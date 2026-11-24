@@ -356,6 +356,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attacks-alone': whenever,
   'trigger.blocks': whenever,
   'trigger.becomes-blocked': whenever,
+  'trigger.attacks-unblocked': whenever,
   'trigger.or': whenever,
   'trigger.landfall': whenever,
   'trigger.sacrifice': whenever,

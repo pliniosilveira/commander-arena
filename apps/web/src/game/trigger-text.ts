@@ -453,6 +453,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes blocked`;
     }
+    case 'becomesUnblocked': {
+      // CR 509.1h: each attacking creature that no creature blocks.
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} attacks and isn't blocked`;
+    }
     case 'becomesBlockedBy': {
       // CR 509.3d, 702.25a (Flanking): once for each creature that blocks it; only the creature without flanking has words.
       const what = subjectPhrase(trigger.what, ctx);

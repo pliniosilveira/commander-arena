@@ -44,6 +44,7 @@ import type {
 import { amountOf } from './amounts';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
+import { attackerDefender } from './defending';
 import { derive } from './derive';
 import { emblemsOf } from './emblem';
 import { findLaterTriggers } from './later-triggers';
@@ -336,6 +337,19 @@ function occurrences(
             seat: null,
           }))
         : [];
+    case 'becomesUnblocked': {
+      // CR 509.1h, 603.2: as the declaration of blockers is made (the event is made with none declared too), each creature attacking a player or a planeswalker or battle of the
+      // declaring player that no creature was declared to block. `blocked` stays true when a blocker leaves later, so such a creature is not unblocked.
+      if (event.kind !== 'blockersDeclared') return [];
+      const out: Occurrence[] = [];
+      for (const a of state.combat?.attackers ?? []) {
+        if (a.blocked || attackerDefender(state, a) !== event.seat) continue;
+        const creature = state.objects[a.object];
+        if (creature === undefined || creature.zone !== 'battlefield') continue;
+        out.push({ subject: a.object, seat: null });
+      }
+      return out;
+    }
     case 'becomesBlockedBy':
       // CR 509.3d, 702.25a: an attacking creature becomes blocked by each creature declared as its blocker, once for each of them.
       return event.kind === 'blockersDeclared'
@@ -1002,6 +1016,7 @@ function matches(
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'becomesBlockedBy': {
       // CR 702.25a: "a creature without flanking": the blocker as it is when it is declared.

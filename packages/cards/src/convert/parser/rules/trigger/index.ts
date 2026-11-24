@@ -91,6 +91,8 @@ type EventName =
   | 'becomesMonstrous'
   | 'blocks'
   | 'becomesBlocked'
+  // CR 509.1h: "attacks and isn't blocked", for `trigger.attacks-unblocked` only.
+  | 'becomesUnblocked'
   // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
   | 'leavesBattlefield'
   // Stage P36 (D-178): "becomes the target of a spell", for the alternatives of `trigger.or` only.
@@ -130,6 +132,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
   becomesBlocked: map(
     pattern(/ becomes blocked(?![\p{L}\p{N}])/iu),
     (): EventName => 'becomesBlocked',
+  ),
+  // CR 509.1h, 603.2: "attacks and isn't blocked": an attacking creature that no creature was declared to block (not "attacks and is blocked", "attacks and isn't blocked by ...").
+  becomesUnblocked: map(
+    pattern(/ attacks and isn['’]t blocked(?![\p{L}\p{N}])(?! by)/iu),
+    (): EventName => 'becomesUnblocked',
   ),
   // CR 603.6c: "leaves the battlefield" (a permanent that goes to another zone, wherever it went).
   leavesBattlefield: map(
@@ -531,6 +538,33 @@ export const TRIGGER_BECOMES_BLOCKED = singleEvent('trigger.becomes-blocked', 'b
     '~ is blocked',
   ],
 });
+
+/**
+ * `trigger.attacks-unblocked`: "~ attacks and isn't blocked", "a creature you control attacks and isn't blocked" (CR 509.1h: an attacking creature no creature was declared to block is
+ * unblocked; CR 603.2: it triggers as the blockers are declared, once for each such creature). The engine's `becomesUnblocked`; "defending player" of the effect is the player it attacks.
+ * Not read: "attacks and is blocked", "attacks and isn't blocked by a creature", "attack and aren't blocked", "attacks or isn't blocked", "becomes unblocked".
+ */
+export const TRIGGER_ATTACKS_UNBLOCKED = singleEvent(
+  'trigger.attacks-unblocked',
+  'becomesUnblocked',
+  {
+    cites: ['CR 509.1h (Declare Blockers Step)', 'CR 603.2 (Handling Triggered Abilities)'],
+    examples: [
+      "~ attacks and isn't blocked",
+      'a creature you control attacks and isn’t blocked',
+      "another creature you control attacks and isn't blocked",
+    ],
+    rejects: [
+      '~ attacks and is blocked',
+      "~ attacks and isn't blocked by a creature",
+      "~ attack and aren't blocked",
+      "~ attacks or isn't blocked",
+      '~ becomes unblocked',
+      "~ attacks and isn't",
+      "you attack and isn't blocked",
+    ],
+  },
+);
 
 /**
  * `trigger.or`: one subject with two or more events joined by "or": "~ enters or attacks",
@@ -1402,6 +1436,7 @@ export const TRIGGER_RULES = [
   ...DINOSAUR_TRIGGER_RULES,
   // Stage P34 (D-152): "attacks for the first time each turn", of which "attacks" is a prefix.
   ...DRAGON_TRIGGER_RULES,
+  TRIGGER_ATTACKS_UNBLOCKED,
   TRIGGER_ATTACKS,
   TRIGGER_BECOMES_TAPPED,
   TRIGGER_BECOMES_UNTAPPED,

@@ -2838,12 +2838,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'countOf needs a filter');
       } else if (
         a.filter.owner !== undefined &&
-        kindOf(a.filter.owner) === 'target' &&
+        (kindOf(a.filter.owner) === 'target' || kindOf(a.filter.owner) === 'defendingPlayer') &&
         a.filter.zone !== undefined &&
         a.filter.zone !== 'battlefield'
       ) {
         // D-649 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
-        // the amount is read, with the targets.
+        // the amount is read, with the targets. CR 508.5 (Guiltfeeder): "defending player loses 1 life for each card in their graveyard": the one player the attacking source attacks.
         const { owner, ...rest } = a.filter;
         checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
         if (rest.controller !== undefined || rest.controlledBy !== undefined) {
@@ -2860,7 +2860,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.filter.owner`,
-          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player owns",
+          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player or the defending player owns",
         );
         if (rest.controlledBy !== undefined) {
           issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
@@ -6847,6 +6847,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // D-230: "return that card to the battlefield" of a dies trigger.
         if (scope.triggerSubject !== 'permanent') {
           issue(out, `${path}.objects`, "'triggerCard' needs a trigger about a permanent");
+        }
+      } else if (kindOf(e.objects) === 'triggerSubject') {
+        // CR 603.2, 400.3 ("Whenever a creature you control becomes blocked, you may return it to its owner's hand"): the permanent the trigger is about, still on the battlefield,
+        // goes to a zone that is not the battlefield (a permanent put onto the battlefield would be a new object, CR 400.7).
+        checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
+        if (e.to === 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'the permanent a trigger is about is not put onto the battlefield',
+          );
         }
       } else if (kindOf(e.objects) === 'thisCard') {
         // D-110: the card the source became, in an ability; it can be put onto the battlefield only.

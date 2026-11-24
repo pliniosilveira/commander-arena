@@ -739,7 +739,12 @@ const RETURN: Lowering<IrClause, Effects> = {
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
-      zone === 'hand' || zone === 'battlefield' ? { thisCard: true } : {},
+      zone === 'hand' || zone === 'battlefield'
+        ? {
+            thisCard: true,
+            ...(zone === 'hand' && ctx.itStaysInCombat ? { triggerSubject: true } : {}),
+          }
+        : {},
     );
   },
 };
@@ -1384,7 +1389,11 @@ function playerVerb(
           rule: clause.rule,
         };
       }
+      // "for each card in their graveyard" of a loss of life: "their" is the one player who loses the life (a target, the defending player or the player of the trigger).
+      const oneBy = ['target', 'defendingPlayer', 'triggerPlayer'].includes(player.value.kind);
+      ctx.theirPlayer = verb === 'loseLife' && oneBy ? player.value : null;
       const amount = amountArg(clause, 'amount', ctx);
+      ctx.theirPlayer = null;
       if (!amount.ok) return amount;
       // "Each opponent loses life equal to the life that player lost this turn" (D-365, CR 119.3): the amount of another player than "you" (who is "that
       // player"), of a loss of life; each affected player's own number.
@@ -2409,6 +2418,21 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       const unsupportedWalk = missingFeatures(['ability:keyword', 'keyword:landwalk']);
       if (unsupportedWalk.length > 0) return { ok: false, needs: unsupportedWalk, ...at };
       abilities.push({ kind: 'keyword', keyword: { kind: 'landwalk', landType } });
+      continue;
+    }
+    // "with protection from black" (CR 702.16a): the colors the token's own keyword names.
+    const protection = /^protection from (.+)$/.exec(word);
+    if (protection?.[1] !== undefined) {
+      const colors = protection[1].split(' and from ').map((w) => colorLetter(w));
+      const unsupportedProtection = missingFeatures(['ability:keyword', 'keyword:protection']);
+      if (unsupportedProtection.length > 0) {
+        return { ok: false, needs: unsupportedProtection, ...at };
+      }
+      if (colors.some((c) => c === undefined)) return { ok: false, needs: [], ...at };
+      abilities.push({
+        kind: 'keyword',
+        keyword: { kind: 'protection', from: 'color', colors: colors as Color[] },
+      });
       continue;
     }
     const kind = keywordKind(word);

@@ -137,6 +137,10 @@ describe('the other new kinds', () => {
     [{ kind: 'blocks', what: { kind: 'this' } }, 'Whenever Pyre Hound blocks'],
     [{ kind: 'becomesBlocked', what: { kind: 'this' } }, 'Whenever Pyre Hound becomes blocked'],
     [
+      { kind: 'becomesUnblocked', what: { kind: 'this' } },
+      "Whenever Pyre Hound attacks and isn't blocked",
+    ],
+    [
       {
         kind: 'becomesBlockedBy',
         what: { kind: 'this' },
@@ -201,6 +205,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   attacks: { kind: 'attacks', what: { kind: 'this' } },
   blocks: { kind: 'blocks', what: { kind: 'this' } },
   becomesBlocked: { kind: 'becomesBlocked', what: { kind: 'this' } },
+  becomesUnblocked: { kind: 'becomesUnblocked', what: { kind: 'this' } },
   becomesBlockedBy: {
     kind: 'becomesBlockedBy',
     what: { kind: 'this' },

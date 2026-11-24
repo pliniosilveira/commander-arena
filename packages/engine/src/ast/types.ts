@@ -5292,6 +5292,12 @@ export type Trigger =
    */
   | { readonly kind: 'becomesBlocked'; readonly what: TriggerSubject }
   /**
+   * "Whenever [a creature] attacks and isn't blocked" (CR 509.1h, 603.2): once for each attacking creature of the player `what` names that has no creature declared as a blocker for it, as
+   * the declaration of blockers is made (the declaration is an event even when no creature blocks). The creature is the subject (`triggerSubject`); "defending player" in the effect is
+   * the player it attacks (CR 508.5). A creature that is blocked, even if its blockers leave later, is not unblocked.
+   */
+  | { readonly kind: 'becomesUnblocked'; readonly what: TriggerSubject }
+  /**
    * "Whenever [a creature] becomes blocked by a creature [without flanking]" (CR 509.3d, 702.25a, Flanking): once for each creature declared as a blocker of an attacking creature
    * `what` names (so two blockers of one attacker are two occurrences); the attacker is the subject (`triggerSubject`) and the blocker is what `triggerSources` names in the effect
    * ("the blocking creature"). `by` is the filter the blocker must match, read as it blocks (a blocker that has flanking is not one).
