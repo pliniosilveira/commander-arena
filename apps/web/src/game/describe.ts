@@ -1158,7 +1158,17 @@ export function describeEvent(
           'CR 310.9a',
         );
       }
-      // CR 701.38a (D-194): "You vote for profit (Emissary Green)." / "Opponent votes for security (Emissary Green)." A vote is public.
+      // CR 701.49b, 309.5a: "You choose Forge for your venture marker." The room is public.
+      if (event.purpose === 'dungeonRoom') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${optionText(event.purpose, event.option)} for ${verb(event.seat, 'your', 'their')} venture marker.`,
+          event.seat,
+          [],
+          'CR 701.49b',
+        );
+      }
+      // CR 701.38a (D-194): "You vote for profit (Emissary Green)."/ "Opponent votes for security (Emissary Green)." A vote is public.
       if (event.purpose === 'vote') {
         return line(
           'major',
@@ -1566,6 +1576,48 @@ export function describeEvent(
         event.to,
         [],
         'CR 725.3',
+      );
+    case 'initiativeChanged':
+      // CR 726.3, 726.4: the designation moved; `to` is null when no player could take it over.
+      return line(
+        'detail',
+        event.to === null
+          ? 'There is no initiative.'
+          : `The initiative passes to ${event.to === viewer ? 'you' : who(event.to)}.`,
+        event.to,
+        [],
+        'CR 726.3',
+      );
+    case 'initiativeTaken':
+      // CR 726.2, 726.5: a player took the initiative (also one who had it already).
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'take', 'takes')} the initiative.`,
+        event.seat,
+        [],
+        'CR 726.2',
+      );
+    case 'ventured': {
+      // CR 701.49, 309.4c: the venture marker moved into a room, the topmost one as the dungeon entered the command zone.
+      const room = optionText('dungeonRoom', event.room);
+      return line(
+        'major',
+        event.from === null
+          ? `${who(event.seat)} ${verb(event.seat, 'enter', 'enters')} Undercity: ${room}.`
+          : `${who(event.seat)} ${verb(event.seat, 'move', 'moves')} ${verb(event.seat, 'your', 'their')} venture marker into ${room}.`,
+        event.seat,
+        [],
+        'CR 701.49',
+      );
+    }
+    case 'dungeonCompleted':
+      // CR 309.7: the dungeon card was removed from the game.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'complete', 'completes')} Undercity.`,
+        event.seat,
+        [],
+        'CR 309.7',
       );
     case 'topCardsLooked':
       // D-139: only the count is public; the cards are seen by `seat` alone.

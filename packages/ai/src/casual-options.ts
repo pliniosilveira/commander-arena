@@ -7,11 +7,13 @@
  * first, so the answer is deterministic and uses no randomness. The view shows an agent its hand, never a
  * library, so (unlike the library) only what the view shows is counted; that is a deliberate limit.
  */
+
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { chooseCardType } from './casual-card-type';
 import { chooseCardNameOption, choosePlayerOption } from './casual-chosen-subject';
 import { chooseCounterPick } from './casual-counter-pick';
 import { chooseNamedOption } from './casual-dragons';
+import { chooseDungeonRoom } from './casual-dungeon';
 import { chooseRiot } from './casual-keywords';
 import { chooseLifePaid } from './casual-life-paid';
 import { choosePile } from './casual-piles';
@@ -149,6 +151,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
     }
     return { kind: 'chooseOption', option: best ?? d.options[0] ?? '' };
   }
+  // CR 701.49b, 309.5a: which room of the dungeon the venture marker moves to (casual-dungeon.ts).
+  if (d.purpose === 'dungeonRoom') return chooseDungeonRoom(view, d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);
   // CR 122.1, 122.5, 608.2d: the counter to remove or move next (casual-counter-pick.ts).

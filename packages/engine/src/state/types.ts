@@ -9,6 +9,7 @@ import type {
   Ability,
   Cost,
   DoorValues,
+  DungeonId,
   Effect,
   InlineChoice,
   Keyword,
@@ -743,6 +744,14 @@ export interface SeatState {
    */
   readonly citysBlessing?: true;
   /**
+   * The dungeon this player is in (CR 309.4, 701.49a): the dungeon card they own in the command zone and the room their venture marker is on, a room id of
+   * `data/dungeons.ts`. Absent while they are in none. A dungeon card is not an object here: nothing reads its characteristics, so it is a record of the seat, as the Ring is.
+   * Public.
+   */
+  readonly dungeon?: { readonly dungeon: DungeonId; readonly room: string };
+  /** How many dungeons this player has completed (CR 309.7). Absent until the first. Public. */
+  readonly dungeonsCompleted?: number;
+  /**
    * The player's speed (CR 702.179b, 702.179c): a number from 1 to 4 once a rule or effect sets it, kept for the rest of the game (`rules/speed.ts`). Absent until then: a player
    * has no speed (CR 702.179b), which reads as 0 for an effect that refers to speed (CR 702.179f). Public.
    */
@@ -901,6 +910,12 @@ export interface LastKnownInfo {
 export type InherentAbility =
   | 'monarchDraw'
   | 'monarchSteal'
+  // CR 726.2: the three abilities of the initiative.
+  | 'initiativeUpkeep'
+  | 'initiativeDamage'
+  | 'initiativeTaken'
+  // CR 309.4c: the room ability of the room a venture marker moved into, `room:<room id>`.
+  | `room:${string}`
   | 'ringLoot'
   | 'ringBlocked'
   | 'ringDamage'
@@ -1312,6 +1327,16 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Venture into Undercity" (`ventureIntoDungeon`, CR 701.49): the controller of the effect enters the dungeon, or moves their venture marker to the next room (a `chooseOption`
+   * decision of purpose 'dungeonRoom' when the room has two ways on). `chosen` is the answer (a room id), null until then. See rules/dungeon.ts.
+   */
+  | {
+      readonly kind: 'venture';
+      readonly seat: SeatId;
+      readonly dungeon: DungeonId;
+      readonly chosen: string | null;
+    }
+  /**
    * "You may pair this creature with another unpaired creature you control" (`pair`, CR 702.95a, D-286): the effect of the two abilities soulbond stands for.
    * The controller is asked which creature (a `choosePermanent` decision of purpose 'soulbond', `min` 0) while there is one to pair with; `chosen` is the answer,
    * null until then, and an empty answer is a decline. See rules/soulbond.ts.
@@ -1672,6 +1697,8 @@ export type Instruction =
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
+      /** The card taken enters with these counters (`take.withCounters`). */
+      readonly withCounters?: { readonly counter: string; readonly count: number };
       /** Only cards with this mana value or less may be taken (`take.manaValueAtMost`, D-145), worked out when the effect started. */
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
@@ -3035,6 +3062,11 @@ export interface GameState {
    * ability triggered. Keyed by the seat; a seat that never became the monarch has no entry. Absent in a game saved before D-231.
    */
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
+  /**
+   * The player who has the initiative (CR 726.1, 726.3), or null (or absent) while no effect has made anyone take it, or when the holder left the game and nobody could take over
+   * (CR 726.4). One at most.
+   */
+  readonly initiative?: SeatId | null;
   /**
    * How many spells each player cast in the turn before the current one (CR 601.2i), by seat, written as a turn begins from `SeatState.spellsCastThisTurn`: "if no spells were cast last turn",
    * "if a player cast two or more spells last turn" (issue 345). Absent before the second turn of the game, when there is no turn before.

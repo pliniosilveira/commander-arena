@@ -4,7 +4,7 @@
  * (SPEC 17.1 A1); events describe what actually happened.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Zone } from '../ast/types';
+import type { DungeonId, Zone } from '../ast/types';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
@@ -677,6 +677,7 @@ export type GameEvent =
         | 'playerChoice'
         | 'chooseOpponent'
         | 'protector'
+        | 'dungeonRoom'
         | 'number';
       readonly option: string;
     }
@@ -774,6 +775,30 @@ export type GameEvent =
       readonly from: SeatId | null;
       readonly to: SeatId | null;
     }
+  /**
+   * The initiative designation moved (CR 726.1, 726.3, 726.4): `from` is the previous holder (null if there was none), `to` the new one (null when the holder left the game and
+   * nobody could take over, CR 726.4).
+   */
+  | {
+      readonly kind: 'initiativeChanged';
+      readonly from: SeatId | null;
+      readonly to: SeatId | null;
+    }
+  /** `seat` took the initiative (CR 726.2, 726.5), also when they had it already: "Whenever a player takes the initiative" triggers from this. */
+  | { readonly kind: 'initiativeTaken'; readonly seat: SeatId }
+  /**
+   * `seat` moved their venture marker into the room `room` of the dungeon (CR 701.49, 309.4c): from the room `from`, or from none when the dungeon was just put into the
+   * command zone. The room ability triggers from this.
+   */
+  | {
+      readonly kind: 'ventured';
+      readonly seat: SeatId;
+      readonly dungeon: DungeonId;
+      readonly room: string;
+      readonly from: string | null;
+    }
+  /** `seat` completed the dungeon (CR 309.6, 309.7, 701.49c): the dungeon card was removed from the game. */
+  | { readonly kind: 'dungeonCompleted'; readonly seat: SeatId; readonly dungeon: DungeonId }
   /** The game became day or night (CR 731.1, 502.2, 702.145d, 702.145g): `from` is what it was (null while it was neither), `to` what it is now. */
   | {
       readonly kind: 'dayNightChanged';

@@ -29,6 +29,7 @@ import { EXILED_WITH_NEEDS } from './exiled-with';
 import type { FeatureRef } from './features';
 import { FINALE_NEEDS } from './finale';
 import { GIDEON_NEEDS } from './gideon';
+import { INITIATIVE_NEEDS } from './initiative';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
 import { LIMIT_BREAK_G1_NEEDS } from './limit-break-g1';
@@ -168,6 +169,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,
+    ...INITIATIVE_NEEDS,
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,

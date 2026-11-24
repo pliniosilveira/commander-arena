@@ -39,7 +39,7 @@ import { becameTargetEvents } from './becomes-target';
 import { controllerOf } from './control';
 import { crimeEvents } from './crime';
 import { EXALTED_ABILITY, EXTORT_ABILITY } from './derive-keywords';
-import { INHERENT_TEXT, inherentName } from './inherent';
+import { inherentName, inherentText } from './inherent';
 import {
   chosenModeSpecs,
   legalModeSets,
@@ -248,11 +248,53 @@ function runQueue(input: GameState): PutResult {
     if (ctx === null || trigger === undefined) break;
     state = { ...state, triggering: { ...ctx, queue: ctx.queue.slice(1), awaiting: null } };
     if (trigger.source === null) {
-      // An inherent ability of the monarch (CR 725.2) has no modes and no targets: it goes on the stack as it is.
+      const specs = trigger.ability.targets ?? [];
+      if (specs.length === 0) {
+        // An inherent ability of the monarch (CR 725.2) has no modes and no targets: it goes on the stack as it is.
+        const pushed = pushTrigger(state, trigger);
+        state = pushed.state;
+        events.push(pushed.event);
+        continue;
+      }
+      // A room ability of a dungeon (CR 309.4c) has no source and chooses its targets as it goes on the stack (CR 603.3d); it is never modal.
+      const choices = targetChoiceSpecs(state, specs, {
+        controller: trigger.controller,
+        source: null,
+      });
+      if (choices.some((c) => c.legal.length < c.min)) continue; // CR 603.3d: no legal target: the ability is simply removed.
+      if (isForced(choices)) {
+        const pushed = pushTrigger(
+          state,
+          trigger,
+          choices.flatMap((c) => c.legal),
+        );
+        events.push(pushed.event);
+        const named = targetsChosen(pushed.state, pushed.id, trigger.controller);
+        state = named.state;
+        events.push(...named.events);
+        continue;
+      }
       const pushed = pushTrigger(state, trigger);
-      state = pushed.state;
       events.push(pushed.event);
-      continue;
+      const waiting = state.triggering;
+      return {
+        state: {
+          ...pushed.state,
+          triggering: {
+            seat: trigger.controller,
+            queue: waiting?.queue ?? [],
+            awaiting: pushed.id,
+          },
+        },
+        events,
+        decision: {
+          kind: 'targets',
+          seat: trigger.controller,
+          source: pushed.id,
+          specs: choices,
+          forTrigger: true,
+        },
+      };
     }
     // CR 603.3c, 700.2b (D-114): a modal ability's modes are chosen as it goes on the stack, before the
     // targets of the modes chosen. A mode with no legal target cannot be chosen; with no legal choice at
@@ -405,7 +447,7 @@ function triggerChoice(state: GameState, group: readonly PendingTrigger[]): Trig
     first.source === null
       ? {
           name: inherentName(first.inherent ?? 'monarchDraw'),
-          oracleText: INHERENT_TEXT[first.inherent ?? 'monarchDraw'],
+          oracleText: inherentText(first.inherent ?? 'monarchDraw'),
         }
       : sourceInfo(state, first.source);
   return {

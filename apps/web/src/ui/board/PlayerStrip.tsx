@@ -45,6 +45,19 @@ export const SPEED_TITLE =
 export const MONARCH_TITLE =
   'The monarch. Draws a card at the beginning of their own end step. A creature that deals combat damage to the monarch makes its controller the monarch (CR 725.2).';
 
+/** The initiative designation (CR 726.2): what it does, for the chip's tooltip. */
+export const INITIATIVE_TITLE =
+  'The initiative. A player who takes it ventures into Undercity, and does so again at the beginning of each of their upkeeps while they have it. A player whose creatures deal combat damage to the player who has it takes it (CR 726.2).';
+
+/** A venture marker in a dungeon (CR 309.4, 701.49): the room it is on, what the room did and where the next venture can lead, for the chip's tooltip. */
+export function dungeonTitle(dungeon: NonNullable<SeatView['dungeon']>): string {
+  const next =
+    dungeon.leadsTo.length === 0
+      ? 'This is the bottommost room: the dungeon is completed once its ability is done (CR 309.6).'
+      : `The next venture leads to ${dungeon.leadsTo.join(' or ')}.`;
+  return `${dungeon.name}, room ${dungeon.roomName}: ${dungeon.roomText} ${next}`;
+}
+
 /** The city's blessing (CR 702.131c, D-264): a designation with no effect of its own; what reads it, for the chip's tooltip. */
 export const BLESSING_TITLE =
   'The city’s blessing. Ascend gave it for the rest of the game; it does nothing by itself, other abilities ask whether a player has it (CR 702.131).';
@@ -312,7 +325,7 @@ export function PlayerStrip({
         data-seat={seat.id}
         aria-label={`${who}, ${seat.life} life${seat.poison > 0 ? `, ${seat.poison} poison` : ''}${seat.energy !== undefined && seat.energy > 0 ? `, ${seat.energy} energy` : ''}${seat.experience !== undefined && seat.experience > 0 ? `, ${seat.experience} experience` : ''}${
           view.monarch === seat.id ? ', the monarch' : ''
-        }${seat.citysBlessing === true ? ', has the city’s blessing' : ''}${seat.speed === undefined ? '' : `, speed ${seat.speed} of 4`}${seat.ringTempted === undefined ? '' : `, the Ring has tempted ${seat.ringTempted === 1 ? 'once' : `${seat.ringTempted} times`}`}${clickable ? ', can be chosen' : ''}`}
+        }${view.initiative === seat.id ? ', has the initiative' : ''}${seat.dungeon === undefined ? '' : `, in ${seat.dungeon.name}, room ${seat.dungeon.roomName}`}${seat.citysBlessing === true ? ', has the city’s blessing' : ''}${seat.speed === undefined ? '' : `, speed ${seat.speed} of 4`}${seat.ringTempted === undefined ? '' : `, the Ring has tempted ${seat.ringTempted === 1 ? 'once' : `${seat.ringTempted} times`}`}${clickable ? ', can be chosen' : ''}`}
         aria-pressed={selected}
         tabIndex={clickable ? 0 : -1}
         onClick={() => {
@@ -356,6 +369,25 @@ export function PlayerStrip({
               data-monarch={seat.id}
             >
               <span aria-hidden="true">{'♛ '}</span>Monarch
+            </span>
+          )}
+          {view.initiative === seat.id && (
+            <span
+              className="board-flag board-flag-initiative"
+              title={INITIATIVE_TITLE}
+              data-initiative={seat.id}
+            >
+              <span aria-hidden="true">{'⚔ '}</span>Initiative
+            </span>
+          )}
+          {seat.dungeon !== undefined && (
+            <span
+              className="board-flag board-flag-dungeon"
+              title={dungeonTitle(seat.dungeon)}
+              data-dungeon={seat.dungeon.room}
+            >
+              <span aria-hidden="true">{'⌂ '}</span>
+              {seat.dungeon.name}: {seat.dungeon.roomName}
             </span>
           )}
           {seat.citysBlessing === true && (

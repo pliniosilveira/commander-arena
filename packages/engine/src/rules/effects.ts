@@ -82,6 +82,7 @@ import { UNEARTH_EXILE_ABILITY } from './derive-alt';
 import { settleDestruction } from './destroy-replacement';
 import { runDraw } from './draw';
 import { runDrawUpTo } from './draw-up-to';
+import { runVenture } from './dungeon';
 import {
   amountOf,
   gainLifeOf,
@@ -111,6 +112,7 @@ import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
+import { takeInitiative } from './initiative';
 import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
@@ -349,6 +351,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'vote') return runVote(state, res, instruction);
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
+  if (instruction.kind === 'venture') return runVenture(state, res, instruction);
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
@@ -2211,6 +2214,22 @@ function runEffect(
       return done(r.state, r.events);
     }
 
+    case 'takeInitiative': {
+      // CR 726.1, 726.3, 726.5: the designation moves to the one player the selector names; a player who has it takes it again, which is an event too.
+      const [seat] = resolvePlayers(state, effect.player, ctx, targets);
+      if (seat === undefined) return done(state);
+      const r = takeInitiative(state, seat);
+      return done(r.state, r.events);
+    }
+
+    case 'ventureIntoDungeon':
+      // CR 701.49: the controller moves their venture marker as this comes up (rules/dungeon.ts).
+      return done(
+        state,
+        [],
+        [{ kind: 'venture', seat: res.controller, dungeon: effect.dungeon, chosen: null }],
+      );
+
     case 'loseLifeManaValue':
       // Issue 97 (Kefka, CR 202.3, 119.3): the owner of each spell cast this way loses life equal to its mana value.
       return runLoseLifeManaValue(state, resolveObjects(state, effect.spells, ctx, targets));
@@ -3420,6 +3439,9 @@ function runEffect(
             ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
+            ...(effect.take.withCounters === undefined
+              ? {}
+              : { withCounters: effect.take.withCounters }),
             // CR 202.3 (D-145): "with mana value less than or equal to the number of lands you control", worked out as the effect runs.
             ...(effect.take.manaValueAtMost === undefined
               ? {}

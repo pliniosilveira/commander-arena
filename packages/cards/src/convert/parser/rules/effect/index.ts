@@ -135,6 +135,7 @@ import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { INCUBATE_EFFECT_RULES } from './incubate';
+import { INITIATIVE_EFFECT_RULES } from './initiative';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
@@ -1454,6 +1455,8 @@ export const EFFECT_RULES = [
   ...VOTE_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
+  // CR 726 (From the Catacombs): "You take the initiative."
+  ...INITIATIVE_EFFECT_RULES,
   ...PLANESWALKER_EFFECT_RULES,
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,

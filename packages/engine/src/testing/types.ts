@@ -182,6 +182,8 @@ export interface AtOptions {
   readonly extraLandDrops?: number;
   /** The player who is the monarch at the start (CR 725.1, D-127). Default: nobody. */
   readonly monarch?: SeatId;
+  /** The player who has the initiative at the start (CR 726.1). Default: nobody. */
+  readonly initiative?: SeatId;
   /** The day or night designation the game has at the start (CR 731.1). Default: neither. */
   readonly dayNight?: 'day' | 'night';
 }
@@ -633,6 +635,12 @@ export interface Expectations {
   hasLost(seat: SeatId, lost?: boolean): void;
   /** `seat` is the monarch (CR 725), or nobody is when `seat` is null (D-127). */
   monarch(seat: SeatId | null): void;
+  /** `seat` has the initiative (CR 726), or nobody does when `seat` is null. */
+  initiative(seat: SeatId | null): void;
+  /** `seat`'s venture marker is on the room `room` (a room id such as 'forge') of Undercity, or the seat is in no dungeon when `room` is null (CR 309.4). */
+  dungeon(seat: SeatId, room: string | null): void;
+  /** `seat` has completed this many dungeons (CR 309.7). */
+  dungeonsCompleted(seat: SeatId, count: number): void;
   /** The game is `'day'`, `'night'`, or neither when `designation` is null (CR 731.1). */
   dayNight(designation: 'day' | 'night' | null): void;
   /** The Ring has tempted `seat` this many times (CR 701.54c, D-196); 0 means it has not, and the seat has no emblem. */

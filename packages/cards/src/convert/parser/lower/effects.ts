@@ -117,6 +117,7 @@ import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
+import { INITIATIVE_LOWERINGS } from './initiative';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
@@ -2890,6 +2891,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...INITIATIVE_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,

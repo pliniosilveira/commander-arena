@@ -41,7 +41,8 @@ export function optionText(
     | 'vote'
     | 'protectionColor'
     | 'protectionCardType'
-    | 'counterPick',
+    | 'counterPick'
+    | 'dungeonRoom',
   option: string,
 ): string {
   // D-451: "gains protection from the color of your choice", answered with a color letter.
@@ -64,8 +65,29 @@ export function optionText(
     const seat = /^player:(\d+)$/.exec(option)?.[1];
     return seat === undefined ? 'a permanent' : `player ${Number(seat) + 1}`;
   }
+  // CR 701.49b: "forge" is the room of that name; the words are the room's name as the dungeon card prints it.
+  if (purpose === 'dungeonRoom') return roomName(option);
   return option;
 }
+
+/** The name of a room of Undercity as its card prints it ("throne-of-the-dead-three" is "Throne of the Dead Three"), from the id of the room. */
+export function roomName(room: string): string {
+  const named = UNDERCITY_ROOM_NAMES[room];
+  return named ?? room;
+}
+
+/** The names of the rooms of Undercity by their ids. */
+const UNDERCITY_ROOM_NAMES: Readonly<Record<string, string>> = {
+  'secret-entrance': 'Secret Entrance',
+  forge: 'Forge',
+  'lost-well': 'Lost Well',
+  trap: 'Trap!',
+  arena: 'Arena',
+  stash: 'Stash',
+  archives: 'Archives',
+  catacombs: 'Catacombs',
+  'throne-of-the-dead-three': 'Throne of the Dead Three',
+};
 
 /** The noun of the choice: "creature type" or "color". */
 export function purposeNoun(
@@ -91,9 +113,11 @@ export function purposeNoun(
     | 'meldOrder'
     | 'protectionColor'
     | 'protectionCardType'
-    | 'counterPick',
+    | 'counterPick'
+    | 'dungeonRoom',
 ): string {
   if (purpose === 'counterPick') return 'counter';
+  if (purpose === 'dungeonRoom') return 'room';
   if (purpose === 'meldOrder') return 'order of the two cards';
   if (purpose === 'protectionColor') return 'color';
   if (purpose === 'protectionCardType') return 'card type';

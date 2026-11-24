@@ -112,7 +112,15 @@ const ACTIVATED_CAST_EXILED_RIDER =
  * effect of the permanent its first sentence put onto the battlefield; read before the replacement test below, which "would ... instead" would take.
  */
 const LEAVE_EXILE_RIDER =
-  /\. if it would leave the battlefield, exile it instead of putting it anywhere else\./i;
+  /\. if (?:it|that creature) would leave the battlefield, exile it instead of putting it anywhere else\./i;
+
+/**
+ * "Put target creature card from a graveyard onto the battlefield under your control with a corpse counter on it. You take the initiative. If that creature would leave the
+ * battlefield, exile it instead of putting it anywhere else." (From the Catacombs, CR 614.1a): a spell whose first sentence puts a card onto the battlefield and whose last says a
+ * replacement effect of the permanent it put there, read before the replacement test below, which "would ... instead" would take.
+ */
+const SPELL_LEAVE_EXILE_RIDER =
+  /^put [^.:]+ onto the battlefield[^.:]*\. (?:[^.:]+\. )*if (?:it|that creature) would leave the battlefield, exile it instead of putting it anywhere else\.$/i;
 
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
@@ -1744,6 +1752,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
   if (ACTIVATED_CAST_EXILED_RIDER.test(text)) {
     const colon = costColon(text);
     if (colon > 0) return activatedSkeleton(text, colon, base);
+  }
+
+  if (SPELL_LEAVE_EXILE_RIDER.test(text)) {
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 
   if (LEAVE_EXILE_RIDER.test(text)) {

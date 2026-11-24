@@ -1267,6 +1267,35 @@ export function answerResolutionChooseOpponent(
   );
 }
 
+/** Records the room the player chose to move their venture marker to (CR 701.49b, 309.5a) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionVenture(state: GameState, option: string): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'venture' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'dungeonRoom' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const updated: Instruction = { ...head, chosen: option };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
 /** Records the opponent the controller chose to clash with (CR 701.30b) on the instruction that asked, and continues. Null when no such question is waiting. */
 export function answerResolutionClashOpponent(
   state: GameState,

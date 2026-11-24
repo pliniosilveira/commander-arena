@@ -19,9 +19,30 @@ export const RING_NAME = 'The Ring';
 /** The name the engine gives the inherent ability of speed (`ObjectView.name`, CR 702.179d). */
 export const SPEED_NAME = 'Speed';
 
-/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, else "The monarch". */
+/** The name the engine gives the abilities of the initiative (`ObjectView.name`, CR 726.2). */
+export const INITIATIVE_NAME = 'The initiative';
+
+/** The name the engine gives the room abilities of Undercity (`ObjectView.name`, CR 309.4c). */
+export const UNDERCITY_NAME = 'Undercity';
+
+/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, "The initiative", the dungeon of a room ability, else "The monarch". */
 export const inherentNameOf = (inherent: string): string =>
-  inherent.startsWith('ring') ? RING_NAME : inherent === 'speedUp' ? SPEED_NAME : MONARCH_NAME;
+  inherent.startsWith('ring')
+    ? RING_NAME
+    : inherent === 'speedUp'
+      ? SPEED_NAME
+      : inherent.startsWith('initiative')
+        ? INITIATIVE_NAME
+        : inherent.startsWith('room:')
+          ? UNDERCITY_NAME
+          : MONARCH_NAME;
+
+/**
+ * Whether an ability on the stack is one of the initiative's or a room ability of a dungeon (CR 726.2, 309.4c): the engine states their words in the object's own text
+ * (the trigger they carry is never read), so they are shown as it gives them.
+ */
+export const hasOwnWords = (o: Pick<ObjectView, 'name'>): boolean =>
+  o.name === INITIATIVE_NAME || o.name === UNDERCITY_NAME;
 
 /** True for an ability on the stack that has no source: the monarch's (CR 725.2). */
 export function isInherentAbility(o: Pick<ObjectView, 'ability' | 'abilitySource'>): boolean {
