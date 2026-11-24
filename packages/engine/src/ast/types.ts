@@ -5458,6 +5458,16 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'player';
     }
   /**
+   * "Whenever damage that would be dealt to you is prevented" (Selfless Squire; CR 615.6, 120.2, 603.2c): damage of any kind, from any source, that would have been dealt to a player `who`
+   * names (`you`: the controller of this ability; `opponent`: a player the controller does not control, CR 113.7a; `player`: any player) and that a prevention effect prevented, once for each
+   * source and each player in one damage event, when at least 1 point was prevented. `triggerDamage` is the amount prevented ("that many") and `triggerPlayer` the player whose damage it was.
+   * Damage that was not prevented, or that was redirected, is not this event (CR 614.9).
+   */
+  | {
+      readonly kind: 'damageToPlayerPrevented';
+      readonly who: 'you' | 'opponent' | 'player';
+    }
+  /**
    * "Whenever [a creature | this] is dealt damage" (CR 120.3, 603.2, D-133): once for each source that deals damage to
    * the permanent `what` names (a creature, a planeswalker or a battle), in the moment the damage is dealt, so it
    * triggers for damage that kills it, and not for damage that is entirely prevented (CR 603.2g). `combat: true` is

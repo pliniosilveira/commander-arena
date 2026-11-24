@@ -1628,6 +1628,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'damageToPlayerPrevented':
     case 'dealtDamageToPlayer':
       if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1704,6 +1705,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'dealtDamageToPlayer' ||
+    t?.kind === 'damageToPlayerPrevented' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||

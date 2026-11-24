@@ -28,9 +28,10 @@ const ELVES = 'Llanowar Elves';
 
 const anthem = real("Marshal's Anthem");
 const greyHost = real('Grey Host Reinforcements');
+const squire = real('Selfless Squire');
 
 describe('the real cards are valid', () => {
-  test.each([anthem, greyHost])('$name', (card) => {
+  test.each([anthem, greyHost, squire])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 });
@@ -150,5 +151,57 @@ describe('Grey Host Reinforcements', () => {
     g.passAll();
     g.expect.zone('Lightning Bolt', 'exile', { seat: 1 });
     g.expect.counters(greyHost.name, {});
+  });
+});
+
+describe('Selfless Squire', () => {
+  const start = () =>
+    scenario({ seats: 3 })
+      .define(squire)
+      .seat(0)
+      .hand(squire.name)
+      .battlefield('Plains', { count: 4 })
+      .seat(1)
+      .hand('Lightning Bolt')
+      .battlefield('Mountain')
+      .library(...FILLER)
+      .seat(2)
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 3 })
+      .build();
+
+  test('flashed in against a Lightning Bolt, it prevents the damage and gets that many counters (CR 615.6)', () => {
+    const g = start();
+    g.act(1).cast('Lightning Bolt', { targets: [{ player: 0 }], pay: true });
+    g.act(1).pass();
+    g.act(2).pass();
+    g.act(0).cast(squire.name, { pay: true });
+    g.passAll();
+    g.expect.life(0, 40);
+    g.expect.counters(squire.name, { '+1/+1': 3 });
+    g.expect.pt(squire.name, 4, 4);
+  });
+
+  test('damage to another player is not damage to you: no counters', () => {
+    const g = start();
+    g.act(1).cast('Lightning Bolt', { targets: [{ player: 2 }], pay: true });
+    g.act(1).pass();
+    g.act(2).pass();
+    g.act(0).cast(squire.name, { pay: true });
+    g.passAll();
+    g.expect.life(2, 37);
+    g.expect.counters(squire.name, {});
+  });
+
+  test('damage that is dealt, not prevented, triggers nothing', () => {
+    const g = start();
+    g.act(1).cast('Lightning Bolt', { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.expect.life(0, 37);
+    g.act(1).pass();
+    g.act(2).pass();
+    g.act(0).cast(squire.name, { pay: true });
+    g.passAll();
+    g.expect.counters(squire.name, {});
   });
 });
