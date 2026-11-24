@@ -1,9 +1,19 @@
 /**
  * Effect rules of the Planeswalker Party deck (issue 132).
  */
-import { fail, literal, pattern, sequence } from '../../combinators';
-import type { IrCounterSpec, IrNoun } from '../../ir/types';
+import { fail, literal, optional, pattern, satisfy, sequence } from '../../combinators';
+import type {
+  IrBasePt,
+  IrClause,
+  IrColorSpec,
+  IrCounterSpec,
+  IrDuration,
+  IrNoun,
+  IrTypeList,
+} from '../../ir/types';
+import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, quietly, spanned } from '../registry';
+import { CREATURE_TYPE_LIST } from './becomes';
 import { type Clauses, makeClause } from './operands';
 
 const ID = 'effect.damage-exile-if-dies';
@@ -69,6 +79,110 @@ export const EFFECT_DAMAGE_EXILE_IF_DIES = defineRule<Clauses>({
   },
 });
 
+const BECOMES_ID = 'effect.lead-each-becomes-creature';
+
+/**
+ * `effect.lead-each-becomes-creature`: "Until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature and gains flying." (Sarkhan the Masterless; CR 613.1d, 613.1e,
+ * 613.1f, 613.4b, 611.2a, 205.1a): every planeswalker the controller controls as the effect begins is a creature of that color, creature type and base power and toughness until the
+ * end of the turn, and no longer a planeswalker (it keeps its loyalty counters and abilities). The group is fixed once (CR 611.2c). Keywords are given first and the types last, so the
+ * group is still the planeswalkers when each part is made. Not read: another group than planeswalkers you control, "still a planeswalker" (`effect.lead-becomes-creature`), no color,
+ * another duration, a quoted ability.
+ */
+export const EFFECT_LEAD_EACH_BECOMES_CREATURE = defineRule<Clauses>({
+  id: BECOMES_ID,
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1e (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1a (Type Line)',
+  ],
+  examples: [
+    'until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature and gains flying',
+    'Until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature',
+  ],
+  rejects: [
+    'until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature and gains flying.',
+    'until end of turn, each creature you control becomes a 4/4 red Dragon creature and gains flying',
+    "until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature that's still a planeswalker",
+    'until end of turn, each planeswalker you control becomes a 4/4 Dragon creature and gains flying',
+    'until end of turn, each planeswalker you control becomes a red Dragon creature and gains flying',
+    'until your next turn, each planeswalker you control becomes a 4/4 red Dragon creature and gains flying',
+    'until end of turn, each planeswalker becomes a 4/4 red Dragon creature and gains flying',
+    'until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature and gains flying and draws a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrDuration>('duration'),
+      literal(', '),
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.each-permanent'] }),
+        (n) =>
+          n.filter.types?.length === 1 &&
+          n.filter.types[0] === 'planeswalker' &&
+          n.filter.controller === 'you' &&
+          !n.other,
+      ),
+      literal(' becomes a '),
+      spanned(pattern(/(\d+)\/(\d+) /)),
+      spanned(pattern(/(white|blue|black|red|green)(?![\p{L}\p{N}]) /iu)),
+      spanned(CREATURE_TYPE_LIST),
+      literal(' creature'),
+      optional(spanned(sequence(literal(' and gains '), KEYWORD_WORDS)), null),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [duration, , subject, , pt, color, types, , gained] = r.value;
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: Number(pt.value[1]),
+      toughness: Number(pt.value[2]),
+      span: pt.span,
+      rule: BECOMES_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value,
+      cardTypes: ['creature'],
+      span: types.span,
+      rule: BECOMES_ID,
+    };
+    const colorSpec: IrColorSpec = {
+      kind: 'colorSpec',
+      colors: [(color.value[1] ?? '').toLowerCase()],
+      span: color.span,
+      rule: BECOMES_ID,
+    };
+    const clauses: IrClause[] = [];
+    const names = gained === null ? [] : gained.value[1];
+    names.forEach((name) => {
+      const keyword = {
+        kind: 'keywordName' as const,
+        name,
+        span: gained?.span ?? pt.span,
+        rule: BECOMES_ID,
+      };
+      clauses.push({
+        ...makeClause(BECOMES_ID, 'grantKeyword', { objects: subject, keyword }, keyword.span),
+        duration,
+        connector: 'and' as const,
+      });
+    });
+    clauses.push({
+      ...makeClause(
+        BECOMES_ID,
+        'becomesCreatureGroup',
+        { objects: subject, types: typeList, colors: colorSpec, basePt },
+        types.span,
+      ),
+      duration,
+    });
+    return { ok: true, value: clauses, pos: r.pos };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -130,4 +244,5 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_LEAD_EACH_BECOMES_CREATURE),
 ];

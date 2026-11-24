@@ -41,6 +41,7 @@ import { amountArg, arg, type Effects, eachObject, failure, operand } from './cl
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
+  BECOMES_CREATURE_GROUP,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   CHOOSE_OPPONENT,
   CHOOSE_PLAYER,
@@ -2749,6 +2750,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
   BECOMES,
+  BECOMES_CREATURE_GROUP,
   GAIN_ALL_CREATURE_TYPES,
   SET_PT,
   FLICKER,
