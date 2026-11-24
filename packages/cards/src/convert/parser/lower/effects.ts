@@ -626,7 +626,8 @@ const RETURN: Lowering<IrClause, Effects> = {
       zone === 'battlefield' &&
       chosen?.kind === 'noun' &&
       /^it$/iu.test(chosen.filter.raw.trim()) &&
-      !ctx.itIsCard
+      !ctx.itIsCard &&
+      !ctx.diesTrigger
     ) {
       // Meren of Clan Nel Toth: "Choose target creature card in your graveyard. ... return it to the battlefield": "it" is the card the earlier instruction chose from a graveyard (CR 608.2c).
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
@@ -651,7 +652,9 @@ const RETURN: Lowering<IrClause, Effects> = {
       chosen?.kind === 'noun' &&
       zone === 'battlefield' &&
       chosen.det === 'triggerSubject' &&
-      /^that card/iu.test(chosen.filter.raw)
+      // "Whenever a creature you control without flying dies, return it to the battlefield ..." (Luminous Broodmoth): "it" of a dies trigger is the card too (CR 603.10a).
+      (/^that card/iu.test(chosen.filter.raw) ||
+        (ctx.diesTrigger && /^it$/iu.test(chosen.filter.raw.trim())))
     ) {
       const blocked = missingFeatures(['selector:triggerCard', 'selector:triggerSubject']);
       if (blocked.length > 0) return failure(clause, blocked);
