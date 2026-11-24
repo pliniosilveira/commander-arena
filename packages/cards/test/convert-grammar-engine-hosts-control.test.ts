@@ -188,3 +188,51 @@ describe('Wake the Dragon', () => {
     g.expect.zone('Sol Ring', 'battlefield', { seat: 2, count: 0 });
   });
 });
+
+describe('In the Darkness Bind Them', () => {
+  const SAGA = real('In the Darkness Bind Them');
+  const THREE = 'SYNTHETIC Vanilla 3/3';
+
+  function chapterFour() {
+    const g = withCards(scenario({ seats: 3 }), SAGA)
+      .seat(0)
+      .library('Island', { count: 8 })
+      .battlefield(SAGA.name, { counters: { lore: 3 } })
+      .seat(1)
+      .library('Island', { count: 8 })
+      .battlefield(BEARS, { tapped: true })
+      .seat(2)
+      .library('Island', { count: 8 })
+      .battlefield(THREE)
+      .at('upkeep', { active: 0 })
+      .build();
+    g.advanceTo('precombatMain');
+    return g;
+  }
+
+  test('chapter IV: each opponent loses one creature of theirs, untapped and hasty, and the Ring tempts (CR 613.1b, 611.2, 701.54a)', () => {
+    const g = chapterFour();
+    g.act(0).chooseTargets({ name: BEARS, seat: 1 }, { name: THREE, seat: 2 });
+    g.passAll();
+    // The Ring tempts you as the last instruction: the stolen creatures are the ones that can become the Ring-bearer.
+    g.act(0).choosePermanents(THREE);
+    g.expect.ringLevel(0, 1);
+    g.expect.ringBearer(0, THREE);
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.zone(THREE, 'battlefield', { seat: 0 });
+    g.expect.tapped(BEARS, false);
+    g.expect.derived(BEARS, { keywords: ['haste'] });
+    g.expect.derived(THREE, { keywords: ['haste'] });
+    g.expect.invariants();
+  });
+
+  test('the creatures go back at the end of the turn (CR 514.2)', () => {
+    const g = chapterFour();
+    g.act(0).chooseTargets({ name: BEARS, seat: 1 }, { name: THREE, seat: 2 });
+    g.passAll();
+    g.act(0).choosePermanents(THREE);
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.zone(BEARS, 'battlefield', { seat: 1 });
+    g.expect.zone(THREE, 'battlefield', { seat: 2 });
+  });
+});

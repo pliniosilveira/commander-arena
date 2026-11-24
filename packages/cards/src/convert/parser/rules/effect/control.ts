@@ -5,6 +5,7 @@
 import { choice, literal, map, optional, pattern, refuseAt, sequence } from '../../combinators';
 import type { IrArg, IrClause, IrDuration, IrNoun } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
+import { perOpponentNoun } from './angels';
 import { type Clauses, makeClause, single } from './operands';
 
 const RULE = 'effect.gain-control';
@@ -122,6 +123,66 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
       };
     },
   ),
+});
+
+/**
+ * `effect.gain-control-per-opponent`: "for each opponent, gain control of up to one target creature that player controls until end of turn" (In the Darkness Bind Them, CR 115.1,
+ * 601.2c, 613.1b, 611.2: one slot that takes at most one target of each opponent, as `effect.exile-per-opponent` reads it, and the controller of the ability gains control of each
+ * chosen creature for the duration). "Up to one" only; the permanent is whatever phrase of the permanent family names no controller ("that player controls" is the controller). The
+ * group of chosen creatures is plural for the sentences after it ("Untap those creatures. They gain haste until end of turn.").
+ */
+export const EFFECT_GAIN_CONTROL_PER_OPPONENT = defineRule<Clauses>({
+  id: `${RULE}-per-opponent`,
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 613.1b (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    'for each opponent, gain control of up to one target creature that player controls until end of turn',
+    'for each opponent, gain control of up to one target artifact that player controls',
+  ],
+  rejects: [
+    'for each opponent, gain control of target creature that player controls until end of turn',
+    'for each opponent, gain control of up to two target creatures that player controls until end of turn',
+    'for each opponent, gain control of up to one target creature until end of turn',
+    'for each opponent, gain control of up to one target creature you control until end of turn',
+    'for each opponent, gain control of up to one target creature an opponent controls until end of turn',
+    'for each player, gain control of up to one target creature that player controls until end of turn',
+    'for each other opponent, gain control of up to one target creature that player controls until end of turn',
+    'gain control of up to one target creature that player controls until end of turn',
+    'for each opponent, gain control of up to one target creature that player controls until your next turn',
+    'for each opponent, gain control of up to one target creature that player controls until end of turn and draw a card',
+    'for each opponent, gains control of up to one target creature that player controls until end of turn',
+  ],
+  parse: (ctx, pos) => {
+    const id = `${RULE}-per-opponent`;
+    const head = literal('for each opponent, gain control of up to one target ')(ctx, pos);
+    if (!head.ok) return head;
+    const noun = perOpponentNoun(ctx, pos, 'gain control of', head.pos, id);
+    if (!noun.ok) return noun;
+    const ended = DURATION(ctx, noun.pos);
+    if (!ended.ok) return ended;
+    const end = ended.pos;
+    const span = { start: pos, end };
+    const duration: IrDuration | undefined =
+      ended.value === null
+        ? undefined
+        : { kind: 'duration', scope: ended.value.value, span: ended.value.span, rule: id };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(id, 'gainControl', { objects: { ...noun.value, plural: true } }, span),
+          ...(duration === undefined ? {} : { duration }),
+        },
+      ],
+      pos: end,
+    };
+  },
 });
 
 /** "Target player gains control of up to N target creatures" (CR 613.1b, 611.2c): one target player controls the chosen target group. */
@@ -276,6 +337,7 @@ export const EFFECT_CONTROL_WHILE_REMAINS = defineRule<Clauses>({
 
 export const CONTROL_EFFECT_RULES = [
   EFFECT_GAIN_CONTROL,
+  EFFECT_GAIN_CONTROL_PER_OPPONENT,
   EFFECT_GAIN_CONTROL_FOR_PLAYER,
   EFFECT_CONTROL_WHILE_REMAINS,
 ];

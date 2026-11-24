@@ -217,10 +217,14 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     ctx.lastCounteredGroup =
       lastLowered?.kind === 'addCounters' && lastLowered.objects.kind === 'each'
         ? lastLowered.objects
-        : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
-          lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
-          ? ctx.lastCounteredGroup
-          : null;
+        : // In the Darkness Bind Them (CR 608.2c, 611.2c): "For each opponent, gain control of up to one target creature ... Untap those creatures. They gain haste ...": the creatures
+          // the control effect named as targets (`untapThose` does not clear it: it is not lowered as a clause).
+          lastLowered?.kind === 'gainControl' && lastLowered.objects.kind === 'target'
+          ? lastLowered.objects
+          : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
+            lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
+            ? ctx.lastCounteredGroup
+            : null;
     // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
     const lastEffect = lowered.value[lowered.value.length - 1];
     ctx.lastCastRemembered = lastEffect?.kind === 'castFree' && lastEffect.remember === true;
