@@ -34,7 +34,12 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
       !aboutMadeTokens(ctx) && clause.duration !== undefined ? ctx.lastCounteredGroup : null;
     // CR 608.2c, 611.2c (Wake the Past): "Return all artifact cards from your graveyard to the battlefield. They gain haste until end of turn.": "they" are the objects the
     // instruction before put onto the battlefield (`ctx.movedOnto`, the engine's `moved`).
-    const putOnto = !aboutMadeTokens(ctx) && group === null && ctx.movedOnto !== null;
+    // Only with its duration: "They gain haste." after a return would be a haste for good given to "them" (a plural for what may be one card), which is not read.
+    const putOnto =
+      !aboutMadeTokens(ctx) &&
+      group === null &&
+      ctx.movedOnto !== null &&
+      clause.duration !== undefined;
     if (!aboutMadeTokens(ctx) && group === null && !putOnto) return failure(clause);
     const kind = keywordKind(word.name);
     if (kind === undefined || !isGrantable(kind)) return failure(clause);
