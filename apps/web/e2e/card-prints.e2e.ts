@@ -95,8 +95,7 @@ test('a player’s own deck lists the printings of a card, and a chosen one is s
   await page.getByLabel(/^Decklist/).fill(supportedList());
   await page.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText('Saved "SYNTHETIC Mine".')).toBeVisible();
+  await expect(page.getByText('Imported and saved "SYNTHETIC Mine".')).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
   await page.getByRole('button', { name: 'My decks' }).click();
   const open = async () => {

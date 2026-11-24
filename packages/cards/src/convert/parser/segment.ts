@@ -15,6 +15,9 @@
  */
 import type { Span } from './ir/types';
 import { CHAPTER_PREFIX } from './roman';
+import { COUNTER_BLITZ_C_JOINS } from './segment-counter-blitz-c';
+import { COUNTER_BLITZ_E_SEARCH_JOIN } from './segment-counter-blitz-e';
+import { CHOOSE_TARGET_CREATURE, WHEN_THAT_CREATURE_DIES_RETURN } from './segment-counter-group-a';
 
 export type FaceKind = 'spell' | 'permanent';
 
@@ -798,6 +801,16 @@ const BOTTOM_RIDER =
   /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
 
 /**
+ * "That player exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then that player puts the exiled
+ * cards that weren't cast this way on the bottom of their library in a random order." (Grima, Saruman's Footman, CR 701.13, 608.2g, 401.4): the cast and the bottom are of the cards the
+ * first sentence exiles, so the three are one instruction (`effect.that-player-exiles-until-cast`; the first may follow the comma of a trigger).
+ */
+const THAT_PLAYER_EXILES_UNTIL =
+  /(?:^|, )that player exiles cards from the top of their library until they exile an? [^.,]*\.$/i;
+const THEN_THAT_PLAYER_BOTTOM_RANDOM =
+  /^then that player puts the exiled cards that weren['’]t cast this way on the bottom of their library in a random order\.$/i;
+
+/**
  * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 118.9): the second sentence says what the
  * flashback the first gives costs, so the two are one instruction (`effect.gain-flashback-from-mana-cost`).
  */
@@ -832,6 +845,24 @@ const PUT_ALL_REVEALED_HAND =
 const PUT_HAND_REST_GRAVEYARD =
   /^put one of them into your hand and the rest into your graveyard\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
+/**
+ * "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield. Then put all cards revealed this
+ * way that weren't put onto the battlefield into your graveyard." (Genesis Wave, CR 701.20a): three sentences that are one instruction, kept together for
+ * `effect.reveal-any-permanents-x`. Only all three in a row.
+ */
+const MAY_PUT_ANY_PERMANENTS_X =
+  /^you may put any number of permanent cards with mana value X or less from among them onto the battlefield\.$/i;
+const THEN_PUT_REST_GRAVEYARD =
+  /^then put all cards revealed this way that weren['’]t put onto the battlefield into your graveyard\.$/i;
+/**
+ * "Each opponent reveals the top card of their library. If any of those cards shares a card type with that spell, copy that spell, you may choose new targets for the copy, and each
+ * opponent draws a card. Otherwise, you draw a card." (Gandalf, Westward Voyager, CR 701.20a, 608.2c): three sentences that are one instruction (the first may follow the comma of a
+ * trigger), kept together for `effect.opponents-reveal-share-type`. Only all three in a row.
+ */
+const EACH_OPPONENT_REVEALS_TOP = /(?:^|, )each opponent reveals the top card of their library\.$/i;
+const IF_ANY_SHARES_TYPE_COPY =
+  /^if any of those cards shares a card type with that spell, copy that spell, you may choose new targets for the copy, and each opponent draws a card\.$/i;
+const OTHERWISE_YOU_DRAW = /^otherwise, you draw a card\.$/i;
 /**
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
@@ -996,6 +1027,30 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    // Genesis Wave: the reveal, the take of any number of permanents and the rest into the graveyard (`effect.reveal-any-permanents-x`).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_THE_TOP) &&
+      said(b, MAY_PUT_ANY_PERMANENTS_X) &&
+      said(c, THEN_PUT_REST_GRAVEYARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
+    // Gandalf, Westward Voyager: the reveal of each opponent, the copy or the draw it decides and the otherwise (`effect.opponents-reveal-share-type`).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EACH_OPPONENT_REVEALS_TOP) &&
+      said(b, IF_ANY_SHARES_TYPE_COPY) &&
+      said(c, OTHERWISE_YOU_DRAW)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
     // Issue 81 (Jhoira, Weatherlight Corsair): "Target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that card onto the battlefield
     // under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a random order.": one
     // instruction (`effect.player-reveals-until-you-put`).
@@ -1046,8 +1101,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 2;
       continue;
     }
-    // Finale of Promise (issue 121): the four sentences of one instruction.
+    // Counter Blitz deck, group E (Scholar of New Horizons): the four sentences of a search that may put its card onto the battlefield (`effect.search-reveal-may-put-else-hand`).
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, COUNTER_BLITZ_E_SEARCH_JOIN[0]) &&
+      said(b, COUNTER_BLITZ_E_SEARCH_JOIN[1]) &&
+      said(c, COUNTER_BLITZ_E_SEARCH_JOIN[2]) &&
+      said(d, COUNTER_BLITZ_E_SEARCH_JOIN[3])
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       d !== undefined &&
       said(a, FINALE_CAST) &&
@@ -1149,6 +1214,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, REVEAL_THE_TOP) &&
       said(b, SEPARATES_INTO_PILES) &&
       said(c, PUT_ONE_PILE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, THAT_PLAYER_EXILES_UNTIL) &&
+      said(b, MAY_CAST_THAT_CARD_FREE) &&
+      said(c, THEN_THAT_PLAYER_BOTTOM_RANDOM)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
@@ -1264,6 +1338,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, FOR_EACH_OPPONENT_CHOOSE) && said(b, DESTROY_THE_CHOSEN_PERMANENTS)) ||
+        // Counter Blitz deck, group C (Summon: Valefor): each opponent's choice and the move of the permanents chosen.
+        COUNTER_BLITZ_C_JOINS.some(([first, second]) => said(a, first) && said(b, second)) ||
         (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
@@ -1294,6 +1370,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, CHOOSE_PER_PLAYER_GRAVEYARD) && said(b, PUT_THOSE_CARDS_ONTO)) ||
+        (said(a, CHOOSE_TARGET_CREATURE) && said(b, WHEN_THAT_CREATURE_DIES_RETURN)) ||
         (said(a, OPPONENTS_CHOOSE_GRAVEYARD_CARD) && said(b, RETURN_EACH_CARD_CHOSEN)) ||
         (said(a, CHOOSE_EXILED_VOID_CARD) && said(b, MAY_PLAY_IT_FREE)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
@@ -1690,6 +1767,18 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     const numerals = chapter[1] ?? '';
     // A chapter may carry a name of its own before its text ("I — Lightning — ..."): a flavor name of one or two capitalized words, which is no rule (CR 714.2).
     const name = CHAPTER_NAME.exec(text.slice(chapter[0].length));
+    // "I, II, III — Choose one at random —" and its bullets (CR 714.2, 700.2b): the body of the chapter is the modes.
+    const chapterModal = modalBody(text, chapter[0].length);
+    if (chapterModal !== null) {
+      return {
+        ...base,
+        head: 'triggered',
+        trigger: { start: 0, end: numerals.length },
+        chapter: true,
+        modalHeader: chapterModal.header,
+        modes: chapterModal.modes,
+      };
+    }
     return {
       ...base,
       head: 'triggered',

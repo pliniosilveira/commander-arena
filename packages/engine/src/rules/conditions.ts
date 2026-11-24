@@ -27,6 +27,7 @@ import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { designationHolders, hasMaxSpeed } from './designations';
 import { manaSpentOf } from './mana-spent';
+import { manaValueOfCost } from './mana-value';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
 import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
@@ -89,11 +90,15 @@ export interface ConditionContext {
   readonly moved?: readonly ObjectId[];
   /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-584, CR 602.2b). Absent for any other spell or ability. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** The cards discarded to pay the cost of the activated ability that is resolving, for `discardedAsCostMatches` (CR 602.2b, 701.9a). Absent for any other spell or ability. */
+  readonly costDiscarded?: readonly ObjectId[];
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
   readonly dieResult?: number;
   /** Whether the controller won the latest clash of the resolution, for `clashWon` (CR 701.30d). Absent where none happened, which fails that condition closed. */
   readonly clashWon?: boolean;
+  /** The tally of the latest vote of the resolution (CR 701.38a), for `voteMost` and `voteTied`: the votes for each option, an option nobody chose left out. Absent where no vote finished, which fails those conditions closed. */
+  readonly votes?: Readonly<Record<string, number>>;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
@@ -277,6 +282,7 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
       return total === condition.compare.value;
     }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c, 608.2h (Meren of Clan Nel Toth): the mana value of the object the reference names (an {X} is 0 off the stack, CR 202.3e) against a state amount read now.
       const [id] = resolveObjects(
@@ -291,12 +297,20 @@ export function evaluateCondition(
         ctx.targets ?? [],
       );
       if (id === undefined) return false;
-      const value = statOf(state, id, 'manaValue');
+      // CR 608.2h: an object that has since moved (the card exiled earlier in this resolution) is read as it last was.
+      const last = state.lki[id];
+      const value =
+        state.objects[id] === undefined && last !== undefined
+          ? manaValueOfCost(last.characteristics.manaCost, last.object)
+          : statOf(state, id, 'manaValue');
       if (value === null || value === undefined) return false;
-      return (
-        value <=
-        amountOf(state, condition.amount, { controller: ctx.controller, source: ctx.source }, [])
+      const limit = amountOf(
+        state,
+        condition.amount,
+        { controller: ctx.controller, source: ctx.source },
+        [],
       );
+      return condition.kind === 'manaValueAtLeastAmount' ? value >= limit : value <= limit;
     }
     case 'movedShareAllCardTypes': {
       // CR 205.2a, 608.2c (Demonic Covenant): two of the cards an earlier instruction moved have exactly the same card types, as they are (or last were).
@@ -332,6 +346,26 @@ export function evaluateCondition(
           named !== null &&
           // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
           (condition.inZone === undefined || named.zone === condition.inZone) &&
+          matchesFilter(
+            state,
+            named,
+            { ...condition.filter, zone: named.zone },
+            {
+              controller: ctx.controller,
+              source: ctx.source,
+              // CR 205.2a: "shares a card type with that spell" reads the spell the trigger is about.
+              ...(ctx.triggerSubject === undefined ? {} : { triggerSubject: ctx.triggerSubject }),
+            },
+          )
+        );
+      });
+    }
+    case 'discardedAsCostMatches': {
+      // CR 602.2b, 701.9a, 608.2h: the card the cost discarded, as it is in the graveyard (or exile) or as it last was once it has left, against the filter.
+      return (ctx.costDiscarded ?? []).some((id) => {
+        const named = objectOrLki(state, id);
+        return (
+          named !== null &&
           matchesFilter(
             state,
             named,
@@ -638,6 +672,20 @@ export function evaluateCondition(
           (s) => s.seat === ctx.controller && s.fromGraveyard === true,
         ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
       );
+    case 'voteMost': {
+      // CR 701.38a (Plea for Power): "if time gets more votes": more than every other option of the vote earlier in this resolution.
+      if (ctx.votes === undefined) return false;
+      const mine = ctx.votes[condition.option] ?? 0;
+      return Object.entries(ctx.votes).every(
+        ([option, n]) => option === condition.option || mine > n,
+      );
+    }
+    case 'voteTied': {
+      // CR 701.38a: "if the vote is tied": more than one option has the most votes (the options that got fewer are not part of a tie).
+      if (ctx.votes === undefined) return false;
+      const most = Math.max(0, ...Object.values(ctx.votes));
+      return most > 0 && Object.values(ctx.votes).filter((n) => n === most).length > 1;
+    }
     case 'clashWon':
       // CR 701.30d: the controller revealed a card with a higher mana value than every other card revealed in the clash earlier in this resolution.
       return ctx.clashWon === true;
@@ -733,6 +781,23 @@ export function evaluateCondition(
           (condition.counter === undefined || e.counter === condition.counter) &&
           (condition.onType === undefined || e.types.includes(condition.onType)),
       );
+    case 'counterPutOnThisThisTurn':
+      // CR 122.6, 603.4 (Wakka): a counter (of the kind, when named) put on the permanent with this ability this turn by anyone, from the turn log.
+      return (
+        ctx.source !== null &&
+        (state.turnLog.countersPutOn ?? []).some(
+          (e) =>
+            e.object === ctx.source &&
+            (condition.counter === undefined || e.counter === condition.counter),
+        )
+      );
+    case 'subjectPowerLessThanThis': {
+      // CR 208.1, 113.7a, 608.2c (Shelinda): the power of the permanent the trigger is about against the power of the permanent with the ability, each as it is or as it last was.
+      if (ctx.source === null || ctx.triggerSubject === undefined) return false;
+      const subject = ptNow(state, ctx.triggerSubject);
+      const source = ptNow(state, ctx.source);
+      return subject !== null && source !== null && subject.power < source.power;
+    }
     case 'triggerPlayerHasMore':
       // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
       return (

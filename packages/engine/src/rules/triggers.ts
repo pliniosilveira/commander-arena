@@ -31,6 +31,7 @@ import { LOOK_BACK_TRIGGER_KINDS } from '../ast/features';
 import type { Ability, Trigger, TriggerStep, TriggerSubject, Zone } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageRecipient } from '../state/combat-types';
+import type { VoteCast } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat, opponentsOf } from '../state/ops';
 import type {
@@ -125,6 +126,8 @@ interface Occurrence {
   readonly blocker?: ObjectId;
   /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
+  /** For `votingFinished` (CR 701.38a): who voted for what in the vote that finished. */
+  readonly votes?: readonly VoteCast[];
   /**
    * For `attackBatch`: as `attackers`, one entry for each: the player the creature was declared as attacking, or the controller of the planeswalker it was declared as
    * attacking; null for a creature that attacks a battle (CR 508.1b, 506.3), which is neither (`attackingYourOpponents`).
@@ -793,6 +796,11 @@ function occurrences(
       return event.kind === 'classLevelReached' && event.level === trigger.level
         ? [{ subject: event.object, seat: null }]
         : [];
+    case 'votingFinished':
+      // CR 701.38a (Erestor of the Council): every player has voted in a vote of any spell or ability; the record of the votes goes to the ability.
+      return event.kind === 'votesRevealed'
+        ? [{ subject: null, seat: null, votes: event.cast }]
+        : [];
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -1102,6 +1110,10 @@ function matches(
       ) {
         return false;
       }
+      // CR 508.1b: "Whenever an opponent attacks you": the controller of the ability was declared as attacked, as a player.
+      if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
+        return false;
+      }
       // CR 508.1, 603.2c (Frontline Medic): "Whenever ~ and at least two other creatures attack": the permanent itself is one of the creatures counted.
       return (
         attackBatchMembers(state, trigger, occ, candidate.controller, candidate.id, ctx).length >=
@@ -1279,6 +1291,8 @@ function matches(
         matchesWhat(state, trigger.what, objectOrLki(state, earlier), candidate),
       );
     }
+    case 'votingFinished':
+      return true;
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -1328,6 +1342,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'doorUnlocked': // CR 709.5h
     case 'ringTempted':
     case 'classLevelReached':
+    case 'votesRevealed': // CR 701.38a: "whenever players finish voting"
       return true;
     case 'counterAdded':
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
@@ -1736,6 +1751,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
                       : occ.attackers,
                 }),
             ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
+            ...(occ.votes === undefined ? {} : { votes: occ.votes }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'
               ? {
@@ -2107,16 +2123,32 @@ function limitOncePerTurn(
  * types the permanent has as it got them. A counter no player put (`counterAdded` with no `by`) and a permanent that is gone are not recorded.
  */
 function recordCountersPut(state: GameState, events: readonly GameEvent[]): GameState {
+  // CR 122.6 (Wakka): every counter put on a permanent, by anyone or by no player, for "if a counter was put on this creature this turn".
+  const putOn = events.flatMap((e) =>
+    e.kind === 'counterAdded' && e.count >= 1 && state.objects[e.object]?.zone === 'battlefield'
+      ? [{ object: e.object, counter: e.counter }]
+      : [],
+  );
+  const logged: GameState =
+    putOn.length === 0
+      ? state
+      : {
+          ...state,
+          turnLog: {
+            ...state.turnLog,
+            countersPutOn: [...(state.turnLog.countersPutOn ?? []), ...putOn],
+          },
+        };
   const put = events.flatMap((e) => {
     if (e.kind !== 'counterAdded' || e.by === undefined || e.count < 1) return [];
     const obj = state.objects[e.object];
     if (obj === undefined || obj.zone !== 'battlefield') return [];
     return [{ seat: e.by, counter: e.counter, types: [...derive(state, obj).types] }];
   });
-  if (put.length === 0) return state;
+  if (put.length === 0) return logged;
   return {
-    ...state,
-    turnLog: { ...state.turnLog, countersPut: [...(state.turnLog.countersPut ?? []), ...put] },
+    ...logged,
+    turnLog: { ...logged.turnLog, countersPut: [...(logged.turnLog.countersPut ?? []), ...put] },
   };
 }
 

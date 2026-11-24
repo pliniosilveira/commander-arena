@@ -55,8 +55,8 @@ export async function startOptionsFor(
   if (!human.ok) return { ok: false, reason: human.reason };
   const ai = await resolveId(precons, request.aiDeck, request.allowHidden);
   if (!ai.ok) return { ok: false, reason: ai.reason };
-  // The board draws the printings the decks list; on a card both name, the player's is the one drawn.
-  setGamePrintings([listOf(ai), listOf(human)]);
+  // The board draws each seat in the printings its own deck lists: the human is seat 0, the opponent seat 1.
+  setGamePrintings([listOf(human), listOf(ai)]);
   const aiPreconName = precons.list.find((info) => info.id === request.aiDeck)?.name;
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   const options: NewGameOptions = {
@@ -107,7 +107,7 @@ export async function startTableOptionsFor(
       ...(preconName === undefined ? {} : { preconName }),
     });
   }
-  setGamePrintings([...lists, listOf(human)]);
+  setGamePrintings([listOf(human), ...lists]);
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   const options: NewGameOptions = {
     seed: request.seed,
@@ -154,7 +154,7 @@ export async function startChallengeOptions(
       reason: `${ai.info.name} has no ${level === 'medium' ? 'Medium' : 'Hard'} level yet.`,
     };
   }
-  setGamePrintings([ai.info.decklist, human.info.decklist]);
+  setGamePrintings([human.info.decklist, ai.info.decklist]);
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   return {
     ok: true,

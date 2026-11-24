@@ -168,7 +168,9 @@ export function checkDragonsEffect(
       for (const rider of ['anyManaType', 'exileInstead'] as const) {
         if (e[rider] === undefined) continue;
         if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
-        if (e.castOnly !== true) {
+        // Lidless Gaze ("you may play those cards, and mana of any type can be spent to cast those spells"): `anyManaType` is about the spells cast, so it also goes with a permission to
+        // play (a land card among the cards is played as usual); `exileInstead` is the rider of one spell and needs `castOnly`.
+        if (rider === 'exileInstead' && e.castOnly !== true) {
           issue(
             out,
             `${path}.${rider}`,
@@ -1008,6 +1010,28 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
   return true;
 }
 
+/** The abilities of the tokens a spell describes (`createToken` of a described token), wherever the effect is nested. */
+function tokenAbilitiesOf(value: unknown): Ability[] {
+  const found: Ability[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (node === null || typeof node !== 'object') return;
+    const record = node as Record<string, unknown>;
+    if (
+      record.kind === 'custom' &&
+      Array.isArray((record.definition as { abilities?: unknown })?.abilities)
+    ) {
+      found.push(...(record.definition as { abilities: Ability[] }).abilities);
+    }
+    Object.values(record).forEach(walk);
+  };
+  walk(value);
+  return found;
+}
+
 /**
  * What the Dragons slice's shapes need of the face (D-151): Read ahead, a mode that cannot repeat this turn (a triggered ability only), and the
  * filter and selector that name the player of the event ("that opponent", "each other opponent": a triggered ability whose event is about a player).
@@ -1080,7 +1104,21 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
       );
     }
   });
-  const spell = JSON.stringify(face.spell ?? null);
+  // CR 111.4, 113.1 (Wake the Dragon): a token a spell creates has abilities of its own, triggered ones too: they are checked as the abilities they are, and the words of the
+  // spell are read without them.
+  const withoutTokenAbilities = (value: unknown): string =>
+    JSON.stringify(value ?? null, (key, v: unknown) => (key === 'abilities' ? undefined : v));
+  tokenAbilitiesOf(face.spell).forEach((a, i) => {
+    if (!JSON.stringify(a ?? null).includes('"controller":"triggerPlayer"')) return;
+    if (a?.kind !== 'triggered' || !triggerHasPlayer(a.trigger)) {
+      issue(
+        out,
+        `${path}.spell.token.abilities[${i}]`,
+        "controller 'triggerPlayer' needs a triggered ability whose event is about a player",
+      );
+    }
+  });
+  const spell = withoutTokenAbilities(face.spell);
   if (
     spell.includes('"controller":"triggerPlayer"') ||
     spell.includes('"controller":"defendingPlayer"') ||

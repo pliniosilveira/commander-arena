@@ -10,7 +10,7 @@
 import type { Replacement } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
-import { historyCount } from './amounts';
+import { historyCount, stateAmountOf } from './amounts';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
@@ -35,7 +35,9 @@ export function groupEntryCounters(state: GameState, entering: GameObject): Reco
           ? manaSpentOf(entering, r.count.fromType, r.count.snow === true)
           : r.count.kind === 'enteredThisTurn' || r.count.kind === 'diedThisTurn'
             ? historyCount(state, r.count, ctx.controller)
-            : countMatching(state, r.count.filter, ctx);
+            : r.count.kind === 'toughnessOf'
+              ? stateAmountOf(state, r.count, ctx, [])
+              : countMatching(state, r.count.filter, ctx);
     if (count > 0) added[r.counter] = (added[r.counter] ?? 0) + count;
   };
   for (const id of [...sources, entering.id]) {

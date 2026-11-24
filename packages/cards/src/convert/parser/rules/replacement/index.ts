@@ -10,12 +10,14 @@ import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
 import { COPY_EXCEPT_QUOTED_REPLACEMENT_RULES } from './copy-except-quoted';
+import { COUNTER_BLITZ_G_REPLACEMENT_RULES } from './counter-blitz-g';
 import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
+import { DRAW_REDIRECT_REPLACEMENT_RULES } from './draw-redirect';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
@@ -418,6 +420,7 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  ...DRAW_REDIRECT_REPLACEMENT_RULES,
   // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,
   // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."
@@ -426,4 +429,6 @@ export const REPLACEMENT_RULES = [
   ...KEEP_ONE_LOYALTY_REPLACEMENT_RULES,
   // Phyrexian Processor: "As ~ enters, pay any amount of life."
   ...PAY_LIFE_REPLACEMENT_RULES,
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): "As ~ enters, remove all counters from any number of artifacts, creatures, and enchantments. ..."
+  ...COUNTER_BLITZ_G_REPLACEMENT_RULES,
 ];

@@ -55,6 +55,7 @@ import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { TIME_COUNTER } from './time-counter';
 import { collectTriggers } from './triggers';
+import { tallyCast } from './vote-options';
 import { moveObject } from './zones';
 
 export interface ResolveOutcome {
@@ -181,6 +182,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedAsCost === undefined
         ? {}
         : { costSacrificed: obj.stack.sacrificedAsCost }),
+      ...(obj.stack?.discardedAsCost === undefined
+        ? {}
+        : { costDiscarded: obj.stack.discardedAsCost }),
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
@@ -192,6 +196,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { costReturnedAttack: obj.stack.returnedAttack }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
+      // CR 701.38a (Erestor of the Council): a `votingFinished` ability reads the vote that finished as if it had just been made.
+      ...(obj.stack?.triggerVotes === undefined
+        ? {}
+        : { voteCast: obj.stack.triggerVotes, votes: tallyCast(obj.stack.triggerVotes) }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
@@ -270,6 +278,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(out.lifeLost === undefined ? {} : { lifeLost: (res.lifeLost ?? 0) + out.lifeLost }),
         // D-194: the tally of a vote that is finished, for "twice the number of profit votes" (a later vote of the resolution replaces it).
         ...(out.votes === undefined ? {} : { votes: out.votes }),
+        // CR 701.38a: who voted for what, for the amounts and selectors that read the votes of a player.
+        ...(out.voteCast === undefined ? {} : { voteCast: out.voteCast }),
         // D-131: what this instruction did, for "for each creature sacrificed this way" and the like.
         ...(out.thisWay === undefined
           ? {}
@@ -396,7 +406,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
         ...(head.kind === 'chooseObjects' && head.chosen !== null
-          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          ? {
+              chosenObjects: {
+                ...res.chosenObjects,
+                // CR 701.38a (`perVote`): the choices of every vote are one set, a permanent chosen for several votes once.
+                [head.id]:
+                  head.asVoter === undefined || head.asVoter.first
+                    ? head.chosen
+                    : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],
+              },
+            }
           : {}),
         // The Black Gate: the player chosen is what "that player" means for the rest of the resolution.
         ...(head.kind === 'choosePlayer' && head.chosen !== null
@@ -445,9 +464,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     // D-185: the answers of devour and riot belong to the one move that asked for them, too.
     if (
       head.kind === 'move' &&
-      (state.resolution?.entersDevour !== undefined || state.resolution?.entersRiot !== undefined)
+      (state.resolution?.entersDevour !== undefined ||
+        state.resolution?.entersRiot !== undefined ||
+        state.resolution?.entersRemoved !== undefined)
     ) {
-      const { entersDevour: _devoured, entersRiot: _riot, ...rest } = state.resolution;
+      const {
+        entersDevour: _devoured,
+        entersRiot: _riot,
+        entersRemoved: _removed,
+        ...rest
+      } = state.resolution;
       state = { ...state, resolution: rest };
     }
     events.push(...out.events);
@@ -589,6 +615,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
+      ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       ...(adventure && timeCounters === null ? { onAdventure: true as const } : {}),
@@ -961,6 +988,27 @@ export function answerResolutionSearchMay(
 }
 
 /**
+ * Records the answer to "you may put that card onto the battlefield" of a search (CR 608.2d, 701.23; `search.mayPut`): the card found goes onto the battlefield when accepted and to the
+ * hand when declined. Null when no such question is waiting.
+ */
+export function answerResolutionSearchPut(
+  state: GameState,
+  accept: boolean,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (!res || head?.kind !== 'search' || head.put !== null || d?.kind !== 'confirmOptional') {
+    return null;
+  }
+  const events: GameEvent[] = [
+    { kind: 'optionalAnswered', seat: d.seat, source: res.source, accepted: accept },
+  ];
+  const queue: readonly Instruction[] = [{ ...head, put: accept }, ...res.queue.slice(1)];
+  return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
+}
+
+/**
  * Records the answer to "you may pay ... or it enters tapped" (CR 614.12) for the permanent that
  * asked, which is the head of the queue when it is a move, or the spell resolving when the queue is
  * empty, then continues. Null when no such question is waiting.
@@ -1073,6 +1121,33 @@ export function answerResolutionRiot(state: GameState, option: string): ResolveO
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, entersRiot: answers } },
     events,
+  );
+}
+
+/**
+ * Records the answer to "As this enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12) for the permanent that asked, as `answerResolutionDevour` does
+ * for devour, then continues. Null when no such question is waiting.
+ */
+export function answerResolutionRemoveCounters(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'entersRemoveCounters') return null;
+  const head = res.queue[0];
+  if (head?.kind === 'enterToken' && d.source === res.object) {
+    const updated: Instruction = { ...head, removed: chosen };
+    return continueResolution(
+      { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+      [],
+    );
+  }
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source) return null;
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, entersRemoved: chosen } },
+    [],
   );
 }
 

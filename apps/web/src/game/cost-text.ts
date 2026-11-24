@@ -205,6 +205,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return cost.countX === true
         ? 'Exile X cards from your graveyard'
         : `Exile ${countText(cost.count, 'card', 'cards')} from your graveyard`;
+    case 'putLinkedExileInGraveyard':
+      // CR 607.2a (Shelob, Dread Weaver): a card the permanent exiled with its linked ability.
+      return 'Put a card exiled with this permanent into its owner’s graveyard';
     case 'exileFromHand': {
       const colorNames: Readonly<Record<string, string>> = {
         W: 'white',

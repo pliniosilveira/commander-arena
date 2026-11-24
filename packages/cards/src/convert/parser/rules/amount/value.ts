@@ -43,6 +43,7 @@ import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { NUMBER_OF_OPPONENTS_WHO_CONTROL } from './opponents-who-control';
 import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 
@@ -120,9 +121,42 @@ export const NUMBER_OF_ANY_COUNTERS = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * `amount.for-each-counter-kind`: "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter an object has, now. After a quantity ("draw a card
+ * for each ..."): the quantity is the count, as for `amount.for-each`.
+ */
+export const AMOUNT_FOR_EACH_COUNTER_KIND = defineRule<IrAmount>({
+  id: 'amount.for-each-counter-kind',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 122.1 (Counters)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['for each kind of counter on it', 'for each kind of counter on ~'],
+  rejects: [
+    'for each kind of counter',
+    'for each kind of counters on it',
+    'for each counter on it',
+    'for each kind of counter on target creature',
+    'for each type of counter on it',
+    'for each kind of counter on it you control',
+  ],
+  // Quiet: a "for each" this rule does not read stops where `amount.for-each` stops.
+  parse: quiet((ctx, pos) => {
+    const r = spanned(
+      sequence(literal('for each kind of counter on '), selfOrIt('amount.for-each-counter-kind')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, of] = r.value.value;
+    return {
+      ok: true,
+      value: { kind: 'countersOn', of, kinds: true, span: r.value.span },
+      pos: r.pos,
+    };
+  }),
+});
+
 /** "the number of Zombies you control": a count of the objects a filter matches (CR 608.2c). */
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
-  countAmount(rule, literal('the number of '), true);
+  countAmount(rule, choice(literal('the number of '), literal('the total number of ')), true);
 
 /** "the number of +1/+1 counters on ~". Exported for the rules of effects that read it as a limit (Galadriel deck, group 1: "mana value less than or equal to the number of loyalty counters on ~"). */
 export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
@@ -465,6 +499,22 @@ const MANA_VALUE_OF =
         pos: lead.pos,
       };
     }
+    // "the mana value of that card" (Yuna's Whistle, CR 202.3, 608.2h): the possessive written the other way round.
+    const ofThat = pattern(
+      /the mana value of (that (?:creature|permanent|card))(?![\p{L}\p{N}'’])/iu,
+    )(ctx, pos);
+    if (ofThat.ok) {
+      const of = possessedNoun(
+        rule,
+        `${ofThat.value[1] ?? ''}'s`,
+        pos + 'the mana value of '.length,
+      );
+      return {
+        ok: true,
+        value: { kind: 'manaValueOf', of, span: { start: pos, end: ofThat.pos } },
+        pos: ofThat.pos,
+      };
+    }
     const m = pattern(MANA_VALUE_OF_HEAD)(ctx, pos);
     if (!m.ok) return m;
     const head = m.value[1] ?? '';
@@ -585,6 +635,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     CREATURE_CARDS_EXILED_THIS_WAY,
     COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
+    GREATEST_COUNT_OF_AN_OPPONENT(rule),
     AGGREGATE(rule),
     ATTACKERS_GREATEST_POWER,
     DEVOTION,
@@ -593,6 +644,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     NUMBER_OF_TIMES_KICKED,
     // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
     NUMBER_OF_OPPONENTS_WITH_MORE,
+    // Counter Blitz deck, group C (Summon: Yojimbo): "the number of opponents who control a creature with power 4 or greater".
+    NUMBER_OF_OPPONENTS_WHO_CONTROL,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),
@@ -739,6 +792,43 @@ const EXTREME = (rule: string): Parser<IrAmount> => {
         span: { start: pos, end: tail.pos },
       },
       pos: tail.pos,
+    };
+  };
+};
+
+/**
+ * "the greatest number of artifacts an opponent controls" (Cavern-Hoard Dragon, CR 109.4, 608.2c): the most of a plural kind of permanent any one opponent controls, the engine's
+ * `greatestCountOfAnOpponent`. The kind is a plural type phrase with no controller of its own. Not read: "the greatest number of artifacts" alone, "your opponents control", "you control",
+ * a singular kind, "among".
+ */
+const GREATEST_COUNT_OF_AN_OPPONENT = (rule: string): Parser<IrAmount> => {
+  const phrase = sequence(literal('the greatest number of '), permanentPhrase(true, 'all'));
+  return (ctx, pos) => {
+    const r = spanned(phrase)(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter] = r.value.value;
+    // The phrase reads " an opponent controls" as the controller `opponent`; "your opponents control" is the same controller, so the words are checked.
+    if (
+      filter.controller !== 'opponent' ||
+      !/ an opponent controls$/iu.test(ctx.text.slice(pos, r.pos))
+    ) {
+      return fail(ctx, pos);
+    }
+    const { controller: _opponent, ...kind } = filter;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...kind, raw: ctx.text.slice(pos + 'the greatest number of '.length, r.pos) },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: r.value.span,
+      rule,
+    };
+    return {
+      ok: true,
+      value: { kind: 'greatestCountOfAnOpponent', of, span: r.value.span },
+      pos: r.pos,
     };
   };
 };
@@ -904,12 +994,15 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is half the number of Zombies you control, rounded down',
     // Issue 25 (D-321, CR 107.1b): a number taken away, a negative result counting as 0.
     'where X is the number of cards in your hand minus 4',
+    // Realm Seekers (CR 402.1): the cards in the hands of every player.
+    "where X is the total number of cards in all players' hands",
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     // A card the text names by a person's pronoun (Kes, Evolving Telepath).
     'where X is the number of time counters on her',
     'where X is the number of +1/+1 counters on him',
     'where X is that card’s mana value',
+    'where X is the mana value of that card',
     // Prismari deck, group 2 (D-646, CR 202.3): the spell that caused a cast trigger.
     "where X is that spell's mana value",
     'where X is the amount of mana spent to cast that spell',
@@ -936,6 +1029,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
     'where X is the greatest power among creatures they control',
+    // Cavern-Hoard Dragon (CR 109.4): the most of a kind of permanent one opponent controls.
+    'where X is the greatest number of artifacts an opponent controls',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
     // Elminster (CR 701.22): the cards looked at by the scry that caused the trigger.
@@ -950,6 +1045,10 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the results',
     'where X is the number of colors among permanents',
     'where X is the number of colors among permanents your opponents control',
+    'where X is the greatest number of artifacts your opponents control',
+    'where X is the greatest number of artifacts you control',
+    'where X is the greatest number of artifact an opponent controls',
+    'where X is the greatest number of artifacts',
     'where X is the result of',
     'where X is',
     'where X is 3',
@@ -1235,6 +1334,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
 export const VALUE_AMOUNT_RULES = [AMOUNT_EQUAL_TO, AMOUNT_WHERE_X];
 export const FOR_EACH_VALUE_RULES = [
   AMOUNT_FOR_EACH_COUNTER,
+  AMOUNT_FOR_EACH_COUNTER_KIND,
   AMOUNT_FOR_EACH_OPPONENT,
   AMOUNT_FOR_EACH_THIS_WAY,
 ];

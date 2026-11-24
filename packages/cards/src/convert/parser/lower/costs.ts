@@ -148,6 +148,7 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         counter: cost.counter,
         count: cost.count,
         among: filter.value,
+        ...(cost.anyKind === true ? { anyKind: true as const } : {}),
       });
     }
     case 'sacrifice': {
@@ -312,7 +313,12 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         : failure(cost);
     case 'exile': {
       // "Exile two creature cards from your graveyard" (stage P72, D-232, CR 118.1, 406.1): the engine's `exileFromGraveyard`, the cost of an ordinary activated ability.
-      if (options.ordinary !== true) return failure(cost);
+      // CR 702.34a, 107.3a (Summons of Saruman, "Flashback—{3}{U}{R}, Exile X cards from your graveyard"): in a flashback cost only the X announced as the spell is cast.
+      if (
+        options.ordinary !== true &&
+        !(options.flashback === true && cost.what.count?.kind === 'x')
+      )
+        return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
       if (blocked.length > 0) return failure(cost, blocked);
       // Issue 102 (Necropolis Fiend, CR 107.3a, 602.2b): "Exile X cards from your graveyard" is the X announced as the ability is activated.
@@ -320,6 +326,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       const many = cost.what.count?.kind === 'number' ? cost.what.count.value : 1;
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
+      // The engine's flashback cost exiles cards of any kind: a kind of card ("X creature cards") is not read there.
+      if (options.ordinary !== true && filter.ok && Object.keys(filter.value).length > 0)
+        return failure(cost);
       return filter.ok
         ? ok({
             kind: 'exileFromGraveyard',
@@ -328,6 +337,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
             ...(countX ? { countX: true as const } : {}),
           })
         : filter;
+    }
+    case 'putLinkedExile': {
+      // "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a, 118.3): the engine's `putLinkedExileInGraveyard`, the cost of an ordinary activated ability of a permanent.
+      if (options.ordinary !== true) return failure(cost);
+      const blocked = missingFeatures(['cost:putLinkedExileInGraveyard']);
+      if (blocked.length > 0) return failure(cost, blocked);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'putLinkedExileInGraveyard', filter: filter.value }) : filter;
     }
     case 'exileFromHand': {
       if (options.additional !== true || cost.what.anyNumber !== true) return failure(cost);
@@ -358,6 +375,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:discardX',
   'cost:discard',
   'cost:exileFromGraveyard',
+  'cost:putLinkedExileInGraveyard',
   'cost:exileFromHand',
   'cost:removeCounters',
   'cost:energy',

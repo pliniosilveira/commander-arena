@@ -14,6 +14,7 @@ import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
+import { ARWEN_STATIC_RULES } from './arwen';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
@@ -143,6 +144,7 @@ export const STATIC_RULES = [
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,
   ...ANGEL_PLAY_RULES,
+  ...ARWEN_STATIC_RULES,
   // Stage P34 (D-152): mana that stays through steps and phases, casting from the top of the library.
   ...DRAGON_STATIC_RULES,
   // Stage P37 (D-180): lands that enter untapped, opponents that can't cast spells during your turn.

@@ -76,6 +76,7 @@ describe('the dimensions', () => {
       'mill',
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
+      'putLinkedExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -119,6 +120,8 @@ describe('the dimensions', () => {
       'subjectControlledByYou',
       'subjectStat',
       'subjectGreaterThanEach',
+      'counterPutOnThisThisTurn',
+      'subjectPowerLessThanThis',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
       'triggerPlayerTurn',
@@ -146,10 +149,12 @@ describe('the dimensions', () => {
       'movedShareAllCardTypes',
       // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have".
       'manaValueAtMostAmount',
+      'manaValueAtLeastAmount',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'diedThisWay',
       'objectMatches',
+      'discardedAsCostMatches',
       'giftPromised',
       'opponentControlsAtLeast',
       // D-139: "if you control the artifact with the greatest mana value or tied".
@@ -201,6 +206,8 @@ describe('the dimensions', () => {
       'dieResult',
       // CR 701.30d: "If you win" after a clash.
       'clashWon',
+      'voteMost',
+      'voteTied',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
@@ -284,6 +291,7 @@ describe('the dimensions', () => {
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',
+      'cantAttackItsOwner',
       'cantGainLife',
       'damageCantBePrevented',
       'damageAsThoughWither',

@@ -20,6 +20,7 @@ export function TableVersus({ onStart }: { onStart: () => void }) {
         <div className="dec-versus dec-versus-table" data-versus data-versus-opponents={count}>
           <Side
             who="you"
+            seat={0}
             label="You"
             deck={choices.find((d) => d.id === table.humanDeck)}
             fallbackCommander=""
@@ -33,6 +34,7 @@ export function TableVersus({ onStart }: { onStart: () => void }) {
               </span>
               <Side
                 who={`opponent-${index + 1}`}
+                seat={index + 1}
                 label={`${count === 1 ? '' : `${capitalize(OPPONENT_ORDINALS[index] ?? '')} `}Opponent`}
                 deck={choices.find((d) => d.id === id)}
                 fallbackCommander=""

@@ -329,6 +329,10 @@ export function targetText(spec: TargetSpec | undefined): string {
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
     case 'objectOrSpell':
       // Issue 81 (Fatehold Charm, CR 115.1): "target spell or creature".
+      // Endless Detour (CR 115.1): "target spell, nonland permanent, or card in a graveyard".
+      if (spec.what.card !== undefined) {
+        return `target spell, ${nounOf(spec.what.filter)}, or card in a graveyard`;
+      }
       return `target spell or ${nounOf(spec.what.filter)}`;
     case 'objectOrGraveyardCard': {
       // D-270 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
@@ -432,6 +436,12 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'eachObject':
       // Canopy Gargantuan: the creature the counters are being put on right now.
       return 'that creature';
+    case 'votedObjects':
+      // CR 701.38a (Trap the Trespassers).
+      return 'each creature with one or more votes';
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen).
+      return 'your Ring-bearer';
   }
 }
 
@@ -576,6 +586,12 @@ function recipientText(
     }
     case 'couldntSacrificeThisWay':
       return "each player who can't";
+    case 'eachPlayerWithoutVotes':
+      return 'each player who received no votes';
+    case 'eachOpponentWhoVoted':
+      return to.choice === 'same'
+        ? 'each opponent who voted for a choice you voted for'
+        : "each opponent who voted for a choice you didn't vote for";
     case 'attackedPlayers':
       // D-269 (CR 508.6).
       return 'each player this creature attacked this turn';
@@ -603,6 +619,8 @@ function recipientText(
     case 'linkedExile':
     case 'putWithThis':
     case 'eachObject':
+    case 'votedObjects':
+    case 'ringBearer':
     case 'each':
       return objectText(to, ability, self);
   }
@@ -628,6 +646,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   // Issue 81 (CR 509.1b): the Gingerbrute token.
   cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
   cantAttackPlayersAlreadyAttacked: "can't attack a player it has already attacked this turn",
+  cantBeBlockedExceptByThreeOrMore: "can't be blocked except by three or more creatures",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
@@ -776,6 +795,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
+    case 'eachPlayerWithoutVotes':
+    case 'eachOpponentWhoVoted':
     case 'attackedPlayers':
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
@@ -1179,7 +1200,19 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? 'player'
             : null;
       const inner = effectText(effect.effect, ability, self, defs);
+      if (effect.runsAs === 'each') {
+        // Sail into the West: "Each player returns up to two cards from their graveyard to their hand": each does it themselves.
+        return who !== 'player' || inner === '' ? UNSAID : `Each player does this: ${lower(inner)}`;
+      }
       return who === null || inner === '' ? UNSAID : `For each ${who}, ${lower(inner)}`;
+    }
+    case 'repeat': {
+      // Travel Through Caradhras: "For each Redhorn Pass vote, ...".
+      const inner = effectText(effect.effect, ability, self, defs);
+      const times = effect.times;
+      return typeof times === 'object' && times.kind === 'votesFor' && inner !== ''
+        ? `For each ${times.option} vote, ${lower(inner)}`
+        : UNSAID;
     }
     case 'prepare':
       return `${capital(object(effect.objects))} becomes prepared`;
@@ -1450,8 +1483,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? (tapChooseText(effect.objects) ?? UNSAID)
         : `Tap ${object(effect.objects)}`;
     case 'vote':
-      // D-194 (CR 701.38a): "Starting with you, each player votes for profit or security".
-      return `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
+      // D-194 (CR 701.38a): "Starting with you, each player votes for profit or security"; "each player secretly votes for fellowship or aid, then those votes are revealed".
+      return effect.secret === true
+        ? `Each player secretly votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}, then those votes are revealed`
+        : `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
+    case 'voteFor':
+      // CR 701.38a, 701.38b: a vote for a player or for a creature.
+      return `Each player ${effect.secret === true ? 'secretly ' : ''}votes for ${effect.choices.kind === 'players' ? 'a player' : "a creature you don't control"}${effect.secret === true ? ', then those votes are revealed' : ''}`;
     case 'pair':
       // D-286 (CR 702.95a): the effect of the two abilities soulbond stands for; the creature is chosen as it resolves.
       return effect.partner === 'choose'

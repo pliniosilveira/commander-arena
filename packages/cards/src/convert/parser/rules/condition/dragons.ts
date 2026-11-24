@@ -232,6 +232,8 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     // Food and Fellowship deck, group B (Motivated Pony): a subtype the permanent had as it entered.
     'a Food entered the battlefield under your control this turn',
     'two or more Treasures entered the battlefield under your control this turn',
+    // Elven Council deck (Galadriel, Elven-Queen, CR 400.7): the permanent with the condition does not count.
+    'another Elf entered the battlefield under your control this turn',
     // Riders of Rohan deck, group C (Éowyn, Shieldmaiden, CR 400.7): "another" leaves out the permanent with the ability.
     'another Human entered the battlefield under your control this turn',
     'another creature entered the battlefield under your control this turn',
@@ -249,6 +251,9 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     'a creatures entered the battlefield under your control this turn',
     'a Food you control entered the battlefield under your control this turn',
     'a Food entered the battlefield under an opponent’s control this turn',
+    'two or more another creatures entered the battlefield under your control this turn',
+    'another entered the battlefield under your control this turn',
+    'another Elf entered the battlefield under an opponent’s control this turn',
     'another Human entered the battlefield under an opponent’s control this turn',
     'another Human entered under your control this turn',
     'two or more another Humans entered the battlefield under your control this turn',

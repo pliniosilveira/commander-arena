@@ -73,6 +73,10 @@ export function runPreventDamage(
     ...(node.byFilter === undefined
       ? {}
       : { sourceFilter: { filter: node.byFilter, controller: ctx.controller } }),
+    // CR 615.5 (Gatta and Luzzu): "prevent that damage and put that many +1/+1 counters on it": the controller of the effect puts them.
+    ...(node.countersPrevented === undefined
+      ? {}
+      : { countersPrevented: { counter: node.countersPrevented, controller: ctx.controller } }),
     // CR 615.5 (Inkshield): "For each 1 damage prevented this way, create a token": the controller of the effect makes it.
     ...(node.perPrevented === undefined
       ? {}

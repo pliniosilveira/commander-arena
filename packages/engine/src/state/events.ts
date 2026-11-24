@@ -8,6 +8,7 @@ import type { Zone } from '../ast/types';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
+import type { VoteCast } from './decisions';
 import type { StepId } from './types';
 
 export type GameEvent =
@@ -130,6 +131,18 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly sides: number;
       readonly result: number;
+    }
+  /**
+   * CR 701.38a (Vote): every player has voted in a vote of the spell or ability `source` (controlled by `controller`): `cast` is who voted for what, in the order they voted (an option is a word of
+   * the card, `seat:<n>` for a player or `object:<id>` for a permanent). With `secret` the votes were hidden until now (the log says nothing about a vote before this event). The trigger
+   * `votingFinished` reads it and keeps the record.
+   */
+  | {
+      readonly kind: 'votesRevealed';
+      readonly source: ObjectId;
+      readonly controller: SeatId;
+      readonly cast: readonly VoteCast[];
+      readonly secret: boolean;
     }
   /**
    * CR 705.2: `seat` flipped a coin after calling `call`; `result` is the side that came up, drawn from the seeded generator of the game, and `won` is whether the call matched it

@@ -154,8 +154,13 @@ export function isCombinationProduction(production: ManaProduction): boolean {
  * colors") only the sets of different colors: the next pick starts after the last one, so no color is picked twice; colorless is not one of the five
  * (CR 105.1, 106.1b).
  */
-function colorMultisets(count: number, distinct: boolean): ManaColor[][] {
-  const colors = COLORS as readonly ManaColor[];
+function colorMultisets(
+  count: number,
+  distinct: boolean,
+  among: readonly ManaColor[] = COLORS,
+): ManaColor[][] {
+  // `among` keeps the order of `COLORS`, so the next pick never goes back (a multiset, not a sequence).
+  const colors = (COLORS as readonly ManaColor[]).filter((c) => among.includes(c));
   const out: ManaColor[][] = [];
   const build = (from: number, picked: ManaColor[]): void => {
     if (picked.length === count) {
@@ -200,8 +205,8 @@ function plainOutcomes(
       return [[...p.mana]];
     }
     case 'anyCombination':
-      // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
-      return colorMultisets(p.count, p.distinct === true);
+      // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors, or of the `colors` the text lists (Relic of Sauron).
+      return colorMultisets(p.count, p.distinct === true, p.colors);
     case 'anyCombinationAmount': {
       // CR 106.1b, 605.3b: "Add X mana in any combination of colors, where X is ...": every multiset of X of the five colors, X read for the controller with the permanent as "this"
       // (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
@@ -410,7 +415,8 @@ function couldProduceOutcomes(
     for (const t of types.get(id) ?? []) found.add(t);
   }
   if (p.anyType !== true) found.delete('C');
-  return inTypeOrder(found).map((t) => [t]);
+  // Incubation Druid: `count` mana, all of the one type chosen.
+  return inTypeOrder(found).map((t) => Array.from({ length: p.count ?? 1 }, () => t));
 }
 
 /**

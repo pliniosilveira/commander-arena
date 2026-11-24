@@ -411,6 +411,16 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         if (times !== undefined && (!isCount(times) || times < 2)) {
           issue(out, `${path}.count.times`, 'the multiple of X is an integer of 2 or more');
         }
+      } else if (kindOf(r.count) === 'countersRemovedAsEntered') {
+        // Sin, Unending Cataclysm: the counters removed as it entered, times 1 (absent) or an integer of 2 or more; the face must remove them (below).
+        const times = (r.count as { times?: unknown }).times;
+        if (times !== undefined && (!isCount(times) || times < 2)) {
+          issue(
+            out,
+            `${path}.count.times`,
+            'the multiple of the counters removed is an integer of 2 or more',
+          );
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&
@@ -427,6 +437,19 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(out, `${path}.ifEscaped`, 'ifEscaped is true or absent');
       }
       break;
+    case 'asEntersRemoveCounters': {
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents are on the battlefield, of any player, so the filter names neither a zone nor a controller nor an owner.
+      checkFilter(r.filter, `${path}.filter`, out);
+      const f = r.filter as { zone?: unknown; controller?: unknown; owner?: unknown } | undefined;
+      if (f?.zone !== undefined || f?.controller !== undefined || f?.owner !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the permanents are those of the battlefield, of any player: no zone, controller or owner',
+        );
+      }
+      break;
+    }
     case 'asEntersChoose':
       // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
       if (
@@ -1264,6 +1287,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
       }
       break;
+    case 'votingFinished':
+      // CR 701.38a: "whenever players finish voting": no parameter, any vote of any spell or ability.
+      break;
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'activatesAbility':
@@ -1912,6 +1938,28 @@ function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): v
 }
 
 /**
+ * CR 602.2b, 701.9a: the condition `discardedAsCostMatches` reads the cards the cost of an activated ability discarded from the hand, so only an activated ability whose own cost
+ * discards (a `discard` cost that is not "this card" or an X) reads it.
+ */
+function checkDiscardedAsCost(face: CardFace, path: string, out: AstIssue[]): void {
+  face.abilities.forEach((a, i) => {
+    if (!effectHas(a, 'discardedAsCostMatches')) return;
+    const own =
+      a.kind === 'activated' && Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'discard');
+    if (!own) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'discardedAsCostMatches is read only by an activated ability whose own cost discards cards from the hand (CR 602.2b)',
+      );
+    }
+  });
+  if (effectHas(face.spell, 'discardedAsCostMatches')) {
+    issue(out, `${path}.spell`, 'discardedAsCostMatches is not read by a spell (CR 602.2b)');
+  }
+}
+
+/**
  * CR 118.8, 701.68a: the condition `additionalCostPaid` reads whether a spell paid the optional blight of its additional cost, so the face lists one and only the spell's own text reads it.
  */
 function checkAdditionalCostPaid(face: CardFace, path: string, out: AstIssue[]): void {
@@ -2168,8 +2216,11 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         true,
         false,
-        a.trigger?.kind === 'scries',
+        a.trigger?.kind === 'scries' || a.trigger?.kind === 'cycled',
         true,
+        false,
+        // CR 107.3m: the enters trigger of the permanent itself may take up to as many targets as the X of the spell it came from.
+        a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -2226,6 +2277,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           ? { triggerSources: true }
           : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
+        // CR 701.38a (Erestor of the Council): the ability reads who voted for what in the vote that finished.
+        ...(a.trigger.kind === 'votingFinished' ? { voteTrigger: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
           ? { triggerDamagedPlayerCount: true, triggerDamagedPlayers: true }
@@ -2369,6 +2422,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           'subjectHadToAttack',
           'subjectStat',
           'subjectGreaterThanEach',
+          'subjectPowerLessThanThis',
         ]) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
@@ -2398,6 +2452,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'attackersAtYouAtLeast reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
+          );
+        }
+        // CR 603.4, 508.1b (Mirkwood Trapper): the declaration is what `attackersAttackedYou` reads.
+        if (
+          conditionHas(a.interveningIf, 'attackersAttackedYou') &&
+          a.trigger?.kind !== 'attackBatch'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackersAttackedYou reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
           );
         }
         if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {
@@ -2480,6 +2545,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           'subjectHadToAttack',
           'subjectStat',
           'subjectGreaterThanEach',
+          'subjectPowerLessThanThis',
         ]) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
@@ -2936,6 +3002,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAdditionalCosts(face.additionalCosts, `${path}.additionalCosts`, out);
   }
   checkSacrificedAsCost(face, path, out);
+  checkDiscardedAsCost(face, path, out);
   checkAdditionalCostPaid(face, path, out);
   if (face.additionalCostChoice !== undefined) {
     checkAdditionalCostChoice(
@@ -2989,6 +3056,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   // CR 107.3m: "enters with X counters" reads the X of the spell's mana cost; without an {X} there
   // is nothing to read (a card that is not a spell has X = 0, CR 107.3g).
   face.abilities.forEach((a, i) => {
+    // Sin, Unending Cataclysm: the counters removed as it enters can only be read where the face removes them.
+    if (
+      a?.kind === 'replacement' &&
+      a.replacement?.kind === 'entersWithCounters' &&
+      kindOf(a.replacement.count) === 'countersRemovedAsEntered' &&
+      !face.abilities.some(
+        (b) => b?.kind === 'replacement' && b.replacement?.kind === 'asEntersRemoveCounters',
+      )
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].replacement.count`,
+        'it counts the counters removed as it enters, but the face removes none (asEntersRemoveCounters)',
+      );
+    }
     if (
       a?.kind === 'replacement' &&
       a.replacement?.kind === 'entersWithCounters' &&

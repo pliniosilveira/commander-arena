@@ -63,6 +63,12 @@ const TARGET_PLAYER_CONTROLS = pattern(
  */
 const ITS_CONTROLLER_CONTROLS = pattern(new RegExp(` its controller controls${BOUNDARY}`, 'iu'));
 
+/**
+ * " that player controls" (Cavern-Hoard Dragon, CR 109.4, 608.2c): the permanents of the player an earlier noun of the text names, "create a Treasure token for each artifact that player
+ * controls" after "deals combat damage to a player". The binding pass finds the player.
+ */
+const THAT_PLAYER_CONTROLS = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'));
+
 /** " they control": the permanents of the player an earlier noun of the text names (see `battlefield`). */
 const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
 
@@ -70,6 +76,9 @@ const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
 const SHARES_CREATURE_TYPE_WITH_IT = pattern(
   new RegExp(` that shares a creature type with it${BOUNDARY}`, 'iu'),
 );
+
+/** " that entered this turn" (Tromell, Seymour's Butler, CR 400.7): the permanents that entered the battlefield during this turn and are still the same objects. */
+const ENTERED_THIS_TURN = pattern(new RegExp(` that entered this turn${BOUNDARY}`, 'iu'));
 
 /** The words a list of kinds is joined with, in the shapes English has: "A or B", "A, B, or C". */
 const CONNECTORS = ['and/or', 'and', 'or'] as const;
@@ -178,14 +187,18 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (filter.controller !== undefined) return fail(ctx, end);
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
-    } else if (filter.attacking === true && other.value && filter.controller === undefined) {
-      // CR 508.1k (Ghalta and Mavren): "other attacking creatures" names the objects by what they do, whoever controls them, and needs no "on the battlefield".
-      // Only with "other": the creatures attacking besides the source.
+    } else if (filter.attacking === true && filter.controller === undefined) {
+      // CR 508.1k (Ghalta and Mavren, Galadhrim Ambush): "other attacking creatures" and "attacking creatures" name the objects by what they do, whoever controls them, and need no
+      // "on the battlefield". With "other": the creatures attacking besides the source.
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
       const itsController = targeted.ok ? null : ITS_CONTROLLER_CONTROLS(ctx, end);
       // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
       const they = targeted.ok || itsController?.ok === true ? null : THEY_CONTROL(ctx, end);
+      const thatPlayer =
+        targeted.ok || itsController?.ok === true || they?.ok === true
+          ? null
+          : THAT_PLAYER_CONTROLS(ctx, end);
       if (itsController?.ok === true) {
         const start = end + 1;
         const controller: IrNoun = {
@@ -206,6 +219,11 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
         if (!player.ok) return fail(ctx, end);
         filter = { ...filter, controller: { noun: player.value } };
         end = they.pos;
+      } else if (thatPlayer?.ok === true) {
+        const player = family<IrNoun>('noun', { only: ['noun.that-player'] })(ctx, end + 1);
+        if (!player.ok) return fail(ctx, end);
+        filter = { ...filter, controller: { noun: player.value } };
+        end = thatPlayer.pos;
       } else if (targeted.ok) {
         const word = targeted.value[1] ?? '';
         const start = end + 1;
@@ -233,6 +251,14 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (shares.ok) {
         filter = { ...filter, sharesCreatureTypeWithSource: true };
         end = shares.pos;
+      }
+    }
+    // Tromell, Seymour's Butler (CR 400.7, 110.1): "nontoken creatures you control that entered this turn", counted from the turn log (the engine's `enteredThisTurn`).
+    if (plural && filter.controller !== undefined) {
+      const entered = quiet(ENTERED_THIS_TURN)(ctx, end);
+      if (entered.ok) {
+        filter = { ...filter, enteredThisTurn: true };
+        end = entered.pos;
       }
     }
     // Shared Animosity (CR 508.1, 205.3m): "each other attacking creature that shares a creature type with it", whoever controls them: "other" and "it" are the creature the
@@ -294,6 +320,31 @@ const inTargetPlayersZone: Parser<{
   return { ok: true, value: { zone, controller: { noun: player } }, pos: r.pos };
 };
 
+/**
+ * " in that player's graveyard" (The Mouth of Sauron, CR 108.3, 404.1): the graveyard of the player an earlier instruction of the text targeted ("target player mills three cards.
+ * Then amass Orcs X, where X is the number of instant and sorcery cards in that player's graveyard"). The owner is an anaphor the binding pass resolves to that target.
+ */
+const inThatPlayersGraveyard: Parser<{
+  zone: 'graveyard';
+  controller: { readonly noun: IrNoun };
+}> = (ctx, pos) => {
+  const r = pattern(/ in (that (?:player|opponent))['’]s graveyard(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const word = r.value[1] ?? '';
+  const start = pos + ' in '.length;
+  const player: IrNoun = {
+    kind: 'noun',
+    det: 'anaphor',
+    filter: { raw: word },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start, end: start + word.length },
+    rule: 'noun.player',
+  };
+  return { ok: true, value: { zone: 'graveyard', controller: { noun: player } }, pos: r.pos };
+};
+
 function cards(plural: boolean): Parser<IrFilter> {
   const itsControllerGraveyard: Parser<{
     zone: 'graveyard';
@@ -334,6 +385,8 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'you' as const,
     })),
     map(literal(' in all graveyards'), () => ({ zone: 'graveyard' as const })),
+    // Realm Seekers (CR 108.3, 402.1): "the total number of cards in all players' hands", the hands of every player, each card its owner's.
+    map(pattern(/ in all players['’] hands/), () => ({ zone: 'hand' as const })),
     // "for each creature card in your opponents' graveyards": a singular card, the graveyards of all the opponents.
     map(pattern(/ in your opponents['’] graveyards/), () => ({
       zone: 'graveyard' as const,
@@ -342,6 +395,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     itsControllerGraveyard,
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersZone,
+    inThatPlayersGraveyard,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(
@@ -578,6 +632,9 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of lands you control',
     'equal to the number of creatures on the battlefield',
     'equal to the number of cards in your hand',
+    // Realm Seekers (CR 402.1): the hands of all players.
+    'the total number of cards in all players’ hands',
+    'equal to the number of cards in all players’ hands',
     'equal to the number of creature cards in your graveyard',
     'equal to the number of other creatures you control',
     'equal to the number of artifacts you control',
@@ -587,6 +644,8 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of creatures you control of that type',
     'equal to the number of creature cards in your opponents’ graveyards',
     'equal to the number of creatures attacking you',
+    // Galadhrim Ambush (CR 508.1k): every attacking creature, whoever controls it.
+    'equal to the number of attacking creatures',
     'equal to the number of creatures with flying you control',
     'equal to the number of Zombies you control',
     'equal to the number of nontoken creatures you control',
@@ -599,6 +658,8 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of',
     'equal to the number of creatures',
     'equal to the number of creature you control',
+    'equal to the number of cards in all players’ hand',
+    'the total number of',
     'equal to the number of colors in your commanders’ color identity',
     'equal to the number of cards in target opponents’ hand',
     'equal to its power',
@@ -606,7 +667,12 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
   ],
   parse: countAmount(
     'amount.number-of',
-    choice(literal('equal to the number of '), literal('the number of ')),
+    choice(
+      literal('equal to the number of '),
+      literal('the number of '),
+      // Realm Seekers: "the total number of cards in all players' hands" counts as "the number of" does.
+      literal('the total number of '),
+    ),
     true,
   ),
 });

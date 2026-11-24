@@ -35,7 +35,12 @@ export function createTokens(
   chosen?: ChosenValues,
   /** The tokens enter tapped ("create two tapped Treasure tokens", D-131). */
   enterTapped = false,
-  entry?: { readonly counters: Readonly<Record<string, number>>; readonly haste: boolean },
+  entry?: {
+    readonly counters: Readonly<Record<string, number>>;
+    readonly haste: boolean;
+    /** The counters the token removed from other permanents as it entered (Sin, Unending Cataclysm). */
+    readonly removed?: number;
+  },
 ): { state: GameState; events: GameEvent[] } {
   // D-219 (CR 614.1a, 616.1): "If one or more artifact tokens would be created under your control, ... are created instead".
   const settled = settleTokens(
@@ -59,7 +64,12 @@ export function makeTokenParts(
   parts: readonly TokenBatch[],
   chosen?: ChosenValues,
   enterTapped = false,
-  entry?: { readonly counters: Readonly<Record<string, number>>; readonly haste: boolean },
+  entry?: {
+    readonly counters: Readonly<Record<string, number>>;
+    readonly haste: boolean;
+    /** The counters the token removed from other permanents as it entered (Sin, Unending Cataclysm). */
+    readonly removed?: number;
+  },
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
@@ -85,7 +95,12 @@ export function makeTokens(
    * What devour and riot gave the token as it entered (CR 702.82a, 702.136a, D-185): counters it enters with, and whether an instance of riot
    * chose haste. Only for one token, made after the question was answered (`rules/enter-token.ts`).
    */
-  entry?: { readonly counters: Readonly<Record<string, number>>; readonly haste: boolean },
+  entry?: {
+    readonly counters: Readonly<Record<string, number>>;
+    readonly haste: boolean;
+    /** The counters the token removed from other permanents as it entered (Sin, Unending Cataclysm). */
+    readonly removed?: number;
+  },
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
@@ -106,14 +121,21 @@ export function makeTokens(
     // CR 714.3a: a token that is a Saga (a copy of one) enters with a lore counter too.
     const own = entersAsSaga(
       characteristics.subtypes,
-      entersWithCounters(abilities, {}, 0, false, (a) =>
-        a.kind === 'manaSpent'
-          ? 0 // A token was not cast: no mana was spent on it (CR 111.1).
-          : a.kind === 'diedThisTurn'
-            ? historyCount(state, a, seat)
-            : a.kind === 'aggregate'
-              ? amountOf(state, a, { controller: seat, source: id }, [])
-              : countMatching(state, a.filter, { controller: seat, source: id }),
+      entersWithCounters(
+        abilities,
+        {},
+        0,
+        false,
+        (a) =>
+          a.kind === 'manaSpent'
+            ? 0 // A token was not cast: no mana was spent on it (CR 111.1).
+            : a.kind === 'diedThisTurn'
+              ? historyCount(state, a, seat)
+              : a.kind === 'aggregate'
+                ? amountOf(state, a, { controller: seat, source: id }, [])
+                : countMatching(state, a.filter, { controller: seat, source: id }),
+        0,
+        entry?.removed ?? 0,
       ),
       abilities,
       chosen ?? null,

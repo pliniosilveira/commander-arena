@@ -646,7 +646,10 @@ describe('power, toughness and mana value in a filter (CR 202.3, 208.1)', () => 
       'Destroy target creature with converted mana cost 3 or less.',
       'with converted mana cost 3 or less.',
     ],
-    ["Destroy target creature with power less than ~'s power.", "with power less than ~'s power."],
+    [
+      "Destroy target creature with power less than target creature's power.",
+      "with power less than target creature's power.",
+    ],
   ])('%s stays unread', (text, stoppedAt) => {
     expect(dropped(text, 'instant')).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });

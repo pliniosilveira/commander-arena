@@ -88,8 +88,34 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'attackedEnchantedPlayer is true when present',
         );
       }
+      if (t.attackedYou !== undefined && t.attackedYou !== true) {
+        issue(out, `${path}.attackedYou`, 'attackedYou is true when present');
+      }
+      if (
+        t.attackedYou === true &&
+        (t.attackedEnchantedPlayer === true || t.eachAttackedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedYou`,
+          'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
+        );
+      }
       if (t.eachAttackedPlayer !== undefined && t.eachAttackedPlayer !== true) {
         issue(out, `${path}.eachAttackedPlayer`, 'eachAttackedPlayer is true when present');
+      }
+      if (t.attackedYou !== undefined && t.attackedYou !== true) {
+        issue(out, `${path}.attackedYou`, 'attackedYou is true when present');
+      }
+      if (
+        t.attackedYou === true &&
+        (t.eachAttackedPlayer === true || t.attackedEnchantedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedYou`,
+          'attackedYou does not go with eachAttackedPlayer or attackedEnchantedPlayer',
+        );
       }
       if (t.eachAttackedPlayer === true && t.attackedEnchantedPlayer === true) {
         issue(
@@ -232,6 +258,15 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       if (['countOf', 'enteredThisTurn', 'diedThisTurn'].includes(kindOf(r.count))) {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'toughnessOf') {
+        // Arwen (CR 614.12): the toughness of the permanent with the ability.
+        if (kindOf((r.count as { of?: unknown }).of) !== 'this') {
+          issue(
+            out,
+            `${path}.count.of`,
+            'an enters-with count reads the toughness of this permanent only',
+          );
+        }
       } else if (kindOf(r.count) === 'manaSpent') {
         // D-183: the mana spent to cast the entering permanent, all of it or from sources of a card type.
         checkManaSpentType(
@@ -266,6 +301,16 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       if (!Number.isInteger(r.count) || r.count < 2) {
         issue(out, `${path}.count`, 'the draws made instead are a whole number of two or more');
       }
+      if (r.exceptFirstInDrawStep !== true) {
+        issue(
+          out,
+          `${path}.exceptFirstInDrawStep`,
+          'only a replacement of every draw but the first of the draw step is run',
+        );
+      }
+      return true;
+    case 'drawRedirect':
+      // CR 614.1a, 614.11 (Notion Thief): the draws of the opponents but the first of each of their draw steps (the only form the engine runs).
       if (r.exceptFirstInDrawStep !== true) {
         issue(
           out,

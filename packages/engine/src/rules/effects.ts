@@ -71,9 +71,10 @@ import {
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
-import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
+import { counterBonuses, counterCountOn } from './counter-bonus';
 import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
+import { putCountersOn } from './counter-put';
 import {
   asking,
   runDealDamage,
@@ -190,6 +191,7 @@ import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { increaseSpeed } from './speed';
 import { runPlayerSpellsCostLess } from './spell-discount';
+import { runSpellEntersWithCounters } from './spell-enters-counters';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
 import { TIME_COUNTER } from './time-counter';
@@ -284,6 +286,11 @@ export function runInstruction(
   }
   if (instruction.kind === 'chooseObjects') {
     if (instruction.chosen !== null) return done(state);
+    // CR 701.38a (`perVote`): the filter is read for the voter, who is "you" in it.
+    const readFor =
+      instruction.asVoter === undefined
+        ? contextOf(state, res)
+        : { ...contextOf(state, res), controller: instruction.seat ?? res.controller };
     // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
     const among =
       instruction.fromMoved === true
@@ -292,7 +299,7 @@ export function runInstruction(
     const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter(
       (id) =>
         (among === null || among.has(id)) &&
-        matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+        matchesFilter(state, getObject(state, id), instruction.filter, readFor),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
     const max =
@@ -305,7 +312,7 @@ export function runInstruction(
       front: [],
       needs: {
         kind: 'choosePermanent',
-        seat: res.controller,
+        seat: instruction.seat ?? res.controller,
         source: res.object,
         purpose: 'effect',
         min: instruction.exactly === true ? max : 0,
@@ -592,6 +599,7 @@ export function runInstruction(
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
+      ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       // "Under its owner's control" or "under your control" (CR 110.2): that seat takes the permanent.
@@ -779,15 +787,28 @@ export function runInstruction(
     return {
       ...out,
       front: out.front.map((next) =>
-        next.kind === 'effect'
+        // CR 608.2d: the cards a player chooses to move as "you" are chosen from their own zone and by them (`seat` names the chooser, `res.controller` is the controller of the ability).
+        as !== undefined && next.kind === 'chooseMove' && next.seat === undefined
           ? {
               ...next,
-              ...(as === undefined || next.as !== undefined ? {} : { as }),
-              ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
-                ? {}
-                : { declinedBy: instruction.declinedBy }),
+              seat: as,
+              // CR 110.2a (Círdan the Shipwright: "each player who received no votes may put a permanent card from their hand onto the battlefield"): a player who puts a card they own
+              // onto the battlefield controls it, not the controller of the ability.
+              ...(next.to === 'battlefield' &&
+              next.controller === 'you' &&
+              next.filter.zone === 'hand'
+                ? { controller: 'owner' as const }
+                : {}),
             }
-          : next,
+          : next.kind === 'effect'
+            ? {
+                ...next,
+                ...(as === undefined || next.as !== undefined ? {} : { as }),
+                ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
+                  ? {}
+                  : { declinedBy: instruction.declinedBy }),
+              }
+            : next,
       ),
     };
   }
@@ -883,6 +904,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
     ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
+    ...(res.costDiscarded === undefined ? {} : { costDiscarded: res.costDiscarded }),
     ...(res.costTappedPower === undefined ? {} : { costTappedPower: res.costTappedPower }),
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
@@ -898,6 +920,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
+    ...(res.voteCast === undefined ? {} : { voteCast: res.voteCast }),
     ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
   };
 }
@@ -942,7 +965,32 @@ function runEffect(
   let next = state;
 
   switch (effect.kind) {
-    case 'chooseObjects':
+    case 'chooseObjects': {
+      // CR 701.38a, 608.2d (Elrond of the White Council): "for each fellowship vote, the voter chooses a creature they control": one choice for each vote for the option, by the player who cast it,
+      // in the order the votes were cast; the filter is read for that voter as "you" and every choice is remembered under the one id.
+      if (effect.perVote !== undefined) {
+        const votes = (ctx.voteCast ?? []).filter((c) => c.option === effect.perVote);
+        return done(
+          state,
+          [],
+          votes.map((c, i) => ({
+            kind: 'chooseObjects' as const,
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
+            seat: c.seat,
+            asVoter: { first: i === 0 },
+            chosen: null,
+          })),
+        );
+      }
+      // CR 608.2d (Mirkwood Trapper): "that player chooses": a player the effect names makes the choice; with none left in the game nothing is chosen.
+      let chooser: SeatId | undefined;
+      if (effect.chooser !== undefined) {
+        [chooser] = resolvePlayers(state, effect.chooser, ctx, targets);
+        if (chooser === undefined) return done(state);
+      }
       return done(
         state,
         [],
@@ -953,12 +1001,14 @@ function runEffect(
             filter: effect.filter,
             count: effect.count,
             ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ...(chooser === undefined ? {} : { seat: chooser }),
             ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
             ...(effect.fromMoved === true ? { fromMoved: true as const } : {}),
             chosen: null,
           },
         ],
       );
+    }
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
       return done(
@@ -1312,6 +1362,15 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // Summon: Valefor (CR 608.2d, 101.4): "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures ...": each player the effect names
+        // chooses among their own permanents, in APNAP order, and the permanents chosen move once the last has chosen.
+        const choosers =
+          effect.player === undefined
+            ? undefined
+            : resolvePlayers(state, effect.player, ctx, targets);
+        if (choosers !== undefined && choosers.length === 0)
+          return { ...done(state), lastMoved: [] };
+        const [firstChooser, ...laterChoosers] = choosers ?? [];
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
@@ -1323,6 +1382,12 @@ function runEffect(
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              ...(firstChooser === undefined ? {} : { seat: firstChooser }),
+              ...(laterChoosers.length === 0
+                ? {}
+                : { together: { later: laterChoosers, held: [] } }),
+              ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
+              ...(sel.least === undefined ? {} : { least: sel.least }),
               filter: sel.filter,
               // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
               ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined
@@ -1714,11 +1779,25 @@ function runEffect(
       return done(
         state,
         [],
-        resolvePlayers(state, effect.players, ctx, targets).map(() => ({
+        resolvePlayers(state, effect.players, ctx, targets).map((seat) => ({
+          kind: 'effect' as const,
+          effect: effect.effect,
+          // CR 101.4, 608.2d ("Each player returns ..."): each player does it as themselves, in APNAP order: they are "you" in it.
+          ...(effect.runsAs === 'each' ? { as: seat } : {}),
+        })),
+      );
+    case 'repeat': {
+      // CR 608.2c, 701.38b ("For each Redhorn Pass vote, search ..."): the number is read as this instruction comes up, then the effect is done that many times, one after the other.
+      const times = amountOf(state, effect.times, ctx, targets);
+      return done(
+        state,
+        [],
+        Array.from({ length: Math.max(0, times) }, () => ({
           kind: 'effect' as const,
           effect: effect.effect,
         })),
       );
+    }
     case 'copyCardAndCast': {
       // CR 707.12 (D-654): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
       // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
@@ -1785,6 +1864,28 @@ function runEffect(
               effect: effect.effect,
             },
           })),
+        ],
+      });
+    case 'delayedDies':
+      // CR 603.7, 603.7c, 603.10a, 514.2 (Together Forever): "When that creature dies this turn, return that card to its owner's hand": one delayed ability of the controller for each
+      // permanent the effect names as it resolves, about that object only (`watched`), once, ended with the turn. A permanent that is not on the battlefield as it resolves makes none.
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          ...resolveObjects(state, effect.objects, ctx, targets)
+            .filter((id) => state.objects[id]?.zone === 'battlefield')
+            .map((watched) => ({
+              source: res.source,
+              controller: res.controller,
+              watched,
+              untilEndOfTurn: true as const,
+              ability: {
+                kind: 'triggered' as const,
+                trigger: { kind: 'dies' as const, what: {} },
+                effect: effect.effect,
+              },
+            })),
         ],
       });
     case 'delayedCombatDamageTurn': {
@@ -2356,7 +2457,34 @@ function runEffect(
 
     case 'vote':
       // CR 701.38a (D-194): each player votes in turn order from the controller (rules/vote.ts).
-      return done(state, [], [{ kind: 'vote', options: effect.options, cast: [] }]);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: effect.options,
+            cast: [],
+            ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
+
+    case 'voteFor':
+      // CR 701.38a, 701.38b: the same, for the players or the permanents of a filter as the choices.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: [],
+            cast: [],
+            choices: effect.choices,
+            ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
 
     case 'reflexive':
       // CR 603.12 (D-135): "When you do, ...": a triggered ability, if the `may` before it was done (rules/may-effects.ts).
@@ -2415,6 +2543,9 @@ function runEffect(
     case 'playerSpellsCostLess':
       // CR 601.2f, 118.7a, 611.2a: "Until your next turn, ... spells that player casts cost {2} less to cast" (rules/spell-discount.ts).
       return runPlayerSpellsCostLess(state, effect, ctx, targets);
+    case 'spellEntersWithCounters':
+      // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
+      return runSpellEntersWithCounters(state, effect, ctx);
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
       return runNextSpellPayLife(state, res);
@@ -2814,6 +2945,7 @@ function runEffect(
         (n, e) => (e.kind === 'counterAdded' && e.counter === effect.counter ? n + e.count : n),
         0,
       );
+      // CR 603.12 (Auron, Venerated Guardian): "put a +1/+1 counter on it. When you do, ...": a counter really put is something done (`performed`).
       // Spectacular Showdown (CR 608.2c): "each creature that had a double strike counter put on it this way" is the objects that really got a counter, each once.
       const putOn = [
         ...new Set(
@@ -2825,7 +2957,10 @@ function runEffect(
       return {
         ...done(next, events),
         ...(putCount > 0
-          ? { thisWay: { countersPut: putCount, countersPutOn: { [effect.counter]: putOn } } }
+          ? {
+              thisWay: { countersPut: putCount, countersPutOn: { [effect.counter]: putOn } },
+              performed: 1,
+            }
           : {}),
       };
     }
@@ -3529,7 +3664,8 @@ function runEffect(
             seat: res.controller,
             count,
             filter: effect.take.filter,
-            max: effect.take.max,
+            // CR 701.20, 608.2c: "any number of ... cards from among them": up to every card looked at, a number known only now.
+            max: effect.take.any === true ? count : effect.take.max,
             ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
@@ -4003,7 +4139,7 @@ function runEffect(
 
     case 'becomeCopy':
       // CR 707.2, 613.2a: a layer 1 effect that gives the object the copiable values of another.
-      return runBecomeCopy(state, effect, ctx, targets);
+      return runBecomeCopy(state, effect, ctx, targets, state.objects[res.object]?.stack?.ability);
 
     case 'cascade':
       // CR 702.85a: exile until a cheaper nonland card, may cast it free, bottom the rest (rules/cascade.ts).
@@ -4295,32 +4431,6 @@ function runEffect(
       return unreachable;
     }
   }
-}
-
-/**
- * Puts `count` counters of a kind on one object as the effect of a spell or ability (CR 122.6, 101.2, D-380): nothing if the object is gone
- * or can't have counters of the kind. `read` is the state the counter blockers were read from.
- */
-function putCountersOn(
-  read: GameState,
-  state: GameState,
-  id: ObjectId,
-  counter: string,
-  count: number,
-  by: SeatId,
-  blockers: ReturnType<typeof counterBlockers>,
-  bonuses: ReturnType<typeof counterBonuses>,
-): { readonly state: GameState; readonly events: readonly GameEvent[] } {
-  const obj = state.objects[id];
-  if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
-  // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
-  const put = bonusCounters(read, bonuses, obj, counter, count);
-  return {
-    state: patchObject(state, id, {
-      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
-    }),
-    events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
-  };
 }
 
 /** An effect with each `thisWay` amount in it replaced by the number the effects before it counted (CR 603.7c: a delayed ability is about what happened as it was created). */

@@ -2,7 +2,7 @@
  * One permanent on the battlefield: the top of its printed card (title, cost, art and type line,
  * `card-top.ts`) under the marks the card does not carry: current power and toughness, counters,
  * keyword chips and the state marks of A19. Until the image has loaded, and for a card with none
- * or with a frame that has no top to cut, it is a drawn frame with the colour band and the name
+ * or with a frame that has no top to cut, it is a drawn frame in the card's colours with the name
  * over the art alone. Tapped is a tilt of the inner frame and a small mark in the corner; ribbons stay upright
  * on the slot so they remain readable.
  */
@@ -36,6 +36,7 @@ import {
   PRINTED_TITLE,
   roleText,
 } from './resolve';
+import { STACK_FRONT_TOP, stackShape } from './stack-shape';
 
 export interface TileProps {
   readonly object: ObjectView;
@@ -141,6 +142,22 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
   ]
     .filter(Boolean)
     .join(' ');
+  const stack = stackShape(count);
+  const picture = isFaceDownPermanent(o) ? (
+    // D-315: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
+    <FaceDownArt version="art_crop" className="board-tile-art" />
+  ) : (
+    <Art
+      name={art.name}
+      back={art.back}
+      isToken={o.isToken}
+      eager
+      owner={o.owner}
+      {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
+      version={top === null ? 'art_crop' : 'normal'}
+      className={top === null ? 'board-tile-art' : 'board-tile-art board-tile-top'}
+    />
+  );
   return (
     <button
       type="button"
@@ -179,26 +196,34 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
         pairing.setFocus([]);
       }}
     >
-      {count > 1 && <span className="board-tile-stack" aria-hidden="true" />}
+      {count > 1 && (
+        // One card behind the front one for each other copy, each drawn with the card's own picture, the furthest first.
+        <span className="board-tile-stack" aria-hidden="true">
+          {Array.from({ length: stack.behind }, (_, i) => {
+            const k = stack.behind - i;
+            return (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: the cards behind are alike and never reordered
+                key={i}
+                className="board-tile-layer"
+                style={{
+                  left: k * stack.dx,
+                  top: STACK_FRONT_TOP - k * stack.dy,
+                  filter: `brightness(${(0.9 - (0.3 * k) / Math.max(stack.behind, 2)).toFixed(2)})`,
+                }}
+              >
+                {picture}
+              </span>
+            );
+          })}
+        </span>
+      )}
       <span className="board-tile-inner">
         <span
           className="board-tile-band"
           style={{ background: bandBackground(framed ? frameColors(o) : o.colors) }}
         />
-        {isFaceDownPermanent(o) ? (
-          // D-315: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
-          <FaceDownArt version="art_crop" className="board-tile-art" />
-        ) : (
-          <Art
-            name={art.name}
-            back={art.back}
-            isToken={o.isToken}
-            eager
-            {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
-            version={top === null ? 'art_crop' : 'normal'}
-            className={top === null ? 'board-tile-art' : 'board-tile-art board-tile-top'}
-          />
-        )}
+        {picture}
         {top !== null && top.cover < 1 && (
           // A frame whose type line stands higher (a planeswalker): what the cut would show under it is covered.
           <span

@@ -941,11 +941,12 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana, life and the sacrifice of N permanents ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures"; rules/cast-cost.ts, rules/cast.ts).
+        // CR 702.34a: an alternative cost; mana, life, the sacrifice of N permanents and the exile of X cards of the graveyard ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures", "Flashback—{3}{U}{R}, Exile X cards from your graveyard"; rules/cast-cost.ts, rules/cast.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
           'mana',
           'payLife',
           'sacrifice',
+          'exileFromGraveyard',
         ]);
       } else if (a.keyword.kind === 'ninjutsu') {
         // CR 702.49a (unverified): paid like any activation cost; only mana is run (rules/derive-keywords.ts adds the return of an unblocked attacker).
@@ -962,8 +963,11 @@ function walkAbility(
           'discard',
         ]);
       } else if (a.keyword.kind === 'escalate') {
-        // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-145).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+        // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana, no X (D-145), or tapped permanents (Collective Effort: `casting.extra.tap`, rules/cast-additional.ts).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
+          'mana',
+          'tapPermanents',
+        ]);
       } else if (a.keyword.kind === 'replicate' || a.keyword.kind === 'buyback') {
         // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129). CR 702.27a: the same for the buyback cost (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
@@ -1073,7 +1077,8 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
   for (const [i, c] of (face.additionalCosts ?? []).entries()) {
     if (
       (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
-      c.kind === 'exileFromGraveyard'
+      c.kind === 'exileFromGraveyard' ||
+      c.kind === 'putLinkedExileInGraveyard'
     ) {
       out.push({
         path: `${base}.additionalCosts[${i}]`,
@@ -1092,6 +1097,7 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
       if (
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
         c.kind === 'exileFromGraveyard' ||
+        c.kind === 'putLinkedExileInGraveyard' ||
         c.kind === 'exileFromHand'
       ) {
         out.push({

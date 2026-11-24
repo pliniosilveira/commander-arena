@@ -286,6 +286,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:rollsHighest']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'rollsHighest', who });
     }
+    case 'votingFinished': {
+      // "Whenever players finish voting" (Erestor of the Council, CR 701.38a): any vote of any spell or ability; the record of the votes goes to the ability.
+      const blocked = missingFeatures(['trigger:votingFinished']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'votingFinished' });
+    }
     case 'winsCoinFlip': {
       // "Whenever you win a coin flip" (Setzer, CR 705.2): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
@@ -706,6 +711,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         atLeast: t.atLeast,
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
+        ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
         ...(t.eachAttackedOpponent === true ? { eachAttackedOpponent: true as const } : {}),
         ...(t.includesSource === true ? { includesSource: true as const } : {}),
@@ -1271,6 +1277,61 @@ function hadCountersThatMany(ability: Triggered): Triggered {
   return { ...ability, body: { ...ability.body, sentences } };
 }
 
+/**
+ * "Whenever another permanent you control is put into a graveyard from the battlefield, if it had one or more counters on it, you may put that number of +1/+1 counters on target creature."
+ * (Yuna, Grand Summoner; CR 603.10a, 113.7a, 122.1): in the body of a trigger about another permanent whose intervening "if" says it had counters on it, "that number" is the number of counters
+ * of every kind the permanent had as it left, which the engine reads from its last-known information (`countersOn` of the `triggerSubject`, no kind named). Only the words "that number".
+ */
+function hadCountersThatNumber(ability: Triggered): Triggered {
+  const test = ability.interveningIf?.test;
+  if (
+    test?.kind !== 'hadCounters' ||
+    test.oneOrMore !== true ||
+    test.counter !== undefined ||
+    ability.modal !== undefined ||
+    ability.trigger.subject === undefined ||
+    ability.trigger.subject.det === 'self'
+  ) {
+    return ability;
+  }
+  const counters = (amount: IrAmount): IrAmount => ({
+    kind: 'countersOn',
+    of: {
+      kind: 'noun',
+      det: 'triggerSubject',
+      filter: { raw: 'it' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: amount.span,
+      rule: ability.interveningIf?.rule ?? 'condition.had-counters',
+    },
+    span: amount.span,
+  });
+  const retarget = (amount: IrAmount): IrAmount =>
+    amount.kind === 'thisWay' &&
+    amount.thatMany === true &&
+    amount.words.length === 1 &&
+    amount.words[0] === 'number'
+      ? counters(amount)
+      : amount;
+  const sentences = ability.body.sentences.map((sentence) => ({
+    ...sentence,
+    clauses: sentence.clauses.map(
+      (clause): IrClause => ({
+        ...clause,
+        args: Object.fromEntries(
+          Object.entries(clause.args).map(([key, arg]) => [
+            key,
+            isIrAmount(arg) ? retarget(arg) : arg,
+          ]),
+        ),
+      }),
+    ),
+  }));
+  return { ...ability, body: { ...ability.body, sentences } };
+}
+
 /** The count a prime-number condition reads, inside the intervening "if" (alone or joined with others by "and"). */
 function primeCountOf(condition: IrCondition | undefined): IrAmount | null {
   const test = condition?.test;
@@ -1407,7 +1468,9 @@ function lowerTriggeredAbility(
   if (taken === null) return failure(written);
   const { once, doOnce } = taken;
   // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
-  const ability = hadCountersThatMany(conditionAmountThatMany(eventAmountThatMany(taken.ability)));
+  const ability = hadCountersThatNumber(
+    hadCountersThatMany(conditionAmountThatMany(eventAmountThatMany(taken.ability))),
+  );
   // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
   // lowering of those does not carry the flag into.
   if (doOnce && ability.modal !== undefined) return failure(written);
@@ -1450,6 +1513,9 @@ function lowerTriggeredAbility(
   ctx.enchantedPlayerTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
+  ctx.attachedTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.triggeredBody = true;
@@ -1807,6 +1873,8 @@ function lowerTriggeredAbility(
       (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
+      // Kimahri, Valiant Guardian (CR 707.9b): "Then you may have ~ become a copy of that creature, except ...": the lowering wraps the copy in the engine's `may`.
+      c.verb === 'becomeCopyKeepingAbility' ||
       // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
       c.verb === 'attachOwnToSelf' ||
       // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
@@ -1861,7 +1929,39 @@ function lowerTriggeredAbility(
     rest.every((c) => !c.optional) &&
     sentences[0]?.clauses[0] === first &&
     missingFeatures(['effect:may']).length === 0;
-  if (optional && !mayFirst && ((others.length !== 1 && !chain) || conditional)) {
+  // Tidus, Yuna's Guardian (CR 608.2d, 603.5): "you may draw a card and proliferate": the one "you may" of one sentence is for everything it joins with "and" (the parse marks each clause of it
+  // optional), so the engine's `optional`
+  // of the whole ability (all or nothing) is the question. Only the one sentence of the text, its first clause the offered one, no condition, and "and" between every clause ("then" says
+  // an order the text of an offer does not, and is left to its own readings).
+  const mayAnd =
+    optional &&
+    !chain &&
+    !mayFirst &&
+    !conditional &&
+    first?.optional === true &&
+    rest.length > 0 &&
+    sentences.filter(ownMay).length === 1 &&
+    rest.every((c) => c.optional && c.verb === 'proliferate') &&
+    others.slice(0, -1).every((c) => c.connector === 'and');
+  // Knollspine Dragon (CR 608.2d): "you may discard your hand and draw cards equal to ...": one sentence whose first instruction is the optional one and which joins others with "and"
+  // is one offer for the whole sentence, which is what the ability's own `optional` is.
+  const mayWholeSentence =
+    optional &&
+    !chain &&
+    !conditional &&
+    sentences.length === 1 &&
+    others.length > 1 &&
+    first?.optional === true &&
+    // Only the shape "discard ... and draw ...": the draw goes with the discard it follows. Other pairs ("draw a card and you gain 1 life", a search and its shuffle) are not read.
+    first.verb === 'discard' &&
+    others.slice(1).every((c) => c.verb === 'draw');
+  if (
+    optional &&
+    !mayFirst &&
+    !mayAnd &&
+    !mayWholeSentence &&
+    ((others.length !== 1 && !chain) || conditional)
+  ) {
     return failure(ability);
   }
   // A "you may" of the whole ability beside an offer would be two questions for one effect.
@@ -2104,6 +2204,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:surveils',
   'trigger:rollsHighest',
   'trigger:winsCoinFlip',
+  'trigger:votingFinished',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

@@ -21,12 +21,16 @@ import { ATTACHMENT_NEEDS } from './attachments';
 import { AURA_GRAVEYARD_NEEDS } from './aura-graveyard';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
+import { COUNCIL_VOTES_NEEDS } from './council-votes';
+import { COUNTER_BLITZ_G_NEEDS } from './counter-blitz-g';
+import { COUNTER_GROUP_A_NEEDS } from './counter-group-a';
 import { COUNTER_INTELLIGENCE_G2_NEEDS } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_NEEDS } from './counter-intelligence-g3';
 import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
+import { ELVEN_COUNCIL_REVEAL_NEEDS } from './elven-council-reveal';
 import { EXILED_WITH_NEEDS } from './exiled-with';
 import type { FeatureRef } from './features';
 import { FINALE_NEEDS } from './finale';
@@ -41,6 +45,7 @@ import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
 import { REVEAL_TOP_CARD_NEEDS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
+import { SECRET_VOTES_NEEDS } from './secret-votes';
 import {
   COMBAT_DAMAGE_BATCH_NEEDS,
   COMBAT_DAMAGE_TO_PLAYER_NEEDS,
@@ -172,14 +177,19 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...LOCKE_NEEDS,
     ...AURA_GRAVEYARD_NEEDS,
     ...LIMIT_BREAK_G1_NEEDS,
+    ...COUNTER_BLITZ_G_NEEDS,
+    ...COUNTER_GROUP_A_NEEDS,
     ...COUNTER_INTELLIGENCE_G2_NEEDS,
     ...COUNTER_INTELLIGENCE_G3_NEEDS,
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,
+    ...COUNCIL_VOTES_NEEDS,
+    ...SECRET_VOTES_NEEDS,
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,
+    ...ELVEN_COUNCIL_REVEAL_NEEDS,
     ...REVEAL_TOP_CARD_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,

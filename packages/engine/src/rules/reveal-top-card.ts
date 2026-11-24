@@ -1,7 +1,8 @@
 /**
  * "Scry 3, then reveal the top card of your library. Draw cards equal to that card's mana value." (CR 701.20a Reveal, 400.7j, 202.3): the `revealTopCard` effect. Each player the
  * selector names reveals the top card of their own library (a `cardsRevealed` event, public); the card stays where it is. The card revealed is what `moved` names for the effects
- * after it in the same sequence, so "that card's mana value" is read from it; when nothing was revealed (an empty library) `moved` is empty.
+ * after it in the same sequence, so "that card's mana value" is read from it; when nothing was revealed (an empty library) `moved` is empty. With several players `moved` holds every card
+ * revealed, in the order of the players.
  */
 import type { Effect } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
@@ -34,7 +35,7 @@ export function runRevealTopCard(
       names: [derive(state, card).name],
       from: 'library',
     });
-    revealed = [top];
+    revealed = [...revealed, top];
   }
   return { ...done(state, events), lastMoved: revealed };
 }

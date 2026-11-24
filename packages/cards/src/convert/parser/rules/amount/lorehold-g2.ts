@@ -5,33 +5,17 @@
 import { fail, pattern } from '../../combinators';
 import type { IrAmount } from '../../ir/types';
 import { defineRule } from '../registry';
+import { NOT_AN_OPTION, VOTE_OPTION } from '../vote-words';
 
-/** The words before "vote" that name no option of a card's vote ("for each vote", "for each other vote"). */
-const NOT_AN_OPTION = new Set([
-  'a',
-  'additional',
-  'all',
-  'an',
-  'any',
-  'each',
-  'extra',
-  'no',
-  'opponent',
-  'opponents',
-  'other',
-  'player',
-  'players',
-  'the',
-  'total',
-]);
-
-const FOR_EACH_VOTE = /for each ([\p{Ll}]+(?:-[\p{Ll}]+)*) vote(?![\p{L}\p{N}])/iu;
+// No flag `i`: a capital letter is only itself, as the options of a vote are written ("Redhorn Pass"); "For" at the start of a sentence is the one capital allowed.
+const FOR_EACH_VOTE = new RegExp(`[Ff]or each (${VOTE_OPTION}) vote(?![\\p{L}\\p{N}])`, 'u');
 
 /**
  * `amount.for-each-vote`: "for each past vote" (CR 701.38a, 701.38b, 608.2c: each player voted for one of the options, and the instruction counts the votes for the one named, as it runs). It
  * follows a quantity like `amount.for-each` does ("You mill a card for each past vote", "Exile the top card of your library for each present vote"). The option is one word the card
- * gave in its vote, which has no rules meaning of its own (CR 701.38b); the engine's `votesFor` reads the tally of the vote that ran before it in the same text, and `validateCard` refuses an
- * option that vote does not offer. Not read: "for each vote" (no option), a plural "for each past votes", an option that is a pronoun or a word that counts ("for each extra vote").
+ * gave in its vote, which has no rules meaning of its own (CR 701.38b): a lowercase word or a name with capitals ("for each Redhorn Pass vote"); the engine's `votesFor` reads the tally of
+ * the vote that ran before it in the same text, and `validateCard` refuses an option that vote does not offer. Not read: "for each vote" (no option), a plural "for each past votes",
+ * an option that is a pronoun or a word that counts ("for each extra vote").
  */
 export const AMOUNT_FOR_EACH_VOTE = defineRule<IrAmount>({
   id: 'amount.for-each-vote',
@@ -43,13 +27,16 @@ export const AMOUNT_FOR_EACH_VOTE = defineRule<IrAmount>({
     'for each present vote',
     'For each profit vote',
     'for each left-handed vote',
+    'for each Redhorn Pass vote',
+    'For each Mines of Moria vote',
   ],
   rejects: [
     'for each vote',
     'for each past votes',
     'for each extra vote',
     'for each other vote',
-    'for each Past vote',
+    'for each Redhorn pass vote',
+    'for each PAST vote',
     'for each past vote for',
     'for each past or present vote',
     'for every past vote',
@@ -60,8 +47,7 @@ export const AMOUNT_FOR_EACH_VOTE = defineRule<IrAmount>({
     const r = pattern(FOR_EACH_VOTE)(ctx, pos);
     if (!r.ok) return r;
     const option = r.value[1] ?? '';
-    // Options are lowercase words, as the vote writes them.
-    if (option !== option.toLowerCase() || NOT_AN_OPTION.has(option)) return fail(ctx, pos);
+    if (NOT_AN_OPTION.has(option.toLowerCase())) return fail(ctx, pos);
     return {
       ok: true,
       value: { kind: 'votesFor', option, span: { start: pos, end: r.pos } },

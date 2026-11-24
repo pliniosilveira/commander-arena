@@ -28,6 +28,7 @@ import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
 import { lowerQuotedCopyStatic } from './copy-statics';
 import { lowerCost } from './costs';
+import { lowerEntersRemoveCounters } from './counter-blitz-g';
 import { lowerClause } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes } from './modal';
@@ -141,14 +142,14 @@ function lowerEquipCosts(
   };
 }
 
-/** The flashback cost that sacrifices permanents: each of mana, life and one sacrifice at most once, as the engine's `checkFlashbackCost` takes them. */
+/** The flashback cost that sacrifices permanents or exiles X cards of the graveyard: each of mana, life, one sacrifice and one exile at most once, as the engine's `checkFlashbackCost` takes them. */
 function lowerFlashbackSacrifice(
   ability: IrKeyword,
   written: readonly IrCost[],
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (
-    kinds.some((k) => k !== 'mana' && k !== 'payLife' && k !== 'sacrifice') ||
+    kinds.some((k) => k !== 'mana' && k !== 'payLife' && k !== 'sacrifice' && k !== 'exile') ||
     new Set(kinds).size !== kinds.length
   ) {
     return failure(ability);
@@ -227,7 +228,7 @@ function lowerCostedKeyword(
   // "Flashback—Sacrifice three creatures." (Dread Return, CR 702.34a, 118.9, 701.21a): one sacrifice of the caster's permanents, alone or with a mana cost or a payment of life.
   if (
     name === 'flashback' &&
-    (ability.cost ?? []).some((c) => c.kind === 'sacrifice') &&
+    (ability.cost ?? []).some((c) => c.kind === 'sacrifice' || c.kind === 'exile') &&
     ability.params.length === 0
   ) {
     return lowerFlashbackSacrifice(ability, ability.cost ?? []);
@@ -256,25 +257,36 @@ function lowerCostedKeyword(
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'replicate' ||
-    name === 'escalate' ||
     name === 'buyback' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
-      : name === 'ward'
-        ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
-        : ['mana', 'payLife'];
+      : // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
+        name === 'escalate'
+        ? ['mana', 'tapPermanents']
+        : name === 'ward'
+          ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
+          : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
     only,
-    name === 'cycling' ? { x: true } : name === 'ward' ? { ward: true } : {},
+    name === 'cycling'
+      ? { x: true }
+      : name === 'ward'
+        ? { ward: true }
+        : name === 'escalate'
+          ? { ordinary: true }
+          : {},
   );
   if (!cost.ok) return cost;
   const blocked = gate(ability, [
     'ability:keyword',
     `keyword:${name}`,
     `cost:${cost.value.kind}` as FeatureRef,
+    ...(name === 'escalate' && cost.value.kind === 'tapPermanents'
+      ? (['ability:escalateTapCost'] as const)
+      : []),
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
@@ -747,6 +759,8 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       value: [{ kind: 'replacement', replacement }],
       rule: ability.rule,
     }) as const;
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): two abilities from one line.
+  if (event.verb === 'entersRemoveCounters') return lowerEntersRemoveCounters(ability);
   if (event.verb === 'entersTapped') {
     const blocked = gate(ability, ['ability:replacement', 'replacement:entersTapped']);
     if (blocked !== null) return blocked;
@@ -1062,6 +1076,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const blocked = gate(ability, ['ability:replacement', 'replacement:drawInstead']);
     if (blocked !== null) return blocked;
     return built({ kind: 'drawInstead', count: amount.value, exceptFirstInDrawStep: true });
+  }
+  if (event.verb === 'drawRedirect') {
+    // "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card." (Notion Thief, CR
+    // 614.1a, 614.11, 504.1): the engine's `drawRedirect` of the permanent.
+    if (event.condition !== undefined) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:drawRedirect']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'drawRedirect', exceptFirstInDrawStep: true });
   }
   if (event.verb === 'tokensInstead' && event.args.double !== undefined) {
     // "If one or more tokens would be created under your control, twice that many of those tokens are created instead." (Hashaton deck group 3, D-378, CR 614.1a,
@@ -1424,6 +1446,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTappedUnlessPays',
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',
+  'replacement:asEntersRemoveCounters',
   'replacement:entersAsCopy',
   'replacement:skipDraw',
   'replacement:keepOneLoyalty',
@@ -1432,5 +1455,6 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:damageBonus',
   'replacement:damageDouble',
   'replacement:drawInstead',
+  'replacement:drawRedirect',
   'replacement:umbraArmor',
 ];

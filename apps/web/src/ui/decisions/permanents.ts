@@ -19,7 +19,12 @@ import {
   tappedWhat,
 } from '../../game/cost-text';
 import { thingsPhrase } from '../../game/filter-text';
-import { devourDetail, devourPrompt } from '../../game/keywords-text';
+import {
+  devourDetail,
+  devourPrompt,
+  removeCountersDetail,
+  removeCountersPrompt,
+} from '../../game/keywords-text';
 import { namesSeveral } from '../../game/player-text';
 import { triggerGist } from './ability-label';
 import { type Index, nameOf, plural, stackName } from './lookup';
@@ -134,6 +139,13 @@ export function isDevour(decision: Pick<ChoosePermanentDecision, 'purpose'>): bo
   return decision.purpose === 'devour';
 }
 
+/** True for "As this enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12): the permanents that lose every counter, none being fine. */
+export function isEntersRemoveCounters(
+  decision: Pick<ChoosePermanentDecision, 'purpose'>,
+): boolean {
+  return decision.purpose === 'entersRemoveCounters';
+}
+
 /** The bar's second line: the running total for a crew, else what to click. */
 export function permanentsDetail(
   chosen: readonly ObjectId[],
@@ -147,6 +159,7 @@ export function permanentsDetail(
     return `Keeping ${plural(chosen.length, 'creature')}, total power ${crewTotal(chosen, decision)} of at most ${decision.maxTotalPower ?? 0}. The others are sacrificed.`;
   }
   if (decision.purpose === 'devour') return devourDetail(chosen.length, decision.devourQuality);
+  if (decision.purpose === 'entersRemoveCounters') return removeCountersDetail(chosen.length);
   // D-139: "you may tap any number of untapped Myr you control".
   if (decision.purpose === 'effect' && decision.min === 0) {
     return chosen.length === 0
@@ -396,6 +409,15 @@ export function choosePermanentPrompt(
         ? `the token ${source.name} creates`
         : nameOf(index, decision.source);
     return devourPrompt(entering, decision.devourQuality);
+  }
+  if (isEntersRemoveCounters(decision)) {
+    // A token has no object yet: the question is about the token that the ability on the stack makes.
+    const source = index.get(decision.source);
+    return removeCountersPrompt(
+      source?.zone === 'stack' && source.ability !== undefined
+        ? `the token ${source.name} creates`
+        : nameOf(index, decision.source),
+    );
   }
   if (isSpare(decision)) return sparePrompt(decision);
   if (isCrew(decision)) {

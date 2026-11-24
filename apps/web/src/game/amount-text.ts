@@ -83,8 +83,12 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       // Animate Dead: the creature this permanent put onto the battlefield.
       return "that creature's";
     case 'eachObject':
-      // Canopy Gargantuan: the creature the counters are being put on right now.
+    case 'votedObjects':
+      // Canopy Gargantuan: the creature the counters are being put on right now. Trap the Trespassers: a creature with votes.
       return "that creature's";
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen): the creature that is the controller's Ring-bearer.
+      return "your Ring-bearer's";
   }
 }
 
@@ -120,7 +124,10 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'the exiled card';
     case 'putWithThis':
     case 'eachObject':
+    case 'votedObjects':
       return 'that creature';
+    case 'ringBearer':
+      return 'your Ring-bearer';
   }
 }
 
@@ -427,6 +434,12 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'votesFor':
       // D-194 (CR 701.38a): "twice the number of profit votes".
       return `the number of ${amount.option} votes`;
+    case 'votesReceived':
+      // CR 701.38a (Círdan the Shipwright): "for each vote they received".
+      return 'the number of votes they received';
+    case 'votesForObject':
+      // CR 701.38a (Trap the Trespassers): "put that many stun counters on it".
+      return 'the number of votes for it';
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";

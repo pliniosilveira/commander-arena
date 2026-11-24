@@ -125,6 +125,8 @@ export function entersWithCounters(
   ) => number = () => 0,
   /** The times the spell the permanent came from was kicked (D-254, CR 702.33c): "for each time it was kicked". 0 for a permanent that was not cast. */
   kicks = 0,
+  /** The counters the permanent removed from other permanents as it entered (Sin, Unending Cataclysm, `asEntersRemoveCounters`): what `countersRemovedAsEntered` reads. 0 for one that removed none. */
+  removed = 0,
 ): Record<string, number> {
   let counters: Record<string, number> = { ...base };
   for (const r of replacementsOf(abilities)) {
@@ -142,7 +144,9 @@ export function entersWithCounters(
               ? r.count.of.reduce((n, part) => n + counted(part), 0)
               : r.count.kind === 'timesKicked'
                 ? kicks
-                : x * (r.count.times ?? 1);
+                : r.count.kind === 'countersRemovedAsEntered'
+                  ? removed * (r.count.times ?? 1)
+                  : x * (r.count.times ?? 1);
       if (count > 0) counters = { ...counters, [r.counter]: (counters[r.counter] ?? 0) + count };
     }
   }

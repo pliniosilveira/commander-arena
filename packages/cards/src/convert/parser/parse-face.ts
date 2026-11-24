@@ -598,7 +598,10 @@ function linkExile(abilities: readonly Ability[]): {
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||
         // Lorehold group 2 (CR 607.2a): "Choose target card exiled with ~": a target slot of the cards the permanent exiled.
-        JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true')))
+        JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true') ||
+        // Shelob, Dread Weaver (CR 607.2a): "Put a creature card exiled with ~ into its owner's graveyard" as a cost reads the cards the permanent exiled.
+        (a.kind === 'activated' &&
+          JSON.stringify(a.cost ?? null).includes('"putLinkedExileInGraveyard"'))))
       ? [i]
       : [],
   );
@@ -623,8 +626,9 @@ function linkExile(abilities: readonly Ability[]): {
   }
   const [only] = exilers;
   const one = only !== undefined ? abilities[only] : undefined;
+  // Shelob, Dread Weaver: several abilities may read the cards the one exile ability remembers.
   const linkable =
-    readers.length === 1 &&
+    readers.length >= 1 &&
     replacers.length === 0 &&
     exilers.length === 1 &&
     one !== undefined &&
