@@ -160,7 +160,7 @@ describe('validation', () => {
 
   test('a replicate cost of another kind is still refused', () => {
     expect(JSON.stringify(validateCard(withReplicate([{ kind: 'payLife', amount: 2 }])))).toContain(
-      'mana or the tapping of permanents',
+      'tapping of untapped permanents',
     );
   });
 

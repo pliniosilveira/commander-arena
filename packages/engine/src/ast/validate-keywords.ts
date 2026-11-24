@@ -184,7 +184,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
             issue(
               out,
               `${path}.cost[${i}]`,
-              'a replicate cost may be mana or the tapping of permanents in this engine',
+              'a replicate cost may be mana only (or, on its own, the tapping of untapped permanents) in this engine',
             );
           } else if (c.symbols?.includes('X')) {
             issue(out, `${path}.cost[${i}]`, 'X in a replicate cost is not supported');

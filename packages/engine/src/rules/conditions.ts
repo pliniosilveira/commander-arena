@@ -26,7 +26,6 @@ import {
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { designationHolders, hasMaxSpeed } from './designations';
-import { faceOf } from './legality';
 import { manaSpentOf } from './mana-spent';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
@@ -34,7 +33,6 @@ import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
 import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
-import { suspendOf } from './special-legality';
 import { TIME_COUNTER } from './time-counter';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
@@ -668,7 +666,9 @@ export function evaluateCondition(
         card !== undefined &&
         card.zone === 'exile' &&
         (card.counters[TIME_COUNTER] ?? 0) >= 1 &&
-        suspendOf(faceOf(state, card)) !== null
+        derive(state, card).abilities.some(
+          (a) => a.kind === 'keyword' && a.keyword.kind === 'suspend',
+        )
       );
     }
     case 'thisOnBattlefield': {
