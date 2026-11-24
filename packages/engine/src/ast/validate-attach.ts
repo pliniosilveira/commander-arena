@@ -47,6 +47,7 @@ export function checkStaticSubject(
   out: AstIssue[],
   keywords = false,
   allowPair = false,
+  allowGoaded = false,
 ): void {
   switch (s?.kind) {
     case 'this':
@@ -78,9 +79,12 @@ export function checkStaticSubject(
       // Attacking is read from the current combat. Resolution-only source values remain unavailable here.
       if (
         filterSome(s.filter, (f) => {
-          // `modified` (issue 345, CR 700.9) is read from the counters and attachments, which no layer changes.
-          const { attacking: _attacking, modified: _modified, ...rest } = f;
-          return readsCombatOrSourceBesidesCommander(rest);
+          // `modified` (issue 345, CR 700.9) is read from the counters and attachments, which no layer changes. `goaded` (CR 701.15b) is read after the layers by a restriction
+          // (`derive-statics.ts` applies it once every goad of a static ability has been), never by an ability that changes characteristics.
+          const { attacking: _attacking, modified: _modified, goaded, ...rest } = f;
+          return (
+            readsCombatOrSourceBesidesCommander(rest) || (goaded !== undefined && !allowGoaded)
+          );
         })
       ) {
         issue(

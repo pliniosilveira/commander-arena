@@ -61,7 +61,7 @@ const TAIL_ALL = tail(true);
  * The creatures that are targets of a restriction (CR 115.1): one creature (a spell's "target" is a creature), "up to N" of them (CR 115.2) or "one
  * or two" (D-295, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
  */
-const targetCreatures = refuseAt(
+export const targetCreatures = refuseAt(
   family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.target-creature-token'] }),
   (n) =>
     (!n.plural || n.minTargets !== undefined || n.upTo) &&

@@ -2368,6 +2368,8 @@ export interface ThisWayCounts {
   readonly discardedValue?: number;
   /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
   readonly countersPut?: number;
+  /** The objects `addCounters` effects really put counters on, by kind of counter, each once (Spectacular Showdown: "each creature that had a double strike counter put on it this way", CR 608.2c); left out until some are. */
+  readonly countersPutOn?: Readonly<Record<string, readonly ObjectId[]>>;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
   /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */

@@ -532,6 +532,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Arcane Lighthouse: creatures that enter later follow CR 611.2c; unverified against the ruling.
 - "Each other creature that's attacking one of your opponents gets +N/+N until end of turn" only; the plural without "other", other effects and a battle protected by an opponent are not read.
 - Goad as an effect: one creature, a target or "it"; "goad each creature" and a group are not read.
+- A static subject names a goaded creature only for a restriction (Bothersome Quasit); a group "with power less than ~'s power are goaded", "had to attack this combat" and each player putting counters on their own creature are not built.
 - Protection from the chosen color: the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
 - Counters on a chosen creature: only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read.
 - The condition `attackedHasMoreLifeThanOtherOpponent` for three players is tested directly, not through a full game (the scenario DSL has two seats).

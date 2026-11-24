@@ -149,14 +149,23 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     const whileRemains = scope === 'whileSelfRemains';
     // "attacks this combat if able" (issue 144, CR 506.1, 508.1d): the requirement of one combat, the engine's `thisCombat`.
     const thisCombat = scope === 'thisCombat';
+    // "Until your next turn, target creature can't be blocked" (Sly Instigator, CR 611.2a, 500.1): the engine's `untilYourNextTurn`, with `cantBeBlocked` only.
+    const nextTurn = scope === 'untilYourNextTurn';
     if (
       scope !== 'thisTurn' &&
       scope !== 'untilEndOfTurn' &&
       !whileControlling &&
       !whileRemains &&
-      !thisCombat
+      !thisCombat &&
+      !nextTurn
     ) {
       return failure(clause);
+    }
+    if (nextTurn) {
+      if (given.restriction !== 'cantBeBlocked') return failure(clause);
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     if (thisCombat) {
       if (given.restriction !== 'attacksEachCombat') return failure(clause);
@@ -253,7 +262,9 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
             ? 'forAsLongAsThisRemains'
             : thisCombat
               ? 'thisCombat'
-              : END,
+              : nextTurn
+                ? 'untilYourNextTurn'
+                : END,
       }),
       'objects',
       // "That token attacks this combat if able": the token the sentence before made (the noun is bound by the earlier instruction).

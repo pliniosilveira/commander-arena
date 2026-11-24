@@ -1157,6 +1157,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
     'tokensPerPrevented',
     'moved',
+    // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
+    'putCountersOn',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
@@ -2139,6 +2141,8 @@ export const SELECTOR_KINDS = [
   'anyOf',
   /** "It" for what an earlier instruction of the same resolution moved (CR 400.7j): the engine's `moved`. */
   'moved',
+  /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
+  'putCountersOn',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
   'colorChoice',
   /**

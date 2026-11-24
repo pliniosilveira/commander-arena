@@ -21,6 +21,7 @@ export const EFFECT_GOAD = defineRule<Clauses>({
     'goad target creature',
     'goad up to one target creature',
     'goad it',
+    'goad that creature',
     'Goad target creature',
     'goad each creature target player controls',
     'goad each creature target opponent controls',
@@ -37,6 +38,8 @@ export const EFFECT_GOAD = defineRule<Clauses>({
     'goad all artifacts your opponents control',
     'goad all creatures your opponents control until end of turn',
     'goad them',
+    'goad that land',
+    'goad that permanent',
     'goad target player',
     'goads target creature',
     'goad',
@@ -51,6 +54,8 @@ export const EFFECT_GOAD = defineRule<Clauses>({
           'noun.target-permanent-of-that-player',
           'noun.target-permanent',
           'noun.it',
+          // Draconic Dissent deck (Sly Instigator): "goad that creature", the creature an earlier sentence chose.
+          'noun.that-object',
           'noun.each-permanent-of-target-player',
           'noun.all-permanents-of-target-player',
           // Riders of Rohan deck, group B (Taunt from the Rampart): "goad all creatures your opponents control".
@@ -61,11 +66,13 @@ export const EFFECT_GOAD = defineRule<Clauses>({
         {
           // A group names whose creatures it is ("your opponents control"): "goad all creatures" and a group of a kind other than creatures are other lines.
           accept: (n) =>
-            n.rule !== 'noun.all-permanents' && n.rule !== 'noun.each-permanent'
-              ? true
-              : n.filter.controller !== undefined &&
-                n.filter.types?.length === 1 &&
-                n.filter.types[0] === 'creature',
+            n.rule === 'noun.that-object'
+              ? /^that creature$/iu.test(n.filter.raw)
+              : n.rule !== 'noun.all-permanents' && n.rule !== 'noun.each-permanent'
+                ? true
+                : n.filter.controller !== undefined &&
+                  n.filter.types?.length === 1 &&
+                  n.filter.types[0] === 'creature',
           locate: (n) => n.span.start,
         },
       ),
