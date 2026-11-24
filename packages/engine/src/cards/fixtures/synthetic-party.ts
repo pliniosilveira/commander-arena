@@ -95,6 +95,29 @@ export const SYNTHETIC_PARTY_LIST: readonly CardDefinition[] = [
     ],
     spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 5 } },
   }),
+  // "~ is also a Cleric, Rogue, Warrior, and Wizard."
+  singleFace({
+    name: 'SYNTHETIC Party Chimera',
+    manaCost: ['3', 'B'],
+    types: ['creature'],
+    subtypes: ['Orc'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 2,
+    toughness: 4,
+    oracleText: '~ is also a Cleric, Rogue, Warrior, and Wizard.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'setTypes',
+          subject: { kind: 'this' },
+          additive: true,
+          subtypes: ['Cleric', 'Rogue', 'Warrior', 'Wizard'],
+        },
+      },
+    ],
+  }),
   // "At the beginning of combat on your turn, if you have a full party, you gain 3 life."
   singleFace({
     name: 'SYNTHETIC Party Banner',

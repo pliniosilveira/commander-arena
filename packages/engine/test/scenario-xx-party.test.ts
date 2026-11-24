@@ -17,13 +17,14 @@ const COMMONER = 'SYNTHETIC Party Commoner';
 const SCRIBE = 'SYNTHETIC Party Scribe'; // power = party size; itself a Cleric
 const LEECH = 'SYNTHETIC Party Leech'; // enters: each opponent loses X, you gain X; itself a Cleric
 const RITE = 'SYNTHETIC Party Rite'; // {4}{B}{B}, costs {1} less per party creature
+const CHIMERA = 'SYNTHETIC Party Chimera'; // is also a Cleric, Rogue, Warrior and Wizard
 const BANNER = 'SYNTHETIC Party Banner'; // beginning of combat, if full party: gain 3
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
 
 type Builder = ReturnType<typeof scenario>;
 
 describe('the cards are valid', () => {
-  test.each([SCRIBE, LEECH, RITE, BANNER])('%s', (name) => {
+  test.each([SCRIBE, LEECH, RITE, BANNER, CHIMERA])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 });
@@ -225,5 +226,19 @@ describe('"if you have a full party" (CR 700.8c, 603.4)', () => {
         .battlefield(WARRIOR),
     );
     g.expect.stack([]);
+  });
+});
+
+describe('a creature that is also all four types (CR 205.3m, 613.1d)', () => {
+  test('it alone is one member of the party, never four (CR 700.8b)', () => {
+    const g = game((b) => b.battlefield(CHIMERA).battlefield(SCRIBE));
+    // The Scribe is a Cleric and the Chimera fills another slot: two.
+    g.expect.pt(SCRIBE, 2, 2);
+  });
+  test('with three other creatures of the other types it still makes a full party only if each slot is filled', () => {
+    const g = game((b) =>
+      b.battlefield(CHIMERA).battlefield(SCRIBE).battlefield(ROGUE).battlefield(WARRIOR),
+    );
+    g.expect.pt(SCRIBE, 4, 2);
   });
 });
