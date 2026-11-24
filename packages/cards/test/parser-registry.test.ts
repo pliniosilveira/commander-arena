@@ -556,6 +556,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
+  'condition.discarded-card-matches': permanent(
+    (e) => `{T}, Discard a card: Draw a card. If ${e}, you gain 1 life.`,
+  ),
   'condition.gift-promised': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Issue 100 (Transcendent Dragon): the intervening "if" of an enters trigger of the permanent itself.
   'condition.was-cast': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
@@ -832,6 +835,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.one-or-two-targets-bare': spell(
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,
+  ),
+  'amount.damage-dealt-to-player-this-turn': permanent((e) => `When ~ enters, draw cards ${e}.`),
+  'noun.one-two-or-three-targets-bare': spell(
+    (e) => `~ deals 3 damage divided as you choose among ${e}.`,
   ),
   'condition.that-spells-stat': permanent(
     (e) => `Whenever you cast a creature spell, if ${e}, you gain 1 life.`,
@@ -1121,6 +1128,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.keep-one-loyalty': asIs,
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
+  'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
@@ -1331,6 +1339,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.behold': spell((e) => `As an additional cost to cast ~, ${e}. Draw a card.`),
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
@@ -1448,6 +1457,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-permanent-of-that-player': permanent(
     (e) => `At the beginning of each opponent's upkeep, tap ${e}.`,
+  ),
+  // Grishnákh: the target of the reflexive ability after an amass.
+  'noun.target-permanent-power-at-most-amassed': permanent(
+    (e) =>
+      `When ~ enters, amass Orcs 2. When you do, until end of turn, gain control of ${e}. Untap that creature.`,
   ),
   'condition.card-types-among': permanent(
     (e) =>

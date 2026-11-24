@@ -120,6 +120,9 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
         (a.static?.kind === 'takeFromLinkedExile' ||
           // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~".
           a.static?.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
+      // Shelob, Dread Weaver (CR 607.2a): "Put a creature card exiled with ~ into its owner's graveyard" as a cost reads the cards the permanent exiled.
+      (a?.kind === 'activated' &&
+        JSON.stringify(a.cost ?? null).includes('"putLinkedExileInGraveyard"')) ||
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.

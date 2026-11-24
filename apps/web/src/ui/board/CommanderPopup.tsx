@@ -69,6 +69,7 @@ export function CommanderPopup({
                   {o.objects[0] !== undefined && (
                     <Art
                       {...artOf(o.objects[0])}
+                      owner={o.seat}
                       isToken={false}
                       version="art_crop"
                       className="cmdr-art-img"

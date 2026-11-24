@@ -442,6 +442,9 @@ function lowerManaAbility(
     ...(production.kind === 'anyCombination' && production.distinct === true
       ? (['ability:manaDistinctColors'] as const)
       : []),
+    ...(production.kind === 'anyCombination' && production.colors !== undefined
+      ? (['ability:manaColorSubset'] as const)
+      : []),
   ];
   const blocked = gate(ability, needs);
   if (blocked !== null) return blocked;
@@ -669,6 +672,9 @@ function lowerManaInstead(
     `manaProduction:${production.kind}`,
     ...(production.kind === 'anyCombination' && production.distinct === true
       ? (['ability:manaDistinctColors'] as const)
+      : []),
+    ...(production.kind === 'anyCombination' && production.colors !== undefined
+      ? (['ability:manaColorSubset'] as const)
       : []),
   ]);
   if (blocked !== null) return blocked;
@@ -1163,6 +1169,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',
+  'ability:manaColorSubset',
   'ability:manaSpentRiderCopy',
   'ability:manaSpentRiderCounters',
   'ability:manaSpentRiderExile',

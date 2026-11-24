@@ -12,7 +12,7 @@ import type { GameState, ObjectView, SeatId } from '@commander-arena/engine';
 /** What the picker shows of a card looked at that cannot be taken: its face, never more. */
 export type LookedCard = Pick<
   ObjectView,
-  'id' | 'name' | 'manaCost' | 'supertypes' | 'types' | 'subtypes' | 'oracleText'
+  'id' | 'name' | 'manaCost' | 'supertypes' | 'types' | 'subtypes' | 'oracleText' | 'owner'
 >;
 
 export function lookedCards(state: GameState, viewer: SeatId): readonly LookedCard[] {
@@ -36,6 +36,7 @@ export function lookedCards(state: GameState, viewer: SeatId): readonly LookedCa
         types: face.types,
         subtypes: face.subtypes,
         oracleText: face.oracleText,
+        owner: obj.owner,
       },
     ];
   });

@@ -83,6 +83,21 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       if (mp.distinct !== undefined && mp.distinct !== true) {
         issue(out, `${path}.distinct`, 'distinct is true or absent');
       }
+      // "in any combination of {U}, {B}, and/or {R}": two to four different colors of the five.
+      if (mp.colors !== undefined) {
+        if (!Array.isArray(mp.colors) || mp.colors.length < 2 || mp.colors.length > 4) {
+          issue(out, `${path}.colors`, 'colors lists two to four colors');
+        } else {
+          for (const c of mp.colors) {
+            if (!isOneOf(c, ['W', 'U', 'B', 'R', 'G'])) {
+              issue(out, `${path}.colors`, `unknown mana color ${JSON.stringify(c)}`);
+            }
+          }
+          if (new Set(mp.colors).size !== mp.colors.length) {
+            issue(out, `${path}.colors`, 'colors lists a color twice');
+          }
+        }
+      }
       break;
     case 'producedType': // read from the mana ability that was tapped for mana; only a `tappedForMana` effect (validate.ts, validate-parts.ts)
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check

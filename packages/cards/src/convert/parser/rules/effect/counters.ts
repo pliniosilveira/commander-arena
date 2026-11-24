@@ -54,6 +54,8 @@ const COUNTER_OPERANDS = [
   'noun.each-of-them',
   // Counter Blitz deck, group C (Collective Effort): "each creature target player controls".
   'noun.each-permanent-of-target-player',
+  // Monstrosity of the Lake: "Tap all creatures your opponents control, then put a stun counter on each of those creatures." (the binding pass turns the words into the group before)
+  'noun.paired-creatures',
 ] as const;
 
 /**

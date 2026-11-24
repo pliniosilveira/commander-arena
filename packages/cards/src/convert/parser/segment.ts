@@ -794,6 +794,16 @@ const BOTTOM_RIDER =
   /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
 
 /**
+ * "That player exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then that player puts the exiled
+ * cards that weren't cast this way on the bottom of their library in a random order." (Grima, Saruman's Footman, CR 701.13, 608.2g, 401.4): the cast and the bottom are of the cards the
+ * first sentence exiles, so the three are one instruction (`effect.that-player-exiles-until-cast`; the first may follow the comma of a trigger).
+ */
+const THAT_PLAYER_EXILES_UNTIL =
+  /(?:^|, )that player exiles cards from the top of their library until they exile an? [^.,]*\.$/i;
+const THEN_THAT_PLAYER_BOTTOM_RANDOM =
+  /^then that player puts the exiled cards that weren['’]t cast this way on the bottom of their library in a random order\.$/i;
+
+/**
  * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 118.9): the second sentence says what the
  * flashback the first gives costs, so the two are one instruction (`effect.gain-flashback-from-mana-cost`).
  */
@@ -1155,6 +1165,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, REVEAL_THE_TOP) &&
       said(b, SEPARATES_INTO_PILES) &&
       said(c, PUT_ONE_PILE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, THAT_PLAYER_EXILES_UNTIL) &&
+      said(b, MAY_CAST_THAT_CARD_FREE) &&
+      said(c, THEN_THAT_PLAYER_BOTTOM_RANDOM)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

@@ -390,6 +390,16 @@ export function dealDamageAsking(
         }
       }
       state = patchObject(state, to.id, { damage, damagedByDeathtouch, counters });
+      // CR 120.3: this permanent has been dealt damage this turn ("a creature that was dealt damage this turn").
+      if (!(state.turnLog.damagedObjects ?? []).includes(to.id)) {
+        state = {
+          ...state,
+          turnLog: {
+            ...state.turnLog,
+            damagedObjects: [...(state.turnLog.damagedObjects ?? []), to.id],
+          },
+        };
+      }
     }
   }
 

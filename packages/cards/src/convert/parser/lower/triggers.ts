@@ -1916,7 +1916,25 @@ function lowerTriggeredAbility(
     sentences.filter(ownMay).length === 1 &&
     rest.every((c) => c.optional && c.verb === 'proliferate') &&
     others.slice(0, -1).every((c) => c.connector === 'and');
-  if (optional && !mayFirst && !mayAnd && ((others.length !== 1 && !chain) || conditional)) {
+  // Knollspine Dragon (CR 608.2d): "you may discard your hand and draw cards equal to ...": one sentence whose first instruction is the optional one and which joins others with "and"
+  // is one offer for the whole sentence, which is what the ability's own `optional` is.
+  const mayWholeSentence =
+    optional &&
+    !chain &&
+    !conditional &&
+    sentences.length === 1 &&
+    others.length > 1 &&
+    first?.optional === true &&
+    // Only the shape "discard ... and draw ...": the draw goes with the discard it follows. Other pairs ("draw a card and you gain 1 life", a search and its shuffle) are not read.
+    first.verb === 'discard' &&
+    others.slice(1).every((c) => c.verb === 'draw');
+  if (
+    optional &&
+    !mayFirst &&
+    !mayAnd &&
+    !mayWholeSentence &&
+    ((others.length !== 1 && !chain) || conditional)
+  ) {
     return failure(ability);
   }
   // A "you may" of the whole ability beside an offer would be two questions for one effect.

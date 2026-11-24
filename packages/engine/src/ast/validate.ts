@@ -1933,6 +1933,28 @@ function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): v
 }
 
 /**
+ * CR 602.2b, 701.9a: the condition `discardedAsCostMatches` reads the cards the cost of an activated ability discarded from the hand, so only an activated ability whose own cost
+ * discards (a `discard` cost that is not "this card" or an X) reads it.
+ */
+function checkDiscardedAsCost(face: CardFace, path: string, out: AstIssue[]): void {
+  face.abilities.forEach((a, i) => {
+    if (!effectHas(a, 'discardedAsCostMatches')) return;
+    const own =
+      a.kind === 'activated' && Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'discard');
+    if (!own) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'discardedAsCostMatches is read only by an activated ability whose own cost discards cards from the hand (CR 602.2b)',
+      );
+    }
+  });
+  if (effectHas(face.spell, 'discardedAsCostMatches')) {
+    issue(out, `${path}.spell`, 'discardedAsCostMatches is not read by a spell (CR 602.2b)');
+  }
+}
+
+/**
  * CR 118.8, 701.68a: the condition `additionalCostPaid` reads whether a spell paid the optional blight of its additional cost, so the face lists one and only the spell's own text reads it.
  */
 function checkAdditionalCostPaid(face: CardFace, path: string, out: AstIssue[]): void {
@@ -2189,7 +2211,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         true,
         false,
-        a.trigger?.kind === 'scries',
+        a.trigger?.kind === 'scries' || a.trigger?.kind === 'cycled',
         true,
         false,
         // CR 107.3m: the enters trigger of the permanent itself may take up to as many targets as the X of the spell it came from.
@@ -2959,6 +2981,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAdditionalCosts(face.additionalCosts, `${path}.additionalCosts`, out);
   }
   checkSacrificedAsCost(face, path, out);
+  checkDiscardedAsCost(face, path, out);
   checkAdditionalCostPaid(face, path, out);
   if (face.additionalCostChoice !== undefined) {
     checkAdditionalCostChoice(

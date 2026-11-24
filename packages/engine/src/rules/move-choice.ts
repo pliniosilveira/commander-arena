@@ -8,7 +8,7 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { zoneList } from '../state/ops';
+import { seatsInOrder, zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
@@ -251,8 +251,12 @@ export function runChooseMove(
           );
         })
       : fromCards && instruction.anyOwner === true
-        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
-          (instruction.among ?? []).filter((id) => {
+        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter. Without `among`
+          // (Extract from Darkness, CR 404.1: "a creature card from a graveyard") every card of every graveyard.
+          (
+            instruction.among ??
+            seatsInOrder(state, chooser).flatMap((seat) => zoneList(state, 'graveyard', seat))
+          ).filter((id) => {
             const obj = state.objects[id];
             const { controller: _owner, ...described } = instruction.filter;
             return (
@@ -375,19 +379,21 @@ export function runChooseMove(
                       ? 'from among the cards exiled this way'
                       : instruction.among !== undefined
                         ? 'from among the cards put into your graveyard'
-                        : zone === 'exile'
-                          ? 'exiled with this permanent'
-                          : instruction.graveyardOf !== undefined
-                            ? instruction.graveyardOf === chooser
-                              ? 'from your graveyard'
-                              : "from an opponent's graveyard"
-                            : instruction.alsoGraveyard === true
-                              ? 'from your hand or graveyard'
-                              : zone === 'command'
-                                ? 'from your command zone'
-                                : instruction.handOf !== undefined
-                                  ? 'from their hand'
-                                  : `from your ${zone}`
+                        : instruction.anyOwner === true
+                          ? 'from a graveyard'
+                          : zone === 'exile'
+                            ? 'exiled with this permanent'
+                            : instruction.graveyardOf !== undefined
+                              ? instruction.graveyardOf === chooser
+                                ? 'from your graveyard'
+                                : "from an opponent's graveyard"
+                              : instruction.alsoGraveyard === true
+                                ? 'from your hand or graveyard'
+                                : zone === 'command'
+                                  ? 'from your command zone'
+                                  : instruction.handOf !== undefined
+                                    ? 'from their hand'
+                                    : `from your ${zone}`
                   } to put ${WHERE[instruction.to]}`.replace(
                     'from among the cards put into your graveyard',
                     instruction.anyOwner === true

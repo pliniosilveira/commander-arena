@@ -139,9 +139,12 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.
 - "Whenever one or more creatures you control deal combat damage to one or more players this turn" (`delayedCombatDamageBatchTurn`) triggers once for each player damaged, not once for the event; harmless for "you become the monarch".
 - Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
+- Notion Thief's draw replacement goes before dredge and "draw two instead"; with thieves of different controllers on one draw the oldest applies first. The player who would draw is not asked the order (CR 616.1).
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
+- "That was dealt damage this turn" is read only in "costs {3} less to cast if it targets a creature that was dealt damage this turn"; as a target or group wording elsewhere it stays unread.
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
 - "As you cast this spell" amounts are worked out as the spell becomes cast, costs paid; only one such amount is kept for a spell, and only in a spell's own text.

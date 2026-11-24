@@ -646,6 +646,11 @@ export interface StackData {
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
+   * For an activated ability whose cost discarded cards from the hand (CR 602.2b, 701.9a): the ids the cards have after the discard (in the graveyard, or in exile for madness), which
+   * the condition `discardedAsCostMatches` reads (from last-known information once they have moved on, CR 113.7a). Absent for every other object.
+   */
+  readonly discardedAsCost?: readonly ObjectId[];
+  /**
    * For a spell cast with Convoke (CR 702.51a): the creatures the caster tapped to help pay for it, in the order chosen, which the `convokers` reference reads ("each creature that
    * convoked this spell"). Absent when no creature was tapped for it, and for every other object.
    */
@@ -1058,6 +1063,7 @@ export interface CastingContext {
     | 'payment'
     | 'behold'
     | 'additionalExile'
+    | 'linkedExile'
     | 'harmonize'
     | 'sacrifice'
     | 'discard'
@@ -1541,7 +1547,7 @@ export type Instruction =
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
        */
       readonly among?: readonly ObjectId[];
-      /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
+      /** `ChooseSelector.fromAnyGraveyard` (issue 159): the cards may be in the graveyard of any player (with `among` the moved ones only, without it every graveyard's). */
       readonly anyOwner?: true;
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
@@ -2111,6 +2117,11 @@ export type Instruction =
        */
       readonly dredgeAfter?: ObjectId;
       readonly dredgeAnswer?: { readonly card: ObjectId; readonly accepted: boolean };
+      /**
+       * The permanents whose `drawRedirect` already replaced the draw this instruction stands for (Notion Thief, CR 614.5: an effect applies once to a draw): the instruction is the draw
+       * their controller makes in its place, so those effects do not replace it again. Absent for a draw nothing replaced.
+       */
+      readonly redirectedBy?: readonly ObjectId[];
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {
@@ -2291,6 +2302,8 @@ export interface ResolutionContext {
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What `discardedAsCostMatches` reads: `StackData.discardedAsCost`. */
+  readonly costDiscarded?: readonly ObjectId[];
   /** What the attacker returned to pay the cost of the activated ability that is resolving was attacking (`StackData.returnedAttack`), for `enterAttacking.asReturned` (Ninjutsu). Absent for any other spell or ability. */
   readonly costReturnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
   /** What `tappedAsCostPower` means (CR 702.184a): `StackData.tappedPowerAsCost`. */
@@ -2959,6 +2972,11 @@ export interface TurnLog {
   }[];
   /** The damage each player has been dealt this turn, by seat (D-151, CR 120.3): all damage that was dealt after prevention, combat or not. */
   readonly damageTaken: readonly number[];
+  /**
+   * The permanents that have been dealt damage this turn (CR 120.3, 400.7: the same object; one that left and came back is a new one), each once, for "a creature that was dealt damage
+   * this turn" (`ObjectFilter.dealtDamageThisTurn`). Damage that was prevented was never dealt. Absent until some permanent was dealt damage, so the state of a game without any hashes as before.
+   */
+  readonly damagedObjects?: readonly ObjectId[];
   /**
    * Each time a creature was declared as an attacker this turn, by its id (D-151): a creature that attacks in two combat phases appears twice.
    * "Whenever this creature attacks for the first time each turn" reads it.

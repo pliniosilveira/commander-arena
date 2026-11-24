@@ -100,6 +100,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast any number of spells from among cards exiled with ~ without paying their mana costs',
     'you may cast instant and sorcery spells with mana value X or less from among them without paying their mana costs',
     'you may cast instant and sorcery spells from among them without paying their mana costs',
+    // Summons of Saruman (CR 608.2g, 202.3, 107.3a): one instant or sorcery spell of mana value up to the X of the spell, from among the cards just milled.
+    'You may cast an instant or sorcery spell with mana value X or less from among them without paying its mana cost',
     'you may cast up to two spells from among the other cards exiled this way without paying their mana costs',
     'you may cast any number of spells from among those cards without paying their mana costs',
     'you may cast any number of spells from among cards exiled this way without paying their mana costs',
@@ -122,15 +124,22 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast instant and sorcery spells from among them without paying its mana cost',
     'you may cast creature spells with mana value X or less from among them without paying their mana costs',
     'you may cast instant and sorcery spells with mana value Y or less from among them without paying their mana costs',
+    'you may cast an instant or sorcery spell with mana value Y or less from among them without paying its mana cost',
+    'you may cast an instant or sorcery spell with mana value X or less from among them without paying their mana costs',
+    'you may cast an instant or sorcery spell from among them without paying its mana cost',
+    'you may cast an instant and sorcery spell with mana value X or less from among them without paying its mana cost',
+    'you may cast a creature spell with mana value X or less from among them without paying its mana cost',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.cast-from-among';
     const head = pattern(
-      /(you may )?cast (a spell|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~|cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
+      /(you may )?cast (a spell|an instant or sorcery spell with mana value X or less|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~|cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!head.ok) return head;
     const [, may = '', count = '', from = '', cost = ''] = head.value;
-    const single = count.toLowerCase() === 'a spell';
+    const single =
+      count.toLowerCase() === 'a spell' ||
+      count.toLowerCase() === 'an instant or sorcery spell with mana value x or less';
     // "a spell" goes with "its mana cost", the plural spells with "their mana costs".
     if (single !== (cost.toLowerCase() === 'its mana cost')) return fail(ctx, pos);
     const span = { start: pos, end: head.pos };
@@ -147,6 +156,11 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     if (lower === 'up to two spells') args.max = number(2, span);
     if (lower === 'any number of spells') args.any = flag(id, true, span);
     // Epic Experiment (issue 121): "instant and sorcery spells with mana value X or less": any number of them, of those types, with a mana value no more than the X of the spell.
+    // Summons of Saruman: one spell, an instant or a sorcery, with a mana value no more than the X of the spell.
+    if (lower.startsWith('an instant or sorcery spell')) {
+      args.instantOrSorcery = flag(id, true, span);
+      args.limitX = flag(id, true, span);
+    }
     if (lower.startsWith('instant and sorcery spells')) {
       args.any = flag(id, true, span);
       args.instantOrSorcery = flag(id, true, span);

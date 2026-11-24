@@ -155,7 +155,7 @@ function classify(raw: string): Pronoun | null {
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'each of them') return { kind: 'plural', each: true };
-  if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
+  if (word === 'them' || /^(?:each of )?those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
@@ -341,8 +341,11 @@ class Binder {
           (a) =>
             a.kind === 'player' &&
             a.noun.filter.raw !== '' &&
+            // Cavern-Hoard Dragon (CR 603.2c): "Whenever ~ deals combat damage to a player, you create a Treasure token for each artifact that player controls": in a counting phrase of a trigger about a
+            // player, "that player" is that player and never the "you" of the sentence.
             !(
-              this.playerAsked &&
+              (this.playerAsked ||
+                (this.inAmount && this.antecedents.some((x) => x.noun.ref === 'trigActor'))) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
             ),
@@ -355,7 +358,8 @@ class Binder {
           (a) =>
             a.kind === 'object' &&
             (a.tokens !== true || pronoun.each === true) &&
-            (a.noun.plural || (a.noun.det === 'each' && /^those /iu.test(noun.filter.raw.trim()))),
+            (a.noun.plural ||
+              (a.noun.det === 'each' && /^(?:each of )?those /iu.test(noun.filter.raw.trim()))),
         );
         break;
       case 'other':
@@ -485,6 +489,10 @@ class Binder {
     };
     if (noun.det === 'anaphor') {
       out = this.resolveAnaphor(out);
+    } else if (noun.det === 'pair' && this.clauseVerb === 'addCounters') {
+      // "Tap all creatures your opponents control, then put a stun counter on each of those creatures" (CR 608.2c): counters are put on no soulbond pair, so the words name the group of the
+      // instruction before, as "those creatures" does.
+      out = this.resolveAnaphor({ ...out, det: 'anaphor', plural: true });
     } else if (noun.det === 'target') {
       const ref = ownTargetRef ?? `t${++this.scope.targetCount}`;
       out = { ...out, ref };
@@ -510,7 +518,20 @@ class Binder {
   }
 
   /** An amount with the nouns it names bound: what it counts, the object whose power or toughness it reads. */
+  /** True while the nouns of an amount are bound ("for each artifact that player controls"). */
+  private inAmount = false;
+
   amount(amount: IrAmount): IrAmount {
+    const before = this.inAmount;
+    this.inAmount = true;
+    try {
+      return this.boundAmount(amount);
+    } finally {
+      this.inAmount = before;
+    }
+  }
+
+  private boundAmount(amount: IrAmount): IrAmount {
     switch (amount.kind) {
       case 'countOf':
       case 'powerOf':
@@ -523,6 +544,8 @@ class Binder {
       case 'cardTypesAmong':
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
+      case 'damageDealtToThisTurn':
+      case 'greatestCountOfAnOpponent':
         return { ...amount, of: this.noun(amount.of) };
       case 'commanderCasts':
         // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.

@@ -388,6 +388,9 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
+  if (f.notCommander !== undefined && f.notCommander !== true) {
+    issue(out, `${path}.notCommander`, 'notCommander must be true when present');
+  }
   // D-489 (CR 201.2): "a card named X" is the text of a name.
   if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
     issue(out, `${path}.named`, 'named must be the name of a card');
@@ -410,8 +413,10 @@ export function checkFilter(
     'xInManaCost',
     'firstXSpellThisTurn',
     'enteredThisTurn',
+    'dealtDamageThisTurn',
     'exiledWithSource',
     'exiledThisWay',
+    'powerAtMostMoved',
     'putWithSource',
     'singleTarget',
     'modified',
@@ -634,6 +639,13 @@ export function checkFilter(
         'only a permanent on the battlefield has a controller to ask',
       );
     }
+  }
+  if (f.dealtDamageThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(
+      out,
+      `${path}.dealtDamageThisTurn`,
+      'only a permanent on the battlefield was dealt damage this turn',
+    );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(
@@ -899,7 +911,9 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out, scope?: Scope): 
 /** True when the filter or any anyOf member satisfies `test`. */
 /** True for a filter that reads the combat or the source's power, which `derive` cannot (D-120, D-131). */
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
-  readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
+  readsCombatOrSourceBesidesCommander(f) ||
+  f.commander !== undefined ||
+  f.notCommander !== undefined;
 
 /** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
 export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
@@ -921,8 +935,10 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
+  f.dealtDamageThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.exiledThisWay !== undefined ||
+  f.powerAtMostMoved !== undefined ||
   f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
@@ -983,7 +999,7 @@ export function declareTargets(
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
   /** `'slot'` (issue 345): only a slot of as many targets as the X announced (an activated ability whose cost has an X); `true` is a spell's own text, which also lets a division and a filter read X. */
   countXAllowed: boolean | 'slot' = false,
-  /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
+  /** D-513: only the targets of a triggered ability whose event carries a number (a scry, the X of a cycling cost) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
   upToAmountAllowed = false,
@@ -1226,7 +1242,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.upToTriggerAmount`,
-          'only a slot of a triggered ability whose event carries a number (whenever you scry) takes up to as many targets as that number',
+          'only a slot of a triggered ability whose event carries a number (whenever you scry, when you cycle this card) takes up to as many targets as that number',
         );
       } else if (
         spec.min !== undefined ||
@@ -2175,6 +2191,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
   }
   switch (a?.kind) {
     case 'countOf':
+    case 'greatestCountOfAnOpponent':
     case 'aggregate':
     case 'devotion':
     case 'commanderColors':
@@ -2531,6 +2548,32 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       ) {
         checkSinglePlayer(a.player, `${path}.player`, 'lifeTotalOf', out);
       }
+      break;
+    case 'greatestCountOfAnOpponent':
+      // CR 109.4: the objects each opponent controls, one opponent at a time: the filter names no player and no zone but the battlefield.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'greatestCountOfAnOpponent needs a filter');
+      } else {
+        if (
+          a.filter.controller !== undefined ||
+          a.filter.controlledBy !== undefined ||
+          a.filter.owner !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the controller of a greatest count among opponents is each opponent in turn: the filter names none',
+          );
+        }
+        if (a.filter.zone !== undefined && a.filter.zone !== 'battlefield') {
+          issue(out, `${path}.filter.zone`, 'only permanents have a controller');
+        }
+        checkFilter(a.filter, `${path}.filter`, out);
+      }
+      break;
+    case 'damageDealtToThisTurn':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      checkSinglePlayer(a.player, `${path}.player`, 'damageDealtToThisTurn', out);
       break;
     case 'playerCount':
       // CR 102.1: the number of players a selector names, read as the amount is read.
@@ -2927,11 +2970,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
         const { controlledBy, ...rest } = a.filter;
         // CR 109.4, 608.2c (Observed Stasis): "for each tapped creature its controller controls": `controllerOf` of the permanent an Aura is attached to, counted the same way.
-        if (kindOf(controlledBy) !== 'target' && kindOf(controlledBy) !== 'controllerOf') {
+        // CR 603.2c (Cavern-Hoard Dragon): "for each artifact that player controls": the player the trigger is about (`triggerPlayer`, valid only where the trigger has one).
+        if (
+          kindOf(controlledBy) !== 'target' &&
+          kindOf(controlledBy) !== 'controllerOf' &&
+          kindOf(controlledBy) !== 'triggerPlayer'
+        ) {
           issue(
             out,
             `${path}.filter.controlledBy`,
-            'a count names the player whose objects it counts by a target of the ability or spell, or the controller of an object (controlledBy: target or controllerOf)',
+            'a count names the player whose objects it counts by a target of the ability or spell, the controller of an object, or the player the trigger is about (controlledBy: target, controllerOf or triggerPlayer)',
           );
         } else {
           checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
@@ -3516,6 +3564,17 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
       }
       break;
+    case 'putLinkedExileInGraveyard':
+      // CR 607.2a (Shelob, Dread Weaver): a card the permanent exiled with its linked ability, so the filter describes a card in exile.
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (cost.filter?.zone !== undefined || cost.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the card is one exiled with the permanent: no zone, no controller',
+        );
+      }
+      break;
     case 'loyalty':
       // CR 606.4, 606.5 (D-200): [+N], [-N], [0] or [-X].
       if (cost.change !== 'x' && !Number.isSafeInteger(cost.change)) {
@@ -3795,6 +3854,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'manaValueAtMostAmount':
     case 'manaValueAtLeastAmount':
     case 'objectMatches':
+    case 'discardedAsCostMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
       break;
@@ -4251,6 +4311,8 @@ function movesObjects(e: Effect): boolean {
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
     e?.kind === 'populate' ||
+    // CR 701.47a (Grishnákh): the Army an `amass` chose is "the amassed Army" of the reflexive ability that follows it.
+    e?.kind === 'amass' ||
     // Twilight Diviner: the token `copyOneOfTriggerCards` made is "it".
     e?.kind === 'copyOneOfTriggerCards' ||
     // D-145: the card found by a `revealUntil` is "it".
@@ -4635,15 +4697,27 @@ function checkChooseMove(
       );
     }
   }
-  if (
-    sel.fromAnyGraveyard !== undefined &&
-    (sel.fromAnyGraveyard !== true || sel.fromMoved !== true)
-  ) {
-    issue(
-      out,
-      `${path}.fromAnyGraveyard`,
-      'fromAnyGraveyard is true and only with fromMoved (issue 159)',
-    );
+  // Issue 159: among the moved cards of any graveyard. Extract from Darkness (CR 404.1, 608.2d): "a creature card from a graveyard", every graveyard, without fromMoved: onto the battlefield only.
+  if (sel.fromAnyGraveyard !== undefined) {
+    if (sel.fromAnyGraveyard !== true) {
+      issue(out, `${path}.fromAnyGraveyard`, 'fromAnyGraveyard must be true when present');
+    } else if (sel.fromMoved !== true) {
+      if (
+        sel.filter?.zone !== 'graveyard' ||
+        sel.alsoGraveyard !== undefined ||
+        sel.fromHandOf !== undefined ||
+        sel.eachGraveyard !== undefined ||
+        sel.chosenBy !== undefined ||
+        sel.minCardTypes !== undefined ||
+        sel.exceptSacrificed !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.fromAnyGraveyard`,
+          'a choice from every graveyard names the graveyard as its zone and is not combined with alsoGraveyard, fromHandOf, eachGraveyard, chosenBy, minCardTypes or exceptSacrificed',
+        );
+      }
+    }
   }
   // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
   if (sel.alsoGraveyard !== undefined) {
@@ -5406,6 +5480,26 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'discardedAsCostMatches':
+      // CR 602.2b, 701.9a: the card the cost discarded; the face is checked as a whole (`checkDiscardedAsCost`: only an activated ability whose cost discards from the hand).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        filterSome(
+          c.filter,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'discardedAsCostMatches describes the card (type, subtype, color, ...): no zone, controller, owner or stackKind',
+        );
+      }
+      break;
     case 'movedTotalManaValue':
       // D-661 (CR 202.3): the cards an earlier moving effect of the sequence moved, added up, against a whole number.
       checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
@@ -8626,7 +8720,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.12, 400.7j: a slot for "card exiled this way" reads the objects the reflexive ability carries.
       if (
         e.carriesMoved !== true &&
-        JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true')
+        (JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true') ||
+          JSON.stringify(e.targets ?? null).includes('"powerAtMostMoved":true'))
       ) {
         issue(
           out,

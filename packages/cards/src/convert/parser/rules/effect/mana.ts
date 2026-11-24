@@ -62,6 +62,25 @@ const MANA_CHOICE = satisfy(
 /** The number words "in any combination of colors" takes. */
 const COMBINATION_COUNT: Readonly<Record<string, number>> = { two: 2, three: 3, four: 4 };
 
+/**
+ * "two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b, 605.3b): each mana one of two to four different listed colors.
+ * The list is joined by commas and a last "and/or" (or "or"); a color twice is not read, nor are symbols written in a row.
+ */
+const LISTED_COMBINATION = satisfy(
+  map(
+    pattern(
+      /(two|three|four) mana in any combination of (\{[WUBRG]\}(?:(?:, and\/or |, or |, | and\/or | or )\{[WUBRG]\})+)(?![\p{L}\p{N}{])/iu,
+    ),
+    (m) => ({
+      count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
+      colors: [...(m[2] ?? '').matchAll(/\{([WUBRG])\}/gi)].map(
+        (s) => (s[1] ?? '').toUpperCase() as 'W' | 'U' | 'B' | 'R' | 'G',
+      ),
+    }),
+  ),
+  (r) => r.colors.length <= 4 && new Set(r.colors).size === r.colors.length,
+);
+
 /** The symbols of a combination as a multiset, for telling two combinations apart. */
 const multiset = (symbols: readonly string[]): string => [...symbols].sort().join('');
 
@@ -144,6 +163,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add two mana in any combination of colors',
     'add three mana in any combination of colors',
     'add four mana in any combination of colors',
+    // Relic of Sauron (CR 106.1b, 605.3b): each mana one of the colors listed.
+    'add two mana in any combination of {u}, {b}, and/or {r}',
+    'add three mana in any combination of {w} or {g}',
     // Issue 25 (D-319, CR 106.1b): two mana of different colors, never colorless and never the same color twice.
     'add two mana of different colors',
     'add three mana of different colors',
@@ -195,6 +217,12 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add five mana in any combination of colors',
     'add two mana in any combination of color',
     'add two mana of any combination of colors',
+    'add two mana in any combination of {u}',
+    'add two mana in any combination of {u}{b}',
+    'add two mana in any combination of {u}, {u}, and/or {r}',
+    'add two mana in any combination of {u}, {b}, and/or',
+    'add two mana in any combination of {u}, {b},',
+    'add two mana in any combination of {u}, {b}, and/or {r}, then draw a card',
     'add two mana of different color',
     'add two mana of different types',
     'add one mana of different colors',
@@ -293,6 +321,12 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
                 count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
               }),
             ),
+            // Relic of Sauron (CR 106.1b, 605.3b): "two mana in any combination of {U}, {B}, and/or {R}", before the same words with "colors".
+            map(LISTED_COMBINATION, (r) => ({
+              kind: 'anyCombination' as const,
+              count: r.count,
+              colors: r.colors,
+            })),
             // Issue 25 (D-319, CR 106.1b, 605.3b): "two mana of different colors": each a color chosen on its own, no color twice (colorless is not a color).
             map(pattern(/(two|three) mana of different colors(?![\p{L}\p{N}])/iu), (m) => ({
               kind: 'anyCombination' as const,

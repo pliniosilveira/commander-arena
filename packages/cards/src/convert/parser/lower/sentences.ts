@@ -231,10 +231,14 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     ctx.lastCounteredGroup =
       lastLowered?.kind === 'addCounters' && lastLowered.objects.kind === 'each'
         ? lastLowered.objects
-        : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
-          lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
-          ? ctx.lastCounteredGroup
-          : null;
+        : // In the Darkness Bind Them (CR 608.2c, 611.2c): "For each opponent, gain control of up to one target creature ... Untap those creatures. They gain haste ...": the creatures
+          // the control effect named as targets (`untapThose` does not clear it: it is not lowered as a clause).
+          lastLowered?.kind === 'gainControl' && lastLowered.objects.kind === 'target'
+          ? lastLowered.objects
+          : // "They gain flying and vigilance until end of turn": one grant for each keyword, all of the same group.
+            lastLowered?.kind === 'grantKeyword' && lastLowered.objects === ctx.lastCounteredGroup
+            ? ctx.lastCounteredGroup
+            : null;
     // Call for Aid: "those creatures" after "gain control of all creatures target opponent controls": the permanents the group `gainControl` took (`moved`), until an instruction moves other objects.
     ctx.gainedGroup =
       lastLowered?.kind === 'gainControl' && lastLowered.objects.kind === 'each'
@@ -2064,8 +2068,12 @@ function lowerDoneReflexive(
   // (`lowerExiledReflexive`).
   const body = sentences.slice(i + 2);
   if (body.length > 0) {
-    if (sentence.clauses[0]?.verb !== 'exile') return refuse(next);
-    const lowered = lowerExiledReflexive(sentence, next, body, ctx);
+    const verb = sentence.clauses[0]?.verb;
+    if (verb !== 'exile' && verb !== 'amass') return refuse(next);
+    const lowered =
+      verb === 'amass'
+        ? lowerAmassReflexive(sentence, next, body, ctx)
+        : lowerExiledReflexive(sentence, next, body, ctx);
     return lowered.ok ? { ...lowered, last: i + 1 + body.length } : lowered;
   }
   const blocked = missingFeatures(['effect:reflexive']);
@@ -2169,6 +2177,52 @@ function lowerExiledReflexive(
   if (
     effect.value.kind !== 'reflexive' ||
     !JSON.stringify(effect.value.targets ?? null).includes('"exiledThisWay":true')
+  ) {
+    return refuse(next);
+  }
+  return {
+    ok: true,
+    value: [only, { ...effect.value, carriesMoved: true, ifMoved: true }],
+    rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
+}
+
+/**
+ * "When ~ enters, amass Orcs 2. When you do, until end of turn, gain control of target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's
+ * power. Untap that creature. It gains haste until end of turn." (Grishnákh, Brash Instigator; CR 603.12, 701.47a): the engine's `amass` and a `reflexive` ability created when it
+ * chose an Army (`ifMoved`), carrying that Army (`carriesMoved`); the sentences from "When you do" on are the ability's own body, its target chosen by `powerAtMostMoved` (the only way
+ * a reflexive ability that carries the Army reads it). Any other shape is refused, never guessed.
+ */
+function lowerAmassReflexive(
+  sentence: IrSentence,
+  next: IrSentence,
+  body: readonly IrSentence[],
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  if (
+    sentence.clauses.length !== 1 ||
+    sentence.clauses.some((c) => c.condition !== undefined || c.duration !== undefined) ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.condition !== undefined ||
+    [next, ...body].some((s) => s.clauses.some((c) => c.optional) || s.delayed !== undefined)
+  ) {
+    return refuse(next);
+  }
+  const blocked = missingFeatures(['effect:reflexive', 'ability:reflexiveIfMoved']);
+  if (blocked.length > 0) return { ...refuse(next), needs: blocked };
+  const done = lowerClauses(sentence.clauses, ctx);
+  if (!done.ok) return done;
+  const [only, ...rest] = done.value;
+  if (only?.kind !== 'amass' || rest.length > 0) return refuse(sentence);
+  const effect = lowerReflexiveBody(next, body, ctx);
+  if (!effect.ok) return effect;
+  if (
+    effect.value.kind !== 'reflexive' ||
+    !JSON.stringify(effect.value.targets ?? null).includes('"powerAtMostMoved":true')
   ) {
     return refuse(next);
   }
