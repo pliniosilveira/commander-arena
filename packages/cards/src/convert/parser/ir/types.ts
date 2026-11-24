@@ -1294,6 +1294,8 @@ export interface IrTypeList extends IrNode {
   readonly subtypes: readonly string[];
   readonly cardTypes?: readonly string[];
   readonly additive?: boolean;
+  /** "becomes a 2/2 creature with all creature types" (CR 205.3m, 702.73a): every creature type is added (the engine's `setTypes` `allCreatureTypes`), besides the types listed. */
+  readonly allCreatureTypes?: boolean;
   /** "It's a black Zombie in addition to its other colors and types" (issue 159, CR 105.3): the color letters the object also has, as names ("black"). */
   readonly colors?: readonly string[];
 }
