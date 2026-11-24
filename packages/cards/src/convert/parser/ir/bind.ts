@@ -510,6 +510,7 @@ class Binder {
       case 'cardTypesAmong':
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
+      case 'damageDealtToThisTurn':
         return { ...amount, of: this.noun(amount.of) };
       case 'commanderCasts':
         // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.

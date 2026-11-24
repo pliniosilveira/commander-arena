@@ -1351,6 +1351,7 @@ describe('unmatched abilities', () => {
       'amount.where-x-exiled-creatures',
       'amount.where-x-energy-paid',
       'amount.damage-dealt-by-trigger',
+      'amount.damage-dealt-to-player-this-turn',
       'amount.life-lost-this-turn',
       'amount.attackers-of-affected',
       'amount.cards-in-hand-of-that-player',

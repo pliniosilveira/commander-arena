@@ -263,6 +263,81 @@ describe('"it deals 3 damage divided as you choose among one, two, or three targ
   });
 });
 
+describe('"discard your hand and draw cards equal to the damage dealt to target opponent this turn" (CR 120.3, 608.2d)', () => {
+  const DRAKE = 'SYNTHETIC Hoard Drake';
+  const BOLT = 'Lightning Bolt';
+  const board = () =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(DRAKE, BOLT, BOLT, 'Grizzly Bears', 'Giant Spider')
+      .battlefield(...Array.from({ length: 10 }, () => 'Mountain'))
+      .seat(1)
+      .library(...LIBRARY)
+      .seat(2)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  const bolt = (g: Game, seat: 1 | 2) => {
+    g.act(0).cast(`${BOLT}[0]`, { targets: [{ player: seat }], pay: true });
+    g.passAll();
+  };
+
+  const castDrake = (g: Game) => {
+    g.act(0).cast(DRAKE, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ player: 1 });
+  };
+
+  test('the card is valid', () => {
+    expect(validateCard(syntheticCard(DRAKE))).toEqual([]);
+  });
+
+  const handSize = (g: Game): number => g.state.seats[0]?.hand.length ?? -1;
+
+  test('accepted: the hand is discarded, then as many cards are drawn as the damage the target took, not what other opponents took', () => {
+    const g = board();
+    bolt(g, 1);
+    bolt(g, 2);
+    castDrake(g);
+    g.passAll();
+    g.act(0).accept();
+    // Bears and Spider are discarded; 3 damage to seat 1 draws 3 (the 3 damage to seat 2 is not counted).
+    expect(handSize(g)).toBe(3);
+    expect(g.find({ name: 'Grizzly Bears', zone: 'graveyard' })).toHaveLength(1);
+    expect(g.find({ name: 'Giant Spider', zone: 'graveyard' })).toHaveLength(1);
+  });
+
+  test('the damage of every source counts: two bolts draw six', () => {
+    const g = board();
+    bolt(g, 1);
+    bolt(g, 1);
+    castDrake(g);
+    g.passAll();
+    g.act(0).accept();
+    expect(handSize(g)).toBe(6);
+  });
+
+  test('declined: nothing is discarded and nothing is drawn', () => {
+    const g = board();
+    bolt(g, 1);
+    castDrake(g);
+    g.passAll();
+    g.act(0).decline();
+    expect(handSize(g)).toBe(3); // the second Bolt, Bears and Spider
+  });
+
+  test('no damage dealt to the target: the hand is discarded and nothing is drawn', () => {
+    const g = board();
+    bolt(g, 2);
+    castDrake(g);
+    g.passAll();
+    g.act(0).accept();
+    expect(handSize(g)).toBe(0);
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (CR 702.29a, 107.3, 603.3d)', () => {
   const MAMMOTH = 'SYNTHETIC Artifact Mammoth';
   const RING = 'Sol Ring';

@@ -97,6 +97,42 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "When this enters, you may discard your hand and draw cards equal to the damage dealt to target opponent this turn." (CR 120.3, 608.2d)
+  singleFace({
+    name: 'SYNTHETIC Hoard Drake',
+    manaCost: ['4', 'R', 'R'],
+    types: ['creature'],
+    subtypes: ['Dragon'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 5,
+    toughness: 5,
+    oracleText:
+      'When this enters, you may discard your hand and draw cards equal to the damage dealt to target opponent this turn.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        targets: [{ id: 't1', what: { kind: 'player', filter: 'opponent' } }],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'discard',
+              player: { kind: 'you' },
+              count: { kind: 'countOf', filter: { zone: 'hand', controller: 'you' } },
+            },
+            {
+              kind: 'draw',
+              player: { kind: 'you' },
+              count: { kind: 'damageDealtToThisTurn', player: { kind: 'target', id: 't1' } },
+            },
+          ],
+        },
+        optional: true,
+      },
+    ],
+  }),
   // "Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts." (CR 702.29a, 107.3, 603.3d)
   singleFace({
     name: 'SYNTHETIC Artifact Mammoth',

@@ -2476,6 +2476,10 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         checkSinglePlayer(a.player, `${path}.player`, 'lifeTotalOf', out);
       }
       break;
+    case 'damageDealtToThisTurn':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      checkSinglePlayer(a.player, `${path}.player`, 'damageDealtToThisTurn', out);
+      break;
     case 'playerCount':
       // CR 102.1: the number of players a selector names, read as the amount is read.
       checkPlayerSelector(a.of, `${path}.of`, scope, out);

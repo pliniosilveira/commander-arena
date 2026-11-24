@@ -1636,6 +1636,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
     'lifeTotalOf',
+    // "the damage dealt to target opponent this turn" (CR 120.3): the engine's `damageDealtToThisTurn`.
+    'damageDealtToThisTurn',
     // CR 102.1: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
     'playerCount',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
@@ -2794,6 +2796,8 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** A player's current life total at resolution (CR 119.1). */
   'lifeTotalOf',
+  /** "The damage dealt to target opponent this turn" (CR 120.3, 608.2c): the engine's `damageDealtToThisTurn`, from `TurnLog.damageTaken`. */
+  'damageDealtToThisTurn',
   /** "For each player who lost life this turn" (CR 102.1, 608.2c): the engine's `playerCount` of a player selector. */
   'playerCount',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */

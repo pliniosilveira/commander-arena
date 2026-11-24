@@ -313,6 +313,11 @@ export type Amount =
   /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
   | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
+   * "Draw cards equal to the damage dealt to target opponent this turn" (Knollspine Dragon; CR 120.3, 608.2c): all the damage dealt to the player the selector names so far this
+   * turn, by every source and of every kind (`TurnLog.damageTaken`), whether or not it changed their life total; damage that was prevented was not dealt. Read as the amount is read. One player.
+   */
+  | { readonly kind: 'damageDealtToThisTurn'; readonly player: PlayerSelector }
+  /**
    * "For each player who lost life this turn", "the number of your opponents who were dealt combat damage by this creature or a Dragon this turn" (CR 102.1, 608.2c): how many players
    * `of` names, as the amount is read (the player selectors that read the game: `lostLifeThisTurn`, `combatDamagedThisTurn`, `eachPlayer`, `eachOpponent`, ...). Not a static
    * ability's power or toughness.

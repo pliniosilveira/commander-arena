@@ -634,6 +634,8 @@ export type IrAmount =
   | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
+  // "the damage dealt to target opponent this turn" (CR 120.3): all the damage dealt to the player so far this turn
+  | { readonly kind: 'damageDealtToThisTurn'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it
   | { readonly kind: 'votesFor'; readonly option: string; readonly span: Span }
   // "your devotion to black" (CR 700.5), "the number of colors in your commanders' color identity" (CR 903.4)
@@ -2453,6 +2455,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'playerCount',
   'commanderManaValue',
   'commanderCasts',
+  'damageDealtToThisTurn',
   'half',
   'multiple',
   'minus',

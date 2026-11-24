@@ -1799,7 +1799,21 @@ function lowerTriggeredAbility(
     rest.every((c) => !c.optional) &&
     sentences[0]?.clauses[0] === first &&
     missingFeatures(['effect:may']).length === 0;
-  if (optional && !mayFirst && ((others.length !== 1 && !chain) || conditional)) {
+  // Knollspine Dragon (CR 608.2d): "you may discard your hand and draw cards equal to ...": one sentence whose first instruction is the optional one and which joins others with "and"
+  // is one offer for the whole sentence, which is what the ability's own `optional` is.
+  const mayWholeSentence =
+    optional &&
+    !chain &&
+    !conditional &&
+    sentences.length === 1 &&
+    others.length > 1 &&
+    first?.optional === true;
+  if (
+    optional &&
+    !mayFirst &&
+    !mayWholeSentence &&
+    ((others.length !== 1 && !chain) || conditional)
+  ) {
     return failure(ability);
   }
   // A "you may" of the whole ability beside an offer would be two questions for one effect.

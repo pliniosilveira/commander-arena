@@ -305,6 +305,11 @@ export function amountOf(
   if (amount.kind === 'playerCount') {
     return resolvePlayers(state, amount.of, ctx, targets).length;
   }
+  if (amount.kind === 'damageDealtToThisTurn') {
+    // CR 120.3: the damage every source has dealt to the player this turn (damage prevented was never dealt).
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : (state.turnLog.damageTaken[seat] ?? 0);
+  }
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;

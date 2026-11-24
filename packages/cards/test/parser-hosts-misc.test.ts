@@ -135,6 +135,64 @@ describe('"it deals 3 damage divided as you choose among one, two, or three targ
   });
 });
 
+describe('"you may discard your hand and draw cards equal to the damage dealt to target opponent this turn" (Knollspine Dragon, CR 120.3, 608.2d)', () => {
+  test('the real line: one optional ability, the discard then the draw read at resolution', () => {
+    const parsed = readAll(
+      'When ~ enters, you may discard your hand and draw cards equal to the damage dealt to target opponent this turn.',
+      'creature',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        targets: [{ id: 't1', what: { kind: 'player', filter: 'opponent' } }],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'discard',
+              player: { kind: 'you' },
+              count: { kind: 'countOf', filter: { zone: 'hand', controller: 'you' } },
+            },
+            {
+              kind: 'draw',
+              player: { kind: 'you' },
+              count: { kind: 'damageDealtToThisTurn', player: { kind: 'target', id: 't1' } },
+            },
+          ],
+        },
+        optional: true,
+      },
+    ]);
+  });
+
+  test('the amount alone, with the target player (SYNTHETIC)', () => {
+    const parsed = readAll(
+      'When ~ enters, draw cards equal to the damage dealt to target player this turn.',
+      'creature',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"damageDealtToThisTurn"');
+  });
+
+  test.each([
+    'When ~ enters, draw cards equal to the damage dealt to target opponent.',
+    'When ~ enters, draw cards equal to the damage dealt to target creature this turn.',
+    'When ~ enters, draw cards equal to the damage dealt to target opponent this way.',
+    'When ~ enters, draw cards equal to the combat damage dealt to target opponent this turn.',
+  ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
+    expect(dropped(text, 'creature').reason).toBeDefined();
+  });
+
+  test('"you may A and B" in one sentence is one offer; a second sentence is not (SYNTHETIC)', () => {
+    const one = readAll('When ~ enters, you may discard your hand and draw two cards.', 'creature');
+    expect(JSON.stringify(one.abilities)).toContain('"optional":true');
+    expect(
+      dropped('When ~ enters, you may discard your hand. You may draw two cards.', 'creature')
+        .reason,
+    ).toBeDefined();
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 603.3d)', () => {
   test('the real line: a slot of up to as many targets as the X of the cycling cost', () => {
     const parsed = readAll(
