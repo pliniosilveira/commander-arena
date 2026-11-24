@@ -2145,6 +2145,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderColors':
     case 'commanderManaValue':
     case 'commanderCasts':
+    case 'partySize':
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
@@ -2487,6 +2488,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
       checkSinglePlayer(a.player, `${path}.player`, 'poisonShortfall', out);
+      break;
+    case 'partySize':
+      // CR 700.8 (Archpriest of Iona): the controller's own party now; valid wherever an amount of an effect is.
       break;
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the controller's own experience counters now; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
@@ -3103,6 +3107,17 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not a greatest power');
     }
     checkCountOnly(amount, path, out, 'greatestPowerAmong', false);
+    return;
+  }
+  // CR 700.8 (Archpriest of Iona): "equal to the number of creatures in your party": a characteristic-defining ability only.
+  if (amount?.kind === 'partySize') {
+    if (plain) {
+      issue(
+        out,
+        path,
+        'a party size is the amount of a characteristic-defining ability, not a plain static power/toughness modifier',
+      );
+    }
     return;
   }
   if (amount?.kind === 'sum') {

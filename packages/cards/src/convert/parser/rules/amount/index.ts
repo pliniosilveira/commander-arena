@@ -22,6 +22,7 @@ import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { PARTY_AMOUNT_RULES } from './party';
 import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
@@ -527,6 +528,8 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
   // Meren of Clan Nel Toth: "the number of experience counters you have".
   ...EXPERIENCE_AMOUNT_RULES,
+  // Party (CR 700.8): "for each creature in your party".
+  ...PARTY_AMOUNT_RULES,
   AMOUNT_NUMBER,
   AMOUNT_X,
   AMOUNT_ARTICLE,

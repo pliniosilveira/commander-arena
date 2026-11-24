@@ -21,6 +21,7 @@ import { devotionOf } from './devotion';
 import { timesKickedOf } from './kicks';
 import { manaSpentOf } from './mana-spent';
 import { manaValueOfCost } from './mana-value';
+import { partySizeOf } from './party';
 import {
   countMatching,
   matchesFilter,
@@ -53,6 +54,7 @@ type StateAmount = Extract<
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'experienceCounters'
+      | 'partySize'
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
       | 'cardsToGraveyardThisTurn'
@@ -109,6 +111,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'experienceCounters' ||
+    amount.kind === 'partySize' ||
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'cardsToGraveyardThisTurn' ||
@@ -572,6 +575,16 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'partySize':
+      // CR 700.8a, 700.8b: the creatures the controller of the effect controls, read as they are now.
+      return partySizeOf(
+        objectsInZone(state, 'battlefield').flatMap((id) => {
+          const obj = state.objects[id];
+          if (obj === undefined || controllerOf(state, obj) !== ctx.controller) return [];
+          const view = derive(state, obj);
+          return view.types.includes('creature') ? [view.subtypes] : [];
+        }),
+      );
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller of the effect has now (`SeatState.experience`).
       return getSeat(state, ctx.controller).experience ?? 0;

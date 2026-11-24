@@ -391,6 +391,12 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
     }
+    case 'partySize': {
+      // CR 700.8 (Archpriest of Iona, Malakir Blood-Priest): the party of the controller, counted as the instruction runs.
+      const blocked = needs('partySize');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'partySize' }, rule };
+    }
     case 'experienceCounters': {
       // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller has now, read as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('experienceCounters');
@@ -1087,6 +1093,12 @@ export function lowerDefinedPt(
     }
     return { ok: true, value: { kind: 'lifeTotalOf', player: { kind: 'you' } }, rule };
   }
+  // CR 700.8, 604.3 (Archpriest of Iona): "equal to the number of creatures in your party", the engine's `partySize`.
+  if (count.kind === 'partySize') {
+    const lowered = lowerAmount(count, ctx, rule);
+    if (!lowered.ok) return lowered;
+    return { ok: true, value: { kind: 'partySize' }, rule };
+  }
   return count.kind === 'sum' ? sumInStatic(count, ctx, rule) : countInStatic(count, ctx, rule);
 }
 
@@ -1113,6 +1125,7 @@ export const AMOUNT_NEEDS = [
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
   'amount:experienceCounters',
+  'amount:partySize',
   'amount:spellsCastThisTurn',
   'amount:greatestManaValueCast',
   'amount:cardsToGraveyardThisTurn',

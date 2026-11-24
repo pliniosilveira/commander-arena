@@ -433,7 +433,10 @@ function effectOf(
     case 'addTypes':
       // "... are Juggernauts in addition to their other creature types" (stage P31, D-140, CR 205.1b, 613.1d): layer 4; and, stage P33
       // (D-150), "Enchanted creature ... is an Angel in addition to its other types".
-      return subject.kind === 'filter' || subject.kind === 'attached'
+      // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard", the permanent itself, creature types only.
+      return subject.kind === 'filter' ||
+        subject.kind === 'attached' ||
+        (subject.kind === 'this' && effect.types === undefined)
         ? ok({
             kind: 'setTypes',
             subject,
@@ -582,7 +585,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'definesPt':
       return [
         'static:characteristicPt',
-        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+        effect.count.kind === 'lifeTotalOf'
+          ? 'amount:lifeTotalOf'
+          : effect.count.kind === 'partySize'
+            ? 'amount:partySize'
+            : 'amount:countOf',
       ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.

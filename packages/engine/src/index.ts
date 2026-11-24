@@ -48,6 +48,7 @@ export type { ControlEnd } from './rules/control';
 export { faceDownLabel } from './rules/face-down';
 export { KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
+export { assignParty, PARTY_TYPES, partySizeOf } from './rules/party';
 export { distinctAssignments } from './rules/sacrifice-groups';
 export type { DeckConfig, GameConfig, StartingEmblem } from './rules/setup';
 export { createGame } from './rules/setup';

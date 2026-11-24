@@ -43,6 +43,7 @@ import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { PARTY_SIZE_VALUE } from './party';
 import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 
@@ -518,6 +519,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
     CARD_TYPES_AMONG_THOSE_VALUE,
+    // CR 700.8: "the number of creatures in your party", before the count of objects, which reads no "in your party".
+    PARTY_SIZE_VALUE,
     // CR 105.2 (Vivid): "the number of colors among permanents you control", before the count of objects, which reads no "colors among".
     COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
@@ -717,6 +720,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
   ],
   examples: [
     'equal to the amount of life you gained this turn',
+    'equal to the number of creatures in your party',
     'equal to the number of nontoken creatures you had enter the battlefield under your control this turn',
     'equal to the greatest power among creatures you control',
     'equal to the total power of creatures you control',
@@ -827,6 +831,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of opponents you have',
     'where X is the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
     'where X is the number of creatures on the battlefield',
+    'where X is the number of creatures in your party',
     'where X is the number of creatures attacking you',
     'where X is the greatest power among creatures you control',
     'where X is the total power of creatures you control',

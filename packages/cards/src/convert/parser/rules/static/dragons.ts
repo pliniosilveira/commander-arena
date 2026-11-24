@@ -18,7 +18,15 @@ import {
 import type { IrFilter, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { BASE_PT, CREATURE_TYPE_LIST } from '../effect/becomes';
 import { KEYWORD_WORDS } from '../keyword/list';
-import { CARD_TYPES, comparisonSuffix, typeWords, withComparison } from '../noun/phrases';
+import { readCreatureType } from '../noun/creature-types';
+import {
+  CARD_TYPES,
+  comparisonSuffix,
+  SUBTYPE_WORD,
+  typeChoice,
+  typeWords,
+  withComparison,
+} from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, quietly } from '../registry';
 import type { StaticUnit } from './grants';
@@ -97,6 +105,13 @@ export const STATIC_UNSPENT_MANA = defineRule<IrStatic>({
   },
 });
 
+/** The kind of spell a cast-from-the-top permission names: card types, one creature type, or a choice of creature types. */
+interface SpellKind {
+  readonly types: string[];
+  readonly subtypes: string[];
+  readonly anyOfSubtypes?: readonly string[];
+}
+
 /**
  * `static.cast-from-top`: "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this
  * way, it gains haste until end of turn." (CR 601.3, 401.5, 702.10: the player may cast the top card of their library when it is a spell of the
@@ -121,6 +136,9 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may cast spells from the top of your library.',
     // Issue 144 (Conspicuous Snoop): a creature type.
     'You may cast Goblin spells from the top of your library.',
+    // Nalia de'Arnise (CR 205.3m): spells with any of several creature types.
+    'You may cast Cleric, Rogue, Warrior, and Wizard spells from the top of your library.',
+    'You may cast Cleric and Rogue spells from the top of your library.',
     // Sliver Swarm deck, group C (Realmwalker): the creature type the permanent chose as it entered.
     'You may cast creature spells of the chosen type from the top of your library.',
     // Death Toll deck, group D (CR 601.2b, 118.8): an additional cost for each such spell.
@@ -146,6 +164,8 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may cast creature spells from the top of your library. You may look at the top card of your library any time.',
     'You may cast creature cards from the top of your library.',
     'You may cast Goblins spells from the top of your library.',
+    'You may cast Cleric, Rogue, Warrior, or Wizard spells from the top of your library.',
+    'You may cast Cleric, Rogue, Goblins spells from the top of your library.',
     'You may cast Goblin from the top of your library.',
     'You may cast Goblin Warrior spells from the top of your library. If you cast a creature spell this way, it gains haste until end of turn.',
     'You may cast creature spells of the chosen color from the top of your library.',
@@ -162,6 +182,16 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
             types,
             subtypes: [] as string[],
           })),
+          // Nalia de'Arnise (CR 205.3m): "Cleric, Rogue, Warrior, and Wizard spells", a spell with any of two or more creature types.
+          map(
+            sequence(
+              satisfy(typeChoice(SUBTYPE_WORD, true, 'and'), (list) =>
+                list.every((w) => readCreatureType(w)?.plural === false),
+              ),
+              literal(' '),
+            ),
+            ([list]) => ({ types: [] as string[], subtypes: [] as string[], anyOfSubtypes: list }),
+          ),
           // Issue 144 (Conspicuous Snoop): "Goblin spells", a creature type.
           map(
             sequence(
@@ -188,11 +218,16 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, { types, subtypes }, , chosenType, compared, ended] = r.value;
+    const [, kind, , chosenType, compared, ended] = r.value;
+    const { types, subtypes } = kind;
+    const anyOfSubtypes = (kind as SpellKind).anyOfSubtypes;
     const sacrifice = /by sacrificing/iu.test(ended[0] ?? '');
     const base: IrFilter = {
       ...(types.length > 0 ? { types } : {}),
       ...(subtypes.length > 0 ? { subtypes } : {}),
+      ...(anyOfSubtypes === undefined
+        ? {}
+        : { anyOf: anyOfSubtypes.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
       ...(chosenType ? { chosen: 'type' as const } : {}),
       raw: ctx.text.slice(pos, r.pos),
     };

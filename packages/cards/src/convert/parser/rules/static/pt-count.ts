@@ -209,6 +209,7 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     "~'s power is equal to the number of creatures you control plus the number of lands you control.",
     "~'s power and toughness are each equal to your life total.",
     "~'s power is equal to your life total.",
+    "~'s power is equal to the number of creatures in your party.",
   ],
   rejects: [
     "~'s power and toughness are each equal to the number of creatures you control plus half the number of lands you control.",
@@ -243,6 +244,7 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
       count.value.kind !== 'countOf' &&
       count.value.kind !== 'sum' &&
       count.value.kind !== 'devotion' &&
+      count.value.kind !== 'partySize' &&
       !lifeTotal
     )
       return fail(ctx, pos);

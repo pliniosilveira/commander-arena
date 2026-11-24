@@ -912,6 +912,41 @@ const RETURN_FROM_GRAVEYARD: Parser<{
 };
 
 /**
+ * "return target creature card and up to one target Cleric creature card from your graveyard to the battlefield" (Thwart the Grave, CR 404.1, 115.1, 110.2a): two targets of your own
+ * graveyard, the first said without the zone the last one names. Each is its own target and its own return, as a list of operands is. Only to the battlefield, only your own graveyard
+ * (a card of another graveyard has another owner, which "under your control" would say).
+ */
+const RETURN_PAIR_FROM_YOUR_GRAVEYARD: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+}> = (ctx, pos) => {
+  const r = sequence(
+    literal('return '),
+    family<IrNoun>('noun', { only: ['noun.target-graveyard-card-shared-zone'] }),
+    literal(' and '),
+    family<IrNoun>('noun', { only: ['noun.target-graveyard-card'] }),
+    TO_THE_BATTLEFIELD,
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const [, first, , last, to] = r.value;
+  if (last.filter.controller !== 'you' || last.plural || first.plural) return fail(ctx, pos);
+  const joined: IrNoun = { ...first, filter: { ...first.filter, controller: 'you' } };
+  return {
+    ok: true,
+    value: {
+      objects: {
+        kind: 'nounList',
+        items: [joined, last],
+        span: { start: joined.span.start, end: last.span.end },
+        rule: 'effect.return',
+      },
+      to,
+    },
+    pos: r.pos,
+  };
+};
+
+/**
  * "return target creature or land card from a graveyard to its owner's hand" (Pulse of Murasa, CR 400.3, 404.1): one target card of any graveyard goes to its owner's
  * hand, wherever it lies. One card only: the plural is "to their owners' hands", read by no rule.
  */
@@ -990,6 +1025,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return the chosen cards to the battlefield tapped',
     // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
     'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
+    // Thwart the Grave (CR 404.1, 115.1): two targets of your graveyard, the zone said once.
+    'return target creature card and up to one target Cleric, Rogue, Warrior, or Wizard creature card from your graveyard to the battlefield',
+    'return target creature card and target land card from your graveyard to the battlefield',
     'return target Aura card from your graveyard to the battlefield attached to that token',
     // Limit Break deck, group 1 (Unfinished Business): the creature the instruction before returned.
     'return target Aura card from your graveyard to the battlefield attached to that creature',
@@ -1036,6 +1074,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from your graveyard to the battlefield attached to it',
     'return target creature card from your graveyard to the battlefield attached to those tokens',
     'return target creature card from your graveyard to the battlefield attached to',
+    'return target creature card and up to one target land card from your graveyard to your hand',
+    "return target creature card and target land card from an opponent's graveyard to the battlefield",
+    'return target creature card and target land card to the battlefield',
   ],
   parse: single(
     'effect.return',
@@ -1046,6 +1087,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_SAME_NAME,
+      RETURN_PAIR_FROM_YOUR_GRAVEYARD,
       RETURN_FROM_GRAVEYARD,
       RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND,
       RETURN_THAT_CARD,

@@ -442,6 +442,22 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.target-graveyard-card-shared-zone` (Thwart the Grave, CR 404.1, 115.1): "target creature card" with no zone words, said before "and target ..." (or "and up to one target ...") whose "from your
+ * graveyard" says where both cards lie. The effect rule that reads the pair gives this card the graveyard owner of the last one; nothing else asks for this noun by its id.
+ */
+export const NOUN_TARGET_GRAVEYARD_CARD_SHARED_ZONE = defineRule<IrNoun>({
+  id: 'noun.target-graveyard-card-shared-zone',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: ['target creature card', 'target Cleric creature card', 'two target creature cards'],
+  rejects: ['target creature', 'creature card', 'target land', 'two target creature'],
+  parse: targetOf('noun.target-graveyard-card-shared-zone', (plural) =>
+    graveyardPhrase(plural, 'sharedZone'),
+  ),
+});
+
+/**
  * `noun.target-cards-in-your-graveyard` (D-362, Victimize): "target creature card in your graveyard", "two target creature cards in your graveyard": the cards of
  * `noun.target-graveyard-card`, said with "in", and of your own graveyard only (CR 404.1, 115.1). Another noun rule so that the "in" is read only where a rule asks
  * for this noun by its id.
@@ -1020,6 +1036,7 @@ export const NOUN_RULES = [
   NOUN_TARGET_GRAVEYARD_CARD,
   NOUN_UP_TO_GRAVEYARD_CARDS,
   NOUN_UP_TO_ONE_PERMANENT,
+  NOUN_TARGET_GRAVEYARD_CARD_SHARED_ZONE,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN,

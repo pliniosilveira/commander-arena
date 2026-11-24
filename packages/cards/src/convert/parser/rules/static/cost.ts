@@ -104,6 +104,8 @@ function reduction(): Parser<IrAmount> {
           'amount.for-each-this-way',
           // Eris, Roar of the Storm (issue 121): "costs {2} less to cast for each different mana value among ...".
           'amount.for-each-different-mana-value',
+          // CR 700.8 (Thwart the Grave): "costs {1} less to cast for each creature in your party".
+          'amount.for-each-party-creature',
         ],
       }),
     ),
@@ -198,6 +200,7 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {2} less to cast.',
     '~ costs {2} less to cast for each card exiled this way.',
     '~ costs {1} less to cast for each card in your hand.',
+    '~ costs {1} less to cast for each creature in your party.',
     '~ costs {1} less to cast for each other creature you control.',
     '~ costs {X} less to cast, where X is the total power of creatures you control.',
     '~ costs {X} less to cast, where X is the greatest power among creatures you control.',
