@@ -39,6 +39,7 @@ import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './d
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
 import { DEATH_TOLL_B_CONDITION_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
+import { DEFENDING_PLAYER_CONDITION_RULES } from './defending-player';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
@@ -554,6 +555,8 @@ export const CONDITION_RULES = [
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
   ...THEY_ATTACKED_YOU_CONDITION_RULES,
+  // Kazuul: "you're the defending player", the intervening "if" of an attack trigger.
+  ...DEFENDING_PLAYER_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
   // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
   ...MELD_CONDITION_RULES,

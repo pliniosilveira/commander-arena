@@ -259,7 +259,6 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
   ],
   rejects: [
     'you may put a basic card from your hand onto the battlefield',
-    'you may put a basic Forest creature card from your hand onto the battlefield',
     'you may put an artifact card from your hand onto the battlefield under your control',
     'you may put an artifact from your hand onto the battlefield',
     'you may put two artifact cards from your hand onto the battlefield',

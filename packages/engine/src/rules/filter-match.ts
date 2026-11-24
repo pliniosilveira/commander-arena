@@ -481,6 +481,18 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 601.2i (Artifact Class): "the first artifact spell you cast each turn": no other spell cast by the caster this turn so far has one of the card types (a copy is not cast, CR 707.10).
+  if (
+    filter.firstOfTypeThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) =>
+        e.seat === controllerOf(state, obj) &&
+        e.object !== obj.id &&
+        e.types.some((t) => filter.types?.includes(t) === true),
+    )
+  ) {
+    return false;
+  }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
   // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.

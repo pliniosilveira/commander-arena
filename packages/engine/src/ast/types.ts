@@ -795,6 +795,13 @@ export interface ObjectFilter {
    */
   readonly nthSpellThisTurn?: number;
   /**
+   * "The first artifact spell you cast each turn" (Artifact Class, CR 601.2f, 601.2i, 604.2): the spell is the first spell of a type in `types` its caster casts this turn, that is, none
+   * of the other spells that caster cast before it (`TurnLog.castSpells`, with the card types each had as it was cast; a copy is not cast, CR 707.10, and the spell itself is left out
+   * of the count whether or not it is logged yet) has one of those types. Needs `types`. Read from the turn log, so it is read as the cost is determined (a cost reduction, where the
+   * spell is not yet logged); refused in a static ability that nothing refreshes (a layer effect).
+   */
+  readonly firstOfTypeThisTurn?: true;
+  /**
    * "That entered this turn" (group 4 of the Vraska deck, CR 400.7, 110.1): the permanent entered the battlefield during this turn and is still the same
    * object (one that left and came back is a new object). Read from the turn log where the filter is matched against the game (a target slot, an `each`
    * selector); refused in a static ability, as `attacking` is, and for a zone other than the battlefield.
@@ -5344,8 +5351,10 @@ export type Trigger =
        * Whom it attacks (D-133, CR 508.1b): "attacks you" (`you`: declared as attacking the controller of this
        * ability as a player) or "attacks you or a planeswalker you control" (`youOrPlaneswalkers`: also an attack on a
        * planeswalker that controller controls). Left out, an attack on anyone triggers it.
+       * `defendingYou` ("..., if you're the defending player", CR 508.5): the controller of this ability is the defending player of the creature as it was declared:
+       * the player it attacks, the controller of the planeswalker or the protector of the battle it attacks.
        */
-      readonly at?: 'you' | 'youOrPlaneswalkers';
+      readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou';
     }
   /**
    * "Whenever you cast a spell", "whenever an opponent casts a spell" (CR 601.2i, 603.2): `by` is the

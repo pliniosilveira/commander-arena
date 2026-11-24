@@ -44,6 +44,7 @@ import type {
 import { amountOf } from './amounts';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
+import { defenderOf } from './defending';
 import { derive } from './derive';
 import { emblemsOf } from './emblem';
 import { findLaterTriggers } from './later-triggers';
@@ -898,7 +899,7 @@ function matchesWhat(
  */
 function attacksAt(
   state: GameState,
-  at: 'you' | 'youOrPlaneswalkers' | undefined,
+  at: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | undefined,
   target: AttackTarget | undefined,
   you: SeatId,
 ): boolean {
@@ -906,6 +907,8 @@ function attacksAt(
   if (target === undefined) return false;
   if (target.kind === 'player') return target.seat === you;
   if (at === 'you') return false;
+  // CR 508.5: the defending player of a creature attacking a planeswalker or a battle is the controller or the protector.
+  if (at === 'defendingYou') return defenderOf(state, target) === you;
   const permanent = objectOrLki(state, target.object);
   return (
     permanent !== null &&

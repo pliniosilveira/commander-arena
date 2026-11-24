@@ -409,6 +409,7 @@ export function checkFilter(
     'castFromOwnGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
+    'firstOfTypeThisTurn',
     'enteredThisTurn',
     'exiledWithSource',
     'exiledThisWay',
@@ -426,6 +427,10 @@ export function checkFilter(
     (!Number.isInteger(f.nthSpellThisTurn) || f.nthSpellThisTurn < 2)
   ) {
     issue(out, `${path}.nthSpellThisTurn`, 'nthSpellThisTurn must be a whole number of 2 or more');
+  }
+  // CR 601.2i: "the first artifact spell you cast each turn" is the first of the card types the filter names.
+  if (f.firstOfTypeThisTurn === true && (f.types?.length ?? 0) === 0) {
+    issue(out, `${path}.firstOfTypeThisTurn`, 'firstOfTypeThisTurn needs types');
   }
   // CR 208.4b: "with base power 0" is a whole number of power.
   if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
