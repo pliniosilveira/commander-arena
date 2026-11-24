@@ -4504,6 +4504,11 @@ export type Effect =
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
        */
       readonly abilities?: readonly Ability[];
+      /**
+       * "..., except its name is Kimahri, Valiant Guardian and it has vigilance and this ability" (Kimahri, Valiant Guardian, CR 707.9b): the copy also has the triggered or activated ability that
+       * is resolving, as part of the copiable values the effect gives (after the ones it copies and those of `abilities`). Only in a triggered or an activated ability.
+       */
+      readonly withThisAbility?: true;
     }
   /**
    * CR 701.27 (Transform): each permanent `objects` names that is represented by a double-faced

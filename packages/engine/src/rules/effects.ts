@@ -3868,7 +3868,7 @@ function runEffect(
 
     case 'becomeCopy':
       // CR 707.2, 613.2a: a layer 1 effect that gives the object the copiable values of another.
-      return runBecomeCopy(state, effect, ctx, targets);
+      return runBecomeCopy(state, effect, ctx, targets, state.objects[res.object]?.stack?.ability);
 
     case 'cascade':
       // CR 702.85a: exile until a cheaper nonland card, may cast it free, bottom the rest (rules/cascade.ts).

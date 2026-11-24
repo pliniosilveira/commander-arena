@@ -2680,6 +2680,24 @@ function lowerStep(
   if (sentence.afterExile === true) return lowerAfterExile(sentence, sentences, i, steps, ctx);
   // "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12): the reflexive ability of the reveal before it.
   if (sentence.afterReveal !== undefined) return lowerAfterReveal(sentence, sentences, i, steps, ctx);
+  // "Then you may have ~ become a copy of that creature, except its name is ~ and it has vigilance and this ability." (Kimahri, Valiant Guardian, CR 707.9b): one offered copy, the engine's
+  // `may` of the `becomeCopy` the lowering makes, after the instructions before it.
+  if (first.verb === 'becomeCopyKeepingAbility') {
+    if (
+      sentence.clauses.length !== 1 ||
+      sentence.condition !== undefined ||
+      sentence.where !== undefined ||
+      sentence.reflexive === true ||
+      sentence.instead === true ||
+      sentence.delayed !== undefined
+    ) {
+      return stop(refuse(sentence));
+    }
+    const offered = lowerClauses(sentence.clauses, ctx);
+    if (!offered.ok) return stop(offered);
+    steps.push({ effects: offered.value, replaceable: false });
+    return { last: i };
+  }
   // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
   // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
   if (

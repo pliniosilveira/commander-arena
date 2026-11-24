@@ -152,6 +152,7 @@ import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
 import { PRIMORDIAL_LOWERINGS } from './primordial';
+import { KIMAHRI_LOWERINGS } from './kimahri';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
@@ -2843,6 +2844,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...KIMAHRI_LOWERINGS,
   ...COPY_CHOSEN_TOKEN_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.

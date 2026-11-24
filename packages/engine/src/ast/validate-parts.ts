@@ -6197,6 +6197,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEnumList(out, `${path}.addSupertypes`, e.addSupertypes, SUPERTYPES, 'supertype');
         }
       }
+      // CR 707.9b (Kimahri, Valiant Guardian): "... and this ability": the ability that resolves is one of the copy's.
+      if (e.withThisAbility !== undefined) {
+        if (e.withThisAbility !== true) issue(out, `${path}.withThisAbility`, 'withThisAbility is true when present');
+        if (scope.owner !== 'ability') {
+          issue(out, `${path}.withThisAbility`, 'the ability a copy keeps is the one that resolves: an ability of a permanent');
+        }
+      }
       // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
       if (e.abilities !== undefined) {
         if (!Array.isArray(e.abilities) || e.abilities.length === 0) {

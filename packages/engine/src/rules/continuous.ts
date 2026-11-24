@@ -24,6 +24,7 @@ import type {
   ContinuousEffect,
   GameObject,
   GameState,
+  StackAbility,
 } from '../state/types';
 import { controllerOf } from './control';
 import { dropEffects, endOf } from './control-effects';
@@ -240,6 +241,7 @@ export function runBecomeCopy(
   node: Extract<Effect, { kind: 'becomeCopy' }>,
   ctx: SelectContext,
   targets: readonly ChosenTarget[],
+  resolving?: StackAbility | null,
 ): StepOutcome {
   const sourceId = resolveObjects(state, node.of, ctx, targets)[0];
   const source =
@@ -248,6 +250,16 @@ export function runBecomeCopy(
     (id) => state.objects[id]?.zone === 'battlefield',
   );
   if (source === undefined || affected.length === 0) return done(state);
+  // CR 707.9b (Kimahri, Valiant Guardian): "... and this ability": the ability that is resolving is one of the copy's.
+  if (node.withThisAbility === true) {
+    if (resolving === undefined || resolving === null) return done(state);
+    return copyEffect(
+      state,
+      { ...node, abilities: [...(node.abilities ?? []), resolving] },
+      source,
+      affected,
+    );
+  }
   return copyEffect(state, node, source, affected);
 }
 

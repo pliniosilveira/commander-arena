@@ -700,6 +700,7 @@ describe('unmatched abilities', () => {
       'effect.choose-token-you-control',
       'effect.each-other-token-becomes-copy',
       'effect.becomes-copy-except-keyword',
+      'effect.become-copy-keeping-this-ability',
       'effect.exile-copy-cast-paying',
       'effect.create-tokens-per-opponent-attacking',
       'effect.add-mana-stays',
