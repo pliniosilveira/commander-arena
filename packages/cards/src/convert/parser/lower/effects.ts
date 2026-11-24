@@ -156,6 +156,7 @@ import {
   recipientOf,
 } from './nouns';
 import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
+import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
@@ -3016,6 +3017,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,
+  ...PARTY_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,

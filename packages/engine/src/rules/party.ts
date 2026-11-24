@@ -2,12 +2,19 @@
  * A player's party (CR 700.8): up to one Cleric, one Rogue, one Warrior and one Wizard among the creatures they control. The number of creatures in it is
  * worked out by the game, never declared (CR 700.8a); a creature with several of the four types fills one slot (CR 700.8b), and where that can be done in
  * different ways the one with the most creatures counts. That is the size of a maximum matching between the creatures and the four types, found here
- * by augmenting paths. The file reads no state: callers pass the creature types of the creatures they look at, after layer 4.
+ * by augmenting paths (`partySizeOf`, `assignParty`: they read no state, callers pass the creature types after layer 4). Stick Together asks each player to choose
+ * a party from among their creatures (CR 700.8d): the rest of the file holds what is needed to ask and check that choice.
  */
-import type { Subtype } from '../characteristics';
 
-/** The creature types a party has a slot for, in the order of CR 700.8. */
-export const PARTY_TYPES: readonly Subtype[] = ['Cleric', 'Rogue', 'Warrior', 'Wizard'];
+import type { Subtype } from '../characteristics';
+import { PARTY_TYPES, type PartyType } from '../characteristics';
+import type { ObjectId, SeatId } from '../ids';
+import { objectsInZone } from '../state/ops';
+import type { GameState } from '../state/types';
+import { controllerOf } from './control';
+import { derive } from './derive';
+
+export { PARTY_TYPES };
 
 /**
  * The party roles each creature could fill: for creature `i`, the indexes into `PARTY_TYPES` of the party types among its `subtypes`.
@@ -62,4 +69,79 @@ export function assignParty(creatures: readonly (readonly Subtype[])[]): (number
       PARTY_TYPES.map(() => false),
     );
   return holder.map((c) => (c === null || c === undefined ? null : (index[c] ?? null)));
+}
+
+/** What a player's party can be: for each party type, the creatures that could fill it. */
+export interface PartySlot {
+  readonly type: PartyType;
+  readonly legal: readonly ObjectId[];
+}
+
+/** One filled place of a party. */
+export interface PartyMember {
+  readonly type: PartyType;
+  readonly object: ObjectId;
+}
+
+/** CR 700.8d: the creatures `seat` controls (as `derive` gives them now), in object order. */
+export function creaturesControlledBy(state: GameState, seat: SeatId): ObjectId[] {
+  return objectsInZone(state, 'battlefield').filter((id) => {
+    const obj = state.objects[id];
+    return (
+      obj !== undefined &&
+      controllerOf(state, obj) === seat &&
+      derive(state, obj).types.includes('creature')
+    );
+  });
+}
+
+/** CR 700.8d: for each party type, the creatures among `creatures` that have it (Changeling and the like are in `derive`'s subtypes). */
+export function partySlots(state: GameState, creatures: readonly ObjectId[]): PartySlot[] {
+  return PARTY_TYPES.map((type) => ({
+    type,
+    legal: creatures.filter((id) => {
+      const obj = state.objects[id];
+      return obj !== undefined && derive(state, obj).subtypes.includes(type);
+    }),
+  }));
+}
+
+/** CR 700.8d: true when the choice fills each type at most once, with a creature the slot lists, and uses no creature twice. */
+export function isLegalParty(slots: readonly PartySlot[], party: readonly PartyMember[]): boolean {
+  const types = new Set<PartyType>();
+  const objects = new Set<ObjectId>();
+  for (const member of party) {
+    const slot = slots.find((s) => s.type === member.type);
+    if (slot === undefined || !slot.legal.includes(member.object)) return false;
+    if (types.has(member.type) || objects.has(member.object)) return false;
+    types.add(member.type);
+    objects.add(member.object);
+  }
+  return true;
+}
+
+/**
+ * Every party the slots allow, the fullest first (more creatures before fewer, each in the order of the types and of the objects), at most `limit` of them. The empty party is
+ * always included last when `limit` leaves room, because "up to one" allows choosing nobody.
+ */
+export function enumerateParties(slots: readonly PartySlot[], limit: number): PartyMember[][] {
+  const out: PartyMember[][] = [];
+  // One pass for each size, the largest first, stopping as soon as `limit` parties are listed (a table of changelings has many).
+  const walk = (index: number, taken: PartyMember[], size: number): void => {
+    if (out.length >= limit) return;
+    if (taken.length === size) {
+      out.push([...taken]);
+      return;
+    }
+    const slot = slots[index];
+    // Not enough slots left to reach the size.
+    if (slot === undefined || size - taken.length > slots.length - index) return;
+    for (const object of slot.legal) {
+      if (taken.some((m) => m.object === object)) continue;
+      walk(index + 1, [...taken, { type: slot.type, object }], size);
+    }
+    walk(index + 1, taken, size);
+  };
+  for (let size = slots.length; size >= 0; size--) walk(0, [], size);
+  return out;
 }

@@ -188,6 +188,7 @@ import {
 import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
+import { PARTY_EFFECT_RULES } from './party';
 import { PARTY_TIME_LIBRARY_EFFECT_RULES } from './party-time-library';
 import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
@@ -1377,6 +1378,8 @@ export const EFFECT_RULES = [
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
   ...KEEPS_UP_TO_EFFECT_RULES,
+  // Stick Together (CR 700.8d): "each player chooses a party from among creatures they control, then sacrifices the rest" (read quietly: it starts like the other "each player" rules).
+  ...PARTY_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,

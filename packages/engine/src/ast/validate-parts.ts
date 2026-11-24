@@ -6257,6 +6257,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.what`, "balance is about 'lands', 'hand' or 'creatures'");
       }
       break;
+    case 'chooseParty':
+      // CR 700.8d, 701.21a (Stick Together): each player the selector names chooses a party among the creatures they control and sacrifices the rest.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      break;
     case 'keepOrSacrifice':
       // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);

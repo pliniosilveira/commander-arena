@@ -3852,6 +3852,16 @@ export type Effect =
        */
       readonly keepAtMost?: number;
     }
+  /**
+   * "Each player chooses a party from among creatures they control, then sacrifices the rest" (Stick Together, CR 700.8d, 701.21a, 101.4): each player the selector names, in APNAP
+   * order, chooses a party among the creatures they control (up to one each of Cleric, Rogue, Warrior and Wizard, every one a different creature, `chooseParty` decision), the ones
+   * chosen already known to the later players. Nothing is sacrificed until the last has chosen; then every creature a player controls that is not in their party is sacrificed at once
+   * (one that can't be sacrificed, CR 101.2, stays).
+   */
+  | {
+      readonly kind: 'chooseParty';
+      readonly players: PlayerSelector;
+    }
   | {
       readonly kind: 'moveToZone';
       /**

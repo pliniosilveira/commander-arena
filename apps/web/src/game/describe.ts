@@ -1825,6 +1825,19 @@ export function describeEvent(
         'CR 701.38a',
       );
     }
+    case 'partyChosen': {
+      // CR 700.8d (Stick Together): the party a player kept; the creatures left out are sacrificed (their own lines follow).
+      const members = event.party.map((m) => `${name(m.object)} (${m.type})`);
+      return line(
+        event.automatic ? 'detail' : 'major',
+        event.party.length === 0
+          ? `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} no party${event.automatic ? ': no creature could be in it' : ''}.`
+          : `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} a party: ${joinNames(members)}.`,
+        event.seat,
+        event.party.map((m) => m.object),
+        'CR 700.8d',
+      );
+    }
     default: {
       const unreachable: never = event;
       return unreachable;

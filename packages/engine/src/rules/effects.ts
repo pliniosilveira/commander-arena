@@ -139,6 +139,7 @@ import { nextMainStep } from './next-main';
 import { runNextSpellModifier } from './next-spell';
 import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
+import { partyInstruction, runChooseParty } from './party-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runYouCantAttackPlayers, runYouCantSacrifice } from './player-bans';
@@ -338,6 +339,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'fightPairs') return runFightPairs(state, res, instruction, flow);
   if (instruction.kind === 'chooseSacrifice') return runChooseSacrifice(state, res, instruction);
+  if (instruction.kind === 'chooseParty') return runChooseParty(state, res, instruction);
   if (instruction.kind === 'chooseMove') return runChooseMove(state, res, instruction);
   if (instruction.kind === 'chooseTap') return runChooseTap(state, res, instruction);
   if (instruction.kind === 'chooseEach') return runChooseEach(state, res, instruction);
@@ -1176,6 +1178,12 @@ function runEffect(
           },
         ],
       );
+    }
+
+    case 'chooseParty': {
+      // CR 700.8d, 101.4 (Stick Together): every player the effect names chooses a party, the active player first; nothing is sacrificed until the last has chosen.
+      const first = partyInstruction(resolvePlayers(state, effect.players, ctx, targets));
+      return first === null ? done(state) : done(state, [], [first]);
     }
 
     case 'keepOrSacrifice': {

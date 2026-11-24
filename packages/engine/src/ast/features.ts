@@ -261,6 +261,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'keepOrSacrifice',
     // Magus of the Balance: "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest" (`balance`).
     'balance',
+    // Stick Together: "Each player chooses a party from among creatures they control, then sacrifices the rest" (`chooseParty`, CR 700.8d).
+    'chooseParty',
     'moveToZone',
     'counter',
     'draw',
@@ -3269,6 +3271,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sacrifice: true,
   keepOrSacrifice: true,
   balance: true,
+  chooseParty: true,
   moveToZone: true,
   counter: true,
   draw: true,
