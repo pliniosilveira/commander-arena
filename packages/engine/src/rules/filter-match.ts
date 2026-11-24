@@ -478,6 +478,15 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 601.2i (Wild-Magic Sorcerer): "the first spell you cast from exile each turn": no other spell the caster cast from exile this turn so far.
+  if (
+    filter.firstCastFromExileThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) => e.fromExile === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
   // CR 601.2i (Alisaie Leveilleur): "the second spell you cast each turn": exactly one other spell cast by the caster this turn so far (a copy is not cast, CR 707.10).
   if (
     filter.nthSpellThisTurn !== undefined &&

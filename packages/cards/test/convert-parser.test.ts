@@ -1505,6 +1505,7 @@ describe('unmatched abilities', () => {
       'static.spells-you-cast-have-keyword',
       'static.each-spell-you-cast-has-replicate',
       'static.permanent-spells-from-hand-gain-evoke',
+      'static.first-spell-from-exile-has-cascade',
       'static.legend-rule-doesnt-apply',
       'static.groups-are-the-chosen-type',
       'static.graveyard-cards-have-encore',

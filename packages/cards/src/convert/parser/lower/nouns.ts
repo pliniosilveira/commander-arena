@@ -374,6 +374,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:firstXSpellThisTurn');
   }
+  // Wild-Magic Sorcerer: "the first spell you cast from exile each turn" (CR 601.2i).
+  if (filter.firstCastFromExileThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstCastFromExileThisTurn');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
@@ -648,6 +653,9 @@ function lowerFilterAt(
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
+    ...(filter.firstCastFromExileThisTurn === true
+      ? { firstCastFromExileThisTurn: true as const }
+      : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.controllerDealtCombatDamageBy === undefined
       ? {}

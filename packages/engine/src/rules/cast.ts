@@ -1856,6 +1856,8 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
               : {}),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
+            // Wild-Magic Sorcerer: "the first spell you cast from exile each turn".
+            ...(obj.stack.castFrom === 'exile' ? { fromExile: true as const } : {}),
           },
         ],
       },

@@ -448,6 +448,8 @@ export interface IrFilter {
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
   readonly firstXSpellThisTurn?: true;
+  /** "the first spell you cast from exile each turn" (Wild-Magic Sorcerer, CR 601.2i): the first spell the caster cast from exile this turn (the engine's `firstCastFromExileThisTurn`). */
+  readonly firstCastFromExileThisTurn?: true;
   /** "the second spell you cast each turn" (Alisaie Leveilleur, CR 601.2i): the spell is the nth (2 or more) its caster cast this turn (the engine's `nthSpellThisTurn`). */
   readonly nthSpellThisTurn?: number;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
@@ -2057,7 +2059,7 @@ export type IrStaticEffect =
    */
   | {
       readonly kind: 'spellKeyword';
-      readonly keyword: 'demonstrate' | 'convoke' | 'improvise' | 'replicateAtManaCost';
+      readonly keyword: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' | 'replicateAtManaCost';
     }
   /**
    * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9, 601.2b): the permanent spells the subject names (a noun with the controller

@@ -975,6 +975,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
+  'static.first-spell-from-exile-has-cascade': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
   'static.permanent-spells-from-hand-gain-evoke': asIs,
   'static.legend-rule-doesnt-apply': asIs,

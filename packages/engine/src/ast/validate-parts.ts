@@ -408,6 +408,7 @@ export function checkFilter(
     'castFromOwnGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
+    'firstCastFromExileThisTurn',
     'enteredThisTurn',
     'exiledWithSource',
     'exiledThisWay',

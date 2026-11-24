@@ -2978,6 +2978,8 @@ export interface TurnLog {
     readonly hasX?: true;
     /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
     readonly fromGraveyard?: true;
+    /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
+    readonly fromExile?: true;
   }[];
 }
 

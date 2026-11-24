@@ -787,6 +787,11 @@ export interface ObjectFilter {
    */
   readonly firstXSpellThisTurn?: true;
   /**
+   * "The first spell you cast from exile each turn" (Wild-Magic Sorcerer, CR 601.2i, 601.2a): no other spell was cast from exile by the caster of this one this turn, before it
+   * (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Meant with `castFromExile`. Read as `firstXSpellThisTurn` is.
+   */
+  readonly firstCastFromExileThisTurn?: true;
+  /**
    * "The second spell you cast each turn" (Alisaie Leveilleur, CR 601.2f, 601.2i, 604.2): the spell is the `nthSpellThisTurn`th spell its caster casts this turn, that is, exactly
    * `nthSpellThisTurn - 1` other spells were cast by that caster before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10, and the spell itself is left out of the count
    * whether or not it is logged yet). A whole number of 2 or more. Read from the turn log, so it is read as the cost is determined (a cost reduction, where the spell is not yet
@@ -7634,7 +7639,7 @@ export type StaticEffect =
       readonly kind: 'grantKeywordToSpells';
       readonly what: ObjectFilter;
       readonly keyword:
-        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
+        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
         | { readonly kind: 'replicateAtManaCost' };
     }
   /**

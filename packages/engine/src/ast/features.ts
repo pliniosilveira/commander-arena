@@ -1067,6 +1067,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
+    // Exit from Exile deck (Wild-Magic Sorcerer): "the first spell you cast from exile each turn" (`ObjectFilter.firstCastFromExileThisTurn`).
+    'firstCastFromExileThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
     // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (`ObjectFilter.controllerDealtCombatDamageByAtLeast`).
@@ -2220,6 +2222,8 @@ export const SELECTOR_KINDS = [
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
   'firstXSpellThisTurn',
+  /** "The first spell you cast from exile each turn" (CR 601.2i, Wild-Magic Sorcerer): the engine's `ObjectFilter.firstCastFromExileThisTurn`. */
+  'firstCastFromExileThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
   'nthSpellThisTurn',
   'triggerSubject',

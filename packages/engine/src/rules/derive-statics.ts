@@ -240,7 +240,7 @@ interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
   readonly keyword:
-    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
     | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;

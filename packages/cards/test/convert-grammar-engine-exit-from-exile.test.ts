@@ -695,3 +695,52 @@ describe('"Whenever ~ attacks or becomes the target of a spell an opponent contr
     expect(g.state.seats[1]?.life).toBe(17);
   });
 });
+
+describe('"The first spell you cast from exile each turn has cascade." (CR 702.85a, 601.2i, 613.1f)', () => {
+  const sorcerer = parsed(
+    'SYNTHETIC Wild Sorcerer',
+    'Creature — Human Wizard',
+    'The first spell you cast from exile each turn has cascade.\nDraw Arcanum — {T}: Look at the top card of your library. You may exile it face down.\nPlay Arcanum — {T}: Until end of turn, you may play cards exiled with ~. Spells you cast this way cost {2} less to cast.',
+    { manaCost: '{2}{R}', power: '2', toughness: '2', colors: ['R'] },
+  );
+  const build = (withSorcerer: boolean) =>
+    scenario()
+      .define(sorcerer)
+      .seat(0)
+      .hand('Serra Angel')
+      .battlefield(
+        ...(withSorcerer ? [sorcerer.name] : ['Island']),
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+      )
+      .library('Serra Angel', 'Grizzly Bears', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('a spell cast from exile cascades into a cheaper card', () => {
+    const g = build(true);
+    g.act(0).activate(sorcerer.name, { ability: 1 });
+    g.passAll();
+    g.act(0).chooseCards('Serra Angel');
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.act(0).activate(sorcerer.name, { ability: 2 });
+    g.passAll();
+    g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { pay: true });
+    // The cascade trigger is above the spell on the stack: the cheaper card is exiled as it resolves.
+    g.passAll();
+    expect(g.find({ name: 'Grizzly Bears', zone: 'library', seat: 0 })).toHaveLength(0);
+  });
+
+  test('a spell cast from the hand does not cascade', () => {
+    const g = build(true);
+    g.act(0).cast('Serra Angel', { pay: true });
+    g.passAll();
+    expect(g.find({ name: 'Grizzly Bears', zone: 'library', seat: 0 })).toHaveLength(1);
+  });
+});

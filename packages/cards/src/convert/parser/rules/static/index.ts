@@ -29,6 +29,7 @@ import { EMINENCE_STATIC_RULES } from './eminence';
 import { STATIC_PAY_ENERGY_ALT_COST } from './energy-alt';
 import { EQUIPMENT_KIT_STATIC_RULES } from './equipment-kit';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
+import { EXILE_SPELL_GRANT_STATIC_RULES } from './exile-spell-grant';
 import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
@@ -179,6 +180,7 @@ export const STATIC_RULES = [
   ...GALADRIEL_G3_STATIC_RULES,
   // Issue 145 (Hatsune Miku deck): "Creature spells you cast have demonstrate."
   ...SPELL_KEYWORD_GRANT_STATIC_RULES,
+  ...EXILE_SPELL_GRANT_STATIC_RULES,
   // Issue 133 (the Sliver Swarm deck, group B): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   ...SLIVER_LORDS_STATIC_RULES,
 ];
