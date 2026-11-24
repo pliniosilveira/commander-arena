@@ -286,7 +286,7 @@ function lowerFilterAt(
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
-      if (word === 'toxic' || word === 'flash') {
+      if (word === 'toxic' || word === 'flash' || word === 'cascade') {
         kinds.push(word);
         continue;
       }

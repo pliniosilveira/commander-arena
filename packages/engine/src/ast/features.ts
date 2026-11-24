@@ -1813,6 +1813,8 @@ export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'flanking',
   // CR 702.8a (Flash): "a card with flash" in a library search (Mystical Teachings); flash is printed, never granted, so only a filter reads it.
   'flash',
+  // CR 702.85a (Cascade): "you cast a spell with cascade" (Aurora Phoenix): cascade is printed or granted by an effect that applies as the spell is cast; a filter reads its presence.
+  'cascade',
 ];
 
 /**

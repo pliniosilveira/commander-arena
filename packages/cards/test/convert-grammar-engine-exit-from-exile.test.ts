@@ -434,3 +434,49 @@ describe('"Until your next turn, up to one target creature gains reach and vigil
     g.expect.derived('Grizzly Bears', { keywords: [] });
   });
 });
+
+describe('"Whenever you cast a spell with cascade, return this card from your graveyard to your hand." (CR 601.2i, 702.85a, 113.6k)', () => {
+  const phoenix = parsed(
+    'SYNTHETIC Cascade Phoenix',
+    'Creature — Phoenix',
+    'Flying\nWhenever you cast a spell with cascade, return this card from your graveyard to your hand.',
+    { manaCost: '{3}{R}{R}', power: '4', toughness: '4', colors: ['R'] },
+  );
+  const cascader = parsed('SYNTHETIC Cascader', 'Sorcery', 'Cascade\nYou gain 1 life.', {
+    manaCost: '{1}',
+    colors: [],
+  });
+  const plain = parsed('SYNTHETIC Plain Spell', 'Sorcery', 'You gain 1 life.', {
+    manaCost: '{1}',
+    colors: [],
+  });
+  const build = (spell: string) =>
+    scenario()
+      .define(phoenix)
+      .define(cascader)
+      .define(plain)
+      .seat(0)
+      .hand(spell)
+      .graveyard(phoenix.name)
+      .battlefield('Island')
+      .library(...FILLER, ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('casting a spell with cascade returns it from the graveyard', () => {
+    const g = build(cascader.name);
+    g.act(0).cast(cascader.name, { pay: true });
+    g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    g.expect.zone(phoenix.name, 'hand', { seat: 0 });
+  });
+
+  test('casting a spell without cascade does not', () => {
+    const g = build(plain.name);
+    g.act(0).cast(plain.name, { pay: true });
+    g.passAll();
+    g.expect.zone(phoenix.name, 'graveyard', { seat: 0 });
+  });
+});

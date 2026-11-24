@@ -409,6 +409,7 @@ describe('unmatched abilities', () => {
       'trigger.cast-from-hand',
       'trigger.cast-from-graveyard',
       'trigger.token-combat-damage-batch',
+      'trigger.cast-with-keyword',
       'trigger.cast-from-exile',
       'trigger.cast-or-land-enters-from-exile',
       'trigger.cast-x',
