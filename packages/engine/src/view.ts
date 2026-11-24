@@ -566,7 +566,7 @@ export interface GameView {
   /** The monarch (CR 725.1, D-127): public. Null while nobody has the designation. */
   readonly monarch: SeatId | null;
   /** The player who has the initiative (CR 726.1): public. Null while nobody has the designation. */
-  readonly initiative: SeatId | null;
+  readonly initiative?: SeatId | null;
   /** The game's day or night designation (CR 731.1): public. Null while it is neither. */
   readonly dayNight: 'day' | 'night' | null;
   readonly battlefield: readonly ObjectView[];
