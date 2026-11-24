@@ -98,7 +98,7 @@ import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
-import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
+import { GAIN_ACTIVATED_ABILITIES, GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
   BECOMES_LOSES_ALL,
@@ -2791,6 +2791,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_KEYWORD,
   GRANT_ABILITY,
   GRANT_MANA_ABILITY,
+  GAIN_ACTIVATED_ABILITIES,
   RESTRICT,
   CHOOSE_PLAYER,
   CHOOSE_OPPONENT,

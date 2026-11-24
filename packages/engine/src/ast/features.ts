@@ -635,6 +635,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokenCreated',
     // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
     'activatesAbility',
+    // Aboleth Spawn: "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (CR 603.2, 603.6a).
+    'entersCausesTrigger',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
@@ -1304,6 +1306,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectControllerHasMore',
     // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
     'subjectControlledByYou',
+    // Endless Evil: "if that creature was a Horror".
+    'subjectMatches',
     'subjectStat',
     // Selvala: "if its power is greater than each other creature's power".
     'subjectGreaterThanEach',
@@ -2409,6 +2413,8 @@ export const CONDITION_KINDS = [
   'subjectControllerHasMore',
   /** "Draw a card if you control that creature" (CR 603.10a, 608.2h): the engine's `subjectControlledByYou`. */
   'subjectControlledByYou',
+  /** "If that creature was a Horror" (CR 603.4, 603.10a, 113.7a): the engine's `subjectMatches`. */
+  'subjectMatches',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
   'subjectStat',
   /** "If its power is greater than each other creature's power" (CR 603.10a, 208.1, Selvala): the engine's `subjectGreaterThanEach`. */
@@ -3299,6 +3305,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tokenCreated: true,
   playsCard: true,
   activatesAbility: true,
+  entersCausesTrigger: true,
   scries: true,
   surveils: true,
   milled: true,

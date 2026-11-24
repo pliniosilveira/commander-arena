@@ -26,6 +26,7 @@ import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { romanValue } from '../../roman';
 import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
+import { ABOLETH_TRIGGER_RULES } from './aboleth';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
@@ -1365,12 +1366,63 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
 );
 
 /**
+ * `trigger.enters-and-upkeep`: "~ enters and at the beginning of your upkeep" (Grell Philosopher, CR 603.2c, 603.6a, 503.1a): one ability that two events cause, each by its own
+ * words ("When ~ enters and at the beginning of your upkeep, ..."). It lowers to one engine ability for each event, sharing the effect, as `trigger.enters-and-cast` does. The
+ * second event is the upkeep trigger as a card writes it; two entering events or any other pair are not read.
+ */
+export const TRIGGER_ENTERS_AND_UPKEEP = quietly(
+  defineRule<IrTrigger>({
+    id: 'trigger.enters-and-upkeep',
+    family: 'trigger',
+    leading: ['~'],
+    cites: [
+      'CR 603.2c (Handling Triggered Abilities)',
+      'CR 603.6a (Handling Triggered Abilities)',
+      'CR 503.1a (Upkeep Step)',
+    ],
+    examples: [
+      '~ enters and at the beginning of your upkeep',
+      '~ enters and at the beginning of each upkeep',
+    ],
+    rejects: [
+      '~ enters and at the beginning of your upkeep and at the beginning of your end step',
+      '~ enters and at your upkeep',
+      '~ enters and whenever you cast a creature spell',
+      '~ enters or at the beginning of your upkeep',
+      '~ enters, and at the beginning of your upkeep',
+      '~ dies and at the beginning of your upkeep',
+      '~ enters tapped and at the beginning of your upkeep',
+      'another creature enters and at the beginning of your upkeep',
+    ],
+    parse: (ctx, pos) => {
+      const r = sequence(
+        satisfy(
+          family<IrTrigger>('trigger', { only: ['trigger.enters'] }),
+          (t) => t.subject?.det === 'self',
+        ),
+        literal(' and at '),
+        family<IrTrigger>('trigger', { only: ['trigger.upkeep'] }),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [enters, , upkeep] = r.value;
+      const span = { start: pos, end: r.pos };
+      return {
+        ok: true,
+        value: { ...enters, span, rule: 'trigger.enters-and-upkeep', alternatives: [upkeep] },
+        pos: r.pos,
+      };
+    },
+  }),
+);
+
+/**
  * Registration order is the order tried, and the first rule that reads a prefix wins: the longer
  * phrases come first ("~ enters or attacks" before "~ enters", "a land enters under your control"
  * before "a land enters").
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
+  TRIGGER_ENTERS_AND_UPKEEP,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
   ...CAST_DURING_TURN_TRIGGER_RULES,
   // Astrologian's Planisphere: "you cast a noncreature spell and whenever you draw your third card each turn" starts like `trigger.cast`, which stops before the rest.
@@ -1382,6 +1434,8 @@ export const TRIGGER_RULES = [
   ...QUANDRIX_E_TRIGGER_RULES,
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
   ...UNBOUND_I_TRIGGER_RULES,
+  // Aboleth Spawn: "a creature entering under an opponent's control causes a triggered ability of that creature to trigger".
+  ...ABOLETH_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
   TRIGGER_ENTERS_FROM_GRAVEYARD,
   TRIGGER_OR,

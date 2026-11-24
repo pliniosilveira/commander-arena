@@ -1426,6 +1426,8 @@ export interface IrToken extends IrNode {
    * instead of the ones it copies (the engine's `copyOf.setTypes`).
    */
   readonly copySetTypes?: readonly string[];
+  /** "..., except the token is 1/1" (Endless Evil, CR 707.9b): with `copyOf`, the copy has this power and toughness and keeps its colors, types and abilities (the engine's `copyOf.setPt`). */
+  readonly copySetPt?: { readonly power: number; readonly toughness: number };
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   /** "create a tapped and attacking X/X ... creature token" (CR 508.4): the tokens enter tapped and attacking, never declared as attackers; with `tapped`. */

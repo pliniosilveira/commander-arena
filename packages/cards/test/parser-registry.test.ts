@@ -187,6 +187,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
+  // Endless Evil: a copy of the enchanted creature with a set power and toughness.
+  'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
   'token.copy-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),
@@ -213,6 +215,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'static.self-and-enchanted-pt-count': asIs,
+  'static.self-and-enchanted-pt-amount': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
@@ -915,6 +918,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.begin-game-on-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-causes-trigger': permanent((e) => `Whenever ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
   // Stage P49 (D-206): the Vraska deck's triggers, conditions and statics. A trigger follows "Whenever"; a condition follows the trigger it conditions or
   // "Then if" in a spell; the static is a line of its own.

@@ -160,19 +160,32 @@ function pushTrigger(
     trigger.source === null
       ? next
       : withModesChosen(next, trigger.source, modes, modal?.choose.notRepeatedBySource === true);
+  // CR 603.6a, 603.2 (Aboleth Spawn): the ability of a permanent that triggered as that permanent entered says so, for "a creature entering causes a triggered ability of that
+  // creature to trigger".
+  const entered =
+    trigger.source !== null &&
+    trigger.ability.trigger.kind === 'entersBattlefield' &&
+    'kind' in trigger.ability.trigger.what &&
+    trigger.ability.trigger.what.kind === 'this'
+      ? trigger.source
+      : undefined;
+  const event: GameEvent = {
+    kind: 'abilityTriggered',
+    seat: trigger.controller,
+    // An ability with no source (the monarch's, CR 725.2) names its own stack object, as `StackData` reads it.
+    source: trigger.source ?? id,
+    abilityIndex: trigger.abilityIndex,
+    stackObject: id,
+    ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
+    ...(entered === undefined ? {} : { entered }),
+  };
+  // What that triggers waits for the next round, as what a target chosen triggers does (CR 603.3b).
+  const settled = entered === undefined ? logged : collectDeferred(logged, [event]);
   return {
     // A new object on the stack: earlier passes in succession no longer count (CR 117.4).
-    state: { ...logged, turn: { ...logged.turn, passedInSuccession: [] } },
+    state: { ...settled, turn: { ...settled.turn, passedInSuccession: [] } },
     id,
-    event: {
-      kind: 'abilityTriggered',
-      seat: trigger.controller,
-      // An ability with no source (the monarch's, CR 725.2) names its own stack object, as `StackData` reads it.
-      source: trigger.source ?? id,
-      abilityIndex: trigger.abilityIndex,
-      stackObject: id,
-      ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
-    },
+    event,
   };
 }
 
@@ -191,16 +204,18 @@ function targetsChosen(
     ...becameTargetEvents(state, stackObject, seat),
     ...crimeEvents(state, stackObject, seat),
   ];
+  return { state: collectDeferred(state, events), events };
+}
+
+/** The triggers `events` cause, noted at once but waiting for the next round (CR 603.3b). */
+function collectDeferred(state: GameState, events: readonly GameEvent[]): GameState {
   const before = state.pendingTriggers.length;
   const collected = collectTriggers(state, events);
   return {
-    state: {
-      ...collected,
-      pendingTriggers: collected.pendingTriggers.map((t, i) =>
-        i < before ? t : { ...t, deferred: true as const },
-      ),
-    },
-    events,
+    ...collected,
+    pendingTriggers: collected.pendingTriggers.map((t, i) =>
+      i < before ? t : { ...t, deferred: true as const },
+    ),
   };
 }
 

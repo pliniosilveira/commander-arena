@@ -394,7 +394,12 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
         return 'this spell';
       }
-      if (ability.trigger?.kind === 'activatesAbility') return 'that ability';
+      if (
+        ability.trigger?.kind === 'activatesAbility' ||
+        ability.trigger?.kind === 'entersCausesTrigger'
+      ) {
+        return 'that ability';
+      }
       return ability.trigger === undefined ||
         ability.trigger.kind === 'castSpell' ||
         ability.trigger.kind === 'becomesTarget'

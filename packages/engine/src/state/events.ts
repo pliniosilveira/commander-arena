@@ -449,6 +449,11 @@ export type GameEvent =
       readonly abilityIndex: number;
       readonly stackObject: ObjectId;
       readonly chapter?: number;
+      /**
+       * The ability triggered because its source, `entered`, entered the battlefield ("When this creature enters", CR 603.6a): what an `entersCausesTrigger` trigger reads
+       * (Aboleth Spawn, CR 603.2). Absent for any other cause.
+       */
+      readonly entered?: ObjectId;
     }
   /**
    * CR 603.3d: a triggered ability was removed as it was to be put on the stack, because a choice it

@@ -83,6 +83,8 @@ interface Occurrence {
   readonly seat: SeatId | null;
   /** For `becomesTarget`: the object that became a target, while `subject` is what targeted it. */
   readonly target?: ObjectId;
+  /** For `entersCausesTrigger`: the permanent that entered, whose own ability is `subject` on the stack. */
+  readonly entered?: ObjectId;
   /** For `becomesTarget` with `batch`: the objects the same spell or ability targeted in the events before this one of the same batch (CR 603.2c: "one or more" triggers once). */
   readonly earlierTargets?: readonly ObjectId[];
   /** For `chapter`: the chapter number that was reached (CR 714.2b). */
@@ -577,6 +579,12 @@ function occurrences(
       return event.kind === 'crimeCommitted'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'entersCausesTrigger':
+      // CR 603.2, 603.6a (Aboleth Spawn): the triggered ability on the stack is the subject, the permanent that entered (its source) is what the filter reads; the player is the one who
+      // controls it, which is the controller of the ability it caused.
+      return event.kind === 'abilityTriggered' && event.entered !== undefined
+        ? [{ subject: event.stackObject, seat: event.seat, entered: event.entered }]
+        : [];
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that uses the stack (a mana ability is no such event); the ability on the stack is the subject.
       // `anySource` (Unbound Flourishing, "activate an ability"): an ability of a card in a hand or a graveyard counts as well.
@@ -1032,6 +1040,16 @@ function matches(
     case 'combatDamageBatch':
     case 'damageBatch':
       return false;
+    case 'entersCausesTrigger': {
+      // CR 603.2, 603.6a, 113.7a (Aboleth Spawn): the permanent that entered, as it is or as it last was, matches the filter ("a creature") and is controlled by the player `who` names.
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      const entered = occ.entered === undefined ? null : objectOrLki(state, occ.entered);
+      return (
+        entered !== null &&
+        matchesFilter(state, entered, { ...trigger.what, zone: entered.zone }, ctx)
+      );
+    }
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'activatesAbility':
@@ -1313,6 +1331,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'becameTarget':
     case 'crimeCommitted':
     case 'abilityActivated':
+    case 'abilityTriggered': // CR 603.2 (Aboleth Spawn): "causes a triggered ability to trigger"
     case 'doorUnlocked': // CR 709.5h
     case 'ringTempted':
     case 'classLevelReached':

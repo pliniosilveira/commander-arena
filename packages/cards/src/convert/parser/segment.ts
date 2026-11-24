@@ -743,6 +743,16 @@ const WHEN_CAST_IT_GAINS_ABILITIES =
   /^when you cast it this turn, ~ gains all activated abilities of that card until end of turn\.$/i;
 
 /**
+ * "Each Horror you control gains all activated abilities of target artifact an opponent controls until end of turn. You may spend blue mana as though it were mana of any color to
+ * activate those abilities." (Grell Philosopher, CR 609.4b, 602.2b): the second sentence says how the abilities the first gives are paid for, so the two are one instruction
+ * (`effect.gain-abilities-of-target`).
+ */
+const GAINS_ABILITIES_OF_TARGET =
+  /(?:^|, )each [^.,]* gains all activated abilities of target [^.,]* until end of turn\.$/i;
+const SPEND_BLUE_AS_ANY_COLOR =
+  /^you may spend blue mana as though it were mana of any color to activate those abilities\.$/i;
+
+/**
  * "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of its owner's library
  * instead." (Lorehold group 2, issue 86, CR 607.2a, 601.2, 118.9, 614.1a): "that card" is the target of the first sentence and "that spell" the one cast with the permission of the second, so
  * the three sentences (or the first two, with no rider) are one instruction (`effect.cast-exiled-with-self`).
@@ -1265,6 +1275,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)) ||
+        (said(a, GAINS_ABILITIES_OF_TARGET) && said(b, SPEND_BLUE_AS_ANY_COLOR)) ||
         (said(a, GAINS_FLASHBACK) && said(b, FLASHBACK_COST_IS_MANA_COST)))
     ) {
       out.push({ start: a.start, end: b.end });

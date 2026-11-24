@@ -711,6 +711,21 @@ export function evaluateCondition(
       }
       return true;
     }
+    case 'subjectMatches': {
+      // CR 603.10a, 113.7a (Endless Evil): "if that creature was a Horror": the permanent the event is about, as it is or as it last was once it has left, against the filter in the
+      // zone it is in (a creature that died is read from its last-known information, with the types it had on the battlefield).
+      if (ctx.triggerSubject === undefined) return false;
+      const subject = objectOrLki(state, ctx.triggerSubject);
+      return (
+        subject !== null &&
+        matchesFilter(
+          state,
+          subject,
+          { ...condition.filter, zone: subject.zone },
+          { controller: ctx.controller, source: ctx.source },
+        )
+      );
+    }
     case 'subjectStat': {
       // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.
       if (ctx.triggerSubject === undefined) return false;

@@ -1240,6 +1240,20 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
       break;
+    case 'entersCausesTrigger':
+      // Aboleth Spawn: the permanent that entered (a filter that names no zone) and its controller, relative to the controller of this ability.
+      checkFilter(t.what, `${path}.what`, out);
+      if (t.what?.zone !== undefined || t.what?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.what`,
+          'the permanent that entered names no zone or controller: `who` says whose',
+        );
+      }
+      if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'activatesAbility':
@@ -1807,6 +1821,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesTarget':
     case 'crimeCommitted':
     case 'activatesAbility':
+    case 'entersCausesTrigger':
       return 'stack';
     case 'tokenCreated':
       return 'permanent';
@@ -2336,7 +2351,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectMatches',
+          'subjectStat',
+          'subjectGreaterThanEach',
+        ]) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
               out,
@@ -2442,7 +2462,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectMatches',
+          'subjectStat',
+          'subjectGreaterThanEach',
+        ]) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
           }

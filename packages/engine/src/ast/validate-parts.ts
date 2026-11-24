@@ -3150,6 +3150,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
         issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
       }
+      if (cost.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blueAsAnyColor is given by an effect to the abilities it grants, a card does not write it',
+        );
+      }
       break;
     case 'tap':
     case 'untap':
@@ -3864,6 +3871,18 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       if (!isOneOf(c.stat, ['power', 'toughness'])) {
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      break;
+    case 'subjectMatches':
+      // CR 603.10a (Endless Evil): the filter describes the permanent the event is about; where it may stand is checked with the trigger (validate.ts).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
       }
       break;
     case 'subjectControlledByYou':
@@ -4763,6 +4782,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
     case 'target':
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'attached':
+      // CR 707.2, 303.4b (Endless Evil, Helm of the Host): "a token that's a copy of enchanted creature": the permanent the Aura or Equipment is attached to.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     case 'chosen':
       // D-642 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
       checkRef(ref, 'object', path, scope, out);
@@ -5346,6 +5369,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectMatches':
     case 'subjectStat':
     case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
@@ -8552,6 +8576,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'gainActivatedAbilitiesOf':
       // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (e.blueAsAnyColor !== undefined && e.blueAsAnyColor !== true) {
+        issue(out, `${path}.blueAsAnyColor`, 'blueAsAnyColor must be true when present');
+      }
+      if (kindOf(e.from) === 'target') {
+        // Grell Philosopher (CR 611.2c, 613.1f): "each Horror you control gains all activated abilities of target artifact": a group, fixed as the effect resolves, gets those of a target.
+        checkRef(e.from, 'object', `${path}.from`, scope, out);
+        if (kindOf(e.to) === 'each') {
+          checkObjectSelector(e.to, `${path}.to`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.to`,
+            'the abilities of a target go to a group (each) the effect names',
+          );
+        }
+        break;
+      }
       if (kindOf(e.to) !== 'this') {
         issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
       }
@@ -8559,6 +8600,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
       } else {
         checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blue mana is spent as any color only for the abilities of a target',
+        );
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
