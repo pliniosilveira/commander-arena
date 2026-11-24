@@ -3453,6 +3453,17 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
       }
       break;
+    case 'putLinkedExileInGraveyard':
+      // CR 607.2a (Shelob, Dread Weaver): a card the permanent exiled with its linked ability, so the filter describes a card in exile.
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (cost.filter?.zone !== undefined || cost.filter?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the card is one exiled with the permanent: no zone, no controller',
+        );
+      }
+      break;
     case 'loyalty':
       // CR 606.4, 606.5 (D-200): [+N], [-N], [0] or [-X].
       if (cost.change !== 'x' && !Number.isSafeInteger(cost.change)) {

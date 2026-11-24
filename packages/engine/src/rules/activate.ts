@@ -42,7 +42,14 @@ import {
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
 import { answerRemoveCountersCost, payRemoveCounters } from './activate-remove-counters';
 import { answerUntapPermanentsCost, payUntap } from './activate-untap';
-import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
+import {
+  activationExileDecision,
+  activationLinkedExileDecision,
+  exileChosen,
+  exileCostCandidates,
+  linkedExileCandidates,
+  linkedExileToGraveyard,
+} from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
 import { crimeEvents } from './crime';
@@ -648,7 +655,7 @@ function payExileCards(state: GameState, events: GameEvent[]): Result {
   const { casting, costs } = going;
   // Issue 102 (CR 107.3a): an X of 0 exiles nothing.
   if (costs.exileCards === null || costs.exileCards.count === 0) {
-    return finishActivation(state, events);
+    return payLinkedExile(state, events);
   }
   const source = state.objects[casting.object]?.stack?.source ?? casting.object;
   const legal = exileCostCandidates(state, casting.seat, source, costs.exileCards.filter);
@@ -679,11 +686,46 @@ function exileCardsChosen(
       : patchObject(moved.state, casting.object, {
           stack: { ...stack, exiledAsCost: moved.exiled },
         });
-  return finishActivation(next, [...events, ...moved.events]);
+  return payLinkedExile(next, [...events, ...moved.events]);
+}
+
+/**
+ * The cost "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a, 118.3, 400.7): with one card that can be chosen the engine puts it, with more a `chooseCards`
+ * decision with `forCost` asks the activating player, and `cancel` rewinds the activation (CR 733).
+ */
+function payLinkedExile(state: GameState, events: GameEvent[]): Result {
+  const going = inProgress(state);
+  if (!going) return fail('No activation is in progress');
+  const { casting, costs } = going;
+  if (costs.linkedExile === null) return finishActivation(state, events);
+  const source = state.objects[casting.object]?.stack?.source ?? casting.object;
+  const legal = linkedExileCandidates(state, source, costs.linkedExile);
+  if (legal.length === 0) {
+    return fail('No card exiled with this permanent can be put into a graveyard');
+  }
+  if (legal.length === 1) return linkedExileChosen(state, events, legal);
+  return pause(
+    { ...state, casting: { ...casting, stage: 'linkedExile' } },
+    events,
+    activationLinkedExileDecision(casting.seat, casting.object, legal),
+  );
+}
+
+function linkedExileChosen(
+  state: GameState,
+  events: GameEvent[],
+  chosen: readonly ObjectId[],
+): Result {
+  const moved = linkedExileToGraveyard(state, chosen);
+  if (moved === null) return fail('That card cannot be put into a graveyard');
+  return finishActivation(moved.state, [...events, ...moved.events]);
 }
 
 /** The answer to the exile question of a cost; the caller checked it against the decision. */
 export function answerExileCost(state: GameState, chosen: readonly ObjectId[]): Result {
+  if (state.casting?.activation != null && state.casting.stage === 'linkedExile') {
+    return linkedExileChosen({ ...state, pending: null }, [], chosen);
+  }
   if (state.casting?.activation == null || state.casting.stage !== 'exile') {
     return fail('No cards are being chosen to exile for a cost');
   }

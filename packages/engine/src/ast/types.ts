@@ -1781,6 +1781,13 @@ export type Cost =
        */
       readonly countX?: true;
     }
+  /**
+   * "Put a creature card exiled with ~ into its owner's graveyard" (Shelob, Dread Weaver; CR 607.2a, 118.3, 602.2b, 400.7): as the cost of an activated ability of a permanent, the
+   * player chooses one of the cards the permanent exiled with its linked ability (`exile.linked`) that are still in exile and that `filter` matches (a filter of cards in exile: card
+   * types, subtypes, colors, mana value; no zone, controller or owner), and puts it into its owner's graveyard. The player chooses with a `chooseCards` decision of purpose `exile` and
+   * `forCost` (the engine takes the card when only one can be chosen), and with no such card the ability cannot be activated (CR 118.3). Only the cost of an ordinary activated ability.
+   */
+  | { readonly kind: 'putLinkedExileInGraveyard'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'removeCounters';
       readonly counter: string;

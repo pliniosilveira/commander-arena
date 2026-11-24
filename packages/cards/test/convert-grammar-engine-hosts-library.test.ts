@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   type CardDefinition,
   type GameState,
+  getLegalActions,
   type ObjectId,
   validateCard,
 } from '@commander-arena/engine';
@@ -276,6 +277,127 @@ describe('Notion Thief (CR 614.1a, 614.11, 504.1, 614.5: an opponent draw but th
     g.expect.handSize(1, 2);
     g.expect.handSize(0, 0);
     g.expect.handSize(2, 0);
+  });
+});
+
+describe('Shelob, Dread Weaver (CR 607.2a, 603.2, 118.3, 107.3a, 602.2b: cards exiled with it, a cost that puts one into a graveyard, X to pick one back)', () => {
+  const SHELOB = 'Shelob, Dread Weaver';
+  const shelob = real(SHELOB);
+  const BEARS = 'Grizzly Bears'; // mana value 2
+  const SPIDER = 'Llanowar Elves'; // mana value 1
+
+  /** Seat 0 has Shelob, five Swamps and a Bolt with {R}; seats 1 and 2 each have creatures. */
+  const board = () =>
+    scenario({ seats: 3 })
+      .define(shelob)
+      .seat(0)
+      .hand('Lightning Bolt', 'Lightning Bolt', 'Lightning Bolt')
+      .pool('RRR')
+      .battlefield(SHELOB, 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .battlefield(BEARS, { label: 'b1' })
+      .library('Island')
+      .seat(2)
+      .battlefield(SPIDER, { label: 's2' })
+      .library('Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  /** Bolts the creature `target` of seat 0's opponent and lets the trigger resolve. */
+  const kill = (g: ReturnType<typeof board>, target: string) => {
+    g.act(0).cast({ name: 'Lightning Bolt', nth: 0 }, { targets: [target], pay: true });
+    g.passAll();
+  };
+
+  test('is valid', () => {
+    expect(validateCard(shelob)).toEqual([]);
+  });
+
+  test('a nontoken creature an opponent controls that dies is exiled, whichever opponent: it is exiled with Shelob', () => {
+    const g = board();
+    kill(g, 'b1');
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+    kill(g, 's2');
+    g.expect.zone(SPIDER, 'exile', { seat: 2 });
+    g.expect.invariants();
+  });
+
+  test('the cost puts a creature card exiled with it into its owner graveyard: two +1/+1 counters and a card', () => {
+    const g = board();
+    kill(g, 'b1');
+    g.act(0).activate(SHELOB, { ability: 1, pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.counters(SHELOB, { '+1/+1': 2 });
+    g.expect.handSize(0, 3);
+    g.expect.invariants();
+  });
+
+  test('with two cards exiled the player chooses which one the cost puts into a graveyard', () => {
+    const g = board();
+    kill(g, 'b1');
+    kill(g, 's2');
+    g.act(0).activate(SHELOB, { ability: 1, pay: true });
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards({ name: SPIDER, zone: 'exile', seat: 2 });
+    g.passAll();
+    g.expect.zone(SPIDER, 'graveyard', { seat: 2 });
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+  });
+
+  test('without a card exiled with it the ability cannot be activated', () => {
+    const g = board();
+    const activations = getLegalActions(g.state, 0).filter(
+      (a) => a.kind === 'activate' && a.abilityIndex === 1,
+    );
+    expect(activations).toEqual([]);
+  });
+
+  test('X picks a creature card with that mana value exiled with it and puts it onto the battlefield tapped under its controller', () => {
+    const g = board();
+    kill(g, 'b1');
+    kill(g, 's2');
+    g.act(0).activate(SHELOB, {
+      ability: 2,
+      x: 2,
+      targets: [{ name: BEARS, zone: 'exile', seat: 1 }],
+      pay: true,
+    });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.tapped(BEARS, true);
+    g.expect.zone(SPIDER, 'exile', { seat: 2 });
+    g.expect.invariants();
+  });
+
+  test('a card of another mana value is not a target for that X', () => {
+    const g = board();
+    kill(g, 'b1');
+    const refused = (() => {
+      try {
+        g.act(0).activate(SHELOB, {
+          ability: 2,
+          x: 3,
+          targets: [{ name: BEARS, zone: 'exile', seat: 1 }],
+          pay: true,
+        });
+        return false;
+      } catch {
+        return true;
+      }
+    })();
+    expect(refused).toBe(true);
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+  });
+
+  test('the cards are remembered by that Shelob only: once it leaves the battlefield nothing is exiled with it', () => {
+    const g = board();
+    kill(g, 'b1');
+    g.act(0).cast({ name: 'Lightning Bolt', nth: 0 }, { targets: [SHELOB], pay: true });
+    g.passAll();
+    g.expect.zone(SHELOB, 'graveyard', { seat: 0 });
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
   });
 });
 

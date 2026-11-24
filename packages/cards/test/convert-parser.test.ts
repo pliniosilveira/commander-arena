@@ -384,6 +384,7 @@ describe('unmatched abilities', () => {
       'cost.exile-graveyard-cards',
       'cost.exile-any-hand',
       'cost.put-this-on-library-bottom',
+      'cost.put-linked-exile-graveyard',
       'cost.reveal-this',
       'cost.mill',
       'cost.energy',
