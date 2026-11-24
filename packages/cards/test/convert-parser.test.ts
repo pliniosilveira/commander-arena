@@ -1381,6 +1381,7 @@ describe('unmatched abilities', () => {
       'amount.for-each',
       'amount.number-of',
       'amount.for-each-counter',
+      'amount.for-each-counter-kind',
       'amount.for-each-opponent',
       'amount.for-each-this-way',
       'amount.times-kicked',

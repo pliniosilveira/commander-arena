@@ -614,6 +614,8 @@ export type IrAmount =
       readonly of: IrNoun;
       /** The kind of counter; left out for "the number of counters on that creature" (every kind added together). */
       readonly counter?: string;
+      /** "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter, not of counters. Never with `counter`. */
+      readonly kinds?: true;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"

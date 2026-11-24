@@ -222,7 +222,16 @@ export type Amount =
    * it ("+1/+1", "-1/-1", "stun", "page", ...). Left out (Puca's Covenant, "the number of counters on that creature"): the counters of every kind added together (not in a static ability's
    * condition, which names the kind: `validateCard`).
    */
-  | { readonly kind: 'countersOn'; readonly of: ObjectRef; readonly counter?: string }
+  | {
+      readonly kind: 'countersOn';
+      readonly of: ObjectRef;
+      readonly counter?: string;
+      /**
+       * "Draw a card for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter the object has (as it is, or as it last was), not the number of
+       * counters. Never with `counter`.
+       */
+      readonly kinds?: true;
+    }
   /**
    * "The greatest power among creatures you control", "the total power of creatures you control", "the greatest
    * mana value among artifacts you control" (D-131): over the objects `filter` matches (in its zone, the battlefield

@@ -461,6 +461,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),
   'amount.for-each-counter': spell((e) => `Draw a card ${e}.`),
+  // Blitzball Stadium: the cards a creature draws when it deals combat damage.
+  'amount.for-each-counter-kind': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, draw a card ${e}.`,
+  ),
   'amount.for-each-opponent': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),

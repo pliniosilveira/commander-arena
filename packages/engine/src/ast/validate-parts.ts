@@ -2294,6 +2294,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
+      if (a.kind === 'countersOn' && a.kinds !== undefined && (a.kinds !== true || a.counter !== undefined)) {
+        issue(out, `${path}.kinds`, 'kinds is true and goes without a counter kind');
+      }
       break;
     case 'aggregate':
       // D-131: the greatest or the total of a stat over the objects a filter matches.

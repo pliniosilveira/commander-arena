@@ -61,6 +61,7 @@ export const AMOUNT_TIMES_KICKED = defineRule<IrAmount>({
 export const FOR_EACH_AMOUNTS = [
   'amount.for-each',
   'amount.for-each-counter',
+  'amount.for-each-counter-kind',
   'amount.for-each-opponent',
   'amount.for-each-this-way',
   'amount.times-kicked',
