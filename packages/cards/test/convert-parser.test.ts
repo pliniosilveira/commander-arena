@@ -1243,6 +1243,7 @@ describe('unmatched abilities', () => {
       'noun.any-number-targets-controllers',
       'noun.target-commander',
       'noun.any-number-targets',
+      'noun.each-of-any-number-targets',
       'noun.creatures-named-self',
       'noun.each-creature-you-control-named-self',
       'noun.any-number-of-targets',

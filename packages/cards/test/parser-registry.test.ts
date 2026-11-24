@@ -608,6 +608,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-commander': spell((e) => `Destroy ${e}.`),
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
+  'noun.each-of-any-number-targets': spell((e) => `Put a +1/+1 counter on ${e}.`),
   // Prismari deck, group 2 (D-656, D-657): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
   'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
   // Issue 145 (Gruff Triplets): "each creature you control named ~" is the objects of a counters effect.

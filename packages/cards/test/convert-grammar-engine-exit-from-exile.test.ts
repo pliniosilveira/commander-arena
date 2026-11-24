@@ -356,3 +356,43 @@ describe('"~ can\'t attack unless you control a 1/1 creature." (CR 508.1a, 101.2
     expect(() => g.playCombat({ attack: [beast.name], until: 'combatDamage' })).toThrow();
   });
 });
+
+describe('"When ~ enters, put three +1/+1 counters on each of any number of target creatures that entered this turn." (CR 115.1, 601.2d, 122.1, 400.7)', () => {
+  const recluse = parsed(
+    'SYNTHETIC Sweet Recluse',
+    'Creature — Spider',
+    'When ~ enters, put three +1/+1 counters on each of any number of target creatures that entered this turn.',
+    { manaCost: '{2}{G}', power: '2', toughness: '2', colors: ['G'] },
+  );
+  const build = () =>
+    scenario()
+      .define(recluse)
+      .seat(0)
+      .hand('Grizzly Bears', recluse.name)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest', 'Forest', 'Serra Angel')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('a creature that entered this turn gets the counters', () => {
+    const g = build();
+    g.act(0).cast('Grizzly Bears', { pay: true });
+    g.passAll();
+    g.act(0).cast(recluse.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('Grizzly Bears');
+    g.passAll();
+    expect(g.object('Grizzly Bears').counters?.['+1/+1']).toBe(3);
+  });
+
+  test('a creature that was already on the battlefield is not a legal target', () => {
+    const g = build();
+    g.act(0).cast('Grizzly Bears', { pay: true });
+    g.passAll();
+    g.act(0).cast(recluse.name, { pay: true });
+    g.passAll();
+    expect(() => g.act(0).chooseTargets('Serra Angel')).toThrow();
+  });
+});
