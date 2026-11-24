@@ -82,4 +82,23 @@ export const SYNTHETIC_G8_LIST: readonly CardDefinition[] = [
     oracleText: 'Exploit',
     abilities: [{ kind: 'keyword', keyword: { kind: 'exploit' } }],
   }),
+  // "Replicate—Tap an untapped Horror you control. You gain 1 life." (no targets, no mana to pay for the copies)
+  singleFace({
+    name: 'SYNTHETIC Tap Replicate Ritual',
+    manaCost: ['B'],
+    types: ['sorcery'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText: 'Replicate—Tap an untapped Horror you control.\nYou gain 1 life.',
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: {
+          kind: 'replicate',
+          cost: [{ kind: 'tapPermanents', filter: { subtypes: ['Horror'] }, count: 1 }],
+        },
+      },
+    ],
+    spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 } },
+  }),
 ];

@@ -214,20 +214,28 @@ function lowerCostedKeyword(
     name === 'embalm' ||
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
-    name === 'replicate' ||
     name === 'escalate' ||
     name === 'buyback' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
-      : name === 'ward'
-        ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
-        : ['mana', 'payLife'];
+      : // CR 702.56a (Psionic Ritual): a replicate cost is mana or the tapping of an untapped permanent, paid once for each copy.
+        name === 'replicate'
+        ? ['mana', 'tapPermanents']
+        : name === 'ward'
+          ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
+          : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
     only,
-    name === 'cycling' ? { x: true } : name === 'ward' ? { ward: true } : {},
+    name === 'cycling'
+      ? { x: true }
+      : name === 'ward'
+        ? { ward: true }
+        : name === 'replicate' && only.kind === 'tapPermanents'
+          ? { ordinary: true }
+          : {},
   );
   if (!cost.ok) return cost;
   const blocked = gate(ability, [

@@ -179,6 +179,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-654: "an enchanted creature dies".
   'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
+  'keyword.replicate-tap': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
   'keyword.station': asIs,

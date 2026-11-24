@@ -955,8 +955,14 @@ function walkAbility(
       } else if (a.keyword.kind === 'escalate') {
         // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-145).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
-      } else if (a.keyword.kind === 'replicate' || a.keyword.kind === 'buyback') {
-        // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129). CR 702.27a: the same for the buyback cost (Galadriel group 3).
+      } else if (a.keyword.kind === 'replicate') {
+        // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana, no X (D-129), or on its own the tapping of untapped permanents (Psionic Ritual).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
+          'mana',
+          'tapPermanents',
+        ]);
+      } else if (a.keyword.kind === 'buyback') {
+        // CR 702.27a: the buyback cost, an additional cost paid as the spell is cast; mana only, no X (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'suspend') {
         // CR 702.62a: paid as the special action is taken (rules/special-actions.ts); mana only, no X (D-128).
