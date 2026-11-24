@@ -2073,7 +2073,8 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
-      { triggerSubject: true, moved: true, token: true },
+      // "each of those creatures" (Unbreakable Formation, CR 608.2c): the group an earlier instruction named, as it was lowered.
+      { triggerSubject: true, moved: true, token: true, eachMention: true },
     );
   },
 };

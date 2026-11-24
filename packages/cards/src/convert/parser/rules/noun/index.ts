@@ -322,8 +322,11 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target Aura spell',
     'target spell with mana value 1',
     'target creature spell with mana value 3 or less',
+    'target spell with {X} in its mana cost',
   ],
   rejects: [
+    'target spell with {X} in its mana cost and',
+    'target spell with {X} in its mana costs',
     'target spells',
     'target spell or ability',
     'target tapped spell',
@@ -342,6 +345,15 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     (ctx, pos) => {
       const head = sequence(literal('target '), spellPhrase())(ctx, pos);
       if (!head.ok) return head;
+      // CR 107.3, 202.1 (Frontline Medic): "target spell with {X} in its mana cost": a spell whose printed mana cost has an {X} (the engine's `xInManaCost`).
+      const withX = literal(' with {X} in its mana cost')(ctx, head.pos);
+      if (withX.ok) {
+        return {
+          ok: true,
+          value: { ...head.value[1], xInManaCost: true as const },
+          pos: withX.pos,
+        };
+      }
       const suffix = sequence(
         literal(' with mana value less than or equal to '),
         family<IrAmount>('amount'),

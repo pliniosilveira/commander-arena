@@ -40,19 +40,17 @@ const medic = singleFaceCard({
 });
 
 const attackWith = (...attackers: readonly string[]) => {
-  const g = scenario()
-    .seat(0)
-    .define(medic)
-    .battlefield(MEDIC, BEARS, HAWK, ELVES)
-    .seat(1)
-    .build();
+  const g = scenario().seat(0).define(medic).battlefield(MEDIC, BEARS, HAWK, ELVES).seat(1).build();
   g.advanceTo('declareAttackers', { attack: false });
   g.act(0).attack([...attackers]);
   return g;
 };
 
 const indestructible = (g: ReturnType<typeof attackWith>, name: string) =>
-  g.view(0).battlefield.find((o) => o.name === name)?.keywords.includes('indestructible') === true;
+  g
+    .view(0)
+    .battlefield.find((o) => o.name === name)
+    ?.keywords.includes('indestructible') === true;
 
 describe('Battalion: "~ and at least two other creatures attack"', () => {
   test('the creature and two others attack: it triggers and every creature I control, attacking or not, gains indestructible', () => {

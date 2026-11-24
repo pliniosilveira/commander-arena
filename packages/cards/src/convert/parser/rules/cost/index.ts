@@ -36,6 +36,24 @@ export const COST_TAP = defineRule<IrCost>({
   ),
 });
 
+/**
+ * `cost.untap`: "{Q}" (CR 107.6 the untap symbol: "Untap this permanent", which an untapped permanent cannot pay; CR 602.5a: a creature's ability with {Q} in its cost cannot be activated unless
+ * it has been under its controller's control since the start of their most recent turn): untapping the permanent itself as a cost (the engine's `untap`).
+ */
+export const COST_UNTAP = defineRule<IrCost>({
+  id: 'cost.untap',
+  family: 'cost',
+  leading: ['{q}'],
+  cites: ['CR 107.6 (Numbers and Symbols)', 'CR 602.5a (Activating Activated Abilities)'],
+  examples: ['{Q}', '{q}'],
+  rejects: ['{T}', 'untap', '{Q}{Q}', '{1}', 'Q'],
+  parse: node<string, IrCost>(
+    'cost.untap',
+    map(pattern(/\{q\}(?!\{q\})/i), (m) => m[0]),
+    () => ({ kind: 'untap' }),
+  ),
+});
+
 /** The symbols of a plain mana cost: a generic number or a single color, as `{1}{G}`. */
 const PLAIN_SYMBOLS = map(pattern(/(?:\{(?:0|[1-9][0-9]*|[WUBRGC])\})+/i), (m): string[] =>
   [...m[0].matchAll(/\{([^}]+)\}/g)].map((s) => (s[1] ?? '').toUpperCase()),
@@ -923,6 +941,7 @@ export const COST_ENERGY = defineRule<IrCost>({
 export const COST_RULES = [
   COST_BEHOLD,
   COST_TAP,
+  COST_UNTAP,
   COST_TAP_PERMANENTS,
   // Before the plain mana cost, which would take the plain prefix of "{1}{R/W}" and stop there.
   COST_MANA_HYBRID,

@@ -971,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // `mana` cost, with the value announced as the spell is cast or the ability activated.
   costKinds: [
     'tap',
+    // CR 107.6 (Order of Whiteclay): the untap symbol {Q}, "Untap this permanent".
+    'untap',
     'mana',
     'payLife',
     'payXLife',
