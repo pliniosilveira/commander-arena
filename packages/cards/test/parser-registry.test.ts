@@ -1110,6 +1110,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.that-sources-controller': permanent(
     (e) => `Whenever a source deals damage to ~, ${e} exiles a card from their hand at random.`,
   ),
+  'noun.that-spells-controller': permanent(
+    (e) => `Whenever ~ becomes the target of a spell, ~ deals 2 damage to ${e}.`,
+  ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
   'trigger.enchanted-by-you-attack': whenever,

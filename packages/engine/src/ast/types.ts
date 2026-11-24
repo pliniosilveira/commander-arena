@@ -4271,6 +4271,12 @@ export type Effect =
    */
   | { readonly kind: 'additionalLandDropThisTurn'; readonly count: Amount }
   /**
+   * "Damage can't be prevented this turn." (Stomp of Bonecrusher Giant, CR 615.12, 101.2, 611.2a): until the end of this turn no damage is prevented, whoever deals it and whoever or
+   * whatever it is dealt to; the prevention effects still apply once each and prevent nothing (as for the static `damageCantBePrevented`). It begins as the effect resolves and ends
+   * with the turn.
+   */
+  | { readonly kind: 'damageCantBePreventedThisTurn' }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability

@@ -2068,6 +2068,10 @@ function runEffect(
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
+    case 'damageCantBePreventedThisTurn':
+      // CR 615.12, 611.2a: for the rest of this turn no damage is prevented (read by `damageCantBePrevented`, `rules/global-statics.ts`).
+      return done({ ...state, turn: { ...state.turn, damageUnpreventable: true } });
+
     case 'additionalLandDropThisTurn':
       // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.
       return done(

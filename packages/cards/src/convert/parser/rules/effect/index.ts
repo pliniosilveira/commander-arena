@@ -68,6 +68,7 @@ import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
 import { DAMAGE_THEIR_CREATURES_EFFECT_RULES } from './damage-their-creatures';
+import { DAMAGE_UNPREVENTABLE_EFFECT_RULES } from './damage-unpreventable';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -1305,6 +1306,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
   ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
+  ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

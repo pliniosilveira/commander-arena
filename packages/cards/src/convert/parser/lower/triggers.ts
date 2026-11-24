@@ -877,7 +877,6 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ([
       'drawn',
       'sacrifice',
-      'becomesTarget',
       'lifeGained',
       'lifeLost',
       'attackBatch',
@@ -895,6 +894,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'winsCoinFlip',
     ].includes(only.event) &&
       only.actor !== undefined) ||
+    // Exit from Exile deck (Bonecrusher Giant, CR 603.2, 115.1): the controller of the spell or ability that targeted is the player of the event, said or not ("that spell's controller").
+    only.event === 'becomesTarget' ||
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||

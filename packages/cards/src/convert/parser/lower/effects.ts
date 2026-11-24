@@ -69,6 +69,7 @@ import { lowerCost } from './costs';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
+import { DAMAGE_UNPREVENTABLE_LOWERINGS } from './damage-unpreventable';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
@@ -2884,6 +2885,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
   ...SLIVER_D_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...DAMAGE_UNPREVENTABLE_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

@@ -109,6 +109,8 @@ export const DAMAGE_RECIPIENTS = [
   'noun.that-player',
   // "~ deals 2 damage to that permanent's controller" (stage P35, D-176, CR 109.4, 608.2h): the controller of an object the text named.
   'noun.its-controller',
+  // Exit from Exile deck (Bonecrusher Giant): "that spell's controller", the controller of the spell that targeted.
+  'noun.that-spells-controller',
   ...PERMANENT_OPERANDS,
   // "~ deals 1 damage to the player or planeswalker it's attacking" (stage P31, D-140): what the creature attacks.
   'noun.attacked-by-it',

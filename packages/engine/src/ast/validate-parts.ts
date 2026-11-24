@@ -6665,6 +6665,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       checkFilter(e.to, `${path}.to`, out);
       break;
+    case 'damageCantBePreventedThisTurn':
+      // CR 615.12: no parameters.
+      break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
       if (typeof e.count === 'number' ? !isCount(e.count) || e.count < 1 : e.count === undefined) {

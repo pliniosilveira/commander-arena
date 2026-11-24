@@ -151,6 +151,8 @@ function classify(raw: string): Pronoun | null {
   }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
+  // Exit from Exile deck (Bonecrusher Giant): "that spell's controller", the player a trigger about a spell that targeted names.
+  if (/^that spell['’]s controller$/u.test(word)) return { kind: 'player' };
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
@@ -955,6 +957,15 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
     source.alternatives === undefined &&
     subject !== undefined &&
     subject.det !== 'self' &&
+    actor === undefined
+  ) {
+    binder.seedControllerOfSubject(subject);
+  }
+  // Exit from Exile deck (Bonecrusher Giant, CR 603.2): "that spell's controller" of "Whenever ~ becomes the target of a spell": the player of the event, the controller of the spell or ability that targeted.
+  if (
+    source.event === 'becomesTarget' &&
+    source.alternatives === undefined &&
+    subject !== undefined &&
     actor === undefined
   ) {
     binder.seedControllerOfSubject(subject);

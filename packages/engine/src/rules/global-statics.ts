@@ -23,8 +23,9 @@ function someHas(state: GameState, kind: GlobalKind): boolean {
 }
 
 /** CR 615.12: whether damage can't be prevented. */
+// An effect that says so for the turn (Stomp) counts like the static ability.
 export const damageCantBePrevented = (state: GameState): boolean =>
-  someHas(state, 'damageCantBePrevented');
+  state.turn.damageUnpreventable === true || someHas(state, 'damageCantBePrevented');
 
 /** CR 702.80a, 120.3d: whether all damage is dealt as though its source had wither. */
 export const allDamageHasWither = (state: GameState): boolean =>

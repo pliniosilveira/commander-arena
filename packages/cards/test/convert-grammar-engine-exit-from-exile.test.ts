@@ -480,3 +480,87 @@ describe('"Whenever you cast a spell with cascade, return this card from your gr
     g.expect.zone(phoenix.name, 'graveyard', { seat: 0 });
   });
 });
+
+describe('"Damage can\'t be prevented this turn. ~ deals 2 damage to any target." (CR 615.12, 611.2a)', () => {
+  const stomp = parsed(
+    'SYNTHETIC Stomp Test',
+    'Instant',
+    "Damage can't be prevented this turn. ~ deals 2 damage to any target.",
+    { manaCost: '{1}{R}', colors: ['R'] },
+  );
+  const bolt = parsed('SYNTHETIC Plain Bolt', 'Instant', '~ deals 2 damage to any target.', {
+    manaCost: '{R}',
+    colors: ['R'],
+  });
+  const ward = parsed(
+    'SYNTHETIC Shield Spell',
+    'Instant',
+    'Prevent all damage that would be dealt to target creature this turn.',
+    { manaCost: '{W}', colors: ['W'] },
+  );
+  const build = (burn: string) =>
+    scenario()
+      .define(stomp)
+      .define(bolt)
+      .define(ward)
+      .seat(0)
+      .hand(ward.name, burn)
+      .battlefield('Mountain', 'Mountain', 'Plains', 'Grizzly Bears')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('a prevention shield stops an ordinary spell', () => {
+    const g = build(bolt.name);
+    g.act(0).cast(ward.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.act(0).cast(bolt.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+
+  test('after the effect the same shield prevents nothing', () => {
+    const g = build(stomp.name);
+    g.act(0).cast(ward.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.act(0).cast(stomp.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+  });
+});
+
+describe('"Whenever ~ becomes the target of a spell, ~ deals 2 damage to that spell\'s controller." (CR 603.2, 115.1, 109.4)', () => {
+  const giant = parsed(
+    'SYNTHETIC Spiteful Giant',
+    'Creature — Giant',
+    "Whenever ~ becomes the target of a spell, ~ deals 2 damage to that spell's controller.",
+    { manaCost: '{2}{R}', power: '4', toughness: '3', colors: ['R'] },
+  );
+  const shock = parsed('SYNTHETIC Weak Shock', 'Instant', '~ deals 1 damage to any target.', {
+    manaCost: '{R}',
+    colors: ['R'],
+  });
+  const build = () =>
+    scenario()
+      .define(giant)
+      .define(shock)
+      .seat(0)
+      .battlefield(giant.name)
+      .library(...FILLER)
+      .seat(1)
+      .life(20)
+      .hand(shock.name)
+      .battlefield('Mountain')
+      .library(...FILLER)
+      .at('precombatMain', { active: 1 })
+      .build();
+
+  test('the player who cast the spell takes 2 damage', () => {
+    const g = build();
+    g.act(1).cast(shock.name, { targets: [giant.name], pay: true });
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBe(18);
+  });
+});

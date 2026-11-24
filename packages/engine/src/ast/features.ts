@@ -479,6 +479,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'blight',
     // Issue 208: "You may play an additional land this turn." (CR 305.2).
     'additionalLandDropThisTurn',
+    // Exit from Exile deck (Stomp): "Damage can't be prevented this turn." (CR 615.12).
+    'damageCantBePreventedThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
     // D-201: "You get an emblem with ..." (CR 114).
@@ -3210,6 +3212,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   populate: true,
   blight: true,
   additionalLandDropThisTurn: true,
+  damageCantBePreventedThisTurn: true,
   moveCountersOnto: true,
   createEmblem: true,
   delayedSacrifice: true,
