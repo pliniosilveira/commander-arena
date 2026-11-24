@@ -145,6 +145,18 @@ describe('formatTableReport', () => {
   const report: TableReport = {
     seats: 4,
     games: 8,
+    bySeat: [
+      { games: 8, wins: 0, meanPlace: 3.5 },
+      { games: 8, wins: 2, meanPlace: 2.5 },
+      { games: 8, wins: 2, meanPlace: 2.25 },
+      { games: 8, wins: 4, meanPlace: 1.75 },
+    ],
+    byPosition: [
+      { games: 8, wins: 3, meanPlace: 2.25 },
+      { games: 8, wins: 1, meanPlace: 2.75 },
+      { games: 8, wins: 2, meanPlace: 2.5 },
+      { games: 8, wins: 2, meanPlace: 2.5 },
+    ],
     agents: [
       {
         label: 'heuristic',
@@ -182,6 +194,8 @@ describe('formatTableReport', () => {
 
   test('reads survival, the race, blocks and removal of each agent, with their denominators', () => {
     expect(text).toContain('table report: 8 games at 4 seats');
+    expect(text).toContain('by seat number: 0 0/8 (0.0%) place 3.50 | 1 2/8 (25.0%)');
+    expect(text).toContain('by turn order (0 took the first turn): 0 3/8 (37.5%) place 2.25');
     expect(text).toContain('mean place 2.50 (1 best), wins 2, first out 2, eliminated 6/8');
     expect(text).toContain('mean elimination turn 31.8, by life 5, commander 1');
     expect(text).toContain('all-in 26 (83.9%)');

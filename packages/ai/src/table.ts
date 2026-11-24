@@ -47,6 +47,8 @@ export interface TableGame {
    * without a winner shares 1), by seat. Use `rotation` to find the agent: agent `k` sat in seat `(k + rotation) % seats`.
    */
   readonly places: readonly number[];
+  /** The seat that took the first turn (drawn at random by the engine), or null when no action was taken. */
+  readonly startingSeat: SeatId | null;
   /** The events of the game, only when `TableOptions.trace` is on. */
   readonly events?: readonly TableEvent[];
 }
@@ -161,6 +163,7 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
         drew: game.result?.kind === 'draw',
         turns: game.state.turn.number,
         places: observer.placements(),
+        startingSeat: observer.startingSeat(),
         ...(options.trace ? { events: observer.events } : {}),
       });
     }

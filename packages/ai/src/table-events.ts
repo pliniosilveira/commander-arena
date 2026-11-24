@@ -202,6 +202,7 @@ export class TableObserver {
   /** Place of each seat that has been eliminated, by seat; the survivors have none yet. */
   private readonly places = new Map<SeatId, number>();
   private readonly seats: number;
+  private starter: SeatId | null = null;
 
   constructor(seats: number) {
     this.seats = seats;
@@ -209,6 +210,8 @@ export class TableObserver {
 
   observe(step: ActionStep): void {
     const { before, after, seat, action } = step;
+    // The engine draws the starting seat at random as the game is created (rules/setup.ts), so it is the active seat of the first state.
+    this.starter ??= before.turn.activeSeat;
     const view = getView(before, seat);
     const made =
       attackEvent(step, view, action) ??
@@ -240,6 +243,11 @@ export class TableObserver {
         place,
       });
     }
+  }
+
+  /** The seat that took the first turn (null until a step has been observed). */
+  startingSeat(): SeatId | null {
+    return this.starter;
   }
 
   /**

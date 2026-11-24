@@ -112,7 +112,19 @@ const avg = (sum: number, n: number): string => (n === 0 ? '-' : (sum / n).toFix
  * removal of each agent, in plain text. Counts come with their denominator so a rate can be read off.
  */
 export function formatTableReport(r: TableReport): string {
-  const lines: string[] = [`table report: ${r.games} games at ${r.seats} seats`, ''];
+  const slot = (label: string, rows: TableReport['bySeat']): string =>
+    `${label}: ${rows
+      .map(
+        (p, i) =>
+          `${i} ${p.wins}/${p.games} (${pct(p.wins, p.games)}) place ${p.meanPlace.toFixed(2)}`,
+      )
+      .join(' | ')}`;
+  const lines: string[] = [
+    `table report: ${r.games} games at ${r.seats} seats`,
+    slot('by seat number', r.bySeat),
+    slot('by turn order (0 took the first turn)', r.byPosition),
+    '',
+  ];
   for (const a of r.agents) {
     const s = a.survival;
     const t = a.attack;

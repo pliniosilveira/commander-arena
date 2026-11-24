@@ -71,10 +71,25 @@ export interface AgentReport {
   readonly removal: RemovalStats;
 }
 
+/** What happened to whoever sat in one seat, or in one place of the turn order, over the games. */
+export interface PositionStats {
+  readonly games: number;
+  readonly wins: number;
+  /** Mean place (1 best). */
+  readonly meanPlace: number;
+}
+
 export interface TableReport {
   readonly seats: number;
   readonly games: number;
   readonly agents: readonly AgentReport[];
+  /**
+   * By seat number. The engine draws the first seat at random, so a gap here that is not in `byPosition`
+   * comes from something tied to the seat number (a tie-break by seat, a deck bound to a seat), not from the turn order.
+   */
+  readonly bySeat: readonly PositionStats[];
+  /** By place in the turn order: 0 took the first turn, 1 the second, and so on. Games without a recorded start are left out. */
+  readonly byPosition: readonly PositionStats[];
 }
 
 const mean = (xs: readonly number[]): number =>
@@ -183,6 +198,31 @@ function removalOf(games: readonly TableGame[], agent: number, seats: number): R
   return { casts, tokens, bands, meanShareOfBest: mean(shares), atAttacker, atAttackerOfMine };
 }
 
+/** Wins and mean place of each slot, where `slotOf(game, seat)` says which slot a seat falls in (null: leave the game out). */
+function slotsOf(
+  games: readonly TableGame[],
+  seats: number,
+  slotOf: (game: TableGame, seat: number) => number | null,
+): PositionStats[] {
+  const stat = Array.from({ length: seats }, () => ({ games: 0, wins: 0, places: 0 }));
+  for (const g of games) {
+    for (let seat = 0; seat < seats; seat += 1) {
+      const slot = slotOf(g, seat);
+      const row = slot === null ? undefined : stat[slot];
+      if (row === undefined) continue;
+      const place = g.places[seat] ?? 1;
+      row.games += 1;
+      row.places += place;
+      if (g.winnerSeat === seat) row.wins += 1;
+    }
+  }
+  return stat.map((r) => ({
+    games: r.games,
+    wins: r.wins,
+    meanPlace: r.games === 0 ? 0 : r.places / r.games,
+  }));
+}
+
 /** The report of a run made with `trace: true`; a run without events reports empty attack, block and removal blocks. */
 export function tableReport(result: TableResult): TableReport {
   const games = result.log;
@@ -197,5 +237,9 @@ export function tableReport(result: TableResult): TableReport {
       block: blockOf(games, agent, result.seats),
       removal: removalOf(games, agent, result.seats),
     })),
+    bySeat: slotsOf(games, result.seats, (_, seat) => seat),
+    byPosition: slotsOf(games, result.seats, (g, seat) =>
+      g.startingSeat === null ? null : (seat - g.startingSeat + result.seats) % result.seats,
+    ),
   };
 }

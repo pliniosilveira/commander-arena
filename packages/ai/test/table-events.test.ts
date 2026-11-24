@@ -193,6 +193,7 @@ describe('a traced table run', () => {
     const r = await run(true);
     for (const g of r.log) {
       expect(g.places).toHaveLength(4);
+      expect([0, 1, 2, 3]).toContain(g.startingSeat);
       if (g.winnerSeat !== null) {
         expect(g.places[g.winnerSeat]).toBe(1);
         expect([...g.places].sort()).toEqual([1, 2, 3, 4]);
@@ -207,6 +208,11 @@ describe('a traced table run', () => {
     const rep = tableReport(r);
     expect(rep.games).toBe(4);
     expect(rep.agents.map((a) => a.label)).toEqual(r.labels);
+    // Every seat of every game falls in one seat slot and one place of the turn order, and one seat wins each game.
+    for (const slots of [rep.bySeat, rep.byPosition]) {
+      expect(slots.reduce((n, p) => n + p.games, 0)).toBe(16);
+      expect(slots.reduce((n, p) => n + p.wins, 0)).toBe(r.wins.reduce((a, b) => a + b, 0));
+    }
     for (const a of rep.agents) {
       expect(a.survival.games).toBe(4);
       expect(a.survival.meanPlace).toBeGreaterThanOrEqual(1);

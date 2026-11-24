@@ -73,6 +73,7 @@ export {
   type AgentReport,
   type AttackStats,
   type BlockStats,
+  type PositionStats,
   type RemovalStats,
   type SurvivalStats,
   type TableReport,
