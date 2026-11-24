@@ -294,6 +294,31 @@ const inTargetPlayersZone: Parser<{
   return { ok: true, value: { zone, controller: { noun: player } }, pos: r.pos };
 };
 
+/**
+ * " in that player's graveyard" (The Mouth of Sauron, CR 108.3, 404.1): the graveyard of the player an earlier instruction of the text targeted ("target player mills three cards.
+ * Then amass Orcs X, where X is the number of instant and sorcery cards in that player's graveyard"). The owner is an anaphor the binding pass resolves to that target.
+ */
+const inThatPlayersGraveyard: Parser<{
+  zone: 'graveyard';
+  controller: { readonly noun: IrNoun };
+}> = (ctx, pos) => {
+  const r = pattern(/ in (that (?:player|opponent))['’]s graveyard(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const word = r.value[1] ?? '';
+  const start = pos + ' in '.length;
+  const player: IrNoun = {
+    kind: 'noun',
+    det: 'anaphor',
+    filter: { raw: word },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start, end: start + word.length },
+    rule: 'noun.player',
+  };
+  return { ok: true, value: { zone: 'graveyard', controller: { noun: player } }, pos: r.pos };
+};
+
 function cards(plural: boolean): Parser<IrFilter> {
   const itsControllerGraveyard: Parser<{
     zone: 'graveyard';
@@ -342,6 +367,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     itsControllerGraveyard,
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersZone,
+    inThatPlayersGraveyard,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(

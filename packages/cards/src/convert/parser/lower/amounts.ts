@@ -452,7 +452,7 @@ export function lowerAmount(
         const itsController = controller.noun.det === 'controllerOf';
         if (
           controller.orPlaneswalkerController === true ||
-          (controller.noun.det !== 'target' && !itsController)
+          (controller.noun.det !== 'target' && controller.noun.det !== 'anaphor' && !itsController)
         ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
