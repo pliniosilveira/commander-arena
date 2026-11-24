@@ -1313,6 +1313,12 @@ export type PlayerSelector =
    */
   | { readonly kind: 'eachPlayerControlling'; readonly filter: ObjectFilter }
   /**
+   * "The number of players who control more lands than you" (CR 102.1, 109.4, 101.4; Oreskos Explorer): the players still in the game, other than the controller, who control more
+   * battlefield permanents that match `filter` than the controller does, read as the effect resolves, in the order of CR 101.4. The filter names no controller of its own (each
+   * player is read as "you" in turn).
+   */
+  | { readonly kind: 'eachPlayerControllingMore'; readonly filter: ObjectFilter }
+  /**
    * Several selectors at once (D-131): "you and target opponent" is `all` of `you` and a `target` player. The players
    * they name together, each once (a player named twice acts once), in the order CR 101.4 gives (the active player
    * first, then in turn order): the order in which each acts in a draw, a life change, a sacrifice or a token

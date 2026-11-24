@@ -1030,6 +1030,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayerExcept',
     // Shatter the Sky: "each player who controls a creature with power 4 or greater" (`eachPlayerControlling`, CR 102.1).
     'eachPlayerControlling',
+    // Planeswalker Party deck: "the number of players who control more lands than you".
+    'eachPlayerControllingMore',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -2085,6 +2087,8 @@ export const SELECTOR_KINDS = [
   'eachPlayerExcept',
   /** "Each player who controls a creature with power 4 or greater" (CR 102.1, 109.4, Shatter the Sky): the engine's `PlayerSelector` `eachPlayerControlling`. */
   'eachPlayerControlling',
+  /** "The number of players who control more lands than you" (CR 102.1, Oreskos Explorer): the engine's `PlayerSelector` `eachPlayerControllingMore`. */
+  'eachPlayerControllingMore',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */

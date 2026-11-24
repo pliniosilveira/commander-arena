@@ -74,6 +74,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   combatDamagedThisTurn: 'selector:combatDamagedThisTurn',
   // CR 102.1: "each player who controls a creature with power 4 or greater".
   eachPlayerControlling: 'selector:eachPlayerControlling',
+  // CR 102.1: "the number of players who control more lands than you".
+  eachPlayerControllingMore: 'selector:eachPlayerControllingMore',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -1608,6 +1610,17 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       }
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
+    }
+    case 'eachPlayerControllingMore': {
+      // CR 102.1, 109.4: the other players who control more battlefield permanents like the noun than the controller; the filter names no controller (each player is "you" in turn).
+      if (noun.of === undefined) return failure(noun, []);
+      const filter = lowerFilter(noun.of);
+      if (!filter.ok) return filter;
+      if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
+        return failure(noun, []);
+      }
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'eachPlayerControllingMore', filter: filter.value });
     }
     case 'lostLifeThisTurn': {
       // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.

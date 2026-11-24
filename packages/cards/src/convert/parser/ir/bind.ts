@@ -132,6 +132,7 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'combatDamagedThisTurn',
   // "each player who controls a creature with power 4 or greater": several players, as above.
   'eachPlayerControlling',
+  'eachPlayerControllingMore',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {

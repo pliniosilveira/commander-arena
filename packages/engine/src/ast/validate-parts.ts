@@ -1695,6 +1695,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
     case 'attackedPlayers':
     case 'triggerDamagedPlayers':
     case 'combatDamagedByNamed':
@@ -1735,6 +1736,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
       }
       break;
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
       // CR 102.1, 109.4 (Shatter the Sky): "each player who controls a creature with power 4 or greater": the filter reads battlefield permanents, each player as "you".
       checkFilter(sel.filter, `${path}.filter`, out);
       if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
@@ -1916,6 +1918,7 @@ export const PLAYER_ONLY = [
   'eachOtherOpponent',
   'eachPlayerExcept',
   'eachPlayerControlling',
+  'eachPlayerControllingMore',
   'all',
   'controllerOf',
   'ownerOf',

@@ -155,6 +155,7 @@ export interface IrNoun extends IrNode {
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
     | 'lostLifeThisTurn' // "each opponent who lost life this turn" (CR 119.3): the players of the group `whoGroup` who lost life this turn
     | 'combatDamagedThisTurn' // "your opponents who were dealt combat damage by ~ or a Dragon this turn" (CR 120.2a): the players of the group `whoGroup` that source hurt
+    | 'eachPlayerControllingMore' // "the number of players who control more lands than you" (CR 102.1): the other players with more battlefield permanents like `of` than the controller
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
