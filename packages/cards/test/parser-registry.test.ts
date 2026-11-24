@@ -1179,6 +1179,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As long as ${e}, enchanted creature has hexproof.`,
   ),
   'noun.all-enchanted': spell((e) => `Destroy ${e}.`),
+  'noun.all-not-legendary': spell((e) => `Destroy ${e}.`),
   'static.equip-cost-reduction': asIs,
   // Stage P52 (D-210): the players an effect asks, and what the instructions before them did.
   // Issue 26 (the Danitha deck, D-403): the condition of the second sentence of an offer to put a card onto the battlefield.

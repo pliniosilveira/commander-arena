@@ -72,6 +72,7 @@ import {
   spellPhrase,
   withColorList,
 } from './phrases';
+import { PLANESWALKER_PARTY_NOUN_RULES } from './planeswalker-party';
 import { PLAYER_NOUN_RULES } from './players';
 import { PLAYERS_WHO_NOUN_RULES } from './players-who';
 import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
@@ -1054,6 +1055,7 @@ export const NOUN_RULES = [
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
+  ...PLANESWALKER_PARTY_NOUN_RULES,
   ...ENCHANTED_BY_YOU_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
   ...HYLDA_G2_EARLY_NOUN_RULES,

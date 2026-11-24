@@ -1,0 +1,88 @@
+Commander
+1x Commodore Guff
+
+Mainboard
+1x Ajani Steadfast
+1x Arcane Signet
+1x Azorius Signet
+1x Blasphemous Act
+1x Boros Signet
+1x Cartographer's Hawk
+1x Cascade Bluffs
+1x Chandra, Awakened Inferno
+1x Chandra, Legacy of Fire
+1x Chandra, Torch of Defiance
+1x Command Tower
+1x Deepglow Skate
+1x Deploy the Gatewatch
+1x Elspeth, Sun's Champion
+1x Exotic Orchard
+1x Fellwar Stone
+1x Flux Channeler
+1x Fog Bank
+1x Forge of Heroes
+1x Frostboil Snarl
+1x Furycalm Snarl
+1x Gatewatch Beacon
+1x Gideon Jura
+1x Grateful Apparition
+1x Guff Rewrites History
+1x Honor-Worn Shaku
+1x Interplanar Beacon
+1x Izzet Signet
+1x Jace Beleren
+1x Jace, Architect of Thought
+1x Jace, Mirror Mage
+1x Jaya's Phoenix
+1x Karn's Bastion
+1x Kazuul, Tyrant of the Cliffs
+1x Leori, Sparktouched Hunter
+1x Mangara, the Diplomat
+1x Mobilized District
+1x Myriad Landscape
+1x Mystic Gate
+1x Mystic Monastery
+1x Nahiri, the Harbinger
+1x Narset of the Ancient Way
+1x Narset, Enlightened Master
+1x Narset, Parter of Veils
+1x Nevinyrral's Disk
+1x Norn's Annex
+1x Oath of Gideon
+1x Oath of Jace
+1x Oath of Teferi
+1x Onakke Oathkeeper
+1x Oreskos Explorer
+1x Path to Exile
+1x Port Town
+1x Prairie Stream
+1x Promise of Loyalty
+1x Reliquary Tower
+1x Repeated Reverberation
+1x Rugged Prairie
+1x Saheeli, Sublime Artificer
+1x Sarkhan the Masterless
+1x Semester's End
+1x Silent Arbiter
+1x Skycloud Expanse
+1x Sol Ring
+1x Spark Double
+1x Sparkshaper Visionary
+1x Swords to Plowshares
+1x Talisman of Conviction
+1x Talisman of Creativity
+1x Talisman of Progress
+1x Temple of Enlightenment
+1x Temple of Epiphany
+1x Temple of Triumph
+1x Teyo, Geometric Tactician
+1x The Chain Veil
+1x The Wanderer
+1x Thrummingbird
+1x Urza's Ruinous Blast
+1x Vronos, Masked Inquisitor
+1x Wall of Denial
+1x Wayfarer's Bauble
+4x Mountain
+7x Island
+7x Plains
