@@ -172,6 +172,44 @@ export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "This creature costs {X} less to cast, where X is the greatest number of artifacts an opponent controls. Flying, haste. Whenever this creature deals combat damage to a player, you create a
+  // Treasure token for each artifact that player controls." (CR 109.4, 601.2f, 603.2c)
+  singleFace({
+    name: 'SYNTHETIC Hoard Wyrm',
+    manaCost: ['7', 'R', 'R'],
+    types: ['creature'],
+    subtypes: ['Dragon'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 6,
+    toughness: 6,
+    oracleText:
+      'This creature costs {X} less to cast, where X is the greatest number of artifacts an opponent controls. Flying, haste. Whenever this creature deals combat damage to a player, you create a Treasure token for each artifact that player controls.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'costReduction',
+          spells: { kind: 'this' },
+          amount: { kind: 'greatestCountOfAnOpponent', filter: { types: ['artifact'] } },
+        },
+      },
+      { kind: 'keyword', keyword: { kind: 'flying' } },
+      { kind: 'keyword', keyword: { kind: 'haste' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+        effect: {
+          kind: 'createToken',
+          token: { kind: 'preset', preset: 'Treasure' },
+          count: {
+            kind: 'countOf',
+            filter: { types: ['artifact'], controlledBy: { kind: 'triggerPlayer' } },
+          },
+        },
+      },
+    ],
+  }),
   // "Cycling {X}{2}{R}. When you cycle this card, destroy up to X target artifacts." (CR 702.29a, 107.3, 603.3d)
   singleFace({
     name: 'SYNTHETIC Artifact Mammoth',

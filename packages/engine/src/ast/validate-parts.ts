@@ -2149,6 +2149,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
   }
   switch (a?.kind) {
     case 'countOf':
+    case 'greatestCountOfAnOpponent':
     case 'aggregate':
     case 'devotion':
     case 'commanderColors':
@@ -2483,6 +2484,28 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         JSON.stringify(a.player) !== JSON.stringify(scope.lifeAffected)
       ) {
         checkSinglePlayer(a.player, `${path}.player`, 'lifeTotalOf', out);
+      }
+      break;
+    case 'greatestCountOfAnOpponent':
+      // CR 109.4: the objects each opponent controls, one opponent at a time: the filter names no player and no zone but the battlefield.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'greatestCountOfAnOpponent needs a filter');
+      } else {
+        if (
+          a.filter.controller !== undefined ||
+          a.filter.controlledBy !== undefined ||
+          a.filter.owner !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the controller of a greatest count among opponents is each opponent in turn: the filter names none',
+          );
+        }
+        if (a.filter.zone !== undefined && a.filter.zone !== 'battlefield') {
+          issue(out, `${path}.filter.zone`, 'only permanents have a controller');
+        }
+        checkFilter(a.filter, `${path}.filter`, out);
       }
       break;
     case 'damageDealtToThisTurn':
@@ -2884,11 +2907,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
         const { controlledBy, ...rest } = a.filter;
         // CR 109.4, 608.2c (Observed Stasis): "for each tapped creature its controller controls": `controllerOf` of the permanent an Aura is attached to, counted the same way.
-        if (kindOf(controlledBy) !== 'target' && kindOf(controlledBy) !== 'controllerOf') {
+        // CR 603.2c (Cavern-Hoard Dragon): "for each artifact that player controls": the player the trigger is about (`triggerPlayer`, valid only where the trigger has one).
+        if (
+          kindOf(controlledBy) !== 'target' &&
+          kindOf(controlledBy) !== 'controllerOf' &&
+          kindOf(controlledBy) !== 'triggerPlayer'
+        ) {
           issue(
             out,
             `${path}.filter.controlledBy`,
-            'a count names the player whose objects it counts by a target of the ability or spell, or the controller of an object (controlledBy: target or controllerOf)',
+            'a count names the player whose objects it counts by a target of the ability or spell, the controller of an object, or the player the trigger is about (controlledBy: target, controllerOf or triggerPlayer)',
           );
         } else {
           checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);

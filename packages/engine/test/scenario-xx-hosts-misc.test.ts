@@ -1,7 +1,7 @@
 // The Hosts of Mordor deck (issue 150), small primitives. Cards are SYNTHETIC (src/cards/fixtures/synthetic-hosts-misc.ts).
 // Relic of Sauron: "Add two mana in any combination of {U}, {B}, and/or {R}." (CR 106.1b, 605.3b, 106.4, 601.2g).
 import { describe, expect, test } from 'vitest';
-import { SUPPORTED_FEATURES, syntheticCard, validateCard } from '../src/index';
+import { getView, SUPPORTED_FEATURES, syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const LIBRARY = Array.from({ length: 12 }, () => 'Plains');
@@ -411,6 +411,82 @@ describe('"costs {3} less to cast if it targets a creature that was dealt damage
     expect(g.state.turnLog.damagedObjects).toContain(g.id('hurt'));
     g.advanceTo('precombatMain', { turn: 'next' });
     expect(g.state.turnLog.damagedObjects ?? []).toEqual([]);
+  });
+});
+
+describe('"costs {X} less to cast, where X is the greatest number of artifacts an opponent controls" and "a Treasure for each artifact that player controls" (CR 109.4, 601.2f, 603.2c)', () => {
+  const WYRM = 'SYNTHETIC Hoard Wyrm';
+  const RING = 'Sol Ring';
+  const rings = (n: number) => Array.from({ length: n }, () => RING);
+  const board = (a: number, b: number, mine = 0) =>
+    scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(WYRM)
+      .battlefield(...Array.from({ length: 9 }, () => 'Mountain'))
+      .battlefield(...rings(mine))
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(...rings(a))
+      .seat(2)
+      .library(...LIBRARY)
+      .battlefield(...rings(b))
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  const castCost = (g: Game) =>
+    getView(g.state, 0).seats[0]?.hand.find((o) => o.name === WYRM)?.castCost;
+
+  test('the card is valid and the amount is a listed feature', () => {
+    expect(validateCard(syntheticCard(WYRM))).toEqual([]);
+    expect(SUPPORTED_FEATURES.amountKinds).toContain('greatestCountOfAnOpponent');
+  });
+
+  test('the opponent with the most counts, not the sum: 2 and 3 artifacts reduce by 3', () => {
+    expect(castCost(board(2, 3))).toEqual(['4', 'R', 'R']);
+    expect(castCost(board(3, 2))).toEqual(['4', 'R', 'R']);
+  });
+
+  test('my own artifacts do not count', () => {
+    expect(castCost(board(0, 1, 5))).toEqual(['6', 'R', 'R']);
+  });
+
+  test('no opponent artifacts: the full cost', () => {
+    expect(castCost(board(0, 0))).toEqual(['7', 'R', 'R']);
+  });
+
+  test('seven or more: only the generic mana goes, {R}{R} is left (ruling 2023-06-16)', () => {
+    expect(castCost(board(8, 1))).toEqual(['R', 'R']);
+    expect(castCost(board(7, 0))).toEqual(['R', 'R']);
+  });
+
+  test('it can be cast with the reduced cost', () => {
+    const g = board(2, 3);
+    g.act(0).cast(WYRM, { pay: true });
+    g.passAll();
+    g.expect.zone(WYRM, 'battlefield');
+  });
+
+  test('combat damage to a player: a Treasure for each artifact that player controls, not the other opponent', () => {
+    const g = scenario({ seats: 3 })
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(WYRM, { label: 'wyrm' })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(...rings(2))
+      .seat(2)
+      .library(...LIBRARY)
+      .battlefield(...rings(3))
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 'wyrm', target: { player: 2 } }]);
+    g.advanceTo('endOfCombat');
+    g.passAll();
+    const treasures = g.find({ name: 'Treasure', zone: 'battlefield' });
+    expect(treasures).toHaveLength(3);
+    for (const t of treasures) expect(t.controller).toBe(0);
   });
 });
 

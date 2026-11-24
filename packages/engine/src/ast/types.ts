@@ -318,6 +318,12 @@ export type Amount =
    */
   | { readonly kind: 'damageDealtToThisTurn'; readonly player: PlayerSelector }
   /**
+   * "~ costs {X} less to cast, where X is the greatest number of artifacts an opponent controls" (Cavern-Hoard Dragon; CR 109.4, 608.2c, 601.2f): for each opponent still in the game,
+   * the number of objects `filter` matches that player controls, and the greatest of those numbers (0 with no opponent). `filter` names no controller, owner or `controlledBy`: the
+   * controller is each opponent in turn. Read as the amount is read (for a cost reduction, as the total cost is determined).
+   */
+  | { readonly kind: 'greatestCountOfAnOpponent'; readonly filter: ObjectFilter }
+  /**
    * "For each player who lost life this turn", "the number of your opponents who were dealt combat damage by this creature or a Dragon this turn" (CR 102.1, 608.2c): how many players
    * `of` names, as the amount is read (the player selectors that read the game: `lostLifeThisTurn`, `combatDamagedThisTurn`, `eachPlayer`, `eachOpponent`, ...). Not a static
    * ability's power or toughness.

@@ -230,6 +230,63 @@ describe('"costs {3} less to cast if it targets a creature that was dealt damage
   });
 });
 
+describe('"costs {X} less to cast, where X is the greatest number of artifacts an opponent controls" and the Treasures "for each artifact that player controls" (Cavern-Hoard Dragon, CR 109.4, 601.2f)', () => {
+  test('the real cost line: the greatest count of one opponent, not of the table', () => {
+    const parsed = readAll(
+      'This creature costs {X} less to cast, where X is the greatest number of artifacts an opponent controls.',
+      'creature',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'costReduction',
+          spells: { kind: 'this' },
+          amount: { kind: 'greatestCountOfAnOpponent', filter: { types: ['artifact'] } },
+        },
+      },
+    ]);
+  });
+
+  test('the real trigger: a Treasure for each artifact of the player dealt damage', () => {
+    const parsed = readAll(
+      'Whenever ~ deals combat damage to a player, you create a Treasure token for each artifact that player controls.',
+      'creature',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+        effect: {
+          kind: 'createToken',
+          token: { kind: 'preset', preset: 'Treasure' },
+          count: {
+            kind: 'countOf',
+            filter: { types: ['artifact'], controlledBy: { kind: 'triggerPlayer' } },
+          },
+        },
+      },
+    ]);
+  });
+
+  test('"that player" is not the "you" of the sentence in a trigger about a player (SYNTHETIC)', () => {
+    const parsed = readAll(
+      'Whenever ~ deals combat damage to a player, you draw a card for each creature that player controls.',
+      'creature',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"controlledBy":{"kind":"triggerPlayer"}');
+  });
+
+  test.each([
+    'This creature costs {X} less to cast, where X is the greatest number of artifacts your opponents control.',
+    'This creature costs {X} less to cast, where X is the greatest number of artifacts you control.',
+    'This creature costs {X} less to cast, where X is the greatest number of artifacts.',
+    'This creature costs {X} less to cast, where X is the greatest number of artifact an opponent controls.',
+  ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
+    expect(dropped(text, 'creature').reason).toBeDefined();
+  });
+});
+
 describe('"When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 603.3d)', () => {
   test('the real line: a slot of up to as many targets as the X of the cycling cost', () => {
     const parsed = readAll(

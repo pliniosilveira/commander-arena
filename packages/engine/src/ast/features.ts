@@ -1640,6 +1640,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeTotalOf',
     // "the damage dealt to target opponent this turn" (CR 120.3): the engine's `damageDealtToThisTurn`.
     'damageDealtToThisTurn',
+    // "the greatest number of artifacts an opponent controls" (CR 109.4): the engine's `greatestCountOfAnOpponent`.
+    'greatestCountOfAnOpponent',
     // CR 102.1: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
     'playerCount',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
@@ -2802,6 +2804,8 @@ export const AMOUNT_KINDS = [
   'lifeTotalOf',
   /** "The damage dealt to target opponent this turn" (CR 120.3, 608.2c): the engine's `damageDealtToThisTurn`, from `TurnLog.damageTaken`. */
   'damageDealtToThisTurn',
+  /** "The greatest number of artifacts an opponent controls" (CR 109.4, 608.2c): the engine's `greatestCountOfAnOpponent`. */
+  'greatestCountOfAnOpponent',
   /** "For each player who lost life this turn" (CR 102.1, 608.2c): the engine's `playerCount` of a player selector. */
   'playerCount',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */

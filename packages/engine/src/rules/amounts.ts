@@ -305,6 +305,19 @@ export function amountOf(
   if (amount.kind === 'playerCount') {
     return resolvePlayers(state, amount.of, ctx, targets).length;
   }
+  if (amount.kind === 'greatestCountOfAnOpponent') {
+    // CR 109.4: each opponent still in the game in turn is "you" of the filter; the greatest of the counts.
+    let greatest = 0;
+    for (const seat of opponentsOf(state, ctx.controller)) {
+      const count = countMatching(
+        state,
+        { ...amount.filter, controller: 'you' },
+        { ...ctx, controller: seat },
+      );
+      if (count > greatest) greatest = count;
+    }
+    return greatest;
+  }
   if (amount.kind === 'damageDealtToThisTurn') {
     // CR 120.3: the damage every source has dealt to the player this turn (damage prevented was never dealt).
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];

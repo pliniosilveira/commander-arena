@@ -323,8 +323,10 @@ class Binder {
           (a) =>
             a.kind === 'player' &&
             a.noun.filter.raw !== '' &&
+            // Cavern-Hoard Dragon (CR 603.2c): "Whenever ~ deals combat damage to a player, you create a Treasure token for each artifact that player controls": when the trigger is about a
+            // player, "that player" is that player and never the "you" of the sentence.
             !(
-              this.playerAsked &&
+              (this.playerAsked || this.antecedents.some((x) => x.noun.ref === 'trigActor')) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
             ),
@@ -511,6 +513,7 @@ class Binder {
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
       case 'damageDealtToThisTurn':
+      case 'greatestCountOfAnOpponent':
         return { ...amount, of: this.noun(amount.of) };
       case 'commanderCasts':
         // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.
