@@ -151,6 +151,7 @@ describe('the dimensions', () => {
       'thisWayAtLeast',
       'diedThisWay',
       'objectMatches',
+      'discardedAsCostMatches',
       'giftPromised',
       'opponentControlsAtLeast',
       // D-139: "if you control the artifact with the greatest mana value or tied".
