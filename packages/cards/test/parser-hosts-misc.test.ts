@@ -1,7 +1,32 @@
 // The Hosts of Mordor deck (issue 150): seven cards, each with its own small primitive. The lines are the real Oracle text of the acceptance cards of the golden
 // corpus (names replaced by ~) read through the whole pipeline; the other lines are SYNTHETIC siblings and near misses the grammar must not read.
+
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
+import { fromGoldenCard, importCard, parseGolden } from '../src/index';
+import { NO_OVERRIDES } from './convert-grammar-helpers';
 import { dropped, read, readAll } from './parser-p5-helpers';
+
+describe('the seven cards of the Hosts of Mordor deck read as a whole from their real Oracle text', () => {
+  const golden = parseGolden(
+    readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
+  );
+  test.each([
+    'Bitter Downfall',
+    'Cavern-Hoard Dragon',
+    'Inferno Titan',
+    'Knollspine Dragon',
+    'Monstrosity of the Lake',
+    'Rampaging War Mammoth',
+    'Relic of Sauron',
+  ])('%s is supported', (name) => {
+    const card = golden.find((c) => c.name === name);
+    if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
+    const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+  });
+});
 
 describe('"Add two mana in any combination of {U}, {B}, and/or {R}" (Relic of Sauron, CR 106.1b, 605.3b)', () => {
   test('the real line: a mana ability of two mana, each one of the three listed colors', () => {

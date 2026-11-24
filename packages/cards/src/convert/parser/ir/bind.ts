@@ -323,10 +323,11 @@ class Binder {
           (a) =>
             a.kind === 'player' &&
             a.noun.filter.raw !== '' &&
-            // Cavern-Hoard Dragon (CR 603.2c): "Whenever ~ deals combat damage to a player, you create a Treasure token for each artifact that player controls": when the trigger is about a
+            // Cavern-Hoard Dragon (CR 603.2c): "Whenever ~ deals combat damage to a player, you create a Treasure token for each artifact that player controls": in a counting phrase of a trigger about a
             // player, "that player" is that player and never the "you" of the sentence.
             !(
-              (this.playerAsked || this.antecedents.some((x) => x.noun.ref === 'trigActor')) &&
+              (this.playerAsked ||
+                (this.inAmount && this.antecedents.some((x) => x.noun.ref === 'trigActor'))) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
             ),
@@ -499,7 +500,20 @@ class Binder {
   }
 
   /** An amount with the nouns it names bound: what it counts, the object whose power or toughness it reads. */
+  /** True while the nouns of an amount are bound ("for each artifact that player controls"). */
+  private inAmount = false;
+
   amount(amount: IrAmount): IrAmount {
+    const before = this.inAmount;
+    this.inAmount = true;
+    try {
+      return this.boundAmount(amount);
+    } finally {
+      this.inAmount = before;
+    }
+  }
+
+  private boundAmount(amount: IrAmount): IrAmount {
     switch (amount.kind) {
       case 'countOf':
       case 'powerOf':

@@ -1807,7 +1807,10 @@ function lowerTriggeredAbility(
     !conditional &&
     sentences.length === 1 &&
     others.length > 1 &&
-    first?.optional === true;
+    first?.optional === true &&
+    // Only the shape "discard ... and draw ...": the draw goes with the discard it follows. Other pairs ("draw a card and you gain 1 life", a search and its shuffle) are not read.
+    first.verb === 'discard' &&
+    others.slice(1).every((c) => c.verb === 'draw');
   if (
     optional &&
     !mayFirst &&
