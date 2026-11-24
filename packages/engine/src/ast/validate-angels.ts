@@ -238,6 +238,16 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
         );
       }
       return true;
+    case 'drawRedirect':
+      // CR 614.1a, 614.11 (Notion Thief): the draws of the opponents but the first of each of their draw steps (the only form the engine runs).
+      if (r.exceptFirstInDrawStep !== true) {
+        issue(
+          out,
+          `${path}.exceptFirstInDrawStep`,
+          'only a replacement of every draw but the first of the draw step is run',
+        );
+      }
+      return true;
     case 'groupEntersUntapped':
     case 'groupEntersTapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.

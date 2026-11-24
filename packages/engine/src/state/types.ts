@@ -2082,6 +2082,11 @@ export type Instruction =
        */
       readonly dredgeAfter?: ObjectId;
       readonly dredgeAnswer?: { readonly card: ObjectId; readonly accepted: boolean };
+      /**
+       * The permanents whose `drawRedirect` already replaced the draw this instruction stands for (Notion Thief, CR 614.5: an effect applies once to a draw): the instruction is the draw
+       * their controller makes in its place, so those effects do not replace it again. Absent for a draw nothing replaced.
+       */
+      readonly redirectedBy?: readonly ObjectId[];
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {

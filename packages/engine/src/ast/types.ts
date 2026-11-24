@@ -7525,6 +7525,16 @@ export type Replacement =
       readonly exceptFirstInDrawStep: true;
     }
   /**
+   * "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card." (Notion Thief, CR 614.1a,
+   * 614.11, 504.1, 121.6): a replacement effect of a permanent on the battlefield for the cards each opponent of its controller (every other player) would draw, by an effect or
+   * after the first card of their draw step (CR 504.1; `exceptFirstInDrawStep` is required, always `true`: a replacement of every draw is not built). The draw does not happen (nothing
+   * was drawn, as for `skipDraw`) and the controller of the permanent draws a card, a draw of their own that can be replaced in turn by the effect of another permanent that applies to it
+   * (CR 614.5: this effect applies once to the draw it replaced, so two of them never make the controller draw twice). It is applied even when the library has no cards (CR 614.11).
+   * It goes before the draw is replaced by `drawInstead` or dredge, and when effects of different controllers apply to one draw the oldest permanent applies first: the player who
+   * would draw is not asked which (`docs/ROADMAP.md`, CR 616.1). It is the ability of the permanent (lost with "loses all abilities").
+   */
+  | { readonly kind: 'drawRedirect'; readonly exceptFirstInDrawStep: true }
+  /**
    * "Umbra armor" (CR 702.89a, D-417): "If enchanted permanent would be destroyed, instead remove all damage marked on it and destroy this Aura." A
    * replacement effect of an Aura on the battlefield for the destruction of the permanent it is attached to: by the effect `destroy`, or by the
    * state-based actions for lethal damage or damage from a deathtouch source (CR 704.5g, 704.5h). The destruction does not happen (the permanent stays, with

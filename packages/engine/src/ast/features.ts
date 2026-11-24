@@ -868,6 +868,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'keepOneLoyalty',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
+    // CR 614.1a, 614.11, 504.1 (Notion Thief): "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card."
+    'drawRedirect',
     // D-417 (CR 702.89a): "Umbra armor".
     'umbraArmor',
   ],
@@ -3432,6 +3434,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   skipDraw: true,
   keepOneLoyalty: true,
   drawInstead: true,
+  drawRedirect: true,
   umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {

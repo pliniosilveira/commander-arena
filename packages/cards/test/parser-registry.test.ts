@@ -1084,6 +1084,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.keep-one-loyalty': asIs,
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
+  'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
