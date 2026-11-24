@@ -65,6 +65,8 @@ export interface LowerContext {
   cycleTriggerX: boolean;
   /** The one intervening "if" of the triggered ability is "if you gained life this turn" (CR 603.4): "that many" in its body is the life gained this turn (Lathiel). */
   lifeGainedIf: boolean;
+  /** The one intervening "if" of the triggered ability is "if it had counters on it" (CR 603.10a, 122.1): "those counters" and "that number" in its body are the counters the permanent the trigger is about had (Resourceful Defense, Yuna, Grand Summoner). */
+  hadCountersIf: boolean;
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
@@ -439,6 +441,7 @@ export function newContext(
     castTriggerX: false,
     cycleTriggerX: false,
     lifeGainedIf: false,
+    hadCountersIf: false,
     activateTrigger: false,
     becomesTargetOf: null,
     removed: new Set(),

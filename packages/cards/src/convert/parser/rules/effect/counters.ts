@@ -38,6 +38,8 @@ const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-
 const COUNTER_OPERANDS = [
   'noun.self',
   'noun.it',
+  // CR 608.2c (Sphere Grid): "put a +1/+1 counter on that creature", the permanent the trigger is about.
+  'noun.that-object',
   // Stage P49 (D-206): "put two +1/+1 counters on that token" (the token the sentence before made).
   'noun.that-token',
   'noun.target-permanent',
@@ -101,6 +103,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'you put two +1/+1 counters on a creature you control',
     'put two +1/+1 counters on a creature you control',
     'put a +1/+1 counter on each of up to two Soldiers you control',
+    'put a +1/+1 counter on that creature',
   ],
   rejects: [
     'you put two +1/+1 counters on target creature and draw a card',

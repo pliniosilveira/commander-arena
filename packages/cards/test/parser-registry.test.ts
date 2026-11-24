@@ -694,6 +694,19 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.its-stat-was': permanent(
     (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
   ),
+  // Wakka, Devoted Guardian: a counter put on the permanent with the ability this turn, the intervening "if" of an end step trigger.
+  'condition.counter-was-put-on-self-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  // Shelinda, Yevon Acolyte: the creature the trigger is about against the permanent with the ability, at the end of a sentence.
+  'condition.its-power-less-than-self': permanent(
+    (e) => `Whenever another creature enters, its controller draws a card if ${e}.`,
+  ),
+  // Yuna, Grand Summoner: "that number" of the counters a permanent had, in the body of a trigger about it.
+  'amount.that-number': permanent(
+    (e) =>
+      `Whenever another permanent you control dies, if it had one or more counters on it, put ${e} of +1/+1 counters on target creature.`,
+  ),
   'condition.you-put-counter-this-turn': permanent(
     (e) => `At the beginning of each end step, if ${e}, ~ deals 2 damage to each opponent.`,
   ),

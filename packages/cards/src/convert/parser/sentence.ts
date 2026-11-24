@@ -294,6 +294,8 @@ const TRAILING_CONDITIONS = [
   'condition.it-was-attacking',
   // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
   'condition.its-stat-greater-than-each-other',
+  // Shelinda, Yevon Acolyte: "put a +1/+1 counter on that creature if its power is less than ~'s power" (CR 608.2c).
+  'condition.its-power-less-than-self',
   // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
   'condition.this-power',
   // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".

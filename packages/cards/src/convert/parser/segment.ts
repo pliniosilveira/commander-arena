@@ -16,6 +16,7 @@
 import type { Span } from './ir/types';
 import { CHAPTER_PREFIX } from './roman';
 import { COUNTER_BLITZ_C_JOINS } from './segment-counter-blitz-c';
+import { CHOOSE_TARGET_CREATURE, WHEN_THAT_CREATURE_DIES_RETURN } from './segment-counter-group-a';
 
 export type FaceKind = 'spell' | 'permanent';
 
@@ -1251,6 +1252,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, CHOOSE_PER_PLAYER_GRAVEYARD) && said(b, PUT_THOSE_CARDS_ONTO)) ||
+        (said(a, CHOOSE_TARGET_CREATURE) && said(b, WHEN_THAT_CREATURE_DIES_RETURN)) ||
         (said(a, OPPONENTS_CHOOSE_GRAVEYARD_CARD) && said(b, RETURN_EACH_CARD_CHOSEN)) ||
         (said(a, CHOOSE_EXILED_VOID_CARD) && said(b, MAY_PLAY_IT_FREE)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||

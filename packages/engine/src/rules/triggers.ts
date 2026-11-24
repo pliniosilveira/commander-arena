@@ -2026,16 +2026,32 @@ function limitOncePerTurn(
  * types the permanent has as it got them. A counter no player put (`counterAdded` with no `by`) and a permanent that is gone are not recorded.
  */
 function recordCountersPut(state: GameState, events: readonly GameEvent[]): GameState {
+  // CR 122.6 (Wakka): every counter put on a permanent, by anyone or by no player, for "if a counter was put on this creature this turn".
+  const putOn = events.flatMap((e) =>
+    e.kind === 'counterAdded' && e.count >= 1 && state.objects[e.object]?.zone === 'battlefield'
+      ? [{ object: e.object, counter: e.counter }]
+      : [],
+  );
+  const logged: GameState =
+    putOn.length === 0
+      ? state
+      : {
+          ...state,
+          turnLog: {
+            ...state.turnLog,
+            countersPutOn: [...(state.turnLog.countersPutOn ?? []), ...putOn],
+          },
+        };
   const put = events.flatMap((e) => {
     if (e.kind !== 'counterAdded' || e.by === undefined || e.count < 1) return [];
     const obj = state.objects[e.object];
     if (obj === undefined || obj.zone !== 'battlefield') return [];
     return [{ seat: e.by, counter: e.counter, types: [...derive(state, obj).types] }];
   });
-  if (put.length === 0) return state;
+  if (put.length === 0) return logged;
   return {
-    ...state,
-    turnLog: { ...state.turnLog, countersPut: [...(state.turnLog.countersPut ?? []), ...put] },
+    ...logged,
+    turnLog: { ...logged.turnLog, countersPut: [...(logged.turnLog.countersPut ?? []), ...put] },
   };
 }
 
