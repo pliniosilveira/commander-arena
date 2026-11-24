@@ -621,6 +621,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-around': asIs,
   'static.draw-limit': asIs,
+  'static.combat-creature-limit': asIs,
   'static.prevent-all-but': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,

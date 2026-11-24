@@ -1535,6 +1535,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cantGainLife',
     // Planeswalker Party deck (CR 121.2b): "Each opponent can't draw more than one card each turn."
     'drawLimit',
+    // Silent Arbiter (CR 508.1c, 509.1b): "No more than one creature can attack each combat."
+    'combatCreatureLimit',
     // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
     'damageCantBePrevented',
     'damageAsThoughWither',
@@ -2670,6 +2672,8 @@ export const STATIC_KINDS = [
   'cantGainLife',
   /** "Each opponent can't draw more than one card each turn" (CR 121.2b): the engine's `drawLimit`. */
   'drawLimit',
+  /** "No more than one creature can attack (or block) each combat" (CR 508.1c, 509.1b): the engine's `combatCreatureLimit`. */
+  'combatCreatureLimit',
   /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
   'damageCantBePrevented',
   'damageAsThoughWither',

@@ -285,6 +285,7 @@ describe('the dimensions', () => {
       'opponentsCantWin',
       'cantGainLife',
       'drawLimit',
+      'combatCreatureLimit',
       'damageCantBePrevented',
       'damageAsThoughWither',
       'playerProtection',

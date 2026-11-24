@@ -328,6 +328,14 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         );
       }
       return true;
+    case 'combatCreatureLimit':
+      if (s.what !== 'attack' && s.what !== 'block') {
+        issue(out, `${path}.what`, 'combatCreatureLimit limits attackers or blockers');
+      }
+      if (!isCount(s.max) || s.max < 1) {
+        issue(out, `${path}.max`, 'the most creatures is a whole number of at least 1');
+      }
+      return true;
     case 'drawLimit':
       // CR 121.2b: the opponents of the controller, or every player, and a whole number of cards of at least 1.
       if (s.who !== 'opponents' && s.who !== 'players') {

@@ -730,6 +730,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':
       return ['static:cantBeSacrificed'];
+    case 'combatCreatureLimit':
+      return ['static:combatCreatureLimit'];
     case 'drawLimit':
       return ['static:drawLimit'];
     case 'preventDamageAround':

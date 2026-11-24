@@ -8225,6 +8225,17 @@ export type StaticEffect =
    * draws past it do not happen (no card moves, no `cardDrawn` event, no loss for an empty library). The draws counted are those the player made this turn, including the ones made before the
    * permanent entered (`SeatState.cardsDrawnThisTurn`). Read from the abilities of the permanents on the battlefield after the layers; a permanent that lost its abilities limits nobody.
    */
+  /**
+   * "No more than one creature can attack each combat." / "No more than one creature can block each combat." (CR 508.1c, 509.1b, 604.1; Silent Arbiter): while the permanent has the
+   * ability, no more than `max` creatures can be declared as attackers (`attack`: by the attacking player, in one declaration) or as blockers (`block`: by all the defending players
+   * together, in one combat) in a combat. It is a restriction: a declaration with more is illegal, and a requirement ("attacks each combat if able") is obeyed as far as the restriction
+   * lets it be (CR 508.1d). Several such abilities give the least `max`. Read from the abilities of the permanents on the battlefield after the layers.
+   */
+  | {
+      readonly kind: 'combatCreatureLimit';
+      readonly what: 'attack' | 'block';
+      readonly max: number;
+    }
   | { readonly kind: 'drawLimit'; readonly who: 'opponents' | 'players'; readonly max: number }
   /**
    * "Damage can't be prevented." (CR 615.12, 101.2, 604.1; Everlasting Torment): while the permanent has the ability, no damage is prevented, whoever deals it and

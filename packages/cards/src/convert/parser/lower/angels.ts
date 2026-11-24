@@ -68,6 +68,7 @@ export type AngelStaticEffect = Extract<
       | 'preventDamageToThis'
       | 'preventDamageAround'
       | 'drawLimit'
+      | 'combatCreatureLimit'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
   }
@@ -84,6 +85,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'preventDamageAround' ||
     effect.kind === 'drawLimit' ||
+    effect.kind === 'combatCreatureLimit' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
   );
@@ -212,6 +214,16 @@ export function lowerAngelStatic(
         });
         break;
       }
+      case 'combatCreatureLimit': {
+        if (subject.det !== 'self') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:combatCreatureLimit']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'combatCreatureLimit', what: effect.what, max: effect.max },
+        });
+        break;
+      }
       case 'drawLimit': {
         if (subject.det !== 'self') return failure(ability);
         const blocked = missingFeatures(['ability:static', 'static:drawLimit']);
@@ -273,6 +285,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:preventDamageToThis',
   'static:preventDamageAround',
   'static:drawLimit',
+  'static:combatCreatureLimit',
   'static:cantCastThis',
   'condition:ownTurnNumber',
   'replacement:othersEnterWithCounters',

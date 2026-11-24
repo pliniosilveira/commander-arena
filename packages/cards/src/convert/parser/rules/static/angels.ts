@@ -372,6 +372,65 @@ export const STATIC_PREVENT_ALL_BUT = defineRule<IrStatic>({
 });
 
 /**
+ * `static.combat-creature-limit`: "No more than one creature can attack each combat." and "No more than one creature can block each combat." (Silent Arbiter; CR 508.1c, 509.1b, 604.1): a
+ * restriction on how many creatures are declared as attackers or as blockers. The engine's `combatCreatureLimit`. Only "creature" and "each combat" and a number of one to three, in
+ * words or digits. Not read: another span ("each turn"), "creatures you control", "no more than zero", a condition.
+ */
+export const STATIC_COMBAT_CREATURE_LIMIT = defineRule<IrStatic>({
+  id: 'static.combat-creature-limit',
+  family: 'static',
+  leading: ['no'],
+  cites: [
+    'CR 508.1c (Declare Attackers Step)',
+    'CR 509.1b (Declare Blockers Step)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'No more than one creature can attack each combat.',
+    'No more than one creature can block each combat.',
+    'No more than two creatures can attack each combat.',
+    'No more than 1 creature can block each combat.',
+  ],
+  rejects: [
+    'No more than one creature can attack each combat',
+    'No more than one creature can attack each turn.',
+    'No more than one creature you control can attack each combat.',
+    'No more than zero creatures can attack each combat.',
+    'No more than one creature can attack or block each combat.',
+    'No more than one creatures can attack each combat.',
+    'No more than one creature can attack each combat unless you control a Wizard.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(
+        pattern(
+          /no more than (one|two|three|1|2|3) (creature|creatures) can (attack|block) each combat(?![\p{L}\p{N}])/iu,
+        ),
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [found] = r.value;
+    const word = (found.value[1] ?? '').toLowerCase();
+    const max = word === 'one' || word === '1' ? 1 : word === 'two' || word === '2' ? 2 : 3;
+    if ((max === 1) !== ((found.value[2] ?? '').toLowerCase() === 'creature'))
+      return fail(ctx, pos);
+    const what = (found.value[3] ?? '').toLowerCase() === 'attack' ? 'attack' : 'block';
+    return {
+      ok: true,
+      value: staticOf(
+        'static.combat-creature-limit',
+        subjectNoun('self', '~', found.span, 'static.combat-creature-limit'),
+        [{ kind: 'combatCreatureLimit', what, max }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `static.draw-limit`: "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils; CR 121.2b, 604.1): the opponents of the controller draw at most that many cards
  * in a turn. The engine's `drawLimit`. Only "each opponent" or "your opponents" and a number of cards written as a word or a digit; "each player" is `players`. Not read: "more than one card
  * each turn" with another span ("each combat"), "you can't draw", "can't draw cards", a condition, "unless".
@@ -578,6 +637,7 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_PREVENT_DAMAGE_TO_SELF,
   STATIC_PREVENT_DAMAGE_AROUND,
   STATIC_DRAW_LIMIT,
+  STATIC_COMBAT_CREATURE_LIMIT,
   STATIC_PREVENT_ALL_BUT,
   STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
