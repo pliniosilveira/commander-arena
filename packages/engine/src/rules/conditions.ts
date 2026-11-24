@@ -94,6 +94,8 @@ export interface ConditionContext {
   readonly dieResult?: number;
   /** Whether the controller won the latest clash of the resolution, for `clashWon` (CR 701.30d). Absent where none happened, which fails that condition closed. */
   readonly clashWon?: boolean;
+  /** The tally of the latest vote of the resolution (CR 701.38a), for `voteMost` and `voteTied`: the votes for each option, an option nobody chose left out. Absent where no vote finished, which fails those conditions closed. */
+  readonly votes?: Readonly<Record<string, number>>;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
@@ -582,7 +584,7 @@ export function evaluateCondition(
       return attackersTotalPower(state, ctx.controller) >= condition.atLeast;
     case 'enteredThisTurn':
       // D-151: permanents that entered under the controller's control this turn (Celebration).
-      return enteredThisTurnHolds(state, ctx.controller, condition);
+      return enteredThisTurnHolds(state, ctx.controller, condition, ctx.source);
     case 'thisEnteredThisTurn':
       // D-423, CR 400.7: the source is the object that entered the battlefield this turn (a permanent that left and came back is a new object).
       return ctx.source !== null && state.turnLog.entered.some((e) => e.object === ctx.source);
@@ -643,6 +645,20 @@ export function evaluateCondition(
           (s) => s.seat === ctx.controller && s.fromGraveyard === true,
         ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
       );
+    case 'voteMost': {
+      // CR 701.38a (Plea for Power): "if time gets more votes": more than every other option of the vote earlier in this resolution.
+      if (ctx.votes === undefined) return false;
+      const mine = ctx.votes[condition.option] ?? 0;
+      return Object.entries(ctx.votes).every(
+        ([option, n]) => option === condition.option || mine > n,
+      );
+    }
+    case 'voteTied': {
+      // CR 701.38a: "if the vote is tied": more than one option has the most votes (the options that got fewer are not part of a tie).
+      if (ctx.votes === undefined) return false;
+      const most = Math.max(0, ...Object.values(ctx.votes));
+      return most > 0 && Object.values(ctx.votes).filter((n) => n === most).length > 1;
+    }
     case 'clashWon':
       // CR 701.30d: the controller revealed a card with a higher mana value than every other card revealed in the clash earlier in this resolution.
       return ctx.clashWon === true;

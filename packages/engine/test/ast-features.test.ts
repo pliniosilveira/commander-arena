@@ -201,6 +201,8 @@ describe('the dimensions', () => {
       'dieResult',
       // CR 701.30d: "If you win" after a clash.
       'clashWon',
+      'voteMost',
+      'voteTied',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',

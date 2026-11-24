@@ -1562,6 +1562,10 @@ export function checkRef(
         issue(out, path, "'attached' is only valid in abilities of an Aura or an Equipment");
       }
       break;
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
+      if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");
+      break;
     case 'putWithThis':
       // CR 400.7 (Animate Dead): "that creature", what the permanent put onto the battlefield with `moveToZone.putWithSource`: the permanent's own, so an ability's.
       if (scope.owner === 'spell') {
@@ -2060,6 +2064,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
+  // CR 608.2c (Travel Through Caradhras): "For each Redhorn Pass vote, search ...": what the repeated effect does is counted each time it is done (0 for a number of 0).
+  if (e?.kind === 'repeat') return thisWayProduced(e.effect);
   // "You may discard all the cards in your hand. If you do, draw that many cards": a declined offer counts 0.
   if (e?.kind === 'may') return thisWayProduced(e.effect);
   return [];
@@ -3922,6 +3928,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
+      if (c.other !== undefined && c.other !== true) {
+        issue(out, `${path}.other`, 'other must be true when present');
+      }
       break;
     case 'aPlayerCardsInHand': // Lorehold group 3, CR 402.1: the same shape, for the hands of the players
     case 'cardsInLibrary': // D-331, CR 401.1: the same shape, for the library
@@ -4035,6 +4044,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         out,
         path,
         'clashWon reads the clash earlier in the same resolution: it is only valid in a conditional effect after a clash of the same sequence',
+      );
+      break;
+    case 'voteMost':
+    case 'voteTied':
+      // CR 701.38a: the tally of a vote is read in the `conditional` effect after the vote (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        `${c.kind} reads the vote earlier in the same resolution: it is only valid in a conditional effect after a vote of the same sequence`,
       );
       break;
     case 'dieResult':
@@ -5381,6 +5399,26 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, path, 'clashWon needs a clash before it in the same sequence');
       }
       break;
+    case 'voteMost':
+      // CR 701.38a: "If time gets more votes": an option of the vote earlier in the same sequence.
+      if (typeof c.option !== 'string' || c.option.trim() === '') {
+        issue(out, `${path}.option`, 'voteMost names the option that gets more votes');
+      } else if (scope.voteOptions === undefined) {
+        issue(out, path, 'voteMost needs a vote effect before it in the same sequence');
+      } else if (!scope.voteOptions.includes(c.option)) {
+        issue(
+          out,
+          `${path}.option`,
+          `"${c.option}" is not an option of the vote (${scope.voteOptions.join(', ')})`,
+        );
+      }
+      break;
+    case 'voteTied':
+      // CR 701.38a: "If the vote is tied": the vote earlier in the same sequence.
+      if (scope.voteOptions === undefined) {
+        issue(out, path, 'voteTied needs a vote effect before it in the same sequence');
+      }
+      break;
     case 'dieResult': {
       // D-271, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
       const sides = scope.dieSides;
@@ -6329,6 +6367,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'forEachPlayer':
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.runsAs !== undefined && e.runsAs !== 'each') {
+        issue(out, `${path}.runsAs`, "runsAs is 'each' when present");
+      }
+      checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    case 'repeat':
+      // CR 608.2c, 701.38b: the number is read as the effect runs, in the scope of the effects before it (a `votesFor` reads the vote earlier in the sequence).
+      checkAmount(e.times, `${path}.times`, scope, out);
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     case 'exileUntilFound':

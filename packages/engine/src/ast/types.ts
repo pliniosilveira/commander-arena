@@ -1259,6 +1259,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'putWithThis' }
   /**
+   * "Your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen: "put a +1/+1 counter on your Ring-bearer"): the creature that is the Ring-bearer of the controller of the
+   * effect, as it is now: on the battlefield under their control with their Ring-bearer designation. Nothing when they have none (the Ring has not tempted them, or the
+   * creature has left or changed controller).
+   */
+  | { readonly kind: 'ringBearer' }
+  /**
    * "The exiled card" of a linked ability (D-145, CR 607.2a, 702.75a Hideaway): the cards the permanent the ability belongs to exiled with its
    * linked ability (`exile.linked`, or the exile of Hideaway) that are still in exile, in the order they were exiled. Nothing when the
    * permanent has left the battlefield (the link is the permanent's own, CR 400.7) or exiled nothing. Valid only on a face that has such a
@@ -2357,7 +2363,23 @@ export type Effect =
    * `powerAtLeastChosenNumber` of an object filter reads in the instructions after it, in the same resolution.
    */
   | { readonly kind: 'chooseNumber'; readonly min: number; readonly max: number }
-  | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
+  /**
+   * `effect` is done once for each player `players` names, by the controller of the ability (a "for each opponent" that repeats an effect). With `runsAs: 'each'` (Sail into the West:
+   * "Each player returns up to two cards from their graveyard to their hand", CR 101.4, 608.2d) each player in turn order does it themselves: that player is "you" in `effect`,
+   * and the choices in it are theirs. A player who has lost the game does nothing.
+   */
+  | {
+      readonly kind: 'forEachPlayer';
+      readonly players: PlayerSelector;
+      readonly effect: Effect;
+      readonly runsAs?: 'each';
+    }
+  /**
+   * "For each Redhorn Pass vote, search your library for a basic land card ..." (CR 608.2c, 701.38b, Travel Through Caradhras): `effect` is done as many times as `times` says as the
+   * effect runs, one after the other (each time asks its own choices; an amount of 0 or less does it never). `times` reads the game as it is then, usually a `votesFor` tally of the
+   * `vote` earlier in the sequence.
+   */
+  | { readonly kind: 'repeat'; readonly times: Amount; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   /**
    * "Populate." (CR 701.36a, 701.36b, D-639): "choose a creature token you control and create a token that's a copy of that creature token." The controller of the effect
@@ -7005,6 +7027,11 @@ export type Condition =
       /** "If a Food entered the battlefield under your control this turn": subtypes (all of them) it had as it entered. */
       readonly subtypes?: readonly string[];
       readonly token?: boolean;
+      /**
+       * "If another Elf entered the battlefield under your control this turn" (Galadriel, Elven-Queen, CR 400.7): the permanent the condition belongs to does not count.
+       * Not in a static ability, which has no permanent to leave out in layers 4 and 5 (`validateCard`).
+       */
+      readonly other?: true;
     }
   /**
    * "As long as this Aura entered this turn" (D-423, CR 400.7, 611.3a): the permanent the condition belongs to entered the battlefield during this turn and is still the same
@@ -7114,6 +7141,16 @@ export type Condition =
    * same sequence (`validateCard` checks it); false if no clash happened.
    */
   | { readonly kind: 'clashWon' }
+  /**
+   * "If time gets more votes" (CR 701.38a, Plea for Power): the option got more votes than each other option of the latest `vote` of this resolution (the tally of that vote,
+   * `ResolutionContext.votes`). Only in a `conditional` after a `vote` of the same sequence that offers `option` (`validateCard` checks it); false if nobody voted for it.
+   */
+  | { readonly kind: 'voteMost'; readonly option: string }
+  /**
+   * "If the vote is tied" (CR 701.38a, Plea for Power): more than one option got the most votes of the latest `vote` of this resolution, so with several options two others
+   * may trail behind (a tie is only between the options that lead). Only in a `conditional` after a `vote` of the same sequence (`validateCard` checks it).
+   */
+  | { readonly kind: 'voteTied' }
   /**
    * "If this card is in your graveyard" (CR 113.6b, 603.4, D-271): the source of the condition is an object that is in its owner's graveyard, and the
    * controller of the condition is that owner. Read from the object itself (not from last-known information: once the card leaves, it is a new object

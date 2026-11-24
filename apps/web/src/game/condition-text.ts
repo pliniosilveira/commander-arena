@@ -489,6 +489,14 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;
+    case 'voteMost':
+      // CR 701.38a: "if time gets more votes".
+      return negate
+        ? `${condition.option} does not get more votes`
+        : `${condition.option} gets more votes`;
+    case 'voteTied':
+      // CR 701.38a: "if the vote is tied".
+      return negate ? 'the vote is not tied' : 'the vote is tied';
     case 'clashWon':
       // CR 701.30d: "if you win" the clash.
       return negate ? 'you did not win the clash' : 'you win the clash';

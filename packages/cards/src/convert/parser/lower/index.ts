@@ -21,6 +21,7 @@ import { ATTACHMENT_NEEDS } from './attachments';
 import { AURA_GRAVEYARD_NEEDS } from './aura-graveyard';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
+import { COUNCIL_VOTES_NEEDS } from './council-votes';
 import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
@@ -169,6 +170,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,
+    ...COUNCIL_VOTES_NEEDS,
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,

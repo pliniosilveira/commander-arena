@@ -84,6 +84,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'eachObject':
       // Canopy Gargantuan: the creature the counters are being put on right now.
       return "that creature's";
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen): the creature that is the controller's Ring-bearer.
+      return "your Ring-bearer's";
   }
 }
 
@@ -119,6 +122,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'putWithThis':
     case 'eachObject':
       return 'that creature';
+    case 'ringBearer':
+      return 'your Ring-bearer';
   }
 }
 

@@ -440,6 +440,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedCombatDamageToPlayer',
     'delayedCombatDamage',
     'forEachPlayer',
+    // CR 608.2c, 701.38b: "For each Redhorn Pass vote, search your library ..." (the effect repeated a number of times).
+    'repeat',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
@@ -1224,6 +1226,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificed',
     // CR 608.2c (Canopy Gargantuan): "that creature" in the count of counters put on each creature (`ObjectRef` `eachObject`, `addCounters.perObject`).
     'eachObject',
+    // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
+    'ringBearer',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
     // greatest power among creatures they control" (`ChooseSelector.anyNumber` and `greatest`), "the chosen player" of a gift.
     'notSupertypes',
@@ -1409,6 +1413,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dieResult',
     // CR 701.30d: "If you win" after a clash.
     'clashWon',
+    // CR 701.38a: "If time gets more votes", "if the vote is tied" after a vote.
+    'voteMost',
+    'voteTied',
     // "If X is 10 or more" (CR 107.3, 608.2c).
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
@@ -2313,6 +2320,8 @@ export const SELECTOR_KINDS = [
   'sacrificed',
   /** "Put a number of +1/+1 counters on each creature equal to that creature's toughness" (CR 608.2c, Canopy Gargantuan): the engine's `ObjectRef` `eachObject` and `addCounters.perObject`. */
   'eachObject',
+  /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
+  'ringBearer',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
   'notSupertypes',
   /** "Sacrifice any number of other permanents" (D-135): the engine's `ChooseSelector.anyNumber`. */
@@ -2517,6 +2526,10 @@ export const CONDITION_KINDS = [
   'dieResult',
   /** "If you win" after a clash (CR 701.30d): the engine's `clashWon`. */
   'clashWon',
+  /** "If time gets more votes" after a vote (CR 701.38a): the engine's `voteMost`. */
+  'voteMost',
+  /** "If the vote is tied" after a vote (CR 701.38a): the engine's `voteTied`. */
+  'voteTied',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
   /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
@@ -3175,6 +3188,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamageToPlayer: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
+  repeat: true,
   delayedCast: true,
   removeTimeCounter: true,
   castExiled: true,

@@ -44,6 +44,7 @@ import { SYNTHETIC_COMMANDER_LIST } from './synthetic-commanders';
 import { SYNTHETIC_CONTROL_LIST } from './synthetic-control';
 import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
+import { SYNTHETIC_COUNCIL_LIST } from './synthetic-council';
 import { SYNTHETIC_COUNTER_DOUBLING_LIST } from './synthetic-counter-doubling';
 import { SYNTHETIC_COUNTERS_PLUS_LIST } from './synthetic-counters-plus';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
@@ -577,6 +578,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_CONTROL_LIST,
   ...SYNTHETIC_ADAMANTOISE_LIST,
   ...SYNTHETIC_VOTE_LIST,
+  ...SYNTHETIC_COUNCIL_LIST,
   ...SYNTHETIC_RING_LIST,
   ...SYNTHETIC_SNOW_LIST,
   ...SYNTHETIC_BRUNA_SEARCH_LIST,

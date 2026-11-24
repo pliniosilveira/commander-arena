@@ -807,6 +807,9 @@ export interface IrCondition extends IrNode {
       }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
+    // "If time gets more votes", "if the vote is tied" (issue 17, CR 701.38a): the tally of the vote before it in the same text; the option as the card words it
+    | { readonly kind: 'voteMost'; readonly option: string }
+    | { readonly kind: 'voteTied' }
     // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
     | { readonly kind: 'destroyedThisWay' }
     // "If that creature dies this way" (Saw in Half, CR 700.4, 608.2c): the creature a destroy before it in the same text named went to a graveyard; `who` is that creature
@@ -1058,6 +1061,8 @@ export interface IrCondition extends IrNode {
         readonly notTypes?: readonly string[];
         readonly subtypes?: readonly string[];
         readonly token?: boolean;
+        /** "another Elf entered the battlefield under your control this turn" (issue 17, CR 400.7): the permanent with the condition does not count. */
+        readonly other?: true;
       }
     // D-063: "if A and B", "if A or B", "if not A"
     | { readonly kind: 'and' | 'or'; readonly terms: readonly IrCondition[] }
