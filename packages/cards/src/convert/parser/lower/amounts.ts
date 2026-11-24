@@ -43,6 +43,10 @@ function statSource(
 > {
   const ref = objectRefOf(of, ctx, { triggerSubject: true, sacrificed: true });
   if (!ref.ok) return ref;
+  // Lothlórien Blade (CR 603.2, 113.7a): in "Whenever equipped creature attacks, ...", "its power" is that of the creature whose attack it was, the trigger's subject.
+  if (ref.value.kind === 'attached' && ctx.attachedTrigger) {
+    return { ok: true, value: { kind: 'triggerSubject' }, rule };
+  }
   if (ref.value.kind === 'target') {
     const id = ref.value.id;
     const spec = ctx.targets.find((t) => t.id === id);

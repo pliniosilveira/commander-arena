@@ -123,6 +123,11 @@ export interface LowerContext {
   /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
+   * True in the body of "Whenever equipped creature attacks" (and the like, Lothlórien Blade, issue 98): every event of the trigger is about the permanent the Equipment or Aura is attached to,
+   * so "it" is the creature whose event it was, the engine's `triggerSubject` (CR 603.2, 113.7a), where a stat or a source of damage cannot name `attached`.
+   */
+  attachedTrigger: boolean;
+  /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
    * sentence are lowered, an X in them is this amount, written into each slot that says X. `used` is set when a slot
    * read it, so a definition no slot reads is refused. Null where X is the announced X (D-103).
@@ -451,6 +456,7 @@ export function newContext(
     attackedPlayer: null,
     attackBatchPlayer: null,
     enchantedPlayerTrigger: false,
+    attachedTrigger: false,
     xIs: null,
     xDefined: false,
     exiled: null,

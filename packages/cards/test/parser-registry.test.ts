@@ -247,6 +247,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
+  // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
+  'amount.for-each-scried': permanent(
+    (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
+  ),
   'amount.number-of': spell((e) => `You gain life ${e}.`),
   'cost.tap': { face: 'permanent', line: (e) => `${e}: Add {G}.` },
   'cost.mana': permanent((e) => `${e}, {T}: Add {G}.`),
@@ -651,6 +655,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
+  'static.others-enter-with-counters-equal-to': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,

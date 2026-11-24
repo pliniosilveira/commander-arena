@@ -196,6 +196,15 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       if (['countOf', 'enteredThisTurn', 'diedThisTurn'].includes(kindOf(r.count))) {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'toughnessOf') {
+        // Arwen (CR 614.12): the toughness of the permanent with the ability.
+        if (kindOf((r.count as { of?: unknown }).of) !== 'this') {
+          issue(
+            out,
+            `${path}.count.of`,
+            'an enters-with count reads the toughness of this permanent only',
+          );
+        }
       } else if (kindOf(r.count) === 'manaSpent') {
         // D-183: the mana spent to cast the entering permanent, all of it or from sources of a card type.
         checkManaSpentType(

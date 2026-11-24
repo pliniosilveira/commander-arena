@@ -134,6 +134,7 @@ export function lowerModes(
     mode.selfCast = ctx.selfCast;
     mode.thatPlayer = ctx.thatPlayer;
     mode.enchantedPlayerTrigger = ctx.enchantedPlayerTrigger;
+    mode.attachedTrigger = ctx.attachedTrigger;
     const lowered = lowerSentences(body.sentences, mode);
     if (!lowered.ok) return lowered;
     const [only] = lowered.value;

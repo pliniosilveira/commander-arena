@@ -89,6 +89,8 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-vote',
   // CR 700.4: the creatures that died this turn (history, read from the turn log).
   'amount.for-each-died',
+  // Celeborn the Wise (CR 701.22): the cards looked at by the scry that caused the trigger.
+  'amount.for-each-scried',
   // Issue 81 (Occult Epiphany): the different card types among the cards an earlier discard discarded.
   'amount.for-each-card-type-discarded',
   // CR 205.2a: the card types among the cards of a graveyard.

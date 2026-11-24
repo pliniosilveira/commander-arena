@@ -417,10 +417,14 @@ const DAMAGE: Lowering<IrClause, Effects> = {
         if (blocked.length > 0) return failure(clause, blocked);
         const ref = objectRefOf(source, ctx, { triggerSubject: true });
         if (!ref.ok) return ref;
-        if (ref.value.kind !== 'target' && ref.value.kind !== 'triggerSubject') {
+        // Lothlórien Blade (CR 603.2, 113.7a): "Whenever equipped creature attacks, it deals damage equal to its power ...": the creature whose attack it was, the trigger's subject.
+        if (ref.value.kind === 'attached' && ctx.attachedTrigger) {
+          from = { kind: 'triggerSubject' };
+        } else if (ref.value.kind !== 'target' && ref.value.kind !== 'triggerSubject') {
           return failure(clause);
+        } else {
+          from = ref.value;
         }
-        from = ref.value;
       }
     }
     const amount = amountArg(clause, 'amount', ctx);

@@ -70,3 +70,17 @@ export function defendingPlayerOf(state: GameState, attacker: ObjectId | null): 
   const seat = attackerDefender(state, entry);
   return seat === null || state.seats[seat]?.hasLost === true ? null : seat;
 }
+
+/**
+ * The defending player an ability reads for `defendingPlayer` ("target creature defending player controls", CR 508.5): the one of its source when the source is an
+ * attacking creature, and otherwise the one of the attacking creature whose event caused the trigger (`triggerSubject`), so an Equipment's "Whenever equipped creature
+ * attacks, ... target creature defending player controls" reads the player the equipped creature attacks (with several opponents each attacker has its own).
+ */
+export function defendingPlayerOfAbility(
+  state: GameState,
+  ctx: { readonly source: ObjectId | null; readonly triggerSubject?: ObjectId },
+): SeatId | null {
+  return (
+    defendingPlayerOf(state, ctx.source) ?? defendingPlayerOf(state, ctx.triggerSubject ?? null)
+  );
+}

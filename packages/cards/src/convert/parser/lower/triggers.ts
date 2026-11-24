@@ -1403,6 +1403,9 @@ function lowerTriggeredAbility(
   ctx.enchantedPlayerTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
+  ctx.attachedTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.triggeredBody = true;
