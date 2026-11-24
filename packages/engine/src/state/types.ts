@@ -1519,7 +1519,7 @@ export type Instruction =
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
        */
       readonly among?: readonly ObjectId[];
-      /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
+      /** `ChooseSelector.fromAnyGraveyard` (issue 159): the cards may be in the graveyard of any player (with `among` the moved ones only, without it every graveyard's). */
       readonly anyOwner?: true;
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;

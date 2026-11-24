@@ -69,3 +69,67 @@ describe('Field of Ruin (CR 701.23a, 701.24, 110.2a: each player searches, puts 
     g.expect.invariants();
   });
 });
+
+describe('Extract from Darkness (CR 701.17, 404.1, 608.2d, 110.2a: mill, then choose a creature card from any graveyard)', () => {
+  const EXTRACT = 'Extract from Darkness';
+  const extract = real(EXTRACT);
+
+  const board = (libraries: readonly (readonly string[])[], graveyard0: readonly string[] = []) => {
+    const b = scenario({ seats: 3 }).define(extract).seat(0).hand(EXTRACT).pool('UUUBB');
+    if (graveyard0.length > 0) b.graveyard(...graveyard0);
+    libraries.forEach((cards, i) => {
+      b.seat(i).library(...cards);
+    });
+    return b.at('precombatMain', { active: 0 }).build();
+  };
+
+  test('is valid', () => {
+    expect(validateCard(extract)).toEqual([]);
+  });
+
+  test('every player mills two, then the controller takes a creature card milled from an opponent, under their control', () => {
+    const g = board([
+      ['Plains', 'Plains', 'Forest', 'Forest'],
+      ['Giant Spider', 'Island', 'Island', 'Island'],
+      ['Serra Angel', 'Plains', 'Plains', 'Plains'],
+    ]);
+    g.act(0).cast(EXTRACT, { pay: true });
+    g.passAll();
+    g.expect.librarySize(0, 2);
+    g.expect.librarySize(1, 2);
+    g.expect.librarySize(2, 2);
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards(g.id('Serra Angel'));
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone('Giant Spider', 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('the creature card may be one in a graveyard from before, and nothing is asked with a single candidate', () => {
+    const g = board(
+      [
+        ['Plains', 'Plains', 'Forest'],
+        ['Island', 'Island', 'Island'],
+        ['Plains', 'Plains', 'Plains'],
+      ],
+      ['Grizzly Bears'],
+    );
+    g.act(0).cast(EXTRACT, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with no creature card in any graveyard it finishes resolving', () => {
+    const g = board([
+      ['Plains', 'Plains', 'Forest'],
+      ['Island', 'Island', 'Island'],
+      ['Plains', 'Plains', 'Plains'],
+    ]);
+    g.act(0).cast(EXTRACT, { pay: true });
+    g.passAll();
+    g.expect.stack([]);
+    g.expect.zone(EXTRACT, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+});

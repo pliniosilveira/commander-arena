@@ -2253,7 +2253,8 @@ export interface ChooseSelector {
   /**
    * "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control" (issue 159, CR 608.2c, 400.7j): with
    * `fromMoved`, the candidates are the cards the effect before it moved that are in any player's graveyard (not only the chooser's), and they may be put onto the
-   * battlefield as well as into the hand.
+   * battlefield as well as into the hand. Without `fromMoved` (Extract from Darkness, "you put a creature card from a graveyard onto the battlefield under your control", CR 404.1,
+   * 608.2d): the candidates are the matching cards in every player's graveyard, with `filter.zone` `graveyard`; the chooser (the controller) picks without targeting.
    */
   readonly fromAnyGraveyard?: true;
   /**

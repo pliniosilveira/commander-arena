@@ -4533,15 +4533,27 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
       );
     }
   }
-  if (
-    sel.fromAnyGraveyard !== undefined &&
-    (sel.fromAnyGraveyard !== true || sel.fromMoved !== true)
-  ) {
-    issue(
-      out,
-      `${path}.fromAnyGraveyard`,
-      'fromAnyGraveyard is true and only with fromMoved (issue 159)',
-    );
+  // Issue 159: among the moved cards of any graveyard. Extract from Darkness (CR 404.1, 608.2d): "a creature card from a graveyard", every graveyard, without fromMoved: onto the battlefield only.
+  if (sel.fromAnyGraveyard !== undefined) {
+    if (sel.fromAnyGraveyard !== true) {
+      issue(out, `${path}.fromAnyGraveyard`, 'fromAnyGraveyard must be true when present');
+    } else if (sel.fromMoved !== true) {
+      if (
+        sel.filter?.zone !== 'graveyard' ||
+        sel.alsoGraveyard !== undefined ||
+        sel.fromHandOf !== undefined ||
+        sel.eachGraveyard !== undefined ||
+        sel.chosenBy !== undefined ||
+        sel.minCardTypes !== undefined ||
+        sel.exceptSacrificed !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.fromAnyGraveyard`,
+          'a choice from every graveyard names the graveyard as its zone and is not combined with alsoGraveyard, fromHandOf, eachGraveyard, chosenBy, minCardTypes or exceptSacrificed',
+        );
+      }
+    }
   }
   // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
   if (sel.alsoGraveyard !== undefined) {
