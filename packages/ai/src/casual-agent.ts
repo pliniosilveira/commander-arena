@@ -32,6 +32,7 @@ import { chooseArrangement } from './casual-library';
 import { chooseModalTargets, chooseModesAnswer } from './casual-modes';
 import { hasNoTargetToChoose, noteCast, withoutTriedCasts } from './casual-no-target';
 import { chooseOptionAnswer } from './casual-options';
+import { choosePartyAnswer } from './casual-party';
 import { choosePayOptionsAnswer } from './casual-pay-options';
 import {
   chooseBlightCreature,
@@ -178,6 +179,8 @@ export function createCasualHandlers(
     // CR 601.2f-h (D-120): the creatures and artifacts to tap and the cards to exile for a spell's cost,
     // the ones it wants to keep left out, see casual-pay-options.ts.
     choosePayOptions: (d) => choosePayOptionsAnswer(view, d),
+    // CR 700.8d (Stick Together): the party that keeps the creatures it values most, see casual-party.ts.
+    chooseParty: (d) => choosePartyAnswer(view, d),
   };
 }
 
