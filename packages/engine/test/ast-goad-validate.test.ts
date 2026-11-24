@@ -60,3 +60,26 @@ describe('goad (D-639)', () => {
     );
   });
 });
+
+describe('a static subject that names a goaded creature (CR 701.15b)', () => {
+  const group = {
+    kind: 'filter',
+    filter: { types: ['creature'], controller: 'opponent', goaded: true },
+  } as const;
+
+  test('a restriction may name it (Bothersome Quasit)', () => {
+    const ability: Ability = {
+      kind: 'static',
+      static: { kind: 'restriction', subject: group, restriction: 'cantBlock' },
+    };
+    expect(messages(creature([ability]))).toEqual([]);
+  });
+
+  test('a change of power and toughness may not: it would read the designation before it is settled', () => {
+    const ability: Ability = {
+      kind: 'static',
+      static: { kind: 'modifyPt', subject: group, power: 1, toughness: 1 },
+    };
+    expect(messages(creature([ability])).join('|')).toContain('static ability cannot read');
+  });
+});

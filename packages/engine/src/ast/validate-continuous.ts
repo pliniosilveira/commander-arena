@@ -323,9 +323,13 @@ export function checkContinuousEffect(
       issue(out, `${path}.duration`, '"this combat" is the duration of attacksEachCombat only');
     }
   } else if (e.kind === 'restrict' && e.duration === 'untilYourNextTurn') {
-    // CR 611.2a, 500.1 (Taunt from the Rampart): "until your next turn" is the duration of cantBlock only here (`runContinuous` ends it as the next turn of the controller begins).
-    if (e.restriction !== 'cantBlock') {
-      issue(out, `${path}.duration`, '"until your next turn" is the duration of cantBlock only');
+    // CR 611.2a, 500.1 (Taunt from the Rampart, Sly Instigator): "until your next turn" is the duration of cantBlock and cantBeBlocked only here (`runContinuous` ends it as the next turn of the controller begins).
+    if (e.restriction !== 'cantBlock' && e.restriction !== 'cantBeBlocked') {
+      issue(
+        out,
+        `${path}.duration`,
+        '"until your next turn" is the duration of cantBlock and cantBeBlocked only',
+      );
     }
   } else if (e.kind === 'grantKeyword' && e.duration === 'untilYourNextTurn') {
     // CR 611.2a, 500.1: the duration of a temporary grant of a keyword (`runContinuous` ends it as the next turn of the controller begins); only without parameters (below).

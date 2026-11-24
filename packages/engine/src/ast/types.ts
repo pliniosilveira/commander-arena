@@ -4221,7 +4221,7 @@ export type Effect =
         | 'untilNextUntapStep'
         | 'thisCombat'
         /**
-         * "Until your next turn, those creatures can't block" (CR 611.2a, 500.1; Taunt from the Rampart): only with `cantBlock`; the objects named as the effect resolves (CR 611.2c) can't block until the next turn
+         * "Until your next turn, those creatures can't block" (CR 611.2a, 500.1; Taunt from the Rampart) and "Until your next turn, target creature can't be blocked" (Sly Instigator): only with `cantBlock` or `cantBeBlocked`; the objects named as the effect resolves (CR 611.2c) can't block until the next turn
          * of the controller of the effect begins, the turn it resolves in not counted (as `grantKeyword` does).
          */
         | 'untilYourNextTurn';

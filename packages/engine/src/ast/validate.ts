@@ -860,7 +860,8 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'restriction':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      // "Goaded creatures your opponents control can't block" (CR 701.15b): the subject may name a goaded creature.
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, false, true);
       if (!isOneOf(s.restriction, RESTRICTIONS)) {
         issue(out, `${path}.restriction`, `unknown restriction ${JSON.stringify(s.restriction)}`);
       }

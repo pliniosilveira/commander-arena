@@ -289,6 +289,8 @@ interface BoardIndex {
   readonly deferred: EntryLists;
   /** The "+N/+N" static abilities whose subject names a keyword, in battlefield order (applied after `deferred`, D-149). */
   readonly late: EntryLists;
+  /** The restrictions whose subject names a goaded creature (CR 701.15b), applied last: they read who is goaded once every goad has been applied. */
+  readonly afterGoad: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
   /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
@@ -707,13 +709,21 @@ function buildIndex(state: GameState): BoardIndex {
   const immediate: ModifierEntry[] = [];
   const deferred: ModifierEntry[] = [];
   const late: ModifierEntry[] = [];
+  const afterGoad: ModifierEntry[] = [];
   let seq = 0;
   for (const source of sources) {
     for (const mod of source.modifiers) {
       const pt = dependsOnPt(mod);
       const keywords = dependsOnKeywords(mod);
       const isLate = keywords && mod.kind === 'modifyPt';
-      (isLate ? late : pt || keywords ? deferred : immediate).push({
+      (dependsOnGoaded(mod)
+        ? afterGoad
+        : isLate
+          ? late
+          : pt || keywords
+            ? deferred
+            : immediate
+      ).push({
         source,
         mod,
         pt,
@@ -731,6 +741,7 @@ function buildIndex(state: GameState): BoardIndex {
     immediate: listEntries(immediate),
     deferred: listEntries(deferred),
     late: listEntries(late),
+    afterGoad: listEntries(afterGoad),
     reductions,
     hasCostIncrease,
     hasStaticGrants,
@@ -938,6 +949,13 @@ function dependsOnPt(mod: Modifier): boolean {
   return (
     mod.subject.kind === 'filter' &&
     filterReads(mod.subject.filter, (f) => f.power !== undefined || f.toughness !== undefined)
+  );
+}
+
+/** Whether a static ability's subject names a goaded creature (CR 701.15b): it applies after the abilities that goad (`afterGoad`). */
+function dependsOnGoaded(mod: Modifier): boolean {
+  return (
+    mod.subject.kind === 'filter' && filterReads(mod.subject.filter, (f) => f.goaded !== undefined)
   );
 }
 
@@ -1275,6 +1293,17 @@ export function staticEffectsOn(
         ...(pt ? base.ptWith(power, toughness, sets) : {}),
         keywords: keywordsNow,
       });
+    }
+  }
+  // CR 701.15b: "goaded creatures ... can't block" reads whether the target is goaded now: by a goad effect, or by a static ability that goads (applied above).
+  if (base.layer6Only !== true) {
+    const goaded =
+      goadedBy.length > 0 ||
+      state.continuousEffects.some(
+        (e) => e.change.kind === 'goaded' && e.objects.includes(target.id),
+      );
+    for (const { source, mod } of entriesFor(index.afterGoad, target.id)) {
+      apply(source, mod, { ...base, goaded });
     }
   }
   const host = target.attachedTo === null ? undefined : state.objects[target.attachedTo];
