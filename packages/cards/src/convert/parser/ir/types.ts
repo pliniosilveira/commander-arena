@@ -1867,7 +1867,10 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'restriction'; readonly restriction: IrRestrictionKind }
   // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control": the creatures the subject names cannot be declared attacking the controller or their planeswalkers
-  | { readonly kind: 'cantAttackYou' }
+  // Riders of Rohan deck, group E (CR 508.1a): "Enchanted creature can't attack you.": the players only, no planeswalkers (`playersOnly`).
+  | { readonly kind: 'cantAttackYou'; readonly playersOnly?: true }
+  // Fealty to the Realm (CR 613.1b, 725.1): "The monarch controls enchanted creature.": the engine's `controlAttached` by the monarch.
+  | { readonly kind: 'controlByMonarch' }
   | { readonly kind: 'noMaxHandSize' }
   /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3): the engine's
