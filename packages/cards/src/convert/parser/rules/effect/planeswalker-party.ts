@@ -269,7 +269,7 @@ export const EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE = defineRule<Clauses>({
   ],
   examples: [
     'until end of turn, you may cast noncreature spells from among those cards without paying their mana costs',
-    'Until end of turn, you may cast instant and sorcery spells from among those cards without paying their mana costs',
+    'Until end of turn, you may cast instant or sorcery spells from among those cards without paying their mana costs',
   ],
   rejects: [
     'until end of turn, you may cast spells from among those cards without paying their mana costs',
