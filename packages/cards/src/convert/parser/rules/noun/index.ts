@@ -746,6 +746,9 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target Dragon',
     // Hosts of Mordor deck (Corsairs of Umbar): one permanent of one of three creature types.
     'target Goblin, Orc, or Pirate',
+    // Seasoned Dungeoneer: an attacking creature of one of four creature types.
+    'target attacking Cleric, Rogue, Warrior, or Wizard',
+    'target attacking Goblin or Orc',
     'target Forest',
     'target Equipment you control',
     'target Elf creature',
@@ -804,6 +807,9 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target creature with power 3 or less and flying',
     'target creature with power 3 or less or greater',
     'target Banana',
+    'target attacking Cleric, Rogue, Warrior, and Wizard',
+    'target attacking Cleric, Rogue Warrior, or Wizard',
+    'target attacking Cleric, or Wizard',
     'target card from a graveyard',
     "target creature that's green",
     "target creature that's green or green",

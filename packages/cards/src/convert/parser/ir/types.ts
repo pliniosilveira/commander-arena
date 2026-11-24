@@ -1326,11 +1326,13 @@ export interface IrKeywordArg extends IrNode {
   readonly name: string;
   /**
    * Feather deck group 1 (D-451, D-452, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
-   * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves. `name` is then `protection`.
+   * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves, or (`cardTypes`) the card types named. `name` is then `protection`.
    */
   readonly protection?:
     | { readonly colors: readonly string[] }
-    | { readonly choice: 'color' | 'cardType' };
+    | { readonly choice: 'color' | 'cardType' }
+    /** "gains protection from creatures until end of turn" (Seasoned Dungeoneer, CR 702.16a, 205.2a): the card types named, as the engine's card type words. */
+    | { readonly cardTypes: readonly string[] };
 }
 
 /** Keywords as the words spell them ("haste", "first strike"), the grant of "except it has haste" (stage P34, D-152, CR 707.9b). */

@@ -252,9 +252,9 @@ describe('what a gain does not read', () => {
     expect(dropped(text)).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });
 
-  test('a keyword with a parameter is unread: protection from a quality that is not a color (colors are read since D-452), landwalk', () => {
+  test('a keyword with a parameter is unread: protection from a quality that is not a color or a card type (read since D-452 and Seasoned Dungeoneer), landwalk', () => {
     expect(
-      dropped('Target creature gains protection from artifacts until end of turn.'),
+      dropped('Target creature gains protection from everything until end of turn.'),
     ).toMatchObject({
       reason: 'unrecognised',
     });

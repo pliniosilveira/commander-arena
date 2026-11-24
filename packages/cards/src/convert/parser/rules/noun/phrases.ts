@@ -807,6 +807,20 @@ export function permanentPhrase(
     const anyOf = words.map((w): IrFilter => ({ subtypes: [w], raw: w }));
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
+  // "target attacking Cleric, Rogue, Warrior, or Wizard" (Seasoned Dungeoneer, CR 508.1k, 205.3m): "attacking" says of the whole choice what it says of one creature type, so the filter
+  // is an attacking creature that is one of the types (the engine's outer `attacking` with the `anyOf` of the types). Only "attacking" is read before a list of creature types.
+  const attackingSubtypeChoice: Parser<IrFilter> = (ctx, pos) => {
+    if (subtypes === false) return fail(ctx, pos);
+    const lead = pattern(/attacking (?=[A-Z])/u)(ctx, pos);
+    if (!lead.ok) return lead;
+    const rest = subtypeChoice(ctx, lead.pos);
+    if (!rest.ok) return rest;
+    return {
+      ok: true,
+      value: { ...rest.value, attacking: true as const, raw: ctx.text.slice(pos, rest.pos) },
+      pos: rest.pos,
+    };
+  };
   // "creature or Vehicle" (D-447, CR 205.2a, 205.3g): one card type and one subtype joined by " or ", in either order; a permanent with the type or with the subtype matches.
   const typeOrSubtype: Parser<IrFilter> = (ctx, pos) => {
     if (subtypes === false) return fail(ctx, pos);
@@ -866,6 +880,7 @@ export function permanentPhrase(
         quiet(mixedChoice),
         quiet(typeOrSubtype),
         quiet(subtypeChoice),
+        quiet(attackingSubtypeChoice),
         single,
       );
   // "target artifact or enchantment with mana value X or less" (D2 group, Kinetic Ooze, CR 202.3): the mana value is at most the X a "where X is ..." defines, or the X of the spell
