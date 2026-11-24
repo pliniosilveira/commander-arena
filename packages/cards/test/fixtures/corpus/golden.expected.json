@@ -833,23 +833,6 @@
       "reasons": [],
       "ast": "a535fe90"
     },
-    "0dfdf1a1-a3a9-490f-bd9d-dcba088c6785": {
-      "name": "Teyo, Geometric Tactician",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−2: Choose left or right. Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
-        }
-      ],
-      "reasons": [],
-      "ast": "06a738d8"
-    },
     "0e3246ef-e0b4-49bc-a715-b69c4b6be461": {
       "name": "Skola Grovedancer",
       "group": "acceptance",
@@ -1540,29 +1523,6 @@
       "reasons": [],
       "ast": "8b02ea48"
     },
-    "1cdf30de-d88c-421a-80df-4917bbd2f09e": {
-      "name": "Silent Arbiter",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "No more than one creature can attack each combat.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "No more than one creature can block each combat.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "eaddbbf2"
-    },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
@@ -1810,39 +1770,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e5dba4ba"
-    },
-    "2274c7ae-5a40-4fd4-a4ac-6f56b23034e4": {
-      "name": "Jace, Architect of Thought",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "+1: Until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.group-enters-tapped"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: Reveal the top three cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other on the bottom of your library in any order.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.reveal-put-all-hand"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−8: For each player, search that player's library for a nonland card and exile it, then that player shuffles. You may cast those cards without paying their mana costs.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
-      "reasons": [],
-      "ast": "41f84205"
     },
     "22c3b484-0f96-4051-807c-fc0fcb7cd1a8": {
       "name": "Seven of Nine, Tertiary Adjunct",
@@ -2179,23 +2106,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9564f29c"
-    },
-    "2a31cd16-fb30-4bb0-b775-d5e8b9221dd4": {
-      "name": "Gatewatch Beacon",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever a planeswalker you control enters, if ~ has loyalty counters on it, you may move a loyalty counter from ~ onto that planeswalker.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
-      "reasons": [],
-      "ast": "ddfb0380"
     },
     "2a3712f9-6bed-4068-9064-2b5240fc7b28": {
       "name": "Gluttonous Troll",
@@ -3131,22 +3041,6 @@
       "reasons": [],
       "ast": "a408d891"
     },
-    "3a2bb47d-228d-499e-a34b-9e10d99e9b2c": {
-      "name": "Fog Bank",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Prevent all combat damage that would be dealt to and dealt by ~.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "9f01b8a5"
-    },
     "3a49b518-61c8-4dea-8008-c5edf8384581": {
       "name": "Ob Nixilis, the Ascended",
       "group": "acceptance",
@@ -3178,23 +3072,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "94f727e1"
-    },
-    "3aeba3c2-5517-4870-8802-29b0fa70ffae": {
-      "name": "Semester's End",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile any number of target creatures and/or planeswalkers you control. At the beginning of the next end step, return each of them to the battlefield under its owner's control. Each of them enters with an additional +1/+1 counter on it if it's a creature and an additional loyalty counter on it if it's a planeswalker.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.any-number-target-graveyard-cards-total-power"
-        }
-      ],
-      "reasons": [],
-      "ast": "985e55ff"
     },
     "3b21abb0-9a58-4e62-9650-4b04ce2bfb12": {
       "name": "Dack Fayden, Helping Hand",
@@ -3915,22 +3792,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "25cb7996"
-    },
-    "4c2196e5-6ed7-4cd2-b8e7-f01aff236569": {
-      "name": "The Wanderer",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Prevent all noncombat damage that would be dealt to you and other permanents you control.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "61f02537"
     },
     "4c340b82-22e1-445a-b236-82471b442031": {
       "name": "Frontline Heroism",
@@ -4843,23 +4704,6 @@
       "reasons": [],
       "ast": "e4b2006b"
     },
-    "5e674793-6586-44a4-b936-a71203c5850a": {
-      "name": "Sparkshaper Visionary",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of combat on your turn, choose any number of target planeswalkers you control. Until end of turn, they become 3/3 blue Bird creatures with flying, hexproof, and \"Whenever ~ deals combat damage to a player, scry 1.\"",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lead-gain-becomes-subtype"
-        }
-      ],
-      "reasons": [],
-      "ast": "8d57d21c"
-    },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
       "group": "acceptance",
@@ -5380,31 +5224,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7dc278bb"
-    },
-    "67dbc5dd-6d05-43e7-83f7-70e10eb54807": {
-      "name": "Sarkhan the Masterless",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever a creature attacks you or a planeswalker you control, each Dragon you control deals 1 damage to that creature.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.gain-keyword-each"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "+1: Until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature and gains flying.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lead-group-base-pt"
-        }
-      ],
-      "reasons": [],
-      "ast": "29364f66"
     },
     "67ee7c8b-afcc-4f09-a184-3db01f2ab175": {
       "name": "Enter the God-Eternals",
@@ -6335,31 +6154,6 @@
       "reasons": [],
       "ast": "973b74f5"
     },
-    "7b2a600b-d6c8-45ff-a7fc-06105d27111f": {
-      "name": "Chandra, Awakened Inferno",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "+2: Each opponent gets an emblem with \"At the beginning of your upkeep, this emblem deals 1 damage to you.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.player.energy"
-        },
-        {
-          "face": 0,
-          "ability": 3,
-          "text": "−X: ~ deals X damage to target creature or planeswalker. If a permanent dealt damage this way would die this turn, exile it instead.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
-      "reasons": [],
-      "ast": "d89efc8a"
-    },
     "7b600c0e-5ad2-48a2-a147-346ca78c8629": {
       "name": "Liliana's Standard Bearer",
       "group": "acceptance",
@@ -6669,23 +6463,6 @@
       "reasons": [],
       "ast": "077cdd35"
     },
-    "7ff7af5f-e4e3-40af-8882-756564bfa479": {
-      "name": "Guff Rewrites History",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "For each player, choose target nonenchantment, nonland permanent that player controls. Those permanents' owners shuffle them into their libraries. Each player who controlled one of those permanents exiles cards from the top of their library until they exile a nonland card, then puts the rest on the bottom of their library in a random order. Each player may cast the nonland card they exiled without paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "c81f1b91"
-    },
     "800cfd70-6a97-40eb-8dc0-40b762e4db76": {
       "name": "Unfinished Business",
       "group": "acceptance",
@@ -6958,39 +6735,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b648a836"
-    },
-    "86851bdb-9b2f-4407-97a1-a6a9f2e0ef66": {
-      "name": "Vronos, Masked Inquisitor",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "+1: Up to two other target planeswalkers you control phase out at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-permanent"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: For each opponent, return up to one target nonland permanent that player controls to its owner's hand.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−7: Target artifact you control becomes a 9/9 Construct artifact creature and gains vigilance, indestructible, and \"~ can't be blocked.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.becomes"
-        }
-      ],
-      "reasons": [],
-      "ast": "dcae445f"
     },
     "868882d2-ed4e-4171-a17c-478a341080fb": {
       "name": "Prossh, Skyraider of Kher",
@@ -7330,23 +7074,6 @@
       "reasons": [],
       "ast": "c20762ee"
     },
-    "8dcb35e5-ae44-455f-86e3-4a77d496ff34": {
-      "name": "Spark Double",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "19dac186"
-    },
     "8dcd7e2b-75a9-476a-a0a0-798613e8dad6": {
       "name": "Sauron, the Necromancer",
       "group": "acceptance",
@@ -7379,23 +7106,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8196a270"
-    },
-    "8dfa789d-ae1c-4f18-a55c-f49a363a5e33": {
-      "name": "Chandra, Legacy of Fire",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "0: Remove a loyalty counter from each of any number of permanents you control. Exile that many cards from the top of your library. You may play them this turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.remove-counters-self"
-        }
-      ],
-      "reasons": [],
-      "ast": "fc3c2e9d"
     },
     "8e04a5e0-e22c-430b-a39a-c9f38e16ea86": {
       "name": "Guardian of Faith",
@@ -7476,31 +7186,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "60bdb358"
-    },
-    "90249526-1875-450a-882d-bf6f6bfd37a6": {
-      "name": "Ajani Steadfast",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: Put a +1/+1 counter on each creature you control and a loyalty counter on each other planeswalker you control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.a-permanent"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−7: You get an emblem with \"If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.get-emblem"
-        }
-      ],
-      "reasons": [],
-      "ast": "5a79b4c1"
     },
     "9070c98b-fd01-4eeb-a4ec-fc464946c7c0": {
       "name": "Stridehangar Automaton",
@@ -7830,23 +7515,6 @@
       "reasons": [],
       "ast": "896d0351"
     },
-    "978e0d87-3ff2-4a73-916c-ff0dc0ab2797": {
-      "name": "Urza's Ruinous Blast",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile all nonland permanents that aren't legendary.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.all-permanents"
-        }
-      ],
-      "reasons": [],
-      "ast": "bc9f1baf"
-    },
     "97b2fb8b-0c69-4ed2-b2d0-8a780f9b5b97": {
       "name": "Dauntless Veteran",
       "group": "acceptance",
@@ -7950,23 +7618,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6b2bb81b"
-    },
-    "9a664735-6e38-407f-9d2f-a6d279cd6309": {
-      "name": "Repeated Reverberation",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When you next cast an instant spell, cast a sorcery spell, or activate a loyalty ability this turn, copy that spell or ability twice. You may choose new targets for the copies.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
-      "reasons": [],
-      "ast": "f5bda85f"
     },
     "9a8f6e5e-6cde-49df-861c-a26cb09c9b12": {
       "name": "Muddle, the Ever-Changing",
@@ -8471,23 +8122,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3e8aa54b"
-    },
-    "a3055ae8-990d-495a-9cb5-971407990cfa": {
-      "name": "Oreskos Explorer",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, search your library for up to X Plains cards, where X is the number of players who control more lands than you. Reveal those cards, put them into your hand, then shuffle.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "amount.where-x"
-        }
-      ],
-      "reasons": [],
-      "ast": "20d90415"
     },
     "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
       "name": "Ganax, Astral Hunter",
@@ -9219,23 +8853,6 @@
       "reasons": [],
       "ast": "2660e610"
     },
-    "aeaf7768-ed67-487d-8506-e667babb88ba": {
-      "name": "Narset, Enlightened Master",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ attacks, exile the top four cards of your library. Until end of turn, you may cast noncreature spells from among those cards without paying their mana costs.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lead-gain-becomes-subtype"
-        }
-      ],
-      "reasons": [],
-      "ast": "fc3b56b4"
-    },
     "aebfdcc0-c5b9-4737-8498-764a5021b087": {
       "name": "Graaz, Unstoppable Juggernaut",
       "group": "training",
@@ -9566,31 +9183,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "71fca4cd"
-    },
-    "b7ac6e89-941f-4ad9-a437-38ec38ec5263": {
-      "name": "Narset of the Ancient Way",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "+1: You gain 2 life. Add {U}, {R}, or {W}. Spend this mana only to cast a noncreature spell.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: Draw a card, then you may discard a card. When you discard a nonland card this way, Narset deals damage equal to that card's mana value to target creature or planeswalker.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
-      "reasons": [],
-      "ast": "4ca4eafb"
     },
     "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
       "name": "Realmwalker",
@@ -10232,23 +9824,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "905d70a1"
-    },
-    "c6a67820-5066-462f-a621-1ecab8bf4f97": {
-      "name": "Jaya's Phoenix",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ deals combat damage to a player or planeswalker, copy the next loyalty ability you activate this turn when you activate it. You may choose new targets for the copy.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.copy-spell"
-        }
-      ],
-      "reasons": [],
-      "ast": "42b17338"
     },
     "c6d89c4a-351f-4d63-ba57-b978a695191e": {
       "name": "Seedship Impact",
@@ -10932,31 +10507,6 @@
       "reasons": [],
       "ast": "4aea75f9"
     },
-    "d492eb9a-1f3b-4bf2-9a5d-0f4a4433f33f": {
-      "name": "Nahiri, the Harbinger",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: Exile target enchantment, tapped artifact, or tapped creature.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−8: Search your library for an artifact or creature card, put it onto the battlefield, then shuffle. It gains haste. Return it to your hand at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return"
-        }
-      ],
-      "reasons": [],
-      "ast": "0ff93d7e"
-    },
     "d4e0749a-e179-4c19-8536-bf8f1a198549": {
       "name": "Dedicated Commons",
       "group": "acceptance",
@@ -11486,14 +11036,6 @@
       "reasons": [],
       "ast": "e99a2316"
     },
-    "debce64a-18bd-42f5-9e85-158c2242e9e9": {
-      "name": "Deepglow Skate",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c7fd7eac"
-    },
     "dee99df5-628f-4a4e-a203-4dfddc927373": {
       "name": "Vivid Meadow",
       "group": "acceptance",
@@ -11605,23 +11147,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "90b0e9dd"
-    },
-    "e17ea7eb-362e-4c61-97cd-537f3921bced": {
-      "name": "Deploy the Gatewatch",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.look-take-one-graveyard"
-        }
-      ],
-      "reasons": [],
-      "ast": "8aecf441"
     },
     "e1d294e8-67b1-4a4a-86b8-f98f28a327d9": {
       "name": "Promise of Loyalty",
@@ -11990,23 +11515,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e9da4a94"
-    },
-    "eb2094cf-b4be-4f52-8615-e179ef7c741d": {
-      "name": "Mobilized District",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{4}: ~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land. This ability costs {1} less to activate for each legendary creature and planeswalker you control.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.becomes-land-creature-trailing"
-        }
-      ],
-      "reasons": [],
-      "ast": "60f7b6f2"
     },
     "eb735501-19e7-4910-aa6a-6667fff6f4e5": {
       "name": "Study Hall",
@@ -12788,23 +12296,6 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
-    "f8bf3d91-cb50-48ce-88c6-cdcb37b64b57": {
-      "name": "Kazuul, Tyrant of the Cliffs",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever a creature an opponent controls attacks, if you're the defending player, create a 3/3 red Ogre creature token unless that creature's controller pays {3}.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
-      "reasons": [],
-      "ast": "2cbc77ec"
-    },
     "f9217532-f7cf-4436-b476-72d97a3147dc": {
       "name": "Galazeth Prismari",
       "group": "acceptance",
@@ -12965,31 +12456,6 @@
       "reasons": [],
       "ast": "6a63a653"
     },
-    "fb88fb3d-6a85-4bb1-b316-7f759b45a0fa": {
-      "name": "The Chain Veil",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your end step, if you didn't activate a loyalty ability of a planeswalker this turn, you lose 2 life.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{4}, {T}: For each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.for-each-pump-all"
-        }
-      ],
-      "reasons": [],
-      "ast": "3e545ab1"
-    },
     "fbb70f54-8c33-4de0-b05c-f0bff9ffa6ce": {
       "name": "Song of the Worldsoul",
       "group": "acceptance",
@@ -13127,23 +12593,6 @@
       "reasons": [],
       "ast": "8032ef5c"
     },
-    "ff94e2d5-8ba1-4f6c-916d-58235a60743e": {
-      "name": "Leori, Sparktouched Hunter",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ deals combat damage to a player, choose a planeswalker type. Until end of turn, whenever you activate an ability of a planeswalker of that type, copy that ability. You may choose new targets for the copies.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
-        }
-      ],
-      "reasons": [],
-      "ast": "51748a44"
-    },
     "ffd34151-457a-4a93-82db-24b18319a06b": {
       "name": "Omnath, Locus of the Roil",
       "group": "acceptance",
@@ -13171,8 +12620,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1267,
-      "total": 1313
+      "supported": 1266,
+      "total": 1285
     }
   }
 }
