@@ -128,6 +128,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyFromGraveyard',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
+    // Empowered Autogenerator: "Put a charge counter on this artifact. Add X mana ..." (`ManaAbility.putCounter`).
+    'manaPutCounter',
+    // Moxite Refinery: "Remove X counters from an artifact or creature you control" (`removeCounters` cost with `countX`).
+    'removeCountersX',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
@@ -174,6 +178,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
     'copyEntersWithX',
+    // "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types" (`entersAsCopy.addTypes`, CR 707.9b, 205.1b).
+    'copyEntersAddsTypes',
     // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
     'copyEntersFromGraveyard',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
@@ -438,6 +444,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
+    // CR 702.44a, 702.44d: "it gains sunburst" (a spell on the stack gains the keyword whose counters its permanent enters with).
+    'spellGainsKeyword',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
     'removeTimeCounter',
     'castExiled',
@@ -795,6 +803,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'embalm',
     'devour',
     'riot',
+    // CR 702.44a: Sunburst, read from the spell a permanent entered from.
+    'sunburst',
     // D-127: Echo (CR 702.30a) and Cumulative upkeep (CR 702.24a).
     'echo',
     'cumulativeUpkeep',
@@ -845,6 +855,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // additional +1/+1 counter on it".
     'lifeGainBonus',
     'lifeGainDouble',
+    // "If you would proliferate, proliferate twice instead" (Tekuthal, CR 614.1a).
+    'proliferateDouble',
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead".
     'countersPlus',
     'othersEnterWithCounters',
@@ -1140,6 +1152,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notChosenType',
     'chosenColor',
     'chosenPlaneswalkerType',
+    // CR 205.2a, 607.2d (Cloud Key): `ObjectFilter.chosenCardType` and `asEntersChoose` of `cardType` among listed `options`.
+    'chosenCardType',
     // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
     'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
@@ -1797,6 +1811,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'annihilator',
   // CR 702.116a, 702.116b (Myriad): given to a creature by a static ability or an effect ("Creatures you control have myriad"); each instance is its own triggered ability.
   'myriad',
+  // CR 702.121a, 702.121b (Melee): given to a creature by a static ability ("Each artifact creature you control has melee"); each instance is its own triggered ability.
+  'melee',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
 ];
@@ -1918,6 +1934,10 @@ export const ABILITY_FEATURES = [
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
   'manaCountOwnCounters',
+  /** "{T}: Put a charge counter on this artifact. Add X mana of any one color, where X is the number of charge counters on it" (CR 605.3b, 122.6): `ManaAbility.putCounter`, the counters put first, the amount counted after. */
+  'manaPutCounter',
+  /** "Remove X counters from an artifact or creature you control" (CR 107.3a, 602.2b): the `removeCounters` cost with `countX`, the X announced as the ability is activated. */
+  'removeCountersX',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
@@ -1964,6 +1984,8 @@ export const ABILITY_FEATURES = [
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
   'copyEntersWithX',
+  /** "..., except it's an artifact in addition to its other types" (CR 707.9b, 205.1b): the engine's `entersAsCopy.addTypes`. */
+  'copyEntersAddsTypes',
   /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
   'copyEntersFromGraveyard',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
@@ -2214,6 +2236,8 @@ export const SELECTOR_KINDS = [
   'notChosenType',
   'chosenColor',
   'chosenPlaneswalkerType',
+  /** "Spells you cast of the chosen type" (CR 205.2a, 607.2d, Cloud Key): the engine's `ObjectFilter.chosenCardType`, and a choice among some card types. */
+  'chosenCardType',
   /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
   'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
@@ -2973,6 +2997,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyFromGraveyard: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
+  manaPutCounter: true,
+  removeCountersX: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
@@ -2996,6 +3022,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,
+  copyEntersAddsTypes: true,
   copyEntersFromGraveyard: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,
@@ -3164,6 +3191,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
+  spellGainsKeyword: true,
   removeTimeCounter: true,
   castExiled: true,
   may: true,
@@ -3390,6 +3418,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   embalm: true,
   devour: true,
   riot: true,
+  sunburst: true,
   echo: true,
   cumulativeUpkeep: true,
   suspend: true,
@@ -3420,6 +3449,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   exileInsteadOfOpponentGraveyard: true,
   lifeGainBonus: true,
   lifeGainDouble: true,
+  proliferateDouble: true,
   countersPlus: true,
   othersEnterWithCounters: true,
   tokensInstead: true,

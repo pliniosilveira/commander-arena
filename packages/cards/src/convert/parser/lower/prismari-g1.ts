@@ -32,7 +32,15 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
     // the counters went to, read again as the keyword is granted (a group of "each" is fixed as the effect resolves); only for a keyword of one turn.
     const group =
       !aboutMadeTokens(ctx) && clause.duration !== undefined ? ctx.lastCounteredGroup : null;
-    if (!aboutMadeTokens(ctx) && group === null) return failure(clause);
+    // CR 608.2c, 611.2c (Wake the Past): "Return all artifact cards from your graveyard to the battlefield. They gain haste until end of turn.": "they" are the objects the
+    // instruction before put onto the battlefield (`ctx.movedOnto`, the engine's `moved`).
+    // Only with its duration: "They gain haste." after a return would be a haste for good given to "them" (a plural for what may be one card), which is not read.
+    const putOnto =
+      !aboutMadeTokens(ctx) &&
+      group === null &&
+      ctx.movedOnto !== null &&
+      clause.duration !== undefined;
+    if (!aboutMadeTokens(ctx) && group === null && !putOnto) return failure(clause);
     const kind = keywordKind(word.name);
     if (kind === undefined || !isGrantable(kind)) return failure(clause);
     return {
@@ -59,6 +67,20 @@ function atEndStep(action: 'sacrifice' | 'exile'): Lowering<IrClause, Effects> {
     lower(clause, ctx) {
       // CR 603.7c: also the one card an instruction before put onto the battlefield from a hand or graveyard ("You may put a creature card from your hand onto the battlefield.
       // ... Sacrifice it at the beginning of the next end step."): the delayed ability is about that object only, and about none when the player put none.
+      // CR 603.7c (Depthshaker Titan): the targets an instruction before made creatures for good ("Sacrifice them at the beginning of the next end step"), bound as it resolves.
+      if (action === 'sacrifice' && ctx.becameTarget !== null) {
+        return {
+          ok: true,
+          value: [
+            {
+              kind: 'delayedTrigger',
+              at: { step: 'endStep', whose: 'each' },
+              effect: { kind: 'sacrifice', objects: { kind: 'target', id: ctx.becameTarget } },
+            },
+          ],
+          rule: clause.rule,
+        };
+      }
       if (!aboutMadeTokens(ctx) && !(action === 'sacrifice' && ctx.searched !== null)) {
         return failure(clause);
       }

@@ -520,6 +520,57 @@ function lowerManaAbility(
 }
 
 /**
+ * "{T}: Put a charge counter on ~. Add X mana of any one color, where X is the number of charge counters on ~." (Empowered Autogenerator; CR 605.1a, 605.3b, 122.6): a mana ability whose
+ * first instruction puts counters on its own permanent, which the engine's `putCounter` does before the mana is added (the amount counts after). Exactly these two sentences, each of one
+ * instruction, the first a number of counters of a named kind on `~`; the second is read as any mana ability is. Null when the ability is not of this shape (the ordinary reading follows).
+ */
+function lowerCounterThenMana(
+  ability: Activated,
+  faceTypes: readonly string[],
+): LowerResult<readonly Ability[]> | null {
+  const [first, second, ...more] = ability.body.sentences;
+  if (first === undefined || second === undefined || more.length > 0) return null;
+  const [put, ...firstMore] = first.clauses;
+  const [add, ...secondMore] = second.clauses;
+  if (put?.verb !== 'addCounters' || add?.verb !== 'addMana') return null;
+  if (
+    firstMore.length > 0 ||
+    secondMore.length > 0 ||
+    !plainClause(put) ||
+    first.condition !== undefined ||
+    first.where !== undefined ||
+    first.instead === true ||
+    first.otherwise === true ||
+    first.delayed !== undefined
+  ) {
+    return failure(ability);
+  }
+  const counter = put.args.counter;
+  const objects = put.args.objects;
+  if (counter?.kind !== 'counterSpec' || objects?.kind !== 'noun' || objects.det !== 'self') {
+    return failure(ability);
+  }
+  const count = amountArg(put, 'count', newContext('ability', faceTypes));
+  if (!count.ok) return count;
+  if (typeof count.value !== 'number' || count.value < 1) return failure(ability);
+  const base = lowerManaAbility(
+    { ...ability, body: { ...ability.body, sentences: [second] } },
+    second.clauses,
+    faceTypes,
+  );
+  if (base === null || !base.ok) return base;
+  const [mana] = base.value;
+  if (mana?.kind !== 'mana') return failure(ability);
+  const blocked = gate(ability, ['ability:manaPutCounter']);
+  if (blocked !== null) return blocked;
+  return {
+    ok: true,
+    value: [{ ...mana, putCounter: { counter: counter.name, count: count.value } }],
+    rule: base.rule,
+  };
+}
+
+/**
  * "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color." (Nykthos, Shrine to Nyx; CR 605.3b, 700.5): the mana ability of the
  * second sentence with the engine's `anyColorDevotion`, whose color the player chooses as it resolves (the first sentence says so, and makes no instruction of its own).
  * Exactly these two sentences, each of one instruction. Null when the ability is not of this shape (the ordinary reading follows, which refuses "that color" with no color
@@ -798,7 +849,9 @@ function prepare(
       // "Sacrifice X creatures" (D-488, CR 107.3a): the X is announced as the ability is activated.
       (c.kind === 'sacrifice' && c.countX === true) ||
       // Issue 101 (CR 107.3a): "Discard X cards".
-      (c.kind === 'discard' && c.countX === true),
+      (c.kind === 'discard' && c.countX === true) ||
+      // Moxite Refinery (CR 107.3a, 602.2b): "Remove X counters from an artifact or creature you control".
+      (c.kind === 'removeCounters' && c.countX === true),
   );
   // CR 606.2 (stage P47, D-202): a loyalty symbol is the cost of an ability of a planeswalker, once, and nothing else is paid with it
   // that the rules of 606 do not know (a loyalty ability has no "Activate only" restriction of its own, CR 606.3).
@@ -819,6 +872,10 @@ function prepare(
       : []),
     ...(costs.value.some((c) => c.kind === 'discard' && c.countX === true)
       ? (['ability:discardCostX'] as const)
+      : []),
+    // Moxite Refinery: "Remove X counters from an artifact or creature you control".
+    ...(costs.value.some((c) => c.kind === 'removeCounters' && c.countX === true)
+      ? (['ability:removeCountersX'] as const)
       : []),
     // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard".
     ...(costs.value.some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
@@ -1021,6 +1078,8 @@ export function lowerActivated(
     clauses.some((c) => c.verb === 'addMana') &&
     !ability.costs.some((c) => c.kind === 'loyalty')
   ) {
+    const counterFirst = lowerCounterThenMana(ability, ctx.faceTypes);
+    if (counterFirst !== null) return counterFirst;
     const chosen = lowerChosenColorDevotion(ability, ctx.faceTypes);
     if (chosen !== null) return chosen;
     const instead = lowerManaInstead(ability, ctx.faceTypes);
@@ -1093,6 +1152,8 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaSpendOnlyChosenType',
   'ability:manaSpendOnlyXCost',
   'ability:manaCountOwnCounters',
+  'ability:manaPutCounter',
+  'ability:removeCountersX',
   'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',

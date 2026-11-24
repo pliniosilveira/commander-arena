@@ -92,6 +92,7 @@ import {
   riotDecision,
   riotGivesHaste,
   riotInstances,
+  sunburstCounters,
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
@@ -101,6 +102,7 @@ import { opponentGraveyardReplacement } from './graveyard-replacement';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
 import { gainLife } from './life-gain';
+import { manaSpentOf } from './mana-spent';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
@@ -842,12 +844,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       castX,
       escaped,
       (a) =>
-        a.kind === 'diedThisTurn'
-          ? historyCount(nextBefore, a, enterController)
-          : a.kind === 'aggregate'
-            ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
-              amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
-            : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+        a.kind === 'manaSpent'
+          ? // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell this permanent came from; nothing for a card that was not cast.
+            manaSpentOf(old, a.fromType, a.snow === true, a.colors === true)
+          : a.kind === 'diedThisTurn'
+            ? historyCount(nextBefore, a, enterController)
+            : a.kind === 'aggregate'
+              ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
+                amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
+              : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.
@@ -872,6 +877,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     counters = addCounterMaps(
       counters,
       keywordEntryCounters(abilities, riotAnswers, request.devoured ?? 0),
+    );
+    // CR 702.44a, 702.44b (Sunburst): counters for the colors of the mana spent on the spell this permanent came from; a creature gets +1/+1 counters, any other permanent charge counters.
+    counters = addCounterMaps(
+      counters,
+      sunburstCounters(abilities, old, face?.types.includes('creature') === true),
     );
     if (revealRule !== null && !tapped && !untappedByEffect) {
       if (mayReveal && request.entersPaid === true) {
