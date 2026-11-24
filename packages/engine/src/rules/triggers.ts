@@ -32,7 +32,7 @@ import type { Ability, Trigger, TriggerStep, TriggerSubject, Zone } from '../ast
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
-import { getSeat } from '../state/ops';
+import { getSeat, opponentsOf } from '../state/ops';
 import type {
   DelayedTrigger,
   GameObject,
@@ -124,6 +124,11 @@ interface Occurrence {
   readonly blocker?: ObjectId;
   /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
+  /**
+   * For `attackBatch`: as `attackers`, one entry for each: the player the creature was declared as attacking, or the controller of the planeswalker it was declared as
+   * attacking; null for a creature that attacks a battle (CR 508.1b, 506.3), which is neither (`attackingYourOpponents`).
+   */
+  readonly attackersAt?: readonly (SeatId | null)[];
 }
 
 /** The controller of a damage source, as it is or as it last was (CR 113.7a); null when unknown. */
@@ -722,6 +727,14 @@ function occurrences(
               seat: event.seat,
               player: event.seat,
               attackers: event.attackers.map((a) => a.object),
+              attackersAt: event.attackers.map((a) => {
+                if (a.target.kind === 'player') return a.target.seat;
+                const attacked = state.objects[a.target.object];
+                return attacked !== undefined &&
+                  derive(state, attacked).types.includes('planeswalker')
+                  ? controllerOf(state, attacked)
+                  : null;
+              }),
               attacked: event.attackers.flatMap((a) =>
                 a.target.kind === 'player' ? [a.target.seat] : [],
               ),
@@ -1065,7 +1078,11 @@ function matches(
       ) {
         return false;
       }
-      return attackBatchCount(state, trigger, occ.attackers ?? [], ctx) >= trigger.atLeast;
+      // CR 508.1, 603.2c (Frontline Medic): "Whenever ~ and at least two other creatures attack": the permanent itself is one of the creatures counted.
+      return (
+        attackBatchMembers(state, trigger, occ, candidate.controller, candidate.id, ctx).length >=
+        trigger.atLeast
+      );
     }
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
@@ -1293,19 +1310,31 @@ function isRelevant(event: GameEvent): boolean {
   }
 }
 
-/** CR 603.2c: how many creatures of a declaration an `attackBatch` trigger counts (all of them when it names no filter). */
-function attackBatchCount(
+/**
+ * CR 603.2c: the creatures of a declaration an `attackBatch` trigger counts (all of them when it names no filter). CR 508.1b, 506.3 (Frontier Warmonger): with
+ * `attackingYourOpponents`, only those declared as attacking an opponent of `controller` as a player or a planeswalker an opponent controls. CR 508.1 (Frontline Medic): with
+ * `includesSource`, none unless the permanent with the ability (`source`) is among them, as it counts too.
+ */
+function attackBatchMembers(
   state: GameState,
   trigger: Extract<Trigger, { kind: 'attackBatch' }>,
-  attackers: readonly ObjectId[],
+  occ: Pick<Occurrence, 'attackers' | 'attackersAt'>,
+  controller: SeatId,
+  source: ObjectId,
   ctx: SelectContext,
-): number {
-  if (trigger.what === undefined) return attackers.length;
-  const filter = trigger.what;
-  return attackers.filter((id) => {
+): ObjectId[] {
+  const attackers = occ.attackers ?? [];
+  const opponents = trigger.attackingYourOpponents === true ? opponentsOf(state, controller) : [];
+  const members = attackers.filter((id, i) => {
+    if (trigger.attackingYourOpponents === true) {
+      const at = occ.attackersAt?.[i];
+      if (at === undefined || at === null || !opponents.includes(at)) return false;
+    }
+    if (trigger.what === undefined) return true;
     const creature = objectOrLki(state, id);
-    return creature !== null && matchesFilter(state, creature, filter, ctx);
-  }).length;
+    return creature !== null && matchesFilter(state, creature, trigger.what, ctx);
+  });
+  return trigger.includesSource === true && !members.includes(source) ? [] : members;
 }
 
 /** The battlefield as it was before the events happened, by undoing their zone changes. */
@@ -1647,10 +1676,14 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             // CR 508.1 (issue 81, The Ur-Sphinx): "that many" is the creatures of the declaration the batch trigger counted.
             ...(ability.trigger.kind === 'attackBatch' && occ.attackers !== undefined
               ? {
-                  damage: attackBatchCount(state, ability.trigger, occ.attackers, {
-                    controller: candidate.controller,
-                    source: id,
-                  }),
+                  damage: attackBatchMembers(
+                    state,
+                    ability.trigger,
+                    occ,
+                    candidate.controller,
+                    id,
+                    { controller: candidate.controller, source: id },
+                  ).length,
                 }
               : {}),
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
@@ -1658,9 +1691,18 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ...(occ.blocker === undefined ? {} : { cards: [occ.blocker] }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
+            // CR 603.2c: "those creatures" of a batch that counts only the creatures attacking an opponent are those, not every creature declared.
             ...(occ.attackers === undefined || ability.trigger.kind !== 'attackBatch'
               ? {}
-              : { attackers: occ.attackers }),
+              : {
+                  attackers:
+                    ability.trigger.attackingYourOpponents === true
+                      ? attackBatchMembers(state, ability.trigger, occ, candidate.controller, id, {
+                          controller: candidate.controller,
+                          source: id,
+                        })
+                      : occ.attackers,
+                }),
             ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'

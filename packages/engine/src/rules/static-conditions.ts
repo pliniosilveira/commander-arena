@@ -89,7 +89,7 @@ export function staticConditionHolds(
     case 'chosenOption': // D-151: what the permanent chose as it entered, which no layer changes
       return source.chosen?.option === condition.option;
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
-      return enteredThisTurnHolds(state, controllerOf(state, source), condition);
+      return enteredThisTurnHolds(state, controllerOf(state, source), condition, source.id);
     case 'thisEnteredThisTurn': // D-423 (CR 400.7): the turn log, which no layer changes
       return state.turnLog.entered.some((e) => e.object === source.id);
     case 'amountIs': {

@@ -3922,6 +3922,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
+      if (c.other !== undefined && c.other !== true) {
+        issue(out, `${path}.other`, 'other is true when present');
+      }
       break;
     case 'aPlayerCardsInHand': // Lorehold group 3, CR 402.1: the same shape, for the hands of the players
     case 'cardsInLibrary': // D-331, CR 401.1: the same shape, for the library

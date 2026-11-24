@@ -5783,6 +5783,18 @@ export type Trigger =
        * each player attacked with `atLeast` or more creatures `what` names, whoever declares them. `triggerAttacked` is that player alone. Not with `attackedEnchantedPlayer`.
        */
       readonly eachAttackedPlayer?: true;
+      /**
+       * "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1, 603.2c): the permanent with the ability must itself be one of the creatures the declaration
+       * holds that match `what`, and `atLeast` counts it (so "and at least two other creatures" is `atLeast` 3). Only with `who` `you`: the creature is the controller's own attacker.
+       */
+      readonly includesSource?: true;
+      /**
+       * "Whenever one or more creatures attack one of your opponents or a planeswalker they control" (Frontier Warmonger, CR 508.1b, 506.3, 603.2c): only the creatures declared as
+       * attacking an opponent of the controller of this ability as a player, or a planeswalker an opponent controls, are counted (a creature attacking the controller, a planeswalker
+       * of the controller or a battle is not), whoever declares them. `triggerAttackers` is then those creatures alone ("those creatures"). Not with `eachAttackedPlayer` or
+       * `attackedEnchantedPlayer`.
+       */
+      readonly attackingYourOpponents?: true;
     }
   /**
    * "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 603.2, 508.1b): once for each player `who` names (relative to the controller
@@ -6993,6 +7005,11 @@ export type Condition =
       /** "If a Food entered the battlefield under your control this turn": subtypes (all of them) it had as it entered. */
       readonly subtypes?: readonly string[];
       readonly token?: boolean;
+      /**
+       * "If another Human entered the battlefield under your control this turn" (Éowyn, Shieldmaiden; CR 400.7): the permanent with the ability does not count, whatever it is. Only where
+       * a permanent has the condition (a triggered ability's intervening "if", a static ability); another reading of the condition fails it.
+       */
+      readonly other?: true;
     }
   /**
    * "As long as this Aura entered this turn" (D-423, CR 400.7, 611.3a): the permanent the condition belongs to entered the battlefield during this turn and is still the same

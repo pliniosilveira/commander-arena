@@ -65,6 +65,7 @@ import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { RIDERS_C_TRIGGER_RULES } from './riders-c';
 import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
@@ -1368,6 +1369,8 @@ export const TRIGGER_RULES = [
   ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
+  // Riders of Rohan group C: "~ and at least two other creatures attack", "one or more creatures attack one of your opponents or a planeswalker they control" (before the plainer "one or more creatures attack").
+  ...RIDERS_C_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
   // Landroval: "two or more creatures you control attack a player".
