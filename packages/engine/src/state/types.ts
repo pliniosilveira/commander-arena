@@ -1678,6 +1678,10 @@ export type Instruction =
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
       readonly revealed?: true;
+      /** One card for each of these filters, asked in turn (`take.kinds`, Harper Recruiter): `kindAt` is the filter being asked, `picked` the cards chosen so far. */
+      readonly kinds?: readonly ObjectFilter[];
+      readonly kindAt?: number;
+      readonly picked?: readonly ObjectId[];
       /** The remaining cards are left, ordered or randomized as the effect says. */
       readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
       readonly chosen: readonly ObjectId[] | null;

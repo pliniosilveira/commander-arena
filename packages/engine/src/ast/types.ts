@@ -4615,6 +4615,12 @@ export type Effect =
          * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'` or `'hand'` ("Put all land cards revealed this way into your hand", Mulch).
          */
         readonly all?: true;
+        /**
+         * "You may reveal a Cleric card, a Rogue card, a Warrior card, and/or a Wizard card from among them and put those cards into your hand" (Harper Recruiter, CR 701.20, 608.2d): one
+         * card for each filter, none or one, each a different card (the player is asked for the filters in this order, and a card already chosen is not offered again). `max` is the number of
+         * filters and `filter` is left empty (`{}`). Only with `to` the hand (or left out), and with no `min`, `hidden`, `all`, `tapped`, `totalManaValue`, `manaValueAtMost` or `elseAnyToHand`.
+         */
+        readonly kinds?: readonly ObjectFilter[];
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of

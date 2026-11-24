@@ -5,7 +5,7 @@ import { type CardDefinition, getView } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
 
 const cards: readonly GoldenCard[] = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -153,6 +153,82 @@ describe('Glorious Protector (When this creature enters, you may exile any numbe
     g.act(0).accept();
     g.expect.zone(PROTECTOR.name, 'graveyard', { seat: 0 });
     g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    expect(g.state.pending?.kind).toBe('priority');
+  });
+});
+
+describe('Harper Recruiter (Whenever this creature attacks, look at the top four cards of your library. You may reveal a Cleric card, a Rogue card, a Warrior card, and/or a Wizard card from among them and put those cards into your hand. Put the rest on the bottom of your library in a random order.)', () => {
+  const HARPER = real('Harper Recruiter');
+  // SYNTHETIC stand-ins for the cards of the library: only their types matter.
+  const kind = (name: string, line: string) =>
+    parsed(`SYNTHETIC ${name}`, line, '', { power: '1', toughness: '1', manaCost: '{1}' });
+  const CLERIC = kind('Cleric', 'Creature — Human Cleric');
+  const CLERIC2 = kind('Second Cleric', 'Creature — Human Cleric');
+  const ROGUE = kind('Rogue', 'Creature — Human Rogue');
+  const WIZARD = kind('Wizard', 'Creature — Human Wizard');
+  const CLERIC_ROGUE = kind('Cleric Rogue', 'Creature — Human Cleric Rogue');
+  const plain = kind('Bear', 'Creature — Bear');
+  const board = (...top: CardDefinition[]) => {
+    const b = scenario().define(HARPER);
+    for (const d of new Set(top)) b.define(d);
+    return b
+      .seat(0)
+      .battlefield(HARPER.name, { label: 'harper' })
+      .library(...top.map((d) => d.name), ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+  };
+  const attack = (g: ReturnType<typeof board>) => {
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['harper']);
+    g.passAll();
+  };
+
+  test('one card of each kind may be taken; the rest go to the bottom (CR 701.20, 401.4)', () => {
+    const g = board(CLERIC, CLERIC2, ROGUE, plain);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['harper']);
+    g.passAll();
+    // Asked for a Cleric (two candidates), then a Rogue (one), then Warrior and Wizard have none and ask nothing.
+    g.act(0).chooseCards(CLERIC2.name);
+    g.act(0).chooseCards(ROGUE.name);
+    g.expect.zone(CLERIC2.name, 'hand', { seat: 0 });
+    g.expect.zone(ROGUE.name, 'hand', { seat: 0 });
+    g.expect.zone(CLERIC.name, 'library', { seat: 0 });
+    g.expect.zone(plain.name, 'library', { seat: 0 });
+    const library = g.state.seats[0]?.library ?? [];
+    expect(library).toHaveLength(32);
+    // The two cards not taken are the last two of the library (nothing says which is last: a random order).
+    const bottom = library.slice(-2);
+    expect(bottom).toHaveLength(2);
+    expect(bottom.every((id) => g.state.objects[id]?.zone === 'library')).toBe(true);
+  });
+
+  test('a card that is two kinds is taken once, then offered no more', () => {
+    const g = board(CLERIC_ROGUE, WIZARD, plain, plain);
+    attack(g);
+    g.act(0).chooseCards(CLERIC_ROGUE.name);
+    // Rogue: the only Rogue was taken already, so nothing is asked; Warrior: none; Wizard: one.
+    g.act(0).chooseCards(WIZARD.name);
+    g.expect.zone(CLERIC_ROGUE.name, 'hand', { seat: 0 });
+    g.expect.zone(WIZARD.name, 'hand', { seat: 0 });
+  });
+
+  test('"may": nothing is taken when the player chooses none', () => {
+    const g = board(CLERIC, ROGUE, plain, plain);
+    attack(g);
+    g.act(0).chooseCards();
+    g.act(0).chooseCards();
+    g.expect.zone(CLERIC.name, 'library', { seat: 0 });
+    g.expect.zone(ROGUE.name, 'library', { seat: 0 });
+  });
+
+  test('only the top four cards are looked at', () => {
+    const g = board(plain, plain, plain, plain, WIZARD);
+    attack(g);
+    g.expect.zone(WIZARD.name, 'library', { seat: 0 });
     expect(g.state.pending?.kind).toBe('priority');
   });
 });

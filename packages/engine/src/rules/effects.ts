@@ -3427,6 +3427,10 @@ function runEffect(
             ...(effect.take.elseAnyToHand === true ? { elseAnyToHand: true as const } : {}),
             // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
             ...(effect.take.all === true ? { all: true as const } : {}),
+            // Harper Recruiter: one card for each of several kinds.
+            ...(effect.take.kinds === undefined
+              ? {}
+              : { kinds: effect.take.kinds, kindAt: 0, picked: [] as ObjectId[] }),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
             ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,

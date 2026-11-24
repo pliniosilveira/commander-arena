@@ -296,7 +296,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
  */
 const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
-  /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
+  /^you may reveal [^.]* from among them and put (?:it|that card|them|those cards) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
 /**
  * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,

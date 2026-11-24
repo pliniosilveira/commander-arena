@@ -7129,6 +7129,35 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isCount(e.take?.max) || e.take.max < 1) {
         issue(out, `${path}.take.max`, 'max must be a positive integer');
       }
+      // Harper Recruiter: one card for each of several kinds, put into the hand.
+      if (e.take?.kinds !== undefined) {
+        const kinds = e.take.kinds;
+        if (!Array.isArray(kinds) || kinds.length < 2) {
+          issue(out, `${path}.take.kinds`, 'kinds is a list of two or more filters');
+        } else {
+          for (const [i, k] of kinds.entries()) checkFilter(k, `${path}.take.kinds[${i}]`, out);
+          if (e.take.max !== kinds.length) {
+            issue(out, `${path}.take.max`, 'max is the number of kinds');
+          }
+        }
+        if (
+          (e.take.to !== undefined && e.take.to !== 'hand') ||
+          e.take.min !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.all !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.manaValueAtMost !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          Object.keys(e.take.filter ?? {}).length > 0
+        ) {
+          issue(
+            out,
+            `${path}.take`,
+            'a take of one card for each kind goes into the hand, with an empty filter and no min, hidden, all, tapped, totalManaValue, manaValueAtMost or elseAnyToHand',
+          );
+        }
+      }
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&

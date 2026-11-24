@@ -81,14 +81,30 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   if (ins.revealAll === true && ins.revealed !== true) {
     return done(state, [revealedEvent(state, seat, looked)], [{ ...ins, revealed: true }]);
   }
+  // Harper Recruiter (CR 608.2d): one card for each kind, asked in turn; the cards chosen so far are not offered again. An answer moves on to the next kind.
+  const kindFilter = ins.kinds === undefined ? undefined : ins.kinds[ins.kindAt ?? 0];
+  const picked = ins.picked ?? [];
+  if (ins.kinds !== undefined && ins.chosen !== null) {
+    const all = [...picked, ...ins.chosen];
+    const at = (ins.kindAt ?? 0) + 1;
+    if (at < ins.kinds.length) {
+      return done(state, [], [{ ...ins, kindAt: at, picked: all, chosen: null }]);
+    }
+    const { kinds: _kinds, kindAt: _at, picked: _picked, ...plain } = ins;
+    void _kinds;
+    void _at;
+    void _picked;
+    return runLookTake(state, res, { ...plain, chosen: all });
+  }
   const legal = looked.filter((id) => {
     const card = state.objects[id];
     return (
       card !== undefined &&
+      !picked.includes(id) &&
       matchesFilter(
         state,
         card,
-        { ...ins.filter, zone: 'library' },
+        { ...(kindFilter ?? ins.filter), zone: 'library' },
         // CR 608.2d, 205.3m (D-566): "Choose a creature type. ... cards of the chosen type": the type chosen as this effect resolves.
         {
           controller: seat,
@@ -130,6 +146,10 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
   // `take.all`: "put all land cards from among them": every card that matches goes, with no question.
   const chosenNow = ins.all === true ? legal : (ins.chosen ?? (forced ? legal : null));
+  // A kind with no card to take asks nothing: the next kind is asked, or the cards chosen are taken.
+  if (ins.kinds !== undefined && legal.length === 0) {
+    return runLookTake(state, res, { ...ins, chosen: [] });
+  }
   if (chosenNow === null && legal.length > 0) {
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
@@ -141,7 +161,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
       looked,
       // CR 702.75a (D-145): Hideaway exiles one of the cards looked at; every other take is a "you may".
       min: Math.min(ins.min ?? 0, legal.length),
-      max: Math.min(ins.max, legal.length),
+      max: Math.min(ins.kinds === undefined ? ins.max : 1, legal.length),
       // CR 202.3 (D-230): "with total mana value 4 or less": the answer is checked against the mana value of each card.
       ...(ins.totalManaValue === undefined
         ? {}
