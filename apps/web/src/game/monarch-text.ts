@@ -19,9 +19,30 @@ export const RING_NAME = 'The Ring';
 /** The name the engine gives the inherent ability of speed (`ObjectView.name`, CR 702.179d). */
 export const SPEED_NAME = 'Speed';
 
-/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, else "The monarch". */
+/** The name the engine gives the abilities of the initiative (`ObjectView.name`, CR 726.2). */
+export const INITIATIVE_NAME = 'The initiative';
+
+/** The name of an inherent ability (`StackData.inherent`): "The Ring" for the Ring's three, "Speed" for the speed of a player, "The initiative", the dungeon's name for a room ability, else "The monarch". */
 export const inherentNameOf = (inherent: string): string =>
-  inherent.startsWith('ring') ? RING_NAME : inherent === 'speedUp' ? SPEED_NAME : MONARCH_NAME;
+  inherent.startsWith('ring')
+    ? RING_NAME
+    : inherent === 'speedUp'
+      ? SPEED_NAME
+      : inherent.startsWith('initiative')
+        ? INITIATIVE_NAME
+        : inherent.startsWith('undercity:')
+          ? UNDERCITY_NAME
+          : MONARCH_NAME;
+
+/** The name the engine gives a room ability of Undercity (`ObjectView.name`, CR 309.4c). */
+export const UNDERCITY_NAME = 'Undercity';
+
+/**
+ * Whether an inherent ability shows the rule's own text instead of words made from its trigger (`ObjectView.oracleText`): the initiative's three (CR 726.2) and the room abilities
+ * of a dungeon (CR 309.4c), whose triggers stand for rules the AST has no trigger for.
+ */
+export const showsRuleText = (name: string): boolean =>
+  name === INITIATIVE_NAME || name === UNDERCITY_NAME;
 
 /** True for an ability on the stack that has no source: the monarch's (CR 725.2). */
 export function isInherentAbility(o: Pick<ObjectView, 'ability' | 'abilitySource'>): boolean {
