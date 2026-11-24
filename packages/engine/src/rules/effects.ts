@@ -1307,6 +1307,7 @@ function runEffect(
               // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
               ...(sel.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
               ...(sel.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
+              ...(sel.anyGraveyard === true ? { anyGraveyard: true as const } : {}),
               // CR 205.2a: "any number of cards ... with four or more card types among them".
               ...(sel.minCardTypes === undefined
                 ? {}

@@ -152,6 +152,8 @@ export interface FilterContext {
   readonly graveyarded?: readonly ObjectId[];
   /** The cards put into a graveyard this turn by being discarded or from a library (`discardedOrFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /** The cards put into a graveyard this turn from a library (`putFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
+  readonly fromLibrary?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
   /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
@@ -426,6 +428,10 @@ export function matchesFilterWith(
     filter.discardedOrFromLibraryThisTurn === true &&
     !(ctx.discardedOrFromLibrary ?? []).includes(obj.id)
   ) {
+    return false;
+  }
+  // CR 404.1, 701.17 (Captain N'ghathrod): "that was put there from their library this turn".
+  if (filter.putFromLibraryThisTurn === true && !(ctx.fromLibrary ?? []).includes(obj.id)) {
     return false;
   }
   // CR 601.2a (D-235): "Spells you cast from anywhere other than your hand": a spell on the stack that was cast from another zone.

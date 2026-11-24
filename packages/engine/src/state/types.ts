@@ -1521,6 +1521,8 @@ export type Instruction =
       readonly among?: readonly ObjectId[];
       /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
       readonly anyOwner?: true;
+      /** "A creature card from a graveyard" (`ChooseSelector.anyGraveyard`): the candidates are the matching cards of every player's graveyard. */
+      readonly anyGraveyard?: true;
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
       readonly minCardTypes?: number;
@@ -2920,6 +2922,11 @@ export interface TurnLog {
    * graveyard (Ahoy Mateys deck, Ghost of Ramirez DePietro). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
    */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /**
+   * Each card put into a graveyard this turn from a library (milled, CR 701.17; or any other move from a library), by the id it has in the graveyard, a discard not among them
+   * (Captain N'ghathrod, `putFromLibraryThisTurn`). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly graveyardedFromLibrary?: readonly ObjectId[];
   /**
    * Each card put into a graveyard this turn from a zone other than the battlefield (a hand, a library, the stack, exile, the command zone), by the id it has in the graveyard (CR 404.1,
    * 400.7; Banon, the Returners' Leader: "put there from anywhere other than the battlefield this turn"). A token is not a card. Absent until one was recorded.

@@ -349,6 +349,9 @@ export function matchesFilter(
     ...(filter.discardedOrFromLibraryThisTurn === true
       ? { discardedOrFromLibrary: state.turnLog.discardedOrFromLibrary ?? [] }
       : {}),
+    ...(filter.putFromLibraryThisTurn === true
+      ? { fromLibrary: state.turnLog.graveyardedFromLibrary ?? [] }
+      : {}),
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
@@ -394,6 +397,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.controllerDealtCombatDamageByAtLeast !== undefined ||
     f.putFromBattlefieldThisTurn === true ||
     f.discardedOrFromLibraryThisTurn === true ||
+    f.putFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
     f.exiledWithSource === true ||
     f.exiledThisWay === true ||

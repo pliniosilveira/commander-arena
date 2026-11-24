@@ -1547,6 +1547,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
   ),
+  'noun.target-card-in-opponent-graveyard-from-library': spell(
+    (e) => `Choose ${e}. Put it onto the battlefield under your control.`,
+  ),
   // Scions & Spellcraft deck, group A: the life lost and the combat damage dealt this turn, by the players of a group.
   'condition.a-player-lost-life-this-turn': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,

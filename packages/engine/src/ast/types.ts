@@ -750,6 +750,12 @@ export interface ObjectFilter {
    */
   readonly discardedOrFromLibraryThisTurn?: true;
   /**
+   * "That was put there from their library this turn" (Captain N'ghathrod; CR 404.1, 701.17 mill, 400.3): the card is in a graveyard and was put into it, during this turn, from a library
+   * (milled, or any other move from a library). A card that was discarded, or put there from the battlefield or the stack, is not. Read from the turn log where the filter is matched;
+   * refused in a static ability, as `putFromBattlefieldThisTurn` is.
+   */
+  readonly putFromLibraryThisTurn?: true;
+  /**
    * "Spells you cast from anywhere other than your hand" (CR 601.2a, 601.2f, D-235): the spell on the stack was cast from a zone other than the hand (the graveyard, exile, the command
    * zone, the library). Read from the spell itself as it is cast, so only a spell is matched; in a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -2256,6 +2262,12 @@ export interface ChooseSelector {
    * battlefield as well as into the hand.
    */
   readonly fromAnyGraveyard?: true;
+  /**
+   * "Then you put a creature card from a graveyard onto the battlefield under your control" (Extract from Darkness, CR 608.2d, 404.1, 110.2a): the candidates are the matching cards in
+   * every player's graveyard (the controller chooses, the cards are not only theirs). Only for `moveToZone` onto the battlefield, with `filter.zone` `graveyard`, and not with `fromMoved`,
+   * `alsoGraveyard`, `eachGraveyard`, `fromHandOf` or `chosenBy`.
+   */
+  readonly anyGraveyard?: true;
   /**
    * "Put a land card from your hand or graveyard onto the battlefield" (Galadriel deck, group 2, D-544, CR 608.2d, 110.2a): the candidates are the matching cards of the
    * controller's hand and of their graveyard together (the filter's `zone` is `hand`, the graveyard is the one added). Only for `moveToZone` onto the battlefield, with

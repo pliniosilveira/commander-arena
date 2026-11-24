@@ -148,6 +148,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAmongMoved',
     // D-544: "You may put a land card from your hand or graveyard onto the battlefield." (`ChooseSelector.alsoGraveyard`: the cards of both places are the candidates).
     'chooseAlsoGraveyard',
+    // Extract from Darkness: "you put a creature card from a graveyard onto the battlefield under your control" (`ChooseSelector.anyGraveyard`: the cards of every graveyard are the candidates).
+    'chooseAnyGraveyard',
     // Death Toll deck: "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (`ChooseSelector.minCardTypes`, and `fromMoved` among the cards exiled).
     'chooseMinCardTypes',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
@@ -1055,6 +1057,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromBattlefieldThisTurn',
     // Ahoy Mateys deck: "that was discarded or put there from a library this turn" (`ObjectFilter.discardedOrFromLibraryThisTurn`).
     'discardedOrFromLibraryThisTurn',
+    // Captain N'ghathrod: "that was put there from their library this turn" (`ObjectFilter.putFromLibraryThisTurn`).
+    'putFromLibraryThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
@@ -1946,6 +1950,8 @@ export const ABILITY_FEATURES = [
   'chooseAmongMoved',
   /** "You may put a land card from your hand or graveyard onto the battlefield" (D-544, CR 608.2d, 110.2a): the engine's `ChooseSelector.alsoGraveyard` of a `moveToZone` onto the battlefield. */
   'chooseAlsoGraveyard',
+  /** "Then you put a creature card from a graveyard onto the battlefield under your control" (Extract from Darkness, CR 608.2d, 404.1): the engine's `ChooseSelector.anyGraveyard` of a `moveToZone` onto the battlefield. */
+  'chooseAnyGraveyard',
   /** "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (Death Toll deck, CR 205.2a, 608.2d): the engine's `ChooseSelector.minCardTypes` of a `moveToZone` into exile, then `fromMoved` among the cards exiled. */
   'chooseMinCardTypes',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
@@ -2126,6 +2132,8 @@ export const SELECTOR_KINDS = [
   'controllerDealtCombatDamageByAtLeast',
   /** "That was discarded or put there from a library this turn" (CR 701.9, 701.17, Ahoy Mateys deck): the engine's `ObjectFilter.discardedOrFromLibraryThisTurn`. */
   'discardedOrFromLibraryThisTurn',
+  /** "That was put there from their library this turn" (CR 404.1, 701.17, Captain N'ghathrod): the engine's `ObjectFilter.putFromLibraryThisTurn`. */
+  'putFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
@@ -2995,6 +3003,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
+  chooseAnyGraveyard: true,
   chooseMinCardTypes: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,

@@ -549,6 +549,46 @@ export const NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.target-card-in-opponent-graveyard-from-library` (Captain N'ghathrod; CR 404.1, 115.1, 701.17): "target artifact or creature card in an opponent's graveyard that was put there from
+ * their library this turn": a card of the graveyard of any opponent that went there this turn from a library (the engine's `putFromLibraryThisTurn`, with the owner an opponent). One card;
+ * the phrase is read only where a rule asks for this noun by its id, and only with the words about this turn.
+ */
+export const NOUN_TARGET_CARD_IN_OPPONENT_GRAVEYARD_FROM_LIBRARY = defineRule<IrNoun>({
+  id: 'noun.target-card-in-opponent-graveyard-from-library',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)', 'CR 701.17 (Mill)'],
+  examples: [
+    "target artifact or creature card in an opponent's graveyard that was put there from their library this turn",
+    "target creature card in an opponent's graveyard that was put there from their library this turn",
+    "target card in an opponent's graveyard that was put there from their library this turn",
+  ],
+  rejects: [
+    "target creature card in an opponent's graveyard",
+    "target creature card in an opponent's graveyard that was discarded or put there from a library this turn",
+    'target creature card in your graveyard that was put there from their library this turn',
+    'target creature card in a graveyard that was put there from their library this turn',
+    "target creature card from an opponent's graveyard that was put there from their library this turn",
+    "two target creature cards in an opponent's graveyard that was put there from their library this turn",
+    "up to one target creature card in an opponent's graveyard that was put there from their library this turn",
+    "creature card in an opponent's graveyard that was put there from their library this turn",
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-opponent-graveyard-from-library', (plural) =>
+      graveyardPhrase(plural, 'inOpponents'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card, and only the words about this turn.
+    return r.value.plural ||
+      r.value.upTo ||
+      r.value.count !== undefined ||
+      r.value.filter.putFromLibraryThisTurn !== true
+      ? fail(ctx, pos)
+      : r;
+  },
+});
+
+/**
  * `noun.player-graveyard`: "target player's graveyard", "target opponent's graveyard" (CR 404.1: a
  * graveyard is its owner's discard pile; CR 108.3: a card belongs to its owner). Every card in it,
  * selected by its owner: the player is a target (CR 115.1) the noun carries as `of`, and the
@@ -1023,6 +1063,7 @@ export const NOUN_RULES = [
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN,
+  NOUN_TARGET_CARD_IN_OPPONENT_GRAVEYARD_FROM_LIBRARY,
   // Issue 89 (Animate Dead): "creature card in a graveyard" and "creature put onto the battlefield with ~", read by the enchant ability of an Aura only.
   ...AURA_GRAVEYARD_NOUN_RULES,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.

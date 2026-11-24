@@ -1281,6 +1281,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: {
         ...next.turnLog,
         discardedOrFromLibrary: [...(next.turnLog.discardedOrFromLibrary ?? []), newId],
+        graveyardedFromLibrary: [...(next.turnLog.graveyardedFromLibrary ?? []), newId],
       },
     };
   }
