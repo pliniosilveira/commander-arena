@@ -516,6 +516,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(ofSource === undefined ? {} : { ofSource: ofSource.value }),
       });
     }
+    case 'entersCausesTrigger': {
+      // "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (Aboleth Spawn, CR 603.2, 603.6a): whose creature, and
+      // what kind.
+      const who = whoOf(t.actor);
+      const entered = t.args.entered;
+      if (who === null || entered?.kind !== 'noun') return failure(t);
+      const blocked = missingFeatures(['trigger:entersCausesTrigger']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const what = lowerFilter(entered);
+      if (!what.ok) return what;
+      return ok({ kind: 'entersCausesTrigger', who, what: what.value });
+    }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
       const blocked = missingFeatures(['trigger:ringTempted']);
@@ -1999,6 +2011,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:interveningIf',
   'trigger:triggerCondition',
   'trigger:entersBattlefield',
+  'trigger:entersCausesTrigger',
   'trigger:dies',
   'trigger:attacks',
   'trigger:alone',

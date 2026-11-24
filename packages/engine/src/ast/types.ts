@@ -5352,6 +5352,17 @@ export type Trigger =
    */
   | { readonly kind: 'tokenCreated'; readonly who: 'you' | 'opponent' | 'any' }
   /**
+   * "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (Aboleth Spawn, CR 603.2, 603.6a): a triggered ability of a
+   * permanent, `what`, that triggered because that permanent entered the battlefield (its own "When this creature enters" ability, as it is put on the stack) under the control of
+   * the player `who` names (relative to the controller of this ability). The ability that triggered is on the stack and is the `triggerSubject`, which a `copySpell` of it can copy;
+   * it goes on the stack after the ability it names, so it resolves before it.
+   */
+  | {
+      readonly kind: 'entersCausesTrigger';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly what: ObjectFilter;
+    }
+  /**
    * "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a, D-NEW): once each time the player `who`
    * names (relative to the controller of this ability) activates an activated ability, loyalty abilities included, of a permanent (its source was on the
    * battlefield as it was activated), as the ability goes on the stack. A mana ability (CR 605.1a) is never put on the stack and never triggers it; neither

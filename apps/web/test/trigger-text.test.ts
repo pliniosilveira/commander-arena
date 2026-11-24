@@ -224,6 +224,11 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
   playsCard: { kind: 'playsCard', minCardTypes: 2 },
   activatesAbility: { kind: 'activatesAbility', who: 'you' },
+  entersCausesTrigger: {
+    kind: 'entersCausesTrigger',
+    who: 'opponent',
+    what: { types: ['creature'] },
+  },
   scries: { kind: 'scries', who: 'you' },
   surveils: { kind: 'surveils', who: 'you' },
   milled: { kind: 'milled', who: 'any', filter: { types: ['creature'] } },

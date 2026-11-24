@@ -1,4 +1,4 @@
-// Mind Flayarrrs deck, group 7. Endless Evil, Nighthowler and Grell Philosopher: the REAL Oracle text of the golden corpus goes through the grammar with no override and is played through
+// Mind Flayarrrs deck, group 7. Endless Evil, Nighthowler, Grell Philosopher and Aboleth Spawn: the REAL Oracle text of the golden corpus goes through the grammar with no override and is played through
 // applyAction with the scenario DSL, with three seats. Pins: CR 702.103 (Bestow; the rules text was not available, so the subrule letters are unchecked), CR 707.9b (a copy's
 // exception is part of its copiable values), CR 603.4 and 603.10a (an intervening "if" is read again as the ability resolves, the creature that died as it last was), CR 613.4c
 // (a "+X/+X" follows the board), CR 107.3c (X is what the text defines), CR 205.1a (an Aura that is not a creature).
@@ -244,5 +244,82 @@ describe('Grell Philosopher: Horrors gain the activated abilities of an opponent
         (c) => c.change.kind !== 'grantAbility' || c.until === 'endOfTurn',
       ),
     ).toBe(true);
+  });
+});
+
+const ABOLETH = real('Aboleth Spawn');
+const HUNTED = real('Hunted Horror');
+const CENTAUR = 'Centaur';
+
+describe("Aboleth Spawn: copy the enters ability of an opponent's creature, with new targets", () => {
+  const build = (active: 0 | 1 | 2 | 3) => {
+    let b = scenario({ seats: 4 }).define(ABOLETH).define(HUNTED);
+    for (const s of [0, 1, 2, 3] as const) b = b.seat(s).library(...LIB);
+    return b
+      .seat(0)
+      .battlefield(ABOLETH.name)
+      .seat(1)
+      .hand(HUNTED.name)
+      .battlefield('Swamp', { count: 3 })
+      .seat(2)
+      .hand(BOLT)
+      .at('precombatMain', { active, turn: 3 })
+      .build();
+  };
+  const tokensOf = (g: { find: (q: { name: string }) => { controller: number }[] }) =>
+    g.find({ name: CENTAUR }).map((t) => t.controller);
+
+  test('the card is read as a trigger of an entering creature that copies its ability', () => {
+    const text = JSON.stringify(ABOLETH.faces[0]?.abilities);
+    expect(text).toContain('"kind":"entersCausesTrigger","who":"opponent"');
+    expect(text).toContain('"kind":"copySpell","spell":{"kind":"triggerSubject"}');
+  });
+
+  test('an opponent casts a creature whose ability targets: the controller of Aboleth copies it and picks a new target (four seats)', () => {
+    const g = build(1);
+    g.act(1).cast(HUNTED.name, { pay: true });
+    g.passAll();
+    // The controller of the enters ability chooses its target as it goes on the stack: seat 2.
+    g.act(1).chooseTargets({ player: 2 });
+    // Aboleth's trigger goes on the stack after it, and its controller says whether to copy.
+    g.passAll();
+    expect(g.state.pending?.kind).toBe('confirmOptional');
+    g.act(0).accept();
+    // The copy is controlled by seat 0, who chooses its new target among their opponents: seat 3.
+    expect(g.state.pending?.kind).toBe('targets');
+    g.act(0).chooseTargets({ player: 3 });
+    g.passAll();
+    // "Target opponent" of the copy is seen from its controller (seat 0): seat 3 gets two tokens, and seat 2 two from the original.
+    expect(tokensOf(g).sort()).toEqual([2, 2, 3, 3]);
+    g.expect.invariants();
+  });
+
+  test('declining makes no copy', () => {
+    const g = build(1);
+    g.act(1).cast(HUNTED.name, { pay: true });
+    g.passAll();
+    g.act(1).chooseTargets({ player: 2 });
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    expect(tokensOf(g)).toEqual([2, 2]);
+  });
+
+  test('a creature of the controller of Aboleth is no cause', () => {
+    let b = scenario({ seats: 4 }).define(ABOLETH).define(HUNTED);
+    for (const s of [0, 1, 2, 3] as const) b = b.seat(s).library(...LIB);
+    const g = b
+      .seat(0)
+      .hand(HUNTED.name)
+      .battlefield('Swamp', { count: 3 })
+      .battlefield(ABOLETH.name)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(HUNTED.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ player: 2 });
+    g.passAll();
+    expect(g.state.pending?.kind).not.toBe('confirmOptional');
+    expect(tokensOf(g)).toEqual([2, 2]);
   });
 });

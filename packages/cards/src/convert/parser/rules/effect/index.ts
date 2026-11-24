@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ABOLETH_EFFECT_RULES } from './aboleth';
 import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
@@ -1585,6 +1586,7 @@ export const EFFECT_RULES = [
   ...PUT_RULES,
   ...RECURSION_EFFECT_RULES,
   ...GRELL_EFFECT_RULES,
+  ...ABOLETH_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,
   // Aetherdrift energy deck (issue 105): "pay one or more {E}".

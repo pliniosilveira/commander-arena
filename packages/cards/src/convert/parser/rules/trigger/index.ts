@@ -26,6 +26,7 @@ import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { romanValue } from '../../roman';
 import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
+import { ABOLETH_TRIGGER_RULES } from './aboleth';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
@@ -1433,6 +1434,8 @@ export const TRIGGER_RULES = [
   ...QUANDRIX_E_TRIGGER_RULES,
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
   ...UNBOUND_I_TRIGGER_RULES,
+  // Aboleth Spawn: "a creature entering under an opponent's control causes a triggered ability of that creature to trigger".
+  ...ABOLETH_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
   TRIGGER_ENTERS_FROM_GRAVEYARD,
   TRIGGER_OR,

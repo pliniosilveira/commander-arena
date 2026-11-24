@@ -695,6 +695,18 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
       return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
+    case 'entersCausesTrigger': {
+      // CR 603.2, 603.6a (Aboleth Spawn): the creature's own enters ability, as it triggers.
+      const what = filterPhrase(trigger.what);
+      if (what === null) return null;
+      const whose =
+        trigger.who === 'you'
+          ? 'your'
+          : trigger.who === 'opponent'
+            ? "an opponent's"
+            : "a player's";
+      return `Whenever ${what} entering under ${whose} control causes a triggered ability of that creature to trigger`;
+    }
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;

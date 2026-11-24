@@ -633,6 +633,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokenCreated',
     // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
     'activatesAbility',
+    // Aboleth Spawn: "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (CR 603.2, 603.6a).
+    'entersCausesTrigger',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
@@ -3294,6 +3296,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tokenCreated: true,
   playsCard: true,
   activatesAbility: true,
+  entersCausesTrigger: true,
   scries: true,
   surveils: true,
   milled: true,
