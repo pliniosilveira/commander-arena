@@ -2,8 +2,8 @@
  * One permanent on the battlefield: the top of its printed card (title, cost, art and type line,
  * `card-top.ts`) under the marks the card does not carry: current power and toughness, counters,
  * keyword chips and the state marks of A19. Until the image has loaded, and for a card with none
- * or with a frame that has no top to cut, it is a drawn frame with the colour band and the name
- * over the art alone. Tapped is a tilt of the inner frame and a small mark in the corner; ribbons stay upright
+ * or with a frame that has no top to cut, it is a drawn frame with the colour band over the art alone,
+ * and the name while there is no art. Tapped is a tilt of the inner frame and a small mark in the corner; ribbons stay upright
  * on the slot so they remain readable.
  */
 import type { ObjectView } from '@commander-arena/engine';

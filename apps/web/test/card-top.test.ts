@@ -59,6 +59,17 @@ describe('the top of the printed card on a tile', () => {
     expect(cardTopOf(obj(over))).toBeNull();
   });
 
+  test('a melded permanent shows the top of its combined face, cut at its own type line', () => {
+    const meld = { components: [], manaValue: 13 };
+    const melded = cardTopOf(obj({ meld }));
+    expect(melded?.cover).toBeGreaterThan(0.95);
+    expect(melded?.cover).toBeLessThan(1);
+    const urza = cardTopOf(obj({ meld, types: ['planeswalker'] }));
+    const walker = cardTopOf(obj({ types: ['planeswalker'] }));
+    expect(urza?.cover).toBeGreaterThan(walker?.cover ?? 1);
+    expect(urza?.cover).toBeLessThan(melded?.cover ?? 0);
+  });
+
   test('a token is cut where a card is', () => {
     expect(cardTopOf(obj({ isToken: true }))).toEqual({ cover: 1 });
   });
