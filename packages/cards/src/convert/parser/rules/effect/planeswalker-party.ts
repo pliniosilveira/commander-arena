@@ -13,6 +13,7 @@ import type {
   IrTypeList,
 } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
+import { spellPhrase } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { CREATURE_TYPE_LIST } from './becomes';
 import { type Clauses, makeClause } from './operands';
@@ -248,6 +249,81 @@ export const EFFECT_EACH_DEALS_DAMAGE_TO_THAT = defineRule<Clauses>({
   },
 });
 
+const CAST_AMONG_ID = 'effect.lead-may-cast-kind-from-those-free';
+
+/**
+ * `effect.lead-may-cast-kind-from-those-free`: "Until end of turn, you may cast noncreature spells from among those cards without paying their mana costs." (Narset, Enlightened Master;
+ * CR 601.2, 118.9, 611.2a): the cards an instruction before it exiled may be cast for free until the end of the turn, those of the kind the words name (a spell of a card type is a spell,
+ * a land card is none). The engine's `mayPlay` of `moved` with `free`, `castOnly` and the filter of the cards. Not read: a plain "spells" (every card), a number of spells, "this turn" after,
+ * another duration, "from your hand", "them" ("from among them" is `effect.cast-from-among`), paying the mana cost.
+ */
+export const EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE = defineRule<Clauses>({
+  id: CAST_AMONG_ID,
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 601.2 (Casting Spells)',
+    'CR 118.9 (Costs)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'until end of turn, you may cast noncreature spells from among those cards without paying their mana costs',
+    'Until end of turn, you may cast instant and sorcery spells from among those cards without paying their mana costs',
+  ],
+  rejects: [
+    'until end of turn, you may cast spells from among those cards without paying their mana costs',
+    'until end of turn, you may cast noncreature spells from among those cards',
+    'until end of turn, you may cast noncreature spells from among them without paying their mana costs',
+    'until end of turn, you may cast noncreature spells from among those cards without paying their mana costs this turn',
+    'until your next turn, you may cast noncreature spells from among those cards without paying their mana costs',
+    'until end of turn, you may cast two noncreature spells from among those cards without paying their mana costs',
+    'until end of turn, you may cast noncreature spells from your hand without paying their mana costs',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrDuration>('duration'),
+      literal(', you may cast '),
+      spellPhrase(true),
+      pattern(
+        / from among those cards without paying their mana costs(?![\p{L}\p{N}])(?!\s+(?:and|then|this)(?![\p{L}\p{N}]))/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [duration, , phrase] = r.value;
+    const { stackKind: _kind, zone: _zone, ...rest } = phrase;
+    void _kind;
+    void _zone;
+    // A plain "spells" names every card: another statement.
+    if (
+      rest.types === undefined &&
+      rest.notTypes === undefined &&
+      rest.subtypes === undefined &&
+      rest.anyOf === undefined
+    ) {
+      return fail(ctx, pos);
+    }
+    const span = { start: pos, end: r.pos };
+    const spell: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: rest,
+      upTo: false,
+      plural: true,
+      other: false,
+      span,
+      rule: CAST_AMONG_ID,
+    };
+    return {
+      ok: true,
+      value: [
+        { ...makeClause(CAST_AMONG_ID, 'mayCastKindFromMovedFree', { spell }, span), duration },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -309,6 +385,7 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE),
   quietly(EFFECT_EACH_DEALS_DAMAGE_TO_THAT),
   quietly(EFFECT_LEAD_EACH_BECOMES_CREATURE),
 ];

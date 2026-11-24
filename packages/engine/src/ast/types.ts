@@ -3139,6 +3139,12 @@ export type Effect =
        */
       readonly castOnly?: true;
       /**
+       * "Until end of turn, you may cast noncreature spells from among those cards without paying their mana costs" (Narset, Enlightened Master; CR 601.2, 118.9): only the cards of
+       * `objects` that this filter matches (as cards in exile: card types, subtypes, mana value) get the permission; the others stay exiled with none. Needs `castOnly` (a land card is
+       * never a spell). The filter names no zone, controller or owner.
+       */
+      readonly cards?: ObjectFilter;
+      /**
        * "During any turn you attacked with a commander, you may play those cards." (issue 101, Neriv, Crackling Vanguard; CR 903.3, 508.1, 611.2): the permission can be used only in a
        * turn in which the controller declared a commander of theirs as an attacker (any combat phase), read from the turn log; it lasts as `lasts` says (`whileExiled`). Not with `castOnly`.
        */

@@ -10,7 +10,7 @@ import type { IrClause, IrQuotedAbility } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
 import type { FeatureRef } from './features';
 import { lateLowerers } from './late';
-import { objectSelectorOf, playerSelectorOf } from './nouns';
+import { lowerFilter, objectSelectorOf, playerSelectorOf } from './nouns';
 import { type LowerContext, type Lowering, type LowerResult, newContext } from './types';
 
 /** "Empower Jace 6." (CR 701.71a): the engine's `empowerJace`, a positive number of loyalty counters (an X is not read). */
@@ -205,6 +205,41 @@ const DEAL_DAMAGE_FROM_EACH: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Until end of turn, you may cast noncreature spells from among those cards without paying their mana costs" (Narset, Enlightened Master; CR 601.2, 118.9): the engine's `mayPlay` of the
+ * cards an effect before it exiled (`moved`), free, to cast only, until end of turn, for the cards the filter describes.
+ */
+const MAY_CAST_KIND_FROM_MOVED_FREE: Lowering<IrClause, Effects> = {
+  head: 'mayCastKindFromMovedFree',
+  id: 'lower.may-cast-kind-from-moved-free',
+  needs: ['effect:mayPlay', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause) {
+    const spell = arg(clause, 'spell');
+    if (spell?.kind !== 'noun' || clause.duration?.scope !== 'untilEndOfTurn') {
+      return failure(clause);
+    }
+    const filter = lowerFilter(spell);
+    if (!filter.ok) return filter;
+    const { zone: _zone, ...cards } = filter.value;
+    void _zone;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'mayPlay',
+          objects: { kind: 'moved' },
+          free: true,
+          castOnly: true,
+          lasts: 'endOfTurn',
+          cards,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
@@ -223,6 +258,7 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GET_EMBLEM,
   MOVE_COUNTER_FROM_SELF,
   DEAL_DAMAGE_FROM_EACH,
+  MAY_CAST_KIND_FROM_MOVED_FREE,
   SET_LIFE_TOTAL,
   EXCHANGE_LIFE_PT,
 ];

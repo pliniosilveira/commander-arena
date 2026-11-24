@@ -18,7 +18,7 @@ import type {
   ResolutionContext,
 } from '../state/types';
 import { amountOf, moveInstructions, moving } from './effect-support';
-import { resolveObjects, resolvePlayers, type SelectContext } from './select';
+import { matchesFilter, resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** The steps of a turn that come before its end step (CR 500.1): "your next end step" is this turn's while one of them is current. */
@@ -121,7 +121,21 @@ export function runMayPlay(
       : (res.lastMoved ?? []);
   const cards = named.filter((id) => {
     const card = state.objects[id];
-    return card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller);
+    if (
+      !(card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller))
+    ) {
+      return false;
+    }
+    // Narset, Enlightened Master: only the cards the filter describes get the permission.
+    return (
+      effect.cards === undefined ||
+      matchesFilter(
+        state,
+        card,
+        { ...effect.cards, zone: card.zone },
+        { controller: res.controller, source: res.source },
+      )
+    );
   });
   const until = playEnd(state, res.controller, effect.lasts);
   let next = state;

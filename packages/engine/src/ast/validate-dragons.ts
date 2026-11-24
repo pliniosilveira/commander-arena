@@ -137,6 +137,16 @@ export function checkDragonsEffect(
           issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
         }
       }
+      // Narset, Enlightened Master: only the cards the filter describes, and only to cast them.
+      if (e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.castOnly !== true) {
+          issue(out, `${path}.cards`, 'a filter of the cards that may be cast needs castOnly');
+        }
+        if (e.cards.zone !== undefined || e.cards.controller !== undefined) {
+          issue(out, `${path}.cards`, 'the filter of the cards names no zone or controller');
+        }
+      }
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
