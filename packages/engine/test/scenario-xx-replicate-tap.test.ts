@@ -7,7 +7,7 @@ import { type ScenarioGame, scenario } from '../src/testing/index';
 import { choosePermanentDecision, chooseXDecision } from './pending-helpers';
 
 const RITUAL = 'SYNTHETIC Tap Replicate Ritual'; // {B} sorcery, replicate—tap an untapped Horror you control; you gain 1 life
-const WATCHER = 'SYNTHETIC Exile Watcher'; // a 4/4 Horror
+const WATCHER = 'SYNTHETIC Suspend Watcher'; // a 4/4 Horror
 const BEARS = 'Grizzly Bears'; // not a Horror
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
 
