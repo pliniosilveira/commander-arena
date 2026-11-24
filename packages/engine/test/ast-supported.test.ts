@@ -472,6 +472,7 @@ describe('supported feature gate', () => {
       'countersAddedEach',
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
+      'stepMonarch',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

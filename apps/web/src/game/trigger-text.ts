@@ -709,6 +709,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'damageToPlayerPrevented': {
+      // CR 615.6: "Whenever damage that would be dealt to you is prevented".
+      const to = { you: 'you', opponent: 'an opponent', player: 'a player' }[trigger.who];
+      return `Whenever damage that would be dealt to ${to} is prevented`;
+    }
     case 'unblockedAttackBatch':
       // CR 509.1h, 508.1b: the creatures of an opponent that attack you and have no blocker.
       return "Whenever one or more creatures an opponent controls attack you and aren't blocked";
