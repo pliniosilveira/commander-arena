@@ -2004,6 +2004,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
+  exiledCreatureCards: 'an exile effect',
   discardedTypeCount: 'a discard effect',
 };
 
@@ -2055,7 +2056,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     return ['countersRemoved'];
   }
   // Oversimplify: the creatures an exile really exiled, by controller.
-  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
+  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures', 'exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).

@@ -286,6 +286,17 @@ const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
 };
 
 /**
+ * "the number of times ~ was kicked" (Marshal's Anthem: "return up to X target creature cards ..., where X is the number of times ~ was kicked", CR 702.33c, 702.33d): the kicks of the
+ * spell the permanent came from, read as `timesKicked` is for "for each time it was kicked". The lowering decides which object "it" is.
+ */
+const NUMBER_OF_TIMES_KICKED: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the number of times (it|~) was kicked(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  if (!r.ok) return r;
+  const who = r.value.value[1] === '~' ? ('self' as const) : ('it' as const);
+  return { ok: true, value: { kind: 'timesKicked', who, span: r.value.span }, pos: r.pos };
+};
+
+/**
  * "the number of opponents who control more creatures than you", "the number of opponents who have more life than you" (CR 102.2, 608.2c; Limit Break deck, Heidegger, Shinra Executive): the same
  * count as `amount.for-each-opponent` ("for each opponent who controls more creatures than you"): the opponents still in the game whose total is greater (or, with "fewer", smaller) than the
  * controller's, now. The verb goes with its stat ("controls" creatures, "has" life or cards in hand).
@@ -474,6 +485,22 @@ const LIFE_TOTAL =
   };
 
 /**
+ * "the number of creature cards exiled this way" (Grey Host Reinforcements, CR 608.2c, 404.1): the creature cards an `exile` before it exiled, from a graveyard or anywhere else, which the
+ * engine counts as `thisWay` `exiledCreatureCards` (a token is not a card). The lowering refuses it unless the same text exiled before.
+ */
+const CREATURE_CARDS_EXILED_THIS_WAY: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(/the number of creature cards exiled this way(?![\p{L}\p{N}])/iu),
+  )(ctx, pos);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    value: { kind: 'thisWay', what: 'exiledCreatureCards', words: ['creature'], span: r.value.span },
+    pos: r.pos,
+  };
+};
+
+/**
  * "the number of counters removed this way" (Eventide's Shadow, CR 122.1, 608.2c): the counters the `removeChosenCounters` before it took off, which the engine counts as `thisWay`
  * `countersRemoved`. The lowering refuses it unless the same text removed counters before.
  */
@@ -525,6 +552,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // Scions & Spellcraft deck, group A: "the number of your opponents who were dealt combat damage by ~ this turn", before the count of objects.
     NUMBER_OF_PLAYERS_WHO,
     COUNTERS_REMOVED_THIS_WAY,
+    CREATURE_CARDS_EXILED_THIS_WAY,
     COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),
@@ -532,6 +560,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     DEVOTION,
     COMMANDER_COLORS,
     OPPONENT_COUNT,
+    NUMBER_OF_TIMES_KICKED,
     // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
     NUMBER_OF_OPPONENTS_WITH_MORE,
     COMMANDER_MANA_VALUE,
@@ -740,6 +769,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the mana value of the sacrificed creature',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
+    // CR 608.2c: the creature cards an exile before it exiled (Grey Host Reinforcements).
+    'equal to the number of creature cards exiled this way',
     // Stage P44 (D-195, CR 701.38a): the votes for one option of the vote earlier in the text.
     'equal to the number of profit votes',
     'equal to twice the number of security votes',
@@ -767,6 +798,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the mana value of the sacrificed land',
     'equal to the mana value of a sacrificed permanent',
     'equal to the total life lost this way',
+    'equal to the number of creature cards exiled',
+    'equal to the number of creature cards exiled this',
+    'equal to the number of creatures exiled this way',
     'equal to the greatest power among creatures',
     'equal to the greatest power of creatures you control',
     'equal to the total power',
@@ -825,6 +859,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies you control',
     // CR 102.2: the opponents still in the game.
     'where X is the number of opponents you have',
+    // CR 702.33c: the kicks of a permanent's spell (Marshal's Anthem).
+    'where X is the number of times ~ was kicked',
     'where X is the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
     'where X is the number of creatures on the battlefield',
     'where X is the number of creatures attacking you',
@@ -888,6 +924,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of creatures',
     'where X is the number of opponents',
     'where X is the number of opponents you control',
+    'where X is the number of times ~ was',
+    'where X is the number of times you were kicked',
     'where Y is the number of Zombies you control',
     'where x is the number of Zombies you control',
     'where X is half the number of Zombies you control',

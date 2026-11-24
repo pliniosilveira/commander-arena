@@ -528,6 +528,8 @@ export type ThisWayKind =
   | 'exiledNonland'
   // Mass Polymorph (CR 608.2c): "that many creature cards", the creatures an earlier `exile` effect of this resolution exiled from the battlefield, tokens included.
   | 'exiledCreatures'
+  // Grey Host Reinforcements (CR 608.2c, 404.1): "the number of creature cards exiled this way": the creature cards (never tokens) an `exile` effect of this resolution exiled, from a graveyard or anywhere else.
+  | 'exiledCreatureCards'
   // Occult Epiphany (CR 205.2a, 608.2c): "for each card type among cards discarded this way": how many different card types the cards `discard` effects discarded have.
   | 'discardedTypeCount'
   | 'playersDrew'

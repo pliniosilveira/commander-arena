@@ -706,6 +706,7 @@ export type IrAmount =
         | 'discardedMost'
         | 'discardedTypeCount'
         | 'exiledCreatures'
+        | 'exiledCreatureCards'
         | 'damageDealt'
         | 'excessDamageDealt'
         | 'countersRemoved'
