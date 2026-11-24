@@ -986,6 +986,8 @@ export function declareTargets(
   upToAmountAllowed = false,
   /** CR 107.3a, 602.2b: the targets of an activated ability whose cost has an {X} can name "mana value X": the X is announced before the targets are chosen. */
   xFilterAllowed = false,
+  /** CR 107.3m (Blitzball Stadium: "When this artifact enters, support X"): the enters trigger of the permanent itself can take up to as many targets as the X of the spell it came from. */
+  upToEntersX = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -1238,8 +1240,17 @@ export function declareTargets(
       ) {
         issue(out, p, 'up to as many targets as an amount has no min, max or other count');
       } else {
-        checkAmount(spec.upToAmount, `${p}.upToAmount`, NO_SCOPE, out);
-        if (typeof spec.upToAmount === 'object' && READS_NO_OBJECT.has(spec.upToAmount.kind)) {
+        checkAmount(
+          spec.upToAmount,
+          `${p}.upToAmount`,
+          upToEntersX ? { ...NO_SCOPE, entersX: true } : NO_SCOPE,
+          out,
+        );
+        if (
+          typeof spec.upToAmount === 'object' &&
+          READS_NO_OBJECT.has(spec.upToAmount.kind) &&
+          !(upToEntersX && spec.upToAmount.kind === 'enteredX')
+        ) {
           issue(out, `${p}.upToAmount`, 'the number of targets reads the game, not an object');
         }
       }
@@ -4068,6 +4079,13 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
     case 'foretold': // CR 702.143a: the face must list a foretell cost (`checkCastFace`)
       break;
+    case 'counterPutOnThisThisTurn': // Wakka (CR 122.6): the permanent with the ability; an optional kind of counter
+      if (c.counter !== undefined && (typeof c.counter !== 'string' || c.counter === '')) {
+        issue(out, `${path}.counter`, 'counter must be a non-empty string when present');
+      }
+      break;
+    case 'subjectPowerLessThanThis': // Shelinda (CR 208.1): where it may stand is checked with the trigger (validate.ts)
+      break;
     case 'subjectGreaterPt': // D-120: where it may stand is checked with the trigger (validate.ts)
       // Federation Fleet group D: "if it has greater power than ~" compares the power alone.
       if (c.onlyPower !== undefined && c.onlyPower !== true) {
@@ -5319,6 +5337,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'subjectControlledByYou':
     case 'subjectStat':
+    case 'subjectPowerLessThanThis':
     case 'subjectGreaterThanEach':
       // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
       if (scope.triggerSubject !== 'permanent') {
@@ -6397,6 +6416,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
+    case 'delayedDies':
+      // CR 603.7, 603.10a (Together Forever): the permanents are named as the effect resolves; what the delayed ability does reads the card each one became.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (
+        e.effect?.kind !== 'moveToZone' ||
+        e.effect.to !== 'hand' ||
+        kindOf(e.effect.objects) !== 'triggerCard'
+      ) {
+        issue(
+          out,
+          `${path}.effect`,
+          "a delayedDies returns the card the permanent became to its owner's hand: a moveToZone of 'triggerCard' to 'hand'",
+        );
+      }
+      break;
     case 'delayedCombatDamage':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
@@ -6818,11 +6852,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putCountersOf':
       // CR 122.1, 113.7a (Zack Fair): the permanent whose counters are copied is `this` or the permanent the cost sacrificed, last-known information once it is gone.
       if (kindOf(e.from) === 'sacrificedCost') checkSacrificedCost(`${path}.from`, scope, out);
-      else if (kindOf(e.from) !== 'this') {
+      else if (kindOf(e.from) === 'triggerSubject') {
+        // CR 603.10a, 113.7a (Resourceful Defense: "put those counters on target permanent you control"): the permanent the trigger is about, as it last was once it has left.
+        checkSubjectRef(e.from, 'permanent', `${path}.from`, scope, out);
+      } else if (kindOf(e.from) !== 'this') {
         issue(
           out,
           `${path}.from`,
-          "putCountersOf takes the counters of 'this' or 'sacrificedCost'",
+          "putCountersOf takes the counters of 'this', 'sacrificedCost' or 'triggerSubject'",
         );
       }
       checkRef(e.to, 'object', `${path}.to`, scope, out);
@@ -8692,7 +8729,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'cantBeBlockedByPlayer':
-      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'cantAttackPlaneswalkers':

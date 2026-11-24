@@ -435,6 +435,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 144: "whenever a creature you control deals combat damage to that player this turn, ..." (CR 603.7c).
     'delayedCombatDamageToPlayer',
     'delayedCombatDamage',
+    // Together Forever (CR 603.7, 603.7c): "When that creature dies this turn, return that card to its owner's hand."
+    'delayedDies',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
@@ -1298,6 +1300,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectStat',
     // Selvala: "if its power is greater than each other creature's power".
     'subjectGreaterThanEach',
+    // Wakka, Shelinda: "if a counter was put on ~ this turn", "if its power is less than ~'s power".
+    'counterPutOnThisThisTurn',
+    'subjectPowerLessThanThis',
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
@@ -2399,6 +2404,10 @@ export const CONDITION_KINDS = [
   'subjectGreaterThanEach',
   /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
   'putCountersThisTurn',
+  /** "If a counter was put on ~ this turn" (CR 122.6, 603.4): the engine's `counterPutOnThisThisTurn`. */
+  'counterPutOnThisThisTurn',
+  /** "If its power is less than ~'s power" (CR 208.1, 608.2c): the engine's `subjectPowerLessThanThis`. */
+  'subjectPowerLessThanThis',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
   /** "If it's that player's turn", the player being the one of the event (CR 603.4, 500.1, Tataru Taru): the engine's `triggerPlayerTurn`. */
@@ -3162,6 +3171,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamageTurn: true,
   delayedCombatDamageToPlayer: true,
   delayedCombatDamage: true,
+  delayedDies: true,
   forEachPlayer: true,
   delayedCast: true,
   removeTimeCounter: true,

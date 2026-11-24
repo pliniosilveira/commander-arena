@@ -22,7 +22,9 @@ export function readsTriggerSubject(ability: Ability): boolean {
     effects.includes('"subjectControlledByYou"') ||
     effects.includes('"subjectStat"') ||
     // Selvala: "if its power is greater than each other creature's power" reads the creature that entered as the ability resolves.
-    effects.includes('"subjectGreaterThanEach"')
+    effects.includes('"subjectGreaterThanEach"') ||
+    // Shelinda: "if its power is less than ~'s power" reads the creature that entered as the ability resolves.
+    effects.includes('"subjectPowerLessThanThis"')
   )
     return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.

@@ -1740,6 +1740,28 @@ function runEffect(
           })),
         ],
       });
+    case 'delayedDies':
+      // CR 603.7, 603.7c, 603.10a, 514.2 (Together Forever): "When that creature dies this turn, return that card to its owner's hand": one delayed ability of the controller for each
+      // permanent the effect names as it resolves, about that object only (`watched`), once, ended with the turn. A permanent that is not on the battlefield as it resolves makes none.
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          ...resolveObjects(state, effect.objects, ctx, targets)
+            .filter((id) => state.objects[id]?.zone === 'battlefield')
+            .map((watched) => ({
+              source: res.source,
+              controller: res.controller,
+              watched,
+              untilEndOfTurn: true as const,
+              ability: {
+                kind: 'triggered' as const,
+                trigger: { kind: 'dies' as const, what: {} },
+                effect: effect.effect,
+              },
+            })),
+        ],
+      });
     case 'delayedCombatDamageTurn': {
       // CR 603.7, 603.7c, 603.7d, 510.3a, 514.2 (D-662): "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card": a delayed ability of the
       // controller that triggers each time such a creature damages a player until the end of the turn. The card an earlier effect of this sequence exiled is written into it as

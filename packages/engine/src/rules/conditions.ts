@@ -726,6 +726,23 @@ export function evaluateCondition(
           (condition.counter === undefined || e.counter === condition.counter) &&
           (condition.onType === undefined || e.types.includes(condition.onType)),
       );
+    case 'counterPutOnThisThisTurn':
+      // CR 122.6, 603.4 (Wakka): a counter (of the kind, when named) put on the permanent with this ability this turn by anyone, from the turn log.
+      return (
+        ctx.source !== null &&
+        (state.turnLog.countersPutOn ?? []).some(
+          (e) =>
+            e.object === ctx.source &&
+            (condition.counter === undefined || e.counter === condition.counter),
+        )
+      );
+    case 'subjectPowerLessThanThis': {
+      // CR 208.1, 113.7a, 608.2c (Shelinda): the power of the permanent the trigger is about against the power of the permanent with the ability, each as it is or as it last was.
+      if (ctx.source === null || ctx.triggerSubject === undefined) return false;
+      const subject = ptNow(state, ctx.triggerSubject);
+      const source = ptNow(state, ctx.source);
+      return subject !== null && source !== null && subject.power < source.power;
+    }
     case 'triggerPlayerHasMore':
       // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
       return (

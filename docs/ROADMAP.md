@@ -148,6 +148,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - A name set by `setTypes` (CR 612.8) applies in timestamp order with layer 4, not as layer 3, and only "it's a land named X" after a returned card is read.
 - Explore emits no event and ignores APNAP order.
+- `delayedDies` only returns the card to its owner's hand; "those counters" and "that number" are read only after an intervening "if it had counters on it"; "support X" only in the enters trigger of its own permanent.
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.

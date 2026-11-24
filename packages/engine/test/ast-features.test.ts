@@ -119,6 +119,8 @@ describe('the dimensions', () => {
       'subjectControlledByYou',
       'subjectStat',
       'subjectGreaterThanEach',
+      'counterPutOnThisThisTurn',
+      'subjectPowerLessThanThis',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
       'triggerPlayerTurn',

@@ -1574,7 +1574,7 @@ export interface TargetSpec {
   /**
    * "Return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (CR 107.3c, 603.3d, 601.2c): the slot takes up to as many
    * targets as this amount is as the ability is put on the stack (none to that many); the number is fixed then, and the engine writes it into `max` (and a `min` of 0) of the ability that
-   * goes on the stack. The amount reads the game only (no target, no X): a count of objects, of opponents, and what is made of them. With 0 the ability has no target and, having
+   * goes on the stack. The amount reads the game only (no target, no announced X; the enters trigger of the permanent itself may read `enteredX`, CR 107.3m, "support X"): a count of objects, of opponents, and what is made of them. With 0 the ability has no target and, having
    * nothing else to do for it, is not put on the stack. Only a slot of a triggered ability, with `min` and `max` left out.
    */
   readonly upToAmount?: Amount;
@@ -2391,6 +2391,18 @@ export type Effect =
        * the cost of not paying one. Left out, the copy is cast without paying its mana cost. A copy the controller cannot pay for is not offered (CR 601.2h).
        */
       readonly cost?: readonly Cost[];
+    }
+  /**
+   * "Choose target creature with a counter on it. When that creature dies this turn, return that card to its owner's hand." (CR 603.7, 603.7c, 603.7d, 603.10a, 700.4, 514.2, Together
+   * Forever): for each permanent `objects` names as the effect resolves, a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers when
+   * that permanent dies (is put into a graveyard from the battlefield) before the end of the turn, once, and ends with the turn if it has not (CR 514.2). It is about that object only
+   * (CR 603.7c): the permanent need not have any of the qualities it was chosen for as it dies. `effect` runs when it triggers, with the controller as "you": only `moveToZone` of
+   * `triggerCard` to the owner's hand (the card the permanent became, if it is still in the graveyard; a token that died has ceased to exist, CR 111.8).
+   */
+  | {
+      readonly kind: 'delayedDies';
+      readonly objects: ObjectSelector;
+      readonly effect: Effect;
     }
   | {
       readonly kind: 'delayedCombatDamage';
@@ -3845,8 +3857,8 @@ export type Effect =
   /**
    * "Put ~'s counters on that creature" (Zack Fair, CR 122.1, 122.6, 113.7a, 608.2h): every counter, of every kind, that the permanent `from` named had on the battlefield (as it is,
    * or as it last was when it has left: the sacrificed permanent of the cost) is put onto the permanent `to` names, one `counterAdded` event for each kind, as any counters put on a
-   * permanent are (a replacement effect or a prevention of counters applies). They are not taken off `from`. Nothing when `to` is gone. `from` is `this` or `sacrificedCost`, the latter
-   * only in an activated ability whose cost sacrifices something (`validateCard`).
+   * permanent are (a replacement effect or a prevention of counters applies). They are not taken off `from`. Nothing when `to` is gone. `from` is `this`, `sacrificedCost` (only in an activated ability whose
+   * cost sacrifices something) or `triggerSubject` (Resourceful Defense: "put those counters on target permanent you control", the permanent the trigger is about; `validateCard`).
    */
   | { readonly kind: 'putCountersOf'; readonly from: ObjectRef; readonly to: ObjectRef }
   /**
@@ -6677,6 +6689,18 @@ export type Condition =
       readonly counter?: string;
       readonly onType?: CardType;
     }
+  /**
+   * "At the beginning of your end step, if a counter was put on this creature this turn" (Wakka, Devoted Guardian; CR 122.6, 603.4): at least one counter, of the kind `counter` names (any
+   * kind when left out), was put on the permanent that has the ability this turn by anyone (or by no player, as a wither source does), as the turn log recorded it
+   * (`TurnLog.countersPutOn`). Counters put on it in an earlier turn, or on another permanent, do not count.
+   */
+  | { readonly kind: 'counterPutOnThisThisTurn'; readonly counter?: string }
+  /**
+   * "Put a +1/+1 counter on that creature if its power is less than ~'s power. Otherwise, put a +1/+1 counter on ~." (Shelinda, Yevon Acolyte; CR 208.1, 608.2c, 113.7a): the power of the
+   * permanent whose event caused the trigger (as it is now, or as it last was once it has left) is less than the power of the permanent that has the ability (as it is, or as it last was).
+   * Read as the instruction comes up (a conditional effect of a trigger about a permanent); false where either has no power.
+   */
+  | { readonly kind: 'subjectPowerLessThanThis' }
   /**
    * "If that player controls more creatures than you" (CR 603.4, 110.2; the Bruna deck, Keeper of the Accord): the player the event of the trigger is
    * about (`triggerPlayer`: the active player of a `step`, `upkeep` or `endStep` trigger, the player who drew, who cast, ...) has a greater `stat` than

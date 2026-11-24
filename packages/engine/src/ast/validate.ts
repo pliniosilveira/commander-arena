@@ -2118,6 +2118,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         a.trigger?.kind === 'scries',
         true,
+        false,
+        // CR 107.3m: the enters trigger of the permanent itself may take up to as many targets as the X of the spell it came from.
+        a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -2310,7 +2313,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectStat',
+          'subjectGreaterThanEach',
+          'subjectPowerLessThanThis',
+        ]) {
           if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
             issue(
               out,
@@ -2416,7 +2424,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
-        for (const kind of ['subjectControlledByYou', 'subjectStat', 'subjectGreaterThanEach']) {
+        for (const kind of [
+          'subjectControlledByYou',
+          'subjectStat',
+          'subjectGreaterThanEach',
+          'subjectPowerLessThanThis',
+        ]) {
           if (conditionHas(a.triggerCondition, kind)) {
             issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
           }
