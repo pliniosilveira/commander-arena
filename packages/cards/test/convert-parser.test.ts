@@ -717,6 +717,7 @@ describe('unmatched abilities', () => {
       'effect.exile-self-time-counters',
       'effect.exile-copy-cast',
       'effect.lead-becomes-land-creature',
+      'effect.switch-self-pt',
       'effect.exile-copy-card-times',
       'effect.create-tokens-per-opponent-tapped-attacking',
       'effect.opponents-may-create-tokens',

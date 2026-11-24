@@ -69,6 +69,7 @@ export interface Scope {
         kind:
           | 'modifyPt'
           | 'setPt'
+          | 'switchPt'
           | 'loseAllAbilities'
           | 'loseHexproofShroud'
           | 'setTypes'
@@ -8182,6 +8183,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
     case 'setTypes':

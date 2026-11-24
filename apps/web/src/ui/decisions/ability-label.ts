@@ -1202,6 +1202,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `Choose one: ${choices}`
         : `Repeat this choice ${defs.say(effect.times, { self })} times (choose independently): ${choices}`;
     }
+    case 'switchPt':
+      // CR 613.4d: "Switch this creature's power and toughness until end of turn".
+      return `Switch ${object(effect.objects)}'s power and toughness${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'modifyPt':
     case 'setPt': {
       // D-145 (CR 701.10): "Double the power and toughness of each creature you control until end of turn".

@@ -338,6 +338,7 @@ function walkEffect(
       return;
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'setTypes':
     case 'setColors':

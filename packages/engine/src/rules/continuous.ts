@@ -40,6 +40,7 @@ export type ContinuousNode = Extract<
     kind:
       | 'modifyPt'
       | 'setPt'
+      | 'switchPt'
       | 'loseAllAbilities'
       | 'loseHexproofShroud'
       | 'setTypes'
@@ -71,6 +72,8 @@ function changeOf(
         toughness: ptAmountOf(state, node.toughness, ctx, targets, now),
       };
     }
+    case 'switchPt':
+      return { kind: 'switchPt' };
     case 'loseAllAbilities':
       return { kind: 'loseAllAbilities' };
     case 'loseHexproofShroud':

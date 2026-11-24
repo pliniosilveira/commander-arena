@@ -308,6 +308,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'doubleCounters',
     'modifyPt',
     'setPt',
+    // CR 613.4d: "Switch this creature's power and toughness until end of turn" (`switchPt`).
+    'switchPt',
     'loseAllAbilities',
     // D-649: "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a).
     'loseHexproofShroud',
@@ -3145,6 +3147,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   doubleCounters: true,
   modifyPt: true,
   setPt: true,
+  switchPt: true,
   loseAllAbilities: true,
   loseHexproofShroud: true,
   setTypes: true,

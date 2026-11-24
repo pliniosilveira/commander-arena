@@ -4089,6 +4089,15 @@ export type Effect =
       readonly duration: Duration;
     }
   /**
+   * "Switch this creature's power and toughness until end of turn" (CR 613.4d, layer 7d): each object `objects` names, fixed as the effect resolves (CR 611.2c), has its power
+   * and toughness switched after every other power and toughness effect and counter has applied, whatever the timestamps. Several switches each switch again.
+   */
+  | {
+      readonly kind: 'switchPt';
+      readonly objects: ObjectSelector;
+      readonly duration: Duration;
+    }
+  /**
    * "Target creature loses all abilities until end of turn": layer 6 (CR 613.1f). Abilities it
    * has at that timestamp go, printed and granted; abilities granted later still apply
    * (CR 613.7).

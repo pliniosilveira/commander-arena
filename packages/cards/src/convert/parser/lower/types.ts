@@ -346,6 +346,11 @@ export interface LowerContext {
    */
   createdToken: Extract<Effect, { kind: 'createToken' }> | null;
   /**
+   * The plain `draw` the clause before it lowered to, when it was the only effect and drew for the controller (Curse of Verbosity): "Each opponent attacking that player does the
+   * same" makes the other players draw. Null after any other clause.
+   */
+  drewCards: Extract<Effect, { kind: 'draw' }> | null;
+  /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
    */
@@ -497,6 +502,7 @@ export function newContext(
     milledBefore: false,
     destroyed: false,
     createdToken: null,
+    drewCards: null,
     movedToHand: false,
     exiledAnyCardTypes: false,
     exiledOwnGraveyards: false,
