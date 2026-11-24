@@ -950,6 +950,7 @@ describe('unmatched abilities', () => {
       'effect.control-while-remains',
       'effect.vote',
       'effect.ring-tempts',
+      'effect.take-initiative',
       'effect.exchange-life-pt',
       'effect.double-life-total',
       'effect.life-total-becomes',

@@ -115,8 +115,8 @@ export const EFFECT_EXILE_AT_END_STEP = defineRule<Clauses>({
 
 /**
  * `effect.exile-instead-when-leaving`: "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6: a replacement effect that lasts as long as
- * the object stays on the battlefield, about the permanent the instruction before it put there). The engine's `exileIfLeaves` of the `moved` objects. Not read: another condition
- * ("would die"), "this turn", another object.
+ * the object stays on the battlefield, about the permanent the instruction before it put there). The engine's `exileIfLeaves` of the `moved` objects. The permanent is "it" or, as
+ * From the Catacombs says it, "that creature". Not read: another condition ("would die"), "this turn", another object.
  */
 export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   id: 'effect.exile-instead-when-leaving',
@@ -130,8 +130,12 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   examples: [
     'if it would leave the battlefield, exile it instead of putting it anywhere else',
     'If it would leave the battlefield, exile it instead of putting it anywhere else',
+    // From the Catacombs (CR 614.1a): the creature the sentence before put onto the battlefield.
+    'if that creature would leave the battlefield, exile it instead of putting it anywhere else',
   ],
   rejects: [
+    'if that permanent would leave the battlefield, exile it instead of putting it anywhere else',
+    'if those creatures would leave the battlefield, exile them instead of putting them anywhere else',
     'if it would leave the battlefield, exile it instead',
     'if it would die, exile it instead of putting it anywhere else',
     'if it would leave the battlefield, exile it instead of putting it into a graveyard',
@@ -142,20 +146,37 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.exile-instead-when-leaving';
-    const r = sequence(
-      literal('if '),
-      IT(),
-      pattern(
-        / would leave the battlefield, exile it instead of putting it anywhere else(?![\p{L}\p{N}])/iu,
-      ),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
-    const span = { start: pos, end: r.pos };
+    const rider =
+      / would leave the battlefield, exile it instead of putting it anywhere else(?![\p{L}\p{N}])/iu;
+    const r = sequence(literal('if '), IT(), pattern(rider))(ctx, pos);
+    if (r.ok) {
+      if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+      const span = { start: pos, end: r.pos };
+      return {
+        ok: true,
+        value: [makeClause(id, 'exileIfLeaves', { objects: r.value[1] }, span)],
+        pos: r.pos,
+      };
+    }
+    // "that creature" is read as "it" is: the permanent the instruction before it put onto the battlefield, which the binding pass and the lowering check.
+    const that = sequence(literal('if that creature'), pattern(rider))(ctx, pos);
+    if (!that.ok) return that;
+    if (!endsSentence()(ctx, that.pos)) return fail(ctx, pos);
+    const span = { start: pos, end: that.pos };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'that creature' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos + 3, end: pos + 3 + 'that creature'.length },
+      rule: id,
+    };
     return {
       ok: true,
-      value: [makeClause(id, 'exileIfLeaves', { objects: r.value[1] }, span)],
-      pos: r.pos,
+      value: [makeClause(id, 'exileIfLeaves', { objects }, span)],
+      pos: that.pos,
     };
   },
 });
