@@ -67,6 +67,7 @@ import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { COUNTER_BLITZ_C_LOWERINGS } from './counter-blitz-c';
+import { COUNTER_BLITZ_E_LOWERINGS } from './counter-blitz-e';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { COUNTER_GROUP_A_LOWERINGS } from './counter-group-a';
 import { DACK_LOWERINGS } from './dack';
@@ -2913,6 +2914,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
   ...COUNTER_BLITZ_C_LOWERINGS,
+  ...COUNTER_BLITZ_E_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,
   ...RETURNED_LAND_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,

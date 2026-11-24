@@ -938,6 +938,27 @@ export function answerResolutionSearchMay(
 }
 
 /**
+ * Records the answer to "you may put that card onto the battlefield" of a search (CR 608.2d, 701.23; `search.mayPut`): the card found goes onto the battlefield when accepted and to the
+ * hand when declined. Null when no such question is waiting.
+ */
+export function answerResolutionSearchPut(
+  state: GameState,
+  accept: boolean,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (!res || head?.kind !== 'search' || head.put !== null || d?.kind !== 'confirmOptional') {
+    return null;
+  }
+  const events: GameEvent[] = [
+    { kind: 'optionalAnswered', seat: d.seat, source: res.source, accepted: accept },
+  ];
+  const queue: readonly Instruction[] = [{ ...head, put: accept }, ...res.queue.slice(1)];
+  return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
+}
+
+/**
  * Records the answer to "you may pay ... or it enters tapped" (CR 614.12) for the permanent that
  * asked, which is the head of the queue when it is a move, or the spell resolving when the queue is
  * empty, then continues. Null when no such question is waiting.

@@ -16,6 +16,7 @@
 import type { Span } from './ir/types';
 import { CHAPTER_PREFIX } from './roman';
 import { COUNTER_BLITZ_C_JOINS } from './segment-counter-blitz-c';
+import { COUNTER_BLITZ_E_SEARCH_JOIN } from './segment-counter-blitz-e';
 import { CHOOSE_TARGET_CREATURE, WHEN_THAT_CREATURE_DIES_RETURN } from './segment-counter-group-a';
 
 export type FaceKind = 'spell' | 'permanent';
@@ -1003,8 +1004,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 2;
       continue;
     }
-    // Finale of Promise (issue 121): the four sentences of one instruction.
+    // Counter Blitz deck, group E (Scholar of New Horizons): the four sentences of a search that may put its card onto the battlefield (`effect.search-reveal-may-put-else-hand`).
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, COUNTER_BLITZ_E_SEARCH_JOIN[0]) &&
+      said(b, COUNTER_BLITZ_E_SEARCH_JOIN[1]) &&
+      said(c, COUNTER_BLITZ_E_SEARCH_JOIN[2]) &&
+      said(d, COUNTER_BLITZ_E_SEARCH_JOIN[3])
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       d !== undefined &&
       said(a, FINALE_CAST) &&

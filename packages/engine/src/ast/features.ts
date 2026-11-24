@@ -1121,6 +1121,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'searchTotalManaValue',
     // "Search your library for any number of creature cards" (CR 701.23; `search.anyNumber`).
     'searchAnyNumber',
+    // "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand" after a search (CR 608.2d; `search.mayPut`).
+    'searchMayPut',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -2195,6 +2197,8 @@ export const SELECTOR_KINDS = [
   'searchTotalManaValue',
   /** "Any number of creature cards" (CR 701.23): the engine's `search.anyNumber`. */
   'searchAnyNumber',
+  /** "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand" (CR 608.2d): the engine's `search.mayPut`. */
+  'searchMayPut',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
