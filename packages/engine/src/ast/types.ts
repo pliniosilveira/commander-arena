@@ -1781,6 +1781,13 @@ export type Cost =
        */
       readonly countX?: true;
     }
+  /**
+   * "Put a creature card exiled with ~ into its owner's graveyard" (Shelob, Dread Weaver; CR 607.2a, 118.3, 602.2b, 400.7): as the cost of an activated ability of a permanent, the
+   * player chooses one of the cards the permanent exiled with its linked ability (`exile.linked`) that are still in exile and that `filter` matches (a filter of cards in exile: card
+   * types, subtypes, colors, mana value; no zone, controller or owner), and puts it into its owner's graveyard. The player chooses with a `chooseCards` decision of purpose `exile` and
+   * `forCost` (the engine takes the card when only one can be chosen), and with no such card the ability cannot be activated (CR 118.3). Only the cost of an ordinary activated ability.
+   */
+  | { readonly kind: 'putLinkedExileInGraveyard'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'removeCounters';
       readonly counter: string;
@@ -2253,7 +2260,8 @@ export interface ChooseSelector {
   /**
    * "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control" (issue 159, CR 608.2c, 400.7j): with
    * `fromMoved`, the candidates are the cards the effect before it moved that are in any player's graveyard (not only the chooser's), and they may be put onto the
-   * battlefield as well as into the hand.
+   * battlefield as well as into the hand. Without `fromMoved` (Extract from Darkness, "you put a creature card from a graveyard onto the battlefield under your control", CR 404.1,
+   * 608.2d): the candidates are the matching cards in every player's graveyard, with `filter.zone` `graveyard`; the chooser (the controller) picks without targeting.
    */
   readonly fromAnyGraveyard?: true;
   /**
@@ -3141,7 +3149,7 @@ export type Effect =
       readonly anyManaColor?: true;
       /**
        * "You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell" (Hostage Taker, CR 609.4b): the spell cast with this permission can be
-       * paid with any mana for any symbol of its cost, colored or colorless (`StackData.anyManaType`). Needs `castOnly`: the rider is about casting a spell.
+       * paid with any mana for any symbol of its cost, colored or colorless (`StackData.anyManaType`). With `castOnly`, or without it (Lidless Gaze: "you may play those cards, and mana of any type can be spent to cast those spells": a land card is played as usual).
        */
       readonly anyManaType?: true;
       /**
@@ -7529,6 +7537,16 @@ export type Replacement =
       readonly count: number;
       readonly exceptFirstInDrawStep: true;
     }
+  /**
+   * "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card." (Notion Thief, CR 614.1a,
+   * 614.11, 504.1, 121.6): a replacement effect of a permanent on the battlefield for the cards each opponent of its controller (every other player) would draw, by an effect or
+   * after the first card of their draw step (CR 504.1; `exceptFirstInDrawStep` is required, always `true`: a replacement of every draw is not built). The draw does not happen (nothing
+   * was drawn, as for `skipDraw`) and the controller of the permanent draws a card, a draw of their own that can be replaced in turn by the effect of another permanent that applies to it
+   * (CR 614.5: this effect applies once to the draw it replaced, so two of them never make the controller draw twice). It is applied even when the library has no cards (CR 614.11).
+   * It goes before the draw is replaced by `drawInstead` or dredge, and when effects of different controllers apply to one draw the oldest permanent applies first: the player who
+   * would draw is not asked which (`docs/ROADMAP.md`, CR 616.1). It is the ability of the permanent (lost with "loses all abilities").
+   */
+  | { readonly kind: 'drawRedirect'; readonly exceptFirstInDrawStep: true }
   /**
    * "Umbra armor" (CR 702.89a, D-417): "If enchanted permanent would be destroyed, instead remove all damage marked on it and destroy this Aura." A
    * replacement effect of an Aura on the battlefield for the destruction of the permanent it is attached to: by the effect `destroy`, or by the

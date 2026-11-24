@@ -37,3 +37,8 @@ export function drawInsteadWording(
   const count = COUNT_WORDS[replacement.count] ?? String(replacement.count);
   return `If you would draw a card except the first one you draw in each of your draw steps, draw ${count} cards instead`;
 }
+
+/** "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card" (CR 614.11, 504.1). */
+export function drawRedirectWording(): string {
+  return 'If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card';
+}

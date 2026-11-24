@@ -154,6 +154,7 @@ import {
 } from './mana';
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
+import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
 import { MELD_EFFECT_RULES } from './meld';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -207,6 +208,7 @@ import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
+import { PUT_ANY_GRAVEYARD_RULES } from './put-any-graveyard';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -230,6 +232,7 @@ import { REVIVAL_TRANCE_EFFECT_RULES } from './revival-trance';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
+import { SEARCH_EACH_RULES } from './search-each';
 import { SEARCH_PAIR_RULES } from './search-pair';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
@@ -1225,6 +1228,7 @@ export const EFFECT_RULES = [
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
   ...AHOY_G2_EFFECT_RULES,
+  ...MAY_PLAY_ANY_TYPE_EFFECT_RULES,
   // Summon: Esper Valigarmanda (issue 97): "exile an instant or sorcery card from each graveyard" and "you may cast an instant or sorcery card exiled with ~, and mana of any type ...".
   ...VALIGARMANDA_EFFECT_RULES,
   // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
@@ -1575,11 +1579,13 @@ export const EFFECT_RULES = [
   ...GROUP_BASE_PT_RULES,
   ...GROUP_BASE_PT_SOURCE_RULES,
   ...SEARCH_RULES,
+  ...SEARCH_EACH_RULES,
   ...PREVENT_RULES,
   ...TRANSFORM_RULES,
   ...ATTACH_RULES,
   ...LIBRARY_RULES,
   ...PUT_RULES,
+  ...PUT_ANY_GRAVEYARD_RULES,
   ...RECURSION_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,

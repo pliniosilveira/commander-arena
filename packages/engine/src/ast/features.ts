@@ -868,6 +868,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'keepOneLoyalty',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
+    // CR 614.1a, 614.11, 504.1 (Notion Thief): "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card."
+    'drawRedirect',
     // D-417 (CR 702.89a): "Umbra armor".
     'umbraArmor',
   ],
@@ -998,6 +1000,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mill',
     // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability (not an additional cost of a spell: `additionalCostIssues` refuses it).
     'exileFromGraveyard',
+    // CR 607.2a, 118.3 (Shelob, Dread Weaver): "Put a creature card exiled with ~ into its owner's graveyard" as the cost of an activated ability.
+    'putLinkedExileInGraveyard',
     // D-200: the loyalty symbol of a loyalty ability (CR 606).
     'loyalty',
     // D-209: "{E}{E}", paid by the player an `unlessPays` asks; issue 105: and the cost of an activated or a mana ability (`activationCostIssues` refuses it in a spell).
@@ -3436,6 +3440,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   skipDraw: true,
   keepOneLoyalty: true,
   drawInstead: true,
+  drawRedirect: true,
   umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
@@ -3474,6 +3479,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,
+  putLinkedExileInGraveyard: true,
   removeCounters: true,
   loyalty: true,
   putCounters: true,

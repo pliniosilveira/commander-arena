@@ -14,6 +14,7 @@ import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
+import { DRAW_REDIRECT_REPLACEMENT_RULES } from './draw-redirect';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
@@ -361,6 +362,7 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  ...DRAW_REDIRECT_REPLACEMENT_RULES,
   // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,
   // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."

@@ -1117,6 +1117,8 @@ export type IrCost = IrNode &
         readonly named?: true;
       }
     | { readonly kind: 'exile'; readonly what: IrNoun }
+    // "Put a creature card exiled with ~ into its owner's graveyard" (Shelob, Dread Weaver, CR 607.2a, 118.3): one card of the kind `what` names that the permanent exiled with its linked ability
+    | { readonly kind: 'putLinkedExile'; readonly what: IrNoun }
     | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }

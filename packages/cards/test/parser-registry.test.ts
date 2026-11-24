@@ -1087,6 +1087,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.keep-one-loyalty': asIs,
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
+  'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
@@ -1290,6 +1291,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.behold': spell((e) => `As an additional cost to cast ~, ${e}. Draw a card.`),
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),

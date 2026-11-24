@@ -168,7 +168,9 @@ export function checkDragonsEffect(
       for (const rider of ['anyManaType', 'exileInstead'] as const) {
         if (e[rider] === undefined) continue;
         if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
-        if (e.castOnly !== true) {
+        // Lidless Gaze ("you may play those cards, and mana of any type can be spent to cast those spells"): `anyManaType` is about the spells cast, so it also goes with a permission to
+        // play (a land card among the cards is played as usual); `exileInstead` is the rider of one spell and needs `castOnly`.
+        if (rider === 'exileInstead' && e.castOnly !== true) {
           issue(
             out,
             `${path}.${rider}`,
