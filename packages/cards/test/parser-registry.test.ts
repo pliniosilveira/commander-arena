@@ -953,6 +953,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.roll-highest': whenever,
   // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
   'trigger.win-coin-flip': whenever,
+  // Secret council (Erestor of the Council, Model of Unity): "players finish voting" follows "Whenever"; the sentences read the record of the vote that finished.
+  'trigger.players-finish-voting': whenever,
+  'effect.secret-vote': spell((e) => `${cap(e)}.`),
+  'effect.each-player-draws-per-vote': spell((e) => `${cap(e)}.`),
+  'effect.each-player-without-votes-may-put': spell((e) => `${cap(e)}.`),
+  'effect.stun-voted-creatures': spell((e) => `${cap(e)}.`),
+  'effect.voter-chooses-per-vote': spell((e) => `${cap(e)}.`),
+  'effect.gain-control-chosen-cant-attack-owner': spell((e) => `${cap(e)}.`),
+  'effect.then-for-each-vote-counters': spell((e) => `${cap(e)}.`),
+  'effect.voters-create-treasure': spell((e) => `${cap(e)}.`),
+  'effect.scry-opponents-who-voted-differently': spell((e) => `${cap(e)}.`),
+  'effect.you-and-voters-may-scry': spell((e) => `${cap(e)}.`),
   'effect.flip-coin': spell((e) => `${cap(e)}.`),
   // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
   'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),

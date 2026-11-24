@@ -59,6 +59,7 @@ import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNCIL_VOTES_EFFECT_RULES } from './council-votes';
+import { SECRET_VOTES_EFFECT_RULES } from './secret-votes';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_TRIGGER_EFFECT_RULES } from './counter-trigger';
 import { COUNTER_RULES } from './counters';
@@ -1443,6 +1444,8 @@ export const EFFECT_RULES = [
   ...VOTE_EFFECT_RULES,
   // Issue 17 (Elven Council): "for each Redhorn Pass vote, ...", "each player returns up to two cards ...".
   ...COUNCIL_VOTES_EFFECT_RULES,
+  // Secret council (Círdan the Shipwright, Elrond of the White Council, Trap the Trespassers, Erestor of the Council, Model of Unity): secret votes and what the votes came to.
+  ...SECRET_VOTES_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
   ...PLANESWALKER_EFFECT_RULES,
