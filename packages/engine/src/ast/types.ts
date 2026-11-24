@@ -4370,6 +4370,18 @@ export type Effect =
       readonly duration: 'untilYourNextTurn';
     }
   /**
+   * "Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent." (Teyo, Geometric Tactician; CR
+   * 508.1a, 611.2a, 101.4, 500.1): whenever attackers are declared until the controller's next turn begins (the turn it resolves in not counted), a creature may be declared attacking only
+   * the nearest player still in the game that is not its controller, going `direction` (`left`: the player whose turn comes next; `right`: the one whose turn comes just before), or a
+   * planeswalker that player controls. The direction is fixed as the effect resolves (a `chooseOne` of the two asks the controller). Players and planeswalkers of other opponents, and battles,
+   * are not open. It changes no target of a spell or ability.
+   */
+  | {
+      readonly kind: 'attackOnlyNearestOpponent';
+      readonly direction: 'left' | 'right';
+      readonly duration: 'untilYourNextTurn';
+    }
+  /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender." (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2; Wakestone Gargoyle): a rule-changing effect on a
    * group of creatures that is not a set fixed as the effect resolved (it does not modify characteristics, so a creature that matches later in the turn is affected too): each creature
    * `creatures` matches (read for the controller of the effect as "you") has the restriction `restriction` (`canAttackAsThoughNoDefender` or `assignsDamageByToughness`) until end of turn.

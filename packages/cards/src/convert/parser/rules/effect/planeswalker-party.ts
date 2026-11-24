@@ -447,6 +447,47 @@ export const EFFECT_EXILE_THAT_MANY_TOP = defineRule<Clauses>({
   },
 });
 
+const TEYO_ID = 'effect.choose-direction-attack-nearest';
+
+/**
+ * `effect.choose-direction-attack-nearest`: "Choose left or right. Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers
+ * controlled by that opponent." (Teyo, Geometric Tactician; CR 508.1a, 611.2a, 101.4): the controller chooses a direction as the effect resolves, and until their next turn every player's
+ * creatures may attack only the nearest opponent that way, or their planeswalkers. Two sentences that `splitSentences` keeps together. The engine's `chooseOne` of the two directions, each
+ * `attackOnlyNearestOpponent`. Not read: another duration, "target opponent", a direction other than left or right, "may attack" without "only".
+ */
+export const EFFECT_CHOOSE_DIRECTION_ATTACK_NEAREST = defineRule<Clauses>({
+  id: TEYO_ID,
+  family: 'effect',
+  leading: ['choose'],
+  cites: [
+    'CR 508.1a (Declare Attackers Step)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 101.4 (Handling Simultaneous Decisions)',
+  ],
+  examples: [
+    'choose left or right. Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent',
+  ],
+  rejects: [
+    'choose left or right',
+    'choose left or right. Until your next turn, each player may attack only the nearest opponent in the last chosen direction',
+    'choose left or right. Until end of turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent',
+    'choose left or up. Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent',
+    'choose left or right. Until your next turn, each player may attack the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent',
+    'choose left or right. Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /choose left or right\. until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause(TEYO_ID, 'chooseDirectionAttackNearest', {}, { start: pos, end: r.pos })],
+      pos: r.pos,
+    };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -508,6 +549,7 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_CHOOSE_DIRECTION_ATTACK_NEAREST),
   quietly(EFFECT_REMOVE_COUNTER_FROM_EACH_CHOSEN),
   quietly(EFFECT_EXILE_THAT_MANY_TOP),
   quietly(EFFECT_MAY_CAST_MOVED_CARD),

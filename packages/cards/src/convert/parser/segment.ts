@@ -343,6 +343,10 @@ const PUT_REST_OF_THOSE = /^put the rest of those cards [^.]*\.$/i;
 /** "Put up to two planeswalker cards from among them onto the battlefield." (Deploy the Gatewatch): the middle sentence of a look at the top cards, for `effect.look-put-up-to`. */
 const PUT_UP_TO_FROM_AMONG =
   /^put up to (?:two|three|four|\d+) [^.]* cards from among them onto the battlefield\.$/i;
+/** "Choose left or right." and "Until your next turn, each player may attack only the nearest opponent in the last chosen direction and ..." (Teyo): one instruction, kept together. */
+const CHOOSE_LEFT_OR_RIGHT = /^choose left or right\.$/i;
+const ATTACK_ONLY_NEAREST =
+  /^until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent\.$/i;
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
@@ -1327,6 +1331,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, DEALS_DAMAGE_TO_TARGET) &&
       said(b, EXILE_IF_WOULD_DIE_THIS_TURN)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, CHOOSE_LEFT_OR_RIGHT) &&
+      said(b, ATTACK_ONLY_NEAREST)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

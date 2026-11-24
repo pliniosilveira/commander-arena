@@ -50,6 +50,7 @@ import { enterCombatAttacking } from './combat-enter';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
+  runAttackOnlyNearest,
   runBecomeCopy,
   runCantAttackPlaneswalkers,
   runCantBeBlockedByPlayer,
@@ -4097,6 +4098,10 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'attackOnlyNearestOpponent':
+      // CR 508.1a, 611.2a (Teyo, Geometric Tactician): a restriction on every creature, read when attackers are declared.
+      return runAttackOnlyNearest(state, effect, ctx);
 
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.

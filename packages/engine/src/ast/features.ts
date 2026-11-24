@@ -336,6 +336,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttackSource',
     // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
     'creaturesCantAttackYou',
+    'attackOnlyNearestOpponent',
     // CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender", a group effect that reaches creatures that match later.
     'restrictGroup',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
@@ -3125,6 +3126,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   attackRandomOpponent: true,
   requireAttackSource: true,
   creaturesCantAttackYou: true,
+  attackOnlyNearestOpponent: true,
   restrictGroup: true,
   permanentsEnterTapped: true,
   doubleTokens: true,

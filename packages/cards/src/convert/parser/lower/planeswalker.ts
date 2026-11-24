@@ -306,12 +306,43 @@ const EXILE_TOP_THAT_MANY: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Choose left or right. Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent." (Teyo,
+ * Geometric Tactician; CR 508.1a, 611.2a): the engine's `chooseOne` of the two directions, each the continuous restriction `attackOnlyNearestOpponent`.
+ */
+const CHOOSE_DIRECTION_ATTACK_NEAREST: Lowering<IrClause, Effects> = {
+  head: 'chooseDirectionAttackNearest',
+  id: 'lower.choose-direction-attack-nearest',
+  needs: ['effect:chooseOne', 'effect:attackOnlyNearestOpponent'],
+  lower(clause) {
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'chooseOne',
+          options: (['left', 'right'] as const).map((direction) => ({
+            label: direction === 'left' ? 'Left' : 'Right',
+            effect: {
+              kind: 'attackOnlyNearestOpponent' as const,
+              direction,
+              duration: 'untilYourNextTurn' as const,
+            },
+          })),
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
   'effect:castCard',
+  'effect:chooseOne',
+  'effect:attackOnlyNearestOpponent',
   'effect:chooseObjects',
   'effect:removeCounters',
   'effect:exileTop',
@@ -330,6 +361,7 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DEAL_DAMAGE_FROM_EACH,
   MAY_CAST_KIND_FROM_MOVED_FREE,
   CAST_MOVED_NOW,
+  CHOOSE_DIRECTION_ATTACK_NEAREST,
   REMOVE_COUNTER_FROM_EACH_CHOSEN,
   EXILE_TOP_THAT_MANY,
   SET_LIFE_TOTAL,

@@ -2613,6 +2613,14 @@ export type ContinuousChange =
    * "Until your next turn, creatures can't attack you" (`creaturesCantAttackYou`, CR 508.1a, 611.2c): no layer and no fixed set (`objects` is empty): read where attackers are declared
    * (`rules/attack-bans.ts`), for each creature `filter` matches then, with `controller` as "you": none of them may be declared attacking `controller` as a player.
    */
+  /**
+   * "Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent" (`attackOnlyNearestOpponent`,
+   * Teyo, Geometric Tactician): no layer and no fixed set (`objects` is empty): read where attackers are declared (`rules/attack-bans.ts`), for every creature.
+   */
+  | {
+      readonly kind: 'attackOnlyNearest';
+      readonly direction: 'left' | 'right';
+    }
   | {
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;

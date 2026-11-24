@@ -8180,6 +8180,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.awayFromYou`, 'awayFromYou is true when present');
       }
       break;
+    case 'attackOnlyNearestOpponent':
+      // CR 508.1a, 611.2a (Teyo, Geometric Tactician): a direction and the one duration.
+      if (e.direction !== 'left' && e.direction !== 'right') {
+        issue(out, `${path}.direction`, 'the direction is left or right');
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'attackOnlyNearestOpponent lasts until your next turn');
+      }
+      break;
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2c: a group restriction read when attackers are declared: a filter of creatures, as for `requireAttack`.
       checkFilter(e.creatures, `${path}.creatures`, out);
