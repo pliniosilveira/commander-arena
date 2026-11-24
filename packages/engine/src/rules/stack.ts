@@ -399,9 +399,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 [head.id]:
                   head.asVoter === undefined || head.asVoter.first
                     ? head.chosen
-                    : [
-                        ...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen]),
-                      ],
+                    : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],
               },
             }
           : {}),

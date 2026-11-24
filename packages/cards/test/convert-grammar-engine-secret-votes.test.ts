@@ -76,7 +76,12 @@ const LANDS5 = ['Forest', 'Island', 'Plains', 'Plains', 'Plains'];
 
 describe('Círdan the Shipwright: "each player secretly votes for a player"', () => {
   test('three seats: each player draws for each vote they received, and a player with none may put a permanent card from their hand onto the battlefield', () => {
-    const g = table(3, [CIRDAN], { hand: [CIRDAN.name], board: LANDS5 }, { 2: { hand: ['Forest'] } });
+    const g = table(
+      3,
+      [CIRDAN],
+      { hand: [CIRDAN.name], board: LANDS5 },
+      { 2: { hand: ['Forest'] } },
+    );
     g.act(0).cast(CIRDAN.name, { pay: true });
     g.passAll();
     g.passAll();
@@ -113,7 +118,9 @@ describe('Círdan the Shipwright: "each player secretly votes for a player"', ()
     g.act(0).cast(CIRDAN.name, { pay: true });
     g.passAll();
     g.passAll();
-    [1, 1, 0, 1].forEach((target, seat) => g.act(seat).chooseOption(`seat:${target}`));
+    [1, 1, 0, 1].forEach((target, seat) => {
+      g.act(seat).chooseOption(`seat:${target}`);
+    });
     g.expect.pending('chooseCards', 2);
     g.act(2).chooseCards('Forest');
     g.expect.pending('chooseCards', 3);
@@ -125,7 +132,7 @@ describe('Círdan the Shipwright: "each player secretly votes for a player"', ()
 });
 
 describe('Trap the Trespassers: "each player secretly votes for a creature you don\'t control"', () => {
-  test('three seats: the creature gets a stun counter for each vote and is tapped; the controller\'s own creature is not offered', () => {
+  test("three seats: the creature gets a stun counter for each vote and is tapped; the controller's own creature is not offered", () => {
     const g = table(
       3,
       [TRAP],
@@ -140,7 +147,9 @@ describe('Trap the Trespassers: "each player secretly votes for a creature you d
     expect(d.options).toHaveLength(2);
     expect(d.vote?.choices?.map((c) => (c.kind === 'object' ? c.name : ''))).toEqual([ELF, ELF]);
     const [a, b] = d.options as [string, string];
-    [a, a, b].forEach((o, seat) => g.act(seat).chooseOption(o));
+    [a, a, b].forEach((o, seat) => {
+      g.act(seat).chooseOption(o);
+    });
     const stun = (o: string) =>
       Object.values(g.state.objects).find((x) => x.id === o.replace('object:', ''));
     expect(stun(a)?.counters.stun).toBe(2);
@@ -162,7 +171,9 @@ describe('Trap the Trespassers: "each player secretly votes for a creature you d
     const d = g.state.pending;
     if (d?.kind !== 'chooseOption' || d.purpose !== 'vote') throw new Error('not a vote');
     const [a] = d.options as [string, string, string];
-    [0, 1, 2, 3].forEach((seat) => g.act(seat).chooseOption(a));
+    [0, 1, 2, 3].forEach((seat) => {
+      g.act(seat).chooseOption(a);
+    });
     const counters = Object.values(g.state.objects)
       .filter((o) => o.counters.stun !== undefined)
       .map((o) => o.counters.stun);
@@ -182,7 +193,9 @@ describe('Elrond of the White Council: "each player secretly votes for fellowshi
     g.act(0).cast(ELROND.name, { pay: true });
     g.passAll();
     g.passAll();
-    ['aid', 'fellowship', 'fellowship'].forEach((v, seat) => g.act(seat).chooseOption(v));
+    ['aid', 'fellowship', 'fellowship'].forEach((v, seat) => {
+      g.act(seat).chooseOption(v);
+    });
     g.expect.pending('choosePermanent', 1);
     g.act(1).choosePermanents(ELF);
     g.expect.pending('choosePermanent', 2);
@@ -214,7 +227,9 @@ describe('Erestor of the Council and Model of Unity: "whenever players finish vo
     if (d?.kind !== 'chooseOption' || d.purpose !== 'vote') throw new Error('not a vote');
     const [only] = d.options as [string];
     // Everybody votes for the one creature: every opponent voted for a choice the controller voted for.
-    [0, 1, 2].forEach((seat) => g.act(seat).chooseOption(only));
+    [0, 1, 2].forEach((seat) => {
+      g.act(seat).chooseOption(only);
+    });
     // The Trap has resolved; both abilities wait to be ordered (CR 603.3b), then go on the stack and resolve.
     g.expect.pending('orderTriggers', 0);
     g.act(0).orderTriggers(0, 1);

@@ -14,6 +14,7 @@ import type {
 } from '../ast/types';
 import type { CardType, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
+import type { VoteCast } from '../state/decisions';
 import {
   getObject,
   getSeat,
@@ -22,7 +23,6 @@ import {
   playerToRightOf,
   seatsInOrder,
 } from '../state/ops';
-import type { VoteCast } from '../state/decisions';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';

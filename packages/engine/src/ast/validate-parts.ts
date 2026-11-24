@@ -1568,9 +1568,14 @@ export function checkRef(
       break;
     case 'votedObjects':
       // CR 701.38a, 701.38b (Trap the Trespassers): the permanents with votes, after a vote for permanents (or in the ability a vote triggered).
-      if (expect === 'player') issue(out, path, "'votedObjects' is a set of permanents, not a player");
+      if (expect === 'player')
+        issue(out, path, "'votedObjects' is a set of permanents, not a player");
       else if (scope.voteChoices !== 'objects' && scope.voteTrigger !== true) {
-        issue(out, path, "'votedObjects' needs a vote for permanents before it in the same sequence");
+        issue(
+          out,
+          path,
+          "'votedObjects' needs a vote for permanents before it in the same sequence",
+        );
       }
       break;
     case 'ringBearer':
@@ -2790,7 +2795,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'votesForObject':
       // CR 701.38a, 701.38b (Trap the Trespassers): the votes for one permanent, in a vote for permanents earlier in the sequence or the vote that triggered the ability.
       if (scope.voteChoices !== 'objects' && scope.voteTrigger !== true) {
-        issue(out, path, 'votesForObject needs a vote for permanents before it in the same sequence');
+        issue(
+          out,
+          path,
+          'votesForObject needs a vote for permanents before it in the same sequence',
+        );
       }
       checkAmountObject(a.of, `${path}.of`, scope, out);
       break;
@@ -8431,7 +8440,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (choices?.kind === 'objects') {
         checkFilter(choices.filter, `${path}.choices.filter`, out, scope);
         if (choices.filter.zone !== undefined && choices.filter.zone !== 'battlefield') {
-          issue(out, `${path}.choices.filter.zone`, 'a vote for permanents is among the battlefield');
+          issue(
+            out,
+            `${path}.choices.filter.zone`,
+            'a vote for permanents is among the battlefield',
+          );
         }
       } else if (choices?.kind !== 'players') {
         issue(out, `${path}.choices`, 'a vote is for players or for permanents a filter names');

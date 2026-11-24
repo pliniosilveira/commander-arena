@@ -303,10 +303,15 @@ describe('"each player secretly votes for a player" (a vote for players, secret)
   });
 
   test('four seats: two players who received no votes are each offered the put, in turn order', () => {
-    const g = table(4, [BALLOT.name], ['Island'], { 2: { hand: ['Forest'] }, 3: { hand: ['Swamp'] } });
+    const g = table(4, [BALLOT.name], ['Island'], {
+      2: { hand: ['Forest'] },
+      3: { hand: ['Swamp'] },
+    });
     g.act(0).cast(BALLOT.name, { pay: true });
     g.passAll();
-    [1, 1, 0, 1].forEach((target, seat) => g.act(seat).chooseOption(`seat:${target}`));
+    [1, 1, 0, 1].forEach((target, seat) => {
+      g.act(seat).chooseOption(`seat:${target}`);
+    });
     g.expect.pending('chooseCards', 2);
     g.act(2).chooseCards('Forest');
     g.expect.pending('chooseCards', 3);
@@ -349,7 +354,7 @@ describe('"each player secretly votes for a creature you don\'t control" (a vote
     if (d?.kind !== 'chooseOption' || d.purpose !== 'vote') throw new Error('not a vote');
     expect(d.options).toHaveLength(1);
     expect(d.vote?.choices).toEqual([
-      { kind: 'object', object: expect.any(String), name: BEAR.name },
+      { kind: 'object', object: expect.any(String), name: BEAR.name, controller: 1 },
     ]);
     const only = d.options[0] as string;
     for (const seat of [0, 1, 2]) g.act(seat).chooseOption(only);
@@ -369,7 +374,9 @@ describe('"each player secretly votes for a creature you don\'t control" (a vote
     const d = g.state.pending;
     if (d?.kind !== 'chooseOption' || d.purpose !== 'vote') throw new Error('not a vote');
     const [a, b] = d.options as [string, string];
-    [a, a, b, a].forEach((o, seat) => g.act(seat).chooseOption(o));
+    [a, a, b, a].forEach((o, seat) => {
+      g.act(seat).chooseOption(o);
+    });
     const counters = (o: string) =>
       Object.values(g.state.objects).find((x) => x.id === o.replace('object:', ''))?.counters.stun;
     expect(counters(a)).toBe(3);
@@ -399,7 +406,9 @@ describe('"For each fellowship vote, the voter chooses a creature they control" 
     g.act(0).cast(ELROND.name, { pay: true });
     g.passAll();
     g.passAll();
-    votes.forEach((v, seat) => g.act(seat).chooseOption(v));
+    votes.forEach((v, seat) => {
+      g.act(seat).chooseOption(v);
+    });
     return g;
   };
 
@@ -454,7 +463,9 @@ describe('"Whenever players finish voting" (Erestor of the Council, Model of Uni
     g.act(0).cast(BALLOT.name, { pay: true });
     g.passAll();
     const mark = g.mark();
-    votes.forEach((target, seat) => g.act(seat).chooseOption(`seat:${target}`));
+    votes.forEach((target, seat) => {
+      g.act(seat).chooseOption(`seat:${target}`);
+    });
     return { g, mark };
   };
 

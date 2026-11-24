@@ -70,7 +70,7 @@ describe('what the votes came to (Círdan the Shipwright, Trap the Trespassers)'
     const spell = readAll(
       'Each player secretly votes for a player, then those votes are revealed. Each player draws a card for each vote they received. Each player who received no votes may put a permanent card from their hand onto the battlefield.',
     ).spell;
-    const effects = spell?.effect.kind === 'sequence' ? spell.effect.effects : [];
+    const effects = spell?.effect?.kind === 'sequence' ? spell.effect.effects : [];
     expect(effects).toHaveLength(3);
     expect(effects[1]).toEqual({
       kind: 'forEachPlayer',
@@ -89,7 +89,7 @@ describe('what the votes came to (Círdan the Shipwright, Trap the Trespassers)'
     const spell = readAll(
       "Each player secretly votes for a creature you don't control, then those votes are revealed. For each creature with one or more votes, put that many stun counters on it, then tap it.",
     ).spell;
-    const effects = spell?.effect.kind === 'sequence' ? spell.effect.effects : [];
+    const effects = spell?.effect?.kind === 'sequence' ? spell.effect.effects : [];
     expect(effects.slice(1)).toEqual([
       {
         kind: 'addCounters',
@@ -106,7 +106,9 @@ describe('what the votes came to (Círdan the Shipwright, Trap the Trespassers)'
     NOT_READ(
       'Each player who received no votes may put a creature card from their hand onto the battlefield.',
     );
-    NOT_READ('For each creature with one or more votes, put that many +1/+1 counters on it, then tap it.');
+    NOT_READ(
+      'For each creature with one or more votes, put that many +1/+1 counters on it, then tap it.',
+    );
   });
 });
 
@@ -115,7 +117,7 @@ describe('Elrond of the White Council: the voters choose, the creatures change h
     'Each player secretly votes for fellowship or aid, then those votes are revealed. For each fellowship vote, the voter chooses a creature they control. You gain control of each creature chosen this way, and they gain "~ can\'t attack its owner." Then for each aid vote, put a +1/+1 counter on each creature you control.';
   test('the nodes', () => {
     const spell = readAll(text).spell;
-    const effects = spell?.effect.kind === 'sequence' ? spell.effect.effects : [];
+    const effects = spell?.effect?.kind === 'sequence' ? spell.effect.effects : [];
     expect(effects).toEqual([
       { kind: 'vote', options: ['fellowship', 'aid'], startingWith: 'you', secret: true },
       {
@@ -152,9 +154,7 @@ describe('Elrond of the White Council: the voters choose, the creatures change h
     NOT_READ(
       'Each player secretly votes for fellowship or aid, then those votes are revealed. For each fellowship vote, you choose a creature you control.',
     );
-    NOT_READ(
-      'You gain control of each creature chosen this way, and they gain "~ can\'t block."',
-    );
+    NOT_READ('You gain control of each creature chosen this way, and they gain "~ can\'t block."');
   });
 });
 

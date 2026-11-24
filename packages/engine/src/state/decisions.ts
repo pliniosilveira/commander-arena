@@ -1102,7 +1102,13 @@ export interface VoteQuestion {
 /** One choice of a vote for players or permanents (CR 701.38b): a player, or a permanent with the name it has now. */
 export type VoteChoice =
   | { readonly kind: 'player'; readonly seat: SeatId }
-  | { readonly kind: 'object'; readonly object: ObjectId; readonly name: string };
+  | {
+      readonly kind: 'object';
+      readonly object: ObjectId;
+      readonly name: string;
+      /** Who controls it now, so two permanents with one name can be told apart. */
+      readonly controller: SeatId;
+    };
 
 /** The question of a `'replacement'` choice: the damage event as it is now and the effects that can be applied first (CR 616.1, D-191). */
 export interface DamageReplacementQuestion {

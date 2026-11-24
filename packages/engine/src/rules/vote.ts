@@ -10,12 +10,13 @@
  */
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId } from '../ids';
-import { objectsInZone, seatsInOrder } from '../state/ops';
+import { getObject, objectsInZone, seatsInOrder } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
-import { sourceInfo } from './source-info';
-import { objectOption, seatOption, tallyCast } from './vote-options';
+import { controllerOf } from './control';
 import { matchesFilter } from './select';
+import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
+import { objectOption, seatOption, tallyCast } from './vote-options';
 
 type VoteInstruction = Extract<Instruction, { kind: 'vote' }>;
 
@@ -79,6 +80,7 @@ function choicesOf(
       kind: 'object' as const,
       object,
       name: sourceInfo(state, object)?.name ?? '',
+      controller: controllerOf(state, getObject(state, object)),
     })),
   };
 }

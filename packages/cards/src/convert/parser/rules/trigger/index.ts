@@ -35,7 +35,6 @@ import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CAST_WHILE_TRIGGER_RULES } from './cast-while';
 import { CLASS_TRIGGER_RULES } from './class';
 import { COIN_FLIP_TRIGGER_RULES } from './coin-flip';
-import { VOTING_TRIGGER_RULES } from './voting';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DAMAGE_BATCH_TRIGGER_RULES } from './damage-batch';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
@@ -80,6 +79,7 @@ import {
 import { TROYAN2_TRIGGER_RULES } from './troyan2';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
+import { VOTING_TRIGGER_RULES } from './voting';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =

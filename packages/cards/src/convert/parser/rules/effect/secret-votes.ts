@@ -5,14 +5,7 @@
  * `voteFor`, `vote` with `secret`, and the readers of the vote record (`lower/secret-votes.ts`). The votes of a card that says "starting with you" are `effect.vote`.
  */
 import { choice, fail, literal, map, optional, pattern, sequence } from '../../combinators';
-import type {
-  IrAmount,
-  IrChoiceArg,
-  IrNameArg,
-  IrNoun,
-  IrZoneSpec,
-  Span,
-} from '../../ir/types';
+import type { IrAmount, IrChoiceArg, IrNameArg, IrNoun, IrZoneSpec, Span } from '../../ir/types';
 import { PERMANENT_CARD_TYPES } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { VOTE_OPTION } from '../vote-words';
@@ -70,8 +63,8 @@ export const EFFECT_SECRET_VOTE = defineRule<Clauses>({
       literal('each player secretly votes for '),
       spanned(
         choice(
-          pattern(new RegExp(`a player(?= ?,)`, 'u')),
-          pattern(new RegExp(`a creature you don['’]t control(?= ?,)`, 'u')),
+          pattern(/a player(?= ?,)/u),
+          pattern(/a creature you don['’]t control(?= ?,)/u),
           pattern(OPTION_LIST),
         ),
       ),
@@ -245,11 +238,7 @@ export const EFFECT_VOTER_CHOOSES_PER_VOTE = defineRule<Clauses>({
   id: 'effect.voter-chooses-per-vote',
   family: 'effect',
   leading: ['for'],
-  cites: [
-    'CR 701.38a (Vote)',
-    'CR 701.38b (Vote)',
-    'CR 608.2d (Resolving Spells and Abilities)',
-  ],
+  cites: ['CR 701.38a (Vote)', 'CR 701.38b (Vote)', 'CR 608.2d (Resolving Spells and Abilities)'],
   examples: [
     'for each fellowship vote, the voter chooses a creature they control',
     'For each Redhorn Pass vote, the voter chooses a creature they control',
@@ -322,10 +311,7 @@ export const EFFECT_GAIN_CONTROL_CHOSEN_CANT_ATTACK_OWNER = defineRule<Clauses>(
   parse: single(
     'effect.gain-control-chosen-cant-attack-owner',
     pattern(
-      new RegExp(
-        `you gain control of each creature chosen this way, and they gain ["“](?:This creature|~) can['’]t attack its owner\\.["”]`,
-        'iu',
-      ),
+      /you gain control of each creature chosen this way, and they gain ["“](?:This creature|~) can['’]t attack its owner\.["”]/iu,
     ),
     () => ({ verb: 'gainControlChosenCantAttackOwner', args: {} }),
   ),
@@ -340,11 +326,7 @@ export const EFFECT_THEN_FOR_EACH_VOTE_COUNTERS = defineRule<Clauses>({
   id: 'effect.then-for-each-vote-counters',
   family: 'effect',
   leading: ['then', 'for'],
-  cites: [
-    'CR 701.38a (Vote)',
-    'CR 608.2c (Resolving Spells and Abilities)',
-    'CR 122.6 (Counters)',
-  ],
+  cites: ['CR 701.38a (Vote)', 'CR 608.2c (Resolving Spells and Abilities)', 'CR 122.6 (Counters)'],
   examples: [
     'then for each aid vote, put a +1/+1 counter on each creature you control',
     'for each aid vote, put a +1/+1 counter on each creature you control',
@@ -441,7 +423,7 @@ export const EFFECT_SCRY_OPPONENTS_WHO_VOTED_DIFFERENTLY = defineRule<Clauses>({
   ],
   rejects: [
     'you scry X, where X is the number of opponents who voted for a choice you voted for',
-    'you scry 2, where X is the number of opponents who voted for a choice you didn\'t vote for',
+    "you scry 2, where X is the number of opponents who voted for a choice you didn't vote for",
     "you scry X, where X is the number of players who voted for a choice you didn't vote for",
     "you scry X, where X is the number of opponents who voted for a choice you didn't vote for and",
     "scry X, where X is the number of opponents who voted for a choice you didn't vote for",
