@@ -135,6 +135,7 @@ import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { runMyriad } from './myriad';
 import { nextMainStep } from './next-main';
+import { runSpellEntersWithCounters } from './spell-enters-counters';
 import { runNextSpellModifier } from './next-spell';
 import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
@@ -2296,6 +2297,9 @@ function runEffect(
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);
+    case 'spellEntersWithCounters':
+      // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
+      return runSpellEntersWithCounters(state, effect, ctx);
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
       return runNextSpellPayLife(state, res);

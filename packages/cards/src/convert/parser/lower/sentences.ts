@@ -2583,7 +2583,9 @@ export function lowerDelayedCast(
   if (!inner.ok) return inner;
   const effect = oneEffect(inner.value);
   const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
-  const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
+  const onlyOwn = inner.value.every(
+    (e) => e.kind === 'draw' || e.kind === 'gainLife' || e.kind === 'spellEntersWithCounters',
+  );
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): a choice of a permanent of the controller's, and a token that is a copy of the one chosen.
   const [choice, copy, ...rest] = inner.value;
   const copiesChosen =

@@ -3471,6 +3471,12 @@ export type Effect =
       readonly repeat?: true;
     }
   /**
+   * "That creature enters with two additional +1/+1 counters on it" (Yuna, Grand Summoner, CR 614.1c, 122.6, 603.7): only in the effect of a `delayedCast` whose filter names creature spells: the spell
+   * that was cast (the `triggerSubject`) remembers that the permanent it becomes enters with `count` counters of the kind `counter` on it, with those it already enters with. Does nothing when
+   * the spell has left the stack as the ability resolves.
+   */
+  | { readonly kind: 'spellEntersWithCounters'; readonly counter: string; readonly count: number }
+  /**
    * CR 702.62a (Suspend, D-128): "remove a time counter from it", where "it" is the source: a card in exile that is
    * suspended (it has a time counter). Does nothing if the source is no longer that card in exile (CR 603.4: the
    * intervening "if this card is suspended" is checked again as the ability resolves). Only the effect of the

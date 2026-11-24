@@ -773,6 +773,7 @@ describe('unmatched abilities', () => {
       'effect.adapt',
       'effect.next-spell-modifier',
       'effect.next-spell-pay-life',
+      'effect.spell-enters-with-counters',
       'effect.put-milled-into-hand',
       'effect.pay-any-number-of-times',
       'effect.exile-up-to-that-many-and-copy',

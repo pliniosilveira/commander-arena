@@ -519,6 +519,11 @@ export interface StackData {
    */
   readonly commanderCastCounters?: number;
   /**
+   * The counters the permanent this spell becomes enters with, from `nextSpellModifier` effects used up as the spell was cast (Yuna, Grand Summoner: "that creature enters with two additional +1/+1
+   * counters on it", CR 614.1c, 122.6). Absent when none.
+   */
+  readonly entersWithCounters?: Readonly<Record<string, number>>;
+  /**
    * A spell cast from the graveyard with the permission of a permanent (`playFromGraveyardOnceEachTurn`, D-232): that permanent, and what the permanent the spell becomes
    * does or has because of it (enters tapped; gains an ability). Applied as the spell enters the battlefield (`rules/zones.ts`).
    */

@@ -1,5 +1,6 @@
 import { choice, fail, literal, map, optional, pattern, sequence } from '../../combinators';
-import type { IrAmount, IrArg, IrKeywordArg, IrTypeList } from '../../ir/types';
+import type { IrAmount, IrArg, IrCounterSpec, IrKeywordArg, IrTypeList } from '../../ir/types';
+import { positiveCount } from '../amount/index';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
@@ -164,4 +165,66 @@ export const EFFECT_NEXT_SPELL_PAY_LIFE = defineRule<Clauses>({
   },
 });
 
-export const NEXT_SPELL_EFFECT_RULES = [EFFECT_NEXT_SPELL_MODIFIER, EFFECT_NEXT_SPELL_PAY_LIFE];
+const ENTERS_COUNTERS_RULE = 'effect.spell-enters-with-counters';
+
+/**
+ * `effect.spell-enters-with-counters`: "that creature enters with two additional +1/+1 counters on it", what a delayed trigger of "When you next cast a creature spell this turn, ..." does to the
+ * spell cast (Yuna, Grand Summoner, CR 614.1c, 122.6, 603.7). The engine's `spellEntersWithCounters`, the body of a `delayedCast`. Not read: "enters with" counters without "additional" (the
+ * entering of the card itself), another creature ("target creature"), a count of zero, no counters ("enters with two additional counters"), a missing "on it".
+ */
+export const EFFECT_SPELL_ENTERS_WITH_COUNTERS = defineRule<Clauses>({
+  id: ENTERS_COUNTERS_RULE,
+  family: 'effect',
+  leading: ['that'],
+  cites: ['CR 614.1c (Replacement Effects)', 'CR 122.6 (Counters)', 'CR 603.7 (Delayed Triggered Abilities)'],
+  examples: [
+    'that creature enters with two additional +1/+1 counters on it',
+    'that creature enters with an additional +1/+1 counter on it',
+  ],
+  rejects: [
+    'that creature enters with two +1/+1 counters on it',
+    'target creature enters with two additional +1/+1 counters on it',
+    'that creature enters with two additional counters on it',
+    'that creature enters with two additional +1/+1 counters',
+    'that creature enters with additional +1/+1 counters on it',
+    'that creature enters tapped',
+  ],
+  parse: (ctx, pos) => {
+    const head = literal('that creature enters with ')(ctx, pos);
+    if (!head.ok) return head;
+    const count = positiveCount(ctx, head.pos);
+    if (!count.ok) return fail(ctx, pos);
+    const counter = pattern(
+      / additional ([+-]\d+\/[+-]\d+|[a-z]+) counters? on it(?![\p{L}\p{N}])/iu,
+    )(ctx, count.pos);
+    if (!counter.ok) return fail(ctx, pos);
+    const span = { start: pos, end: counter.pos };
+    const spec: IrCounterSpec = {
+      kind: 'counterSpec',
+      name: (counter.value[1] ?? '').toLowerCase(),
+      span: { start: count.pos, end: counter.pos },
+      rule: ENTERS_COUNTERS_RULE,
+    };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          ENTERS_COUNTERS_RULE,
+          'spellEntersWithCounters',
+          {
+            counter: spec,
+            count: { kind: 'number', value: count.value, span: { start: head.pos, end: count.pos } },
+          },
+          span,
+        ),
+      ],
+      pos: counter.pos,
+    };
+  },
+});
+
+export const NEXT_SPELL_EFFECT_RULES = [
+  EFFECT_NEXT_SPELL_MODIFIER,
+  EFFECT_NEXT_SPELL_PAY_LIFE,
+  EFFECT_SPELL_ENTERS_WITH_COUNTERS,
+];

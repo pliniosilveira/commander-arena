@@ -537,6 +537,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'nextSpellModifier',
     // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b).
     'nextSpellPayLife',
+    // Yuna, Grand Summoner: "that creature enters with two additional +1/+1 counters on it" (CR 614.1c, 122.6), the body of a delayed cast trigger.
+    'spellEntersWithCounters',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -3222,6 +3224,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCastEachType: true,
   nextSpellModifier: true,
   nextSpellPayLife: true,
+  spellEntersWithCounters: true,
   revealTop: true,
   revealTopDuel: true,
   revealTopCard: true,

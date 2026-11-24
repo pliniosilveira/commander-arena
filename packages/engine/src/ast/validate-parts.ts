@@ -5473,6 +5473,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
 function isDelayedCastBody(e: Effect | undefined): boolean {
   if (e === undefined || e === null) return false;
   if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
+  // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast enters with counters.
+  if (e.kind === 'spellEntersWithCounters') return true;
   if (e.kind === 'draw') return kindOf(e.player) === 'you';
   if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
   // CR 608.2d, 707.2 (Summon: Good King Mog XII): "create a token that's a copy of a non-Saga token you control": the permanent is chosen as the ability resolves, then copied.
@@ -8666,6 +8668,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'ownerPutsOnLibrary':
       // CR 108.3 (issue 81): the permanents named are put into their owners' libraries; they are a selector of permanents.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
+    case 'spellEntersWithCounters':
+      // CR 614.1c, 122.6 (Yuna, Grand Summoner): a counter kind and a positive whole number; the effect is only the body of a delayed cast trigger (`isDelayedCastBody`).
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      if (!Number.isInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'count must be a positive whole number');
+      }
+      if (scope.triggerSubject !== 'stack') {
+        issue(out, path, 'spellEntersWithCounters names the spell a cast trigger is about');
+      }
       break;
     case 'explore':
       // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents, or the permanent a trigger is about ("it explores").
