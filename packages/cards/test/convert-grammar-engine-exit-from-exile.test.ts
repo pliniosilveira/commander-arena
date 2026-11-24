@@ -102,3 +102,43 @@ describe('"Whenever you cast a spell from exile or a land you control enters fro
     expect(g.state.seats[0]?.life).toBe(20);
   });
 });
+
+describe('"Exile the top two cards of your library. You may play cards exiled this way until the end of your next turn." (CR 701.13, 601.2, 305.1, 611.2a)', () => {
+  const wilds = parsed(
+    'SYNTHETIC Wilds Escape',
+    'Sorcery',
+    'Exile the top two cards of your library. You may play cards exiled this way until the end of your next turn.',
+    { manaCost: '{2}{G}', colors: ['G'] },
+  );
+  const build = () =>
+    scenario()
+      .define(wilds)
+      .seat(0)
+      .hand(wilds.name)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest')
+      .library('Grizzly Bears', 'Forest', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the cards are exiled and can be played this turn', () => {
+    const g = build();
+    g.act(0).cast(wilds.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile');
+    g.act(0).playLand({ name: 'Forest', zone: 'exile' });
+    g.expect.zone('Forest', 'battlefield', { seat: 0 });
+  });
+
+  test('the permission is still there in the next turn of the controller', () => {
+    const g = build();
+    g.act(0).cast(wilds.name, { pay: true });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+});
