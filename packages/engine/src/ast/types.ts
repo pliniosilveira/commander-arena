@@ -4656,6 +4656,17 @@ export type Effect =
    */
   | { readonly kind: 'rollDie'; readonly sides: number }
   /**
+   * "Each player rolls a d20. If one or more opponents had the highest result, this creature can't attack those players or planeswalkers they control this combat." (CR 706.1, 706.2,
+   * 508.1a, 506.1): every player still in the game rolls one die of `sides` sides in turn order from the active player (`dieRolled` for each); the opponents of the controller whose
+   * result is the highest of all (a tie counts) can't be attacked, nor the planeswalkers they control, by the creature of the ability until the end of combat step ends. Only `this`, in the
+   * ability of a permanent. It sets no `dieResult`.
+   */
+  | {
+      readonly kind: 'eachPlayerRollsBarHighest';
+      readonly sides: number;
+      readonly creature: { readonly kind: 'this' };
+    }
+  /**
    * One coin flip with a call made (CR 705.2: "flip a coin" for an effect that does not only care about heads or tails): the controller's coin is flipped with a draw of the seeded
    * generator of the game (SPEC 4.2), the event `coinFlipped` says the call, the result and whether they match, and the controller wins the flip when they do (CR 705.2), which "whenever you win a
    * coin flip" (`winsCoinFlip`) reads. The call is the player's: "flip a coin" is lowered to a `chooseOne` of one `coinFlip` for each call, so the player is asked as it resolves. Only

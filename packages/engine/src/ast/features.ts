@@ -363,6 +363,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    'eachPlayerRollsBarHighest',
     // CR 705.2: "flip a coin" (`coinFlip`, one for each call under a `chooseOne`) and "whenever you win a coin flip" (`winsCoinFlip`).
     'coinFlip',
     // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
@@ -3181,6 +3182,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  eachPlayerRollsBarHighest: true,
   coinFlip: true,
   clash: true,
   scry: true,
