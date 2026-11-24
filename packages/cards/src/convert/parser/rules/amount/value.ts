@@ -585,6 +585,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     CREATURE_CARDS_EXILED_THIS_WAY,
     COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
+    GREATEST_COUNT_OF_AN_OPPONENT(rule),
     AGGREGATE(rule),
     ATTACKERS_GREATEST_POWER,
     DEVOTION,
@@ -739,6 +740,43 @@ const EXTREME = (rule: string): Parser<IrAmount> => {
         span: { start: pos, end: tail.pos },
       },
       pos: tail.pos,
+    };
+  };
+};
+
+/**
+ * "the greatest number of artifacts an opponent controls" (Cavern-Hoard Dragon, CR 109.4, 608.2c): the most of a plural kind of permanent any one opponent controls, the engine's
+ * `greatestCountOfAnOpponent`. The kind is a plural type phrase with no controller of its own. Not read: "the greatest number of artifacts" alone, "your opponents control", "you control",
+ * a singular kind, "among".
+ */
+const GREATEST_COUNT_OF_AN_OPPONENT = (rule: string): Parser<IrAmount> => {
+  const phrase = sequence(literal('the greatest number of '), permanentPhrase(true, 'all'));
+  return (ctx, pos) => {
+    const r = spanned(phrase)(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter] = r.value.value;
+    // The phrase reads " an opponent controls" as the controller `opponent`; "your opponents control" is the same controller, so the words are checked.
+    if (
+      filter.controller !== 'opponent' ||
+      !/ an opponent controls$/iu.test(ctx.text.slice(pos, r.pos))
+    ) {
+      return fail(ctx, pos);
+    }
+    const { controller: _opponent, ...kind } = filter;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...kind, raw: ctx.text.slice(pos + 'the greatest number of '.length, r.pos) },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: r.value.span,
+      rule,
+    };
+    return {
+      ok: true,
+      value: { kind: 'greatestCountOfAnOpponent', of, span: r.value.span },
+      pos: r.pos,
     };
   };
 };
@@ -936,6 +974,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
     'where X is the greatest power among creatures they control',
+    // Cavern-Hoard Dragon (CR 109.4): the most of a kind of permanent one opponent controls.
+    'where X is the greatest number of artifacts an opponent controls',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
     // Elminster (CR 701.22): the cards looked at by the scry that caused the trigger.
@@ -950,6 +990,10 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the results',
     'where X is the number of colors among permanents',
     'where X is the number of colors among permanents your opponents control',
+    'where X is the greatest number of artifacts your opponents control',
+    'where X is the greatest number of artifacts you control',
+    'where X is the greatest number of artifact an opponent controls',
+    'where X is the greatest number of artifacts',
     'where X is the result of',
     'where X is',
     'where X is 3',

@@ -61,6 +61,8 @@ export interface FilterParts {
   readonly equipped: boolean;
   /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
   readonly commander: boolean;
+  /** "noncommander" before a type (CR 903.3): not a card a player designated as a commander. Only `permanentPhrase` reads it. */
+  readonly notCommander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
   readonly colorCount: IrComparison | undefined;
 }
@@ -87,6 +89,7 @@ export const NO_PARTS: FilterParts = {
   goaded: false,
   equipped: false,
   commander: false,
+  notCommander: false,
   colorCount: undefined,
 };
 
@@ -159,6 +162,12 @@ export const MODIFIER: Parser<Modifier> = choice(
 
 /** "commander creature" (D-443, CR 903.3): a modifier of the permanent phrases only, not of the spell and card phrases that share `MODIFIER` (a commander spell is another reading). */
 const COMMANDER_MODIFIER: Parser<Modifier> = word('commander', (p) => ({ ...p, commander: true }));
+
+/** "noncommander creature" (CR 903.3): a modifier of the permanent phrases only, like `commander`. */
+const NONCOMMANDER_MODIFIER: Parser<Modifier> = word('noncommander', (p) => ({
+  ...p,
+  notCommander: true,
+}));
 
 export const PERMANENT_TYPES = 'artifact|battle|creature|enchantment|land|planeswalker';
 /** The permanent types in the order of "permanent card" (stage P33): a card of any of them is a permanent card (CR 110.1). */
@@ -252,6 +261,7 @@ export function toFilter(
     ...(p.goaded ? { goaded: true as const } : {}),
     ...(p.equipped ? { equipped: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),
+    ...(p.notCommander ? { notCommander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
   };
@@ -643,7 +653,7 @@ export function permanentPhrase(
         )
       : map(literal(''), () => false);
     const r = sequence(
-      many(choice(MODIFIER, COMMANDER_MODIFIER)),
+      many(choice(MODIFIER, COMMANDER_MODIFIER, NONCOMMANDER_MODIFIER)),
       nouns,
       tokenWord,
       tail,

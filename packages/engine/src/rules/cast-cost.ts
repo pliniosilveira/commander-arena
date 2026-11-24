@@ -565,8 +565,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ? 0
             : (graveyardPlayPermission(state, seat, card, false)?.exileOthers ?? 0);
         })());
+  // CR 702.34a, 107.3a, 601.2b: "Flashback—..., Exile X cards from your graveyard" exiles the X announced, besides what an escape cost or a permission asks.
   const exile =
-    alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile;
+    (alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile) +
+    (perX.exile ?? 0) * x;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };

@@ -140,14 +140,14 @@ function lowerEquipCosts(
   };
 }
 
-/** The flashback cost that sacrifices permanents: each of mana, life and one sacrifice at most once, as the engine's `checkFlashbackCost` takes them. */
+/** The flashback cost that sacrifices permanents or exiles X cards of the graveyard: each of mana, life, one sacrifice and one exile at most once, as the engine's `checkFlashbackCost` takes them. */
 function lowerFlashbackSacrifice(
   ability: IrKeyword,
   written: readonly IrCost[],
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (
-    kinds.some((k) => k !== 'mana' && k !== 'payLife' && k !== 'sacrifice') ||
+    kinds.some((k) => k !== 'mana' && k !== 'payLife' && k !== 'sacrifice' && k !== 'exile') ||
     new Set(kinds).size !== kinds.length
   ) {
     return failure(ability);
@@ -226,7 +226,7 @@ function lowerCostedKeyword(
   // "Flashback—Sacrifice three creatures." (Dread Return, CR 702.34a, 118.9, 701.21a): one sacrifice of the caster's permanents, alone or with a mana cost or a payment of life.
   if (
     name === 'flashback' &&
-    (ability.cost ?? []).some((c) => c.kind === 'sacrifice') &&
+    (ability.cost ?? []).some((c) => c.kind === 'sacrifice' || c.kind === 'exile') &&
     ability.params.length === 0
   ) {
     return lowerFlashbackSacrifice(ability, ability.cost ?? []);
@@ -1052,6 +1052,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (blocked !== null) return blocked;
     return built({ kind: 'drawInstead', count: amount.value, exceptFirstInDrawStep: true });
   }
+  if (event.verb === 'drawRedirect') {
+    // "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card." (Notion Thief, CR
+    // 614.1a, 614.11, 504.1): the engine's `drawRedirect` of the permanent.
+    if (event.condition !== undefined) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:drawRedirect']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'drawRedirect', exceptFirstInDrawStep: true });
+  }
   if (event.verb === 'tokensInstead' && event.args.double !== undefined) {
     // "If one or more tokens would be created under your control, twice that many of those tokens are created instead." (Hashaton deck group 3, D-378, CR 614.1a,
     // 614.5): the engine's `tokensInstead` in `double` mode of the permanent, which names the tokens and makes no token of its own.
@@ -1421,5 +1429,6 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:damageBonus',
   'replacement:damageDouble',
   'replacement:drawInstead',
+  'replacement:drawRedirect',
   'replacement:umbraArmor',
 ];

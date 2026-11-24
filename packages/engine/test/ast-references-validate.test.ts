@@ -103,6 +103,8 @@ describe('amounts that read an object', () => {
       'commanderManaValue',
       'commanderCasts',
       'lifeTotalOf',
+      'damageDealtToThisTurn',
+      'greatestCountOfAnOpponent',
       'playerCount',
       // D-179: "for each color among permanents you control".
       'colorsAmong',

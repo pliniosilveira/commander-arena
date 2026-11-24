@@ -20,6 +20,7 @@ import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
 import { PAY_ENERGY_COST_RULES } from './pay-energy';
+import { PUT_LINKED_EXILE_COST_RULES } from './put-linked-exile';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -939,6 +940,7 @@ export const COST_RULES = [
   ...HOFRI_COST_RULES,
   // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
   ...EXTRA_TURN_COST_RULES,
+  ...PUT_LINKED_EXILE_COST_RULES,
   // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,

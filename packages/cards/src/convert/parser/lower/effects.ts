@@ -949,6 +949,36 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       value: limit === undefined ? lowered.value : { ...lowered.value, manaValueAtMost: limit },
     };
     const optional = may?.kind === 'flag' && may.value;
+    // Extract from Darkness (CR 404.1, 608.2d): "you put a creature card from a graveyard onto the battlefield under your control": the cards of every graveyard are the candidates
+    // (`fromAnyGraveyard`; the validator asks for `controller: 'you'`, which the engine does not read for it).
+    const everyGraveyard = arg(clause, 'everyGraveyard');
+    if (everyGraveyard !== undefined) {
+      if (
+        everyGraveyard.kind !== 'flag' ||
+        !everyGraveyard.value ||
+        optional ||
+        limit !== undefined ||
+        arg(clause, 'alsoGraveyard') !== undefined ||
+        arg(clause, 'count') !== undefined ||
+        to.attacking === true ||
+        to.tapped === true ||
+        filter.value.zone !== 'graveyard' ||
+        filter.value.controller !== undefined
+      ) {
+        return failure(clause);
+      }
+      const move: Effect = {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: { ...filter.value, controller: 'you' },
+          fromAnyGraveyard: true,
+        },
+        to: 'battlefield',
+      };
+      ctx.searched = named.ref ?? null;
+      return { ok: true, value: [move], rule: clause.rule };
+    }
     // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
     const both = arg(clause, 'alsoGraveyard');
     // Issue 103 (CR 701.38b, 608.2c): "You may put a permanent card from your hand onto the battlefield for each free vote": up to that many cards, chosen as it resolves.
@@ -1115,9 +1145,12 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
     case 'anyCombination':
-      return spec.what.distinct === true
-        ? { kind: 'anyCombination', count: spec.what.count, distinct: true }
-        : { kind: 'anyCombination', count: spec.what.count };
+      return {
+        kind: 'anyCombination',
+        count: spec.what.count,
+        ...(spec.what.distinct === true ? { distinct: true as const } : {}),
+        ...(spec.what.colors === undefined ? {} : { colors: spec.what.colors }),
+      };
     case 'combination':
       // The engine stores a combination in the order W, U, B, R, G, C (CR 106.4: the pool does not
       // order mana), so {R}{W} is `['W', 'R']`.
@@ -1277,7 +1310,7 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
           {
             kind: 'chooseOne',
             times: spec.what.count,
-            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+            options: (spec.what.colors ?? (['W', 'U', 'B', 'R', 'G'] as const)).map((color) => ({
               label: `{${color}}`,
               effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
             })),
@@ -2113,7 +2146,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
-      { triggerSubject: true, moved: true, token: true, eachMention: eachGroup !== undefined },
+      { triggerSubject: true, moved: true, token: true, eachMention: true },
     );
   },
 };

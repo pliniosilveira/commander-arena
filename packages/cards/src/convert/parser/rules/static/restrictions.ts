@@ -40,6 +40,8 @@ export const STATIC_SELF = defineRule<IrStatic>({
     "~ can't block and can't be blocked.",
     "~ attacks each combat if able and can't block.",
     "~ can't be countered and can't block.",
+    // Hosts of Mordor deck (CR 509.1b): like menace, with three blockers.
+    "~ can't be blocked except by three or more creatures.",
     "~ can't be blocked by more than one creature.",
     "~ can't block and can't be blocked by more than one creature.",
     "~ can't be blocked by creatures with power 2 or less.",
@@ -68,6 +70,8 @@ export const STATIC_SELF = defineRule<IrStatic>({
     "~ can't block",
     "~ can't blocks.",
     "~ can't be blocked except by creatures with flying.",
+    "~ can't be blocked except by two or more creatures.",
+    "~ can't be blocked except by three creatures.",
     "~ can't be blocked by creatures with greater toughness.",
     "~ can't be blocked by creatures with greater power or toughness.",
     "~ can't block unless you control a Plains.",

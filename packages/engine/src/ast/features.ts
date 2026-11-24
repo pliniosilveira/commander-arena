@@ -140,6 +140,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRider',
     // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
     'manaDistinctColors',
+    // "Add two mana in any combination of {U}, {B}, and/or {R}." (`anyCombination` with `colors`, CR 106.1b).
+    'manaColorSubset',
     // D-328: "When that mana is spent to cast a red instant or sorcery spell, copy that spell" (`spentRider` with `copySpell`, a color of the spell).
     'manaSpentRiderCopy',
     // Issue 241: "If you spend this mana to cast your commander, it enters with ... additional +1/+1 counters" (`spentRider.grants.countersCommanderCasts`).
@@ -889,6 +891,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'keepOneLoyalty',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
+    // CR 614.1a, 614.11, 504.1 (Notion Thief): "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card."
+    'drawRedirect',
     // D-417 (CR 702.89a): "Umbra armor".
     'umbraArmor',
   ],
@@ -1019,6 +1023,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mill',
     // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability (not an additional cost of a spell: `additionalCostIssues` refuses it).
     'exileFromGraveyard',
+    // CR 607.2a, 118.3 (Shelob, Dread Weaver): "Put a creature card exiled with ~ into its owner's graveyard" as the cost of an activated ability.
+    'putLinkedExileInGraveyard',
     // D-200: the loyalty symbol of a loyalty ability (CR 606).
     'loyalty',
     // D-209: "{E}{E}", paid by the player an `unlessPays` asks; issue 105: and the cost of an activated or a mana ability (`activationCostIssues` refuses it in a spell).
@@ -1088,10 +1094,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
+    // Bitter Downfall: "a creature that was dealt damage this turn" (`ObjectFilter.dealtDamageThisTurn`).
+    'dealtDamageThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
     'exiledWithSource',
     // Espers to Magicite: "target creature card exiled this way" (`ObjectFilter.exiledThisWay`).
     'exiledThisWay',
+    // Grishnákh, Brash Instigator: "target creature ... with power less than or equal to the amassed Army's power" (`ObjectFilter.powerAtMostMoved`).
+    'powerAtMostMoved',
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
@@ -1286,6 +1296,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Puca's Covenant: "another target permanent card ... from your graveyard" of a trigger about a creature that died (`ObjectFilter.notTriggerCard`).
     'notTriggerCard',
     'commander',
+    // CR 903.3 (Subjugate the Hobbits): "each noncommander creature" (`ObjectFilter.notCommander`).
+    'notCommander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
     // CR 701.15b: "a goaded creature" (`ObjectFilter.goaded`).
@@ -1369,6 +1381,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
     'diedThisWay',
     'objectMatches',
+    // CR 602.2b, 701.9a (Moria Scavenger): "If the discarded card was a creature card".
+    'discardedAsCostMatches',
     'giftPromised',
     'opponentControlsAtLeast',
     // D-139: "if you control the artifact with the greatest mana value or tied for the greatest mana value".
@@ -1659,6 +1673,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
     'lifeTotalOf',
+    // "the damage dealt to target opponent this turn" (CR 120.3): the engine's `damageDealtToThisTurn`.
+    'damageDealtToThisTurn',
+    // "the greatest number of artifacts an opponent controls" (CR 109.4): the engine's `greatestCountOfAnOpponent`.
+    'greatestCountOfAnOpponent',
     // CR 102.1: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
     'playerCount',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N, and the amount of an effect: "the number of colors among permanents you control").
@@ -1847,6 +1865,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // CR 509.1b: "~ can't be blocked except by three or more creatures."
+  'cantBeBlockedExceptByThreeOrMore',
   // CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn."
   'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
@@ -1957,6 +1977,8 @@ export const ABILITY_FEATURES = [
   'manaSpentRider',
   /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
   'manaDistinctColors',
+  /** "Add two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b): `anyCombination` with `colors`, a subset of the five. */
+  'manaColorSubset',
   /** "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy" (D-328): `spentRider` with `copySpell`. */
   'manaSpentRiderCopy',
   /** Issue 241: `spentRider.grants.countersCommanderCasts`: the commander cast with the mana enters with extra +1/+1 counters. */
@@ -2155,10 +2177,14 @@ export const SELECTOR_KINDS = [
   'discardedOrFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
+  /** "A creature that was dealt damage this turn" (CR 120.3, Bitter Downfall): the engine's `ObjectFilter.dealtDamageThisTurn`. */
+  'dealtDamageThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
   'exiledWithSource',
   /** "Target creature card exiled this way" (CR 603.12, 400.7j, Espers to Magicite): the engine's `ObjectFilter.exiledThisWay`. */
   'exiledThisWay',
+  /** "With power less than or equal to the amassed Army's power" (CR 603.12, 701.47a, Grishnákh): the engine's `ObjectFilter.powerAtMostMoved`. */
+  'powerAtMostMoved',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
@@ -2392,6 +2418,8 @@ export const SELECTOR_KINDS = [
   'notTriggerCard',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
+  /** "Each noncommander creature" (CR 903.3, Subjugate the Hobbits): the engine's `ObjectFilter.notCommander`. */
+  'notCommander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
   'modified',
   /** "A goaded creature" (CR 701.15b): the engine's `ObjectFilter.goaded`. */
@@ -2466,6 +2494,8 @@ export const CONDITION_KINDS = [
   'thisMatches',
   /** "If it's a Zombie card", "if it's an Angel" (D-135): the engine's `objectMatches`. */
   'objectMatches',
+  /** "If the discarded card was a creature card" (CR 602.2b, 701.9a): the engine's `discardedAsCostMatches`. */
+  'discardedAsCostMatches',
   /** "If the gift was promised" (CR 702.174k, D-135): the engine's `giftPromised`. */
   'giftPromised',
   /** "If an opponent controls four or more nonbasic lands" (D-135): the engine's `opponentControlsAtLeast`. */
@@ -2829,6 +2859,10 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** A player's current life total at resolution (CR 119.1). */
   'lifeTotalOf',
+  /** "The damage dealt to target opponent this turn" (CR 120.3, 608.2c): the engine's `damageDealtToThisTurn`, from `TurnLog.damageTaken`. */
+  'damageDealtToThisTurn',
+  /** "The greatest number of artifacts an opponent controls" (CR 109.4, 608.2c): the engine's `greatestCountOfAnOpponent`. */
+  'greatestCountOfAnOpponent',
   /** "For each player who lost life this turn" (CR 102.1, 608.2c): the engine's `playerCount` of a player selector. */
   'playerCount',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N or an effect's amount. */
@@ -3018,6 +3052,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   manaDistinctColors: true,
+  manaColorSubset: true,
   manaSpentRiderCopy: true,
   manaSpentRiderCounters: true,
   manaSpentRiderExile: true,
@@ -3482,6 +3517,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   skipDraw: true,
   keepOneLoyalty: true,
   drawInstead: true,
+  drawRedirect: true,
   umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
@@ -3520,6 +3556,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,
+  putLinkedExileInGraveyard: true,
   removeCounters: true,
   loyalty: true,
   putCounters: true,

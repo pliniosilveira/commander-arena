@@ -1,5 +1,5 @@
 {
-  "parserVersion": 203,
+  "parserVersion": 204,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -389,6 +389,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a22638b6"
+    },
+    "05e910aa-cf84-468c-8a48-256588cbbf08": {
+      "name": "Rampaging War Mammoth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93603d58"
     },
     "060deaff-44d6-4f03-9568-bcb7add80255": {
       "name": "Drakuseth, Maw of Flames",
@@ -799,6 +807,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "02478f25"
+    },
+    "0ce47c8b-1e1f-463f-94f0-35ca00be89e6": {
+      "name": "Inferno Titan",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "250cc6db"
     },
     "0d2fa39a-9cac-4a1f-bb1e-b6162e6d5169": {
       "name": "Lazotep Quarry",
@@ -1395,6 +1411,14 @@
       "reasons": [],
       "ast": "75bbf9b2"
     },
+    "19c22e08-29b6-4b3d-bf6e-28a5add620bb": {
+      "name": "Bitter Downfall",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eba297d1"
+    },
     "19cf5798-4600-4a66-b1c7-de77bde157d0": {
       "name": "Tablet of Discovery",
       "group": "acceptance",
@@ -1635,6 +1659,14 @@
       "reasons": [],
       "ast": "129fb08a"
     },
+    "1f139012-fa71-4f5f-8c57-6847bff95678": {
+      "name": "Grishnákh, Brash Instigator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3282090e"
+    },
     "1f1ad44c-1811-40e3-976b-03f19866abd5": {
       "name": "Assemble the Entmoot",
       "group": "acceptance",
@@ -1786,6 +1818,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d1481635"
+    },
+    "222fd9fc-7af4-4269-bbb9-cd7b8ac029bd": {
+      "name": "Troll of Khazad-dûm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "243756cf"
     },
     "223fa044-d387-4884-bf4e-75f1b61c6a46": {
       "name": "Curiosity",
@@ -2074,6 +2114,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e484684d"
+    },
+    "287aae84-b098-456e-b9cb-8eac51c36360": {
+      "name": "Lidless Gaze",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "38789aad"
     },
     "288d5415-ef44-400f-ab88-7c8a4deaaf4b": {
       "name": "Call for Unity",
@@ -3825,6 +3873,14 @@
       "reasons": [],
       "ast": "a98d6e8c"
     },
+    "49e3396a-a125-4cca-b02a-4a96102bcb16": {
+      "name": "The Mouth of Sauron",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "22ff9092"
+    },
     "4a00f56e-e558-4239-bc75-fb0af7639042": {
       "name": "Peema Aether-Seer",
       "group": "acceptance",
@@ -5497,6 +5553,14 @@
       "reasons": [],
       "ast": "e867fc3e"
     },
+    "69c674c7-48a5-49c8-b0be-3f2b5c6a548c": {
+      "name": "Sauron, Lord of the Rings",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5ee0157b"
+    },
     "69fc70b8-b143-4662-ac95-e2743037239d": {
       "name": "Thriving Isle",
       "group": "acceptance",
@@ -6614,6 +6678,14 @@
       "reasons": [],
       "ast": "cf0dc266"
     },
+    "7eade76f-92e4-4d26-9eb8-d3d954845c04": {
+      "name": "Shelob, Dread Weaver",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0a7f5afc"
+    },
     "7ecfa47e-1165-46a6-884c-290b1c14d020": {
       "name": "Etched Oracle",
       "group": "acceptance",
@@ -7619,6 +7691,14 @@
       "reasons": [],
       "ast": "907586e9"
     },
+    "939e8448-013a-4aef-9a92-7c883a77a1a0": {
+      "name": "Cavern-Hoard Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f0d5ee20"
+    },
     "93cf50cf-0ecc-4d3e-abea-778c1ebacec4": {
       "name": "Massacre Wurm",
       "group": "acceptance",
@@ -8131,6 +8211,14 @@
       "reasons": [],
       "ast": "c0001f52"
     },
+    "9d834f1b-a4b5-4676-bb6d-2ffc6b3bccd2": {
+      "name": "Knollspine Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "98447448"
+    },
     "9dc61ef6-da22-42a8-b348-dfd5722deadf": {
       "name": "Town Greeter",
       "group": "acceptance",
@@ -8146,6 +8234,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fa8de13e"
+    },
+    "9df60bb7-2dd4-4d22-b814-f52145356424": {
+      "name": "Gríma, Saruman's Footman",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b1635d52"
     },
     "9e0461e7-ccc4-413b-be80-83311be46861": {
       "name": "Golden-Tail Trainer",
@@ -8563,6 +8659,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "47885dd2"
+    },
+    "a598e824-ad8e-4947-896b-70c5275b615a": {
+      "name": "Moria Scavenger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e11f30e5"
     },
     "a5b72c5d-4c73-49cd-9fc5-855856807ff2": {
       "name": "U.S.S. Stargazer, Here and There",
@@ -9165,6 +9269,14 @@
       "reasons": [],
       "ast": "32911b4a"
     },
+    "aede5485-7b8c-4e29-a3a4-9a3513dc733f": {
+      "name": "Summons of Saruman",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd2f0265"
+    },
     "af1acf07-39e2-441e-a1e0-1db535535e2e": {
       "name": "White Mage's Staff",
       "group": "acceptance",
@@ -9180,6 +9292,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b37ca0c3"
+    },
+    "af65bbf9-e328-4b8b-8caa-c6dff743867b": {
+      "name": "Too Greedily, Too Deep",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b81efaf9"
     },
     "afaef788-34d1-460b-b884-9d7ae6ddeb18": {
       "name": "Toxic Deluge",
@@ -9335,6 +9455,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bf2e0627"
+    },
+    "b3a81bb1-cbd5-41a0-8dd4-faea06593f84": {
+      "name": "Relic of Sauron",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "77946bac"
     },
     "b3b8c7d0-46b9-4519-808a-154e503a58b6": {
       "name": "Liliana's Devotee",
@@ -10121,6 +10249,14 @@
       "reasons": [],
       "ast": "e5d6128e"
     },
+    "c5f52c7f-5dba-4d4c-8acc-068732964031": {
+      "name": "Monstrosity of the Lake",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5c967586"
+    },
     "c6639b52-b51d-46e7-a83c-c4621b1cecaa": {
       "name": "Ever-Watching Threshold",
       "group": "acceptance",
@@ -10232,6 +10368,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c60de66c"
+    },
+    "c8689a83-cefa-4ef3-8ec1-58b4c64e332b": {
+      "name": "In the Darkness Bind Them",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8b908782"
     },
     "c8b143ad-43ec-4e0d-a440-e348daa31391": {
       "name": "Swiftfoot Boots",
@@ -10611,6 +10755,14 @@
       "reasons": [],
       "ast": "2cdda8aa"
     },
+    "cfa5b168-d112-4b92-ac42-8bba30f15d77": {
+      "name": "Wake the Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "27096dc5"
+    },
     "cfc9a2f9-92fa-4608-b98d-f9763c89fc40": {
       "name": "Ob Nixilis of the Black Oath",
       "group": "acceptance",
@@ -10978,6 +11130,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "704353cd"
+    },
+    "d852099f-46c6-4676-860c-20a582f733d1": {
+      "name": "Orcish Siegemaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c58f42a8"
     },
     "d8599f06-f030-4575-8497-307a4d7ec182": {
       "name": "Spiral into Solitude",
@@ -11628,6 +11788,14 @@
       "reasons": [],
       "ast": "fe9ecaed"
     },
+    "e597d8a1-3bbc-4001-b642-f4421447970f": {
+      "name": "Extract from Darkness",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fb1b8111"
+    },
     "e5e8e116-10fe-48b0-b3d8-6edb39bd5f90": {
       "name": "Alibou, Ancient Witness",
       "group": "acceptance",
@@ -11868,6 +12036,14 @@
       "reasons": [],
       "ast": "e9da4a94"
     },
+    "eb56141a-eb43-40e9-8ff1-e0ef5424f6a4": {
+      "name": "Subjugate the Hobbits",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75ed0e49"
+    },
     "eb735501-19e7-4910-aa6a-6667fff6f4e5": {
       "name": "Study Hall",
       "group": "acceptance",
@@ -11987,6 +12163,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "391f728f"
+    },
+    "edc74fb9-a368-4f73-8147-f318a32a3d06": {
+      "name": "Corsairs of Umbar",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "98e93d1e"
     },
     "edcb0248-e7c9-4df9-8dba-982048654fd2": {
       "name": "Archenemy's Charm",
@@ -12672,6 +12856,14 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
+    "f8dab16e-1d50-443e-9431-8b6f1cf61c9c": {
+      "name": "Notion Thief",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3ea3fa5d"
+    },
     "f9217532-f7cf-4436-b476-72d97a3147dc": {
       "name": "Galazeth Prismari",
       "group": "acceptance",
@@ -13004,8 +13196,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1314,
-      "total": 1333
+      "supported": 1338,
+      "total": 1357
     }
   }
 }

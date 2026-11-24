@@ -404,6 +404,8 @@ export interface IrFilter {
    * `'yours'` is "your commander", a commander its owner designated and that owner is the player who controls the ability.
    */
   readonly commander?: true | 'yours';
+  /** "noncommander creature" (Subjugate the Hobbits, CR 903.3): the object is not a card a player designated as a commander. */
+  readonly notCommander?: true;
   /** "~" as one member of a disjunction (issue 101, "attack with ~ and/or your commander", CR 508.1): the object is the source of the ability itself. */
   readonly isSelf?: true;
   /**
@@ -448,12 +450,16 @@ export interface IrFilter {
   readonly nthSpellThisTurn?: number;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /** "that was dealt damage this turn" (Bitter Downfall, CR 120.3): the permanent has been dealt damage this turn (the engine's `dealtDamageThisTurn`). */
+  readonly dealtDamageThisTurn?: true;
   /** "controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck group 7, CR 510.2): the engine's `controllerDealtCombatDamageByAtLeast`. */
   readonly controllerDealtCombatDamageBy?: { readonly atLeast: number; readonly subtype: string };
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
   readonly exiledWithSelf?: true;
   /** "target creature card exiled this way" (Espers to Magicite, CR 603.12): a card in exile that the resolution before the reflexive ability exiled (the engine's `exiledThisWay`). */
   readonly exiledThisWay?: true;
+  /** "with power less than or equal to the amassed Army's power" (Grishnákh, CR 603.12, 701.47a): the engine's `powerAtMostMoved`, read in the reflexive ability after an amass. */
+  readonly powerAtMostMoved?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
   readonly putWithSelf?: true;
   /**
@@ -639,6 +645,10 @@ export type IrAmount =
   | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
+  // "the damage dealt to target opponent this turn" (CR 120.3): all the damage dealt to the player so far this turn
+  | { readonly kind: 'damageDealtToThisTurn'; readonly of: IrNoun; readonly span: Span }
+  // "the greatest number of artifacts an opponent controls" (CR 109.4): the most of those objects any one opponent controls
+  | { readonly kind: 'greatestCountOfAnOpponent'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it
   | { readonly kind: 'votesFor'; readonly option: string; readonly span: Span }
   // "your devotion to black" (CR 700.5), "the number of colors in your commanders' color identity" (CR 903.4)
@@ -943,6 +953,8 @@ export interface IrCondition extends IrNode {
     // Stage P30 (D-135): "if it's a Zombie card", "if it's an Angel" (CR 608.2c): an object an earlier instruction of the
     // text moved or named, against a filter that says what it is (never where it is: no zone, controller or owner)
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
+    // "the discarded card was a creature card" (Moria Scavenger, CR 602.2b, 701.9a): the card the cost of the activated ability discarded, against a filter that says what it is
+    | { readonly kind: 'discardedAsCostMatches'; readonly filter: IrFilter }
     // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
     | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
@@ -1133,6 +1145,8 @@ export type IrCost = IrNode &
         readonly named?: true;
       }
     | { readonly kind: 'exile'; readonly what: IrNoun }
+    // "Put a creature card exiled with ~ into its owner's graveyard" (Shelob, Dread Weaver, CR 607.2a, 118.3): one card of the kind `what` names that the permanent exiled with its linked ability
+    | { readonly kind: 'putLinkedExile'; readonly what: IrNoun }
     | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
@@ -1198,7 +1212,13 @@ export interface IrManaSpec extends IrNode {
       }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
-    | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+    | {
+        readonly kind: 'anyCombination';
+        readonly count: number;
+        readonly distinct?: true;
+        // "two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b): each mana one of these colors
+        readonly colors?: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+      }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
     // "one mana of that color for each charge counter on ~" (CR 605.3b, 106.1b): after "Choose a color.", as many mana of it as the `times` amount of the clause
@@ -1800,6 +1820,8 @@ export type IrRestrictionKind =
   | 'cantBeCountered'
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
+  // "~ can't be blocked except by three or more creatures" (Hosts of Mordor deck, CR 509.1b): like menace, with three blockers.
+  | 'cantBeBlockedExceptByThreeOrMore'
   | 'mustBeBlocked'
   | 'mustBlock'
   // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.
@@ -2499,6 +2521,8 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'playerCount',
   'commanderManaValue',
   'commanderCasts',
+  'damageDealtToThisTurn',
+  'greatestCountOfAnOpponent',
   'half',
   'multiple',
   'minus',

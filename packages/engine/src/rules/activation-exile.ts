@@ -34,6 +34,69 @@ export function exileCostCandidates(
   });
 }
 
+/**
+ * The cards the permanent `source` exiled with its linked ability (CR 607.2a) that are still in exile and that `filter` matches, for the cost "Put a creature card exiled with ~ into
+ * its owner's graveyard". The link is the permanent's own (a source that left has none).
+ */
+export function linkedExileCandidates(
+  state: GameState,
+  source: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const permanent = state.objects[source];
+  const { controller: _you, ...described } = filter;
+  return (permanent?.linkedExile ?? []).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card?.zone === 'exile' &&
+      matchesFilter(
+        state,
+        card,
+        { ...described, zone: 'exile' },
+        { controller: card.owner, source },
+      )
+    );
+  });
+}
+
+/** The question "which card do you put into its owner's graveyard?" for a cost: exactly one of `legal`, public, and `cancel` rewinds the activation (CR 733). */
+export function activationLinkedExileDecision(
+  seat: SeatId,
+  source: ObjectId,
+  legal: readonly ObjectId[],
+): NewDecision {
+  return {
+    kind: 'chooseCards',
+    seat,
+    source,
+    purpose: 'exile',
+    zone: 'exile',
+    legal,
+    min: 1,
+    max: 1,
+    reveal: true,
+    prompt: 'Put a card exiled with this permanent into its owner’s graveyard.',
+    forCost: true,
+  };
+}
+
+/** Puts the chosen cards of the exile into their owners' graveyards: the state and the events. Null when a card is not in exile. */
+export function linkedExileToGraveyard(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): { state: GameState; events: GameEvent[] } | null {
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const id of chosen) {
+    if (next.objects[id]?.zone !== 'exile') return null;
+    const moved = moveObject(next, { object: id, to: 'graveyard' });
+    if (moved.kind !== 'done') return null;
+    next = moved.state;
+    events.push(...moved.events);
+  }
+  return { state: next, events };
+}
+
 /** The question "which cards do you exile?" for a cost: exactly `count` of `legal`, public, and `cancel` rewinds the activation (CR 733). */
 export function activationExileDecision(
   seat: SeatId,

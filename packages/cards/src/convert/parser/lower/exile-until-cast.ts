@@ -54,6 +54,39 @@ const EXILE_UNTIL_CAST_FREE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * Gríma, Saruman's Footman (CR 701.13, 608.2g, 118.9, 401.4): the engine's `exileUntilFound` of the library of the player the trigger is about ("that player"), the `castFree` of the card
+ * found (asked of the controller), and a `moveToZone` of the cards still in exile (`moved`: a card that was cast is a new object on the stack) to the bottom of that player's library in a
+ * random order. A library exiled to its end gives those cards back as the library, shuffled, as the rules ask.
+ */
+const THAT_PLAYER_EXILES_UNTIL_CAST: Lowering<IrClause, Effects> = {
+  head: 'thatPlayerExilesUntilCast',
+  id: 'lower.that-player-exiles-until-cast',
+  needs: ['effect:exileUntilFound', 'effect:castFree', 'effect:moveToZone', 'selector:moved'],
+  lower(clause, ctx) {
+    const player = operand(clause, 'player');
+    const card = arg(clause, 'card');
+    if (player?.kind !== 'noun' || card?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(player, ctx);
+    if (!from.ok) return from;
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    const effects: Effect[] = [
+      { kind: 'exileUntilFound', players: from.value, filter: filter.value },
+      { kind: 'castFree', objects: { kind: 'moved' }, filter: filter.value },
+      {
+        kind: 'moveToZone',
+        objects: { kind: 'moved' },
+        to: 'library',
+        position: 'bottom',
+        random: true,
+      },
+    ];
+    return { ok: true, value: effects, rule: clause.rule };
+  },
+};
+
 export const EXILE_UNTIL_CAST_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_UNTIL_CAST_FREE,
+  THAT_PLAYER_EXILES_UNTIL_CAST,
 ];
