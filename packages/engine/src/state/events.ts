@@ -5,6 +5,7 @@
  */
 import type { CastAlternativeKind } from '../ast/features';
 import type { Zone } from '../ast/types';
+import type { PartyType } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
@@ -508,6 +509,17 @@ export type GameEvent =
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;
+    }
+  /**
+   * CR 700.8d (Stick Together): `seat` chose a party from among the creatures they control: `party` lists the creature that fills each type, empty when they chose none. `automatic`
+   * is true when the player controls no creature of a party type, so there was nothing to choose. The creatures left out are sacrificed once the last player has chosen.
+   */
+  | {
+      readonly kind: 'partyChosen';
+      readonly seat: SeatId;
+      readonly source: ObjectId;
+      readonly party: readonly { readonly type: PartyType; readonly object: ObjectId }[];
+      readonly automatic: boolean;
     }
   /**
    * CR 701.34a (Proliferate, D-149): `seat` proliferated: each permanent in `objects` and each player in `players` was given one more counter of

@@ -21,7 +21,7 @@ import type {
   Zone,
 } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
-import type { CardType, Characteristics, Color, Subtype } from '../characteristics';
+import type { CardType, Characteristics, Color, PartyType, Subtype } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaObject } from '../mana/types';
 import type { RngState } from '../rng/types';
@@ -1247,6 +1247,18 @@ export type Instruction =
       readonly seat?: SeatId;
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
       readonly lkiRecorded?: true;
+    }
+  /**
+   * "Each player chooses a party from among creatures they control, then sacrifices the rest" (Stick Together, CR 700.8d, 701.21a, 101.4): `seat` chooses now (`chooseParty`
+   * decision); `later` are the players who choose after, in APNAP order, `held` what the earlier ones kept. Nothing is sacrificed until the last has chosen.
+   */
+  | {
+      readonly kind: 'chooseParty';
+      readonly seat: SeatId;
+      readonly later: readonly SeatId[];
+      readonly held: readonly { readonly seat: SeatId; readonly party: readonly ObjectId[] }[];
+      /** The party the answer chose; null until asked. */
+      readonly chosen: readonly { readonly type: PartyType; readonly object: ObjectId }[] | null;
     }
   /**
    * CR 608.2d: the controller chooses permanents to sacrifice. `chosen` is null until asked (or

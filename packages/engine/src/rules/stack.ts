@@ -10,7 +10,7 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import { isPermanentType } from '../characteristics';
+import { isPermanentType, type PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat, patchObject } from '../state/ops';
@@ -786,6 +786,27 @@ export function answerResolutionChoice(
     head.kind === 'proliferate' ? { ...head, chosen, players } : { ...head, chosen };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to a chooseParty decision (CR 700.8d) on the `chooseParty` instruction that asked, then continues. Null when no such question is pending. The caller has checked
+ * the answer against the decision.
+ */
+export function answerResolutionParty(
+  state: GameState,
+  party: readonly { readonly type: PartyType; readonly object: ObjectId }[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'chooseParty') return null;
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, queue: [{ ...head, chosen: party }, ...res.queue.slice(1)] },
+    },
     [],
   );
 }

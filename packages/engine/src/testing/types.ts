@@ -5,7 +5,7 @@
 import type { CastAlternativeKind } from '../ast/features';
 import type { Zone } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
-import type { CardType } from '../characteristics';
+import type { CardType, PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { Action } from '../state/actions';
@@ -495,6 +495,8 @@ export interface Actor {
   declineCommandZone(): Actor;
   /** Answer a choosePermanent decision (CR 608.2d) with these permanents. */
   choosePermanents(...cards: CardRef[]): Actor;
+  /** Answer a chooseParty decision (CR 700.8d) with the creature that fills each party type left in; the types not named stay empty. */
+  chooseParty(party: Partial<Record<PartyType, CardRef>>): Actor;
   /**
    * Answer an orderTriggers decision (CR 603.3b). Each entry is the source name of a listed
    * trigger, or its index in the decision; the first entry is put on the stack first, so it

@@ -251,6 +251,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrifice',
     // Slaughter the Strong: "Each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control" (`keepOrSacrifice`).
     'keepOrSacrifice',
+    // Stick Together: "Each player chooses a party from among creatures they control, then sacrifices the rest" (`chooseParty`, CR 700.8d).
+    'chooseParty',
     'moveToZone',
     'counter',
     'draw',
@@ -3226,6 +3228,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exile: true,
   sacrifice: true,
   keepOrSacrifice: true,
+  chooseParty: true,
   moveToZone: true,
   counter: true,
   draw: true,

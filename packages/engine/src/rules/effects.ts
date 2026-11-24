@@ -170,6 +170,7 @@ import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
+import { runChooseParty, partyInstruction } from './party-choice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
 import {
@@ -338,6 +339,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'fightPairs') return runFightPairs(state, res, instruction, flow);
   if (instruction.kind === 'chooseSacrifice') return runChooseSacrifice(state, res, instruction);
+  if (instruction.kind === 'chooseParty') return runChooseParty(state, res, instruction);
   if (instruction.kind === 'chooseMove') return runChooseMove(state, res, instruction);
   if (instruction.kind === 'chooseTap') return runChooseTap(state, res, instruction);
   if (instruction.kind === 'chooseEach') return runChooseEach(state, res, instruction);
@@ -1132,6 +1134,12 @@ function runEffect(
           }).length,
         },
       };
+    }
+
+    case 'chooseParty': {
+      // CR 700.8d, 101.4 (Stick Together): every player the effect names chooses a party, the active player first; nothing is sacrificed until the last has chosen.
+      const first = partyInstruction(resolvePlayers(state, effect.players, ctx, targets));
+      return first === null ? done(state) : done(state, [], [first]);
     }
 
     case 'keepOrSacrifice': {

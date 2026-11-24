@@ -74,6 +74,8 @@ export function describeAction(state: GameState, action: Action): string {
         .join(', ')}]`;
     case 'choosePermanents':
       return `choosePermanents [${action.objects.map(named).join(', ')}]`;
+    case 'chooseParty':
+      return `chooseParty [${action.party.map((m) => `${m.type} ${named(m.object)}`).join(', ')}]`;
     case 'choosePayOptions':
       return `choosePayOptions [${action.objects.map(named).join(', ')}]`;
     case 'orderTriggers':
