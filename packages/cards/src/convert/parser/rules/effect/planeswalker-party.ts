@@ -553,6 +553,52 @@ export const EFFECT_EXILE_RETURN_NEXT_END_STEP_WITH_COUNTERS = defineRule<Clause
   },
 });
 
+const FORGET_ID = 'effect.forget-loyalty-activations';
+
+/**
+ * `effect.forget-loyalty-activations`: "For each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been
+ * activated this turn." (The Chain Veil; CR 606.3): every planeswalker the controller controls as the effect resolves may be activated once more this turn. The engine's
+ * `forgetLoyaltyActivations` of those planeswalkers; the activation itself is the player's own, nothing is forced. Not read: another group, "target", another span, a number of times.
+ */
+export const EFFECT_FORGET_LOYALTY_ACTIVATIONS = defineRule<Clauses>({
+  id: FORGET_ID,
+  family: 'effect',
+  leading: ['for'],
+  cites: ['CR 606.3 (Loyalty Abilities)', 'CR 606.2 (Loyalty Abilities)'],
+  examples: [
+    'for each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn',
+  ],
+  rejects: [
+    'for each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn and draw a card',
+    'for each planeswalker, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn',
+    'for each creature you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn',
+    'for each planeswalker you control, you may activate one of its loyalty abilities twice this turn as though none of its loyalty abilities have been activated this turn',
+    'for each planeswalker you control, you may activate one of its loyalty abilities once this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /for each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { types: ['planeswalker'], controller: 'you', raw: 'each planeswalker you control' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span,
+      rule: FORGET_ID,
+    };
+    return {
+      ok: true,
+      value: [makeClause(FORGET_ID, 'forgetLoyaltyActivations', { objects }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -614,6 +660,7 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_FORGET_LOYALTY_ACTIVATIONS),
   quietly(EFFECT_EXILE_RETURN_NEXT_END_STEP_WITH_COUNTERS),
   quietly(EFFECT_CHOOSE_DIRECTION_ATTACK_NEAREST),
   quietly(EFFECT_REMOVE_COUNTER_FROM_EACH_CHOSEN),

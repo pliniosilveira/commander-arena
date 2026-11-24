@@ -4030,6 +4030,8 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         }
       }
       break;
+    case 'loyaltyAbilityActivatedThisTurn':
+      break;
     case 'attackedWithCreaturesThisTurn':
       // Issue 279, CR 508.1: the different creatures the controller attacked with this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
@@ -6678,6 +6680,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 701.68a: "Blight 1" as an instruction: a positive number of -1/-1 counters.
       if (!isCount(e.count) || e.count < 1) {
         issue(out, `${path}.count`, 'blight puts a positive whole number of -1/-1 counters');
+      }
+      break;
+    case 'forgetLoyaltyActivations':
+      if (kindOf(e.objects) !== 'each') {
+        issue(out, `${path}.objects`, 'forgetLoyaltyActivations names a group (each)');
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       }
       break;
     case 'moveCounterFromThis':

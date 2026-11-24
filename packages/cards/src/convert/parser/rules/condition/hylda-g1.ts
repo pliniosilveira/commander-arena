@@ -98,7 +98,65 @@ export const CONDITION_YOURE_DEFENDING_PLAYER = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.didnt-activate-loyalty`: "you didn't activate a loyalty ability of a planeswalker this turn" (The Chain Veil; CR 606.2, 606.3): the controller activated no loyalty ability this
+ * turn, read from the turn log as the event happens and again as the ability resolves (CR 603.4). Not read: the positive ("you activated"), another player ("an opponent"), another span ("last
+ * turn"), "of a Jace planeswalker", no "this turn".
+ */
+export const CONDITION_DIDNT_ACTIVATE_LOYALTY = defineRule<IrCondition>({
+  id: 'condition.didnt-activate-loyalty',
+  family: 'condition',
+  leading: ['you', 'you’ve', "you've"],
+  cites: [
+    'CR 606.2 (Loyalty Abilities)',
+    'CR 606.3 (Loyalty Abilities)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
+  examples: [
+    "you didn't activate a loyalty ability of a planeswalker this turn",
+    'you didn’t activate a loyalty ability of a planeswalker this turn',
+  ],
+  rejects: [
+    'you activated a loyalty ability of a planeswalker this turn',
+    "an opponent didn't activate a loyalty ability of a planeswalker this turn",
+    "you didn't activate a loyalty ability of a planeswalker",
+    "you didn't activate a loyalty ability of a planeswalker last turn",
+    "you didn't activate a loyalty ability of a Jace planeswalker this turn",
+    "you didn't activate a loyalty ability this turn",
+    "you didn't activate a loyalty ability of a planeswalker this turn or",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      new RegExp(
+        `you didn['’]t activate a loyalty ability of a planeswalker this turn${BOUNDARY}(?! or\\b)`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: {
+          kind: 'not',
+          term: {
+            kind: 'condition',
+            test: { kind: 'loyaltyActivatedThisTurn' },
+            span,
+            rule: 'condition.didnt-activate-loyalty',
+          },
+        },
+        span,
+        rule: 'condition.didnt-activate-loyalty',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const HYLDA_G1_CONDITION_RULES = [
+  CONDITION_DIDNT_ACTIVATE_LOYALTY,
   CONDITION_NOT_DECLARED_ATTACKER,
   CONDITION_YOURE_DEFENDING_PLAYER,
 ];

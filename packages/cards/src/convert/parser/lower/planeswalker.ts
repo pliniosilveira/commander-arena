@@ -372,12 +372,23 @@ const EXILE_RETURN_NEXT_END_STEP_COUNTERS: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "For each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none ... activated" (The Chain Veil; CR 606.3): the engine's `forgetLoyaltyActivations`. */
+const FORGET_LOYALTY_ACTIVATIONS: Lowering<IrClause, Effects> = {
+  head: 'forgetLoyaltyActivations',
+  id: 'lower.forget-loyalty-activations',
+  needs: ['effect:forgetLoyaltyActivations'],
+  lower(clause, ctx) {
+    return eachObject(clause, ctx, (objects) => ({ kind: 'forgetLoyaltyActivations', objects }));
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
   'effect:castCard',
+  'effect:forgetLoyaltyActivations',
   'effect:exile',
   'effect:delayedTrigger',
   'effect:moveToZone',
@@ -401,6 +412,7 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DEAL_DAMAGE_FROM_EACH,
   MAY_CAST_KIND_FROM_MOVED_FREE,
   CAST_MOVED_NOW,
+  FORGET_LOYALTY_ACTIVATIONS,
   EXILE_RETURN_NEXT_END_STEP_COUNTERS,
   CHOOSE_DIRECTION_ATTACK_NEAREST,
   REMOVE_COUNTER_FROM_EACH_CHOSEN,

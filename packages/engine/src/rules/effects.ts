@@ -2095,6 +2095,21 @@ function runEffect(
       // CR 701.68a (Blight): the controller chooses a creature they control and puts the counters on it as the instruction runs (rules/blight-effect.ts).
       return done(state, [], [{ kind: 'blight', count: effect.count, chosen: null }]);
 
+    case 'forgetLoyaltyActivations': {
+      // CR 606.3 (The Chain Veil): the loyalty activations of these permanents this turn no longer count toward the limit of one.
+      const ids = new Set(resolveObjects(state, effect.objects, ctx, targets));
+      if (ids.size === 0) return done(state);
+      return done({
+        ...state,
+        turnLog: {
+          ...state.turnLog,
+          activated: state.turnLog.activated.map((a) =>
+            a.loyalty === true && ids.has(a.object) ? { ...a, forgotten: true as const } : a,
+          ),
+        },
+      });
+    }
+
     case 'moveCounterFromThis': {
       // CR 122.1, 122.6 (Gatewatch Beacon): the counters come off the permanent of the ability and go on the permanent the trigger is about; what the destination can't have is lost.
       const sourceId = ctx.source;

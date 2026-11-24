@@ -715,6 +715,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'attackedHasMoreLifeThanOtherOpponent' });
     }
+    case 'loyaltyActivatedThisTurn': {
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:loyaltyAbilityActivatedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'loyaltyAbilityActivatedThisTurn' });
+    }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
       // anywhere else.

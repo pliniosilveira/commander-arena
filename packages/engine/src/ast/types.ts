@@ -4293,6 +4293,13 @@ export type Effect =
    */
   | { readonly kind: 'moveCountersOnto'; readonly counter: string; readonly to: ObjectFilter }
   /**
+   * "For each planeswalker you control, you may activate one of its loyalty abilities once this turn as though none of its loyalty abilities have been activated this turn." (The Chain Veil;
+   * CR 606.3, 400.7): each permanent `objects` names (planeswalkers, as the effect resolves) is as though no loyalty ability of it was activated this turn, so one more may be activated
+   * (and the limit of its controller counts from there). The activations still happened for what reads the turn (`loyaltyAbilityActivatedThisTurn`). Nothing is forced: the player activates
+   * or not. `objects` is `each`.
+   */
+  | { readonly kind: 'forgetLoyaltyActivations'; readonly objects: ObjectSelector }
+  /**
    * "Move a loyalty counter from this artifact onto that planeswalker." (CR 122.1, 122.6; Gatewatch Beacon): up to `count` counters of the kind `counter` are taken off the permanent with the
    * ability and put on each permanent `to` names (the one the trigger is about, `triggerSubject`), as the effect runs. With none on the source, or the source gone, nothing moves; a
    * permanent that can't have counters of the kind (CR 122.6) gets none, and the counters taken off are gone. The counters go on as the effect of a spell or ability, so a replacement
@@ -7153,6 +7160,12 @@ export type Condition =
    * since still counts. Reads the turn log only, so it is read as the ability is activated or resolves. Not for a static ability.
    */
   | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
+  /**
+   * "If you didn't activate a loyalty ability of a planeswalker this turn" is `not` of this (CR 606.2, 606.3; The Chain Veil): the controller of the condition activated a loyalty ability
+   * this turn, read from the turn log (`TurnLog.activated` with `loyalty` and the player who activated it). An activation counts even when a later effect lets the permanent activate
+   * another (`forgetLoyaltyActivations`).
+   */
+  | { readonly kind: 'loyaltyAbilityActivatedThisTurn' }
   /**
    * "Activate only if this creature attacked this turn" (CR 702.142a, Boast): the permanent the condition belongs to was declared as an attacker this turn, in any combat
    * phase, from `TurnLog.attacked` (kept by the id the creature has now: a permanent that left and came back is a new object, CR 400.7). Reads the turn log only.

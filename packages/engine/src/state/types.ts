@@ -2824,6 +2824,10 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly abilityIndex: number;
     readonly loyalty?: true;
+    /** The player who activated the loyalty ability (The Chain Veil: "if you didn't activate a loyalty ability of a planeswalker this turn"). */
+    readonly activator?: SeatId;
+    /** The activation no longer counts toward the one loyalty ability of a permanent a turn (CR 606.3): `forgetLoyaltyActivations` (The Chain Veil). It still happened. */
+    readonly forgotten?: true;
     /**
      * The player who activated an ability of a card that was in a graveyard as it was activated (issue 159, "activated an ability of a card in a graveyard this turn").
      * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.

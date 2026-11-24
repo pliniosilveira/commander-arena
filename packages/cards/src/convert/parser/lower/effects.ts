@@ -2995,7 +2995,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'unlessReturn' ||
         kind === 'diesThisWay' ||
         kind === 'thePlayerIs' ||
-        kind === 'cardsExiledWithSelf'
+        kind === 'cardsExiledWithSelf' ||
+        kind === 'loyaltyActivatedThisTurn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

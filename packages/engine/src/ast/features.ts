@@ -484,6 +484,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moveCountersOnto',
     // Gatewatch Beacon: "move a loyalty counter from this artifact onto that planeswalker" (CR 122.1).
     'moveCounterFromThis',
+    'forgetLoyaltyActivations',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -1405,6 +1406,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastLastTurn',
     // Issue 279: "if you attacked with three or more creatures this turn".
     'attackedWithCreaturesThisTurn',
+    // The Chain Veil: "if you didn't activate a loyalty ability of a planeswalker this turn".
+    'loyaltyAbilityActivatedThisTurn',
     // CR 702.142a: "Boast" ("Activate only if this creature attacked this turn").
     'thisAttackedThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
@@ -2517,6 +2520,8 @@ export const CONDITION_KINDS = [
   'spellsCastLastTurn',
   /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
   'attackedWithCreaturesThisTurn',
+  /** "If you didn't activate a loyalty ability this turn" (CR 606.3, The Chain Veil): the engine's `loyaltyAbilityActivatedThisTurn`. */
+  'loyaltyAbilityActivatedThisTurn',
   /** "Boast —" (CR 702.142a): "Activate only if this creature attacked this turn", the engine's `thisAttackedThisTurn`. */
   'thisAttackedThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
@@ -3226,6 +3231,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   additionalLandDropThisTurn: true,
   moveCountersOnto: true,
   moveCounterFromThis: true,
+  forgetLoyaltyActivations: true,
   createEmblem: true,
   delayedSacrifice: true,
   myriad: true,
