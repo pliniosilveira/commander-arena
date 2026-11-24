@@ -491,7 +491,9 @@ function effectOf(
       });
     }
     case 'loseAllAbilities':
-      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says.
+      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says; or (Sludge Monster, CR 613.7) a group the
+      // permanent names, whose filter the engine checks (`validateCard`: no keyword or ability in it).
+      if (subject.kind === 'filter') return ok({ kind: 'loseAllAbilities', subject });
       return subject.kind === 'attached'
         ? ok({ kind: 'loseAllAbilities', subject: { kind: 'attached' } })
         : failure(at);
@@ -728,6 +730,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:damageCantBePrevented'];
     case 'damageAsThoughWither':
       return ['static:damageAsThoughWither'];
+    case 'cantActivateChosenName':
+      return ['static:cantActivateChosenName'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':

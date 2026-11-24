@@ -280,6 +280,8 @@ describe('the dimensions', () => {
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
+      // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated."
+      'cantActivateChosenName',
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',

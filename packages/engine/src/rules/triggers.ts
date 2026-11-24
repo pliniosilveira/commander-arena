@@ -42,6 +42,7 @@ import type {
   TriggeredAbility,
 } from '../state/types';
 import { amountOf } from './amounts';
+import { chosenOf } from './chosen';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { attackerDefender } from './defending';
@@ -1188,6 +1189,11 @@ function matches(
       if (trigger.self === true && subject.id !== candidate.id) return false;
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 607.2d (Sewer Nemesis): "Whenever the chosen player casts a spell": the player this permanent chose as it entered; none chosen, no trigger.
+      if (trigger.by === 'chosenPlayer') {
+        const chosenSeat = chosenOf(state, candidate.id)?.player;
+        if (chosenSeat === undefined || occ.seat !== chosenSeat) return false;
+      }
       // D-229: "their second spell each turn": the caster's nth spell of the turn.
       if (trigger.nth !== undefined && occ.nth !== trigger.nth) return false;
       // CR 601.2i, 603.2: "your first instant or sorcery spell each turn": no other spell of those card types was cast by the caster before it this turn (this one is in the log).

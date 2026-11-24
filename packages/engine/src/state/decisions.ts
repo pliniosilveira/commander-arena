@@ -887,6 +887,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    // CR 614.12a, 607.2d: "As this enters, choose a player": the options are `seat:<n>`. `cardName`: "choose a nonland card name": `options` are suggestions (names the game shows), any non-empty name is an answer.
+    | 'player'
+    | 'cardName'
     | 'option'
     | 'attackTarget'
     | 'assignOpponent'

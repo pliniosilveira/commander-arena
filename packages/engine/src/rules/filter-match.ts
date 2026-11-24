@@ -258,6 +258,13 @@ export function matchesFilterWith(
   // CR 508.5 (D-151): "creature defending player controls": the player the source is attacking; nothing matches when it is not attacking.
   if (filter.controller === 'defendingPlayer' && controllerOf(state, obj) !== ctx.defendingPlayer)
     return false;
+  // CR 607.2d (Sewer Nemesis): "cards in the chosen player's graveyard": the controller (the owner of a card in a graveyard) is the player the source chose as it entered; nothing when none was chosen.
+  if (
+    filter.controller === 'chosenPlayer' &&
+    (ctx.sourceChosen?.player === undefined || controllerOf(state, obj) !== ctx.sourceChosen.player)
+  ) {
+    return false;
+  }
   // CR 725.1 (monarch): "creatures the monarch controls": the controller is the monarch now; with no monarch nothing matches.
   if (filter.controller === 'monarch' && controllerOf(state, obj) !== state.monarch) return false;
   // CR 108.3: the owner of a card is the player who started the game with it in their deck.

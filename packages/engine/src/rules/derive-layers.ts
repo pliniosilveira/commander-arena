@@ -221,6 +221,8 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability; CR 702.56a: a Replicate given to a spell, with its trigger). */
 const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = [
   'decayed',
+  // CR 702.93a (Undying): a granted undying is the triggered ability the keyword stands for.
+  'undying',
   'cycling',
   'replicate',
   'encore',

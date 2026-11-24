@@ -654,6 +654,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           entering === null ? undefined : entersColorExcept(entering.abilities),
           // CR 119.4, 119.8: a player whose life total cannot change can pay only 0.
           lifeTotalIsLocked(before, enterController) ? 0 : getSeat(before, enterController).life,
+          { state: before, seat: enterController },
         ),
         source: old.id,
         sourceName: info?.name ?? '',

@@ -683,7 +683,9 @@ export type ControllerFilter =
   | 'any'
   | 'triggerPlayer'
   | 'defendingPlayer'
-  | 'monarch';
+  | 'monarch'
+  // CR 607.2d ("the chosen player's graveyard", Sewer Nemesis): the player the permanent with the ability chose as it entered (`asEntersChoose` of `player`); with no choice nothing matches.
+  | 'chosenPlayer';
 
 /**
  * A comparison with a whole number (D-111): "power 4 or greater" is `{ cmp: 'atLeast', value: 4 }`,
@@ -5266,7 +5268,8 @@ export type Trigger =
   | {
       readonly kind: 'castSpell';
       readonly filter: ObjectFilter;
-      readonly by: 'you' | 'opponent' | 'any';
+      /** `chosenPlayer` (CR 603.2, 607.2d): only a spell the player this permanent chose as it entered casts (`asEntersChoose` of `player`). */
+      readonly by: 'you' | 'opponent' | 'any' | 'chosenPlayer';
       /**
        * "Whenever an opponent casts their second spell each turn" (CR 601.2i, 603.2, D-229): only the spell the caster casts as their `nth` of the turn
        * (a spell cast this turn counts, whoever it was cast by, whatever it is: the filter reads the spell that triggers, not the count). Not with `self`.
@@ -7335,6 +7338,9 @@ export type Replacement =
        * `planeswalkerType` (CR 205.3j, "As this enchantment enters, choose a planeswalker type"): one of `PLANESWALKER_TYPES`; read by the `chosenPlaneswalkerType` quality of a filter.
        * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
        * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
+       * `player` ("As this creature enters, choose a player", CR 614.12a, 607.2d): any player still in the game, the controller included; kept as `GameObject.chosen.player` and read by the
+       * controller filter `chosenPlayer` and the cast trigger's `by: 'chosenPlayer'`. `cardName` ("choose a nonland card name"): the name is free text (the question lists the names the
+       * game shows as suggestions; any non-empty name is accepted, the engine has no list of every card), kept as `GameObject.chosen.cardName` and read by the static `cantActivateChosenName`.
        */
       readonly what:
         | 'creatureType'
@@ -7342,7 +7348,9 @@ export type Replacement =
         | 'option'
         | 'cardType'
         | 'planeswalkerType'
-        | 'lifePaid';
+        | 'lifePaid'
+        | 'player'
+        | 'cardName';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -8142,9 +8150,20 @@ export type StaticEffect =
    * ability it has when this effect applies in layer 6 (timestamp order with the keywords and abilities granted: one granted later still
    * applies, CR 613.7), its own static abilities included, and has none of its printed abilities left to apply for the rules. The subject is
    * `attached` with no host type or supertype (an Aura that can be attached only to a creature, CR 303.4m, is checked by its own enchant
-   * ability). Not for a filter: what loses abilities would depend on the abilities themselves (CR 613.8).
+   * ability). A filter subject ("Non-Horror creatures with slime counters on them lose all abilities", CR 613.1f, 613.8) is matched by what no layer 6 effect changes: the types,
+   * colors and counters of the objects as they are before layer 6 (a filter that reads keywords or abilities is refused, `validateCard`), so no dependency arises; when the permanent
+   * with the ability itself matches the group of an older permanent's ability, it loses its own and applies nothing (CR 613.7: timestamp order).
    */
-  | { readonly kind: 'loseAllAbilities'; readonly subject: { readonly kind: 'attached' } }
+  | {
+      readonly kind: 'loseAllAbilities';
+      readonly subject: { readonly kind: 'attached' } | Extract<StaticSubject, { kind: 'filter' }>;
+    }
+  /**
+   * "Activated abilities of sources with the chosen name can't be activated." (Phyrexian Revoker, CR 602.5, 605.1a, 607.2d): no activated ability, mana abilities and loyalty abilities
+   * included, of an object whose name is the one this permanent chose as it entered (`asEntersChoose` of `cardName`) can be activated, wherever the object is (a card in a hand with cycling too).
+   * Abilities that are not activated (triggered, static) are not affected. Needs `asEntersChoose` of `cardName` on the same face; with no name chosen nothing is stopped.
+   */
+  | { readonly kind: 'cantActivateChosenName' }
   /**
    * "As long as there are fewer than eight cards in your graveyard, ~ isn't a creature" (D-229, CR 613.1d, 205.1a): in layer 4 the subject loses these card types
    * (with the permanent's timestamp). The subtypes correlated with a type that is removed go with it unless the object still has another type they belong to

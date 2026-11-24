@@ -191,6 +191,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
   // D-149: "your commander" is a card the player owns and designated, wherever it is controlled: not a "commanders you control".
   if (filter.commander === 'yours') return null;
   const who = filter.controller ?? 'any';
+  // CR 607.2d (Sewer Nemesis): "the chosen player's graveyard" is said by the card's own text, not here.
+  if (who === 'chosenPlayer') return null;
   const subtypeList = filter.subtypes ?? [];
   // D-151 (CR 205.3i): "you control a Mountain": a basic land type with no card type names lands.
   const types =

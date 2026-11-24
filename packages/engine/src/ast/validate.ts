@@ -400,6 +400,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           'cardType',
           'planeswalkerType',
           'lifePaid',
+          'player',
+          'cardName',
         ])
       ) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
@@ -1013,6 +1015,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'restrictionUnless':
     case 'setColors':
     case 'loseAllAbilities':
+    case 'cantActivateChosenName':
       checkDinosaursStatic(s, path, out);
       break;
     case 'loseTypes':
@@ -1151,7 +1154,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'castSpell':
       checkFilter(t.filter, `${path}.filter`, out);
-      if (!isOneOf(t.by, ['you', 'opponent', 'any']))
+      if (!isOneOf(t.by, ['you', 'opponent', 'any', 'chosenPlayer']))
         issue(out, `${path}.by`, `unknown caster ${String(t.by)}`);
       // D-120: "When you cast this spell" (CR 702.85a): the spell's own ability, for itself only.
       if (t.self !== undefined) {

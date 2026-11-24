@@ -743,10 +743,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'cast': {
       // CR 601.2i: "you cast" is the controller of this ability, "an opponent casts" a player it does not
       // control (D-111), "a player casts" any player.
-      const by = whoOf(t.actor);
+      const chosen = t.actor?.filter.chosenPlayer === true;
+      const by = chosen ? 'chosenPlayer' : whoOf(t.actor);
       if (by === null || t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
+      // CR 603.2, 607.2d (Sewer Nemesis): "the chosen player casts a spell" is the plain cast trigger of the player the permanent chose as it entered.
+      if (by === 'chosenPlayer') {
+        if (t.nth !== undefined || t.firstOfKind === true || t.duringTurn !== undefined) {
+          return failure(t);
+        }
+        const missing = missingFeatures(['selector:castByChosenPlayer']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({ kind: 'castSpell', filter: filter.value, by });
+      }
       // "an opponent casts their second spell each turn" (stage P68, D-229, CR 601.2i): the caster's nth spell of the turn.
       if (t.nth !== undefined) {
         const missing = missingFeatures(
@@ -1661,11 +1671,12 @@ function lowerTriggeredAbility(
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
+  // Haunted One (CR 603.2e): a creature that "becomes tapped" is an ability about the creature itself as well; "it" is the creature that has the ability.
   ctx.selfEntersOrAttacksTrigger =
     triggers.length > 0 &&
     triggers.every(
       (t) =>
-        (t.kind === 'attacks' || t.kind === 'entersBattlefield') &&
+        (t.kind === 'attacks' || t.kind === 'entersBattlefield' || t.kind === 'becomesTapped') &&
         'kind' in t.what &&
         t.what.kind === 'this',
     );

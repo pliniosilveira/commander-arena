@@ -642,6 +642,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.players-cant-gain-life': asIs,
   'static.damage-cant-be-prevented': asIs,
   'static.all-damage-as-though-wither': asIs,
+  // Phyrexian Revoker: the line stands alone.
+  'static.activated-abilities-of-chosen-name': asIs,
+  // Sludge Monster: the line stands alone.
+  'static.group-loses-abilities-base-pt': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
   'static.you-planeswalkers-creatures-hexproof': asIs,
