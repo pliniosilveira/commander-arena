@@ -6,7 +6,7 @@
  */
 import type { Cost } from '../ast/types';
 import { isPermanentType } from '../characteristics';
-import type { SeatId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import { definitionOf } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { alternativeOf } from './alt-costs';
@@ -65,25 +65,49 @@ export function grantedEvokeOf(
   return null;
 }
 
+/** An energy alternative cost a static ability gives a spell: the counters, and the permanent that gives it when it is only for one spell each turn. */
+export interface GrantedEnergy {
+  readonly count: number;
+  /** Set when the grant is "once each turn": the permanent whose use this turn is recorded as the spell is cast. */
+  readonly once?: ObjectId;
+}
+
 /**
- * The energy counters a static ability of a permanent lets `seat` pay rather than the mana cost of `spell` (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14), or null. Only for a
- * permanent spell cast from the hand; the permanent that gives the least decides when several do. The caster must also have the counters (`canPaySpellCost`).
+ * The energy a static ability of a permanent lets `seat` pay rather than the mana cost of `spell` (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14), or null. For a permanent
+ * spell cast from the zone the grant names (the hand unless it says "from exile", Tlincalli Hunter); the permanent that gives the least decides when several do, and a grant "once each
+ * turn" gives nothing once its permanent has been used this turn (CR 601.2b). The caster must also have the counters (`canPaySpellCost`).
  */
-export function grantedEnergyOf(
+export function energyGrantFor(
   state: GameState,
   seat: SeatId,
   spell: GameObject,
   zone: GameObject['zone'] | undefined,
-): number | null {
-  if (spell.stack !== null) return spell.stack.energyGrant ?? null;
-  if (zone !== 'hand' || spell.copyOf !== undefined) return null;
+): GrantedEnergy | null {
+  if (spell.stack !== null) {
+    return spell.stack.energyGrant === undefined
+      ? null
+      : {
+          count: spell.stack.energyGrant,
+          ...(spell.stack.energyGrantOnce === undefined
+            ? {}
+            : { once: spell.stack.energyGrantOnce }),
+        };
+  }
+  if (zone === undefined || spell.copyOf !== undefined) return null;
   const sources = altCostGrantSources(state);
   if (sources.length === 0) return null;
   if (!derive(state, spell).types.some(isPermanentType)) return null;
-  let least: number | null = null;
+  let least: GrantedEnergy | null = null;
   for (const source of sources) {
     if (source.alt.kind !== 'energy') continue;
+    if ((source.alt.from ?? 'hand') !== zone) continue;
     if (controllerOf(state, source.object) !== seat) continue;
+    if (
+      source.alt.oncePerTurn === true &&
+      (state.turnLog.oncePerTurnGrants ?? []).includes(source.object.id)
+    ) {
+      continue;
+    }
     if (
       source.condition !== undefined &&
       !staticConditionHolds(state, source.condition, source.object)
@@ -98,10 +122,25 @@ export function grantedEnergyOf(
         { controller: seat, source: source.object.id },
       )
     ) {
-      least = least === null ? source.alt.count : Math.min(least, source.alt.count);
+      if (least === null || source.alt.count < least.count) {
+        least = {
+          count: source.alt.count,
+          ...(source.alt.oncePerTurn === true ? { once: source.object.id } : {}),
+        };
+      }
     }
   }
   return least;
+}
+
+/** The energy count of `energyGrantFor`, or null. */
+export function grantedEnergyOf(
+  state: GameState,
+  seat: SeatId,
+  spell: GameObject,
+  zone: GameObject['zone'] | undefined,
+): number | null {
+  return energyGrantFor(state, seat, spell, zone)?.count ?? null;
 }
 
 /** The `StackData.evokeGrant` of a card cast for an evoke cost a static ability gave its spell: nothing for a card with a printed evoke cost. */

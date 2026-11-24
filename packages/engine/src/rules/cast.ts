@@ -52,7 +52,7 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
-import { evokeGrantData, grantedEnergyOf } from './alt-cost-grant';
+import { energyGrantFor, evokeGrantData } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
@@ -294,10 +294,13 @@ export function beginCast(
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
       ...(alternative === 'energyGrant'
-        ? {
-            energyGrant:
-              grantedEnergyOf(state, seat, castAs(obj, seat, face, alternative), zone) ?? 0,
-          }
+        ? (() => {
+            const granted = energyGrantFor(state, seat, castAs(obj, seat, face, alternative), zone);
+            return {
+              energyGrant: granted?.count ?? 0,
+              ...(granted?.once === undefined ? {} : { energyGrantOnce: granted.once }),
+            };
+          })()
         : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
@@ -1839,6 +1842,15 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       ...next,
       turnLog: {
         ...next.turnLog,
+        // CR 601.2b (Tlincalli Hunter): "once each turn": the permanent whose alternative cost this spell was cast for has been used.
+        ...(obj.stack.energyGrantOnce === undefined
+          ? {}
+          : {
+              oncePerTurnGrants: [
+                ...(next.turnLog.oncePerTurnGrants ?? []),
+                obj.stack.energyGrantOnce,
+              ],
+            }),
         castSpells: [
           ...next.turnLog.castSpells,
           {

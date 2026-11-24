@@ -7674,6 +7674,16 @@ export type StaticEffect =
       readonly kind: 'grantEnergyAlternative';
       readonly what: ObjectFilter;
       readonly energy: number;
+      /**
+       * "Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile." (Tlincalli Hunter, CR 118.9, 601.2b, 601.2a): the zone the spell is cast
+       * from, the hand when left out. Only a card in exile the player may cast (a play permission); the alternative cost is paid in place of the mana cost.
+       */
+      readonly from?: 'hand' | 'exile';
+      /**
+       * "Once each turn" (CR 601.2b): the permanent gives the alternative cost to one spell in a turn; the cast is recorded in the turn log (`TurnLog.oncePerTurnGrants`). With it `energy` may
+       * be 0: paying {0} is paying nothing, rather than the mana cost.
+       */
+      readonly oncePerTurn?: true;
     }
   /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):

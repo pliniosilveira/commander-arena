@@ -1485,6 +1485,7 @@ describe('unmatched abilities', () => {
       'static.triggers-additional-time-another',
       'static.triggers-additional-time-cause',
       'static.pay-energy-alt-cost-permanents',
+      'static.pay-zero-alt-cost-creatures-from-exile',
       'static.graveyard-play-once-each-turn',
       'static.opponents-cant-gain-life',
       'static.players-cant-gain-life',

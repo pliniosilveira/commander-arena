@@ -624,7 +624,11 @@ export function castZone(
         ? 'exile'
         : null;
     }
-    return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
+    // Tlincalli Hunter: the alternative cost a permanent gives for spells cast from exile is paid instead of the mana cost of a card the player may cast from exile.
+    return (alternative === undefined || alternative === 'energyGrant') &&
+      mayPlayFromExile(state, seat, obj)
+      ? 'exile'
+      : null;
   }
   if (obj.zone === 'hand') return 'hand';
   // A card in the command zone is one card, never a melded permanent (D-277).
@@ -1121,6 +1125,12 @@ export function alternativeCastObjects(
     // `mayCastEachType`: the exiled cards a permission lets the seat cast without paying their mana costs.
     ...(kind === 'free'
       ? freeCastCards(state, seat).filter((id) => !freeFromExile.includes(id))
+      : []),
+    // Tlincalli Hunter (CR 118.9): the cards in exile the seat may cast, for an alternative cost a permanent gives for spells cast from exile.
+    ...(kind === 'energyGrant'
+      ? state.exile.filter(
+          (id) => !onAdventure.includes(id) && mayPlayFromExile(state, seat, getObject(state, id)),
+        )
       : []),
   ];
   return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, kind, face));

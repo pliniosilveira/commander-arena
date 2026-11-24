@@ -433,6 +433,8 @@ export interface StackData {
   readonly lifeForMana?: true;
   /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */
   readonly energyGrant?: number;
+  /** The permanent whose "once each turn" alternative cost the spell was cast for (`grantEnergyAlternative` with `oncePerTurn`), recorded in the turn log as the spell is cast. */
+  readonly energyGrantOnce?: ObjectId;
   /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
@@ -2981,6 +2983,8 @@ export interface TurnLog {
     /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
     readonly fromExile?: true;
   }[];
+  /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
+  readonly oncePerTurnGrants?: readonly ObjectId[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {

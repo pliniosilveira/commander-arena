@@ -26,7 +26,7 @@ import { DRAGON_STATIC_RULES } from './dragons';
 import { EACH_SPELL_COST_STATIC_RULES } from './each-spell-cost';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { EMINENCE_STATIC_RULES } from './eminence';
-import { STATIC_PAY_ENERGY_ALT_COST } from './energy-alt';
+import { STATIC_PAY_ENERGY_ALT_COST, STATIC_PAY_ZERO_ALT_COST_FROM_EXILE } from './energy-alt';
 import { EQUIPMENT_KIT_STATIC_RULES } from './equipment-kit';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
 import { EXILE_SPELL_GRANT_STATIC_RULES } from './exile-spell-grant';
@@ -152,6 +152,7 @@ export const STATIC_RULES = [
   ...EDHREC_STATIC_RULES,
   // Aetherdrift energy deck (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
   STATIC_PAY_ENERGY_ALT_COST,
+  STATIC_PAY_ZERO_ALT_COST_FROM_EXILE,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."

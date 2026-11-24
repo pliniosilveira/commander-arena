@@ -744,3 +744,59 @@ describe('"The first spell you cast from exile each turn has cascade." (CR 702.8
     expect(g.find({ name: 'Grizzly Bears', zone: 'library', seat: 0 })).toHaveLength(1);
   });
 });
+
+describe('"Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile." (CR 118.9, 601.2a, 601.2b)', () => {
+  const hunter = parsed(
+    'SYNTHETIC Zero Hunter',
+    'Creature — Lizard',
+    'Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile.',
+    { manaCost: '{R}', power: '1', toughness: '1', colors: ['R'] },
+  );
+  const impulse = parsed(
+    'SYNTHETIC Plain Impulse',
+    'Sorcery',
+    'Exile the top two cards of your library. You may play cards exiled this way this turn.',
+    { manaCost: '{R}', colors: ['R'] },
+  );
+  const build = (withHunter: boolean) =>
+    scenario()
+      .define(hunter)
+      .define(impulse)
+      .seat(0)
+      .hand(impulse.name)
+      .battlefield(...(withHunter ? [hunter.name] : []), 'Mountain')
+      .library('Serra Angel', 'Grizzly Bears', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('a creature spell is cast from exile for {0}: no mana is needed', () => {
+    const g = build(true);
+    g.act(0).cast(impulse.name, { pay: true });
+    g.passAll();
+    g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { alternative: 'energyGrant' });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+  });
+
+  test('only once each turn: the second creature spell from exile is not offered it', () => {
+    const g = build(true);
+    g.act(0).cast(impulse.name, { pay: true });
+    g.passAll();
+    g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { alternative: 'energyGrant' });
+    g.passAll();
+    expect(() =>
+      g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { alternative: 'energyGrant' }),
+    ).toThrow();
+  });
+
+  test('without the permanent the same cast cannot be paid', () => {
+    const g = build(false);
+    g.act(0).cast(impulse.name, { pay: true });
+    g.passAll();
+    expect(() =>
+      g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { alternative: 'energyGrant' }),
+    ).toThrow();
+  });
+});

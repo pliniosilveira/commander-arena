@@ -225,6 +225,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-spell-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'static.triggers-additional-time-entering-types': asIs,
   'static.pay-energy-alt-cost-permanents': asIs,
+  'static.pay-zero-alt-cost-creatures-from-exile': asIs,
   'effect.each-player-may-choose': permanent(
     (e) => `When ~ enters, ${e}. Destroy each permanent chosen this way.`,
   ),

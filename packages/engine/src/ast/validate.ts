@@ -612,8 +612,18 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'grantEnergyAlternative':
       // CR 118.9, 107.14 (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast": a whole number of one or more, for the spells of the controller.
-      if (!isCount(s.energy) || s.energy < 1) {
-        issue(out, `${path}.energy`, 'the energy paid is a whole number of one or more');
+      if (!isCount(s.energy) || (s.energy < 1 && !(s.energy === 0 && s.oncePerTurn === true))) {
+        issue(
+          out,
+          `${path}.energy`,
+          'the energy paid is a whole number of one or more (0 only for a grant once each turn: {0} is paying nothing)',
+        );
+      }
+      if (s.from !== undefined && s.from !== 'hand' && s.from !== 'exile') {
+        issue(out, `${path}.from`, "the zone the spell is cast from is 'hand' or 'exile'");
+      }
+      if (s.oncePerTurn !== undefined && s.oncePerTurn !== true) {
+        issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true when present');
       }
       checkFilter(s.what, `${path}.what`, out);
       if (s.what?.controller !== 'you') {

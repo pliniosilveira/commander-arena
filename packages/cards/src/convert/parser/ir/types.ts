@@ -2087,7 +2087,15 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'graveyardFlashback'; readonly cards: IrNoun }
   /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14): the permanent spells of the controller may be cast for `count` energy counters. The subject is `you`. */
-  | { readonly kind: 'energyAlternative'; readonly count: number }
+  | {
+      readonly kind: 'energyAlternative';
+      readonly count: number;
+      /** Tlincalli Hunter (CR 118.9, 601.2b): "Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile": the spells are cast from exile, one each turn. */
+      readonly fromExile?: true;
+      readonly oncePerTurn?: true;
+      /** The card types of the spells the grant is for ("a creature spell"); left out for permanent spells. */
+      readonly types?: readonly string[];
+    }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */

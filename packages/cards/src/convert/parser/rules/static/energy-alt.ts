@@ -7,6 +7,57 @@ import type { IrStatic } from '../../ir/types';
 import { defineRule } from '../registry';
 import { staticOf, subjectNoun } from './angels-words';
 
+export const STATIC_PAY_ZERO_ALT_COST_FROM_EXILE = defineRule<IrStatic>({
+  id: 'static.pay-zero-alt-cost-creatures-from-exile',
+  family: 'static',
+  leading: ['once'],
+  cites: [
+    'CR 118.9 (Alternative Costs)',
+    'CR 601.2a (Casting Spells)',
+    'CR 601.2b (Casting Spells)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile.',
+  ],
+  rejects: [
+    'Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile',
+    'Once each turn, you may pay {1} rather than pay the mana cost for a creature spell you cast from exile.',
+    'Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from your graveyard.',
+    'Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast.',
+    'Once each turn, you may pay {0} rather than pay the mana cost for a spell you cast from exile.',
+    'Once each turn, you may pay {0} rather than pay the mana cost for creature spells you cast from exile.',
+    'You may pay {0} rather than pay the mana cost for a creature spell you cast from exile.',
+    'Once each turn, you may pay {0} rather than pay the mana cost for a creature spell an opponent casts from exile.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /once each turn, you may pay \{0\} rather than pay the mana cost for a creature spell you cast from exile\.(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const id = 'static.pay-zero-alt-cost-creatures-from-exile';
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        subjectNoun('you', 'you', { start: pos, end: r.pos }, id),
+        [
+          {
+            kind: 'energyAlternative',
+            count: 0,
+            fromExile: true,
+            oncePerTurn: true,
+            types: ['creature'],
+          },
+        ],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const STATIC_PAY_ENERGY_ALT_COST = defineRule<IrStatic>({
   id: 'static.pay-energy-alt-cost-permanents',
   family: 'static',
