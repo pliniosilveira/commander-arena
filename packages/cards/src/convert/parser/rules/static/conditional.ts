@@ -53,9 +53,11 @@ const STATIC_CONDITIONS = [
   // Quest for the Goblin Lord (CR 122.1, 611.3a): "~ has five or more quest counters on it".
   // Issue 145 (Voice of the Blessed): "~ has four or more +1/+1 counters on it".
   'condition.this-counter-count',
+  // CR 700.8c (Multiclass Baldric): "you have a full party".
+  'condition.full-party',
 ] as const;
 
-const CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
+export const STATIC_CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
   only: STATIC_CONDITIONS,
 });
 
@@ -411,13 +413,13 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
       if (alone.ok) {
         at = alone.pos;
       } else {
-        const more = sequence(literal(' and '), CONDITION, literal(', '))(ctx, grave.pos);
+        const more = sequence(literal(' and '), STATIC_CONDITION, literal(', '))(ctx, grave.pos);
         if (!more.ok) return more;
         condition = more.value[1];
         at = more.pos;
       }
     } else {
-      const head = sequence(CONDITION, literal(', '))(ctx, lead.pos);
+      const head = sequence(STATIC_CONDITION, literal(', '))(ctx, lead.pos);
       if (!head.ok) return head;
       condition = head.value[0];
       at = head.pos;
@@ -532,7 +534,7 @@ export const STATIC_CONDITIONAL_SUFFIX = defineRule<IrStatic>({
       choice(ANY_UNIT, CAST_FROM_GRAVEYARD_UNIT),
       // Federation Fleet deck, group E (Geordi La Forge): "~ can't be blocked if you control a Spacecraft." says the same as "as long as" (CR 611.3a).
       choice(literal(' as long as '), literal(' if ')),
-      CONDITION,
+      STATIC_CONDITION,
     )(ctx, pos);
     if (!read.ok) return read;
     const [part, , condition] = read.value;

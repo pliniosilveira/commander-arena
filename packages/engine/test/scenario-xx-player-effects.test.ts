@@ -843,7 +843,7 @@ describe('what the validator and the feature list say', () => {
     ).toEqual([expect.stringContaining('names its players')]);
     expect(
       reasons(
-        when({ kind: 'playerHasDesignation', player: { kind: 'you' }, designation: 'initiative' }),
+        when({ kind: 'playerHasDesignation', player: { kind: 'you' }, designation: 'ringBearer' }),
       ),
     ).toEqual([expect.stringContaining('unknown designation')]);
     expect(

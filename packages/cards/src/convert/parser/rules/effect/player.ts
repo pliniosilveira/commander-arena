@@ -520,6 +520,19 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
+ * "take the initiative" (CR 726.1: "There is no initiative in a game until an effect instructs a player to take the initiative"; CR 726.3: only one player has it at a time).
+ * Said of one player: "you" ("When ~ enters, you take the initiative.") or "target player" / "target opponent" ("Target player takes the initiative."): the engine's
+ * `takeInitiative` names one player. Several players are not read, as the initiative is held by one of them.
+ */
+const initiativeAction: Action = (subject, you, rule) =>
+  !(subject.det === 'you' || (subject.det === 'target' && subject.anyNumber !== true))
+    ? (ctx, pos) => fail(ctx, pos)
+    : map(
+        spanned(sequence(verbWord('take', you), pattern(/the initiative(?![\p{L}\p{N}])/iu))),
+        ({ span }) => actionClause(rule, 'takeInitiative', { player: subject }, span),
+      );
+
+/**
  * "takes an extra turn after this one" (CR 500.7) said of a player: "target player takes an extra turn after this one". Not read: a number of turns, a turn after another
  * turn, a rider about the turn.
  */
@@ -657,6 +670,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'CR 111.2 (Tokens)',
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
+    'CR 726.1 (The Initiative)',
+    'CR 726.3 (The Initiative)',
     'CR 101.4 (Handling Simultaneous Decisions)',
     'CR 104.3e (Ending the Game)',
   ],
@@ -664,6 +679,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you become the monarch',
     'target player becomes the monarch',
     'target opponent becomes the monarch',
+    'you take the initiative',
+    'target player takes the initiative',
+    'target opponent takes the initiative',
     'target player takes an extra turn after this one',
     'you take an extra turn after this one',
     'you draw a card',
@@ -873,6 +891,14 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its owner',
     'you become the monarch and',
     'you becomes the monarch',
+    'you take the initiative and',
+    'you takes the initiative',
+    'you take initiative',
+    'you take the initiatives',
+    'target player take the initiative',
+    'any number of target players take the initiative',
+    'each opponent takes the initiative',
+    'its controller takes the initiative',
     'you become monarch',
     'you become the monarchy',
     'you become the monarch of the realm',
@@ -932,6 +958,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.shuffle', shuffleAction),
         part('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
+        alone('effect.player.initiative', initiativeAction),
         alone('effect.player.extra-turn', extraTurnAction),
         alone('effect.player.lose-game', loseGameAction),
         alone('effect.player.gain-control-of-self', gainControlOfSelfAction),

@@ -190,6 +190,8 @@ import {
 import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
+import { PARTY_EFFECT_RULES } from './party';
+import { PARTY_TIME_LIBRARY_EFFECT_RULES } from './party-time-library';
 import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack';
@@ -564,6 +566,7 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
     'destroy target permanent you own',
+    "destroy target creature with power less than ~'s power",
   ],
   rejects: [
     'destroy it',
@@ -988,6 +991,41 @@ const RETURN_FROM_GRAVEYARD: Parser<{
 };
 
 /**
+ * "return target creature card and up to one target Cleric creature card from your graveyard to the battlefield" (Thwart the Grave, CR 404.1, 115.1, 110.2a): two targets of your own
+ * graveyard, the first said without the zone the last one names. Each is its own target and its own return, as a list of operands is. Only to the battlefield, only your own graveyard
+ * (a card of another graveyard has another owner, which "under your control" would say).
+ */
+const RETURN_PAIR_FROM_YOUR_GRAVEYARD: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+}> = (ctx, pos) => {
+  const r = sequence(
+    literal('return '),
+    family<IrNoun>('noun', { only: ['noun.target-graveyard-card-shared-zone'] }),
+    literal(' and '),
+    family<IrNoun>('noun', { only: ['noun.target-graveyard-card'] }),
+    TO_THE_BATTLEFIELD,
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const [, first, , last, to] = r.value;
+  if (last.filter.controller !== 'you' || last.plural || first.plural) return fail(ctx, pos);
+  const joined: IrNoun = { ...first, filter: { ...first.filter, controller: 'you' } };
+  return {
+    ok: true,
+    value: {
+      objects: {
+        kind: 'nounList',
+        items: [joined, last],
+        span: { start: joined.span.start, end: last.span.end },
+        rule: 'effect.return',
+      },
+      to,
+    },
+    pos: r.pos,
+  };
+};
+
+/**
  * "return target creature or land card from a graveyard to its owner's hand" (Pulse of Murasa, CR 400.3, 404.1): one target card of any graveyard goes to its owner's
  * hand, wherever it lies. One card only: the plural is "to their owners' hands", read by no rule.
  */
@@ -1068,6 +1106,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return the chosen cards to the battlefield tapped',
     // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
     'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
+    // Thwart the Grave (CR 404.1, 115.1): two targets of your graveyard, the zone said once.
+    'return target creature card and up to one target Cleric, Rogue, Warrior, or Wizard creature card from your graveyard to the battlefield',
+    'return target creature card and target land card from your graveyard to the battlefield',
     'return target Aura card from your graveyard to the battlefield attached to that token',
     // Limit Break deck, group 1 (Unfinished Business): the creature the instruction before returned.
     'return target Aura card from your graveyard to the battlefield attached to that creature',
@@ -1114,6 +1155,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from your graveyard to the battlefield attached to it',
     'return target creature card from your graveyard to the battlefield attached to those tokens',
     'return target creature card from your graveyard to the battlefield attached to',
+    'return target creature card and up to one target land card from your graveyard to your hand',
+    "return target creature card and target land card from an opponent's graveyard to the battlefield",
+    'return target creature card and target land card to the battlefield',
   ],
   parse: single(
     'effect.return',
@@ -1124,6 +1168,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_SAME_NAME,
+      RETURN_PAIR_FROM_YOUR_GRAVEYARD,
       RETURN_FROM_GRAVEYARD,
       RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND,
       RETURN_THAT_CARD,
@@ -1385,6 +1430,8 @@ export const EFFECT_RULES = [
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
   ...KEEPS_UP_TO_EFFECT_RULES,
+  // Stick Together (CR 700.8d): "each player chooses a party from among creatures they control, then sacrifices the rest" (read quietly: it starts like the other "each player" rules).
+  ...PARTY_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
   ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
@@ -1437,6 +1484,7 @@ export const EFFECT_RULES = [
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
+  ...PARTY_TIME_LIBRARY_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,

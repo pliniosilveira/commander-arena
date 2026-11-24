@@ -74,21 +74,38 @@ function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown
 export function runLookTake(state: GameState, res: ResolutionContext, ins: LookTake): StepOutcome {
   if (ins.stage === 'rest') return putRest(state, ins);
   const { seat } = ins;
-  const looked = topCards(state, seat, ins.count);
+  // Gonti: the library looked at may be another player's; `seat` is the one who looks and chooses.
+  const looked = topCards(state, ins.libraryOf ?? seat, ins.count);
   if (looked.length === 0) return done(state);
   // CR 701.20a (D-396): the cards are shown when the effect starts, before anyone chooses. The event comes out as an instruction of its own, because a
   // question (`needs`) carries no events; the same instruction then runs again, marked `revealed`, and asks.
   if (ins.revealAll === true && ins.revealed !== true) {
     return done(state, [revealedEvent(state, seat, looked)], [{ ...ins, revealed: true }]);
   }
+  // Harper Recruiter (CR 608.2d): one card for each kind, asked in turn; the cards chosen so far are not offered again. An answer moves on to the next kind.
+  const kindFilter = ins.kinds === undefined ? undefined : ins.kinds[ins.kindAt ?? 0];
+  const picked = ins.picked ?? [];
+  if (ins.kinds !== undefined && ins.chosen !== null) {
+    const all = [...picked, ...ins.chosen];
+    const at = (ins.kindAt ?? 0) + 1;
+    if (at < ins.kinds.length) {
+      return done(state, [], [{ ...ins, kindAt: at, picked: all, chosen: null }]);
+    }
+    const { kinds: _kinds, kindAt: _at, picked: _picked, ...plain } = ins;
+    void _kinds;
+    void _at;
+    void _picked;
+    return runLookTake(state, res, { ...plain, chosen: all });
+  }
   const legal = looked.filter((id) => {
     const card = state.objects[id];
     return (
       card !== undefined &&
+      !picked.includes(id) &&
       matchesFilter(
         state,
         card,
-        { ...ins.filter, zone: 'library' },
+        { ...(kindFilter ?? ins.filter), zone: 'library' },
         // CR 608.2d, 205.3m (D-566): "Choose a creature type. ... cards of the chosen type": the type chosen as this effect resolves.
         {
           controller: seat,
@@ -130,6 +147,10 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
   // `take.all`: "put all land cards from among them": every card that matches goes, with no question.
   const chosenNow = ins.all === true ? legal : (ins.chosen ?? (forced ? legal : null));
+  // A kind with no card to take asks nothing: the next kind is asked, or the cards chosen are taken.
+  if (ins.kinds !== undefined && legal.length === 0) {
+    return runLookTake(state, res, { ...ins, chosen: [] });
+  }
   if (chosenNow === null && legal.length > 0) {
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
@@ -141,7 +162,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
       looked,
       // CR 702.75a (D-145): Hideaway exiles one of the cards looked at; every other take is a "you may".
       min: Math.min(ins.min ?? 0, legal.length),
-      max: Math.min(ins.max, legal.length),
+      max: Math.min(ins.kinds === undefined ? ins.max : 1, legal.length),
       // CR 202.3 (D-230): "with total mana value 4 or less": the answer is checked against the mana value of each card.
       ...(ins.totalManaValue === undefined
         ? {}
@@ -218,11 +239,22 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
           ? // CR 303.4f (D-230): an Aura among the cards chooses what it enchants as it enters (`rules/aura-entry.ts`).
             withAuraEntries(
               state,
-              moveInstructions(chosen, 'battlefield', 'top', ins.tapped === true, 'you'),
+              moveInstructions(
+                chosen,
+                'battlefield',
+                'top',
+                ins.tapped === true,
+                'you',
+                ins.withCounters,
+              ),
             )
           : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
             moveInstructions(chosen, 'exile').map((i) =>
-              i.kind === 'move' ? { ...i, linkTo: res.source, faceDown: true as const } : i,
+              i.kind === 'move'
+                ? ins.unlinked === true
+                  ? { ...i, faceDown: true as const }
+                  : { ...i, linkTo: res.source, faceDown: true as const }
+                : i,
             )),
     { ...ins, stage: 'rest', chosen, left },
   ]);
@@ -268,7 +300,7 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
       ],
     );
   }
-  return bottomInRandomOrder(state, ins.seat, left);
+  return bottomInRandomOrder(state, ins.libraryOf ?? ins.seat, left);
 }
 
 /**

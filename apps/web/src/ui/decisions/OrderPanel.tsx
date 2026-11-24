@@ -2,7 +2,7 @@ import type { OrderTriggersDecision } from '@commander-arena/engine';
 import { useEffect, useRef, useState } from 'react';
 import { nounOfTypes, triggerWords } from '../../game/artifacts-text';
 import { laterOrderWording } from '../../game/later-text';
-import { inherentTriggerWording } from '../../game/monarch-text';
+import { inherentTriggerWording, showsRuleText } from '../../game/monarch-text';
 import { isReflexiveTrigger } from '../../game/recursion-text';
 import { chapterWord } from '../../game/saga';
 import { useHoverProps } from './hover';
@@ -74,7 +74,9 @@ export function OrderPanel({
                 : trigger.trigger === undefined || trigger.trigger.kind === 'chapter'
                   ? null
                   : trigger.source === null
-                    ? inherentTriggerWording(trigger.trigger, true)
+                    ? showsRuleText(trigger.sourceName)
+                      ? trigger.sourceOracleText
+                      : inherentTriggerWording(trigger.trigger, true)
                     : triggerWords(
                         trigger.trigger,
                         {

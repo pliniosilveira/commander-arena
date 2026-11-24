@@ -47,7 +47,9 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { defenderOf } from './defending';
 import { derive } from './derive';
+import { findDungeonTriggers } from './dungeon';
 import { emblemsOf } from './emblem';
+import { findInitiativeTriggers } from './initiative';
 import { findLaterTriggers } from './later-triggers';
 import { findMonarchTriggers } from './monarch';
 import { findRingTriggers } from './ring';
@@ -266,6 +268,13 @@ function occurrences(
         ) {
           return [];
         }
+        // CR 305.1 (Deep Gnome Terramancer): "without being played": the land was put onto the battlefield by an effect, so no `landPlayed` event names it.
+        if (
+          trigger.notPlayed === true &&
+          batch.events.some((e) => e.kind === 'landPlayed' && e.object === event.to)
+        ) {
+          return [];
+        }
         return [{ subject: event.to, seat: null }];
       }
       // A token was never in a graveyard, and was not cast.
@@ -283,6 +292,8 @@ function occurrences(
         seat: event.seat,
         attackTarget: a.target,
         player: event.seat,
+        // CR 508.6: the player this creature attacks (not a planeswalker or battle), what "that player" of an `at: 'opponent'` trigger is.
+        ...(a.target.kind === 'player' ? { attacked: [a.target.seat] } : {}),
       }));
     case 'castSpell':
       // D-218 (CR 707.10): a copy put onto the stack is not cast, but "cast or copy" counts it, under the control of the player who has it.
@@ -911,7 +922,7 @@ function matchesWhat(
  */
 function attacksAt(
   state: GameState,
-  at: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents' | undefined,
+  at: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents' | 'opponent' | undefined,
   target: AttackTarget | undefined,
   you: SeatId,
 ): boolean {
@@ -923,6 +934,8 @@ function attacksAt(
     const defender = defenderOf(state, target);
     return defender !== null && opponentsOf(state, you).includes(defender);
   }
+  // CR 508.1b, 508.6: "attacks one of your opponents": a player other than the controller, as a player.
+  if (at === 'opponent') return target.kind === 'player' && target.seat !== you;
   if (target.kind === 'player') return target.seat === you;
   if (at === 'you') return false;
   // CR 508.5: the defending player of a creature attacking a planeswalker or a battle is the controller or the protector.
@@ -2170,7 +2183,12 @@ export function collectTriggers(recorded: GameState, events: readonly GameEvent[
   const own = [...withDoubledTriggers(state, limited.found, events)];
   const delayed = findDelayedTriggers(state, events);
   // CR 725.2 (D-127): the monarch's two inherent abilities, which belong to no object.
-  const monarch = findMonarchTriggers(state, events);
+  const monarch = [
+    ...findMonarchTriggers(state, events),
+    // CR 726.2 (the initiative) and CR 309.4c (the room abilities of a dungeon): inherent abilities too.
+    ...findInitiativeTriggers(state, events),
+    ...findDungeonTriggers(events),
+  ];
   // CR 701.54c (D-196): the abilities of the Ring, which belong to no object either.
   const ring = findRingTriggers(state, events);
   // CR 702.62a, 702.35a (D-128): the abilities of Suspend and Madness that work from exile.

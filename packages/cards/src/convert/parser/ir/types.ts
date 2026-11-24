@@ -556,6 +556,8 @@ export type IrAmount =
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
   // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
   | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
+  // "for each creature type among creatures you control" (Valiant Changeling, CR 205.3m): the creature types the permanents of the group have between them, each once
+  | { readonly kind: 'creatureTypesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each different mana value among instant and sorcery cards in your graveyard" (Eris, issue 121, CR 202.3): the distinct mana values the cards of the group have, each once
   | { readonly kind: 'differentManaValuesAmong'; readonly of: IrNoun; readonly span: Span }
   // "equal to the number of differently named tokens you control" (Neriv, issue 101, CR 201.2): the distinct names the permanents of the group have, each once
@@ -596,6 +598,8 @@ export type IrAmount =
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
   // "the number of experience counters you have" (Meren of Clan Nel Toth, CR 122.1): the experience counters the controller has now
   | { readonly kind: 'experienceCounters'; readonly span: Span }
+  // "the number of creatures in your party" (CR 700.8): the party of the controller, up to one each of Cleric, Rogue, Warrior and Wizard
+  | { readonly kind: 'partySize'; readonly span: Span }
   // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-638, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
   | {
       readonly kind: 'spellsCastThisTurn';
@@ -1335,11 +1339,13 @@ export interface IrKeywordArg extends IrNode {
   readonly name: string;
   /**
    * Feather deck group 1 (D-451, D-452, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
-   * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves. `name` is then `protection`.
+   * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves, or (`cardTypes`) the card types named. `name` is then `protection`.
    */
   readonly protection?:
     | { readonly colors: readonly string[] }
-    | { readonly choice: 'color' | 'cardType' };
+    | { readonly choice: 'color' | 'cardType' }
+    /** "gains protection from creatures until end of turn" (Seasoned Dungeoneer, CR 702.16a, 205.2a): the card types named, as the engine's card type words. */
+    | { readonly cardTypes: readonly string[] };
 }
 
 /** Keywords as the words spell them ("haste", "first strike"), the grant of "except it has haste" (stage P34, D-152, CR 707.9b). */
@@ -1364,6 +1370,8 @@ export interface IrTypeList extends IrNode {
   readonly subtypes: readonly string[];
   readonly cardTypes?: readonly string[];
   readonly additive?: boolean;
+  /** "becomes a 2/2 creature with all creature types" (CR 205.3m, 702.73a): every creature type is added (the engine's `setTypes` `allCreatureTypes`), besides the types listed. */
+  readonly allCreatureTypes?: boolean;
   /** "It's a black Zombie in addition to its other colors and types" (issue 159, CR 105.3): the color letters the object also has, as names ("black"). */
   readonly colors?: readonly string[];
 }
@@ -1742,7 +1750,7 @@ export interface IrTrigger extends IrNode {
    * 'attacks' at someone (stage P29, D-133, CR 508.1b): "attacks you" (`you`) or "attacks you or a planeswalker you control"
    * (`youOrPlaneswalkers`); left out, an attack at anyone. `defendingYou`: "..., if you're the defending player" (CR 508.5). `yourOpponents`: "attacks one of your opponents" (CR 508.5).
    */
-  readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents';
+  readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'yourOpponents' | 'opponent';
   /** 'dealtDamage': "is dealt combat damage" rather than "is dealt damage" (stage P29, D-133). */
   readonly combat?: true;
   /** 'enters': "enters untapped" (`false`) or "enters tapped" (`true`), how the permanent entered (stage P30, CR 603.6a). */
@@ -2226,6 +2234,8 @@ export type IrStaticEffect =
   | { readonly kind: 'damageCantBePrevented' }
   /** "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d): the permanent changes a rule of the game. */
   | { readonly kind: 'damageAsThoughWither' }
+  /** "If an opponent would search a library, that player searches the top four cards of that library instead." (Aven Mindcensor, CR 701.23): the number of cards. */
+  | { readonly kind: 'opponentSearchTopOnly'; readonly count: number }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
    * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.
@@ -2380,6 +2390,11 @@ export type IrStaticEffect =
    * (the statement's subject, `you`) have Encore with the cost the mana value of the card.
    */
   | { readonly kind: 'graveyardEncore'; readonly cards: IrNoun }
+  /**
+   * "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}." (Solemn Doomguide, CR 702.84a, 613.1f): the cards of `cards` in the graveyard of
+   * the controller (the statement's subject, `you`) have Unearth with the plain mana cost `cost`.
+   */
+  | { readonly kind: 'graveyardUnearth'; readonly cards: IrNoun; readonly cost: IrCost }
   | { readonly kind: 'raw'; readonly text: string };
 
 /** One more subject of a statement and what it gets or has: "~ gets +2/+2 and creatures you control have vigilance". */
@@ -2397,6 +2412,11 @@ export interface IrStatic extends IrNode {
    * as long as ... (stage P29, D-133, CR 611.3a): the condition applies to every effect of the statement, and of `also`.
    */
   readonly condition?: IrCondition;
+  /**
+   * "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ..." (Multiclass Baldric, CR 611.3a, 613.1f): one condition for each effect,
+   * in the order of `effects` (the same length), each effect applying only while its own condition holds. Set instead of `condition`, only by the rule that reads the list.
+   */
+  readonly effectConditions?: readonly IrCondition[];
   /**
    * "As long as this card is in your graveyard, ..." (stage P34, D-152, CR 113.6b, 604.2): the ability works while its card is in its owner's
    * graveyard, and not on the battlefield; the words are no condition of the engine, they say where the ability works.
@@ -2538,6 +2558,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'manaValueOf',
   'colorsOf',
   'cardTypesAmong',
+  'creatureTypesAmong',
   'differentNamesAmong',
   'timesKicked',
   'lifeLostThisWay',
@@ -2551,6 +2572,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'diedThisTurn',
   'cardsDrawnThisTurn',
   'experienceCounters',
+  'partySize',
   'spellsCastThisTurn',
   'greatestManaValueCast',
   'cardsToGraveyardThisTurn',
@@ -2606,6 +2628,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'aggregate':
     case 'colorsAmong':
     case 'cardTypesAmong':
+    case 'creatureTypesAmong':
       return [amount.of];
     case 'half':
     case 'multiple':

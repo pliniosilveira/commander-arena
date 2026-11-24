@@ -50,6 +50,8 @@ describe('the dimensions', () => {
     // The costs and durations the engine pays and ends (scenario-xx-activated-*, -pump-*).
     expect(SUPPORTED_FEATURES.costKinds).toEqual([
       'tap',
+      // CR 107.6: the untap symbol {Q}.
+      'untap',
       'mana',
       'payLife',
       'payXLife',
@@ -296,6 +298,7 @@ describe('the dimensions', () => {
       'cantGainLife',
       'damageCantBePrevented',
       'damageAsThoughWither',
+      'opponentSearchTopOnly',
       'playerProtection',
       'cantHaveCounters',
       'cantBeSacrificed',
@@ -327,6 +330,7 @@ describe('the dimensions', () => {
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
       'grantEncoreToGraveyardCards',
+      'grantUnearthToGraveyardCards',
     ]);
     expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.
@@ -397,7 +401,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('amount:countOf')).toBe(true);
     expect(isFeatureSupported('static:costReduction')).toBe(true);
     expect(isFeatureSupported('condition:controlCommander')).toBe(true);
-    expect(isFeatureSupported('cost:untap')).toBe(false);
+    expect(isFeatureSupported('cost:untap')).toBe(true);
     // D-232: the cost of an activated ability (Coin of Fate); an additional cost of a spell refuses it.
     expect(isFeatureSupported('cost:exileFromGraveyard')).toBe(true);
     expect(isFeatureSupported('selector:anyOf')).toBe(true);

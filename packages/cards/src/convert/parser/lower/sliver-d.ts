@@ -54,6 +54,8 @@ export function usesSharesWithSource(written: unknown): boolean {
   if (written === null || typeof written !== 'object') return false;
   if (Array.isArray(written)) return written.some(usesSharesWithSource);
   const record = written as Record<string, unknown>;
+  // An ability in quotes is read as the ability of the permanent that has it, with its own check (Folk Hero: a granted triggered ability).
+  if (record.kind === 'quoted') return false;
   if (record.sharesCreatureTypeWithSource === true) return true;
   return Object.values(record).some(usesSharesWithSource);
 }

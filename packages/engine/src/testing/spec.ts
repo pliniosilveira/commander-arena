@@ -3,6 +3,7 @@
  * before any state is built (D-012): spells on the battlefield, battlefield-only options in other
  * zones, bad counts and mana, commander options on non-commanders.
  */
+import type { UndercityRoom } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
 import { isPermanentType } from '../characteristics';
 import type { SeatId } from '../ids';
@@ -37,6 +38,8 @@ export interface SeatSpec {
   citysBlessing: boolean;
   /** The seat's speed at the start (CR 702.179b); null: it has none. */
   speed: number | null;
+  /** The room of Undercity the seat's venture marker is on at the start (CR 309.4); null: the seat is in no dungeon. */
+  dungeon: UndercityRoom | null;
   /** Combat damage this seat has taken from a commander, by card name (CR 903.10a). */
   commanderDamage: { name: string; amount: number }[];
 }
@@ -64,6 +67,7 @@ export function emptySeatSpec(): SeatSpec {
     companion: null,
     citysBlessing: false,
     speed: null,
+    dungeon: null,
     commanderDamage: [],
   };
 }

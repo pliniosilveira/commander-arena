@@ -70,6 +70,7 @@ import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
+import { PARTY_CONDITION_RULES } from './party';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
@@ -677,6 +678,8 @@ export const CONDITION_RULES = [
   CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
   ...EXPERIENCE_CONDITION_RULES,
+  // CR 700.8c: "you have a full party".
+  ...PARTY_CONDITION_RULES,
   ...MANA_VALUE_AT_LEAST_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

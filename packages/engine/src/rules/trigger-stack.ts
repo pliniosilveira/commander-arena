@@ -235,8 +235,9 @@ function runQueue(input: GameState): PutResult {
     const trigger = ctx?.queue[0];
     if (ctx === null || trigger === undefined) break;
     state = { ...state, triggering: { ...ctx, queue: ctx.queue.slice(1), awaiting: null } };
-    if (trigger.source === null) {
-      // An inherent ability of the monarch (CR 725.2) has no modes and no targets: it goes on the stack as it is.
+    if (trigger.source === null && (trigger.ability.targets ?? []).length === 0) {
+      // An inherent ability of the monarch (CR 725.2) has no modes and no targets: it goes on the stack as it is. One with targets (a room ability of a dungeon, CR 309.4c, 603.3d)
+      // chooses them below as any triggered ability does.
       const pushed = pushTrigger(state, trigger);
       state = pushed.state;
       events.push(pushed.event);
@@ -259,9 +260,10 @@ function runQueue(input: GameState): PutResult {
         ? {}
         : { triggerSubject: trigger.subject }),
     };
-    const modal = modalOfAbility(trigger.ability);
+    // A modal ability always has a source (an inherent ability is never modal).
+    const modal = trigger.source === null ? null : modalOfAbility(trigger.ability);
     let modes: readonly number[] = [];
-    if (modal !== null) {
+    if (modal !== null && trigger.source !== null) {
       const sets = legalModeSets(state, modal, select);
       const only = sets[0];
       // D-524 (CR 700.2b): "choose up to one" with nothing to choose but no mode: the ability is removed, as with no legal choice at all.
@@ -332,15 +334,18 @@ function runQueue(input: GameState): PutResult {
       modal === null ? undefined : specModes(modal, modes),
     );
     if (choices.some((c) => c.legal.length < c.min)) {
-      // CR 603.3d: a required choice with no legal choice: the ability is simply removed.
-      events.push({
-        kind: 'abilityRemoved',
-        seat: trigger.controller,
-        source: trigger.source,
-        abilityIndex: trigger.abilityIndex,
-        reason: 'noLegalTargets',
-        ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
-      });
+      // CR 603.3d: a required choice with no legal choice: the ability is simply removed. An ability with no source (a room ability of a dungeon, CR 309.4c) has no object
+      // to name in the event; the `ventured` event that made it trigger is what the log shows.
+      if (trigger.source !== null) {
+        events.push({
+          kind: 'abilityRemoved',
+          seat: trigger.controller,
+          source: trigger.source,
+          abilityIndex: trigger.abilityIndex,
+          reason: 'noLegalTargets',
+          ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
+        });
+      }
       continue;
     }
     if (isForced(choices)) {

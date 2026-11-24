@@ -105,7 +105,9 @@ describe('Gods Willing and Shelter: "gains protection from the color of your cho
     'Target creature you control gains protection from the color of your choice.',
     'Target creature you control gains protection from the color of your choice until your next turn.',
     'Target creature you control gains protection from the colors of your choice until end of turn.',
-    'Target creature gains protection from artifacts until end of turn.',
+    // a card type is read since Seasoned Dungeoneer; "everything" is not
+    'Target creature gains protection from everything until end of turn.',
+    'Target creature gains protection from artifact until end of turn.',
     'Target creature gains protection from the player of your choice until end of turn.',
     'Target creature gains flying and protection from red until end of turn.',
     'Creatures you control gain protection from the color of your choice until end of turn.',

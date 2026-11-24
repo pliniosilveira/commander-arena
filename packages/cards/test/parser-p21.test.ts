@@ -167,6 +167,13 @@ describe("only skulk is grantable of the keywords of batch 2 (the engine's GRANT
       keyword: { kind: 'skulk' },
       duration: END,
     });
+    // Extort is grantable too since Pontiff of Blight (CR 702.101b): each instance granted triggers on its own.
+    expect(effectOf('Target creature gains extort until end of turn.', 'instant')).toEqual({
+      kind: 'grantKeyword',
+      objects: { kind: 'target', id: 't1' },
+      keyword: { kind: 'extort' },
+      duration: END,
+    });
     expect(abilities('Creatures you control have skulk.', 'enchantment')).toEqual([
       {
         kind: 'static',
@@ -183,7 +190,6 @@ describe("only skulk is grantable of the keywords of batch 2 (the engine's GRANT
     ['Target creature gains battle cry until end of turn.', 'battle cry until end of turn.'],
     ['Target creature gains mentor until end of turn.', 'mentor until end of turn.'],
     ['Target creature gains evolve until end of turn.', 'evolve until end of turn.'],
-    ['Target creature gains extort until end of turn.', 'extort until end of turn.'],
     ['Target creature gains convoke until end of turn.', 'convoke until end of turn.'],
     ['Target creature gains cascade until end of turn.', 'cascade until end of turn.'],
     ['Target creature gains storm until end of turn.', 'storm until end of turn.'],

@@ -214,6 +214,9 @@ export function runChooseMove(
         if (i.kind !== 'move') return i;
         // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
         if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
+        // CR 610.3: "until this creature leaves the battlefield": each card exiled comes back when the permanent leaves.
+        if (instruction.untilLeaves !== undefined)
+          return { ...i, untilLeaves: instruction.untilLeaves };
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
@@ -329,7 +332,7 @@ export function runChooseMove(
   const anyNumber = instruction.anyNumber === true;
   if (!anyNumber && !optional && legal.length <= instruction.count) return run(legal, true);
   const max = anyNumber ? legal.length : Math.min(instruction.count, legal.length);
-  const min = optional ? 0 : max;
+  const min = optional || anyNumber ? 0 : max;
   if (fromCards) {
     const zone =
       instruction.filter.zone === 'graveyard'

@@ -34,6 +34,7 @@ export function optionText(
     | 'playerChoice'
     | 'protector'
     | 'chooseOpponent'
+    | 'dungeonRoom'
     | 'option'
     | 'effect'
     | 'riot'
@@ -81,6 +82,7 @@ export function purposeNoun(
     | 'playerChoice'
     | 'protector'
     | 'chooseOpponent'
+    | 'dungeonRoom'
     | 'option'
     | 'effect'
     | 'riot'
@@ -104,6 +106,7 @@ export function purposeNoun(
   if (purpose === 'playerChoice' || purpose === 'player') return 'player';
   if (purpose === 'protector') return 'protector';
   if (purpose === 'chooseOpponent') return 'opponent';
+  if (purpose === 'dungeonRoom') return 'room';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
   if (purpose === 'planeswalkerType') return 'planeswalker type';

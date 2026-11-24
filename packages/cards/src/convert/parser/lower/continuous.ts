@@ -75,7 +75,14 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
       const protection = word.protection;
       let keyword: Keyword;
-      if ('choice' in protection) {
+      if ('cardTypes' in protection) {
+        // Seasoned Dungeoneer (CR 702.16a, 205.2a): "gains protection from creatures", the engine's protection from card types.
+        keyword = {
+          kind: 'protection',
+          from: 'cardType',
+          types: protection.cardTypes as CardType[],
+        };
+      } else if ('choice' in protection) {
         // D-514 (CR 702.16a, 608.2d): the card type of the controller's choice, asked as the effect resolves, as the color is.
         keyword = {
           kind: 'protection',
@@ -477,6 +484,10 @@ function becoming(
       ...(types.additive === true ? { additive: true as const } : {}),
       duration: END,
     });
+    // CR 205.3m, 613.1d: "with all creature types" is the layer 4 effect of its own (the engine keeps it apart from the types listed).
+    if (types.allCreatureTypes === true) {
+      out.push({ kind: 'setTypes', objects, allCreatureTypes: true, duration: END });
+    }
   }
   if (colors !== undefined) out.push({ kind: 'setColors', objects, colors, duration: END });
   if (base !== undefined) {

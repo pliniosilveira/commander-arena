@@ -519,6 +519,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
+    // CR 702.101b (Extort): a keyword whose instances each trigger, given to a group.
+    'Other creatures you control have extort.',
     'Other commanders you control get +2/+2 and have lifelink.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',

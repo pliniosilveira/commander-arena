@@ -250,6 +250,8 @@ interface SpellGrantSource {
 export interface EncoreGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
+  /** `grantUnearthToGraveyardCards` (CR 702.84a): the fixed cost of the Unearth it gives; left out for Encore. */
+  readonly unearth?: readonly Cost[];
 }
 
 /** A static ability of a permanent that stops the legend rule applying to the permanents `what` names (`legendRuleDoesntApply`, CR 704.5j). */
@@ -523,6 +525,9 @@ function encoreGrantsOf(object: GameObject, abilities: readonly Ability[]): Enco
   for (const a of abilities) {
     if (a.kind === 'static' && a.static.kind === 'grantEncoreToGraveyardCards') {
       out.push({ object, what: a.static.what });
+    }
+    if (a.kind === 'static' && a.static.kind === 'grantUnearthToGraveyardCards') {
+      out.push({ object, what: a.static.what, unearth: a.static.cost });
     }
   }
   return out;
@@ -1075,6 +1080,14 @@ function graveyardGrantsOn(state: GameState, target: GameObject, base: StaticBas
     if (
       !matchesFilterWith(state, target, () => base, filter, subjectContextOf(state, source.object))
     ) {
+      continue;
+    }
+    // CR 702.84a: Unearth with the cost the permanent states.
+    if (source.unearth !== undefined) {
+      grants.push({
+        ability: { kind: 'keyword', keyword: { kind: 'unearth', cost: source.unearth } },
+        timestamp: source.object.timestamp,
+      });
       continue;
     }
     const value = base.manaValue ?? 0;

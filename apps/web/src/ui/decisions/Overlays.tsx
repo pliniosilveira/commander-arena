@@ -36,6 +36,7 @@ import { NamedOptionDialog } from './NamedOptionDialog';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
+import { PartyDialog } from './PartyDialog';
 import { PassingDamagePanel } from './PassingDamagePanel';
 import { PayOptionsDialog } from './PayOptionsDialog';
 import { PermanentPanel } from './PermanentPanel';
@@ -273,6 +274,11 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       <PayOptionsDialog key={d.id} d={d} view={view} ui={ui} model={model} update={update} />
     ),
 
+    // CR 700.8d (Stick Together): the party is chosen in a dialog of its own.
+    chooseParty: (d) => (
+      <PartyDialog key={d.id} d={d} view={view} ui={ui} model={model} update={update} />
+    ),
+
     // The division of combat damage is a dock panel, so the board stays visible (issue 92).
     assignDamage: none,
   };
@@ -307,6 +313,8 @@ export function DockPanel(props: OverlayProps): ReactNode {
     chooseModes: none,
     // The creatures, artifacts or graveyard cards are a modal: their cards do not fit the dock.
     choosePayOptions: none,
+    // The party is a modal: a row of creatures for each type does not fit the dock.
+    chooseParty: none,
     // The arrangement is a modal: card faces in two rows do not fit the dock.
     arrangeCards: none,
 

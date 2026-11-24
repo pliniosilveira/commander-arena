@@ -128,9 +128,11 @@ export function runContinuous(
   targets: readonly ChosenTarget[],
 ): StepOutcome {
   // CR 611.2c: the set is fixed now. A target that is no longer a permanent is skipped (CR 608.2b).
-  const affected = resolveObjects(state, node.objects, ctx, targets).filter(
-    (id) => state.objects[id]?.zone === 'battlefield',
-  );
+  // CR 105.3, 613.1e: a color change also reaches a spell on the stack ("target spell or permanent becomes white"): the characteristic of a spell is the characteristic of the object on the stack.
+  const affected = resolveObjects(state, node.objects, ctx, targets).filter((id) => {
+    const zone = state.objects[id]?.zone;
+    return zone === 'battlefield' || (node.kind === 'setColors' && zone === 'stack');
+  });
   if (affected.length === 0) return done(state);
   // CR 611.2b (D-196): "for as long as you control this" does nothing when the duration is over before the effect would begin.
   const until =

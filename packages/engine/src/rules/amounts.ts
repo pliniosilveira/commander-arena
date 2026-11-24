@@ -9,6 +9,7 @@
  * objects or an amount of life or cards is needed).
  */
 import type { Amount, ObjectFilter, PlayerStat } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState } from '../state/types';
@@ -21,6 +22,7 @@ import { devotionOf } from './devotion';
 import { timesKickedOf } from './kicks';
 import { manaSpentOf } from './mana-spent';
 import { manaValueOfCost } from './mana-value';
+import { partySizeOf } from './party';
 import {
   countMatching,
   matchesFilter,
@@ -54,6 +56,7 @@ type StateAmount = Extract<
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'experienceCounters'
+      | 'partySize'
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
       | 'cardsToGraveyardThisTurn'
@@ -63,9 +66,12 @@ type StateAmount = Extract<
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
       | 'differentNamesAmong'
+      | 'creatureTypesAmong'
       | 'colorsAmong';
   }
 >;
+
+const CREATURE_TYPE_SET: ReadonlySet<string> = new Set(CREATURE_TYPES);
 
 /** History uses the event's controller and types, never the object's current zone or characteristics. */
 export function historyCount(
@@ -110,6 +116,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'experienceCounters' ||
+    amount.kind === 'partySize' ||
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'cardsToGraveyardThisTurn' ||
@@ -119,6 +126,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
     amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'creatureTypesAmong' ||
     amount.kind === 'colorsAmong'
   );
 }
@@ -212,6 +220,23 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(derive(state, obj).name);
+  }
+  return seen.size;
+}
+
+/**
+ * CR 205.3m (Valiant Changeling): "the number of creature types among creatures you control": the creature types (not the other subtypes, CR 205.3d) of the battlefield permanents the
+ * filter matches, each once, as the permanents have them now (layers 1 and 4, through `derive`: a permanent with every creature type has them all).
+ */
+function creatureTypesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, filter.zone ?? 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const subtype of derive(state, obj).subtypes) {
+      if (CREATURE_TYPE_SET.has(subtype)) seen.add(subtype);
+    }
   }
   return seen.size;
 }
@@ -554,6 +579,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'creatureTypesAmong':
+      return creatureTypesAmongOf(state, amount.filter, ctx);
     case 'colorsAmong':
       return colorsAmongOf(state, amount.filter, ctx);
     case 'devotion':
@@ -608,6 +635,16 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'partySize':
+      // CR 700.8a, 700.8b: the creatures the controller of the effect controls, read as they are now.
+      return partySizeOf(
+        objectsInZone(state, 'battlefield').flatMap((id) => {
+          const obj = state.objects[id];
+          if (obj === undefined || controllerOf(state, obj) !== ctx.controller) return [];
+          const view = derive(state, obj);
+          return view.types.includes('creature') ? [view.subtypes] : [];
+        }),
+      );
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller of the effect has now (`SeatState.experience`).
       return getSeat(state, ctx.controller).experience ?? 0;
