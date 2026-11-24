@@ -232,3 +232,68 @@ describe('Harper Recruiter (Whenever this creature attacks, look at the top four
     expect(g.state.pending?.kind).toBe('priority');
   });
 });
+
+describe("Gonti, Lord of Luxury (When Gonti enters, look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell.)", () => {
+  const GONTI = real('Gonti, Lord of Luxury');
+  const card = (name: string, cost: string) =>
+    parsed(`SYNTHETIC ${name}`, 'Creature — Bear', '', {
+      power: '2',
+      toughness: '2',
+      manaCost: cost,
+    });
+  const RED = card('Red Bear', '{R}{R}');
+  const TOP2 = card('Second', '{G}');
+  const TOP3 = card('Third', '{1}');
+  const TOP4 = card('Fourth', '{1}');
+  const TOP5 = card('Fifth', '{1}');
+  const board = () =>
+    scenario()
+      .define(GONTI)
+      .define(RED)
+      .define(TOP2)
+      .define(TOP3)
+      .define(TOP4)
+      .define(TOP5)
+      .seat(0)
+      .hand(GONTI.name)
+      .battlefield('Swamp', { count: 4 })
+      .battlefield('Plains', { count: 3 })
+      .library(...FILLER)
+      .seat(1)
+      .library(RED.name, TOP2.name, TOP3.name, TOP4.name, TOP5.name, ...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test("one of the top four cards of the opponent's library is exiled, the rest go to the bottom of that library; the fifth card is not looked at", () => {
+    const g = board();
+    g.act(0).cast(GONTI.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards({ name: RED.name, seat: 1 });
+    g.expect.zone(RED.name, 'exile', { seat: 1 });
+    const library = g.state.seats[1]?.library ?? [];
+    // 35 cards: one exiled; the fifth card is now the top card, the three others went to the bottom.
+    expect(library).toHaveLength(34);
+    expect(g.state.objects[library[0] as `o${number}`]?.zone).toBe('library');
+    g.expect.zone(TOP5.name, 'library', { seat: 1 });
+    expect(g.state.seats[0]?.library).toHaveLength(30);
+  });
+
+  test("the exiled card can be cast by Gonti's controller, with mana of any type, even though it is the opponent's card (CR 609.4b)", () => {
+    const g = board();
+    g.act(0).cast(GONTI.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards({ name: RED.name, seat: 1 });
+    // {R}{R} is paid with Swamps and Plains: no red mana is needed.
+    g.act(0).cast({ name: RED.name, seat: 1 }, { pay: true });
+    g.passAll();
+    g.expect.zone(RED.name, 'battlefield', { seat: 0 });
+  });
+
+  test('the opponent cannot cast the card', () => {
+    const g = board();
+    g.act(0).cast(GONTI.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards({ name: RED.name, seat: 1 });
+    expect(() => g.act(1).cast(RED.name, { pay: true })).toThrow(/cast|legal|exile/i);
+  });
+});

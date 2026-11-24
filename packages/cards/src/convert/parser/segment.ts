@@ -299,6 +299,15 @@ const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|that card|them|those cards) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
 /**
+ * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for
+ * as long as it remains exiled, and mana of any type can be spent to cast that spell." (Gonti, Lord of Luxury, CR 401.2, 406.3, 609.4b): two sentences that are one instruction
+ * (`effect.look-exile-cast-any-type`).
+ */
+const LOOK_EXILE_ONE_FACE_DOWN =
+  /(?:^|, )look at the top [^.]* cards of [^.]* library, exile one of them face down, then put the rest [^.]*\.$/i;
+const MAY_CAST_THAT_CARD_ANY_TYPE =
+  /^you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell\.$/i;
+/**
  * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
  * CR 115.1, 608.2c): the second sentence says what is done with the cards the first one targets, so the two are one instruction (`effect.put-one-per-graveyard`).
  */
@@ -1281,6 +1290,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, LOOK_EXILE_ONE_FACE_DOWN) &&
+      said(b, MAY_CAST_THAT_CARD_ANY_TYPE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
     } else if (
       a !== undefined &&
       b !== undefined &&

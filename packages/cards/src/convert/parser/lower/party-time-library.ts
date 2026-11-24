@@ -5,7 +5,7 @@
  */
 import type { IrClause } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
-import { lowerFilter } from './nouns';
+import { lowerFilter, playerSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
 const EXILE_ANY_NUMBER_UNTIL_LEAVES: Lowering<IrClause, Effects> = {
@@ -73,7 +73,48 @@ const LOOK_TAKE_KINDS: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as
+ * long as it remains exiled, and mana of any type can be spent to cast that spell." (Gonti, Lord of Luxury, CR 401.2, 406.3, 609.4b): the engine's `lookAtTop` of the library of the
+ * target player, the card taken exiled face down and remembered by nobody, then a `mayPlay` of that card (`moved`) that lasts while it is exiled, to cast only, looking at it, any mana type.
+ */
+const LOOK_EXILE_CAST_ANY_TYPE: Lowering<IrClause, Effects> = {
+  head: 'lookExileCastAnyType',
+  id: 'lower.look-exile-cast-any-type',
+  needs: ['effect:lookAtTop', 'effect:mayPlay', 'ability:lookTakeFromPlayer'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    const owner = arg(clause, 'from');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          from: from.value,
+          take: { filter: {}, max: 1, min: 1, to: 'exileFaceDownUnlinked' },
+          rest: 'bottomRandom',
+        },
+        {
+          kind: 'mayPlay',
+          objects: { kind: 'moved' },
+          lasts: 'whileExiled',
+          lookAt: true,
+          castOnly: true,
+          anyManaType: true,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const PARTY_TIME_LIBRARY_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  LOOK_EXILE_CAST_ANY_TYPE,
   EXILE_ANY_NUMBER_UNTIL_LEAVES,
   LOOK_TAKE_KINDS,
 ];

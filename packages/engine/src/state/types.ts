@@ -1661,6 +1661,10 @@ export type Instruction =
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
       readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
+      /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
+      readonly libraryOf?: SeatId;
+      /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
+      readonly unlinked?: true;
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;

@@ -4166,6 +4166,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
+    // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
+    (e?.kind === 'lookAtTop' && e.take?.to === 'exileFaceDownUnlinked') ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -7129,6 +7131,37 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isCount(e.take?.max) || e.take.max < 1) {
         issue(out, `${path}.take.max`, 'max must be a positive integer');
       }
+      // Gonti (CR 406.3, 608.2d): the library of one other player, one card of it exiled face down and remembered by nobody; the rest on the bottom of that library in a random order.
+      if (e.from !== undefined) {
+        checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      }
+      if ((e.from !== undefined) !== (e.take?.to === 'exileFaceDownUnlinked')) {
+        issue(
+          out,
+          `${path}.from`,
+          "from (another player's library) and take.to 'exileFaceDownUnlinked' go together",
+        );
+      }
+      if (
+        e.take?.to === 'exileFaceDownUnlinked' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.kinds !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.all !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.manaValueAtMost !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          e.rest !== 'bottomRandom')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order",
+        );
+      }
       // Harper Recruiter: one card for each of several kinds, put into the hand.
       if (e.take?.kinds !== undefined) {
         const kinds = e.take.kinds;
@@ -7161,7 +7194,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree', 'top'])
+        !isOneOf(e.take.to, [
+          'hand',
+          'battlefield',
+          'exileFaceDown',
+          'exileFaceDownUnlinked',
+          'castFree',
+          'top',
+        ])
       ) {
         issue(
           out,

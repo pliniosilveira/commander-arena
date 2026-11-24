@@ -3400,6 +3400,13 @@ function runEffect(
       // bottom in a random order" (rules/look-take.ts).
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // Gonti (CR 608.2b): "target opponent's library": the one player the selector names; with none (the target is gone) nothing is looked at.
+      let libraryOf: SeatId | undefined;
+      if (effect.from !== undefined) {
+        libraryOf = resolvePlayers(state, effect.from, ctx, targets)[0];
+        if (libraryOf === undefined) return done(state);
+      }
+      const unlinked = effect.take.to === 'exileFaceDownUnlinked';
       return done(
         state,
         [],
@@ -3408,10 +3415,14 @@ function runEffect(
             kind: 'lookTake',
             stage: 'take',
             seat: res.controller,
+            ...(libraryOf === undefined ? {} : { libraryOf }),
+            ...(unlinked ? { unlinked: true as const } : {}),
             count,
             filter: effect.take.filter,
             max: effect.take.max,
-            ...(effect.take.to === undefined ? {} : { to: effect.take.to }),
+            ...(effect.take.to === undefined
+              ? {}
+              : { to: unlinked ? ('exileFaceDown' as const) : effect.take.to }),
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
             // CR 202.3 (D-145): "with mana value less than or equal to the number of lands you control", worked out as the effect runs.

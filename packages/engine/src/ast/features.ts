@@ -154,6 +154,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseExileUntilLeaves',
     // Harper Recruiter (CR 701.20, 608.2d): "You may reveal a Cleric card, a Rogue card, ... and/or a Wizard card from among them" (`lookAtTop` `take.kinds`).
     'lookTakeKinds',
+    // Gonti, Lord of Luxury (CR 401.2, 406.3): "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (`lookAtTop.from`).
+    'lookTakeFromPlayer',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -1948,6 +1950,8 @@ export const ABILITY_FEATURES = [
   'chooseExileUntilLeaves',
   /** "You may reveal a Cleric card, a Rogue card, a Warrior card, and/or a Wizard card from among them and put those cards into your hand" (Harper Recruiter, CR 608.2d): the engine's `lookAtTop` with `take.kinds`. */
   'lookTakeKinds',
+  /** "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, CR 401.2, 406.3): the engine's `lookAtTop` with `from`. */
+  'lookTakeFromPlayer',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -2994,6 +2998,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseMinCardTypes: true,
   chooseExileUntilLeaves: true,
   lookTakeKinds: true,
+  lookTakeFromPlayer: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   moveFaceDownLand: true,

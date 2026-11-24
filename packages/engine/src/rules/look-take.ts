@@ -74,7 +74,8 @@ function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown
 export function runLookTake(state: GameState, res: ResolutionContext, ins: LookTake): StepOutcome {
   if (ins.stage === 'rest') return putRest(state, ins);
   const { seat } = ins;
-  const looked = topCards(state, seat, ins.count);
+  // Gonti: the library looked at may be another player's; `seat` is the one who looks and chooses.
+  const looked = topCards(state, ins.libraryOf ?? seat, ins.count);
   if (looked.length === 0) return done(state);
   // CR 701.20a (D-396): the cards are shown when the effect starts, before anyone chooses. The event comes out as an instruction of its own, because a
   // question (`needs`) carries no events; the same instruction then runs again, marked `revealed`, and asks.
@@ -242,7 +243,11 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
             )
           : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
             moveInstructions(chosen, 'exile').map((i) =>
-              i.kind === 'move' ? { ...i, linkTo: res.source, faceDown: true as const } : i,
+              i.kind === 'move'
+                ? ins.unlinked === true
+                  ? { ...i, faceDown: true as const }
+                  : { ...i, linkTo: res.source, faceDown: true as const }
+                : i,
             )),
     { ...ins, stage: 'rest', chosen, left },
   ]);
@@ -288,7 +293,7 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
       ],
     );
   }
-  return bottomInRandomOrder(state, ins.seat, left);
+  return bottomInRandomOrder(state, ins.libraryOf ?? ins.seat, left);
 }
 
 /**

@@ -138,7 +138,55 @@ export const EFFECT_LOOK_TAKE_KINDS = defineRule<Clauses>({
   ),
 });
 
+const GONTI_RULE = 'effect.look-exile-cast-any-type';
+
+/**
+ * `effect.look-exile-cast-any-type`: "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random
+ * order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell" (CR 401.2, 406.3: the card is exiled face down and its
+ * controller may look at it; CR 609.4b: mana of any type; CR 611.2: for as long as it stays in exile). Two sentences that `splitSentences` keeps together. The engine's `lookAtTop`
+ * with `from` and `take.to` `exileFaceDownUnlinked`, then a `mayPlay` of the card with `lookAt`, `castOnly` and `anyManaType`. Not read: your own library, each opponent, another number
+ * of cards kept, another place for the rest, another length, "play", the card face up.
+ */
+export const EFFECT_LOOK_EXILE_CAST_ANY_TYPE = defineRule<Clauses>({
+  id: GONTI_RULE,
+  family: 'effect',
+  leading: ['look'],
+  cites: [
+    'CR 401.2 (Library)',
+    'CR 406.3 (Exile)',
+    'CR 609.4b (Effects That Modify Cost)',
+    'CR 611.2 (Continuous Effects)',
+  ],
+  examples: [
+    "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell",
+    'look at the top three cards of target opponent’s library, exile one of them face down, then put the rest on the bottom of that library in a random order. you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell',
+  ],
+  rejects: [
+    "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order",
+    'look at the top four cards of your library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell',
+    "look at the top four cards of each opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell",
+    "look at the top four cards of target opponent's library, exile one of them face down, then put the rest into their graveyard. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell",
+    "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card this turn, and mana of any type can be spent to cast that spell",
+    "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled",
+    "look at the top one card of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell",
+  ],
+  parse: single(
+    GONTI_RULE,
+    sequence(
+      literal('look at the top '),
+      satisfy(NUMBER, (a) => a.kind === 'number' && a.value >= 2),
+      literal(' cards of '),
+      satisfy(family<IrNoun>('noun', { only: ['noun.player'] }), (n) => n.det === 'target'),
+      pattern(
+        /['’]s library, exile one of them face down, then put the rest on the bottom of that library in a random order\. you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell(?![\p{L}\p{N}])/iu,
+      ),
+    ),
+    ([, count, , from]) => ({ verb: 'lookExileCastAnyType', args: { count, from } }),
+  ),
+});
+
 export const PARTY_TIME_LIBRARY_EFFECT_RULES = [
+  EFFECT_LOOK_EXILE_CAST_ANY_TYPE,
   EFFECT_EXILE_ANY_NUMBER_UNTIL_LEAVES,
   EFFECT_LOOK_TAKE_KINDS,
 ];
