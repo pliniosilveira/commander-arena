@@ -2,6 +2,7 @@ import { createRequestQueue, type RequestQueue, tokenSearchQuery } from '@comman
 import type { TokenDefinition } from '@commander-arena/engine';
 import { useEffect, useState } from 'react';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
+import { chosenTokenArt, tokenChoiceKey } from './token-choices';
 
 /** What makes two token cards the same token, whatever their art: Scryfall keeps one card per printing family. */
 function sameToken(a: unknown, b: unknown): boolean {
@@ -18,7 +19,7 @@ function sameToken(a: unknown, b: unknown): boolean {
  * Rules text as two wordings of one ability compare equal: Scryfall writes "this creature" where a
  * card that makes the token says "this token", and the two differ in case and punctuation.
  */
-function plainText(text: unknown): string {
+export function plainText(text: unknown): string {
   return typeof text !== 'string'
     ? ''
     : text
@@ -98,8 +99,10 @@ export function useTokenArt(
   const query = definition === undefined ? null : tokenSearchQuery(definition);
   const text = definition?.oracleText;
   const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
+  // The art the player chose for this token on the deck screen wins over the best printing.
+  const chosen = definition === undefined ? null : chosenTokenArt(tokenChoiceKey(definition));
   useEffect(() => {
-    if (query === null) return;
+    if (query === null || chosen !== null) return;
     let alive = true;
     void lookup(query, text).then((art) => {
       if (alive) setFound({ query, art });
@@ -107,6 +110,7 @@ export function useTokenArt(
     return () => {
       alive = false;
     };
-  }, [query, text]);
+  }, [query, text, chosen]);
+  if (chosen !== null) return chosen[version] ?? chosen.normal ?? null;
   return found?.query === query ? (found?.art?.[version] ?? null) : null;
 }
