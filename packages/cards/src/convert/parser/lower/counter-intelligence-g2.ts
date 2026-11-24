@@ -56,18 +56,22 @@ const PUT_CHOICE_OF_COUNTERS: Lowering<IrClause, Effects> = {
     if (typeof one.value !== 'number' || typeof two.value !== 'number') return failure(clause);
     const counts = [one.value, two.value] as const;
     const names = [first.name, second.name] as const;
-    return eachObject(clause, ctx, (objects): Effect => ({
-      kind: 'chooseOne',
-      options: [0, 1].map((i) => ({
-        label: counterWords(counts[i] ?? 1, names[i] ?? ''),
-        effect: {
-          kind: 'addCounters',
-          objects,
-          counter: names[i] ?? '',
-          count: counts[i] ?? 1,
-        } as Effect,
-      })),
-    }));
+    return eachObject(
+      clause,
+      ctx,
+      (objects): Effect => ({
+        kind: 'chooseOne',
+        options: [0, 1].map((i) => ({
+          label: counterWords(counts[i] ?? 1, names[i] ?? ''),
+          effect: {
+            kind: 'addCounters',
+            objects,
+            counter: names[i] ?? '',
+            count: counts[i] ?? 1,
+          } as Effect,
+        })),
+      }),
+    );
   },
 };
 

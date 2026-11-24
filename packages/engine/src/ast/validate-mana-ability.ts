@@ -179,6 +179,26 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
     issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
   }
+  // CR 605.3b, 122.6 (Empowered Autogenerator): the counters the ability puts on its own permanent before its mana is added.
+  if (a.putCounter !== undefined) {
+    if (typeof a.putCounter.counter !== 'string' || a.putCounter.counter === '') {
+      issue(out, `${path}.putCounter.counter`, 'the kind of counter is a name');
+    }
+    if (!Number.isSafeInteger(a.putCounter.count) || a.putCounter.count < 1) {
+      issue(out, `${path}.putCounter.count`, 'count must be a positive integer');
+    }
+    if (
+      a.production?.kind !== 'anyColorAmount' &&
+      a.production?.kind !== 'anyCombinationAmount' &&
+      !(a.production?.kind === 'fixed' && a.production.times !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.putCounter`,
+        'the counters are put before the mana is added so that an amount counts after them: the production has an amount',
+      );
+    }
+  }
   if (a.production?.kind === 'anyColorAmong') {
     // CR 106.1b: the cards whose colors are looked at; the filter reads a zone and what the objects are, nothing of the combat, a target or X.
     const filter = a.production.filter as ObjectFilter | undefined | null;

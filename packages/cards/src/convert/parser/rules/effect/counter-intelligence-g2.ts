@@ -93,7 +93,11 @@ export const EFFECT_PUT_CHOICE_OF_COUNTERS = defineRule<Clauses>({
   id: CHOICE_ID,
   family: 'effect',
   leading: ['put'],
-  cites: ['CR 122.6 (Counters)', 'CR 608.2d (Resolving Spells and Abilities)', 'CR 122.1 (Counters)'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 122.1 (Counters)',
+  ],
   examples: [
     'put your choice of a +1/+1 counter or two charge counters on up to one other target artifact',
     'put your choice of a +1/+1 counter or a -1/-1 counter on target creature',

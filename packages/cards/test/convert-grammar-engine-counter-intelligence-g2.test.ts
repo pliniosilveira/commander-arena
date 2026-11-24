@@ -32,6 +32,7 @@ const FILLER = Array.from({ length: 8 }, () => 'Island');
 const DEFENSE = real('Resourceful Defense');
 const INSPIRIT = real('Inspirit, Flagship Vessel');
 const RING = 'Sol Ring';
+const AUTOGEN = real('Empowered Autogenerator');
 
 describe('Resourceful Defense', () => {
   test('is valid', () => {
@@ -201,7 +202,10 @@ describe('Inspirit, Flagship Vessel: your choice of a +1/+1 counter or two charg
         kind: 'chooseOne',
         options: [
           { label: 'a +1/+1 counter', effect: { kind: 'addCounters', counter: '+1/+1', count: 1 } },
-          { label: 'two charge counters', effect: { kind: 'addCounters', counter: 'charge', count: 2 } },
+          {
+            label: 'two charge counters',
+            effect: { kind: 'addCounters', counter: 'charge', count: 2 },
+          },
         ],
       },
     });
@@ -272,5 +276,66 @@ describe('Inspirit, Flagship Vessel: your choice of a +1/+1 counter or two charg
         mine.expect.counters(`theirs${seat}`, { charge: 2 });
       }
     }
+  });
+});
+
+describe('Empowered Autogenerator: put a charge counter, then add that many mana of one color (CR 605.1a, 605.3b)', () => {
+  test("is valid; the counter is the ability's first step and the amount counts after it", () => {
+    expect(validateCard(AUTOGEN)).toEqual([]);
+    expect(AUTOGEN.faces[0]?.abilities.find((a) => a.kind === 'mana')).toMatchObject({
+      kind: 'mana',
+      cost: [{ kind: 'tap' }],
+      putCounter: { counter: 'charge', count: 1 },
+      production: { kind: 'anyColorAmount', amount: { kind: 'countersOn', counter: 'charge' } },
+    });
+  });
+
+  const start = (charge: number, ...more: string[]) =>
+    scenario()
+      .define(AUTOGEN)
+      .seat(0)
+      .library(...FILLER)
+      .hand(BEARS)
+      .battlefield(AUTOGEN.name, charge === 0 ? {} : { counters: { charge } })
+      .battlefield(...more)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('with no counter it puts one and adds one mana of the color chosen', () => {
+    const g = start(0);
+    g.act(0).tapForMana(AUTOGEN.name, { color: 'R' });
+    g.expect.counters(AUTOGEN.name, { charge: 1 });
+    g.expect.pool(0, 'R');
+    g.expect.tapped(AUTOGEN.name);
+  });
+
+  test('with two it has three after the new one: three mana of one color', () => {
+    const g = start(2);
+    g.act(0).tapForMana(AUTOGEN.name, { color: 'G' });
+    g.expect.counters(AUTOGEN.name, { charge: 3 });
+    g.expect.pool(0, 'GGG');
+  });
+
+  test('it makes one color only: a mix is not offered', () => {
+    const g = start(1);
+    expect(() => g.act(0).tapForMana(AUTOGEN.name)).toThrow();
+    g.act(0).tapForMana(AUTOGEN.name, { color: 'W' });
+    g.expect.pool(0, 'WW');
+  });
+
+  test('the payment of a spell counts the mana it will make after the counter: one counter pays {1}{G}', () => {
+    const g = start(1);
+    g.act(0).cast(BEARS, { pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.counters(AUTOGEN.name, { charge: 2 });
+    g.expect.invariants();
+  });
+
+  test('with no counter its one mana is not enough for a two-mana spell', () => {
+    const g = start(0);
+    expect(g.act(0).try.cast(BEARS).ok).toBe(false);
   });
 });

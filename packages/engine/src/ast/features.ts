@@ -128,6 +128,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyFromGraveyard',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
+    // Empowered Autogenerator: "Put a charge counter on this artifact. Add X mana ..." (`ManaAbility.putCounter`).
+    'manaPutCounter',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
@@ -1918,6 +1920,8 @@ export const ABILITY_FEATURES = [
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
   'manaCountOwnCounters',
+  /** "{T}: Put a charge counter on this artifact. Add X mana of any one color, where X is the number of charge counters on it" (CR 605.3b, 122.6): `ManaAbility.putCounter`, the counters put first, the amount counted after. */
+  'manaPutCounter',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
@@ -2973,6 +2977,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyFromGraveyard: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
+  manaPutCounter: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
