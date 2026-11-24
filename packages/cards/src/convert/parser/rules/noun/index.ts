@@ -321,6 +321,8 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target legendary spell',
     'target Aura spell',
     'target spell with mana value 1',
+    "target spell you don't control",
+    "target creature spell you don't control",
     'target creature spell with mana value 3 or less',
   ],
   rejects: [
@@ -335,13 +337,26 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target instant or sorcery',
     'two target spells',
     'target nonland spell you control',
+    "target spell you don't control with mana value 1",
     'target',
   ],
   parse: node<IrFilter, IrNoun>(
     ID.targetSpell,
     (ctx, pos) => {
-      const head = sequence(literal('target '), spellPhrase())(ctx, pos);
-      if (!head.ok) return head;
+      const head0 = sequence(literal('target '), spellPhrase())(ctx, pos);
+      if (!head0.ok) return head0;
+      // "target spell you don't control" (CR 109.4, 405.1: the controller of a spell is the player who cast it).
+      const notMine = literal(" you don't control")(ctx, head0.pos);
+      const head = notMine.ok
+        ? {
+            ...head0,
+            value: [
+              head0.value[0],
+              { ...head0.value[1], controller: 'opponent' as const },
+            ] as const,
+            pos: notMine.pos,
+          }
+        : head0;
       const suffix = sequence(
         literal(' with mana value less than or equal to '),
         family<IrAmount>('amount'),

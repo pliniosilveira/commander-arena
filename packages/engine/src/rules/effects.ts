@@ -1642,7 +1642,11 @@ function runEffect(
       return done(
         state,
         [],
-        changeTargetInstructions(state, resolveObjects(state, effect.object, ctx, targets)),
+        changeTargetInstructions(
+          state,
+          resolveObjects(state, effect.object, ctx, targets),
+          effect.to === undefined ? undefined : resolveObjects(state, effect.to, ctx, targets)[0],
+        ),
       );
     }
 

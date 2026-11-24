@@ -1976,7 +1976,7 @@ export type Instruction =
    * the stack with one target, is changed to another legal target for its slot, chosen by the controller of the resolving spell or ability. With
    * no other legal target nothing changes; with one it is taken; with several a `targets` decision (`forChange`) asks. See rules/change-target.ts.
    */
-  | { readonly kind: 'changeTarget'; readonly object: ObjectId }
+  | { readonly kind: 'changeTarget'; readonly object: ObjectId; readonly to?: ObjectId }
   /**
    * CR 702.62a, 702.35a, 702.94a (Suspend, Madness and Miracle, D-128, D-274): the resolution of `castExiled`. `start` looks at the card the
    * ability belongs to (it must still be that card, in exile, or in its owner's hand for Miracle) and goes on to `ask` when it could be

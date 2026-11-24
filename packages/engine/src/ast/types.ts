@@ -3405,7 +3405,13 @@ export type Effect =
    * is, even if it is illegal by then (CR 115.7a). The spell or ability keeps what it divides (CR 115.7f). A `target` that is no longer on the stack
    * as this resolves is illegal (CR 608.2b), so the effect does nothing. "Change a target" or "any targets" are other effects.
    */
-  | { readonly kind: 'changeTarget'; readonly object: ObjectRef }
+  /**
+   * "Change a target of target spell or ability to this creature." (CR 115.7b, Spellskite; unchecked against the CR text): with `to`, the controller of the resolving ability
+   * changes ONE target of the spell or ability `object` names (any number of targets) to the object `to` names, only if `to` is a legal target for that target's slot as the
+   * spell or ability could have chosen it and is not already a target of that slot. Which target is changed is chosen when several can be (a `targets` decision, `forChange`); if no
+   * target can be changed, nothing happens.
+   */
+  | { readonly kind: 'changeTarget'; readonly object: ObjectRef; readonly to?: ObjectRef }
   /**
    * CR 702.40a (Storm, D-129): "copy it for each other spell that was cast before it this turn. If the spell has any
    * targets, you may choose new targets for any of the copies." The effect of "When you cast this spell" and nothing

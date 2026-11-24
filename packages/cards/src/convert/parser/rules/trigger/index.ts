@@ -10,6 +10,7 @@
  * The segmenter hands over only the condition: the trigger word is read by the segmenter, and
  * `parseAbility` checks that "At" goes with a step trigger and nothing else does.
  */
+
 import {
   choice,
   fail,
@@ -31,6 +32,7 @@ import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
+import { BRAINSTEALER_G9_TRIGGER_RULES } from './brainstealer-g9';
 import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CAST_WHILE_TRIGGER_RULES } from './cast-while';
@@ -1438,6 +1440,8 @@ export const TRIGGER_ENTERS_AND_UPKEEP = quietly(
  * before "a land enters").
  */
 export const TRIGGER_RULES = [
+  // Brainstealer Dragon: "a nonland permanent an opponent owns enters under your control" starts like `trigger.enters`, which cannot read the subject, so it comes first.
+  ...BRAINSTEALER_G9_TRIGGER_RULES,
   TRIGGER_ENTERS_AND_CAST,
   TRIGGER_ENTERS_AND_UPKEEP,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
