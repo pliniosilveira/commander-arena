@@ -86,6 +86,7 @@ const EXECUTABLE_KEYWORDS = [
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'jumpStart', // scenario-xx-jump-start
   'undaunted', // scenario-undaunted
+  'exploit', // scenario-xx-exploit
   'plot', // scenario-xx-plot
   'compleated', // convert-grammar-engine-blight-curse-oneoffs-b
   'aftermath', // scenario-xx-aftermath
@@ -215,6 +216,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   retrace: { kind: 'retrace' },
   jumpStart: { kind: 'jumpStart' },
   undaunted: { kind: 'undaunted' },
+  exploit: { kind: 'exploit' },
   plot: { kind: 'plot', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   compleated: { kind: 'compleated' },
   aftermath: { kind: 'aftermath' },
@@ -362,6 +364,7 @@ describe('supported feature gate', () => {
         'becomesTapped',
         'becomesUntapped',
         'becomesTarget',
+        'becomesUnblocked',
         'blocks',
         'castSpell',
         'cycled',
@@ -384,14 +387,17 @@ describe('supported feature gate', () => {
         'endStep',
         'entersBatch',
         'entersBattlefield',
+        'entersCausesTrigger',
         // Glorybringer: "When you do" after exerting.
         'exerted',
         'exiledFromLibraryOrGraveyard',
+        'exploits',
         'landfall',
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
         'lifeLost',
+        'milled',
         'noncombatDamageDealt',
         'dealtDamageToPlayer',
         'permanentSacrificed',
