@@ -729,6 +729,17 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
           : null;
       }
+      // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
+      if (trigger.includesSource === true) {
+        const others = trigger.atLeast - 1;
+        return `Whenever this creature and at least ${SMALL_COUNT_WORDS[others] ?? String(others)} other creatures attack`;
+      }
+      // Frontier Warmonger (CR 508.1b, 506.3): only the creatures attacking one of your opponents or a planeswalker they control.
+      if (trigger.attackingYourOpponents === true) {
+        return trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever one or more creatures attack one of your opponents or a planeswalker they control'
+          : null;
+      }
       // D-187: "Whenever you attack" is one creature or more, said without the count.
       // D-218: "Whenever one or more creatures attack" (any player).
       if (trigger.who === 'any') return `Whenever one or more ${things} attack`;

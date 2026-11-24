@@ -849,6 +849,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
   // Exert (CR 701.43d): the trigger is the first sentence of a paragraph, the body follows "When you do,".
   'trigger.exerted': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.exerted-once-a-turn': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.self-and-others-attack': whenever,
+  'trigger.attack-your-opponents': whenever,
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),

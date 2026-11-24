@@ -67,7 +67,8 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
  * "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h, 603.12; Glorybringer): the optional cost of attacking and the ability linked to it, in one
  * paragraph. It is read as a triggered ability whose trigger is the first sentence (`trigger.exerted`) and whose body follows "When you do,".
  */
-const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you do, /i;
+const EXERT_LEAD =
+  /^(?:if (?:~|this creature) hasn['’]t been exerted this turn, )?you may exert (?:~|this creature|it) as it attacks\. when you do, /i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336) and "When you cast your next instant or sorcery spell this turn, " (Twinferno): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you (?:next cast an? |cast your next )[^,.]+ spell this turn, /i;
 /** "Whenever one or more creatures you control deal combat damage to one or more players this turn, " (Forth Eorlingas!, CR 603.7): the lead of a spell's sentence that creates a delayed triggered ability for the turn. */

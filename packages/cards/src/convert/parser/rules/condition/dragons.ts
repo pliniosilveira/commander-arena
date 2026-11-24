@@ -232,6 +232,9 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     // Food and Fellowship deck, group B (Motivated Pony): a subtype the permanent had as it entered.
     'a Food entered the battlefield under your control this turn',
     'two or more Treasures entered the battlefield under your control this turn',
+    // Riders of Rohan deck, group C (Éowyn, Shieldmaiden, CR 400.7): "another" leaves out the permanent with the ability.
+    'another Human entered the battlefield under your control this turn',
+    'another creature entered the battlefield under your control this turn',
   ],
   rejects: [
     'two or more nonland permanents entered the battlefield under your control',
@@ -246,6 +249,10 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     'a creatures entered the battlefield under your control this turn',
     'a Food you control entered the battlefield under your control this turn',
     'a Food entered the battlefield under an opponent’s control this turn',
+    'another Human entered the battlefield under an opponent’s control this turn',
+    'another Human entered under your control this turn',
+    'two or more another Humans entered the battlefield under your control this turn',
+    'another Humans entered the battlefield under your control this turn',
   ],
   parse: (ctx, pos) => {
     const id = 'condition.entered-this-turn';
@@ -262,16 +269,18 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
     let count: number;
     let filter: IrFilter;
     let end: number;
+    let other = false;
     if (several.ok) {
       count = several.value[0].value;
       filter = several.value[2];
       end = several.pos;
     } else {
-      const single = sequence(pattern(/an? /iu), kindOf(false), entered)(ctx, pos);
+      const single = sequence(pattern(/(?:an? |another )/iu), kindOf(false), entered)(ctx, pos);
       if (!single.ok) return single;
       count = 1;
       filter = single.value[1];
       end = single.pos;
+      other = /^another /iu.test(ctx.text.slice(pos, pos + 8));
     }
     // What the engine reads of a permanent that entered: its card types, the types it is not, its subtypes and whether it is a token. Nothing else.
     if (
@@ -290,6 +299,7 @@ export const CONDITION_ENTERED_THIS_TURN = defineRule<IrCondition>({
         ...(filter.notTypes === undefined ? {} : { notTypes: filter.notTypes }),
         ...(filter.subtypes === undefined ? {} : { subtypes: filter.subtypes }),
         ...(filter.token === undefined ? {} : { token: filter.token }),
+        ...(other ? { other: true as const } : {}),
       }),
       pos: end,
     };

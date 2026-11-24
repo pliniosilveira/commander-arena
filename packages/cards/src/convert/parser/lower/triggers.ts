@@ -15,6 +15,7 @@ import type {
   TriggerStep,
   TriggerSubject,
 } from '@commander-arena/engine';
+import { ATTACKERS_REF } from '../ir/bind';
 import {
   type IrAbility,
   type IrAmount,
@@ -704,6 +705,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
+        ...(t.includesSource === true ? { includesSource: true as const } : {}),
+        ...(t.attackingYourOpponents === true ? { attackingYourOpponents: true as const } : {}),
       });
     }
     case 'entersBatch': {
@@ -1364,7 +1367,18 @@ export function lowerTriggered(
   if (blocked.length > 0) return failure(written, blocked);
   return {
     ...lowered,
-    value: [{ kind: 'static', static: { kind: 'exertOnAttack' } }, ...lowered.value],
+    value: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'exertOnAttack',
+          ...(written.trigger.unlessExertedThisTurn === true
+            ? { unlessExertedThisTurn: true as const }
+            : {}),
+        },
+      },
+      ...lowered.value,
+    ],
   };
 }
 
@@ -1398,6 +1412,15 @@ function lowerTriggeredAbility(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  // Frontier Warmonger (CR 603.2c): "those creatures" of "Whenever one or more creatures attack one of your opponents or a planeswalker they control" are the creatures
+  // that attacked them, the engine's `triggerAttackers`.
+  if (
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attackBatch' && t.attackingYourOpponents === true)
+  ) {
+    const blocked = missingFeatures(['selector:triggerAttackers']);
+    if (blocked.length === 0) ctx.eachMentions.set(ATTACKERS_REF, { kind: 'triggerAttackers' });
+  }
   // D-648: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
   ctx.attackedPlayer =
     events.length === 1 && events[0]?.event === 'playerAttacksOpponent'

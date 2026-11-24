@@ -174,6 +174,8 @@ export interface Scope {
   readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of exerting a creature as it attacks (`exerted`): that happens as attackers are declared, in a combat phase an `extraCombat` can follow. */
+  readonly exertTrigger?: boolean;
   /** True in the effect of a triggered ability of combat damage (`dealsCombatDamage`): combat damage is dealt in the combat phase, so an `extraCombat` has one to follow (CR 500.8, Port Razer). */
   readonly combatDamageTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
@@ -3939,6 +3941,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
+      }
+      if (c.other !== undefined && c.other !== true) {
+        issue(out, `${path}.other`, 'other is true when present');
       }
       break;
     case 'aPlayerCardsInHand': // Lorehold group 3, CR 402.1: the same shape, for the hands of the players

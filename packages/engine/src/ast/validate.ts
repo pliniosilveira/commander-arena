@@ -727,7 +727,11 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
     case 'optionalUntap':
+      break;
     case 'exertOnAttack':
+      if (s.unlessExertedThisTurn !== undefined && s.unlessExertedThisTurn !== true) {
+        issue(out, `${path}.unlessExertedThisTurn`, 'unlessExertedThisTurn is true when present');
+      }
       break;
     case 'crewSaddleBonus':
       // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
@@ -2194,6 +2198,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         triggeredAbility: true,
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
+        ...(a.trigger?.kind === 'exerted' ? { exertTrigger: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
         ...(a.trigger?.kind === 'dealsCombatDamage' ? { combatDamageTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),

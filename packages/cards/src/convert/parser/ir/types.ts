@@ -1064,6 +1064,8 @@ export interface IrCondition extends IrNode {
         readonly notTypes?: readonly string[];
         readonly subtypes?: readonly string[];
         readonly token?: boolean;
+        /** "another Human entered the battlefield under your control this turn" (Éowyn, Shieldmaiden): not the permanent with the ability. */
+        readonly other?: true;
       }
     // D-063: "if A and B", "if A or B", "if not A"
     | { readonly kind: 'and' | 'or'; readonly terms: readonly IrCondition[] }
@@ -1704,6 +1706,12 @@ export interface IrTrigger extends IrNode {
   readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
+  /** 'exerted' "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant, CR 701.43b): the exert is offered only to a creature not yet exerted this turn. */
+  readonly unlessExertedThisTurn?: true;
+  /** 'attackBatch' "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1): the permanent with the ability is one of the attackers counted. */
+  readonly includesSource?: true;
+  /** 'attackBatch' "Whenever one or more creatures attack one of your opponents or a planeswalker they control" (Frontier Warmonger, CR 508.1b, 506.3): only those creatures count. */
+  readonly attackingYourOpponents?: true;
   /**
    * 'lifeGained' and 'lifeLost': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.
