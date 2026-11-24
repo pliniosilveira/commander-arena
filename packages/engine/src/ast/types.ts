@@ -2442,6 +2442,12 @@ export type Effect =
       readonly perPrevented?: {
         readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
       };
+      /**
+       * "If damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it" (Gatta and Luzzu, CR 615.5, 122.6): the additional effect of the
+       * prevention, which happens as the damage is prevented: the controller of the effect puts as many counters of this kind on the permanent the damage would have been dealt to as this
+       * shield prevents. Only for a recipient that is a permanent, and with `amount: 'all'`. Not with `perPrevented`.
+       */
+      readonly countersPrevented?: string;
       /** `forAsLongAsThisRemains` (D-207, CR 611.2b, 615): the shield ends when the permanent with the ability leaves the battlefield; only in an ability of a permanent. */
       readonly duration: 'untilEndOfTurn' | 'forAsLongAsThisRemains';
     }

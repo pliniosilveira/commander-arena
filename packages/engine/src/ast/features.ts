@@ -1135,6 +1135,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaStaysThroughCombat',
     // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
     'tokensPerPrevented',
+    // CR 615.5, 122.6: "prevent that damage and put that many +1/+1 counters on it" (`preventDamage.countersPrevented`).
+    'countersPerPrevented',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -2192,6 +2194,8 @@ export const SELECTOR_KINDS = [
   'manaStaysThroughCombat',
   /** "For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the engine's `preventDamage.perPrevented`. */
   'tokensPerPrevented',
+  /** "Prevent that damage and put that many +1/+1 counters on it" (CR 615.5, 122.6): the engine's `preventDamage.countersPrevented`. */
+  'countersPerPrevented',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "with one or more targets" on a cast trigger (D-574). */

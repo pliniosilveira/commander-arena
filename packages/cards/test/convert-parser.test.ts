@@ -1144,6 +1144,7 @@ describe('unmatched abilities', () => {
       'effect.have-group-base-pt-source',
       'effect.search',
       'effect.search-by',
+      'effect.prevent-damage-put-counters',
       'effect.prevent-all-create-tokens',
       'effect.prevent-all',
       'effect.prevent-next',

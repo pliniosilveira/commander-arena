@@ -66,7 +66,8 @@ import { runExchangeControl, runGainControl, runReturnControl } from './control-
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
-import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
+import { counterBonuses, counterCountOn } from './counter-bonus';
+import { putCountersOn } from './counter-put';
 import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
@@ -2699,9 +2700,10 @@ function runEffect(
         (n, e) => (e.kind === 'counterAdded' && e.counter === effect.counter ? n + e.count : n),
         0,
       );
+      // CR 603.12 (Auron, Venerated Guardian): "put a +1/+1 counter on it. When you do, ...": a counter really put is something done (`performed`).
       return {
         ...done(next, events),
-        ...(putCount > 0 ? { thisWay: { countersPut: putCount } } : {}),
+        ...(putCount > 0 ? { thisWay: { countersPut: putCount }, performed: 1 } : {}),
       };
     }
 
@@ -4145,32 +4147,6 @@ function runEffect(
       return unreachable;
     }
   }
-}
-
-/**
- * Puts `count` counters of a kind on one object as the effect of a spell or ability (CR 122.6, 101.2, D-380): nothing if the object is gone
- * or can't have counters of the kind. `read` is the state the counter blockers were read from.
- */
-function putCountersOn(
-  read: GameState,
-  state: GameState,
-  id: ObjectId,
-  counter: string,
-  count: number,
-  by: SeatId,
-  blockers: ReturnType<typeof counterBlockers>,
-  bonuses: ReturnType<typeof counterBonuses>,
-): { readonly state: GameState; readonly events: readonly GameEvent[] } {
-  const obj = state.objects[id];
-  if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
-  // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
-  const put = bonusCounters(read, bonuses, obj, counter, count);
-  return {
-    state: patchObject(state, id, {
-      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
-    }),
-    events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
-  };
 }
 
 /** An effect with each `thisWay` amount in it replaced by the number the effects before it counted (CR 603.7c: a delayed ability is about what happened as it was created). */

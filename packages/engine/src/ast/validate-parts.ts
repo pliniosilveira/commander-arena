@@ -5626,7 +5626,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // CR 608.2c, 608.2g: "you may cast that card. If you do, ...": the card was cast when the question of `castCard` was accepted (`performed`).
               child?.kind === 'castCard' ||
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
-              child?.kind === 'createToken') &&
+              child?.kind === 'createToken' ||
+              // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done (`performed`).
+              child?.kind === 'addCounters') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };

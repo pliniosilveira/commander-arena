@@ -462,6 +462,15 @@ const basePowerSuffix: Parser<number> = map(
 );
 
 /**
+ * " with power less than ~'s power" (Auron, Venerated Guardian, CR 208.1): the object's power is less than the power of the permanent with the ability, as it is now (the engine's
+ * `powerLessThanSource`). Not read: "or equal to", another object's power ("target creature's power"), a number.
+ */
+const powerLessThanSelf: Parser<boolean> = map(
+  pattern(new RegExp(` with power less than ~['’]s power${BOUNDARY}`, 'iu')),
+  () => true,
+);
+
+/**
  * " with a counter on it", " with a +1/+1 counter on it", " with a stun counter on it" and, in the plural, " with counters on them",
  * " with +1/+1 counters on them" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or of the kind named.
  */
@@ -562,6 +571,7 @@ export function permanentPhrase(
     counter: true | string | undefined;
     aboveBase: boolean;
     basePower: number | undefined;
+    lessThanSelf: boolean;
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
@@ -601,7 +611,10 @@ export function permanentPhrase(
     // "creatures you control with base power 0" (Quandrix Unlimited deck, group G).
     const basePower = optional(quiet(basePowerSuffix), undefined)(ctx, aboveBase.pos);
     if (!basePower.ok) return basePower;
-    let end = basePower.pos;
+    // "creature defending player controls with power less than ~'s power" (Auron, Venerated Guardian).
+    const lessThanSelf = optional(quiet(powerLessThanSelf), false)(ctx, basePower.pos);
+    if (!lessThanSelf.ok) return lessThanSelf;
+    let end = lessThanSelf.pos;
     // "creature of the chosen type you control", "creature with power 4 or greater you control".
     if (
       controller === undefined &&
@@ -610,7 +623,8 @@ export function permanentPhrase(
         keyword.value !== undefined ||
         counter.value !== undefined ||
         aboveBase.value ||
-        basePower.value !== undefined)
+        basePower.value !== undefined ||
+        lessThanSelf.value)
     ) {
       const late = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, end);
       if (!late.ok) return late;
@@ -630,6 +644,7 @@ export function permanentPhrase(
         counter: counter.value,
         aboveBase: aboveBase.value,
         basePower: basePower.value,
+        lessThanSelf: lessThanSelf.value,
       },
       pos: end,
     };
@@ -664,6 +679,7 @@ export function permanentPhrase(
         counter,
         aboveBase,
         basePower,
+        lessThanSelf,
       },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
@@ -691,6 +707,7 @@ export function permanentPhrase(
           ...(counter === undefined ? {} : { hasCounter: counter }),
           ...(aboveBase ? { powerAboveBase: true as const } : {}),
           ...(basePower === undefined ? {} : { basePowerIs: basePower }),
+          ...(lessThanSelf ? { powerLessThanSource: true as const } : {}),
         },
         compared,
       ),

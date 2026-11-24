@@ -1170,6 +1170,32 @@ const PREVENT_DAMAGE_PER_PREVENTED: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "If damage would be dealt to that creature this turn, prevent that damage and put that many +1/+1 counters on it." (Gatta and Luzzu, CR 615.5, 122.6): the shield `lower.prevent-damage` makes
+ * for the creature, and the counters the engine puts on it for the damage it prevents (`preventDamage.countersPrevented`). Only +1/+1 counters.
+ */
+const PREVENT_DAMAGE_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'preventDamageCounters',
+  id: 'lower.prevent-damage-counters',
+  needs: ['effect:preventDamage', 'duration:untilEndOfTurn', 'selector:countersPerPrevented'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const { counter, ...rest } = clause.args;
+    if (counter?.kind !== 'counterSpec' || counter.name !== '+1/+1') return failure(clause);
+    const shield = PREVENT_DAMAGE.lower({ ...clause, verb: 'preventDamage', args: rest }, ctx);
+    if (!shield.ok) return shield;
+    const [prevented, ...others] = shield.value;
+    if (prevented?.kind !== 'preventDamage' || others.length > 0 || prevented.to.kind !== 'target') {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ ...prevented, countersPrevented: counter.name }],
+      rule: clause.rule,
+    };
+  },
+};
+
 function sortedMana(symbols: readonly string[]): ManaColor[] {
   return [...symbols].sort((a, b) => MANA_ORDER.indexOf(a) - MANA_ORDER.indexOf(b)) as ManaColor[];
 }
@@ -2764,6 +2790,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SEARCH,
   PREVENT_DAMAGE,
   PREVENT_DAMAGE_PER_PREVENTED,
+  PREVENT_DAMAGE_COUNTERS,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".

@@ -1950,7 +1950,13 @@ function lowerDoneReflexive(
   const [only, ...rest] = done.value;
   // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
   const madeToken = only?.kind === 'createToken';
-  if (only === undefined || rest.length > 0 || !(MAY_KINDS.has(only.kind) || madeToken)) {
+  // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done.
+  const putCounter = only?.kind === 'addCounters';
+  if (
+    only === undefined ||
+    rest.length > 0 ||
+    !(MAY_KINDS.has(only.kind) || madeToken || putCounter)
+  ) {
     return refuse(sentence);
   }
   // Tip the Scales (CR 107.3c, 603.12): "When you do, all creatures get -X/-X until end of turn, where X is the sacrificed creature's toughness.": the "where X is" of the

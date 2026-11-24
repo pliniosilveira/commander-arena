@@ -2723,6 +2723,8 @@ export type ContinuousChange =
       readonly sourceFilter?: { readonly filter: ObjectFilter; readonly controller: SeatId };
       /** "For each 1 damage prevented this way, create a token" (CR 615.5): the token `controller` (the controller of the effect) creates for each point this shield prevents. */
       readonly perPrevented?: { readonly definition: TokenDefinition; readonly controller: SeatId };
+      /** "Prevent that damage and put that many +1/+1 counters on it" (CR 615.5): the counters `controller` puts on the permanent that would have been damaged, as many as this shield prevents. */
+      readonly countersPrevented?: { readonly counter: string; readonly controller: SeatId };
     };
 
 /**
