@@ -450,6 +450,8 @@ export interface IrFilter {
   readonly nthSpellThisTurn?: number;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /** "that was dealt damage this turn" (Bitter Downfall, CR 120.3): the permanent has been dealt damage this turn (the engine's `dealtDamageThisTurn`). */
+  readonly dealtDamageThisTurn?: true;
   /** "controlled by a player who was dealt combat damage by three or more Pirates this turn" (Ahoy Mateys deck group 7, CR 510.2): the engine's `controllerDealtCombatDamageByAtLeast`. */
   readonly controllerDealtCombatDamageBy?: { readonly atLeast: number; readonly subtype: string };
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
@@ -638,6 +640,10 @@ export type IrAmount =
   | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
+  // "the damage dealt to target opponent this turn" (CR 120.3): all the damage dealt to the player so far this turn
+  | { readonly kind: 'damageDealtToThisTurn'; readonly of: IrNoun; readonly span: Span }
+  // "the greatest number of artifacts an opponent controls" (CR 109.4): the most of those objects any one opponent controls
+  | { readonly kind: 'greatestCountOfAnOpponent'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it
   | { readonly kind: 'votesFor'; readonly option: string; readonly span: Span }
   // "your devotion to black" (CR 700.5), "the number of colors in your commanders' color identity" (CR 903.4)
@@ -1188,7 +1194,13 @@ export interface IrManaSpec extends IrNode {
       }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
-    | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+    | {
+        readonly kind: 'anyCombination';
+        readonly count: number;
+        readonly distinct?: true;
+        // "two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b): each mana one of these colors
+        readonly colors?: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+      }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
     // "one mana of that color for each charge counter on ~" (CR 605.3b, 106.1b): after "Choose a color.", as many mana of it as the `times` amount of the clause
@@ -2457,6 +2469,8 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'playerCount',
   'commanderManaValue',
   'commanderCasts',
+  'damageDealtToThisTurn',
+  'greatestCountOfAnOpponent',
   'half',
   'multiple',
   'minus',

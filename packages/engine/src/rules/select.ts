@@ -352,6 +352,9 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    ...(filter.dealtDamageThisTurn === true
+      ? { damagedObjects: state.turnLog.damagedObjects ?? [] }
+      : {}),
     // CR 607.2a, 400.7 (Lorehold group 2): the cards the source exiled with its linked ability; a source that left the battlefield is a new object with none.
     ...(filter.exiledWithSource === true
       ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
@@ -404,6 +407,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.putFromBattlefieldThisTurn === true ||
     f.discardedOrFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.dealtDamageThisTurn === true ||
     f.exiledWithSource === true ||
     f.exiledThisWay === true ||
     f.powerAtMostMoved === true ||

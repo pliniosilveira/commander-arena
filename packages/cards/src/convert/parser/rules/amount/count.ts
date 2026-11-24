@@ -63,6 +63,12 @@ const TARGET_PLAYER_CONTROLS = pattern(
  */
 const ITS_CONTROLLER_CONTROLS = pattern(new RegExp(` its controller controls${BOUNDARY}`, 'iu'));
 
+/**
+ * " that player controls" (Cavern-Hoard Dragon, CR 109.4, 608.2c): the permanents of the player an earlier noun of the text names, "create a Treasure token for each artifact that player
+ * controls" after "deals combat damage to a player". The binding pass finds the player.
+ */
+const THAT_PLAYER_CONTROLS = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'));
+
 /** " they control": the permanents of the player an earlier noun of the text names (see `battlefield`). */
 const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
 
@@ -186,6 +192,10 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       const itsController = targeted.ok ? null : ITS_CONTROLLER_CONTROLS(ctx, end);
       // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
       const they = targeted.ok || itsController?.ok === true ? null : THEY_CONTROL(ctx, end);
+      const thatPlayer =
+        targeted.ok || itsController?.ok === true || they?.ok === true
+          ? null
+          : THAT_PLAYER_CONTROLS(ctx, end);
       if (itsController?.ok === true) {
         const start = end + 1;
         const controller: IrNoun = {
@@ -206,6 +216,11 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
         if (!player.ok) return fail(ctx, end);
         filter = { ...filter, controller: { noun: player.value } };
         end = they.pos;
+      } else if (thatPlayer?.ok === true) {
+        const player = family<IrNoun>('noun', { only: ['noun.that-player'] })(ctx, end + 1);
+        if (!player.ok) return fail(ctx, end);
+        filter = { ...filter, controller: { noun: player.value } };
+        end = thatPlayer.pos;
       } else if (targeted.ok) {
         const word = targeted.value[1] ?? '';
         const start = end + 1;

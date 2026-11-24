@@ -313,6 +313,17 @@ export type Amount =
   /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
   | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
+   * "Draw cards equal to the damage dealt to target opponent this turn" (Knollspine Dragon; CR 120.3, 608.2c): all the damage dealt to the player the selector names so far this
+   * turn, by every source and of every kind (`TurnLog.damageTaken`), whether or not it changed their life total; damage that was prevented was not dealt. Read as the amount is read. One player.
+   */
+  | { readonly kind: 'damageDealtToThisTurn'; readonly player: PlayerSelector }
+  /**
+   * "~ costs {X} less to cast, where X is the greatest number of artifacts an opponent controls" (Cavern-Hoard Dragon; CR 109.4, 608.2c, 601.2f): for each opponent still in the game,
+   * the number of objects `filter` matches that player controls, and the greatest of those numbers (0 with no opponent). `filter` names no controller, owner or `controlledBy`: the
+   * controller is each opponent in turn. Read as the amount is read (for a cost reduction, as the total cost is determined).
+   */
+  | { readonly kind: 'greatestCountOfAnOpponent'; readonly filter: ObjectFilter }
+  /**
    * "For each player who lost life this turn", "the number of your opponents who were dealt combat damage by this creature or a Dragon this turn" (CR 102.1, 608.2c): how many players
    * `of` names, as the amount is read (the player selectors that read the game: `lostLifeThisTurn`, `combatDamagedThisTurn`, `eachPlayer`, `eachOpponent`, ...). Not a static
    * ability's power or toughness.
@@ -794,6 +805,12 @@ export interface ObjectFilter {
    * selector); refused in a static ability, as `attacking` is, and for a zone other than the battlefield.
    */
   readonly enteredThisTurn?: true;
+  /**
+   * "Destroy target creature that was dealt damage this turn", "~ costs {3} less to cast if it targets a creature that was dealt damage this turn" (Bitter Downfall, CR 120.3, 400.7): the
+   * permanent has been dealt damage this turn (any source, any kind, damage that was prevented excluded) and is still the same object. Read from the turn log where the filter is matched
+   * against the game (a target slot, an `each` selector, a `spellTargets` condition); refused in a static ability, as `enteredThisTurn` is, and for a zone other than the battlefield.
+   */
+  readonly dealtDamageThisTurn?: true;
   /**
    * "Target card exiled with this creature" (Lorehold group 2, CR 607.2a, 400.7): the object is a card in exile that the permanent the ability belongs to exiled with its linked
    * ability (`exile.linked`, `GameObject.linkedExile`): a card another permanent exiled, or that this one exiled before it left the battlefield and came back (a new object, CR 400.7),
@@ -1578,8 +1595,8 @@ export interface TargetSpec {
   readonly upToThatMany?: true;
   /**
    * "Tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (CR 603.3d, 701.22, D-513): the slot takes up to as many targets as
-   * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry), none to that many; the number is fixed as the ability is put on the stack, and the
-   * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries`, with `min` and `max` left out.
+   * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry, or the X announced for the cycling cost of "When you cycle this card", CR 702.29a), none to that many; the number is fixed as the ability is put on the stack, and the
+   * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries` or `cycled`, with `min` and `max` left out.
    */
   readonly upToTriggerAmount?: true;
   /**
@@ -5057,7 +5074,16 @@ export type ManaProduction =
    * least 2. `distinct: true` (D-319, "Add two mana of different colors."): no color is chosen twice, so the combinations are the sets of `count` different
    * colors of the five (ten pairs for two mana; colorless is not a color, CR 105.1, 106.1b, so never one of them). At most 4 mana still.
    */
-  | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+  | {
+      readonly kind: 'anyCombination';
+      readonly count: number;
+      readonly distinct?: true;
+      /**
+       * "Add two mana in any combination of {U}, {B}, and/or {R}." (CR 106.1b, 605.3b): each mana is one of these colors (two or more different ones, in any order)
+       * rather than any of the five; with `distinct` it is a set of different ones. Left out: any of the five colors.
+       */
+      readonly colors?: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+    }
   | {
       readonly kind: 'anyColor';
       /**

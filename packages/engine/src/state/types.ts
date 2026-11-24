@@ -2904,6 +2904,11 @@ export interface TurnLog {
   /** The damage each player has been dealt this turn, by seat (D-151, CR 120.3): all damage that was dealt after prevention, combat or not. */
   readonly damageTaken: readonly number[];
   /**
+   * The permanents that have been dealt damage this turn (CR 120.3, 400.7: the same object; one that left and came back is a new one), each once, for "a creature that was dealt damage
+   * this turn" (`ObjectFilter.dealtDamageThisTurn`). Damage that was prevented was never dealt. Absent until some permanent was dealt damage, so the state of a game without any hashes as before.
+   */
+  readonly damagedObjects?: readonly ObjectId[];
+  /**
    * Each time a creature was declared as an attacker this turn, by its id (D-151): a creature that attacks in two combat phases appears twice.
    * "Whenever this creature attacks for the first time each turn" reads it.
    */

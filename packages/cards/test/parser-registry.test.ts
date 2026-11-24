@@ -805,6 +805,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.one-or-two-targets-bare': spell(
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,
   ),
+  'amount.damage-dealt-to-player-this-turn': permanent((e) => `When ~ enters, draw cards ${e}.`),
+  'noun.one-two-or-three-targets-bare': spell(
+    (e) => `~ deals 3 damage divided as you choose among ${e}.`,
+  ),
   'condition.that-spells-stat': permanent(
     (e) => `Whenever you cast a creature spell, if ${e}, you gain 1 life.`,
   ),

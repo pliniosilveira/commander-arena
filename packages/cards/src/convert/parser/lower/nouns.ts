@@ -133,6 +133,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:dealtDamageThisTurn',
   'selector:controllerDealtCombatDamageByAtLeast',
   'selector:modified',
   // CR 701.15b: "a goaded creature".
@@ -374,6 +375,11 @@ function lowerFilterAt(
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
+  }
+  // Bitter Downfall: "that was dealt damage this turn" (CR 120.3), read where the filter is matched against the game; never a member of a choice.
+  if (filter.dealtDamageThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:dealtDamageThisTurn');
   }
   // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2), read where the filter is matched against the game (a target slot, an `each` selector); never a member of a choice.
   if (filter.controllerDealtCombatDamageBy !== undefined) {
@@ -641,6 +647,7 @@ function lowerFilterAt(
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.dealtDamageThisTurn === true ? { dealtDamageThisTurn: true as const } : {}),
     ...(filter.controllerDealtCombatDamageBy === undefined
       ? {}
       : {
@@ -788,7 +795,18 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.xIs !== null &&
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
-  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX;
+  // "When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 107.3, 603.3d): X is the X announced for the cycling cost, which the cycled
+  // event carries as its number, so the slot is the engine's `upToTriggerAmount`; only the body of a cycling trigger reads it.
+  const upToCycleX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    ctx.cycleTriggerX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody &&
+    ctx.xIs === null &&
+    noun.rule !== 'noun.up-to-x-target-graveyard-cards';
+  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX && !upToCycleX;
   // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
   // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
   if (noun.rule === 'noun.up-to-x-target-graveyard-cards' && !upToDefinedX) {
@@ -810,7 +828,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       return failure(noun, []);
     }
   }
-  if (upToDefinedX) {
+  if (upToDefinedX || upToCycleX) {
     if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
@@ -1057,6 +1075,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         if (blocked.length > 0) return failure(noun, blocked);
         if (!ctx.scryTrigger || noun.det !== 'target') return failure(noun, []);
       }
+      if (upToCycleX) {
+        const blocked = missingFeatures(['selector:upToTriggerAmount']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
       // "another target artifact or creature you control" after a first target (stage P64, D-217, CR 115.3): not the target of the slot before it.
       const apart = noun.otherTarget === true ? ctx.targets[ctx.targets.length - 1]?.id : undefined;
       if (noun.otherTarget === true && apart === undefined) return failure(noun, []);
@@ -1109,7 +1131,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
             : upToAmount !== undefined
               ? { id, what: { kind: 'object', filter: filter.value }, upToAmount }
-              : noun.upToTriggerAmount === true
+              : noun.upToTriggerAmount === true || upToCycleX
                 ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
                 : noun.upToThatMany === true
                   ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }

@@ -411,6 +411,7 @@ export function checkFilter(
     'xInManaCost',
     'firstXSpellThisTurn',
     'enteredThisTurn',
+    'dealtDamageThisTurn',
     'exiledWithSource',
     'exiledThisWay',
     'powerAtMostMoved',
@@ -636,6 +637,13 @@ export function checkFilter(
         'only a permanent on the battlefield has a controller to ask',
       );
     }
+  }
+  if (f.dealtDamageThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(
+      out,
+      `${path}.dealtDamageThisTurn`,
+      'only a permanent on the battlefield was dealt damage this turn',
+    );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(
@@ -924,6 +932,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
+  f.dealtDamageThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.exiledThisWay !== undefined ||
   f.powerAtMostMoved !== undefined ||
@@ -987,7 +996,7 @@ export function declareTargets(
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
   /** `'slot'` (issue 345): only a slot of as many targets as the X announced (an activated ability whose cost has an X); `true` is a spell's own text, which also lets a division and a filter read X. */
   countXAllowed: boolean | 'slot' = false,
-  /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
+  /** D-513: only the targets of a triggered ability whose event carries a number (a scry, the X of a cycling cost) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
   upToAmountAllowed = false,
@@ -1211,7 +1220,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.upToTriggerAmount`,
-          'only a slot of a triggered ability whose event carries a number (whenever you scry) takes up to as many targets as that number',
+          'only a slot of a triggered ability whose event carries a number (whenever you scry, when you cycle this card) takes up to as many targets as that number',
         );
       } else if (
         spec.min !== undefined ||
@@ -2147,6 +2156,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
   }
   switch (a?.kind) {
     case 'countOf':
+    case 'greatestCountOfAnOpponent':
     case 'aggregate':
     case 'devotion':
     case 'commanderColors':
@@ -2482,6 +2492,32 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       ) {
         checkSinglePlayer(a.player, `${path}.player`, 'lifeTotalOf', out);
       }
+      break;
+    case 'greatestCountOfAnOpponent':
+      // CR 109.4: the objects each opponent controls, one opponent at a time: the filter names no player and no zone but the battlefield.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'greatestCountOfAnOpponent needs a filter');
+      } else {
+        if (
+          a.filter.controller !== undefined ||
+          a.filter.controlledBy !== undefined ||
+          a.filter.owner !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the controller of a greatest count among opponents is each opponent in turn: the filter names none',
+          );
+        }
+        if (a.filter.zone !== undefined && a.filter.zone !== 'battlefield') {
+          issue(out, `${path}.filter.zone`, 'only permanents have a controller');
+        }
+        checkFilter(a.filter, `${path}.filter`, out);
+      }
+      break;
+    case 'damageDealtToThisTurn':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      checkSinglePlayer(a.player, `${path}.player`, 'damageDealtToThisTurn', out);
       break;
     case 'playerCount':
       // CR 102.1: the number of players a selector names, read as the amount is read.
@@ -2878,11 +2914,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
         const { controlledBy, ...rest } = a.filter;
         // CR 109.4, 608.2c (Observed Stasis): "for each tapped creature its controller controls": `controllerOf` of the permanent an Aura is attached to, counted the same way.
-        if (kindOf(controlledBy) !== 'target' && kindOf(controlledBy) !== 'controllerOf') {
+        // CR 603.2c (Cavern-Hoard Dragon): "for each artifact that player controls": the player the trigger is about (`triggerPlayer`, valid only where the trigger has one).
+        if (
+          kindOf(controlledBy) !== 'target' &&
+          kindOf(controlledBy) !== 'controllerOf' &&
+          kindOf(controlledBy) !== 'triggerPlayer'
+        ) {
           issue(
             out,
             `${path}.filter.controlledBy`,
-            'a count names the player whose objects it counts by a target of the ability or spell, or the controller of an object (controlledBy: target or controllerOf)',
+            'a count names the player whose objects it counts by a target of the ability or spell, the controller of an object, or the player the trigger is about (controlledBy: target, controllerOf or triggerPlayer)',
           );
         } else {
           checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);

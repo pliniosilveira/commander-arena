@@ -2138,7 +2138,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         true,
         false,
-        a.trigger?.kind === 'scries',
+        a.trigger?.kind === 'scries' || a.trigger?.kind === 'cycled',
         true,
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.

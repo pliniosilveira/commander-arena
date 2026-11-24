@@ -450,15 +450,23 @@ export function lowerAmount(
         // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
         // as the count is made.
         const itsController = controller.noun.det === 'controllerOf';
+        // Cavern-Hoard Dragon (CR 109.4, 608.2c): "for each artifact that player controls" after "deals combat damage to a player": the player the trigger is about, read as the count is made.
+        const triggerPlayer = controller.noun.det === 'triggerActor';
         if (
           controller.orPlaneswalkerController === true ||
-          (controller.noun.det !== 'target' && controller.noun.det !== 'anaphor' && !itsController)
+          (controller.noun.det !== 'target' &&
+            controller.noun.det !== 'anaphor' &&
+            !itsController &&
+            !triggerPlayer)
         ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const named = playerSelectorOf(controller.noun, ctx);
         if (!named.ok) return named;
-        if (named.value.kind !== (itsController ? 'controllerOf' : 'target')) {
+        if (
+          named.value.kind !==
+          (itsController ? 'controllerOf' : triggerPlayer ? 'triggerPlayer' : 'target')
+        ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const { controller: _named, ...rest } = amount.of.filter;
@@ -631,6 +639,24 @@ export function lowerAmount(
       const player = playerSelectorOf(amount.of, ctx);
       if (!player.ok) return player;
       return { ok: true, value: { kind: 'lifeTotalOf', player: player.value }, rule };
+    }
+    case 'greatestCountOfAnOpponent': {
+      const blocked = needs('greatestCountOfAnOpponent');
+      if (blocked !== null) return blocked;
+      // Only permanents: a card outside the battlefield has an owner, not a controller.
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'greatestCountOfAnOpponent', filter: filter.value }, rule };
+    }
+    case 'damageDealtToThisTurn': {
+      const blocked = needs('damageDealtToThisTurn');
+      if (blocked !== null) return blocked;
+      const player = playerSelectorOf(amount.of, ctx);
+      if (!player.ok) return player;
+      return { ok: true, value: { kind: 'damageDealtToThisTurn', player: player.value }, rule };
     }
     case 'commanderColors': {
       const blocked = needs('commanderColors');
@@ -1127,6 +1153,8 @@ export const AMOUNT_NEEDS = [
   'amount:commanderManaValue',
   'amount:commanderCasts',
   'amount:lifeTotalOf',
+  'amount:damageDealtToThisTurn',
+  'amount:greatestCountOfAnOpponent',
   'amount:colorsAmong',
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
