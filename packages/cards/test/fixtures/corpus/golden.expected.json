@@ -9692,26 +9692,10 @@
     "c0128941-240a-4ca1-9816-b32f47523fdb": {
       "name": "Fealty to the Realm",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "The monarch controls enchanted creature.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 3,
-          "text": "Enchanted creature attacks each combat if able and can't attack you.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "caeee212"
+      "ast": "1a720655"
     },
     "c01aafb8-3da5-4eb1-8731-2a223e747d63": {
       "name": "Champion's Helm",
@@ -12836,7 +12820,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1290,
+      "supported": 1291,
       "total": 1310
     }
   }
