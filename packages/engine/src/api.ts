@@ -125,11 +125,13 @@ import {
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
   answerResolutionProtector,
+  answerResolutionRemoveCounters,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
   answerResolutionRiot,
   answerResolutionSearchMay,
+  answerResolutionSearchPut,
   answerResolutionUnlessConfirm,
   answerResolutionUnlessPayment,
   continueResolution,
@@ -478,6 +480,9 @@ function answerConfirm(
   // CR 608.2d, 701.23: "may search" is answered by the player who would search.
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
+  // CR 608.2d, 701.23 (`search.mayPut`): "you may put that card onto the battlefield", else it goes into the hand.
+  if (d.purpose === 'searchPut')
+    return finishResolutionAnswer(answerResolutionSearchPut(state, accept));
   const head = state.resolution?.queue[0]?.kind;
   if (
     head === 'confirmOptional' ||
@@ -1115,6 +1120,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
       if (d.purpose === 'entersCopy')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
+      if (d.purpose === 'entersRemoveCounters')
+        return finishResolutionAnswer(answerResolutionRemoveCounters(state, action.objects));
       // CR 702.82a (D-185): the creatures sacrificed as a permanent with devour enters.
       if (d.purpose === 'devour')
         return finishResolutionAnswer(answerResolutionDevour(state, action.objects));

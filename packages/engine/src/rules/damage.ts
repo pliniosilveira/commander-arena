@@ -19,7 +19,9 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
-import { counterBlocked } from './counter-prevention';
+import { counterBonuses } from './counter-bonus';
+import { counterBlocked, counterBlockers } from './counter-prevention';
+import { putCountersOn } from './counter-put';
 import { type Asked, type OrderFlow, quietFlow, settleDamage } from './damage-order';
 import { derive } from './derive';
 import { allDamageHasWither, damageCantBePrevented } from './global-statics';
@@ -239,6 +241,21 @@ export function dealDamageAsking(
   // CR 615.5: the additional effect of a prevention effect happens as the damage is prevented ("for each 1 damage prevented this way, create a token").
   let made: { state: GameState; events: GameEvent[] } = { state: shielded.state, events: [] };
   for (const rider of shielded.riders) {
+    if ('counter' in rider) {
+      // CR 615.5, 122.6 (Gatta and Luzzu): "put that many +1/+1 counters on it", on the permanent the damage would have been dealt to.
+      const put = putCountersOn(
+        made.state,
+        made.state,
+        rider.object,
+        rider.counter,
+        rider.count,
+        rider.controller,
+        counterBlockers(made.state),
+        counterBonuses(made.state),
+      );
+      made = { state: put.state, events: [...made.events, ...put.events] };
+      continue;
+    }
     const tokens = createTokens(made.state, rider.controller, rider.definition, rider.count);
     made = { state: tokens.state, events: [...made.events, ...tokens.events] };
   }

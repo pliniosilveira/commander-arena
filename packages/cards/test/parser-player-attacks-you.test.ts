@@ -40,7 +40,7 @@ describe('"Whenever a player attacks you, target attacking creature gets -2/-0 u
   test.each([
     'Whenever a player attacks you or a planeswalker you control, target attacking creature gets -2/-0 until end of turn.',
     'Whenever a player attacks you with two or more creatures, target attacking creature gets -2/-0 until end of turn.',
-    'Whenever an opponent attacks you, target attacking creature gets -2/-0 until end of turn.',
+    'Whenever a player attacks you or a planeswalker you control, target attacking creature gets -2/-0 until end of turn.',
     'Whenever a player attack you, target attacking creature gets -2/-0 until end of turn.',
   ])('is dropped, never half read (SYNTHETIC): %s', (text) => {
     expect(droppedCreature(text)).toBe(text);

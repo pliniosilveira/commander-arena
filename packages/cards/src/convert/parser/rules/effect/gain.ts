@@ -497,7 +497,8 @@ const LEAD_GRANTED_ABILITY: Parser<Clauses> = (ctx, pos) => {
     if (!gain.ok) return gain;
     cursor = gain.pos;
   }
-  const quoted = readQuotedAbility(ctx, cursor, { mana: false });
+  // "... gains \"Whenever ~ deals combat damage to a player, draw a card\" and it can't be blocked this turn" (Blitzball Stadium): a quote that is followed by more words has no period inside.
+  const quoted = readQuotedAbility(ctx, cursor, { mana: false, unpunctuated: true });
   if (!quoted.ok) return quoted;
   if (quoted.value.ability.kind !== 'triggered') return fail(ctx, cursor);
 

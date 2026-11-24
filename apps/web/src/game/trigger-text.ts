@@ -737,11 +737,13 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
           : null;
       }
-      // Mirkwood Trapper (CR 508.1b): "Whenever a player attacks you", once for a declaration that attacks the controller as a player.
+      // CR 508.1b (Lulu, Stern Guardian; Mirkwood Trapper): "Whenever an opponent attacks you", "Whenever a player attacks you".
       if (trigger.attackedYou === true) {
-        return trigger.who === 'any' && trigger.atLeast === 1 && trigger.what === undefined
-          ? 'Whenever a player attacks you'
-          : null;
+        if (trigger.atLeast === 1 && trigger.what === undefined) {
+          if (trigger.who === 'opponent') return 'Whenever an opponent attacks you';
+          if (trigger.who === 'any') return 'Whenever a player attacks you';
+        }
+        return null;
       }
       // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
       if (trigger.includesSource === true) {

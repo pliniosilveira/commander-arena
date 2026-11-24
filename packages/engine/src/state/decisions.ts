@@ -454,6 +454,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'auraHost'
     | 'entersCopy'
     | 'devour'
+    | 'entersRemoveCounters'
     | 'ringBearer'
     | 'empowerJace'
     | 'amass'
@@ -475,6 +476,10 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'entersCopy'` (D-151, CR 707.9, 614.12: "As this artifact enters, you may have it become a copy of any creature on the battlefield"): `seat`, the
    * player the permanent `subject` enters under, chooses which permanent of `legal` it becomes a copy of; `min` is 0 when that is optional, `max` 1. The
    * permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'entersRemoveCounters'` (Sin, Unending Cataclysm, CR 614.12, 122.1: "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments"): `seat`, the player the
+   * permanent `subject` enters under, chooses which of the permanents in `legal` (those of every player that have a counter and match the filter) lose every counter; `min` is 0 and `max` is
+   * `legal.length`, and the permanent enters with counters for the number removed. The permanent has not entered yet: `source` and `subject` are the object it is now, or, for a token, the spell or
+   * ability creating it. The removal is not a cost and cannot be taken back.
    * For `'devour'` (D-185, CR 702.82a: "As this creature enters, you may sacrifice any number of creatures"): `seat`, the player the permanent
    * `subject` enters under, chooses which of the creatures in `legal` (all they control) to sacrifice; `min` is 0 and `max` is `legal.length`, and the
    * permanent enters with N +1/+1 counters for each one chosen. The permanent has not entered yet: `source` and `subject` are the object it is now,
@@ -780,7 +785,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
    * spell without it, and `cancel` rewinds the cast, as for the kicker. `'clash'` (CR 701.30a, 701.30c, "clash with an opponent"): `seat` is a player who clashed and revealed the card `subject` (public,
    * and still the top card of their library); accepting puts it on the bottom of their library, declining leaves it on top. `source` is the spell or ability that resolves. Asked of each clashing
-   * player in turn order, and the cards move only after the last has answered.
+   * player in turn order, and the cards move only after the last has answered. `'searchPut'` (CR 608.2d, 701.23; `search.mayPut`, "If an opponent controls more lands than you, you may put that
+   * card onto the battlefield tapped"): `seat` is the player who searched, `subject` the card they found (public: it was revealed), `source` the ability on the stack; accepting puts it onto the
+   * battlefield (tapped when the effect says so), declining puts it into the hand.
    */
   readonly purpose?:
     | 'kicker'
@@ -802,7 +809,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'buyback'
     | 'exileMore'
     | 'exert'
-    | 'clash';
+    | 'clash'
+    | 'searchPut';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.

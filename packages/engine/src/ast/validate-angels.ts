@@ -88,6 +88,19 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'attackedEnchantedPlayer is true when present',
         );
       }
+      if (t.attackedYou !== undefined && t.attackedYou !== true) {
+        issue(out, `${path}.attackedYou`, 'attackedYou is true when present');
+      }
+      if (
+        t.attackedYou === true &&
+        (t.attackedEnchantedPlayer === true || t.eachAttackedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedYou`,
+          'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
+        );
+      }
       if (t.eachAttackedPlayer !== undefined && t.eachAttackedPlayer !== true) {
         issue(out, `${path}.eachAttackedPlayer`, 'eachAttackedPlayer is true when present');
       }

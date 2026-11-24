@@ -415,7 +415,8 @@ function couldProduceOutcomes(
     for (const t of types.get(id) ?? []) found.add(t);
   }
   if (p.anyType !== true) found.delete('C');
-  return inTypeOrder(found).map((t) => [t]);
+  // Incubation Druid: `count` mana, all of the one type chosen.
+  return inTypeOrder(found).map((t) => Array.from({ length: p.count ?? 1 }, () => t));
 }
 
 /**

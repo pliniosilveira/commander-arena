@@ -213,7 +213,12 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     sequence(
       literal('choose '),
       operands(
-        ['noun.target-commander', 'noun.target-permanent', 'noun.player'],
+        [
+          'noun.target-commander',
+          'noun.target-creature-attacking-you-plain',
+          'noun.target-permanent',
+          'noun.player',
+        ],
         'effect.choose-target',
         {
           // One target, not "two target creatures" or "up to one target creature": the sentences after say "it".

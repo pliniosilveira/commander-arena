@@ -201,6 +201,16 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modeDifferentTargets',
     // CR 700.2: "choose one at random" (`ModeChoice.random`): a mode drawn from the seeded generator as the triggered ability goes on the stack.
     'modeRandom',
+    // Counter Blitz deck, group C: "the number of opponents who control a creature with power 4 or greater" (`eachPlayerControlling.opponentsOnly`, CR 102.2).
+    'opponentsControlling',
+    // Counter Blitz deck, group C: "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card.
+    'spellPermanentOrCard',
+    // Counter Blitz deck, group C: "Escalate—Tap an untapped creature you control." (CR 702.120a, 118.3): the engine's `escalate` keyword with a `tapPermanents` cost, paid once for each mode chosen beyond the first.
+    'escalateTapCost',
+    // Counter Blitz deck, group C: "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`.
+    'moveChoosePlayers',
+    // Counter Blitz deck, group C: "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`.
+    'attackTaxUntil',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
@@ -452,6 +462,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Forth Eorlingas!: "whenever one or more creatures you control deal combat damage to one or more players this turn, ..." (CR 603.7, 603.2c).
     'delayedCombatDamageBatchTurn',
     'delayedCombatDamage',
+    // Together Forever (CR 603.7, 603.7c): "When that creature dies this turn, return that card to its owner's hand."
+    'delayedDies',
     'forEachPlayer',
     // CR 608.2c, 701.38b: "For each Redhorn Pass vote, search your library ..." (the effect repeated a number of times).
     'repeat',
@@ -560,6 +572,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'nextSpellModifier',
     // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b).
     'nextSpellPayLife',
+    // Yuna, Grand Summoner: "that creature enters with two additional +1/+1 counters on it" (CR 614.1c, 122.6), the body of a delayed cast trigger.
+    'spellEntersWithCounters',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -870,6 +884,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-214: "This creature enters prepared." (CR 722.3a).
     'entersPrepared',
     'asEntersChoose',
+    // Sin, Unending Cataclysm: "As this enters, remove all counters from any number of artifacts, creatures, and enchantments".
+    'asEntersRemoveCounters',
     // D-133: "If a nontoken creature an opponent controls would die, instead exile it and create a token".
     'wouldDie',
     // Issue 102 (Dauthi Voidwalker): "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it".
@@ -1150,6 +1166,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'searchTotalManaValue',
     // "Search your library for any number of creature cards" (CR 701.23; `search.anyNumber`).
     'searchAnyNumber',
+    // "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand" after a search (CR 608.2d; `search.mayPut`).
+    'searchMayPut',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -1176,6 +1194,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaStaysThroughCombat',
     // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
     'tokensPerPrevented',
+    // CR 615.5, 122.6: "prevent that damage and put that many +1/+1 counters on it" (`preventDamage.countersPrevented`).
+    'countersPerPrevented',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -1354,6 +1374,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectStat',
     // Selvala: "if its power is greater than each other creature's power".
     'subjectGreaterThanEach',
+    // Wakka, Shelinda: "if a counter was put on ~ this turn", "if its power is less than ~'s power".
+    'counterPutOnThisThisTurn',
+    'subjectPowerLessThanThis',
     'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
@@ -1397,6 +1420,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'movedShareAllCardTypes',
     // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have" (`manaValueAtMostAmount`).
     'manaValueAtMostAmount',
+    // CR 202.3, 608.2c: "if the exiled card's mana value is 4 or greater" (`manaValueAtLeastAmount`).
+    'manaValueAtLeastAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
@@ -2068,6 +2093,16 @@ export const ABILITY_FEATURES = [
   'modeDifferentTargets',
   /** "At the beginning of combat on your turn, choose one at random —" (CR 700.2): `ModeChoice.random`, the engine chooses the mode with the seeded generator as the ability goes on the stack. */
   'modeRandom',
+  /** "The number of opponents who control a creature with power 4 or greater" (CR 102.2, 109.4): the engine's `eachPlayerControlling` with `opponentsOnly`. */
+  /** "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`. */
+  'attackTaxUntil',
+  /** "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`. */
+  'moveChoosePlayers',
+  /** "Escalate—Tap an untapped creature you control." (CR 702.120a, 118.3): the engine's `escalate` keyword with a `tapPermanents` cost, paid once for each mode chosen beyond the first. */
+  'escalateTapCost',
+  /** "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card. */
+  'spellPermanentOrCard',
+  'opponentsControlling',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
@@ -2258,6 +2293,8 @@ export const SELECTOR_KINDS = [
   'searchTotalManaValue',
   /** "Any number of creature cards" (CR 701.23): the engine's `search.anyNumber`. */
   'searchAnyNumber',
+  /** "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand" (CR 608.2d): the engine's `search.mayPut`. */
+  'searchMayPut',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
@@ -2282,6 +2319,8 @@ export const SELECTOR_KINDS = [
   'manaStaysThroughCombat',
   /** "For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the engine's `preventDamage.perPrevented`. */
   'tokensPerPrevented',
+  /** "Prevent that damage and put that many +1/+1 counters on it" (CR 615.5, 122.6): the engine's `preventDamage.countersPrevented`. */
+  'countersPerPrevented',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "with one or more targets" on a cast trigger (D-574). */
@@ -2507,6 +2546,10 @@ export const CONDITION_KINDS = [
   'subjectGreaterThanEach',
   /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
   'putCountersThisTurn',
+  /** "If a counter was put on ~ this turn" (CR 122.6, 603.4): the engine's `counterPutOnThisThisTurn`. */
+  'counterPutOnThisThisTurn',
+  /** "If its power is less than ~'s power" (CR 208.1, 608.2c): the engine's `subjectPowerLessThanThis`. */
+  'subjectPowerLessThanThis',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
   /** "If it's that player's turn", the player being the one of the event (CR 603.4, 500.1, Tataru Taru): the engine's `triggerPlayerTurn`. */
@@ -2551,6 +2594,8 @@ export const CONDITION_KINDS = [
   'movedShareAllCardTypes',
   /** "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c): the engine's `manaValueAtMostAmount`. */
   'manaValueAtMostAmount',
+  /** "If the exiled card's mana value is 4 or greater" (CR 202.3, 608.2c): the engine's `manaValueAtLeastAmount`. */
+  'manaValueAtLeastAmount',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -3136,6 +3181,11 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeAllOrNone: true,
   modeDifferentTargets: true,
   modeRandom: true,
+  opponentsControlling: true,
+  spellPermanentOrCard: true,
+  escalateTapCost: true,
+  moveChoosePlayers: true,
+  attackTaxUntil: true,
   sacrificeX: true,
   exileFromGraveyardX: true,
   discardCostX: true,
@@ -3297,6 +3347,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamageToPlayer: true,
   delayedCombatDamageBatchTurn: true,
   delayedCombatDamage: true,
+  delayedDies: true,
   forEachPlayer: true,
   repeat: true,
   delayedCast: true,
@@ -3356,6 +3407,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCastEachType: true,
   nextSpellModifier: true,
   nextSpellPayLife: true,
+  spellEntersWithCounters: true,
   revealTop: true,
   revealTopDuel: true,
   revealTopCard: true,
@@ -3559,6 +3611,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersTappedUnlessReveals: true,
   entersPrepared: true,
   asEntersChoose: true,
+  asEntersRemoveCounters: true,
   wouldDie: true,
   exileInsteadOfOpponentGraveyard: true,
   lifeGainBonus: true,

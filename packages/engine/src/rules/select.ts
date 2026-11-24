@@ -725,10 +725,12 @@ function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext):
   if (spec.what.kind === 'objectOrSpell') {
     // CR 115.1 (issue 81): "target spell or creature": the permanents the filter matches, then the spells on the stack the spell filter matches. A spell never targets itself
     // while it is being put on the stack.
-    const { filter: permanents, spell: spells } = spec.what;
+    const { filter: permanents, spell: spells, card: cards } = spec.what;
     for (const [filter, zone] of [
       [permanents, 'battlefield'],
       [spells, 'stack'],
+      // CR 115.1, 404.1 (Endless Detour): "or card in a graveyard": the cards of any graveyard the card filter matches.
+      ...(cards === undefined ? [] : [[cards, 'graveyard'] as const]),
     ] as const) {
       for (const id of objectsInZone(state, zone)) {
         const obj = getObject(state, id);
@@ -1089,10 +1091,12 @@ export function resolvePlayers(
       const battlefield = objectsInZone(state, 'battlefield');
       return apnapOrder(
         state,
-        seatsInOrder(state, ctx.controller).filter((seat) =>
-          battlefield.some((id) =>
-            matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
-          ),
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) =>
+            (selector.opponentsOnly !== true || seat !== ctx.controller) &&
+            battlefield.some((id) =>
+              matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+            ),
         ),
       );
     }

@@ -206,6 +206,8 @@ const LEAD_CONDITIONS = [
   'condition.there-are-counters-on-self',
   // Kes, Evolving Telepath: "Then if she has nine or more time counters on her, sacrifice her." (CR 122.1, 608.2c).
   'condition.this-counter-count',
+  // Incubation Druid: "If ~ has a +1/+1 counter on it, add three mana of that type instead." (CR 122.1, 608.2c).
+  'condition.this-has-counter',
   // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
   'condition.the-player-is-opponent-with-cards',
   // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.
@@ -297,8 +299,12 @@ const TRAILING_CONDITIONS = [
   'condition.it-was-attacking',
   // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
   'condition.its-stat-greater-than-each-other',
+  // Shelinda, Yevon Acolyte: "put a +1/+1 counter on that creature if its power is less than ~'s power" (CR 608.2c).
+  'condition.its-power-less-than-self',
   // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
   'condition.this-power',
+  // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
+  'condition.exiled-mana-value-at-least',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -356,6 +362,10 @@ interface SentenceOptions {
    * of a triggered ability asks for it, where the lowering joins the two.
    */
   readonly afterExile?: boolean;
+  /**
+   * "When you reveal a creature card this way, ..." may start the sentence (Yuna's Whistle, CR 603.12): the reflexive ability the "reveal cards until" before it creates. The text of a spell asks for it.
+   */
+  readonly afterReveal?: boolean;
   /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
@@ -570,6 +580,15 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
     let afterExile = false;
+    let afterReveal: string | undefined;
+    if (options.afterReveal === true) {
+      const lead = pattern(/when you reveal an? ([a-z]+) card this way, /iu)(ctx, start);
+      if (lead.ok) {
+        reflexive = true;
+        afterReveal = (lead.value[1] ?? '').toLowerCase();
+        at = lead.pos;
+      }
+    }
     if (options.afterDiscard === true) {
       // "When you discard a card this way, ..." (Summon: Kujata) is made by any card, the nonland one by a card that is not a land.
       const lead = choice(
@@ -740,9 +759,10 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined && !afterExile
+        ...(reflexive && afterDiscard === undefined && !afterExile && afterReveal === undefined
           ? { reflexive: true as const }
           : {}),
+        ...(afterReveal === undefined ? {} : { afterReveal }),
         ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
@@ -772,6 +792,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   dieRows: true,
   // Tip the Scales (CR 603.12): "Sacrifice a creature. When you do, ...": the lowering reads a reflexive ability only after an instruction it can tell was done.
   reflexive: true,
+  // Yuna's Whistle: "When you reveal a creature card this way, put X +1/+1 counters on target creature you control, where X is the mana value of that card."
+  afterReveal: true,
 });
 
 /**

@@ -152,6 +152,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - A name set by `setTypes` (CR 612.8) applies in timestamp order with layer 4, not as layer 3, and only "it's a land named X" after a returned card is read.
 - Explore emits no event and ignores APNAP order.
+- `delayedDies` only returns the card to its owner's hand; "those counters" and "that number" are read only after an intervening "if it had counters on it"; "support X" only in the enters trigger of its own permanent.
 - Sunburst as the number of another ability (Modular-Sunburst, CR 702.44c) is unread; a spell gains sunburst only through a cast trigger, never a permanent or for a duration.
 - Two effects that proliferate twice multiply (four times), as two damage doublers do (CR 614.5); unverified, no ruling for the pair. "Equip—Pay {3} or remove a counter" is expanded as two equip abilities.
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
@@ -592,3 +593,5 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- Escalate with a tap cost holds one tap requirement per spell: a card whose alternative cost also taps permanents is not read.
+- An attack tax made by an effect ("until your next turn, creatures can't attack you unless their controller pays") covers attacks on the player only, not their planeswalkers.
