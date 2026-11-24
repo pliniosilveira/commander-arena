@@ -506,14 +506,16 @@ const investigateAction: Action = (subject, you, rule) =>
 
 /**
  * "become the monarch" (CR 725.1: "Some cards allow a player to become the monarch"; CR 725.3: there is only one
- * monarch at a time). Said of "you" only (stage P25, D-127): the engine's effect names one player and the corpus's
- * real line is "When ~ enters, you become the monarch."; "target player becomes the monarch" is not read.
+ * monarch at a time). Said of one player: "you" (stage P25, D-127: "When ~ enters, you become the monarch.") or "target
+ * player" / "target opponent" ("Target player becomes the monarch."): the engine's effect names one player. Several
+ * players ("each opponent becomes the monarch") are not read, as the monarch is only one of them.
  */
 const monarchAction: Action = (subject, you, rule) =>
-  !you
+  !(subject.det === 'you' || (subject.det === 'target' && subject.anyNumber !== true))
     ? (ctx, pos) => fail(ctx, pos)
-    : map(spanned(pattern(/become the monarch(?![\p{L}\p{N}])/iu)), ({ span }) =>
-        actionClause(rule, 'becomeMonarch', { player: subject }, span),
+    : map(
+        spanned(sequence(verbWord('become', you), pattern(/the monarch(?![\p{L}\p{N}])/iu))),
+        ({ span }) => actionClause(rule, 'becomeMonarch', { player: subject }, span),
       );
 
 /**
@@ -656,6 +658,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
   ],
   examples: [
     'you become the monarch',
+    'target player becomes the monarch',
+    'target opponent becomes the monarch',
     'target player takes an extra turn after this one',
     'you take an extra turn after this one',
     'you draw a card',
@@ -859,7 +863,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you become monarch',
     'you become the monarchy',
     'you become the monarch of the realm',
-    'target player becomes the monarch',
+    'target player become the monarch',
+    'any number of target players become the monarch',
     'target player take an extra turn after this one',
     'target player takes two extra turns after this one',
     'you takes an extra turn after this one',

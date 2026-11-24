@@ -434,6 +434,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedCombatDamageTurn',
     // Issue 144: "whenever a creature you control deals combat damage to that player this turn, ..." (CR 603.7c).
     'delayedCombatDamageToPlayer',
+    // Forth Eorlingas!: "whenever one or more creatures you control deal combat damage to one or more players this turn, ..." (CR 603.7, 603.2c).
+    'delayedCombatDamageBatchTurn',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -683,6 +685,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
     'lifeLostBatch',
+    // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
+    'stepMonarch',
   ],
   keywordKinds: [
     'flying',
@@ -2054,6 +2058,8 @@ export const TRIGGER_FEATURES = [
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
   'lifeLostBatch',
+  /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
+  'stepMonarch',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -3161,6 +3167,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileTopAnyNumber: true,
   delayedCombatDamageTurn: true,
   delayedCombatDamageToPlayer: true,
+  delayedCombatDamageBatchTurn: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
@@ -3304,6 +3311,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  stepMonarch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

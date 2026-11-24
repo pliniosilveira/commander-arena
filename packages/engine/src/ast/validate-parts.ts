@@ -6012,6 +6012,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.optional !== undefined && e.optional !== true) {
         issue(out, `${path}.optional`, 'optional must be true when present');
       }
+      if (e.xIsHandSize !== undefined) {
+        if (e.xIsHandSize !== true)
+          issue(out, `${path}.xIsHandSize`, 'xIsHandSize is true when present');
+        if (!e.cost.every((c) => c.kind === 'mana' && c.symbols.every((s) => s === 'X'))) {
+          issue(
+            out,
+            `${path}.cost`,
+            'a cost with the {X} of a hand size is a mana cost of {X} symbols only',
+          );
+        }
+      }
       break;
     case 'grantPlayerHexproof': {
       // CR 702.11b (Hylda group 3): players named by a selector ("you", "each opponent", a target player), until end of turn.
@@ -6379,6 +6390,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         break;
       }
       checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    }
+    case 'delayedCombatDamageBatchTurn': {
+      // CR 603.7c, 510.2: the sources are creatures the controller controls; what the ability does names no target and reads nothing of the spell.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          "the sources are creatures the controller controls (controller 'you'), as they are on the battlefield",
+        );
+      }
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
     case 'delayedCombatDamageToPlayer': {
@@ -8146,8 +8170,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'a restriction names creatures by type, color, controller and the like (the battlefield, as they are when attackers are declared): no zone, owner, stackKind, combat or trigger player',
         );
       }
-      if (e.duration !== 'untilYourNextTurn') {
-        issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
+      if (e.duration !== 'untilYourNextTurn' && e.duration !== 'thisCombat') {
+        issue(out, `${path}.duration`, 'the restriction lasts until your next turn or this combat');
+      }
+      if (e.player !== undefined) {
+        checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        checkSinglePlayer(e.player, `${path}.player`, 'creaturesCantAttackYou', out);
       }
       break;
     case 'restrictGroup':

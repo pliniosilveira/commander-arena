@@ -437,6 +437,16 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
         whose: 'you' as const,
       }),
     ),
+    // Forth Eorlingas! (CR 603.7, 603.2c, 510.2): the creatures that deal combat damage in one event to players, this turn.
+    map(
+      literal(
+        'whenever one or more creatures you control deal combat damage to one or more players this turn, ',
+      ),
+      () => ({
+        step: 'combatDamageBatch' as const,
+        whose: 'you' as const,
+      }),
+    ),
     // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
     EACH_CAST_LEAD,

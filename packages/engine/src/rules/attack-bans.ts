@@ -51,6 +51,7 @@ export function withoutBannedTargets(
   for (const e of state.continuousEffects) {
     if (e.change.kind !== 'creaturesCantAttackPlayer') continue;
     const ctx = { controller: e.change.controller, source: null };
+    if (e.change.of !== undefined && controllerOf(state, obj) !== e.change.of) continue;
     if (!matchesFilter(state, obj, { ...e.change.filter, zone: 'battlefield' }, ctx)) continue;
     const protectedSeat = e.change.controller;
     allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== protectedSeat);

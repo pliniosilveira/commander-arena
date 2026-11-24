@@ -1544,12 +1544,21 @@ export interface IrSentence extends IrNode {
      * `thatCombat` (stage P41, D-188, CR 603.7, 500.8): "At the beginning of that combat, untap all creatures you control": the combat phase the
      * sentence before it added, which the lowering folds into the engine's `extraCombat` as what happens at its beginning.
      */
-    readonly step: 'endStep' | 'thatCombat' | 'nextCast' | 'combatDamageToThatPlayer';
+    readonly step:
+      | 'endStep'
+      | 'thatCombat'
+      | 'nextCast'
+      | 'combatDamageToThatPlayer'
+      | 'combatDamageBatch';
     /**
      * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
      * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
      */
     readonly whose: 'you' | 'each';
+    /**
+     * `combatDamageBatch` (Forth Eorlingas!, CR 603.7, 603.2c, 510.2): "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become
+     * the monarch": a delayed ability for the turn that triggers once for the creatures that dealt the damage of one combat damage event.
+     */
     /**
      * `nextCast` (D-336, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
      * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
@@ -1639,6 +1648,8 @@ export interface IrTrigger extends IrNode {
     | 'creature'
     | 'playerOrPlaneswalker'
     | 'you';
+  /** 'endStep' "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the turn of the player who is the monarch; `actor` is `eachPlayer`. */
+  readonly monarchTurn?: true;
   /** 'combatDamageBatch' "... while you're the monarch" (issue 81, CR 725.2): the controller was the monarch as the damage was dealt. */
   readonly whileMonarch?: true;
   /** 'discarded': "another card" (D-374), a card other than the one with the ability. */

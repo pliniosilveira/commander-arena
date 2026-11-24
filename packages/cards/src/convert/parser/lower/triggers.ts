@@ -554,6 +554,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'upkeep':
     case 'endStep': {
+      // "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` of whoever is the monarch.
+      if (t.monarchTurn === true) {
+        const blocked = missingFeatures(['trigger:stepMonarch']);
+        if (blocked.length > 0) return { ...failure(t), needs: blocked };
+        return ok({ kind: 'step', step: t.event, whose: 'monarch' });
+      }
       const whose = whoseOf(t.actor);
       if (whose === null) return failure(t);
       // The engine's `upkeep` and `endStep` are for you and each player; another player's turn is `step`.

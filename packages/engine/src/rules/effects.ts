@@ -111,7 +111,7 @@ import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
-import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
+import { costWithHandSizeX, lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
@@ -1463,18 +1463,29 @@ function runEffect(
     case 'unlessPays': {
       // CR 118.12a: each player the selector names may pay; the effect happens for each who does not.
       // Run as instructions (rules/pay-unless.ts) because the payer is asked in the middle of this.
+      // CR 107.3 (Champions of Minas Tirith): "pay {X}, where X is the number of cards in their hand" is worked out for each player as they are asked; a player with no card
+      // in hand has a cost of {0}, paid at once, so nothing is asked and the effect does not happen for them.
       return done(
         state,
         [],
-        resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
-          kind: 'unlessPays' as const,
-          seat,
-          cost: effect.cost,
-          stage: 'ask' as const,
-          effect: effect.effect,
-          optional: effect.optional === true,
-          ...(effect.upkeep === undefined ? {} : { upkeep: effect.upkeep }),
-        })),
+        resolvePlayers(state, effect.player, ctx, targets).flatMap((seat) => {
+          const cost =
+            effect.xIsHandSize === true
+              ? costWithHandSizeX(effect.cost, state.seats[seat]?.hand.length ?? 0)
+              : effect.cost;
+          if (cost === null) return [];
+          return [
+            {
+              kind: 'unlessPays' as const,
+              seat,
+              cost,
+              stage: 'ask' as const,
+              effect: effect.effect,
+              optional: effect.optional === true,
+              ...(effect.upkeep === undefined ? {} : { upkeep: effect.upkeep }),
+            },
+          ];
+        }),
       );
     }
 
@@ -1777,6 +1788,30 @@ function runEffect(
         ],
       });
     }
+    case 'delayedCombatDamageBatchTurn':
+      // CR 603.7, 603.7c, 603.2c, 510.2, 514.2: "Whenever one or more creatures you control deal combat damage to one or more players this turn, ...": a delayed ability of the
+      // controller that triggers like the batch trigger, once for each player damaged in one combat damage event, until the end of the turn.
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: {
+                kind: 'combatDamageBatch' as const,
+                what: effect.filter,
+                to: 'player' as const,
+              },
+              effect: effect.effect,
+            },
+          },
+        ],
+      });
     case 'delayedCombatDamageToPlayer': {
       // CR 603.7, 603.7c, 510.3a, 514.2 (issue 144): "Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token": a delayed
       // ability of the controller, for damage to the player the spell targeted, which is fixed as it is made. A player that is not there (not a legal target any more) gets none.
@@ -4045,7 +4080,7 @@ function runEffect(
 
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.
-      return runCreaturesCantAttackYou(state, effect, ctx);
+      return runCreaturesCantAttackYou(state, effect, ctx, targets);
 
     case 'restrictGroup':
       // CR 609.4, 611.2c: a rule change on a group of creatures, read where the rule acts (attackers declared, combat damage assigned).
