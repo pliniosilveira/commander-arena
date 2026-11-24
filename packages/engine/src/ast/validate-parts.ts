@@ -4304,7 +4304,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'ringBearerChosen':
       // Galadriel group 1 (CR 701.54a): the creature chosen by the tempting of this trigger; where it may stand is checked with the trigger (validate.ts).
       if (c.other !== undefined && c.other !== true) {
-        issue(out, `${path}.other`, 'other is true when present');
+        issue(out, `${path}.other`, 'other must be true when present');
       }
       break;
     case 'abilityResolvedTimes':

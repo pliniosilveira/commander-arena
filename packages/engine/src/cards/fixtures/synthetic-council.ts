@@ -57,8 +57,8 @@ export const SYNTHETIC_COUNCIL_LIST: readonly CardDefinition[] = [
     name: 'SYNTHETIC Council of Tides',
     manaCost: ['2', 'G', 'U'],
     types: ['instant'],
-    colors: ['G', 'U'],
-    colorIdentity: ['G', 'U'],
+    colors: ['U', 'G'],
+    colorIdentity: ['U', 'G'],
     oracleText:
       'Starting with you, each player votes for return or embark. If return gets more votes, each player returns up to two cards from their graveyard to their hand, then you exile this spell. If embark gets more votes or the vote is tied, each player may discard their hand and draw seven cards.',
     spell: {
@@ -170,8 +170,8 @@ export const SYNTHETIC_COUNCIL_LIST: readonly CardDefinition[] = [
     supertypes: ['legendary'],
     types: ['creature'],
     subtypes: ['Elf', 'Noble'],
-    colors: ['G', 'U'],
-    colorIdentity: ['G', 'U'],
+    colors: ['U', 'G'],
+    colorIdentity: ['U', 'G'],
     // INVENTED body.
     power: 3,
     toughness: 4,

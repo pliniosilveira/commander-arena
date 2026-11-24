@@ -139,7 +139,7 @@ describe('enteredThisTurn with other', () => {
       validateCard(withAbility(trigger(false)))
         .map((i) => i.message)
         .join(),
-    ).toMatch(/other must be true/);
+    ).toMatch(/other is true/);
   });
 
   test('a static ability may not: it has no permanent to leave out in layers 4 and 5', () => {
