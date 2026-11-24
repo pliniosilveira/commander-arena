@@ -787,6 +787,7 @@ describe('unmatched abilities', () => {
       'effect.choose-a-number',
       'effect.each-player-keeps-creatures-and-sacrifices-the-rest',
       'effect.player-keeps-up-to-and-sacrifices-the-rest',
+      'effect.each-player-chooses-a-party-and-sacrifices-the-rest',
       'effect.gain-keyword-and-ability',
       'effect.gain-life-and-draw-equal',
       'effect.draw-and-lose-life-equal',
