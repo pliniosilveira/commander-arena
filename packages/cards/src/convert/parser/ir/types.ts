@@ -404,6 +404,8 @@ export interface IrFilter {
    * `'yours'` is "your commander", a commander its owner designated and that owner is the player who controls the ability.
    */
   readonly commander?: true | 'yours';
+  /** "noncommander creature" (Subjugate the Hobbits, CR 903.3): the object is not a card a player designated as a commander. */
+  readonly notCommander?: true;
   /** "~" as one member of a disjunction (issue 101, "attack with ~ and/or your commander", CR 508.1): the object is the source of the ability itself. */
   readonly isSelf?: true;
   /**
@@ -454,6 +456,8 @@ export interface IrFilter {
   readonly exiledWithSelf?: true;
   /** "target creature card exiled this way" (Espers to Magicite, CR 603.12): a card in exile that the resolution before the reflexive ability exiled (the engine's `exiledThisWay`). */
   readonly exiledThisWay?: true;
+  /** "with power less than or equal to the amassed Army's power" (Grishnákh, CR 603.12, 701.47a): the engine's `powerAtMostMoved`, read in the reflexive ability after an amass. */
+  readonly powerAtMostMoved?: true;
   /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
   readonly putWithSelf?: true;
   /**
@@ -1764,6 +1768,8 @@ export type IrRestrictionKind =
   | 'cantBeCountered'
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
+  // "~ can't be blocked except by three or more creatures" (Hosts of Mordor deck, CR 509.1b): like menace, with three blockers.
+  | 'cantBeBlockedExceptByThreeOrMore'
   | 'mustBeBlocked'
   | 'mustBlock'
   // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.

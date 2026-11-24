@@ -808,6 +808,12 @@ export interface ObjectFilter {
    */
   readonly exiledThisWay?: true;
   /**
+   * "Target creature with power less than or equal to the amassed Army's power" (Grishnákh, Brash Instigator; CR 603.12, 701.47a, 208.1): the object's power now is at most the power of the
+   * first object the resolution that created the reflexive ability moved (`reflexive.carriesMoved`: the Army an `amass` chose), as that object is now. An object with no power matches
+   * nothing, and so does any when the ability carries no object. Read only in a target slot of such a reflexive ability.
+   */
+  readonly powerAtMostMoved?: true;
+  /**
    * "Creature put onto the battlefield with this Aura" (CR 303.4, 400.7, 702.5a; Animate Dead): the object is a permanent that an effect of the source of the filter (an Aura) put
    * onto the battlefield with `moveToZone.putWithSource`, and it is still that same object (one that left and came back is a new object, CR 400.7). Read where the filter is matched
    * against the game with the source: an enchant ability's filter (the Aura it belongs to is the source), a target slot, an `each` selector. The filter's zone is the battlefield.
@@ -903,6 +909,11 @@ export interface ObjectFilter {
    * count a static ability reads, as `attacking` is.
    */
   readonly commander?: true | 'yours';
+  /**
+   * "Each noncommander creature" (CR 903.3, Subjugate the Hobbits): the object is not a card a player designated as their commander (a token or a permanent that copies a commander
+   * is not one either, so it matches). Read where the filter is matched against the game (a target slot, an `each` selector), refused where `commander` is.
+   */
+  readonly notCommander?: true;
   /**
    * Only attacking creatures (CR 506.4, D-120): a creature that was declared as an attacker and is still on
    * the battlefield and in combat. Read where the filter is matched against the game (a target slot, an
@@ -5859,6 +5870,8 @@ export type Trigger =
  *   attacked you during their last turn as though it didn't have defender", `GameState.attackedLastTurn`); "you" is the controller of the creature;
  * - `assignsDamageByToughness`: it assigns combat damage equal to its toughness rather than its power (CR 510.1a, 609.4: "Each creature you control assigns combat damage equal to its toughness
  *   rather than its power"); it changes only the amount assigned, never the creature's power, so every other rule reads the real values;
+ * - `cantBeBlockedExceptByThreeOrMore`: it can't be blocked except by three or more creatures (CR 509.1b, the way menace, CR 702.111b, asks two: a lone blocker, or two, is not a legal block;
+ *   with `cantBeBlockedByMoreThanOne` nothing can block it);
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -5876,6 +5889,7 @@ export type Restriction =
   | 'cantAttack'
   | 'cantBeBlocked'
   | 'cantBeBlockedExceptByHaste'
+  | 'cantBeBlockedExceptByThreeOrMore'
   | 'cantAttackPlayersAlreadyAttacked'
   | 'canBlockOnlyFlying'
   | 'canAttackAsThoughNoDefender'

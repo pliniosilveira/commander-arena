@@ -366,7 +366,8 @@ export interface LowerContext {
    */
   lastCastRemembered: boolean;
   /**
-   * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
+   * The targets of the control effect the instruction just lowered gave (In the Darkness Bind Them, "Untap those creatures. They gain haste until end of turn."), or
+   * the group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
    * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
    */
   lastCounteredGroup: ObjectSelector | null;

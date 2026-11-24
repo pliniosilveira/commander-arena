@@ -386,6 +386,9 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
+  if (f.notCommander !== undefined && f.notCommander !== true) {
+    issue(out, `${path}.notCommander`, 'notCommander must be true when present');
+  }
   // D-489 (CR 201.2): "a card named X" is the text of a name.
   if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
     issue(out, `${path}.named`, 'named must be the name of a card');
@@ -410,6 +413,7 @@ export function checkFilter(
     'enteredThisTurn',
     'exiledWithSource',
     'exiledThisWay',
+    'powerAtMostMoved',
     'putWithSource',
     'singleTarget',
     'modified',
@@ -896,7 +900,9 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out, scope?: Scope): 
 /** True when the filter or any anyOf member satisfies `test`. */
 /** True for a filter that reads the combat or the source's power, which `derive` cannot (D-120, D-131). */
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
-  readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
+  readsCombatOrSourceBesidesCommander(f) ||
+  f.commander !== undefined ||
+  f.notCommander !== undefined;
 
 /** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
 export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
@@ -920,6 +926,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
   f.exiledThisWay !== undefined ||
+  f.powerAtMostMoved !== undefined ||
   f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
@@ -4172,6 +4179,8 @@ function movesObjects(e: Effect): boolean {
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
     e?.kind === 'populate' ||
+    // CR 701.47a (Grishnákh): the Army an `amass` chose is "the amassed Army" of the reflexive ability that follows it.
+    e?.kind === 'amass' ||
     // Twilight Diviner: the token `copyOneOfTriggerCards` made is "it".
     e?.kind === 'copyOneOfTriggerCards' ||
     // D-145: the card found by a `revealUntil` is "it".
@@ -8353,7 +8362,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.12, 400.7j: a slot for "card exiled this way" reads the objects the reflexive ability carries.
       if (
         e.carriesMoved !== true &&
-        JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true')
+        (JSON.stringify(e.targets ?? null).includes('"exiledThisWay":true') ||
+          JSON.stringify(e.targets ?? null).includes('"powerAtMostMoved":true'))
       ) {
         issue(
           out,

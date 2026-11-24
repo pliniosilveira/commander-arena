@@ -1075,6 +1075,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exiledWithSource',
     // Espers to Magicite: "target creature card exiled this way" (`ObjectFilter.exiledThisWay`).
     'exiledThisWay',
+    // Grishnákh, Brash Instigator: "target creature ... with power less than or equal to the amassed Army's power" (`ObjectFilter.powerAtMostMoved`).
+    'powerAtMostMoved',
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
@@ -1267,6 +1269,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Puca's Covenant: "another target permanent card ... from your graveyard" of a trigger about a creature that died (`ObjectFilter.notTriggerCard`).
     'notTriggerCard',
     'commander',
+    // CR 903.3 (Subjugate the Hobbits): "each noncommander creature" (`ObjectFilter.notCommander`).
+    'notCommander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
     // CR 701.15b: "a goaded creature" (`ObjectFilter.goaded`).
@@ -1826,6 +1830,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // CR 509.1b: "~ can't be blocked except by three or more creatures."
+  'cantBeBlockedExceptByThreeOrMore',
   // CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn."
   'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
@@ -2130,6 +2136,8 @@ export const SELECTOR_KINDS = [
   'exiledWithSource',
   /** "Target creature card exiled this way" (CR 603.12, 400.7j, Espers to Magicite): the engine's `ObjectFilter.exiledThisWay`. */
   'exiledThisWay',
+  /** "With power less than or equal to the amassed Army's power" (CR 603.12, 701.47a, Grishnákh): the engine's `ObjectFilter.powerAtMostMoved`. */
+  'powerAtMostMoved',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
@@ -2361,6 +2369,8 @@ export const SELECTOR_KINDS = [
   'notTriggerCard',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
+  /** "Each noncommander creature" (CR 903.3, Subjugate the Hobbits): the engine's `ObjectFilter.notCommander`. */
+  'notCommander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
   'modified',
   /** "A goaded creature" (CR 701.15b): the engine's `ObjectFilter.goaded`. */

@@ -324,6 +324,7 @@ function lowerFilterAt(
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
   if (filter.hasCounter !== undefined) parts.push('selector:hasCounter');
   if (filter.commander !== undefined) parts.push('selector:commander');
+  if (filter.notCommander === true) parts.push('selector:notCommander');
   if (filter.isSelf === true) parts.push('selector:isSource');
   // D-180 (stage P37): "that was put there from the battlefield this turn" (CR 700.4), a card of a graveyard (the engine reads it of the filter of
   // a target or an `each` selector, never of a member of a choice).
@@ -388,6 +389,11 @@ function lowerFilterAt(
   if (filter.exiledThisWay === true) {
     if (inner || filter.zone !== 'exile') return bad([]);
     parts.push('selector:exiledThisWay');
+  }
+  // Grishnákh (CR 603.12, 701.47a): "power less than or equal to the amassed Army's power", read where the filter is matched against the game with what the reflexive ability carries (a target slot); never a member of a choice, and a battlefield permanent.
+  if (filter.powerAtMostMoved === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:powerAtMostMoved');
   }
   // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
   if (filter.putWithSelf === true) {
@@ -615,6 +621,7 @@ function lowerFilterAt(
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
     ...(filter.hasCounter === undefined ? {} : { hasCounter: filter.hasCounter }),
     ...(filter.commander === undefined ? {} : { commander: filter.commander }),
+    ...(filter.notCommander === true ? { notCommander: true as const } : {}),
     ...(filter.isSelf === true ? { isSource: true as const } : {}),
     ...(filter.manaValueX === true ? { manaValueX: true as const } : {}),
     ...(filter.controllerDamagedBySource === true
@@ -644,6 +651,7 @@ function lowerFilterAt(
         }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.exiledThisWay === true ? { exiledThisWay: true as const } : {}),
+    ...(filter.powerAtMostMoved === true ? { powerAtMostMoved: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),

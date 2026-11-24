@@ -165,6 +165,10 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
     ...(subject === 'attached' ? [phrase('is goaded', 'goaded')] : []),
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
+    phrase(
+      "can['’]t be blocked except by three or more creatures",
+      'cantBeBlockedExceptByThreeOrMore',
+    ),
     BLOCKED_EXCEPT_BY,
     BLOCKED_BY_MONARCH,
     BLOCKED_BY_GREATER_POWER,

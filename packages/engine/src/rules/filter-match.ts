@@ -158,6 +158,8 @@ export interface FilterContext {
   readonly linkedExile?: readonly ObjectId[];
   /** The cards the resolution that created the reflexive ability moved (`exiledThisWay`, Espers to Magicite, CR 603.12, 400.7j): read by the caller; absent fails the flag closed. */
   readonly exiledThisWay?: readonly ObjectId[];
+  /** The power of the first object the resolution that created the reflexive ability moved (`powerAtMostMoved`, Grishnákh, CR 603.12, 701.47a): read by the caller; absent fails the flag closed. */
+  readonly movedPower?: number;
   /**
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
@@ -359,6 +361,9 @@ export function matchesFilterWith(
   // CR 903.3 (D-145): "commander" is a card designated as a player's commander.
   if (filter.commander !== undefined && (d.commander ?? isCommanderObject(state, obj)) !== true)
     return false;
+  // CR 903.3 (Subjugate the Hobbits): "noncommander" is any object that is not a card designated as a player's commander.
+  if (filter.notCommander === true && (d.commander ?? isCommanderObject(state, obj)) === true)
+    return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 108.3 ("you don't own"): the owner of the object is not the player reading the filter.
@@ -486,6 +491,11 @@ export function matchesFilterWith(
   // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
   if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
   if (filter.exiledThisWay === true && !(ctx.exiledThisWay ?? []).includes(obj.id)) return false;
+  // CR 208.1, 603.12 (Grishnákh): "power less than or equal to the amassed Army's power".
+  if (filter.powerAtMostMoved === true) {
+    if (ctx.movedPower === undefined || d.power === null || d.power === undefined) return false;
+    if (d.power > ctx.movedPower) return false;
+  }
   // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura": the object remembers the source, as the same object.
   if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
     return false;

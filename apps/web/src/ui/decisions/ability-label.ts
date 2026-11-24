@@ -620,6 +620,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   // Issue 81 (CR 509.1b): the Gingerbrute token.
   cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
   cantAttackPlayersAlreadyAttacked: "can't attack a player it has already attacked this turn",
+  cantBeBlockedExceptByThreeOrMore: "can't be blocked except by three or more creatures",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
