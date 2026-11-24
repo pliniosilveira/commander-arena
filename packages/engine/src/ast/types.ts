@@ -7980,6 +7980,13 @@ export type StaticEffect =
    */
   | { readonly kind: 'goaded'; readonly subject: StaticSubject }
   /**
+   * "The monarch controls enchanted creature." (Fealty to the Realm; CR 613.1b, 613.7, 725.1): the permanent this one is attached to is controlled by the monarch, a layer 2 effect
+   * (`rules/control.ts`, `controllerOf`) with the timestamp of the permanent with the ability, which an Aura gets as it becomes attached (CR 613.7e) and a new monarch does not change.
+   * While there is no monarch it does nothing (the permanent stays with the controller the other layer 2 effects leave it). It ends when the permanent with the ability leaves the
+   * battlefield, stops being attached or loses its abilities (CR 611.3a, 613.1f).
+   */
+  | { readonly kind: 'controlAttached'; readonly by: 'monarch' }
+  /**
    * "Rhonas can't attack or block unless you control another creature with power 4 or greater" (D-145, CR 508.1a, 509.1a, 113.6): the
    * permanent has the restrictions `restrictions` (`cantAttack`, `cantBlock`) except while `unless` holds. `unless` is a full condition, read
    * for the controller of the permanent with the permanent as "this" (a count of permanents may compare power, toughness or keywords),

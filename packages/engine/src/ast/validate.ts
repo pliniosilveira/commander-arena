@@ -837,6 +837,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'controlAttached':
+      // CR 613.1b, 725.1: the permanent this one is attached to is controlled by the monarch.
+      if (s.by !== 'monarch') issue(out, `${path}.by`, 'controlAttached is by the monarch');
+      break;
     case 'goaded':
       // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
       checkStaticSubject(s.subject, `${path}.subject`, out);
