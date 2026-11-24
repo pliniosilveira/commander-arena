@@ -35,12 +35,16 @@ describe('take the initiative (CR 726.3)', () => {
 
 describe('venture into the dungeon (CR 701.49)', () => {
   test('Undercity', () => {
-    expect(messages(spell({ kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' }))).toEqual([]);
+    expect(
+      messages(spell({ kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' })),
+    ).toEqual([]);
   });
 
   test('a dungeon that is not built is refused', () => {
     expect(
-      messages(spell({ kind: 'venture', player: { kind: 'you' }, dungeon: 'tomb' as never })).join(' '),
+      messages(spell({ kind: 'venture', player: { kind: 'you' }, dungeon: 'tomb' as never })).join(
+        ' ',
+      ),
     ).toContain('undercity');
   });
 });
@@ -64,10 +68,10 @@ describe('a card taken from the top enters with counters (CR 122.6, 701.20)', ()
   });
 
   test('into the hand: refused', () => {
-    expect(messages(spell(take('hand'))).join(' ')).toContain('withCounters');
+    expect(messages(spell(take('hand'))).join(' ')).toContain('only for the battlefield');
   });
 
   test('a count of 0: refused', () => {
-    expect(messages(spell(take('battlefield', 0))).join(' ')).toContain('withCounters');
+    expect(messages(spell(take('battlefield', 0))).join(' ')).toContain('positive integer');
   });
 });

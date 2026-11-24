@@ -586,7 +586,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         ? { filter: escalateTap.filter, count: escalateTap.count * escalatedModes }
         : replicaTap?.kind === 'tapPermanents'
           ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
-        : null;
+          : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
     alternative === 'sacrificeFromGraveyard'

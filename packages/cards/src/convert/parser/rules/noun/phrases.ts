@@ -1207,22 +1207,22 @@ export function graveyardPhrase(
               : preposition === 'inOpponents'
                 ? // Captain N'ghathrod: "target artifact or creature card in an opponent's graveyard": the graveyard of any opponent.
                   map(pattern(/ in an opponent['’]s graveyard/i), () => 'opponent' as const)
-              : preposition === 'in'
-                ? map(literal(' in your graveyard'), () => 'you' as const)
-                : choice(
-                    map(literal(' from your graveyard'), () => 'you' as const),
-                    map(literal(' from a graveyard'), () => undefined),
-                    map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-                    // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
-                    map(
-                      pattern(/ from defending player['’]s graveyard/i),
-                      () => 'defendingPlayer' as const,
-                    ),
-                    // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-                    ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-                    // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
-                    ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
-                  );
+                : preposition === 'in'
+                  ? map(literal(' in your graveyard'), () => 'you' as const)
+                  : choice(
+                      map(literal(' from your graveyard'), () => 'you' as const),
+                      map(literal(' from a graveyard'), () => undefined),
+                      map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                      // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
+                      map(
+                        pattern(/ from defending player['’]s graveyard/i),
+                        () => 'defendingPlayer' as const,
+                      ),
+                      // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+                      ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+                      // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
+                      ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
+                    );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(
       choice(

@@ -1195,4 +1195,3 @@ export function getView(state: GameState, viewer: SeatId): GameView {
     result: state.result,
   };
 }
-

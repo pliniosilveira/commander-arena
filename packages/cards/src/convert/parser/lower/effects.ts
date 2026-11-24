@@ -908,12 +908,7 @@ const RESELECT_ATTACK: Lowering<IrClause, Effects> = {
 const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
-  needs: [
-    'effect:moveToZone',
-    'selector:choose',
-    'ability:chooseAlsoGraveyard',
-    'amount:votesFor',
-  ],
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard', 'amount:votesFor'],
   lower(clause, ctx) {
     const named = arg(clause, 'objects');
     const to = zoneOf(clause);

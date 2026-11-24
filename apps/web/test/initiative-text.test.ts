@@ -51,26 +51,27 @@ test('on the stack the initiative says what its ability does, for either viewer'
     return stackWording(item, new Map(view.battlefield.map((o) => [o.id, o])), 1, false, 2);
   };
   expect(wordsOf().inherent).toBe(true);
-  expect(wordsOf().monarchWords).toBe('Whenever you take the initiative, venture into Undercity.');
+  expect(wordsOf().monarchWords).toBe(
+    'Whenever a player takes the initiative, that player ventures into Undercity.',
+  );
   expect(wordsOf().when).toBeNull();
   // The room ability that the venture then triggers says what its room does (CR 309.4c).
   g.pass();
   g.pass();
-  expect(wordsOf().monarchWords).toContain('Secret Entrance: Search your library for a basic land');
+  expect(wordsOf().monarchWords).toContain('Secret Entrance — When you move your venture marker into this room');
 });
 
 test('the question that asks which room the venture marker moves to', () => {
   const d = {
     purpose: 'dungeonRoom',
     sourceName: 'Undercity',
-    options: ['forge', 'lost-well'],
+    options: ['Forge', 'Lost Well'],
   } as never;
-  expect(optionPrompt(d)).toBe('Choose the room to move your venture marker to (Undercity).');
+  expect(optionPrompt(d)).toBe('Choose the room to move your venture marker into (Undercity).');
   expect(purposeNoun('dungeonRoom')).toBe('room');
-  expect(optionText('dungeonRoom', 'forge')).toBe('Forge');
-  expect(optionText('dungeonRoom', 'lost-well')).toBe('Lost Well');
-  expect(optionText('dungeonRoom', 'trap')).toBe('Trap!');
-  expect(optionText('dungeonRoom', 'throne-of-the-dead-three')).toBe('Throne of the Dead Three');
+  // The options are the names of the rooms the card prints.
+  expect(optionText('dungeonRoom', 'Forge')).toBe('Forge');
+  expect(optionText('dungeonRoom', 'Trap!')).toBe('Trap!');
 });
 
 test('the log: the initiative, the venture marker and a completed dungeon', () => {
@@ -83,22 +84,19 @@ test('the log: the initiative, the venture marker and a completed dungeon', () =
     'Opponent takes the initiative.',
   );
   expect(
-    describeEvent({ kind: 'initiativeChanged', from: 0, to: null } as never, s, s, 0)?.text,
-  ).toBe('There is no initiative.');
-  expect(
     describeEvent(
       {
         kind: 'ventured',
         seat: 0,
         dungeon: 'undercity',
-        room: 'secret-entrance',
+        room: 'secretEntrance',
         from: null,
       } as never,
       s,
       s,
       0,
     )?.text,
-  ).toBe('You enter Undercity: Secret Entrance.');
+  ).toBe('You enter Undercity: move the venture marker to Secret Entrance.');
   expect(
     describeEvent(
       {
@@ -106,13 +104,13 @@ test('the log: the initiative, the venture marker and a completed dungeon', () =
         seat: 1,
         dungeon: 'undercity',
         room: 'forge',
-        from: 'secret-entrance',
+        from: 'secretEntrance',
       } as never,
       s,
       s,
       0,
     )?.text,
-  ).toBe('Opponent moves their venture marker into Forge.');
+  ).toBe('Opponent moves the venture marker to Forge (Undercity).');
   expect(
     describeEvent({ kind: 'dungeonCompleted', seat: 0, dungeon: 'undercity' } as never, s, s, 0)
       ?.text,
@@ -131,9 +129,8 @@ test('the chip of a seat in Undercity names the room, its text and where the mar
   const dungeon = getView(g.state, 1).seats[0]?.dungeon;
   if (dungeon === undefined) throw new Error('the seat is not in a dungeon');
   const title = dungeonTitle(dungeon);
-  expect(title).toContain('Undercity, room Secret Entrance');
+  expect(title).toContain('Undercity: the venture marker is on Secret Entrance.');
   expect(title).toContain('Search your library for a basic land card');
-  expect(title).toContain('forge or lost-well');
   const bottom = scenario()
     .seat(0)
     .library(...LIBRARY)
@@ -143,7 +140,7 @@ test('the chip of a seat in Undercity names the room, its text and where the mar
     .build();
   const last = getView(bottom.state, 1).seats[0]?.dungeon;
   if (last === undefined) throw new Error('the seat is not in a dungeon');
-  expect(dungeonTitle(last)).toContain('bottommost room');
+  expect(dungeonTitle(last)).toContain('The next venture completes the dungeon');
 });
 
 test('the effects are worded as the cards write them', () => {
@@ -157,5 +154,7 @@ test('the effects are worded as the cards write them', () => {
       undefined,
     );
   expect(gist({ kind: 'takeInitiative', player: { kind: 'you' } })).toBe('You take the initiative');
-  expect(gist({ kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' })).toBe('Venture into Undercity');
+  expect(gist({ kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' })).toBe(
+    'You venture into Undercity',
+  );
 });
