@@ -1263,6 +1263,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Puca's Covenant: "another target permanent card ... from your graveyard" of a trigger about a creature that died (`ObjectFilter.notTriggerCard`).
     'notTriggerCard',
     'commander',
+    // CR 903.3 (Subjugate the Hobbits): "each noncommander creature" (`ObjectFilter.notCommander`).
+    'notCommander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
     // CR 701.15b: "a goaded creature" (`ObjectFilter.goaded`).
@@ -2357,6 +2359,8 @@ export const SELECTOR_KINDS = [
   'notTriggerCard',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
+  /** "Each noncommander creature" (CR 903.3, Subjugate the Hobbits): the engine's `ObjectFilter.notCommander`. */
+  'notCommander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
   'modified',
   /** "A goaded creature" (CR 701.15b): the engine's `ObjectFilter.goaded`. */

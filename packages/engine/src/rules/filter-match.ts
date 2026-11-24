@@ -359,6 +359,9 @@ export function matchesFilterWith(
   // CR 903.3 (D-145): "commander" is a card designated as a player's commander.
   if (filter.commander !== undefined && (d.commander ?? isCommanderObject(state, obj)) !== true)
     return false;
+  // CR 903.3 (Subjugate the Hobbits): "noncommander" is any object that is not a card designated as a player's commander.
+  if (filter.notCommander === true && (d.commander ?? isCommanderObject(state, obj)) === true)
+    return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 108.3 ("you don't own"): the owner of the object is not the player reading the filter.

@@ -53,6 +53,8 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature for as long as you control ~',
     'gain control of target permanent until end of turn',
     'gain control of target creature an opponent controls until end of turn',
+    'gain control of each noncommander creature with mana value 3 or less',
+    'gain control of each creature until end of turn',
     'gain control of ~',
     'gain control of ~ until end of turn',
     'gain control of all artifacts that player controls',
@@ -66,7 +68,6 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature until end of turn and untap it',
     'gain control of target creatures until end of turn',
     'gain control of up to one target creature until end of turn',
-    'gain control of each creature until end of turn',
     'gain control of all creatures until end of turn',
     'gain control of target player until end of turn',
     'gain control of target creature until end of turn, then',
@@ -89,13 +90,17 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
             'noun.target-permanent-controller-dealt-damage-by',
             // Limit Break deck, group 4 (Hellkite Tyrant): "gain control of all artifacts that player controls", a group of the permanents the player the text named controls.
             'noun.all-permanents-of-that-player',
+            // Hosts of Mordor deck (Subjugate the Hobbits): "gain control of each noncommander creature with mana value 3 or less", a group of the battlefield.
+            'noun.each-permanent',
             'noun.that-object',
             'noun.it',
             'noun.self',
           ],
         }),
         (n) =>
-          (!n.plural || n.rule === 'noun.all-permanents-of-that-player') &&
+          (!n.plural ||
+            n.rule === 'noun.all-permanents-of-that-player' ||
+            n.rule === 'noun.each-permanent') &&
           !n.upTo &&
           n.filter.player === undefined,
         (_n, _ctx, start) => start,

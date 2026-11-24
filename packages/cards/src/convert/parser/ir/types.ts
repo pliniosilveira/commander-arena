@@ -404,6 +404,8 @@ export interface IrFilter {
    * `'yours'` is "your commander", a commander its owner designated and that owner is the player who controls the ability.
    */
   readonly commander?: true | 'yours';
+  /** "noncommander creature" (Subjugate the Hobbits, CR 903.3): the object is not a card a player designated as a commander. */
+  readonly notCommander?: true;
   /** "~" as one member of a disjunction (issue 101, "attack with ~ and/or your commander", CR 508.1): the object is the source of the ability itself. */
   readonly isSelf?: true;
   /**

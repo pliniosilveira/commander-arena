@@ -386,6 +386,9 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
+  if (f.notCommander !== undefined && f.notCommander !== true) {
+    issue(out, `${path}.notCommander`, 'notCommander must be true when present');
+  }
   // D-489 (CR 201.2): "a card named X" is the text of a name.
   if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
     issue(out, `${path}.named`, 'named must be the name of a card');
@@ -896,7 +899,9 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out, scope?: Scope): 
 /** True when the filter or any anyOf member satisfies `test`. */
 /** True for a filter that reads the combat or the source's power, which `derive` cannot (D-120, D-131). */
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
-  readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
+  readsCombatOrSourceBesidesCommander(f) ||
+  f.commander !== undefined ||
+  f.notCommander !== undefined;
 
 /** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
 export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>

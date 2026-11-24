@@ -396,6 +396,15 @@ describe('costs, ward and mana symbols', () => {
     expect(validateAbility(equip({ commander: true, controller: 'you' }))).not.toEqual([]);
   });
 
+  test('notCommander (CR 903.3) is true when present', () => {
+    const equip = (restriction: ObjectFilter): Ability => ({
+      kind: 'keyword',
+      keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['3'] }], restriction },
+    });
+    expect(validateAbility(equip({ notCommander: true }))).toEqual([]);
+    expect(validateAbility(equip({ notCommander: false as never }))).not.toEqual([]);
+  });
+
   test('cost amounts must be integers', () => {
     const life: Ability = {
       kind: 'activated',

@@ -904,6 +904,11 @@ export interface ObjectFilter {
    */
   readonly commander?: true | 'yours';
   /**
+   * "Each noncommander creature" (CR 903.3, Subjugate the Hobbits): the object is not a card a player designated as their commander (a token or a permanent that copies a commander
+   * is not one either, so it matches). Read where the filter is matched against the game (a target slot, an `each` selector), refused where `commander` is.
+   */
+  readonly notCommander?: true;
+  /**
    * Only attacking creatures (CR 506.4, D-120): a creature that was declared as an attacker and is still on
    * the battlefield and in combat. Read where the filter is matched against the game (a target slot, an
    * `each` selector, a trigger subject); refused in a static ability, a count read by a static ability
