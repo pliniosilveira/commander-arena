@@ -1469,8 +1469,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'putIntoGraveyard':
       // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
-      if (!isOneOf(t.who, ['you', 'any'])) {
+      if (!isOneOf(t.who, ['you', 'any', 'opponent'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      if (
+        t.who === 'opponent' &&
+        (t.firstTimeEachTurn === true || t.batch === true || t.self === true)
+      ) {
+        issue(
+          out,
+          `${path}.who`,
+          "an opponent's graveyard goes with a trigger for each card, not a batch, first-time or self trigger",
+        );
       }
       if (!isOneOf(t.from, ['anywhere', 'library', 'notBattlefield'])) {
         issue(
@@ -2412,6 +2422,18 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           out,
           `${path}.interveningIf`,
           "thisInYourGraveyard needs functionsIn: 'graveyard': an ability that works on the battlefield has its card there",
+        );
+      }
+      // CR 702.62b: "if this card is suspended" is true only for a card in exile, which the ability must say it works from (CR 113.6b).
+      if (
+        (conditionHas(a.interveningIf, 'thisSuspended') ||
+          conditionHas(a.triggerCondition, 'thisSuspended')) &&
+        a.functionsIn !== 'exile'
+      ) {
+        issue(
+          out,
+          `${path}.interveningIf`,
+          "thisSuspended needs functionsIn: 'exile': an ability that works on the battlefield has its card there",
         );
       }
       // D-145: "attacks while you don't control another Dinosaur": the condition of the event itself, read once.

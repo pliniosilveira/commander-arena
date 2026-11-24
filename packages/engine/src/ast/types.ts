@@ -5619,9 +5619,10 @@ export type Trigger =
       readonly kind: 'putIntoGraveyard';
       /**
        * `you`: the graveyard of the controller of this ability. `any` ("a creature card is put into a graveyard from anywhere other than the battlefield", CR 603.2,
-       * 404.1): the graveyard of any player; not with `firstTimeEachTurn`.
+       * 404.1): the graveyard of any player; not with `firstTimeEachTurn`. `opponent` ("a card is put into an opponent's graveyard from anywhere", CR 404.1): the graveyard of
+       * a player other than the controller (any of them, with several opponents); not with `firstTimeEachTurn`, `batch` or `self`.
        */
-      readonly who: 'you' | 'any';
+      readonly who: 'you' | 'any' | 'opponent';
       /** `notBattlefield` (CR 700.4): any zone but the battlefield, so a permanent that dies is not counted. */
       readonly from: 'anywhere' | 'library' | 'notBattlefield';
       readonly filter?: ObjectFilter;
@@ -7137,6 +7138,11 @@ export type Condition =
    */
   | { readonly kind: 'thisInYourGraveyard' }
   /**
+   * "If this card is suspended" (CR 702.62b, 603.4): the card the condition belongs to is in exile, has a Suspend ability and has a time counter on it. Read from the object itself
+   * (once the card leaves exile it is a new object, CR 400.7), as the event happens and again as the ability resolves. Only for an ability that works from exile (`functionsIn: 'exile'`).
+   */
+  | { readonly kind: 'thisSuspended' }
+  /**
    * "If it's on the battlefield" (CR 603.4, 400.7; Animate Dead): the permanent the condition belongs to is on the battlefield now, the same object that triggered (an object that has
    * left is a new object elsewhere, so this reads the live object, never last-known information). Read as the event happens and again as the ability resolves.
    */
@@ -8528,8 +8534,10 @@ export type Ability =
        * "Whenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand." (CR 113.6b, 603.2, D-151):
        * the ability triggers while its card is in its owner's graveyard, and not on the battlefield. The card is "this" (`this` names it while it
        * is still in the graveyard as the same object, CR 400.7); the controller of the ability is the owner of the card.
+       * `exile` ("Whenever a card is put into an opponent's graveyard from anywhere, if this card is suspended, you may remove a time counter from this card", CR 113.6b, 702.62b): the
+       * ability triggers while its card is in exile (checked by the intervening `thisSuspended`), where "this" is that card and the controller of the ability is its owner (CR 108.4).
        */
-      readonly functionsIn?: 'graveyard';
+      readonly functionsIn?: 'graveyard' | 'exile';
     }
   | {
       readonly kind: 'activated';

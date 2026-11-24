@@ -4052,6 +4052,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'thisSuspended':
+      // CR 702.62b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
     case 'thisOnBattlefield':
       // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
       break;

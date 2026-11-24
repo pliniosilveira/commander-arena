@@ -883,6 +883,8 @@ export interface IrCondition extends IrNode {
     // "If X is 10 or more" (CR 107.3, 608.2c): the X announced for the spell, against a number
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
+    // CR 702.62b, 603.4 (Nihilith): "this card is suspended": the card itself, in exile with Suspend and a time counter
+    | { readonly kind: 'thisSuspended' }
     // Issue 89 (CR 603.4, Animate Dead): "it's on the battlefield": the permanent the trigger is about, which is the source, is still on the battlefield
     | { readonly kind: 'thisOnBattlefield' }
     // Valakut Exploration (CR 603.4, 607.2a): "there are cards exiled with ~": at least one card the permanent exiled with its linked ability is still in exile
@@ -1723,6 +1725,8 @@ export interface IrTrigger extends IrNode {
    * battlefield.
    */
   readonly fromNotBattlefield?: true;
+  /** 'putIntoGraveyard' "a card is put into an opponent's graveyard from anywhere" (CR 603.2, 404.1): the graveyard of a player other than the controller of the ability. */
+  readonly opponentGraveyard?: true;
   /** 'leftGraveyard' "a creature card leaves your graveyard" (CR 603.2, 400.7): once for each card, not one trigger for the cards that leave together. */
   readonly each?: true;
   /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */

@@ -26,6 +26,7 @@ import {
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { designationHolders, hasMaxSpeed } from './designations';
+import { faceOf } from './legality';
 import { manaSpentOf } from './mana-spent';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
@@ -33,6 +34,8 @@ import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
 import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
+import { suspendOf } from './special-legality';
+import { TIME_COUNTER } from './time-counter';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
 /** A prime number: a whole number of 2 or more with no divisor but 1 and itself (`amountIsPrime`); 0, 1 and negative numbers are not. */
@@ -657,6 +660,16 @@ export function evaluateCondition(
       // controller in a graveyard, CR 108.4a). A card that has left is another object, so it is read live, never from last-known information.
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
+    }
+    case 'thisSuspended': {
+      // CR 702.62b, 603.4, 400.7: the card itself is in exile, has Suspend and a time counter; read live, a card that left exile is another object.
+      const card = ctx.source === null ? undefined : state.objects[ctx.source];
+      return (
+        card !== undefined &&
+        card.zone === 'exile' &&
+        (card.counters[TIME_COUNTER] ?? 0) >= 1 &&
+        suspendOf(faceOf(state, card)) !== null
+      );
     }
     case 'thisOnBattlefield': {
       // CR 603.4, 400.7 (Animate Dead): "if it's on the battlefield": the live object, which is a new one elsewhere once it has left.

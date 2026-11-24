@@ -130,6 +130,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
+    // CR 113.6b, 702.62b (Nihilith): "Whenever ..., if this card is suspended, ..." (`functionsIn: 'exile'`).
+    'functionsInExile',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
     'doOnlyOnceEachTurn',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
@@ -1413,6 +1415,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
     'thisOnBattlefield',
+    // CR 702.62b, 603.4 (Nihilith): "if this card is suspended".
+    'thisSuspended',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -1928,6 +1932,8 @@ export const ABILITY_FEATURES = [
   'manaCountOwnCounters',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
+  /** A triggered ability that works while its card is in exile (CR 113.6b, 702.62b, Nihilith): `functionsIn: 'exile'`. */
+  'functionsInExile',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
   'doOnlyOnceEachTurn',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
@@ -2521,6 +2527,8 @@ export const CONDITION_KINDS = [
   'thisInYourGraveyard',
   /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
   'thisOnBattlefield',
+  /** "If this card is suspended" (CR 702.62b, 603.4, Nihilith): the engine's `thisSuspended`. */
+  'thisSuspended',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -2986,6 +2994,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
+  functionsInExile: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   manaDistinctColors: true,

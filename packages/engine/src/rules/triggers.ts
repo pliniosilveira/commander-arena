@@ -809,12 +809,18 @@ function isSelfGraveyardEntry(trigger: Trigger): boolean {
   return trigger.kind === 'putIntoGraveyard' && trigger.self === true;
 }
 
-function triggeredOf(abilities: readonly Ability[], inGraveyard = false): Candidate['triggered'] {
+function triggeredOf(
+  abilities: readonly Ability[],
+  where?: 'graveyard' | 'exile',
+): Candidate['triggered'] {
+  const inGraveyard = where === 'graveyard';
   // CR 113.6b (D-151): an ability that works from the graveyard works only there; the others work where the object is checked from.
   // CR 702.29c (D-179): "when you cycle this card" works from whatever zone the card winds up in, so it is found wherever the card is.
   return abilities.flatMap((ability, index) =>
     ability.kind === 'triggered' &&
-    ((ability.functionsIn === 'graveyard') === inGraveyard ||
+    // CR 113.6b, 702.62b (Nihilith): an ability that works from exile works only there.
+    (((ability.functionsIn === 'graveyard') === inGraveyard &&
+      (ability.functionsIn === 'exile') === (where === 'exile')) ||
       ability.trigger.kind === 'cycled' ||
       isSelfGraveyardEntry(ability.trigger))
       ? [{ index, ability }]
@@ -839,6 +845,16 @@ function graveyardTriggerCards(state: GameState): ObjectId[] {
       }
     }
   }
+  // CR 113.6b, 702.62b (Nihilith): the cards in exile with a triggered ability that works there.
+  for (const id of state.exile) {
+    const card = state.objects[id]?.card;
+    const definition = card === null || card === undefined ? undefined : state.cards[card];
+    const face =
+      definition === undefined ? undefined : state.definitions[definition.definition]?.faces[0];
+    if (face?.abilities.some((a) => a.kind === 'triggered' && a.functionsIn === 'exile')) {
+      out.push(id);
+    }
+  }
   // CR 114.4 (D-201): the triggered abilities of an emblem work from the command zone.
   out.push(...emblemsOf(state));
   return out;
@@ -852,7 +868,10 @@ function candidateFor(state: GameState, id: ObjectId): Candidate | null {
       controller: controllerOf(state, live),
       attachedTo: live.attachedTo,
       ...(live.attachedToPlayer === undefined ? {} : { attachedToPlayer: live.attachedToPlayer }),
-      triggered: triggeredOf(derive(state, live).abilities, live.zone === 'graveyard'),
+      triggered: triggeredOf(
+        derive(state, live).abilities,
+        live.zone === 'graveyard' ? 'graveyard' : live.zone === 'exile' ? 'exile' : undefined,
+      ),
     };
   }
   // CR 113.7a, 603.10a: an object that has left is checked as it last existed.
@@ -963,7 +982,10 @@ function matches(
       if (trigger.self === true) return subject !== null && subject.id === candidate.id;
       // CR 603.2: the card as it is in the graveyard (or as it last was); the filter names card types only.
       return (
-        (trigger.who === 'any' || occ.seat === candidate.controller) &&
+        (trigger.who === 'any' ||
+          (trigger.who === 'opponent'
+            ? occ.seat !== null && occ.seat !== candidate.controller
+            : occ.seat === candidate.controller)) &&
         (trigger.filter === undefined ||
           (subject !== null &&
             matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx)))

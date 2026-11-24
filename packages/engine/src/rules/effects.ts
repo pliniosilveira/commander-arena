@@ -4094,7 +4094,8 @@ function runEffect(
       let anyRemoved = false;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
-        if (obj?.zone !== 'battlefield') continue;
+        // CR 122.1: counters stay on a permanent and on a card in exile (a suspended card's time counters, CR 702.62b).
+        if (obj?.zone !== 'battlefield' && obj?.zone !== 'exile') continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;

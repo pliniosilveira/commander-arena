@@ -592,6 +592,28 @@ export function checkDragonsEffect(
 export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[]): void {
   const where = (a as { functionsIn?: unknown }).functionsIn;
   if (where === undefined) return;
+  if (where === 'exile') {
+    // CR 113.6b, 702.62b (Nihilith): a triggered ability of a card in exile, which needs the card suspended (the card has no other way to be in exile with its abilities running).
+    if (a.kind !== 'triggered') {
+      issue(out, `${path}.functionsIn`, 'only a triggered ability works from exile here');
+      return;
+    }
+    if (!JSON.stringify(a.interveningIf ?? null).includes('"thisSuspended"')) {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        "a triggered ability that works from exile needs the intervening if 'thisSuspended'",
+      );
+    }
+    if (a.trigger?.kind !== 'putIntoGraveyard' || a.trigger.self === true) {
+      issue(
+        out,
+        `${path}.trigger`,
+        'a trigger that works from exile is read for a card put into a graveyard only (the engine finds its card in exile for no other event)',
+      );
+    }
+    return;
+  }
   if (where !== 'graveyard') {
     issue(
       out,

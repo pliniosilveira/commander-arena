@@ -89,6 +89,7 @@ import { SYNTHETIC_FETCH_GRANTS_LIST } from './synthetic-fetch-grants';
 import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
 import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
+import { SYNTHETIC_G8_LIST } from './synthetic-g8';
 import { SYNTHETIC_GALADRIEL_G1_LIST } from './synthetic-galadriel-g1';
 import { SYNTHETIC_GALADRIEL_G2_LIST } from './synthetic-galadriel-g2';
 import { SYNTHETIC_GALADRIEL_G3_LIST } from './synthetic-galadriel-g3';
@@ -461,6 +462,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LOREHOLD_G3_LIST,
   ...SYNTHETIC_LOSE_GAME_LIST,
   ...SYNTHETIC_DICE_LIST,
+  ...SYNTHETIC_G8_LIST,
   ...SYNTHETIC_RANDOM_MODE_LIST,
   ...SYNTHETIC_COIN_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,

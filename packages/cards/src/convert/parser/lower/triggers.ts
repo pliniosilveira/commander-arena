@@ -807,7 +807,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return ok({
         kind: 'putIntoGraveyard',
         // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
-        who: t.fromNotBattlefield === true ? 'any' : 'you',
+        who:
+          t.fromNotBattlefield === true ? 'any' : t.opponentGraveyard === true ? 'opponent' : 'you',
         from:
           t.fromNotBattlefield === true
             ? 'notBattlefield'
@@ -1865,6 +1866,15 @@ function lowerTriggeredAbility(
   ) {
     return failure(ability);
   }
+  // CR 702.62b, 113.6b (Nihilith): "if this card is suspended" belongs to an ability that works from exile; the trigger is about other cards (a card put into a graveyard).
+  const fromExile = JSON.stringify(interveningIf ?? null).includes('"thisSuspended"');
+  if (fromExile) {
+    const blockedExile = missingFeatures(['ability:functionsInExile']);
+    if (blockedExile.length > 0) return failure(ability, blockedExile);
+    if (ctx.usedGraveyardSource || !triggers.every((t) => t.kind === 'putIntoGraveyard')) {
+      return failure(ability);
+    }
+  }
   if (ctx.usedGraveyardSource) {
     const blockedGraveyard = missingFeatures(['ability:functionsInGraveyard']);
     if (blockedGraveyard.length > 0) return failure(ability, blockedGraveyard);
@@ -1914,6 +1924,7 @@ function lowerTriggeredAbility(
       ...(once ? { oncePerTurn: true as const } : {}),
       ...(doOnce ? { doOnlyOnceEachTurn: true as const } : {}),
       ...(ctx.usedGraveyardSource ? { functionsIn: 'graveyard' as const } : {}),
+      ...(fromExile ? { functionsIn: 'exile' as const } : {}),
     })),
     rule: ability.trigger.rule,
   };

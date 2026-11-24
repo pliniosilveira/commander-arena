@@ -60,6 +60,7 @@ import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { MILL_TRIGGER_RULES } from './mill';
+import { MIND_FLAYARRRS_G8_TRIGGER_RULES } from './mind-flayarrrs-g8';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
@@ -1480,6 +1481,8 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
   ...TROYAN2_TRIGGER_RULES,
+  // Mind Flayarrrs deck, group 8: "a card is put into an opponent's graveyard from anywhere".
+  ...MIND_FLAYARRRS_G8_TRIGGER_RULES,
   // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
   ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,

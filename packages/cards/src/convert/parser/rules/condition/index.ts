@@ -65,6 +65,7 @@ import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
+import { MIND_FLAYARRRS_G8_CONDITION_RULES } from './mind-flayarrrs-g8';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
 import { PLAYED_LAND_CONDITION_RULES } from './played-land';
@@ -560,6 +561,8 @@ export const CONDITION_RULES = [
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "this card is suspended".
+  ...MIND_FLAYARRRS_G8_CONDITION_RULES,
   // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
   ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Valakut Exploration: "there are cards exiled with ~", before the plain count whose phrase ("there are") is a prefix of it.
