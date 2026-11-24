@@ -5851,6 +5851,8 @@ export type Trigger =
  *   attacked you during their last turn as though it didn't have defender", `GameState.attackedLastTurn`); "you" is the controller of the creature;
  * - `assignsDamageByToughness`: it assigns combat damage equal to its toughness rather than its power (CR 510.1a, 609.4: "Each creature you control assigns combat damage equal to its toughness
  *   rather than its power"); it changes only the amount assigned, never the creature's power, so every other rule reads the real values;
+ * - `cantBeBlockedExceptByThreeOrMore`: it can't be blocked except by three or more creatures (CR 509.1b, the way menace, CR 702.111b, asks two: a lone blocker, or two, is not a legal block;
+ *   with `cantBeBlockedByMoreThanOne` nothing can block it);
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -5868,6 +5870,7 @@ export type Restriction =
   | 'cantAttack'
   | 'cantBeBlocked'
   | 'cantBeBlockedExceptByHaste'
+  | 'cantBeBlockedExceptByThreeOrMore'
   | 'cantAttackPlayersAlreadyAttacked'
   | 'canBlockOnlyFlying'
   | 'canAttackAsThoughNoDefender'

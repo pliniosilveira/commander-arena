@@ -83,6 +83,10 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
     one: "can't attack a player it has already attacked this turn",
     many: "can't attack a player they have already attacked this turn",
   },
+  cantBeBlockedExceptByThreeOrMore: {
+    one: "can't be blocked except by three or more creatures",
+    many: "can't be blocked except by three or more creatures",
+  },
   cantBeBlockedByMoreThanOne: {
     one: "can't be blocked by more than one creature",
     many: "can't be blocked by more than one creature",

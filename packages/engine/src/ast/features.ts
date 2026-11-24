@@ -1820,6 +1820,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // CR 509.1b: "~ can't be blocked except by three or more creatures."
+  'cantBeBlockedExceptByThreeOrMore',
   // CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn."
   'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
