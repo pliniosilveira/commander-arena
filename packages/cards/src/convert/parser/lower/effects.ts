@@ -2045,6 +2045,18 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // Unbreakable Formation (CR 608.2c, 611.2c): "put a +1/+1 counter on each of those creatures" is the group a sentence before named, taken again as it stands now. A counter
+    // changes what a filter that reads power, toughness or counters means, so only a group named by its kind of permanent (never by what it can do or has) is taken again.
+    const eachGroup =
+      objectsArg?.kind === 'noun' &&
+      objectsArg.det === 'anaphor' &&
+      objectsArg.plural &&
+      objectsArg.ref !== undefined
+        ? ctx.eachMentions.get(objectsArg.ref)
+        : undefined;
+    if (eachGroup !== undefined && !(eachGroup.kind === 'each' && namesKindOnly(eachGroup.filter))) {
+      return failure(clause);
+    }
     // Canopy Gargantuan (CR 608.2c): "that creature" in the count is the creature of the group each placement is for.
     const eachRef =
       objectsArg?.kind === 'noun' && objectsArg.det === 'each' ? (objectsArg.ref ?? null) : null;
@@ -2073,10 +2085,24 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
         ...(perObject ? { perObject: true as const } : {}),
       }),
       'objects',
-      { triggerSubject: true, moved: true, token: true },
+      { triggerSubject: true, moved: true, token: true, eachMention: eachGroup !== undefined },
     );
   },
 };
+
+/** The keys of a filter that name a kind of permanent and its controller, and nothing a +1/+1 counter, damage or a keyword could change. */
+const KIND_KEYS: ReadonlySet<string> = new Set([
+  'types',
+  'notTypes',
+  'subtypes',
+  'supertypes',
+  'controller',
+  'zone',
+  'token',
+  'colors',
+]);
+const namesKindOnly = (filter: object): boolean =>
+  Object.keys(filter).every((key) => KIND_KEYS.has(key));
 
 /**
  * "Double the number of +1/+1 counters on target creature you control" (CR 701.10, 122.6): the engine's `doubleCounters`, one for each object

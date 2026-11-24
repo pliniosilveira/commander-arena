@@ -95,7 +95,7 @@ export const NOUN_THE_TOKEN = defineRule<IrNoun>({
 });
 
 /**
- * `noun.each-of-them`: "each of them" (stage P48, D-205, CR 608.2c, 109.1), the several objects an earlier noun of the text named ("Tap up to two target creatures.
+ * `noun.each-of-them`: "each of them" and "each of those creatures" (stage P48, D-205, CR 608.2c, 109.1), the several objects an earlier noun of the text named ("Tap up to two target creatures.
  * Put a stun counter on each of them."): bound like "them" to the most recent plural object noun, which a target slot of several targets is. Only the verbs
  * that name it in their operands read it (counters); "each of those" and "each of it" are not read.
  */
@@ -104,8 +104,10 @@ export const NOUN_EACH_OF_THEM = defineRule<IrNoun>({
   family: 'noun',
   leading: ['each'],
   cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 109.1 (Objects)'],
-  examples: ['each of them', 'Each of them'],
+  examples: ['each of them', 'Each of them', 'each of those creatures'],
   rejects: [
+    'each of those creature',
+    'each of those permanents',
     'each of it',
     'each of those',
     'each of the',
@@ -115,11 +117,11 @@ export const NOUN_EACH_OF_THEM = defineRule<IrNoun>({
   ],
   parse: node<RegExpExecArray, IrNoun>(
     'noun.each-of-them',
-    pattern(new RegExp(`each of them${BOUNDARY}`, 'iu')),
+    pattern(new RegExp(`each of (?:them|those creatures)${BOUNDARY}`, 'iu')),
     () => ({
       kind: 'noun',
       det: 'anaphor',
-      // The binding pass reads these words: the plural antecedent, several tokens included (Assemble the Entmoot).
+      // The binding pass reads these words: the plural antecedent, several tokens included (Assemble the Entmoot). "Each of those creatures" (Unbreakable Formation) is the same group.
       filter: { raw: 'each of them' },
       upTo: false,
       plural: true,
