@@ -43,6 +43,7 @@ import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CAST_AMONG_EXILED_EFFECT_RULES } from './cast-among-exiled';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
@@ -1304,6 +1305,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
   ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
+  ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,

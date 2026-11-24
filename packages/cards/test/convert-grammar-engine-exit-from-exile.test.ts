@@ -288,3 +288,33 @@ describe('"Whenever ~ deals combat damage to a player, exile that many cards fro
     g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
   });
 });
+
+describe('"At the beginning of your upkeep, exile the top card of each opponent\'s library. Until end of turn, you may cast spells from among those exiled cards, and you may spend mana as though it were mana of any color to cast those spells." (CR 701.13, 601.2, 609.4b)', () => {
+  const strategy = parsed(
+    'SYNTHETIC Stolen Plan',
+    'Enchantment',
+    "At the beginning of your upkeep, exile the top card of each opponent's library. Until end of turn, you may cast spells from among those exiled cards, and you may spend mana as though it were mana of any color to cast those spells.",
+    { manaCost: '{2}{R}', colors: ['R'] },
+  );
+  const build = () =>
+    scenario()
+      .define(strategy)
+      .seat(0)
+      .battlefield(strategy.name, 'Island', 'Island')
+      .library(...FILLER)
+      .seat(1)
+      .library('Grizzly Bears', ...FILLER)
+      .at('end', { active: 1 })
+      .build();
+
+  test("the top card of the opponent's library is exiled and can be cast with any color of mana", () => {
+    const g = build();
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 1 });
+    g.advanceTo('precombatMain');
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile', seat: 1 }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+});
