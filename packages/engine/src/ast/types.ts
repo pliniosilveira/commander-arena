@@ -6878,6 +6878,11 @@ export type Condition =
    */
   | { readonly kind: 'manaValueAtMostAmount'; readonly of: ObjectRef; readonly amount: Amount }
   /**
+   * "Put a +1/+1 counter on it if the exiled card's mana value is 4 or greater" (CR 202.3, 608.2c, 608.2h, Summoner's Sending): the mana value of the object `of` names (read as
+   * `manaValueAtMostAmount` reads it, from last-known information when it has moved) is at least `amount`, a state amount read now. False when `of` names nothing. Only in a `conditional` effect.
+   */
+  | { readonly kind: 'manaValueAtLeastAmount'; readonly of: ObjectRef; readonly amount: Amount }
+  /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).
    */

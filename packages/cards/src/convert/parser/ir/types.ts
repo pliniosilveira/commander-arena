@@ -939,6 +939,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
     // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
     | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
+    // "the exiled card's mana value is 4 or greater" (Summoner's Sending, CR 202.3, 608.2c): the same object, against an amount it must reach
+    | { readonly kind: 'manaValueAtLeastAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.

@@ -1147,6 +1147,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, choose target creature card in your graveyard. If ${e}, return it to the battlefield.`,
   ),
+  // Summoner's Sending: the trailing "if" of an instruction after the exile.
+  'condition.exiled-mana-value-at-least': permanent(
+    (e) =>
+      `At the beginning of your end step, you may exile target creature card from a graveyard. If you do, create a 1/1 white Spirit creature token. Put a +1/+1 counter on it if ${e}.`,
+  ),
   // Yavimaya Bloomsage.
   'condition.that-object-power': spell(
     (e) => `Put a +1/+1 counter on target creature you control. Then if ${e}, draw a card.`,

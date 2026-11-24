@@ -642,6 +642,7 @@ describe('unmatched abilities', () => {
       'condition.that-object-power',
       'condition.that-object-greater-power-than-self',
       'condition.that-mana-value-at-most',
+      'condition.exiled-mana-value-at-least',
       'condition.unless-pays',
       'condition.unless-escaped',
       'condition.if-you-do',

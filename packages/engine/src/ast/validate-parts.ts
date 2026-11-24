@@ -3715,6 +3715,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'movedTotalManaValue':
     case 'movedShareAllCardTypes':
     case 'manaValueAtMostAmount':
+    case 'manaValueAtLeastAmount':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -5283,6 +5284,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
       break;
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of a target, the object that was moved or the one that caused the trigger, against an amount read now.
       const ofKind = kindOf(c.of);
@@ -5290,7 +5292,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(
           out,
           `${path}.of`,
-          'manaValueAtMostAmount reads a target, the object that was moved or the object that caused the trigger',
+          `${c.kind} reads a target, the object that was moved or the object that caused the trigger`,
         );
       } else if (ofKind === 'triggerSubject') {
         if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {

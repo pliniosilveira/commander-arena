@@ -596,9 +596,10 @@ export function lowerCondition(
       if (filter.value.powerGreaterThanSource === true) at.comparedPowerOf = of;
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of the target an earlier instruction of the text named (or the object it moved), against an amount read as the instruction runs.
-      const blocked = missingFeatures(['condition:manaValueAtMostAmount']);
+      const blocked = missingFeatures([`condition:${test.kind}`]);
       if (blocked.length > 0) return failure(c, blocked);
       const at = ctx ?? newContext('ability', []);
       const id = test.who.ref ?? '';
@@ -611,7 +612,7 @@ export function lowerCondition(
         id === 'moved' || at.movedOnto === id
           ? ({ kind: 'moved' } as const)
           : ({ kind: 'target', id } as const);
-      return ok({ kind: 'manaValueAtMostAmount', of, amount: amount.value });
+      return ok({ kind: test.kind, of, amount: amount.value });
     }
     case 'milledThisWay': {
       // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
@@ -1010,6 +1011,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:manaValueAtMostAmount',
+  'condition:manaValueAtLeastAmount',
   'condition:giftPromised',
   'condition:wasCast',
   'condition:opponentControlsAtLeast',

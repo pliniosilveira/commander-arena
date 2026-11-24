@@ -1341,6 +1341,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'movedShareAllCardTypes',
     // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have" (`manaValueAtMostAmount`).
     'manaValueAtMostAmount',
+    // CR 202.3, 608.2c: "if the exiled card's mana value is 4 or greater" (`manaValueAtLeastAmount`).
+    'manaValueAtLeastAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
@@ -2441,6 +2443,8 @@ export const CONDITION_KINDS = [
   'movedShareAllCardTypes',
   /** "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c): the engine's `manaValueAtMostAmount`. */
   'manaValueAtMostAmount',
+  /** "If the exiled card's mana value is 4 or greater" (CR 202.3, 608.2c): the engine's `manaValueAtLeastAmount`. */
+  'manaValueAtLeastAmount',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */

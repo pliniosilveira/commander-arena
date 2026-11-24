@@ -294,6 +294,8 @@ const TRAILING_CONDITIONS = [
   'condition.its-stat-greater-than-each-other',
   // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
   'condition.this-power',
+  // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
+  'condition.exiled-mana-value-at-least',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
