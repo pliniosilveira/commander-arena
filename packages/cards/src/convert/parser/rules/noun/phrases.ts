@@ -700,23 +700,26 @@ export function permanentPhrase(
   // "noncreature artifact or noncreature enchantment" (stage P15): a choice whose every member has
   // modifiers of its own. A modifier on the first member alone ("tapped creature or planeswalker") is
   // ambiguous and stays unread, so each member must carry at least one.
-  const member: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(
-      satisfy(many(MODIFIER), (modifiers) => modifiers.length > 0),
-      typeWords(PERMANENT_TYPES, false),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    const [modifiers, types] = r.value;
-    const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), { ...NO_PARTS, types });
-    const { zone, ...filter } = toFilter('battlefield', parts, ctx.text.slice(pos, r.pos));
-    void zone;
-    return { ok: true, value: filter, pos: r.pos };
-  };
+  // `plain` (Summon: Yojimbo, "artifact, enchantment, or tapped creature an opponent controls"): the member may have no modifier, so a list of plain types ends in one member that has them.
+  const memberOf =
+    (plain: boolean): Parser<IrFilter & { readonly hadModifiers?: boolean }> =>
+    (ctx, pos) => {
+      const r = sequence(
+        satisfy(many(MODIFIER), (modifiers) => plain || modifiers.length > 0),
+        typeWords(PERMANENT_TYPES, false),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [modifiers, types] = r.value;
+      const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), { ...NO_PARTS, types });
+      const { zone, ...filter } = toFilter('battlefield', parts, ctx.text.slice(pos, r.pos));
+      void zone;
+      return { ok: true, value: { ...filter, hadModifiers: modifiers.length > 0 }, pos: r.pos };
+    };
   const modifiedChoice: Parser<IrFilter> = (ctx, pos) => {
-    const first = member(ctx, pos);
+    const first = memberOf(true)(ctx, pos);
     if (!first.ok) return first;
     const more = many(
-      map(sequence(pattern(/(, or | or |, )/i), member), ([separator, filter]) => ({
+      map(sequence(pattern(/(, or | or |, )/i), memberOf(true)), ([separator, filter]) => ({
         separator: separator[0].toLowerCase(),
         filter,
       })),
@@ -725,6 +728,13 @@ export function permanentPhrase(
     const items = more.value;
     const last = items[items.length - 1];
     if (last === undefined) return fail(ctx, pos);
+    // A modifier belongs to the one member it stands before: every member has one, or only the last does ("artifact, enchantment, or tapped creature"; "tapped creature or planeswalker" stays unread).
+    const members = [first.value, ...items.map((i) => i.filter)];
+    const allModifiers = members.every((m) => m.hadModifiers === true);
+    const onlyLastModified =
+      members.slice(0, -1).every((m) => m.hadModifiers !== true) &&
+      members[members.length - 1]?.hadModifiers === true;
+    if (!allModifiers && !onlyLastModified) return fail(ctx, pos);
     const shaped =
       items.slice(0, -1).every((i) => i.separator === ', ') &&
       (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
@@ -738,7 +748,7 @@ export function permanentPhrase(
     );
     return {
       ok: true,
-      value: { ...base, anyOf: [first.value, ...items.map((i) => i.filter)] },
+      value: { ...base, anyOf: members.map(({ hadModifiers: _had, ...member }) => member) },
       pos: controller.pos,
     };
   };

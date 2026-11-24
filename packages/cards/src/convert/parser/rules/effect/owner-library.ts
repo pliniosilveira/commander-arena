@@ -21,6 +21,7 @@ export const EFFECT_OWNER_PUTS_ON_LIBRARY = defineRule<Clauses>({
   examples: [
     'the owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library',
     'the owner of target creature puts it on their choice of the top or bottom of their library',
+    'the owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library',
   ],
   rejects: [
     'the owner of target creature puts it on top of their library',
@@ -35,7 +36,10 @@ export const EFFECT_OWNER_PUTS_ON_LIBRARY = defineRule<Clauses>({
     ID,
     sequence(
       literal('the owner of '),
-      family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+      // Endless Detour: "target spell, nonland permanent, or card in a graveyard".
+      family<IrNoun>('noun', {
+        only: ['noun.target-permanent', 'noun.target-spell-permanent-or-graveyard-card'],
+      }),
       literal(' puts it on their choice of the top or bottom of their library'),
     ),
     ([, objects]) => ({ verb: 'ownerPutsOnLibrary', args: { objects } }),

@@ -1554,6 +1554,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-player-who': permanent(
     (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
   ),
+  // Counter Blitz deck, group C.
+  'amount.for-each-opponent-who-controls': permanent(
+    (e) => `At the beginning of your end step, put a soul counter on ~ ${e}.`,
+  ),
+  'keyword.escalate-tap': asIs,
   // Abzan Armor deck.
   'condition.n-cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,

@@ -10,6 +10,7 @@ import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COMPANION_KEYWORD_RULES } from './companion';
 import { COPY_KEYWORD_RULES } from './copies';
 import { DECK_LIMIT_KEYWORD_RULES } from './deck-limit';
+import { COUNTER_BLITZ_C_KEYWORD_RULES } from './counter-blitz-c';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
 import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
 import { GIFT_KEYWORD_RULES } from './gift';
@@ -426,6 +427,7 @@ export const KEYWORD_RULES = [
   ...LIVING_WEAPON_KEYWORD_RULES,
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
+  ...COUNTER_BLITZ_C_KEYWORD_RULES,
   ...WARD_CREW_RULES,
   // CR 702.184a (Station).
   ...STATION_KEYWORD_RULES,

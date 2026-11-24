@@ -1311,7 +1311,12 @@ export type PlayerSelector =
    * "Each player who controls a creature with power 4 or greater" (Shatter the Sky; CR 102.1, 109.4, 101.4): the players still in the game who control at least one battlefield permanent that
    * matches `filter`, read as the effect resolves, in the order of CR 101.4. The filter names no controller of its own (each player is read as "you" in turn).
    */
-  | { readonly kind: 'eachPlayerControlling'; readonly filter: ObjectFilter }
+  | {
+      readonly kind: 'eachPlayerControlling';
+      readonly filter: ObjectFilter;
+      /** "The number of opponents who control a creature with power 4 or greater" (CR 102.2, 109.4): only the opponents of the controller (never the controller). */
+      readonly opponentsOnly?: true;
+    }
   /**
    * Several selectors at once (D-131): "you and target opponent" is `all` of `you` and a `target` player. The players
    * they name together, each once (a player named twice acts once), in the order CR 101.4 gives (the active player
@@ -1495,6 +1500,11 @@ export interface TargetSpec {
         readonly kind: 'objectOrSpell';
         readonly filter: ObjectFilter;
         readonly spell: ObjectFilter;
+        /**
+         * "Target spell, nonland permanent, or card in a graveyard" (Endless Detour, CR 115.1, 601.2c, 404.1): a third kind of target, a card of any graveyard that this filter matches
+         * (`zone: 'graveyard'`, no other, controller, owner or stackKind), as `objectOrGraveyardCard`'s `card`. The permanents come first, then the spells, then the cards.
+         */
+        readonly card?: ObjectFilter;
       };
   readonly min?: number;
   readonly max?: number;
@@ -2222,7 +2232,7 @@ export interface ChooseSelector {
   /**
    * "A creature with the greatest power among creatures they control" (D-135): the choice is limited to the permanents the
    * filter matches that have the greatest value of this stat among them (the player chooses among the tied ones). Read as
-   * the choice is made, with the stat as `derive` gives it. Only for `sacrifice`.
+   * the choice is made, with the stat as `derive` gives it. Only for `sacrifice` and for a `moveToZone` with `player`.
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /**
@@ -3583,6 +3593,13 @@ export type Effect =
        */
       readonly objects: ObjectSelector | ChooseSelector;
       /**
+       * "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands." (Summon: Valefor, CR 608.2d, 101.4): each
+       * player the selector names, in APNAP order, chooses among the permanents they control that the `choose` matches (with `greatest` or `least` of it, `count` of them), the choices already
+       * made known to the players after; once the last has chosen, the permanents chosen move, each player's together (CR 603.10a). Only with a `choose` of battlefield permanents and a `to` of `hand`,
+       * `library`, `graveyard` or `exile`, not optional; a player with nothing to choose lets the next one choose. Without `player` the controller of the effect chooses.
+       */
+      readonly player?: PlayerSelector;
+      /**
        * `exile` (CR 406.1, 608.2d): only for a `choose` of cards in the hand or the graveyard ("you may exile a creature card from your graveyard"): the player chooses
        * and the cards are exiled; what was exiled is what `moved` names afterwards ("If you do, create a token that's a copy of that card"). Any other exile is the `exile` effect.
        * `command` (issue 103, CR 903.9, Hellkite Courser): "Return it to the command zone at the beginning of the next end step", only in the effect of a `delayedTrigger` about the
@@ -4318,6 +4335,12 @@ export type Effect =
       readonly kind: 'creaturesCantAttackYou';
       readonly creatures: ObjectFilter;
       readonly duration: 'untilYourNextTurn';
+      /**
+       * "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures." (CR 508.1d, 508.1h, 611.2c; Summon: Yojimbo): the creatures are not barred
+       * but taxed: each creature `creatures` matches that is declared attacking the controller of the effect as a player costs `tax` (mana only, no {X}) to its own controller, as an `attackTax`
+       * static ability does (`rules/attack-tax.ts`); planeswalkers are not covered. Several taxes add up.
+       */
+      readonly tax?: readonly Cost[];
     }
   /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender." (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2; Wakestone Gargoyle): a rule-changing effect on a
@@ -4498,7 +4521,9 @@ export type Effect =
   /**
    * "The owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library" (CR 108.3, 401.4, issue 81, Plan for All Outcomes): each
    * permanent `objects` names that is on the battlefield is put into its owner's library, where the owner (not the controller) chooses between the top and the bottom. The owners are
-   * asked one permanent at a time, in the order the selector names them. A token ceases to exist (CR 111.7).
+   * asked one permanent at a time, in the order the selector names them. A token ceases to exist (CR 111.7). Also a spell on the stack and a card in a graveyard (Endless Detour: "The owner
+   * of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library", CR 108.3, 401.4, 400.3): the object named, wherever it is
+   * (the battlefield, the stack as a spell, a graveyard), goes into its owner's library, the owner choosing; a copy of a spell ceases to exist.
    */
   | { readonly kind: 'ownerPutsOnLibrary'; readonly objects: ObjectSelector }
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */

@@ -189,6 +189,16 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modeDifferentTargets',
     // CR 700.2: "choose one at random" (`ModeChoice.random`): a mode drawn from the seeded generator as the triggered ability goes on the stack.
     'modeRandom',
+    // Counter Blitz deck, group C: "the number of opponents who control a creature with power 4 or greater" (`eachPlayerControlling.opponentsOnly`, CR 102.2).
+    'opponentsControlling',
+    // Counter Blitz deck, group C: "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card.
+    'spellPermanentOrCard',
+    // Counter Blitz deck, group C: "Escalate—Tap an untapped creature you control." (CR 702.120a, 118.3): the engine's `escalate` keyword with a `tapPermanents` cost, paid once for each mode chosen beyond the first.
+    'escalateTapCost',
+    // Counter Blitz deck, group C: "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`.
+    'moveChoosePlayers',
+    // Counter Blitz deck, group C: "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`.
+    'attackTaxUntil',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
@@ -1980,6 +1990,16 @@ export const ABILITY_FEATURES = [
   'modeDifferentTargets',
   /** "At the beginning of combat on your turn, choose one at random —" (CR 700.2): `ModeChoice.random`, the engine chooses the mode with the seeded generator as the ability goes on the stack. */
   'modeRandom',
+  /** "The number of opponents who control a creature with power 4 or greater" (CR 102.2, 109.4): the engine's `eachPlayerControlling` with `opponentsOnly`. */
+  /** "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`. */
+  'attackTaxUntil',
+  /** "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`. */
+  'moveChoosePlayers',
+  /** "Escalate—Tap an untapped creature you control." (CR 702.120a, 118.3): the engine's `escalate` keyword with a `tapPermanents` cost, paid once for each mode chosen beyond the first. */
+  'escalateTapCost',
+  /** "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card. */
+  'spellPermanentOrCard',
+  'opponentsControlling',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
@@ -3004,6 +3024,11 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeAllOrNone: true,
   modeDifferentTargets: true,
   modeRandom: true,
+  opponentsControlling: true,
+  spellPermanentOrCard: true,
+  escalateTapCost: true,
+  moveChoosePlayers: true,
+  attackTaxUntil: true,
   sacrificeX: true,
   exileFromGraveyardX: true,
   discardCostX: true,

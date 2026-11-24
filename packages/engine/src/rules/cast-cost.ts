@@ -459,8 +459,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);
+  const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
   if (escalate !== null) {
-    const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
   // CR 601.2f (D-641): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
@@ -565,7 +565,15 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
-  const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
+  // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps that many permanents once for each mode chosen beyond the first.
+  const escalateTap = escalate?.find((c) => c.kind === 'tapPermanents');
+  const escalatedModes = escalateTap === undefined ? 0 : Math.max(0, modes - 1);
+  const tap =
+    tapAlt !== null
+      ? { filter: tapAlt.filter, count: tapAlt.count }
+      : escalateTap?.kind === 'tapPermanents' && escalatedModes > 0
+        ? { filter: escalateTap.filter, count: escalateTap.count * escalatedModes }
+        : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
     alternative === 'sacrificeFromGraveyard'

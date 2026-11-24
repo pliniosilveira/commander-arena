@@ -14,6 +14,7 @@ import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
+import { greatestAmong } from './sacrifice-choice';
 import { matchesFilter } from './select';
 import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
@@ -284,7 +285,18 @@ export function runChooseMove(
               (id) => instruction.among === undefined || instruction.among.includes(id),
             )
           : controlledCandidates(state, chooser, res.source, instruction.filter);
-  const legal = legalAll.filter((id) => !chosenBefore.includes(id));
+  // "A creature with the greatest mana value among creatures they control" (`moveToZone.player`, CR 608.2d): only the candidates tied for the extreme value of the stat can be chosen.
+  const extreme =
+    instruction.greatest !== undefined
+      ? ({ stat: instruction.greatest, which: 'greatest' } as const)
+      : instruction.least !== undefined
+        ? ({ stat: instruction.least, which: 'least' } as const)
+        : undefined;
+  const legal = (
+    extreme === undefined || fromCards || legalAll.length === 0
+      ? legalAll
+      : greatestAmong(state, legalAll, extreme.stat, extreme.which)
+  ).filter((id) => !chosenBefore.includes(id));
   // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
   // shown it even when none can be chosen; an empty hand shows nothing.
   const looked =

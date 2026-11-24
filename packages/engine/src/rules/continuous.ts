@@ -25,6 +25,7 @@ import type {
   GameObject,
   GameState,
 } from '../state/types';
+import { manaSymbolsOf } from './alt-costs';
 import { controllerOf } from './control';
 import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
@@ -372,11 +373,21 @@ export function runCreaturesCantAttackYou(
     timestamp,
     objects: [],
     until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
-    change: {
-      kind: 'creaturesCantAttackPlayer',
-      filter: node.creatures,
-      controller: ctx.controller,
-    },
+    change:
+      node.tax === undefined
+        ? {
+            kind: 'creaturesCantAttackPlayer',
+            filter: node.creatures,
+            controller: ctx.controller,
+          }
+        : {
+            // CR 508.1d, 508.1h (Summon: Yojimbo): a tax on attacking, not a ban.
+            kind: 'attackTaxPlayer',
+            filter: node.creatures,
+            controller: ctx.controller,
+            symbols: manaSymbolsOf(node.tax),
+            source: ctx.source,
+          },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
 }

@@ -1528,6 +1528,9 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`): the choice is among the candidates with the greatest (smallest) value of the stat. */
+      readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      readonly least?: 'power' | 'toughness' | 'manaValue';
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2611,6 +2614,18 @@ export type ContinuousChange =
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;
       readonly controller: SeatId;
+    }
+  /**
+   * "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (`creaturesCantAttackYou` with `tax`, CR 508.1d, 508.1h, 611.2c): no
+   * layer and no fixed set (`objects` is empty): read where an attack is taxed (`rules/attack-tax.ts`), for each creature `filter` matches then, with `controller` as "you": each such creature
+   * declared attacking `controller` as a player costs `symbols` (mana symbols) to its controller. `source` is the object named as the source of the payment.
+   */
+  | {
+      readonly kind: 'attackTaxPlayer';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+      readonly symbols: readonly string[];
+      readonly source: ObjectId | null;
     }
   /**
    * "Creatures you control with defender can attack this turn as though they didn't have defender" (`restrictGroup`, CR 609.4, 611.2c): no layer and no fixed set (`objects` is empty): each

@@ -1276,6 +1276,15 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // Summon: Valefor (CR 608.2d, 101.4): "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures ...": each player the effect names
+        // chooses among their own permanents, in APNAP order, and the permanents chosen move once the last has chosen.
+        const choosers =
+          effect.player === undefined
+            ? undefined
+            : resolvePlayers(state, effect.player, ctx, targets);
+        if (choosers !== undefined && choosers.length === 0)
+          return { ...done(state), lastMoved: [] };
+        const [firstChooser, ...laterChoosers] = choosers ?? [];
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
@@ -1287,6 +1296,12 @@ function runEffect(
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
               ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              ...(firstChooser === undefined ? {} : { seat: firstChooser }),
+              ...(laterChoosers.length === 0
+                ? {}
+                : { together: { later: laterChoosers, held: [] } }),
+              ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
+              ...(sel.least === undefined ? {} : { least: sel.least }),
               filter: sel.filter,
               // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
               ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined

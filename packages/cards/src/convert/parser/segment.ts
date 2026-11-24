@@ -15,6 +15,7 @@
  */
 import type { Span } from './ir/types';
 import { CHAPTER_PREFIX } from './roman';
+import { COUNTER_BLITZ_C_JOINS } from './segment-counter-blitz-c';
 
 export type FaceKind = 'spell' | 'permanent';
 
@@ -1219,6 +1220,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, FOR_EACH_OPPONENT_CHOOSE) && said(b, DESTROY_THE_CHOSEN_PERMANENTS)) ||
+        // Counter Blitz deck, group C (Summon: Valefor): each opponent's choice and the move of the permanents chosen.
+        COUNTER_BLITZ_C_JOINS.some(([first, second]) => said(a, first) && said(b, second)) ||
         (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
@@ -1628,6 +1631,18 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     const numerals = chapter[1] ?? '';
     // A chapter may carry a name of its own before its text ("I — Lightning — ..."): a flavor name of one or two capitalized words, which is no rule (CR 714.2).
     const name = CHAPTER_NAME.exec(text.slice(chapter[0].length));
+    // "I, II, III — Choose one at random —" and its bullets (CR 714.2, 700.2b): the body of the chapter is the modes.
+    const chapterModal = modalBody(text, chapter[0].length);
+    if (chapterModal !== null) {
+      return {
+        ...base,
+        head: 'triggered',
+        trigger: { start: 0, end: numerals.length },
+        chapter: true,
+        modalHeader: chapterModal.header,
+        modes: chapterModal.modes,
+      };
+    }
     return {
       ...base,
       head: 'triggered',

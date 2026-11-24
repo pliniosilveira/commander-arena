@@ -1144,6 +1144,23 @@ export function declareTargets(
             'the spell half is a spell on the stack: stackKind "spell", no zone or owner',
           );
         }
+        // CR 115.1, 404.1 (Endless Detour): "or card in a graveyard": the card half is a card of any graveyard.
+        if (what.card !== undefined) {
+          checkFilter(what.card, `${p}.what.card`, out);
+          if (
+            what.card.zone !== 'graveyard' ||
+            what.card.other !== undefined ||
+            what.card.controller !== undefined ||
+            what.card.owner !== undefined ||
+            what.card.stackKind !== undefined
+          ) {
+            issue(
+              out,
+              `${p}.what.card`,
+              'the card half is a card of any graveyard: zone "graveyard" and no other, controller, owner or stackKind',
+            );
+          }
+        }
         if (
           spec.onePerOpponent !== undefined ||
           spec.divide !== undefined ||
@@ -1746,6 +1763,9 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           `${path}.filter.controller`,
           "'each player who controls' names the controller itself",
         );
+      }
+      if (sel.opponentsOnly !== undefined && sel.opponentsOnly !== true) {
+        issue(out, `${path}.opponentsOnly`, 'opponentsOnly is true or absent');
       }
       break;
     case 'eachPlayerExcept':
@@ -4421,7 +4441,14 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
  * says "you control" and looks at the battlefield. Choosing among other players' permanents, or
  * among cards in other zones, is not run (docs/ROADMAP.md).
  */
-function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
+function checkChooseMove(
+  sel: ChooseSelector,
+  path: string,
+  scope: Scope,
+  out: Out,
+  /** "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures ..." (`moveToZone.player`): the `greatest` and `least` of the choice are allowed. */
+  perPlayer = false,
+): void {
   checkFilter(sel.filter, `${path}.filter`, out);
   // CR 107.3a: "mana value X or less" of a card chosen reads the X of the spell or ability that has one.
   if (
@@ -4438,16 +4465,18 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
   if (
-    sel.greatest !== undefined ||
-    sel.least !== undefined ||
+    (!perPlayer && (sel.greatest !== undefined || sel.least !== undefined)) ||
     sel.dealtCombatDamageToYou !== undefined ||
     (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
   ) {
     issue(
       out,
       path,
-      'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least',
+      'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least (a move has them only when players choose, `moveToZone.player`)',
     );
+  }
+  if (sel.greatest !== undefined && sel.least !== undefined) {
+    issue(out, path, 'greatest and least exclude each other');
   }
   // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
   if (sel.minCardTypes !== undefined) {
@@ -6853,7 +6882,37 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.objects`, "'thisCard' is only valid in abilities");
         }
       } else if (kindOf(e.objects) === 'choose') {
-        checkChooseMove(e.objects as ChooseSelector, `${path}.objects`, scope, out);
+        checkChooseMove(
+          e.objects as ChooseSelector,
+          `${path}.objects`,
+          scope,
+          out,
+          e.player !== undefined,
+        );
+        // Counter Blitz deck, group C (Summon: Valefor): "Each opponent chooses a creature ... Return those creatures to their owners' hands": each player the selector names chooses among the
+        // permanents they control (CR 608.2d, 101.4); the permanents chosen are put into the hand, the library, the graveyard or exile together.
+        if (e.player !== undefined) {
+          checkPlayerSelector(e.player, `${path}.player`, scope, out);
+          const sel = e.objects as ChooseSelector;
+          if (
+            (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') ||
+            e.to === 'battlefield' ||
+            e.to === 'command' ||
+            sel.optional !== undefined ||
+            sel.chosenBy !== undefined ||
+            sel.fromMoved !== undefined ||
+            sel.eachGraveyard !== undefined ||
+            sel.fromHandOf !== undefined ||
+            sel.alsoGraveyard !== undefined ||
+            e.linked !== undefined
+          ) {
+            issue(
+              out,
+              `${path}.player`,
+              'players who choose what to move choose permanents they control on the battlefield, to the hand, the library, the graveyard or exile, with no option',
+            );
+          }
+        }
         // A chosen permanent would enter under a control the choice does not settle: only a card chosen from the hand or the
         // graveyard (D-139) is put onto the battlefield, by the controller of the effect. A card that could be an Aura would need to
         // choose what to enchant (CR 303.4f): not run (`ast/supported.ts`).
@@ -6947,6 +7006,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       } else {
         checkObjectSelector(e.objects as ObjectSelector, `${path}.objects`, scope, out);
+        if (e.player !== undefined) {
+          issue(out, `${path}.player`, "player goes with a 'choose' of what to move");
+        }
       }
       if (e.withCounters !== undefined) {
         const w = e.withCounters;
@@ -8148,6 +8210,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.duration !== 'untilYourNextTurn') {
         issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
+      }
+      // CR 508.1d, 508.1h (Summon: Yojimbo): "... unless their controller pays {2} for each of those creatures": a mana cost of at least one symbol, no X.
+      if (e.tax !== undefined) {
+        if (!Array.isArray(e.tax) || e.tax.length === 0) {
+          issue(out, `${path}.tax`, 'a tax needs a cost to pay');
+        } else {
+          let symbols = 0;
+          e.tax.forEach((c, i) => {
+            if (c?.kind !== 'mana') {
+              issue(out, `${path}.tax[${i}]`, 'an attack tax may be mana only in this engine');
+            } else if (Array.isArray(c.symbols)) {
+              symbols += c.symbols.length;
+              if (c.symbols.includes('X')) {
+                issue(out, `${path}.tax[${i}]`, 'X in an attack tax is not supported');
+              }
+            }
+          });
+          if (symbols === 0)
+            issue(out, `${path}.tax`, 'an attack tax needs at least one mana symbol');
+        }
       }
       break;
     case 'restrictGroup':
