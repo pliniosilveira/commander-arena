@@ -121,6 +121,7 @@ import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
+import { HALDIR_EFFECT_RULES } from './haldir';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -1514,6 +1515,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
   ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Elven Council deck (issue 98): "Until end of turn, other Elves you control gain vigilance and get +1/+1 for each +1/+1 counter on ~."
+  ...HALDIR_EFFECT_RULES,
   // Ashling, the Limitless: "The token gains haste until end of turn."
   ...THE_TOKEN_EFFECT_RULES,
   // Food and Fellowship deck, group B (Motivated Pony): "..., untap those creatures and they get an additional +2/+2 until end of turn."

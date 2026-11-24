@@ -7439,7 +7439,12 @@ export type Replacement =
         | number
         | CountAmount
         | ManaSpentAmount
-        | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
+        | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>
+        /**
+         * "equal to ~'s toughness" (Arwen, Weaver of Hope, CR 614.12, 208.1): the toughness of the permanent with the ability (`of` is `this`), read as the other permanent
+         * enters, so a permanent that enters together with it gets nothing from it.
+         */
+        | { readonly kind: 'toughnessOf'; readonly of: { readonly kind: 'this' } };
     }
   /**
    * "Lands you control enter untapped." (CR 614.1c, 614.12, 616.1, D-179): a replacement effect of a permanent on the battlefield for the permanents

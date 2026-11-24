@@ -16,7 +16,11 @@ import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
 import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
-import { AMOUNT_FOR_EACH_DIED, AMOUNT_FOR_EACH_OTHER_SPELL_CAST } from './history';
+import {
+  AMOUNT_FOR_EACH_DIED,
+  AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
+  AMOUNT_FOR_EACH_SCRIED,
+} from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
@@ -151,7 +155,8 @@ export const AMOUNT_THAT_MANY = defineRule<IrAmount>({
   ),
 });
 
-const POWER_OF = /equal to (its|that (?:creature|permanent)['’]s|~['’]s) power(?![\p{L}\p{N}])/iu;
+const POWER_OF =
+  /equal to (its|that (?:creature|permanent|card)['’]s|~['’]s) power(?![\p{L}\p{N}])/iu;
 const TARGET_CREATURE_POWER =
   /equal to the power of (target creature you control)(?![\p{L}\p{N}])/iu;
 
@@ -172,6 +177,8 @@ export const AMOUNT_POWER_OF = defineRule<IrAmount>({
     "equal to that creature's power",
     'equal to that permanent’s power',
     "equal to ~'s power",
+    // Mirkwood Elk (CR 208.1): the card an earlier instruction of the ability returned.
+    "equal to that card's power",
   ],
   rejects: [
     'equal to its toughness',
@@ -500,6 +507,8 @@ export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
 export const AMOUNT_RULES = [
   AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY,
   AMOUNT_FOR_EACH_DIED,
+  // Celeborn the Wise (CR 701.22): "for each card looked at while scrying this way".
+  AMOUNT_FOR_EACH_SCRIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
   ...KORVOLD_AMOUNT_RULES,
   // CR 205.2a: "for each card type among cards in your graveyard".

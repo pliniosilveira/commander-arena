@@ -26,7 +26,7 @@ import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../stat
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { countersOfKind } from './counters-of-kind';
-import { defendingPlayerOf } from './defending';
+import { defendingPlayerOfAbility } from './defending';
 import { derive } from './derive';
 import { keywordKindsOf } from './derive-keywords';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
@@ -333,7 +333,7 @@ export function matchesFilter(
     ...(filter.manaValueX === true ? xFilterContext(state, ctx) : {}),
     ...(filter.controller === 'defendingPlayer'
       ? (() => {
-          const seat = defendingPlayerOf(state, ctx.source);
+          const seat = defendingPlayerOfAbility(state, ctx);
           return seat === null ? {} : { defendingPlayer: seat };
         })()
       : {}),
@@ -1079,7 +1079,7 @@ export function resolvePlayers(
     }
     case 'defendingPlayer': {
       // CR 508.5: the player the source creature attacks (or attacked), D-110.
-      const seat = defendingPlayerOf(state, ctx.source);
+      const seat = defendingPlayerOfAbility(state, ctx);
       return seat === null ? [] : [seat];
     }
     case 'chosenPlayer':

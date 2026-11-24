@@ -105,7 +105,8 @@ function lowerOthersEnter(
     | number
     | CountAmount
     | ManaSpentAmount
-    | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
+    | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>
+    | { readonly kind: 'toughnessOf'; readonly of: { readonly kind: 'this' } };
   if (effect.count.kind === 'number') {
     count = effect.count.value;
   } else if (effect.count.kind === 'manaSpent') {
@@ -116,6 +117,18 @@ function lowerOthersEnter(
       kind: 'manaSpent',
       ...(effect.count.fromType === undefined ? {} : { fromType: effect.count.fromType }),
     };
+  } else if (effect.count.kind === 'toughnessOf') {
+    // "equal to ~'s toughness" (Arwen, CR 614.12, 208.1): the toughness of the permanent with the ability as the other one enters.
+    const counted = lowerAmount(effect.count, newContext('ability', []), ability.rule);
+    if (!counted.ok) return counted;
+    if (
+      typeof counted.value !== 'object' ||
+      counted.value.kind !== 'toughnessOf' ||
+      counted.value.of.kind !== 'this'
+    ) {
+      return failure(ability);
+    }
+    count = { kind: 'toughnessOf', of: { kind: 'this' } };
   } else {
     // "for each Angel you already control": counted for the controller of the permanent, without the one that enters.
     const counted = lowerAmount(effect.count, newContext('ability', []), ability.rule);
