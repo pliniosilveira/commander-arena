@@ -261,3 +261,68 @@ describe('Eight-and-a-Half-Tails: {1}: Target spell or permanent becomes white u
     g.expect.derived('Llanowar Elves', { colors: ['W'] });
   });
 });
+
+describe("Firja's Retribution, chapter II: Angels you control gain {T}: Destroy target creature with power less than this creature's power", () => {
+  const FIRJA = "Firja's Retribution";
+  const firja = real(FIRJA);
+  const start = () =>
+    scenario()
+      .seat(0)
+      .define(firja)
+      .battlefield('Serra Angel', 'Grizzly Bears')
+      .battlefield(FIRJA, { counters: { lore: 1 } })
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .battlefield('Grizzly Bears', 'Serra Angel')
+      .library('Plains', 'Plains', 'Plains')
+      .at('upkeep', { active: 0, turn: 3 })
+      .build();
+
+  test('chapter II gives your Angels the ability for the turn: the Angel taps to destroy a creature with less power', () => {
+    const g = start();
+    g.advanceTo('precombatMain');
+    g.passAll();
+    // The Angel's derived abilities: flying, vigilance, then the granted one (the index is the last).
+    const angel = { name: 'Serra Angel', zone: 'battlefield', seat: 0 } as const;
+    const theirAngel = { name: 'Serra Angel', zone: 'battlefield', seat: 1 } as const;
+    // A creature whose power is not less (Serra Angel is 4/4 too) cannot be the target (CR 208.1).
+    const other = start();
+    other.advanceTo('precombatMain');
+    other.passAll();
+    expect(() => other.act(0).activate(angel, { ability: 2, targets: [theirAngel] })).toThrow();
+    g.act(0).activate(angel, {
+      ability: 2,
+      targets: [{ name: 'Grizzly Bears', seat: 1, zone: 'battlefield' }],
+    });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 1 });
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 1 });
+    g.expect.tapped(angel, true);
+  });
+});
+
+describe("Firja's Retribution, chapter III: Angels you control gain double strike until end of turn", () => {
+  test('your Angels have double strike for the turn, other creatures and the opponent's Angels do not', () => {
+    const FIRJA = "Firja's Retribution";
+    const g = scenario()
+      .seat(0)
+      .define(real(FIRJA))
+      .battlefield('Serra Angel', 'Grizzly Bears')
+      .battlefield(FIRJA, { counters: { lore: 2 } })
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .battlefield('Serra Angel')
+      .library('Plains', 'Plains', 'Plains')
+      .at('upkeep', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('precombatMain');
+    g.passAll();
+    const mine = { name: 'Serra Angel', zone: 'battlefield', seat: 0 } as const;
+    const theirs = { name: 'Serra Angel', zone: 'battlefield', seat: 1 } as const;
+    g.expect.derived(mine, { keywords: ['flying', 'vigilance', 'doubleStrike'] });
+    g.expect.derived('Grizzly Bears', { keywords: [] });
+    g.expect.derived(theirs, { keywords: ['flying', 'vigilance'] });
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.derived(mine, { keywords: ['flying', 'vigilance'] });
+  });
+});
