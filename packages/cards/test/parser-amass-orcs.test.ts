@@ -2,7 +2,7 @@
 // read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs the lowered effects in
 // packages/engine/test/scenario-xx-discarded-cost-amass.test.ts and scenario-xx-amass-mill-cast.test.ts.
 import { describe, expect, test } from 'vitest';
-import { dropped, read, readAll } from './parser-p5-helpers';
+import { read, readAll } from './parser-p5-helpers';
 
 const ORC = (count: unknown) => ({ kind: 'amass', subtype: 'Orc', count });
 
