@@ -728,6 +728,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'each of up to two target creatures',
     'each of two target creatures',
     'target Dragon',
+    // Hosts of Mordor deck (Corsairs of Umbar): one permanent of one of three creature types.
+    'target Goblin, Orc, or Pirate',
     'target Forest',
     'target Equipment you control',
     'target Elf creature',

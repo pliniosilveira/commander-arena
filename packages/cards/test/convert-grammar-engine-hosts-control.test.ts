@@ -4,6 +4,7 @@
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { real } from './agatha-helpers';
+import { parsed } from './convert-grammar-helpers';
 
 const BEARS = 'Grizzly Bears';
 
@@ -28,5 +29,53 @@ describe('Troll of Khazad-dûm', () => {
     expect(g.act(1).try.declareBlockers(block(1)).ok).toBe(false);
     expect(g.act(1).try.declareBlockers(block(2)).ok).toBe(false);
     expect(g.act(1).try.declareBlockers(block(3)).ok).toBe(true);
+  });
+});
+
+describe('Corsairs of Umbar', () => {
+  const CORSAIRS = real('Corsairs of Umbar');
+  const GOBLIN = parsed('SYNTHETIC Parsed Goblin', 'Creature — Goblin', '', {
+    manaCost: '{R}',
+    power: '1',
+    toughness: '1',
+  });
+
+  function game(target: string) {
+    const g = scenario()
+      .define(CORSAIRS)
+      .define(GOBLIN)
+      .seat(0)
+      .battlefield(CORSAIRS.name, GOBLIN.name, BEARS, 'Island', 'Island', 'Island')
+      .seat(1)
+      .battlefield('SYNTHETIC Vanilla 3/3')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(CORSAIRS.name, { ability: 0, targets: [target], pay: true });
+    return g;
+  }
+
+  test('a Goblin, Orc or Pirate (here a Goblin, and the Pirate itself) can not be blocked this turn (CR 509.1b)', () => {
+    for (const target of [GOBLIN.name, CORSAIRS.name]) {
+      const g = game(target);
+      g.passAll();
+      g.advanceTo('declareAttackers');
+      g.act(0).attack([target]);
+      g.advanceTo('declareBlockers');
+      expect(
+        g.act(1).try.declareBlockers([{ blocker: 'SYNTHETIC Vanilla 3/3', attacker: target }]).ok,
+      ).toBe(false);
+    }
+  });
+
+  test('a creature of none of the three types is not a legal target', () => {
+    const g = scenario()
+      .define(CORSAIRS)
+      .seat(0)
+      .battlefield(CORSAIRS.name, BEARS, 'Island', 'Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+    expect(() =>
+      g.act(0).activate(CORSAIRS.name, { ability: 0, targets: [BEARS], pay: true }),
+    ).toThrow();
   });
 });
