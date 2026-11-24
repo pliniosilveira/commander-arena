@@ -851,6 +851,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-214: "This creature enters prepared." (CR 722.3a).
     'entersPrepared',
     'asEntersChoose',
+    // Sin, Unending Cataclysm: "As this enters, remove all counters from any number of artifacts, creatures, and enchantments".
+    'asEntersRemoveCounters',
     // D-133: "If a nontoken creature an opponent controls would die, instead exile it and create a token".
     'wouldDie',
     // Issue 102 (Dauthi Voidwalker): "If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it".
@@ -3466,6 +3468,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersTappedUnlessReveals: true,
   entersPrepared: true,
   asEntersChoose: true,
+  asEntersRemoveCounters: true,
   wouldDie: true,
   exileInsteadOfOpponentGraveyard: true,
   lifeGainBonus: true,

@@ -575,6 +575,7 @@ export function runInstruction(
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
+      ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       // "Under its owner's control" or "under your control" (CR 110.2): that seat takes the permanent.

@@ -7348,7 +7348,12 @@ export type Replacement =
         /** "... where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the greatest or the total of a stat over a group, read as the permanent enters, without it. */
         | Extract<Amount, { readonly kind: 'aggregate' }>
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
-        | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
+        | { readonly kind: 'sum'; readonly of: readonly CountAmount[] }
+        /**
+         * "... where X is twice the number of counters removed this way" (Sin, Unending Cataclysm, CR 614.12, 122.1): the counters the controller took off permanents as it entered
+         * (`asEntersRemoveCounters` on the same face), multiplied by `times` (2 or more; 1 when absent). 0 for a permanent that removed none.
+         */
+        | { readonly kind: 'countersRemovedAsEntered'; readonly times?: number };
       /**
        * "This permanent escapes with a +1/+1 counter" (CR 702.138c, D-124): the counters are put on it only if it
        * escaped, i.e. its spell was cast from a graveyard for its escape cost. Only on a face with an escape cost.
@@ -7390,6 +7395,14 @@ export type Replacement =
        */
       readonly except?: Color;
     }
+  /**
+   * "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments" (Sin, Unending Cataclysm, CR 614.12, 122.1): before the permanent
+   * enters, its controller chooses any number (none included) of the permanents on the battlefield that `filter` matches, those of every player; every counter of every kind on each
+   * comes off, one `counterRemoved` event for each kind, and the total is what `entersWithCounters` of `countersRemovedAsEntered` reads. Cast, put onto the battlefield by an effect, a token
+   * or a copy: the choice is made whichever way the permanent enters. The question is a `choosePermanent` decision of purpose `entersRemoveCounters`. `filter` has no zone, controller or
+   * owner: the battlefield, any player. A face has at most one question that is asked as it enters (`validateCard`).
+   */
+  | { readonly kind: 'asEntersRemoveCounters'; readonly filter: ObjectFilter }
   /**
    * "If a nontoken creature an opponent controls would die, instead exile that card and create a 2/2 black Zombie creature
    * token" (D-133, CR 614.1a, 700.4): a replacement effect of a permanent on the battlefield, for each creature that

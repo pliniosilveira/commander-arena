@@ -1863,6 +1863,8 @@ export type Instruction =
       readonly settled?: true;
       /** The creatures its controller chose to sacrifice for devour (CR 702.82a, D-185), null until asked; absent when the definition has no devour. */
       readonly devoured?: readonly ObjectId[] | null;
+      /** The permanents whose counters its controller chose to remove as it enters (Sin, Unending Cataclysm), null until asked; absent when the definition removes none. */
+      readonly removed?: readonly ObjectId[] | null;
       /** The answers to the riot questions so far, one for each instance of riot (CR 702.136b, D-185): `counter` or `haste`. */
       readonly riot?: readonly string[];
       /** The card of the hand revealed for the "reveal a card" of a land this token is a copy of (CR 701.20a, D-225), once the player chose among several. */
@@ -2231,6 +2233,8 @@ export interface ResolutionContext {
    * none being an answer. Absent until answered, and cleared once that move is done.
    */
   readonly entersDevour?: readonly ObjectId[];
+  /** The answer to "remove all counters from any number of permanents" as it enters (Sin, Unending Cataclysm): the permanents chosen, none being an answer, for the move that asked it. Absent until answered, and cleared once that move is done. */
+  readonly entersRemoved?: readonly ObjectId[];
   /** The answers to the riot questions (CR 702.136a, 702.136b, D-185) of the move that asks them, one for each instance so far: `counter` or `haste`. Cleared once that move is done. */
   readonly entersRiot?: readonly string[];
   /** The card of the hand revealed for "you may reveal a Mountain or Plains card from your hand" (CR 701.20a, D-225), for the move that asked. Absent until answered; cleared once that move is done. */
