@@ -5696,6 +5696,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       break;
+    case 'dealDamageFromEach':
+      // CR 120.3 (Sarkhan the Masterless): a group of sources, the object each deals damage to, and a positive whole number.
+      if (kindOf(e.sources) !== 'each') {
+        issue(out, `${path}.sources`, 'dealDamageFromEach names its sources as a group (each)');
+      } else {
+        checkObjectSelector(e.sources, `${path}.sources`, scope, out);
+      }
+      if (kindOf(e.to) === 'triggerSubject') {
+        checkSubjectRef(e.to as ObjectRef, 'permanent', `${path}.to`, scope, out);
+      } else {
+        checkObjectSelector(e.to, `${path}.to`, scope, out);
+      }
+      if (!isCount(e.amount) || e.amount < 1) {
+        issue(out, `${path}.amount`, 'dealDamageFromEach deals a positive whole number of damage');
+      }
+      break;
     case 'dealDamageToSelf':
       // CR 120.3 (Lorehold group 1): each object the selector names deals damage to itself equal to its power: a group or a reference, never a choice.
       if (kindOf(e.objects) === 'choose') {

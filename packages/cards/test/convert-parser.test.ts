@@ -818,6 +818,7 @@ describe('unmatched abilities', () => {
       'effect.put-permanent-from-among-exiled',
       'effect.damage-exile-if-dies',
       'effect.move-counter-from-self',
+      'effect.each-deals-damage-to-that',
       'effect.lead-each-becomes-creature',
       'effect.damage',
       'effect.damage-count',

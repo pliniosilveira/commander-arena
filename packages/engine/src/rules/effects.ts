@@ -72,6 +72,7 @@ import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
   asking,
   runDealDamage,
+  runDealDamageFromEach,
   runDealDamageToController,
   runDealDamageToSelf,
   runDealDividedDamage,
@@ -968,6 +969,10 @@ function runEffect(
 
     case 'dealDividedDamage':
       return runDealDividedDamage(state, res, effect, targets, flow);
+
+    case 'dealDamageFromEach':
+      // CR 120.3 (Sarkhan the Masterless): each source deals its own damage.
+      return runDealDamageFromEach(state, effect, ctx, targets, flow);
 
     case 'dealDamageToSelf':
       // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."

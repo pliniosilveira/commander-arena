@@ -2498,6 +2498,17 @@ export type Effect =
       readonly objects: ObjectSelector;
     }
   /**
+   * "Each Dragon you control deals 1 damage to that creature" (CR 120.3, 608.2c; Sarkhan the Masterless): every object `sources` names (`each`, on the battlefield) is a source of one
+   * damage event of its own, of `amount`, to each object `to` names (a reference: the permanent the trigger is about, or a target). Each source deals damage as any source does (deathtouch,
+   * lifelink, infect and wither, prevention effects for that source; not combat damage). A source that is not on the battlefield deals none. `amount` is a positive whole number.
+   */
+  | {
+      readonly kind: 'dealDamageFromEach';
+      readonly sources: ObjectSelector;
+      readonly to: ObjectSelector;
+      readonly amount: number;
+    }
+  /**
    * "Each creature deals 1 damage to its controller" (CR 120.3, 120.8, 608.2h; issue 279, Rakdos Charm): every object `objects` names on the battlefield is a source and deals `amount`
    * damage to the player who controls it, the controller read as the effect begins (CR 109.4, 608.2h). Each is a source of its own damage event, so lifelink and a prevention effect for
    * that source apply as for any damage (CR 120.3), and the damage is not combat damage. An object that is not on the battlefield deals none; `amount` is read once, and 0 or less deals

@@ -503,6 +503,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'distributeCounters',
     // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
     'dealDamageToSelf',
+    'dealDamageFromEach',
     // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
@@ -3195,6 +3196,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDividedDamage: true,
   distributeCounters: true,
   dealDamageToSelf: true,
+  dealDamageFromEach: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
   mayPlayCounterCard: true,

@@ -168,11 +168,49 @@ const MOVE_COUNTER_FROM_SELF: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Each Dragon you control deals 1 damage to that creature" (Sarkhan the Masterless; CR 120.3): the engine's `dealDamageFromEach`: a group of sources, each dealing its own damage to the
+ * permanent the trigger is about.
+ */
+const DEAL_DAMAGE_FROM_EACH: Lowering<IrClause, Effects> = {
+  head: 'dealDamageFromEach',
+  id: 'lower.deal-damage-from-each',
+  needs: ['effect:dealDamageFromEach', 'selector:triggerSubject'],
+  lower(clause, ctx) {
+    const sources = arg(clause, 'sources');
+    const to = arg(clause, 'to');
+    const amount = arg(clause, 'amount');
+    if (sources?.kind !== 'noun' || to?.kind !== 'noun' || amount?.kind !== 'number') {
+      return failure(clause);
+    }
+    const group = objectSelectorOf(sources, ctx);
+    if (!group.ok) return group;
+    const victim = objectSelectorOf(to, ctx, { triggerSubject: true });
+    if (!victim.ok) return victim;
+    if (group.value.kind !== 'each' || victim.value.kind !== 'triggerSubject') {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'dealDamageFromEach',
+          sources: group.value,
+          to: victim.value,
+          amount: amount.value,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
+  'effect:dealDamageFromEach',
   'effect:setLifeTotal',
   'effect:exchangeLifeWithPt',
   'ability:static',
@@ -184,6 +222,7 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EMPOWER_JACE,
   GET_EMBLEM,
   MOVE_COUNTER_FROM_SELF,
+  DEAL_DAMAGE_FROM_EACH,
   SET_LIFE_TOTAL,
   EXCHANGE_LIFE_PT,
 ];
