@@ -36,7 +36,6 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY, permanentPhrase } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
-import { PARTY_SIZE_VALUE } from './party';
 import { CARD_TYPES_AMONG_THOSE_VALUE, CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
@@ -44,6 +43,7 @@ import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { PARTY_SIZE_VALUE } from './party';
 import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 

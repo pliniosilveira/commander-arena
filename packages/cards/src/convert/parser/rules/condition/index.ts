@@ -46,7 +46,6 @@ import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
-import { PARTY_CONDITION_RULES } from './party';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
 import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
@@ -68,6 +67,7 @@ import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
+import { PARTY_CONDITION_RULES } from './party';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';

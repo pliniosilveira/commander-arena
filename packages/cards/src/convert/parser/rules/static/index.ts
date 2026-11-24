@@ -11,6 +11,7 @@ import type { IrStatic } from '../../ir/types';
 import { defineRule } from '../registry';
 import { ABZAN_ARMOR_STATIC_RULES } from './abzan-armor';
 import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
+import { ALSO_TYPES_STATIC_RULES } from './also-types';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
@@ -105,6 +106,8 @@ export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
   // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
   ...DEATH_TOLL_C_STATIC_RULES,
+  // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard."
+  ...ALSO_TYPES_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
   // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.

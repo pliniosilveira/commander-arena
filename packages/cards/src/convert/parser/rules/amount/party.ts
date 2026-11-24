@@ -9,10 +9,7 @@ import { defineRule, spanned } from '../registry';
 
 /** "the number of creatures in your party": read after "where X is" and "equal to" (`amount/value.ts`). */
 export const PARTY_SIZE_VALUE: Parser<IrAmount> = (ctx, pos) => {
-  const r = spanned(pattern(/the number of creatures in your party(?![\p{L}\p{N}'’])/iu))(
-    ctx,
-    pos,
-  );
+  const r = spanned(pattern(/the number of creatures in your party(?![\p{L}\p{N}'’])/iu))(ctx, pos);
   if (!r.ok) return r;
   return { ok: true, value: { kind: 'partySize', span: r.value.span }, pos: r.pos };
 };
@@ -25,7 +22,11 @@ export const AMOUNT_FOR_EACH_PARTY_CREATURE = defineRule<IrAmount>({
   id: 'amount.for-each-party-creature',
   family: 'amount',
   leading: ['for'],
-  cites: ['CR 700.8 (General)', 'CR 700.8a (General)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  cites: [
+    'CR 700.8 (General)',
+    'CR 700.8a (General)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
   examples: ['for each creature in your party', 'For each creature in your party'],
   rejects: [
     'for each creature in their party',
