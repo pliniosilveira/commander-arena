@@ -1,5 +1,5 @@
-// Planeswalker Party deck (issue 132), group 3: "the number of players who control more lands than you" (Oreskos Explorer's X). The lines are SYNTHETIC: the card itself also needs its
-// reveal as a sentence of its own after the definition of X.
+// Planeswalker Party deck (issue 132), group 3: "the number of players who control more lands than you" (Oreskos Explorer's X). The lines are SYNTHETIC; the card is in
+// scenario-planeswalker-party-g3.test.ts.
 import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
 
 const SIBLINGS: readonly Line[] = [
