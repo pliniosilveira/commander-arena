@@ -2296,6 +2296,11 @@ export interface IrStatic extends IrNode {
    */
   readonly condition?: IrCondition;
   /**
+   * "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ..." (Multiclass Baldric, CR 611.3a, 613.1f): one condition for each effect,
+   * in the order of `effects` (the same length), each effect applying only while its own condition holds. Set instead of `condition`, only by the rule that reads the list.
+   */
+  readonly effectConditions?: readonly IrCondition[];
+  /**
    * "As long as this card is in your graveyard, ..." (stage P34, D-152, CR 113.6b, 604.2): the ability works while its card is in its owner's
    * graveyard, and not on the battlefield; the words are no condition of the engine, they say where the ability works.
    */

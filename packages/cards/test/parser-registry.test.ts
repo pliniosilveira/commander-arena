@@ -195,6 +195,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-pay-life': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
+  'static.attached-keywords-if': asIs,
   'static.permanents': asIs,
   'static.self': asIs,
   // Stage P13: what a spell costs. The statements are lines of their own.
@@ -620,6 +621,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.life-gain-bonus': asIs,
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
+  'static.prevent-damage-to-attached': asIs,
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,

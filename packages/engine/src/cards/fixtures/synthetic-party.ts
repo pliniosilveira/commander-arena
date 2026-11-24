@@ -5,7 +5,7 @@
  * whose cost is reduced by it, and a trigger whose intervening "if" is "you have a full party" (`amountIs` of it at least 4). Names start with "SYNTHETIC "; oracleId is
  * null. The text describes what the AST does; it is not Oracle text.
  */
-import type { Amount, Condition } from '../../ast/types';
+import type { Ability, Amount, Condition } from '../../ast/types';
 import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 
@@ -137,6 +137,48 @@ export const SYNTHETIC_PARTY_LIST: readonly CardDefinition[] = [
         interveningIf: FULL_PARTY,
         effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 3 },
       },
+    ],
+  }),
+  // "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, haste if you control a Warrior, and flying if you control a Wizard. As long as you
+  // have a full party, prevent all damage that would be dealt to equipped creature. Equip {2}"
+  singleFace({
+    name: 'SYNTHETIC Party Aegis',
+    manaCost: ['1'],
+    types: ['artifact'],
+    subtypes: ['Equipment'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, haste if you control a Warrior, and flying if you control a Wizard.\nAs long as you have a full party, prevent all damage that would be dealt to equipped creature.\nEquip {2}',
+    abilities: [
+      ...(
+        [
+          ['lifelink', 'Cleric'],
+          ['deathtouch', 'Rogue'],
+          ['haste', 'Warrior'],
+          ['flying', 'Wizard'],
+        ] as const
+      ).map(
+        ([kind, subtype]): Ability => ({
+          kind: 'static',
+          static: { kind: 'grantKeyword', subject: { kind: 'attached' }, keyword: { kind } },
+          condition: {
+            kind: 'controlsAtLeast',
+            filter: { types: ['creature'], subtypes: [subtype] },
+            count: 1,
+          },
+        }),
+      ),
+      {
+        kind: 'static',
+        static: {
+          kind: 'preventDamageToThis',
+          subject: { kind: 'attached' },
+          scope: 'all',
+        },
+        condition: FULL_PARTY,
+      },
+      { kind: 'keyword', keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['2'] }] } },
     ],
   }),
 ];
