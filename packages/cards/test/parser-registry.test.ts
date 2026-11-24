@@ -195,6 +195,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-pay-life': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
+  'static.monarch-controls-attached': asIs,
   'static.permanents': asIs,
   'static.self': asIs,
   // Stage P13: what a spell costs. The statements are lines of their own.
