@@ -1,5 +1,5 @@
 {
-  "parserVersion": 204,
+  "parserVersion": 205,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -461,6 +461,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "24a8fee4"
+    },
+    "06f11ff8-cc99-411d-b00b-464ba4b7b87d": {
+      "name": "Summon: Magus Sisters",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7ab917e2"
     },
     "06f7ec6d-d70e-44d8-bf43-ae667d244ab4": {
       "name": "Espers to Magicite",
@@ -1579,6 +1587,14 @@
       "reasons": [],
       "ast": "8b02ea48"
     },
+    "1ccb8122-9135-4b8d-b1d1-18997fd7e9d2": {
+      "name": "Summon: Ixion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3d88eb3e"
+    },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
@@ -2146,6 +2162,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f272f45d"
+    },
+    "28c7c816-07e7-42fb-923c-bf149ba28b38": {
+      "name": "Luminous Broodmoth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6fcf2bff"
     },
     "28c7f2b6-ba67-4ccf-9e1b-99c89a9d1f72": {
       "name": "Angel of Invention",
@@ -2814,6 +2838,14 @@
       "reasons": [],
       "ast": "93bf610d"
     },
+    "34428f42-03ac-4795-8286-6cbea796df2b": {
+      "name": "Incubation Druid",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c5bb3894"
+    },
     "348c67ef-9ccc-4651-9038-efdf1ad1b36a": {
       "name": "Rootha, Mastering the Moment",
       "group": "acceptance",
@@ -3032,6 +3064,14 @@
       "reasons": [],
       "ast": "e38feca9"
     },
+    "36b19ec0-d581-4213-bfae-1d7808a2f60d": {
+      "name": "Together Forever",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4ffa3096"
+    },
     "36c800cb-b1ca-4432-ad3c-4d8b90337f4c": {
       "name": "Phyrexian Processor",
       "group": "acceptance",
@@ -3108,17 +3148,10 @@
           "reason": "unrecognised",
           "slot": "effect",
           "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−11: Destroy up to six target nonland permanents, then create six 2/2 green Cat Warrior creature tokens with forestwalk.",
-          "reason": "notRunnable",
-          "closestRule": "token.custom"
         }
       ],
       "reasons": [],
-      "ast": "6b248b78"
+      "ast": "550879fb"
     },
     "3909ff79-2103-407c-a812-a5a5a996fce2": {
       "name": "Fandaniel, Telophoroi Ascian",
@@ -3168,6 +3201,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "875d8303"
+    },
+    "39bf633c-41a6-496d-8aef-1ab7befb503d": {
+      "name": "Yuna's Whistle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "62e687b0"
     },
     "39c10798-9dfc-47a2-9da3-b4038509aebe": {
       "name": "Underworld Connections",
@@ -3328,6 +3369,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b4a40457"
+    },
+    "3c7ea603-c985-4107-806b-a467b5fcca36": {
+      "name": "Scholar of New Horizons",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "08c3036e"
     },
     "3cc4d6f4-79b2-4210-84de-a0febf81eb67": {
       "name": "Slash of Light",
@@ -3721,6 +3770,14 @@
       "reasons": [],
       "ast": "b0d02ea1"
     },
+    "46b01055-4839-4b95-aa53-b954e9669e03": {
+      "name": "Summoner's Sending",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ce1ec295"
+    },
     "46c3a69a-4984-40b0-905f-4b0762c7ad72": {
       "name": "Titania, Nature's Force",
       "group": "acceptance",
@@ -3792,6 +3849,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bd288408"
+    },
+    "48534bbf-06b6-46a0-8a86-b14f38caee58": {
+      "name": "Sin, Unending Cataclysm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "33c176b2"
     },
     "488ff0d9-a74c-4ba9-9c10-3aa88230c2bd": {
       "name": "Captain Janeway, Endgame",
@@ -4028,7 +4093,7 @@
           "text": "III — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.search"
+          "closestRule": "effect.search-reveal-may-put-else-hand"
         }
       ],
       "reasons": [],
@@ -4282,6 +4347,14 @@
       "reasons": [],
       "ast": "fb6f03ab"
     },
+    "52714c3c-6821-44dd-88ba-813554df9914": {
+      "name": "Path of Discovery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "efc58092"
+    },
     "5277a68e-1ceb-4b40-8e10-3d0564f5d7be": {
       "name": "Jace, Wielder of Mysteries",
       "group": "acceptance",
@@ -4306,6 +4379,14 @@
       ],
       "reasons": [],
       "ast": "bc857b26"
+    },
+    "52791629-0f22-4023-bb04-c829d1600568": {
+      "name": "Lord Jyscal Guado",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5dfc9bb5"
     },
     "52b3a979-3b93-4441-9237-0c8a754e5523": {
       "name": "Furious Rise",
@@ -4920,6 +5001,14 @@
       "reasons": [],
       "ast": "93825a93"
     },
+    "5e166b42-252e-4f34-9610-dcddc04a62ff": {
+      "name": "Auron, Venerated Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "08ff4e99"
+    },
     "5e26a688-67d7-48a5-8862-653851bf3784": {
       "name": "Bramble Sovereign",
       "group": "acceptance",
@@ -5359,7 +5448,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "6412d950"
+      "ast": "968f76aa"
     },
     "657a4500-4b47-4c78-945b-a7791af7d10e": {
       "name": "Adelbert Steiner",
@@ -5465,6 +5554,14 @@
       "reasons": [],
       "ast": "07d0d057"
     },
+    "67d29e56-9ca8-46bc-9ee0-20184e867ce4": {
+      "name": "Summon: Valefor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1eaf0533"
+    },
     "67d60b24-d429-4ded-90d9-06e49f28c396": {
       "name": "Verdant Catacombs",
       "group": "training",
@@ -5560,6 +5657,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5ee0157b"
+    },
+    "69facbc7-3859-4716-b627-5199571fb3cf": {
+      "name": "Chasm Skulker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6f0b01be"
     },
     "69fc70b8-b143-4662-ac95-e2743037239d": {
       "name": "Thriving Isle",
@@ -5728,6 +5833,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "40fb9d8c"
+    },
+    "6d42e81a-84d3-4c90-9c69-c0d562c66cac": {
+      "name": "Kimahri, Valiant Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "80600a32"
     },
     "6d588e25-7b4d-43c0-b45b-1b0ffb277a78": {
       "name": "Elementalist's Palette",
@@ -6274,6 +6387,14 @@
       "reasons": [],
       "ast": "1b091477"
     },
+    "77dd6ce0-91fc-4e71-99ff-47cdf3359067": {
+      "name": "Yuna's Decision",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b4b1d0d5"
+    },
     "78124cd1-2658-43f3-a339-0755d84154d2": {
       "name": "Stonecoil Serpent",
       "group": "acceptance",
@@ -6806,6 +6927,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ef95aec4"
+    },
+    "81ba75af-eddc-4344-befb-419ebfb855a3": {
+      "name": "Rikku, Resourceful Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2563a15e"
     },
     "81d72511-88b4-45ec-a5a9-e722caf55577": {
       "name": "Mystical Teachings",
@@ -7707,6 +7836,14 @@
       "reasons": [],
       "ast": "476b9795"
     },
+    "93d0e129-e3b5-4aff-9e50-f34771ed00ff": {
+      "name": "Fathom Mage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "25ed380f"
+    },
     "93df61b5-6abe-4603-9a6e-cba90a834173": {
       "name": "Cloud's Limit Break",
       "group": "acceptance",
@@ -7786,6 +7923,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1b84d472"
+    },
+    "969fa9b9-161f-461e-8878-9ebcff5a2669": {
+      "name": "Lulu, Stern Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9983d312"
     },
     "96b909ab-55f1-4cde-a675-2504de3da772": {
       "name": "Cavalier of Thorns",
@@ -7921,7 +8066,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "2a1ce5e8"
+      "ast": "90a4b278"
     },
     "990b5e12-6e04-4832-9d64-87278f12cbda": {
       "name": "Betor, Ancestor's Voice",
@@ -8611,6 +8756,14 @@
       "reasons": [],
       "ast": "5c259800"
     },
+    "a4b66fb3-16ea-4bf1-bce3-6df872e8883b": {
+      "name": "Blitzball Stadium",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4cebcc99"
+    },
     "a5350327-e84c-44b6-8359-87882e521048": {
       "name": "Niv-Mizzet, Ghost Counsel",
       "group": "acceptance",
@@ -8859,6 +9012,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3fb7afd6"
+    },
+    "a97e760a-99c8-47ea-a875-451aca913ee7": {
+      "name": "Collective Effort",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3998b29"
     },
     "a9a6c2ba-30ba-4e45-9ea0-ea9833342069": {
       "name": "Dragon Broodmother",
@@ -9357,6 +9518,14 @@
       "reasons": [],
       "ast": "d67c7c09"
     },
+    "b06c9a4b-f309-45b3-ae5b-0ce3f067a5cb": {
+      "name": "Shelinda, Yevon Acolyte",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8a54de12"
+    },
     "b099fc54-cdbc-46cb-b4e4-7c2ca77b115b": {
       "name": "Plumb the Forbidden",
       "group": "acceptance",
@@ -9744,6 +9913,14 @@
       "reasons": [],
       "ast": "0d33da74"
     },
+    "ba72d4a9-6f36-4796-bd71-2342fa9b4a30": {
+      "name": "Yuna, Grand Summoner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56d24e9a"
+    },
     "ba9f3c5d-556f-48d1-8d87-723f7893cfcd": {
       "name": "Flayer of the Hatebound",
       "group": "acceptance",
@@ -9922,8 +10099,8 @@
           "ability": 1,
           "text": "{1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control.",
           "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "noun.target-permanent-of-that-player"
+          "slot": "noun",
+          "closestRule": "effect.player"
         }
       ],
       "reasons": [],
@@ -9976,6 +10153,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ecf128bf"
+    },
+    "c01d6fde-1bd2-4412-932a-9bc97d4e5aef": {
+      "name": "Gatta and Luzzu",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "03173b2e"
     },
     "c02c5547-b9c9-4b2d-9d12-e87bfba8f2d2": {
       "name": "Herald's Horn",
@@ -11043,6 +11228,14 @@
       "reasons": [],
       "ast": "fff007f3"
     },
+    "d65728cf-e9ce-46d8-a890-e1295b18cfbe": {
+      "name": "Endless Detour",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ce9c2cf5"
+    },
     "d683d985-9888-4d21-8b5f-69e69ce4a03b": {
       "name": "Path to Exile",
       "group": "training",
@@ -11876,6 +12069,14 @@
       "reasons": [],
       "ast": "9e6982a5"
     },
+    "e7e41303-69a8-4617-b418-142cf41edb9b": {
+      "name": "Maester Seymour",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da27695b"
+    },
     "e823639f-1308-47f6-9b51-8fd9a682489a": {
       "name": "Gnarlwood Dryad",
       "group": "acceptance",
@@ -11931,6 +12132,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "db92f311"
+    },
+    "e8fbcafd-3617-4cd7-b55d-457fb7b60162": {
+      "name": "Tidus, Yuna's Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d3bd879b"
     },
     "e91240bc-4a13-4131-9379-5ddac6555f4a": {
       "name": "Adaptive Omnitool",
@@ -12123,6 +12332,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5ef9c253"
+    },
+    "ed0fc294-de9b-4c64-b97d-e3a41fd2f46a": {
+      "name": "O'aka, Traveling Merchant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f47a79fb"
     },
     "ed14be15-8f8d-4fe3-a147-f5da8ed873bf": {
       "name": "Conduit of Worlds",
@@ -12349,6 +12566,14 @@
       "reasons": [],
       "ast": "b9cfc0a5"
     },
+    "f088817a-570d-4480-bc59-f2ad6675a71b": {
+      "name": "Tromell, Seymour's Butler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "700734a0"
+    },
     "f09278dc-1e67-4cd8-977d-4b3b94430aac": {
       "name": "Ringwraiths",
       "group": "acceptance",
@@ -12456,7 +12681,7 @@
           "text": "Whenever one or more land cards are put into your graveyard from your library, put them onto the battlefield tapped.",
           "reason": "unrecognised",
           "slot": "amount",
-          "closestRule": "effect.add-counters-distinct-targets"
+          "closestRule": "effect.put-that-number-counters"
         }
       ],
       "reasons": [],
@@ -12599,6 +12824,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b6ec8430"
+    },
+    "f4770345-f15e-4e31-b6ef-4c2608df9644": {
+      "name": "Sphere Grid",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5bd54529"
     },
     "f48b2349-797e-4e79-aea7-2413e78129e1": {
       "name": "Morgul-Knife Wound",
@@ -12750,7 +12983,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "34f415d5"
+      "ast": "1a4f1923"
     },
     "f7252190-ad24-4ba3-a644-2790dd1d680d": {
       "name": "Rhys the Redeemed",
@@ -13000,6 +13233,14 @@
       "reasons": [],
       "ast": "ef18b0f8"
     },
+    "fb084141-cb80-479e-b5d4-114c1f31eb6c": {
+      "name": "Generous Patron",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "60653bd0"
+    },
     "fb3defc0-c93a-4423-9ff9-c399f8a8ef1f": {
       "name": "Jadar, Ghoulcaller of Nephalia",
       "group": "acceptance",
@@ -13039,6 +13280,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "83235699"
+    },
+    "fbd37284-35ff-4409-b6d5-f813c06c4931": {
+      "name": "Wakka, Devoted Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fb740b66"
     },
     "fbf9f8c5-849f-45d5-8129-5fc683c21a04": {
       "name": "Fury",
@@ -13169,6 +13418,14 @@
       "reasons": [],
       "ast": "8032ef5c"
     },
+    "ff70d743-280e-476f-a3b8-92026419419d": {
+      "name": "Summon: Yojimbo",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4babdb53"
+    },
     "ffd34151-457a-4a93-82db-24b18319a06b": {
       "name": "Omnath, Locus of the Roil",
       "group": "acceptance",
@@ -13196,8 +13453,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1338,
-      "total": 1357
+      "supported": 1371,
+      "total": 1390
     }
   }
 }
