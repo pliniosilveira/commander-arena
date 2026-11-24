@@ -139,6 +139,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:modified',
   // CR 701.15b: "a goaded creature".
   'selector:goaded',
+  // CR 201.2 (Mocking Doppelganger): "with the same name as ~", in the subject of a static ability.
+  'selector:sameNameAsSource',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
@@ -412,6 +414,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:goaded');
   }
+  // CR 201.2: "with the same name as ~" is read where the subject of a static ability is matched (`subjectAffects`); never a member of a choice.
+  if (filter.sameNameAsSource === true) {
+    if (inner) return bad([]);
+    parts.push('selector:sameNameAsSource');
+  }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
@@ -655,6 +662,7 @@ function lowerFilterAt(
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
+    ...(filter.sameNameAsSource === true ? { sameNameAsSource: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
     ...(filter.powerAtLeastChosenNumber === true

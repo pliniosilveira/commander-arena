@@ -49,6 +49,7 @@ import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
 import { PT_COUNTERS_ON_SOURCE_STATIC_RULES } from './pt-counters-on-source';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
+import { SAME_NAME_GOADED_STATIC_RULES } from './same-name-goaded';
 import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
@@ -166,6 +167,8 @@ export const STATIC_RULES = [
   // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
   ...HASHATON_G3_STATIC_RULES,
   ...CANT_BE_SACRIFICED_STATIC_RULES,
+  // Mocking Doppelganger: "Other creatures with the same name as ~ are goaded."
+  ...SAME_NAME_GOADED_STATIC_RULES,
   // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   ...DANITHA_G3_STATIC_RULES,
   // Limit Break deck, group 4 (Professor Hojo): "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate."

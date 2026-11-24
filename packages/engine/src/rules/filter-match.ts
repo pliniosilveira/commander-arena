@@ -130,6 +130,8 @@ export interface FilterContext {
   readonly chosenNumber?: number;
   /** The name of the object `sameNameAs` names, read by the caller as the effect resolves (CR 201.2); null when it names nothing. Absent fails the filter closed. */
   readonly nameLimit?: string | null;
+  /** The name of the permanent whose static ability the filter is the subject of, for `sameNameAsSource` (CR 201.2); absent fails the filter closed. */
+  readonly sourceName?: string;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
   /**
@@ -536,6 +538,11 @@ export function matchesFilterWith(
   if (filter.sameNameAs !== undefined) {
     const name = ctx.nameLimit;
     if (name === null || name === undefined || d.name !== name) return false;
+  }
+  // CR 201.2 (Mocking Doppelganger): "with the same name as this creature": the name of the permanent with the static ability.
+  if (filter.sameNameAsSource === true) {
+    const name = ctx.sourceName;
+    if (name === undefined || d.name === undefined || d.name !== name) return false;
   }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {

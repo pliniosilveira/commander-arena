@@ -182,6 +182,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copyEntersAddsTypes',
     // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
     'copyEntersFromGraveyard',
+    // "..., except it has \"Other creatures with the same name as this creature are goaded.\"" (`entersAsCopy.addStatics`, CR 707.9b).
+    'copyEntersAddsStatics',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
@@ -1222,6 +1224,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerAtLeastChosenNumber',
     // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
     'sameNameAs',
+    // CR 201.2 (Mocking Doppelganger): `ObjectFilter.sameNameAsSource`, in the subject of a static ability.
+    'sameNameAsSource',
     // CR 608.2c (Legions to Ashes): `each.plus`, the target besides the tokens with its name.
     'eachPlus',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
@@ -2007,6 +2011,8 @@ export const ABILITY_FEATURES = [
   'copyEntersAddsTypes',
   /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
   'copyEntersFromGraveyard',
+  /** "..., except it has \"<static ability>\"" (CR 707.9b): the engine's `entersAsCopy.addStatics`. */
+  'copyEntersAddsStatics',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
@@ -2323,6 +2329,8 @@ export const SELECTOR_KINDS = [
   'powerAtLeastChosenNumber',
   /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
   'sameNameAs',
+  /** "Other creatures with the same name as this creature" (CR 201.2): the engine's `ObjectFilter.sameNameAsSource`, in the subject of a static ability. */
+  'sameNameAsSource',
   /** "Target permanent and all tokens ... with the same name as that permanent" (CR 608.2c): the engine's `each.plus`. */
   'eachPlus',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
@@ -3053,6 +3061,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   copyEntersWithX: true,
   copyEntersAddsTypes: true,
   copyEntersFromGraveyard: true,
+  copyEntersAddsStatics: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,
   delayedReturnToHand: true,

@@ -323,6 +323,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Choose a card type": the web shows no preview of what the choice protects from.
 - Copy exceptions that retain the copier's own values (CR 707.9c) and exceptions to the supertypes, loyalty or defense of a copy are not built.
 - `token.copy-except` reads one shape ("except it's a P/T <colors> <creature types>"), not "it has no mana cost", "in addition to its other types" or a list of separate exceptions as a card line.
+- "Enters as a copy, except it has \"...\"" (`addStatics`) reads one quoted static ability. The plural token copy "except they're 3/3 Dragon creatures ... and they have flying" needs the keyword clause. `sameNameAsSource` matches only in a static subject.
 - `setCreatureTypes` keeps the original's other subtypes and card types (a copy of an artifact creature card is an artifact creature Zombie); read from CR 205.3d and 707.9b alone, unverified against Hashaton's rulings.
 - `trigger.discarded` reads one card kind ("a creature card", "a nonland card"), not "a creature or land card", a creature type or a color; the filter is read against the card where it went, not the hand it left.
 - A copy of a card discarded with madness: when the card is cast with madness before the ability resolves, the copy is made from its last-known information.

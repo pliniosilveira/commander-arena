@@ -1052,6 +1052,12 @@ export interface ObjectFilter {
    */
   readonly sameNameAs?: ObjectRef;
   /**
+   * "Other creatures with the same name as this creature are goaded" (Mocking Doppelganger, CR 201.2, 701.15): the object has the same name as the permanent whose static ability
+   * this filter is the subject of, as each is now (a copy has the name it copies). Read only in the subject of a static ability (`rules/static-subject.ts`); anywhere else the
+   * source's name is not known and the filter matches nothing.
+   */
+  readonly sameNameAsSource?: true;
+  /**
    * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.
@@ -7554,6 +7560,11 @@ export type Replacement =
        * when the copy is made. Only on a card whose mana cost has an {X}.
        */
       readonly withX?: { readonly counter: string };
+      /**
+       * "..., except it has \"Other creatures with the same name as this creature are goaded.\"" (Mocking Doppelganger, CR 707.9b, 707.9a): static abilities the permanent has besides the
+       * ones it copies, part of its copiable values. Never empty; each is a static ability.
+       */
+      readonly addStatics?: readonly Ability[];
       /**
        * "..., except it's a Dragon in addition to its other types and it has flying" (issue 103, CR 707.9b): the creature types the permanent has besides the ones it copies,
        * part of its copiable values. Never empty.

@@ -9,6 +9,7 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COPY_EXCEPT_QUOTED_REPLACEMENT_RULES } from './copy-except-quoted';
 import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
@@ -406,6 +407,7 @@ export const REPLACEMENT_RULES = [
   ...ENTERS_AS_COPY_COUNTERS_RULES,
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
+  ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
