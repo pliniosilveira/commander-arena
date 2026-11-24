@@ -7786,7 +7786,14 @@ export type StaticEffect =
    * that step has run, CR 701.43b) and the `exerted` event triggers the abilities linked to this one (`trigger` `exerted`: "When you do, ...", CR 607.2h).
    * It is the ability of the creature itself: its own attack only.
    */
-  | { readonly kind: 'exertOnAttack' }
+  | {
+      readonly kind: 'exertOnAttack';
+      /**
+       * "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant; CR 701.43b: a permanent can be exerted more than once in a turn, so the printed
+       * condition is what limits it): the creature is asked only if it has not been exerted yet this turn, by this or any other exert (`TurnLog.exerted`).
+       */
+      readonly unlessExertedThisTurn?: true;
+    }
   /**
    * "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, 613.4; Galadriel group 3): when its controller taps the creature to pay a
    * crew cost (`tapCreatures`), its power counts `amount` more than the power it has (the power it has is not changed). The engine has Crew and not Saddle, so the part of the ability

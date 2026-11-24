@@ -1350,7 +1350,18 @@ export function lowerTriggered(
   if (blocked.length > 0) return failure(written, blocked);
   return {
     ...lowered,
-    value: [{ kind: 'static', static: { kind: 'exertOnAttack' } }, ...lowered.value],
+    value: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'exertOnAttack',
+          ...(written.trigger.unlessExertedThisTurn === true
+            ? { unlessExertedThisTurn: true as const }
+            : {}),
+        },
+      },
+      ...lowered.value,
+    ],
   };
 }
 

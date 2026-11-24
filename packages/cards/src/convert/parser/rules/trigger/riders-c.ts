@@ -130,7 +130,66 @@ export const TRIGGER_ATTACK_YOUR_OPPONENTS = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.exerted-once-a-turn`: "if ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant; CR 701.43b, 701.43d, 508.1g, 607.2h): the optional cost to
+ * attack of `trigger.exerted`, offered only to a creature that has not been exerted yet this turn (a permanent can be exerted more than once in a turn, so the condition is what limits
+ * it). The creature is the one with the ability. The engine's `exertOnAttack` with `unlessExertedThisTurn` and the `exerted` trigger linked to it. Not read: another creature, another
+ * time ("this combat"), "may exert" without the condition (`trigger.exerted`), "as it blocks", "attacks" or more words after "attacks".
+ */
+export const TRIGGER_EXERTED_ONCE_A_TURN = defineRule<IrTrigger>({
+  id: 'trigger.exerted-once-a-turn',
+  family: 'trigger',
+  leading: ['if'],
+  cites: [
+    'CR 701.43b (Exert)',
+    'CR 701.43d (Exert)',
+    'CR 508.1g (Declare Attackers Step)',
+    'CR 607.2h (Linked Abilities)',
+  ],
+  examples: [
+    "if ~ hasn't been exerted this turn, you may exert it as it attacks",
+    'if ~ hasn’t been exerted this turn, you may exert it as it attacks',
+    "if this creature hasn't been exerted this turn, you may exert it as it attacks",
+    "if ~ hasn't been exerted this turn, you may exert ~ as it attacks",
+  ],
+  rejects: [
+    "if another creature hasn't been exerted this turn, you may exert it as it attacks",
+    "if ~ hasn't been exerted this combat, you may exert it as it attacks",
+    "if ~ hasn't been exerted this turn, you may exert it",
+    "if ~ hasn't been exerted this turn, you may exert it as it blocks",
+    "if ~ hasn't been exerted this turn, you may exert it as it attacks.",
+    "if ~ hasn't been exerted this turn, you may exert target creature as it attacks",
+    "if ~ hasn't been exerted this turn, you exert it as it attacks",
+    "if ~ hasn't been exerted this turn, you may exert it as it attacks or blocks",
+    'if ~ has been exerted this turn, you may exert it as it attacks',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.exerted-once-a-turn';
+    const r = spanned(
+      pattern(
+        /if (~|this creature) hasn['’]t been exerted this turn, you may exert (?:it|~|this creature) as it attacks(?![\p{L}\p{N}.]|\s+or(?![\p{L}\p{N}]))/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject = makeNoun(id, r.value.span, 'self', { raw: '~' });
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'exerted',
+        subject,
+        unlessExertedThisTurn: true,
+        args: {},
+        span: { start: pos, end: r.pos },
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const RIDERS_C_TRIGGER_RULES = [
   TRIGGER_SELF_AND_OTHERS_ATTACK,
   TRIGGER_ATTACK_YOUR_OPPONENTS,
+  TRIGGER_EXERTED_ONCE_A_TURN,
 ];

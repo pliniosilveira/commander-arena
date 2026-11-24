@@ -2054,7 +2054,10 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
       objectsArg.ref !== undefined
         ? ctx.eachMentions.get(objectsArg.ref)
         : undefined;
-    if (eachGroup !== undefined && !(eachGroup.kind === 'each' && namesKindOnly(eachGroup.filter))) {
+    if (
+      eachGroup !== undefined &&
+      !(eachGroup.kind === 'each' && namesKindOnly(eachGroup.filter))
+    ) {
       return failure(clause);
     }
     // Canopy Gargantuan (CR 608.2c): "that creature" in the count is the creature of the group each placement is for.

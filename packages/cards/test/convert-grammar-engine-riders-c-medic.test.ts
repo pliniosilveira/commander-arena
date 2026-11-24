@@ -177,6 +177,6 @@ describe('Frontline Medic: "Counter target spell with {X} in its mana cost unles
     g.act(1).cast('bolt', { targets: [{ player: 0 }], pay: true });
     g.act(1).pass();
     g.act(2).pass();
-    expect(g.act(0).try.activate('medic', { targets: ['bolt'] }).ok).toBe(false);
+    expect(() => g.act(0).activate('medic', { targets: ['bolt'], pay: true })).toThrow();
   });
 });

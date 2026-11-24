@@ -527,6 +527,7 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.exertTrigger !== true &&
         scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true

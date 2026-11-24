@@ -2964,6 +2964,8 @@ export interface TurnLog {
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-646 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
    * announced, as it does for a spell on the stack), for "the greatest mana value among instant and sorcery spells you've cast this turn".
    */
+  /** The permanents exerted this turn (CR 701.43a), as exerted as an attacker or as a cost; "if ~ hasn't been exerted this turn" reads it. */
+  readonly exerted: readonly ObjectId[];
   readonly castSpells: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
@@ -2994,6 +2996,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   leftGraveyard: [],
   graveyardEntries: [],
   modesChosen: [],
+  exerted: [],
   castSpells: [],
 };
 
