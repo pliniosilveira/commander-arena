@@ -66,6 +66,7 @@ import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
+import { DAMAGE_THEIR_CREATURES_EFFECT_RULES } from './damage-their-creatures';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -1300,6 +1301,7 @@ export const EFFECT_RULES = [
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,

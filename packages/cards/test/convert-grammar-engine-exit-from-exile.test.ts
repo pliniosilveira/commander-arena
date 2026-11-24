@@ -142,3 +142,64 @@ describe('"Exile the top two cards of your library. You may play cards exiled th
     g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
   });
 });
+
+describe('"~ deals 2 damage to each opponent and each creature they control. If ~ was cast from exile, it deals 5 damage ... instead." (CR 120.2, 601.2a, 614.1a)', () => {
+  const blast = parsed(
+    'SYNTHETIC Delayed Blast',
+    'Sorcery',
+    '~ deals 2 damage to each opponent and each creature they control. If ~ was cast from exile, it deals 5 damage to each opponent and each creature they control instead.',
+    { manaCost: '{4}{R}{R}', colors: ['R'] },
+  );
+  const keeper = parsed(
+    'SYNTHETIC Exile Keeper',
+    'Creature — Elf Advisor',
+    'Draw Arcanum — {T}: Look at the top card of your library. You may exile it face down.\nPlay Arcanum — {T}: Until end of turn, you may play cards exiled with ~. Spells you cast this way cost {2} less to cast.',
+    { manaCost: '{W}{U}', power: '1', toughness: '3', colors: ['W', 'U'] },
+  );
+  const build = (top: string | null) =>
+    scenario()
+      .define(blast)
+      .define(keeper)
+      .seat(0)
+      .hand(...(top === null ? [blast.name] : []))
+      .battlefield(
+        keeper.name,
+        'Mountain',
+        'Mountain',
+        'Mountain',
+        'Mountain',
+        'Mountain',
+        'Mountain',
+      )
+      .library(top ?? 'Island', ...FILLER)
+      .seat(1)
+      .life(20)
+      .battlefield('Serra Angel', 'Grizzly Bears')
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('cast from the hand: 2 to the opponent and to each of their creatures', () => {
+    const g = build(null);
+    g.act(0).cast(blast.name, { pay: true });
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBe(18);
+    g.expect.noObject('Grizzly Bears', { zone: 'battlefield' });
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 1 });
+  });
+
+  test('cast from exile: 5 damage instead', () => {
+    const g = build(blast.name);
+    g.act(0).activate(keeper.name, { ability: 0 });
+    g.passAll();
+    g.act(0).chooseCards(blast.name);
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.act(0).activate(keeper.name, { ability: 1 });
+    g.passAll();
+    g.act(0).cast({ name: blast.name, zone: 'exile' }, { pay: true });
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBe(15);
+    g.expect.noObject('Serra Angel', { zone: 'battlefield' });
+  });
+});
