@@ -795,11 +795,13 @@ class Binder {
     // CR 701.9, 603.12 (Summon: Kujata): "Discard a card, then draw two cards. When you discard a card this way, ~ deals damage equal to that card's mana value": "that card" is the one card the
     // discard made the player discard, which the engine's `thisWay` `discardedValue` counts (`ref` 'discarded': only the lowering of the reflexive ability reads it).
     if (
-      clause.verb === 'discard' &&
-      clause.args.amount?.kind === 'number' &&
-      clause.args.amount.value === 1 &&
-      clause.args.random === undefined &&
-      clause.args.unless === undefined
+      // Narset of the Ancient Way: "then you may discard a card" is the same one discard, offered.
+      clause.verb === 'discardMayOne' ||
+      (clause.verb === 'discard' &&
+        clause.args.amount?.kind === 'number' &&
+        clause.args.amount.value === 1 &&
+        clause.args.random === undefined &&
+        clause.args.unless === undefined)
     ) {
       this.antecedents.push({
         kind: 'object',

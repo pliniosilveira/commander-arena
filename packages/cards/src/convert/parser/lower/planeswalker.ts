@@ -382,12 +382,62 @@ const FORGET_LOYALTY_ACTIVATIONS: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Add {U}, {R}, or {W}. Spend this mana only to cast a noncreature spell." (Narset of the Ancient Way; CR 106.1b, 106.6, 205.2a): the engine's `chooseOne` of the colors, each an `addMana`
+ * of one mana that only a spell with no creature type can spend (`spendOnly` `notTypes`).
+ */
+const ADD_ONE_OF_NONCREATURE_ONLY: Lowering<IrClause, Effects> = {
+  head: 'addOneOfNoncreatureOnly',
+  id: 'lower.add-one-of-noncreature-only',
+  needs: ['effect:chooseOne', 'effect:addMana'],
+  lower(clause) {
+    const colors = arg(clause, 'colors');
+    if (colors?.kind !== 'keywordName') return failure(clause);
+    const options = colors.name.split('').flatMap((c) =>
+      c === 'W' || c === 'U' || c === 'B' || c === 'R' || c === 'G'
+        ? [
+            {
+              label: `{${c}}`,
+              effect: {
+                kind: 'addMana' as const,
+                mana: {
+                  kind: 'fixed' as const,
+                  mana: [c as 'W' | 'U' | 'B' | 'R' | 'G'],
+                  spendOnly: { notTypes: ['creature' as const] },
+                },
+              },
+            },
+          ]
+        : [],
+    );
+    if (options.length < 2) return failure(clause);
+    return { ok: true, value: [{ kind: 'chooseOne', options }], rule: clause.rule };
+  },
+};
+
+/** "... then you may discard a card" (Narset of the Ancient Way; CR 701.9, 608.2d): the engine's `may` of a discard of one card by the controller, whose answer "When you discard a nonland card this way" reads. */
+const DISCARD_MAY_ONE: Lowering<IrClause, Effects> = {
+  head: 'discardMayOne',
+  id: 'lower.discard-may-one',
+  needs: ['effect:may', 'effect:discard'],
+  lower(clause) {
+    return {
+      ok: true,
+      value: [{ kind: 'may', effect: { kind: 'discard', player: { kind: 'you' }, count: 1 } }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
   'effect:castCard',
+  'effect:may',
+  'effect:discard',
+  'effect:addMana',
   'effect:forgetLoyaltyActivations',
   'effect:exile',
   'effect:delayedTrigger',
@@ -412,6 +462,8 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DEAL_DAMAGE_FROM_EACH,
   MAY_CAST_KIND_FROM_MOVED_FREE,
   CAST_MOVED_NOW,
+  DISCARD_MAY_ONE,
+  ADD_ONE_OF_NONCREATURE_ONLY,
   FORGET_LOYALTY_ACTIVATIONS,
   EXILE_RETURN_NEXT_END_STEP_COUNTERS,
   CHOOSE_DIRECTION_ATTACK_NEAREST,

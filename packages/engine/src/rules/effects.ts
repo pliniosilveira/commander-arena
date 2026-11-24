@@ -5,7 +5,7 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ObjectFilter, ObjectRef, ObjectSelector } from '../ast/types';
+import type { Effect, ManaAbility, ObjectFilter, ObjectRef, ObjectSelector } from '../ast/types';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
@@ -118,6 +118,7 @@ import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { runLoseLifeManaValue } from './lose-life-mana-value';
+import { spendRestrictionOf } from './mana-outcomes';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
 import {
@@ -2691,12 +2692,17 @@ function runEffect(
           : live !== undefined
             ? derive(state, live).types
             : (state.lki[res.source]?.characteristics.types ?? []);
+      // Narset of the Ancient Way (CR 106.6): "Spend this mana only to cast a noncreature spell".
+      const restriction =
+        production.spendOnly === undefined
+          ? null
+          : spendRestrictionOf({ spendOnly: production.spendOnly } as ManaAbility);
       const added = Array.from({ length: Math.max(0, times) }, () =>
         production.mana.map((color) => ({
           color,
           snow: false,
           source: res.source,
-          restriction: null,
+          restriction,
           ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
           // D-650 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
           ...(production.staysUntilEndOfTurn === true ? { stays: true as const } : {}),

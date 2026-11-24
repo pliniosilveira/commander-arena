@@ -8069,6 +8069,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.mana?.kind === 'fixed' && e.mana.times !== undefined) {
         checkAmount(e.mana.times, `${path}.mana.times`, scope, out);
       }
+      // Narset of the Ancient Way (CR 106.6, 205.2a): "Spend this mana only to cast a noncreature spell": the card types the spell must not have.
+      if (e.mana?.kind === 'fixed' && e.mana.spendOnly !== undefined) {
+        const only = e.mana.spendOnly;
+        if (
+          only.notTypes === undefined ||
+          Object.keys(only).some((k) => k !== 'notTypes') ||
+          !Array.isArray(only.notTypes) ||
+          only.notTypes.length === 0
+        ) {
+          issue(
+            out,
+            `${path}.mana.spendOnly`,
+            'an effect restricts its mana by the card types the spell must not have (notTypes)',
+          );
+        } else {
+          checkEnumList(
+            out,
+            `${path}.mana.spendOnly.notTypes`,
+            only.notTypes,
+            CARD_TYPES,
+            'card type',
+          );
+        }
+      }
       break;
     case 'addCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
@@ -8446,7 +8470,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           ? {}
           : {
               thisWay:
-                e.ifThisWay === 'discarded' ? [e.ifThisWay, 'discardedValue'] : [e.ifThisWay],
+                e.ifThisWay === 'discarded' || e.ifThisWay === 'discardedNonland'
+                  ? [e.ifThisWay, 'discardedValue']
+                  : [e.ifThisWay],
             }),
         checkAbility: scope.checkAbility,
         checkContinuous: scope.checkContinuous,

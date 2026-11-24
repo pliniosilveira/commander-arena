@@ -17,6 +17,7 @@ import { spellPhrase } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { CREATURE_TYPE_LIST } from './becomes';
 import { type Clauses, makeClause } from './operands';
+import { impliedYou } from './player';
 
 const ID = 'effect.damage-exile-if-dies';
 
@@ -599,6 +600,107 @@ export const EFFECT_FORGET_LOYALTY_ACTIVATIONS = defineRule<Clauses>({
   },
 });
 
+const ADD_ONE_OF_ID = 'effect.add-one-of-noncreature-only';
+
+/**
+ * `effect.add-one-of-noncreature-only`: "Add {U}, {R}, or {W}. Spend this mana only to cast a noncreature spell." (Narset of the Ancient Way; CR 106.1b, 106.6, 205.2a): one mana of a
+ * color the controller chooses from those listed, as the effect resolves, that can pay only for a spell with no creature type among its card types. Two sentences that
+ * `splitSentences` keeps together. The engine's `chooseOne` of the colors, each an `addMana` with `spendOnly` `notTypes` creature. Not read: one color, a different restriction, a number
+ * of mana, any color.
+ */
+export const EFFECT_ADD_ONE_OF_NONCREATURE_ONLY = defineRule<Clauses>({
+  id: ADD_ONE_OF_ID,
+  family: 'effect',
+  leading: ['add'],
+  cites: [
+    'CR 106.1b (Mana)',
+    'CR 106.6 (Mana)',
+    'CR 205.2a (Card Types)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'add {U}, {R}, or {W}. Spend this mana only to cast a noncreature spell',
+    'Add {R} or {G}. Spend this mana only to cast a noncreature spell',
+  ],
+  rejects: [
+    'add {U}, {R}, or {W}',
+    'add {U}. Spend this mana only to cast a noncreature spell',
+    'add {U}, {R}, or {W}. Spend this mana only to cast a creature spell',
+    'add {U}{R}. Spend this mana only to cast a noncreature spell',
+    'add {U}, {R}, or {W}. Spend this mana only to cast noncreature spells',
+    'add {U}, {R}, or {W}. Spend this mana only to cast a noncreature spell and draw a card',
+    'add {U}, {R}, and {W}. Spend this mana only to cast a noncreature spell',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /add ((?:\{[WUBRG]\}, )+\{[WUBRG]\}, or \{[WUBRG]\}|\{[WUBRG]\} or \{[WUBRG]\})\. spend this mana only to cast a noncreature spell(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const colors = [...(r.value[1] ?? '').matchAll(/\{([WUBRG])\}/gi)].map((m) =>
+      (m[1] ?? '').toUpperCase(),
+    );
+    if (new Set(colors).size !== colors.length) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    const list = { kind: 'keywordName' as const, name: colors.join(''), span, rule: ADD_ONE_OF_ID };
+    return {
+      ok: true,
+      value: [makeClause(ADD_ONE_OF_ID, 'addOneOfNoncreatureOnly', { colors: list }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+const DRAW_MAY_DISCARD_ID = 'effect.draw-then-may-discard';
+
+/**
+ * `effect.draw-then-may-discard`: "Draw a card, then you may discard a card." (Narset of the Ancient Way; CR 121.1, 701.9, 608.2d): the draw, and a discard the controller may decline
+ * (the engine's `draw` and an optional `discard`, so that "When you discard a nonland card this way" after it reads what was discarded). Not read: "discard a card" without "may"
+ * (`effect.draw` and `effect.discard` joined by the sentence), a number of cards other than one, "at random", more after it.
+ */
+export const EFFECT_DRAW_THEN_MAY_DISCARD = defineRule<Clauses>({
+  id: DRAW_MAY_DISCARD_ID,
+  family: 'effect',
+  leading: ['draw'],
+  cites: [
+    'CR 121.1 (Drawing a Card)',
+    'CR 701.9 (Discard)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: ['draw a card, then you may discard a card'],
+  rejects: [
+    'draw a card, then discard a card',
+    'draw two cards, then you may discard a card',
+    'draw a card, then you may discard two cards',
+    'draw a card, then you may discard a card at random',
+    'draw a card, then you may discard a card and draw a card',
+    'draw a card, you may discard a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /draw a card, then you may discard a card(?![\p{L}\p{N}])(?!\s+(?:at|and|unless))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const one = (rule: string) => ({ kind: 'number' as const, value: 1, span, rule });
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(
+            DRAW_MAY_DISCARD_ID,
+            'draw',
+            { player: impliedYou(DRAW_MAY_DISCARD_ID, pos), amount: one(DRAW_MAY_DISCARD_ID) },
+            span,
+          ),
+          connector: 'then' as const,
+        },
+        makeClause(DRAW_MAY_DISCARD_ID, 'discardMayOne', {}, span),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -660,6 +762,8 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_DRAW_THEN_MAY_DISCARD),
+  quietly(EFFECT_ADD_ONE_OF_NONCREATURE_ONLY),
   quietly(EFFECT_FORGET_LOYALTY_ACTIVATIONS),
   quietly(EFFECT_EXILE_RETURN_NEXT_END_STEP_WITH_COUNTERS),
   quietly(EFFECT_CHOOSE_DIRECTION_ATTACK_NEAREST),

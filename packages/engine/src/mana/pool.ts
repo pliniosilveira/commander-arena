@@ -109,6 +109,8 @@ export function restrictionAllows(
         return false;
       }
     }
+    // CR 106.6, 205.2a: "a noncreature spell": the spell has none of the card types named.
+    if (restriction.notTypes?.some((t) => target.types.includes(t)) === true) return false;
     return (
       (restriction.types === undefined ||
         target.types.some((t) => restriction.types?.includes(t) === true)) &&

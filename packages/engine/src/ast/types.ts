@@ -5110,6 +5110,11 @@ export type ManaProduction =
        * the combat phase, so the mana empties as the end of combat step ends. Not with `staysUntilEndOfTurn`.
        */
       readonly staysUntilEndOfCombat?: true;
+      /**
+       * "Add {R}. Spend this mana only to cast a noncreature spell." (Narset of the Ancient Way; CR 106.6): the mana an `addMana` effect adds can be spent only as the restriction says
+       * (the same as a mana ability's `spendOnly`, with `notTypes`). Only the `addMana` effect of a spell or ability that uses the stack, not a mana ability (which has its own).
+       */
+      readonly spendOnly?: NonNullable<ManaAbility['spendOnly']>;
     }
   /**
    * "Add two mana in any combination of colors." (D-151, CR 106.1b, 605.3b): `count` mana, each of a color of the five (colorless is not a color), chosen
@@ -8734,6 +8739,11 @@ export interface ManaAbility {
    */
   readonly spendOnly?: {
     readonly types?: readonly CardType[];
+    /**
+     * "Spend this mana only to cast a noncreature spell." (Narset of the Ancient Way; CR 106.6, 205.2a): the spell has none of these card types as it is cast. Alone with
+     * no `types`, `subtypes`, `chosenType` or `qualities`.
+     */
+    readonly notTypes?: readonly CardType[];
     readonly subtypes?: readonly Subtype[];
     /**
      * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of

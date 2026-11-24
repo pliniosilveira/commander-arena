@@ -354,6 +354,10 @@ const RETURN_EACH_OF_THEM_NEXT_END =
   /^at the beginning of the next end step, return each of them to the battlefield under its owner['’]s control\.$/i;
 const EACH_OF_THEM_ENTERS_WITH =
   /^each of them enters with an additional \+1\/\+1 counter on it if it['’]s a creature and an additional loyalty counter on it if it['’]s a planeswalker\.$/i;
+/** Narset of the Ancient Way: "Add {U}, {R}, or {W}." and the restriction of the mana, one instruction. */
+const ADD_ONE_OF_COLORS =
+  /^add (?:\{[WUBRG]\}, )+\{[WUBRG]\}, or \{[WUBRG]\}\.$|^add \{[WUBRG]\} or \{[WUBRG]\}\.$/i;
+const SPEND_ONLY_NONCREATURE = /^spend this mana only to cast a noncreature spell\.$/i;
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
@@ -1355,6 +1359,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, CHOOSE_LEFT_OR_RIGHT) &&
       said(b, ATTACK_ONLY_NEAREST)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, ADD_ONE_OF_COLORS) &&
+      said(b, SPEND_ONLY_NONCREATURE)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

@@ -819,6 +819,8 @@ describe('unmatched abilities', () => {
       'effect.put-permanent-from-among-exiled',
       'effect.damage-exile-if-dies',
       'effect.move-counter-from-self',
+      'effect.draw-then-may-discard',
+      'effect.add-one-of-noncreature-only',
       'effect.forget-loyalty-activations',
       'effect.exile-return-next-end-step-with-counters',
       'effect.choose-direction-attack-nearest',
