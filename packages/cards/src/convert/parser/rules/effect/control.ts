@@ -55,6 +55,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature an opponent controls until end of turn',
     'gain control of each noncommander creature with mana value 3 or less',
     'gain control of each creature until end of turn',
+    'gain control of target artifact that player controls',
     'gain control of ~',
     'gain control of ~ until end of turn',
     'gain control of all artifacts that player controls',
@@ -88,6 +89,8 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
             'noun.target-permanent',
             // Ahoy Mateys group 7 (Admiral Beckett Brass): "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn".
             'noun.target-permanent-controller-dealt-damage-by',
+            // Hosts of Mordor deck (Wake the Dragon): "gain control of target artifact that player controls", the player of the combat damage event of a trigger.
+            'noun.target-permanent-of-that-player',
             // Limit Break deck, group 4 (Hellkite Tyrant): "gain control of all artifacts that player controls", a group of the permanents the player the text named controls.
             'noun.all-permanents-of-that-player',
             // Hosts of Mordor deck (Subjugate the Hobbits): "gain control of each noncommander creature with mana value 3 or less", a group of the battlefield.

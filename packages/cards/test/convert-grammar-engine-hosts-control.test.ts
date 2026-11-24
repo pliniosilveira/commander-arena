@@ -142,3 +142,49 @@ describe('Subjugate the Hobbits', () => {
     g.expect.zone(CHEAP.name, 'battlefield', { seat: 0 });
   });
 });
+
+describe('Wake the Dragon', () => {
+  const WAKE = real('Wake the Dragon');
+
+  function game() {
+    const g = withCards(scenario({ seats: 3 }), WAKE)
+      .seat(0)
+      .hand(WAKE.name)
+      .library('Island', { count: 8 })
+      .battlefield('Swamp', 'Mountain', 'Island', 'Island', 'Island', 'Island')
+      .seat(1)
+      .library('Island', { count: 8 })
+      .battlefield('Sol Ring')
+      .seat(2)
+      .library('Island', { count: 8 })
+      .battlefield('Sol Ring')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(WAKE.name, { pay: true });
+    g.passAll();
+    return g;
+  }
+
+  test('makes a 6/6 black and red Dragon with flying and menace', () => {
+    const g = game();
+    g.expect.pt('Dragon', 6, 6);
+    g.expect.derived('Dragon', { colors: ['B', 'R'], keywords: ['flying', 'menace'] });
+    g.expect.invariants();
+  });
+
+  test('when the Dragon deals combat damage to a player, its controller takes an artifact of that player, not of another (CR 603.2, 613.1b)', () => {
+    const g = game();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.playCombat({
+      attack: [{ attacker: 'Dragon', target: { player: 2 } }],
+      until: 'combatDamage',
+    });
+    // The one legal target is the artifact of the player who was dealt the damage: it is chosen as the ability goes on the stack.
+    g.passAll();
+    g.expect.zone('Sol Ring', 'battlefield', { seat: 0, count: 1 });
+    g.expect.zone('Sol Ring', 'battlefield', { seat: 1, count: 1 });
+    g.expect.zone('Sol Ring', 'battlefield', { seat: 2, count: 0 });
+  });
+});
