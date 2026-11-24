@@ -139,8 +139,8 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Replicate—Pay 2 life.',
-    expect: no('Replicate—Pay 2 life.', NONE),
-    note: 'SYNTHETIC: a cost that is not mana',
+    expect: no('Pay 2 life.', NONE),
+    note: 'SYNTHETIC: a cost that is not mana; the report stops at the cost, after "Replicate—", since `keyword.replicate-tap` reads the dash (the line stays unsupported)',
   },
   {
     kind: 'instant',
