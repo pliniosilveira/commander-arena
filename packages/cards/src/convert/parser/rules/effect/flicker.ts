@@ -11,7 +11,7 @@
  * same words after any other verb are not read, and a return at another time ("at the beginning of
  * the next end step") is a delayed triggered ability (CR 603.7): since stage P48 (D-205) `effect.return-delayed` reads it.
  */
-import { literal, optional, pattern, satisfy, sequence } from '../../combinators';
+import { fail, literal, optional, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun, IrZoneSpec } from '../../ir/types';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { type Clauses, GRAVEYARD_OPERANDS, makeClause, UNDER_CONTROL } from './operands';
@@ -125,6 +125,7 @@ export const EFFECT_RETURN_DELAYED = quietly(
       "return that card to the battlefield under its owner's control at the beginning of the next end step",
     ],
     rejects: [
+      'return that card to the battlefield under your control at the beginning of the next end step',
       "return it to the battlefield under its owner's control",
       "return it to the battlefield under its owner's control at the beginning of your next end step",
       "return it to the battlefield under its owner's control at the beginning of the next upkeep",
@@ -147,6 +148,8 @@ export const EFFECT_RETURN_DELAYED = quietly(
       )(ctx, pos);
       if (!r.ok) return r;
       const [, objects, , tapped, whose] = r.value;
+      // "that card ... under your control" is `effect.return-to-battlefield-delayed` (the card of a creature that died): "that card" is read here only with "its owner's control".
+      if (objects.rule === 'noun.that-card' && whose === 'you') return fail(ctx, pos);
       const to: IrZoneSpec = {
         kind: 'zoneSpec',
         zone: 'battlefield',
