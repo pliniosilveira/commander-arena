@@ -1,0 +1,84 @@
+Commander
+1x Faldorn, Dread Wolf Herald
+
+Mainboard
+11x Mountain
+12x Forest
+1x Arasta of the Endless Web
+1x Arcane Signet
+1x Ash Barrens
+1x Aurora Phoenix
+1x Battle Mammoth
+1x Beanstalk Giant // Fertile Footsteps
+1x Beast Within
+1x Blighted Woodland
+1x Bloodbraid Elf
+1x Bonecrusher Giant // Stomp
+1x Castle Embereth
+1x Chaos Wand
+1x Cinder Glade
+1x Command Tower
+1x Cultivate
+1x Delayed Blast Fireball
+1x Demon Bolt
+1x Dire Fleet Daredevil
+1x Dream Pillager
+1x Durnan of the Yawning Portal
+1x Embereth Shieldbreaker // Battle Display
+1x End-Raze Forerunners
+1x Escape to the Wilds
+1x Etali, Primal Storm
+1x Explore
+1x Ezuri's Predation
+1x Game Trail
+1x Greater Gargadon
+1x Green Slime
+1x Grumgully, the Generous
+1x Gruul Turf
+1x Highland Forest
+1x Hornet Queen
+1x Ignite the Future
+1x Izzet Chemister
+1x Jeska's Will
+1x Journey to the Lost City
+1x Kessig Wolf Run
+1x Kodama's Reach
+1x Laelia, the Blade Reforged
+1x Light Up the Stage
+1x Lovestruck Beast // Heart's Desire
+1x Managorger Hydra
+1x Mizzium Mortars
+1x Mossfire Valley
+1x Mosswort Bridge
+1x Myriad Landscape
+1x Nalfeshnee
+1x Natural Reclamation
+1x Nature's Lore
+1x Outpost Siege
+1x Passionate Archaeologist
+1x Primeval Bounty
+1x Raging Ravine
+1x Return of the Wildspeaker
+1x Sakura-Tribe Elder
+1x Sandwurm Convergence
+1x Sarevok's Tome
+1x Search for Tomorrow
+1x Sol Ring
+1x Spinerock Knoll
+1x Stolen Strategy
+1x Sweet-Gum Recluse
+1x Tectonic Giant
+1x Temple of Abandon
+1x Temple of the False God
+1x Terramorph
+1x Three Visits
+1x Tlincalli Hunter // Retrieve Prey
+1x Urabrask the Hidden
+1x Venture Forth
+1x Vivien, Champion of the Wilds
+1x Volcanic Torrent
+1x Warstorm Surge
+1x Wild-Magic Sorcerer
+1x Xenagos, the Reveler
+
+---
