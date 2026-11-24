@@ -121,6 +121,8 @@ export const EFFECT_RETURN_DELAYED = quietly(
       'return it to the battlefield under its owner’s control at the beginning of the next end step',
       'return it to the battlefield under your control at the beginning of the next end step',
       "return it to the battlefield tapped under its owner's control at the beginning of the next end step",
+      // Galepowder Mage ("Exile another target creature. Return that card to ..."): "that card" is the object the exile moved, as "it" is.
+      "return that card to the battlefield under its owner's control at the beginning of the next end step",
     ],
     rejects: [
       "return it to the battlefield under its owner's control",
@@ -130,7 +132,6 @@ export const EFFECT_RETURN_DELAYED = quietly(
       'return it to the battlefield at the beginning of the next end step',
       "return it to its owner's hand at the beginning of the next end step",
       "return them to the battlefield under their owners' control at the beginning of the next end step",
-      "return that card to the battlefield under its owner's control at the beginning of the next end step",
       "return target creature card to the battlefield under its owner's control at the beginning of the next end step",
       "return it to the battlefield under his owner's control at the beginning of the next end step",
       "return it to the battlefield under its owner's control at the beginning of the next combat",
@@ -138,7 +139,7 @@ export const EFFECT_RETURN_DELAYED = quietly(
     parse: (ctx, pos) => {
       const r = sequence(
         literal('return '),
-        family<IrNoun>('noun', { only: ['noun.it'] }),
+        family<IrNoun>('noun', { only: ['noun.it', 'noun.that-card'] }),
         literal(' to the battlefield'),
         optional(literal(' tapped'), null),
         UNDER_CONTROL,
