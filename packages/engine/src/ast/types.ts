@@ -1090,6 +1090,11 @@ export interface ObjectFilter {
    */
   readonly chosenPlaneswalkerType?: true;
   /**
+   * "Spells you cast of the chosen type" said of card types (CR 205.2a, 607.2d; Cloud Key): the object has the card type the source permanent chose as it entered
+   * (`GameObject.chosen.cardType`, an `asEntersChoose` of `cardType`). Matches nothing without that choice. Read for a spell as the cost is determined (`costReduction`).
+   */
+  readonly chosenCardType?: true;
+  /**
    * For stack objects: spells only, abilities only, or (D-207, CR 113.3c, 603.1) triggered abilities only ("target triggered ability"). A member of an
    * `anyOf` may set it when the outer filter does not ("target triggered ability or colorless spell": the outer filter has `zone: 'stack'`, one member
    * `stackKind: 'triggeredAbility'` and one `stackKind: 'spell'` with `colorless`).
@@ -2362,6 +2367,16 @@ export type Effect =
       readonly count: number;
       /** "Put two +1/+1 counters on a creature you control" (D-653): the controller must choose `count` permanents (or all there are when fewer), not up to that many. */
       readonly exactly?: true;
+      /**
+       * "Proliferate, then choose any number of permanents you control that had a counter put on them this way" (Ripples of Potential, CR 608.2d, 701.34a): the controller chooses none, some
+       * or all of the candidates, so `count` is not a limit (write 1). Not with `exactly`.
+       */
+      readonly anyNumber?: true;
+      /**
+       * "... that had a counter put on them this way" (CR 608.2c): the candidates are only the permanents the effect before it produced (`moved`: the permanents a `proliferate` put a
+       * counter on), among those the filter matches. After an effect that produces `moved` (`validateCard`).
+       */
+      readonly fromMoved?: true;
     }
   /**
    * "Choose a creature type" as the effect resolves (CR 205.3m, 608.2d): the controller chooses. With `players` (Harsh Mercy: "Each player chooses a creature type", CR 101.4): each player the
@@ -7316,7 +7331,8 @@ export type Replacement =
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
-       * `chosenOption` of the abilities that are linked to it ("Khans — ...", CR 607.2d). Absent for the other kinds.
+       * `chosenOption` of the abilities that are linked to it ("Khans — ...", CR 607.2d). With `what: 'cardType'` (Cloud Key, CR 205.2a: "choose artifact, creature, enchantment,
+       * instant, or sorcery") the card types the controller may choose among, at least two different ones: the question offers only those. Absent for the other kinds.
        */
       readonly options?: readonly string[];
       /**
@@ -7415,6 +7431,11 @@ export type Replacement =
        * part of its copiable values. Never empty.
        */
       readonly addSubtypes?: readonly Subtype[];
+      /**
+       * "..., except it's an artifact in addition to its other types" (Phyrexian Metamorph, CR 707.9b, 205.1b): the card types the permanent has besides the ones it copies, part of its
+       * copiable values (the copy of a creature is also an artifact). Never empty.
+       */
+      readonly addTypes?: readonly CardType[];
       /**
        * "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn" (Federation Fleet deck, CR 614.12, 707.9, 707.2,
        * 700.4): what is copied is a card in the graveyard of the controller, not a permanent on the battlefield. `what` then names the zone `graveyard` (and may carry

@@ -178,6 +178,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
     'copyEntersWithX',
+    // "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types" (`entersAsCopy.addTypes`, CR 707.9b, 205.1b).
+    'copyEntersAddsTypes',
     // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
     'copyEntersFromGraveyard',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
@@ -1150,6 +1152,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notChosenType',
     'chosenColor',
     'chosenPlaneswalkerType',
+    // CR 205.2a, 607.2d (Cloud Key): `ObjectFilter.chosenCardType` and `asEntersChoose` of `cardType` among listed `options`.
+    'chosenCardType',
     // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
     'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
@@ -1807,6 +1811,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'annihilator',
   // CR 702.116a, 702.116b (Myriad): given to a creature by a static ability or an effect ("Creatures you control have myriad"); each instance is its own triggered ability.
   'myriad',
+  // CR 702.121a, 702.121b (Melee): given to a creature by a static ability ("Each artifact creature you control has melee"); each instance is its own triggered ability.
+  'melee',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
 ];
@@ -1978,6 +1984,8 @@ export const ABILITY_FEATURES = [
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
   'copyEntersWithX',
+  /** "..., except it's an artifact in addition to its other types" (CR 707.9b, 205.1b): the engine's `entersAsCopy.addTypes`. */
+  'copyEntersAddsTypes',
   /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
   'copyEntersFromGraveyard',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
@@ -2228,6 +2236,8 @@ export const SELECTOR_KINDS = [
   'notChosenType',
   'chosenColor',
   'chosenPlaneswalkerType',
+  /** "Spells you cast of the chosen type" (CR 205.2a, 607.2d, Cloud Key): the engine's `ObjectFilter.chosenCardType`, and a choice among some card types. */
+  'chosenCardType',
   /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
   'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
@@ -3012,6 +3022,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,
+  copyEntersAddsTypes: true,
   copyEntersFromGraveyard: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,

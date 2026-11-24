@@ -376,6 +376,11 @@ export interface LowerContext {
    */
   lastCounteredGroup: ObjectSelector | null;
   /**
+   * The id of the target the instruction just lowered made a creature for good (Depthshaker Titan, CR 603.7c: "any number of target noncreature artifacts you control become 3/3
+   * artifact creatures. Sacrifice them at the beginning of the next end step."): "them" is those targets. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  becameTarget: string | null;
+  /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
    */
@@ -489,6 +494,7 @@ export function newContext(
     lastEffectKind: null,
     lastCastRemembered: false,
     lastCounteredGroup: null,
+    becameTarget: null,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,

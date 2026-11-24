@@ -87,7 +87,10 @@ export function entersColorExcept(abilities: readonly Ability[]): string | undef
 /** The names "As this enters, choose Khans or Dragons" offers (D-151), or none when the abilities ask no such question. */
 export function entersOptions(abilities: readonly Ability[]): readonly string[] {
   for (const r of replacementsOf(abilities)) {
-    if (r.kind === 'asEntersChoose' && r.what === 'option') return r.options ?? [];
+    if (r.kind === 'asEntersChoose' && (r.what === 'option' || r.what === 'cardType')) {
+      // Cloud Key (CR 205.2a): "choose artifact, creature, enchantment, instant, or sorcery": a card type choice among the types listed; none listed offers every card type.
+      return r.options ?? [];
+    }
   }
   // CR 702.155b (D-151): "choose a number between one and this Saga's final chapter number".
   if (hasReadAhead(abilities)) {

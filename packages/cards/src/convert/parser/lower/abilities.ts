@@ -7,6 +7,7 @@
 import type {
   Ability,
   Amount,
+  CardType,
   Color,
   Condition,
   Cost,
@@ -936,6 +937,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         ? failure(ability)
         : built({ kind: 'asEntersChoose', what: 'option', options: [...what.options] });
     }
+    // CR 205.2a (Cloud Key): "choose artifact, creature, enchantment, instant, or sorcery": the card types the question offers.
+    if (what.what === 'cardType' && what.options !== undefined) {
+      return what.options.length < 2
+        ? failure(ability)
+        : built({ kind: 'asEntersChoose', what: 'cardType', options: [...what.options] });
+    }
     return built({
       kind: 'asEntersChoose',
       what: what.what,
@@ -956,6 +963,7 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       ...(event.args.fromGraveyard === undefined
         ? []
         : (['ability:copyEntersFromGraveyard'] as const)),
+      ...(event.args.addTypes === undefined ? [] : (['ability:copyEntersAddsTypes'] as const)),
     ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
@@ -986,11 +994,27 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     ) {
       return failure(ability);
     }
+    // CR 707.9b, 205.1b (Phyrexian Metamorph): "except it's an artifact in addition to its other types": card types, in a list of their own.
+    const addedTypes = event.args.addTypes;
+    if (
+      addedTypes !== undefined &&
+      (addedTypes.kind !== 'typeList' ||
+        addedTypes.additive !== true ||
+        addedTypes.subtypes.length > 0 ||
+        addedTypes.colors !== undefined ||
+        addedTypes.cardTypes === undefined ||
+        addedTypes.cardTypes.length === 0)
+    ) {
+      return failure(ability);
+    }
     return built({
       kind: 'entersAsCopy',
       what: kind,
       optional: true,
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
+      ...(addedTypes?.kind === 'typeList' && addedTypes.cardTypes !== undefined
+        ? { addTypes: addedTypes.cardTypes as CardType[] }
+        : {}),
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
       ...(fromGraveyard ? { fromGraveyard: true as const } : {}),

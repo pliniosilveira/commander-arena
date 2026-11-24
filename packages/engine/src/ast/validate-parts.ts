@@ -786,6 +786,7 @@ export function checkFilter(
     'chosenColor',
     'notChosenType',
     'chosenPlaneswalkerType',
+    'chosenCardType',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -4194,6 +4195,8 @@ function movesObjects(e: Effect): boolean {
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
+    // Ripples of Potential (CR 701.34a): the permanents a `proliferate` put a counter on are "those permanents that had a counter put on them this way".
+    e?.kind === 'proliferate' ||
     // D-660, D-661, D-663: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
     e?.kind === 'exileUntilFound' ||
     e?.kind === 'opponentChoosesCard' ||
@@ -5573,6 +5576,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.count`, 'chooseObjects count must be positive');
       if (e.exactly !== undefined && e.exactly !== true)
         issue(out, `${path}.exactly`, 'exactly must be true when present');
+      // Ripples of Potential: any number of the permanents the effect before it produced.
+      if (e.anyNumber !== undefined && (e.anyNumber !== true || e.exactly === true)) {
+        issue(out, `${path}.anyNumber`, 'anyNumber must be true, and is not with exactly');
+      }
+      if (e.fromMoved !== undefined) {
+        if (e.fromMoved !== true)
+          issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
+        else if (scope.movedAvailable !== true) {
+          issue(
+            out,
+            `${path}.fromMoved`,
+            'fromMoved needs an effect before it that produced objects (moved)',
+          );
+        }
+      }
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
@@ -6344,6 +6362,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         scope.auraDiesTrigger === true,
         scope.thisWay?.includes('exiledCreatures') === true,
       );
+      // Depthshaker Titan (CR 603.7c): the delayed sacrifice of the targets of the ability names a target slot the ability declares.
+      if (e.effect?.kind === 'sacrifice' && kindOf(e.effect.objects) === 'target') {
+        checkObjectSelector(
+          e.effect.objects as Extract<ObjectSelector, { kind: 'target' }>,
+          `${path}.effect.objects`,
+          scope,
+          out,
+        );
+      }
       break;
     case 'prepare':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
