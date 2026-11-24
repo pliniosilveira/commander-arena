@@ -787,7 +787,11 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
     case 'optionalUntap':
+      break;
     case 'exertOnAttack':
+      if (s.unlessExertedThisTurn !== undefined && s.unlessExertedThisTurn !== true) {
+        issue(out, `${path}.unlessExertedThisTurn`, 'unlessExertedThisTurn is true when present');
+      }
       break;
     case 'crewSaddleBonus':
       // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
@@ -892,6 +896,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           'cantBeCountered is the spell\'s own ability: its subject is "this"',
         );
       }
+      break;
+    case 'controlAttached':
+      // CR 613.1b, 725.1: the permanent this one is attached to is controlled by the monarch.
+      if (s.by !== 'monarch') issue(out, `${path}.by`, 'controlAttached is by the monarch');
       break;
     case 'goaded':
       // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
@@ -1622,7 +1630,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           `alsoStep must be another known step, not ${String(t.alsoStep)}`,
         );
       }
-      if (!isOneOf(t.whose, ['you', 'each', 'opponent'])) {
+      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;
@@ -1688,6 +1696,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'damageToPlayerPrevented':
     case 'dealtDamageToPlayer':
       if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1764,6 +1773,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'dealtDamageToPlayer' ||
+    t?.kind === 'damageToPlayerPrevented' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
@@ -2103,6 +2113,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       break;
     case 'replacement':
       checkReplacement(a.replacement, `${path}.replacement`, out);
+      checkGraveyardAbility(a, path, out);
       break;
     case 'level':
       // CR 716.2a (D-235): the abilities a class level bar adds from level `level` on: two or more of them is not a thing, a nested bar is not either.
@@ -2256,6 +2267,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         triggeredAbility: true,
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
+        ...(a.trigger?.kind === 'exerted' ? { exertTrigger: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
         ...(a.trigger?.kind === 'dealsCombatDamage' ? { combatDamageTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
@@ -2853,6 +2865,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   checkArtifactsFace(face, path, out);
   checkDinosaursFace(face, path, out);
   checkDragonsFace(face, path, out);
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is for a flashback cost the face has.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'static' &&
+      a.static?.kind === 'costReduction' &&
+      a.static.forAlternative === 'flashback' &&
+      !face.abilities.some((k) => k?.kind === 'keyword' && k.keyword?.kind === 'flashback')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].static.forAlternative`,
+        'a reduction for the flashback cost needs the flashback keyword on the face',
+      );
+    }
+  });
   // CR 702.165a (D-230): Backup gives the abilities printed below it as they are: a static or replacement ability there would not be given, so the face is refused.
   const backupAt = face.abilities.findIndex(
     (a) => a?.kind === 'keyword' && a.keyword?.kind === 'backup',

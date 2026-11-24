@@ -124,11 +124,8 @@ const IT_CONTROLLER: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Exile target creature. Its controller searches their library for a basic land card, put it onto the battlefield, then shuffle.',
-    expect: no(
-      'searches their library for a basic land card, put it onto the battlefield, then shuffle.',
-      'effect.player',
-    ),
-    note: 'SYNTHETIC; without "may" the search is not read',
+    expect: no(', put it onto the battlefield, then shuffle.', 'effect.player.search'),
+    note: 'SYNTHETIC; without "may" the search is not read in the imperative form ("put" and "shuffle" for "searches"); Field of Ruin\'s "puts it ..., then shuffles" is read',
   },
   {
     kind: 'sorcery',

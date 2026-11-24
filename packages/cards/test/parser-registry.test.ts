@@ -199,10 +199,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-remove-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
+  'static.monarch-controls-attached': asIs,
   'static.permanents': asIs,
   'static.self': asIs,
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
+  'static.self-cost-reduction-this-way': asIs,
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
   'static.nth-spell-cost-reduction': asIs,
@@ -877,6 +879,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
   // Exert (CR 701.43d): the trigger is the first sentence of a paragraph, the body follows "When you do,".
   'trigger.exerted': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.exerted-once-a-turn': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
+  'trigger.self-and-others-attack': whenever,
+  'trigger.attack-your-opponents': whenever,
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),
@@ -963,6 +968,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
+  'trigger.activate-ability-of-kinds': whenever,
   'trigger.targets-activated-batch': whenever,
   'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
   'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
@@ -1120,6 +1126,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
+  'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
   'trigger.opponent-attacks-you': whenever,
   'effect.opponents-attacking-do-same': spell(

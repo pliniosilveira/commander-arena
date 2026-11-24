@@ -529,7 +529,7 @@ export function stateAmountOf(
     case 'commanderColors':
       return commanderIdentity(state, ctx.controller).length;
     case 'commanderManaValue':
-      return commandersManaValue(state, ctx.controller);
+      return commandersManaValue(state, ctx.controller, amount.zones);
     case 'commanderCasts': {
       if (amount.player !== undefined) {
         // CR 903.8: the player the selector names ("target player ... they've cast").

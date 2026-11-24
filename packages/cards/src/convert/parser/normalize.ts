@@ -365,10 +365,19 @@ const OPTION_CHOICE = /^[Aa]s ~ enters, choose \p{Lu}[^.—•\n]*? or \p{Lu}[^.
 const LINKED_LEAVES = /(?<=\.) (?=When ~ leaves the battlefield, )/gu;
 
 function splitLinkedLeaves(normalized: string): string {
-  return normalized.replace(LINKED_LEAVES, (_match, offset: number) =>
-    (normalized.slice(0, offset).match(/["”“]/gu)?.length ?? 0) % 2 === 0 ? '\n' : ' ',
-  );
+  return normalized
+    .replace(LINKED_LEAVES, (_match, offset: number) =>
+      (normalized.slice(0, offset).match(/["”“]/gu)?.length ?? 0) % 2 === 0 ? '\n' : ' ',
+    )
+    .replace(FLASHBACK_THEN_LESS, '$1\n');
 }
+
+/**
+ * "Flashback {8}{W}{W}. ~ costs {X} less to cast this way, where X is ..." (Visions of Glory, CR 702.34a, 601.2f): the Oracle text prints the keyword and the reduction of its cost in the same
+ * paragraph, but they are two abilities, the keyword (which has no period) and the spell's own static ability, so the second starts a line of its own.
+ */
+const FLASHBACK_THEN_LESS =
+  /^(Flashback (?:\{[^}\n]+\})+)\. (?=~ costs \{[^}\n]+\} less to cast this way, )/gmu;
 
 /**
  * Splits normalized text into abilities, one per line. A bullet line ("• ...") belongs to the

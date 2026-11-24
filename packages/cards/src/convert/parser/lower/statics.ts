@@ -559,12 +559,24 @@ function effectOf(
         return ok({
           kind: 'cantAttackYou',
           creatures: { hostOfSource: true },
-          planeswalkers: true,
+          // Riders of Rohan, group E (Fealty to the Realm): "can't attack you" bars the player only.
+          ...(effect.playersOnly === true ? {} : { planeswalkers: true as const }),
         });
       }
+      if (effect.playersOnly === true) return failure(at);
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
+    case 'controlByMonarch': {
+      // CR 613.1b, 725.1 (Fealty to the Realm): "The monarch controls enchanted creature.": only the creature an Aura is attached to, with no other modifier.
+      const plain =
+        subject.kind === 'attached' &&
+        subject.types?.length === 1 &&
+        subject.types[0] === 'creature' &&
+        Object.keys(subject).length === 2;
+      if (!plain) return failure(at);
+      return ok({ kind: 'controlAttached', by: 'monarch' });
+    }
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
@@ -625,6 +637,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
+    case 'controlByMonarch':
+      return ['static:controlAttached'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':
@@ -813,9 +827,12 @@ function lowerCostReduction(
   amount: Extract<IrStaticEffect, { kind: 'costReduction' }>['amount'],
   ctx: LowerContext,
   inCommandZone?: true,
+  thisWay?: 'flashback',
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', 'static:costReduction']);
+  // Visions of Glory (CR 702.34a): "this way" is the spell's own reduction, for its flashback cost.
+  if (thisWay !== undefined && subject.det !== 'self') return failure(subject);
   if (missing.length > 0) return failure(ability, missing);
   const lowered = lowerAmount(amount, ctx, ability.rule);
   if (!lowered.ok) return lowered;
@@ -844,6 +861,7 @@ function lowerCostReduction(
           amount: lowered.value,
           // Eminence (issue 81, CR 113.6): the reduction works in the command zone too.
           ...(inCommandZone === true ? { inCommandZone: true as const } : {}),
+          ...(thisWay === undefined ? {} : { forAlternative: thisWay }),
         },
       },
     ],
@@ -1356,7 +1374,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with
   // a condition the engine reads as the total cost is determined (not by `derive`, so it may compare a power).
   if (first.kind === 'costReduction' && statement.condition !== undefined) {
-    if (more.length > 0 || statement.subject.det !== 'self') return failure(ability);
+    if (more.length > 0 || statement.subject.det !== 'self' || first.thisWay !== undefined) {
+      return failure(ability);
+    }
     const lowered = lowerCondition(statement.condition, false, ctx);
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
@@ -1446,7 +1466,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
-    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone);
+    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone, first.thisWay);
   }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')

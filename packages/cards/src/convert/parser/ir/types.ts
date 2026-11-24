@@ -631,7 +631,12 @@ export type IrAmount =
   // "the greatest power among those creatures" of an attack batch trigger (CR 508.1): the creatures the declaration of the trigger held
   | { readonly kind: 'attackersGreatestPower'; readonly span: Span }
   // "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3)
-  | { readonly kind: 'commanderManaValue'; readonly span: Span }
+  /** `zones`: "a commander you own on the battlefield or in the command zone" (Visions of Glory, CR 903.3, 108.3): only the commanders in these zones. */
+  | {
+      readonly kind: 'commanderManaValue';
+      readonly zones?: readonly ('battlefield' | 'command')[];
+      readonly span: Span;
+    }
   // "for each time you've cast your commander from the command zone this game" (stage P68, D-229, CR 903.8)
   | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
@@ -708,6 +713,7 @@ export type IrAmount =
         | 'discardedMost'
         | 'discardedTypeCount'
         | 'exiledCreatures'
+        | 'exiledCreatureCards'
         | 'damageDealt'
         | 'excessDamageDealt'
         | 'countersRemoved'
@@ -1066,6 +1072,8 @@ export interface IrCondition extends IrNode {
         readonly notTypes?: readonly string[];
         readonly subtypes?: readonly string[];
         readonly token?: boolean;
+        /** "another Human entered the battlefield under your control this turn" (Éowyn, Shieldmaiden): not the permanent with the ability. */
+        readonly other?: true;
       }
     // D-063: "if A and B", "if A or B", "if not A"
     | { readonly kind: 'and' | 'or'; readonly terms: readonly IrCondition[] }
@@ -1268,7 +1276,12 @@ export interface IrZoneSpec extends IrNode {
    */
   readonly from?: 'graveyard';
   /** "with a +1/+1 counter on it" (stage P30, CR 122.6): the card enters the battlefield with these counters. */
-  readonly counters?: { readonly counter: string; readonly count: number };
+  readonly counters?: {
+    readonly counter: string;
+    readonly count: number;
+    /** "with a vigilance counter and a lifelink counter on it" (Gilraen, CR 122.6): the further kinds of counter it enters with. */
+    readonly also?: readonly { readonly counter: string; readonly count: number }[];
+  };
   /**
    * Whose zone, when the text says: "your hand", "its owner's hand". For the battlefield, who
    * controls what enters: "under your control", "under its owner's control" (CR 110.2a); absent when
@@ -1569,12 +1582,21 @@ export interface IrSentence extends IrNode {
      * `thatCombat` (stage P41, D-188, CR 603.7, 500.8): "At the beginning of that combat, untap all creatures you control": the combat phase the
      * sentence before it added, which the lowering folds into the engine's `extraCombat` as what happens at its beginning.
      */
-    readonly step: 'endStep' | 'thatCombat' | 'nextCast' | 'combatDamageToThatPlayer';
+    readonly step:
+      | 'endStep'
+      | 'thatCombat'
+      | 'nextCast'
+      | 'combatDamageToThatPlayer'
+      | 'combatDamageBatch';
     /**
      * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
      * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
      */
     readonly whose: 'you' | 'each';
+    /**
+     * `combatDamageBatch` (Forth Eorlingas!, CR 603.7, 603.2c, 510.2): "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become
+     * the monarch": a delayed ability for the turn that triggers once for the creatures that dealt the damage of one combat damage event.
+     */
     /**
      * `nextCast` (D-336, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
      * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
@@ -1669,6 +1691,8 @@ export interface IrTrigger extends IrNode {
     | 'creature'
     | 'playerOrPlaneswalker'
     | 'you';
+  /** 'endStep' "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the turn of the player who is the monarch; `actor` is `eachPlayer`. */
+  readonly monarchTurn?: true;
   /** 'combatDamageBatch' "... while you're the monarch" (issue 81, CR 725.2): the controller was the monarch as the damage was dealt. */
   readonly whileMonarch?: true;
   /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
@@ -1719,6 +1743,12 @@ export interface IrTrigger extends IrNode {
   readonly attackedEnchantedPlayer?: true;
   /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
   readonly attackedYou?: true;
+  /** 'exerted' "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant, CR 701.43b): the exert is offered only to a creature not yet exerted this turn. */
+  readonly unlessExertedThisTurn?: true;
+  /** 'attackBatch' "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1): the permanent with the ability is one of the attackers counted. */
+  readonly includesSource?: true;
+  /** 'attackBatch' "Whenever one or more creatures attack one of your opponents or a planeswalker they control" (Frontier Warmonger, CR 508.1b, 506.3): only those creatures count. */
+  readonly attackingYourOpponents?: true;
   /**
    * 'lifeGained' and 'lifeLost': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.
@@ -1869,7 +1899,10 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'restriction'; readonly restriction: IrRestrictionKind }
   // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control": the creatures the subject names cannot be declared attacking the controller or their planeswalkers
-  | { readonly kind: 'cantAttackYou' }
+  // Riders of Rohan deck, group E (CR 508.1a): "Enchanted creature can't attack you.": the players only, no planeswalkers (`playersOnly`).
+  | { readonly kind: 'cantAttackYou'; readonly playersOnly?: true }
+  // Fealty to the Realm (CR 613.1b, 725.1): "The monarch controls enchanted creature.": the engine's `controlAttached` by the monarch.
+  | { readonly kind: 'controlByMonarch' }
   | { readonly kind: 'noMaxHandSize' }
   /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3): the engine's
@@ -1888,7 +1921,13 @@ export type IrStaticEffect =
    * {1} less to cast" (stage P13, CR 118.7, 601.2f): `amount` generic mana less. The statement's
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
-  | { readonly kind: 'costReduction'; readonly amount: IrAmount; readonly inCommandZone?: true }
+  | {
+      readonly kind: 'costReduction';
+      readonly amount: IrAmount;
+      readonly inCommandZone?: true;
+      /** "~ costs {X} less to cast this way" (Visions of Glory, CR 702.34a): the reduction is for the flashback cost only. */
+      readonly thisWay?: 'flashback';
+    }
   /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
   | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off

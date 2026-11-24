@@ -174,6 +174,8 @@ export interface Scope {
   readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of exerting a creature as it attacks (`exerted`): that happens as attackers are declared, in a combat phase an `extraCombat` can follow. */
+  readonly exertTrigger?: boolean;
   /** True in the effect of a triggered ability of combat damage (`dealsCombatDamage`): combat damage is dealt in the combat phase, so an `extraCombat` has one to follow (CR 500.8, Port Razer). */
   readonly combatDamageTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
@@ -2036,6 +2038,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
+  exiledCreatureCards: 'an exile effect',
   discardedTypeCount: 'a discard effect',
 };
 
@@ -2087,7 +2090,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     return ['countersRemoved'];
   }
   // Oversimplify: the creatures an exile really exiled, by controller.
-  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
+  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures', 'exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -2495,7 +2498,21 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.colors === undefined) issue(out, `${path}.colors`, 'devotion needs at least one color');
       break;
     case 'commanderColors':
+      break;
     case 'commanderManaValue':
+      // CR 903.3, 108.3 (Visions of Glory): the zones the commanders must be in: the battlefield and/or the command zone.
+      if (
+        a.zones !== undefined &&
+        (!Array.isArray(a.zones) ||
+          a.zones.length === 0 ||
+          a.zones.some((z) => z !== 'battlefield' && z !== 'command'))
+      ) {
+        issue(
+          out,
+          `${path}.zones`,
+          'the zones of a commander are the battlefield and the command zone',
+        );
+      }
       break;
     case 'commanderCasts':
       // CR 903.8: "they've cast": the player a selector names, which may be a target of the effect.
@@ -3120,6 +3137,9 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
+    if ((amount as { zones?: unknown }).zones !== undefined) {
+      issue(out, path, 'a static power or toughness reads every commander, not those in a zone');
+    }
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not a commander');
     }
@@ -3981,6 +4001,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
+      if (c.other !== undefined && c.other !== true) {
+        issue(out, `${path}.other`, 'other is true when present');
+      }
       break;
     case 'aPlayerCardsInHand': // Lorehold group 3, CR 402.1: the same shape, for the hands of the players
     case 'cardsInLibrary': // D-331, CR 401.1: the same shape, for the library
@@ -4220,6 +4243,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exile' ||
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
+    // Call for Aid (CR 611.2c): "Untap those creatures. They gain haste": the permanents a `gainControl` took are "those creatures".
+    e?.kind === 'gainControl' ||
     // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
     (e?.kind === 'counter' && e.exileInstead === true) ||
     e?.kind === 'createToken' ||
@@ -6143,6 +6168,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.optional !== undefined && e.optional !== true) {
         issue(out, `${path}.optional`, 'optional must be true when present');
       }
+      if (e.xIsHandSize !== undefined) {
+        if (e.xIsHandSize !== true)
+          issue(out, `${path}.xIsHandSize`, 'xIsHandSize is true when present');
+        if (!e.cost.every((c) => c.kind === 'mana' && c.symbols.every((s) => s === 'X'))) {
+          issue(
+            out,
+            `${path}.cost`,
+            'a cost with the {X} of a hand size is a mana cost of {X} symbols only',
+          );
+        }
+      }
       break;
     case 'grantPlayerHexproof': {
       // CR 702.11b (Hylda group 3): players named by a selector ("you", "each opponent", a target player), until end of turn.
@@ -6531,6 +6567,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         break;
       }
       checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    }
+    case 'delayedCombatDamageBatchTurn': {
+      // CR 603.7c, 510.2: the sources are creatures the controller controls; what the ability does names no target and reads nothing of the spell.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          "the sources are creatures the controller controls (controller 'you'), as they are on the battlefield",
+        );
+      }
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
     case 'delayedCombatDamageToPlayer': {
@@ -7179,6 +7228,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (!isCount(w?.count) || w.count < 1) {
           issue(out, `${path}.withCounters.count`, 'counter count must be a positive integer');
+        }
+        // Gilraen (CR 122.6): more kinds of counter it enters with, each named once and not the first kind.
+        const names = [w?.counter, ...(w?.also ?? []).map((a) => a?.counter)];
+        (w?.also ?? []).forEach((a, i) => {
+          if (typeof a?.counter !== 'string' || a.counter === '') {
+            issue(out, `${path}.withCounters.also[${i}].counter`, 'counter name must be non-empty');
+          }
+          if (!isCount(a?.count) || a.count < 1) {
+            issue(
+              out,
+              `${path}.withCounters.also[${i}].count`,
+              'counter count must be a positive integer',
+            );
+          }
+        });
+        if (new Set(names).size !== names.length) {
+          issue(out, `${path}.withCounters.also`, 'each kind of counter is named once');
         }
       }
       if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
@@ -8367,8 +8433,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'a restriction names creatures by type, color, controller and the like (the battlefield, as they are when attackers are declared): no zone, owner, stackKind, combat or trigger player',
         );
       }
-      if (e.duration !== 'untilYourNextTurn') {
-        issue(out, `${path}.duration`, 'the restriction lasts until your next turn');
+      if (e.duration !== 'untilYourNextTurn' && e.duration !== 'thisCombat') {
+        issue(out, `${path}.duration`, 'the restriction lasts until your next turn or this combat');
+      }
+      if (e.player !== undefined) {
+        checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        checkSinglePlayer(e.player, `${path}.player`, 'creaturesCantAttackYou', out);
       }
       // CR 508.1d, 508.1h (Summon: Yojimbo): "... unless their controller pays {2} for each of those creatures": a mana cost of at least one symbol, no X.
       if (e.tax !== undefined) {
@@ -8953,6 +9023,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'cantBeBlockedByPlayer':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'youCantAttackPlayers':
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, "'youCantAttackPlayers' lasts until end of turn");
+      }
+      break;
+    case 'youCantSacrifice':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, "'youCantSacrifice' lasts until end of turn");
+      }
       break;
     case 'cantAttackPlaneswalkers':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

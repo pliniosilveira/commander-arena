@@ -928,6 +928,7 @@ export function lowerCondition(
         ...(test.notTypes === undefined ? {} : { notTypes: [...test.notTypes] as CardType[] }),
         ...(test.subtypes === undefined ? {} : { subtypes: [...test.subtypes] }),
         ...(test.token === undefined ? {} : { token: test.token }),
+        ...(test.other === true ? { other: true as const } : {}),
       });
     }
     case 'hadCounters':

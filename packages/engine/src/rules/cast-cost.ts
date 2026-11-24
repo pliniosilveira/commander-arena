@@ -228,6 +228,7 @@ function reductionFor(
   excluded: ObjectId | undefined,
   optimistic = false,
   castFrom?: CastFrom,
+  alternative?: CastAlternative,
 ): number {
   let total = 0;
   const base = excluded === undefined ? {} : { excluded };
@@ -237,6 +238,8 @@ function reductionFor(
     if (a.kind !== 'static' || a.static.kind !== 'costReduction' || !('kind' in a.static.spells)) {
       continue;
     }
+    // CR 702.34a, 601.2f (Visions of Glory): "This spell costs {X} less to cast this way" reduces only the cast for the flashback cost.
+    if (a.static.forAlternative !== undefined && a.static.forAlternative !== alternative) continue;
     // CR 601.2f (D-181): "This spell costs {3} less to cast if you control a creature with power 4 or greater" is read when the cost is determined.
     if (
       a.condition !== undefined &&
@@ -537,6 +540,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       request.excluded,
       request.optimistic === true,
       request.zone,
+      alternative,
     ) +
       // CR 702.180a (Harmonize): the tapped creature's power in generic mana off the total cost.
       (alternative === 'harmonize'

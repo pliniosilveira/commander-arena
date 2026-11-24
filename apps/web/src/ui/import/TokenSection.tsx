@@ -50,7 +50,9 @@ function TokenDialog({
   const current = prints.find((p) => art !== null && p.normal === art.normal);
   const [chosen, setChosen] = useState<string | null>(null);
   const selected = prints.find((p) => p.id === chosen) ?? current;
-  const picture = selected?.large ?? art?.normal ?? null;
+  // With no art chosen yet, `art` is null: fall back to the default art the tile already shows.
+  const defaultArt = useTokenArt(token.definition, 'normal');
+  const picture = selected?.large ?? art?.normal ?? defaultArt;
 
   const use = (print: CardPrint) => {
     chooseTokenArt(token.key, {

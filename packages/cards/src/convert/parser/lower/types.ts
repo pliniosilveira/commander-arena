@@ -376,6 +376,11 @@ export interface LowerContext {
    */
   lastCounteredGroup: ObjectSelector | null;
   /**
+   * True after a `gainControl` of a group of "each" (Call for Aid, CR 611.2c, 400.7j): "those creatures" and "they" of the instructions after it are the permanents it took, the engine's `moved`,
+   * until an instruction that moves, destroys, exiles, sacrifices or makes other objects is lowered. Filled by `lowerSentences`.
+   */
+  gainedGroup: boolean;
+  /**
    * The id of the target the instruction just lowered made a creature for good (Depthshaker Titan, CR 603.7c: "any number of target noncreature artifacts you control become 3/3
    * artifact creatures. Sacrifice them at the beginning of the next end step."): "them" is those targets. Null after any other instruction. Filled by `lowerSentences`.
    */
@@ -494,6 +499,7 @@ export function newContext(
     lastEffectKind: null,
     lastCastRemembered: false,
     lastCounteredGroup: null,
+    gainedGroup: false,
     becameTarget: null,
     randomYardCard: false,
     choseAPlayer: false,

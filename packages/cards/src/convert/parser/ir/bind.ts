@@ -264,6 +264,24 @@ class Binder {
     this.seed(test.amount.of, 'triggerSubject', true);
   }
 
+  /** The creatures of an attack batch trigger, the antecedent of "those creatures" of its body (Frontier Warmonger, CR 603.2c). */
+  seedAttackers(trigger: IrTrigger): void {
+    this.antecedents.push({
+      noun: {
+        kind: 'noun',
+        det: 'each',
+        filter: { raw: 'those creatures', types: ['creature'] },
+        upTo: false,
+        plural: true,
+        other: false,
+        span: trigger.span,
+        rule: trigger.rule,
+        ref: ATTACKERS_REF,
+      },
+      kind: 'object',
+    });
+  }
+
   /** The controller of the permanent a death trigger is about, as an antecedent of "that player" (CR 603.10a). */
   seedControllerOfSubject(subject: IrNoun): void {
     this.antecedents.push({
@@ -942,8 +960,14 @@ function selfNoun(cost: { readonly span: Span; readonly rule: string }): IrNoun 
   };
 }
 
+/** The reference of "those creatures" of an attack batch trigger that counts only the creatures attacking your opponents (Frontier Warmonger, CR 603.2c): the creatures that attacked them. */
+export const ATTACKERS_REF = 'trigAttackers';
+
 /** Seeds a trigger's subject, actor and recipient as the first antecedents of whatever follows. */
 function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
+  if (source.event === 'attackBatch' && source.attackingYourOpponents === true) {
+    binder.seedAttackers(source);
+  }
   const subject = binder.seed(source.subject, 'triggerSubject', aboutSelf(source));
   const actor = binder.seed(source.actor, 'triggerActor');
   // The player a creature dealt combat damage to is the antecedent of "that player" (stage P18).

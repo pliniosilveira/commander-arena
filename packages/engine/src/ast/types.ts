@@ -299,8 +299,11 @@ export type Amount =
    * the controller, wherever they are (the command zone, the battlefield, any other zone): the mana value of the card as printed (a copy
    * effect on a commander on the battlefield is not read, `docs/ROADMAP.md`). 0 for a player with no commander. Also readable by a static
    * ability's power or toughness (`StaticPtAmount`: "Equipped creature gets +X/+X, where X is ...").
+   * `zones` (Visions of Glory, CR 903.3, 108.3, 202.3: "the greatest mana value of a commander you own on the battlefield or in the command zone"): only the commanders of the controller
+   * that are in one of these zones count, as the card is now (the object on the battlefield, or the card in the command zone); a commander anywhere else does not. Not in a static ability's
+   * power or toughness.
    */
-  | { readonly kind: 'commanderManaValue' }
+  | { readonly kind: 'commanderManaValue'; readonly zones?: readonly ('battlefield' | 'command')[] }
   /**
    * "The number of times you've cast your commander from the command zone this game" (CR 903.8, D-229): the sum, over the commanders of the
    * controller (`SeatState.commanders`), of the times each was cast from the command zone (the count the commander tax is made from, `GameState.commanderCasts`).
@@ -537,6 +540,8 @@ export type ThisWayKind =
   | 'exiledNonland'
   // Mass Polymorph (CR 608.2c): "that many creature cards", the creatures an earlier `exile` effect of this resolution exiled from the battlefield, tokens included.
   | 'exiledCreatures'
+  // Grey Host Reinforcements (CR 608.2c, 404.1): "the number of creature cards exiled this way": the creature cards (never tokens) an `exile` effect of this resolution exiled, from a graveyard or anywhere else.
+  | 'exiledCreatureCards'
   // Occult Epiphany (CR 205.2a, 608.2c): "for each card type among cards discarded this way": how many different card types the cards `discard` effects discarded have.
   | 'discardedTypeCount'
   | 'playersDrew'
@@ -1172,6 +1177,16 @@ export type AttachedTo =
  * whose turn it is, which is a legal target only during the turn of an opponent.
  */
 export type PlayerFilter = 'any' | 'opponent' | 'opponentWhoseTurn';
+
+/**
+ * The counters a permanent enters the battlefield with (`moveToZone.withCounters`, CR 122.6, 614.1c): `count` counters of the kind `counter`, and `also` more kinds ("with a vigilance counter
+ * and a lifelink counter on it", Gilraen), all put on as it enters.
+ */
+export interface EnteringCounters {
+  readonly counter: string;
+  readonly count: number;
+  readonly also?: readonly { readonly counter: string; readonly count: number }[];
+}
 
 /** A reference to one or more objects or players, resolved by the interpreter. */
 export type ObjectRef =
@@ -3364,6 +3379,17 @@ export type Effect =
       readonly effect: Effect;
     }
   /**
+   * "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become the monarch." (CR 603.7, 603.2c, 510.2, 514.2, Forth Eorlingas!): a
+   * delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers until the end of the turn (CR 514.2) as the `combatDamageBatch` trigger
+   * does: once for each player damaged in one combat damage event, however many of the sources `filter` names damaged them. `effect` runs each time, with the controller of the spell
+   * or ability as "you"; it names no target and reads nothing of the spell (CR 603.7c: nothing of it is left to name later).
+   */
+  | {
+      readonly kind: 'delayedCombatDamageBatchTurn';
+      readonly filter: ObjectFilter;
+      readonly effect: Effect;
+    }
+  /**
    * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (CR 603.7, 603.7c, 510.3a, 514.2, issue 144,
    * Great Train Heist): a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the
    * controller controls, as it is when the damage is dealt) deals combat damage to the one player `player` names, until the end of the turn (CR 514.2), once for each such creature
@@ -3734,7 +3760,7 @@ export type Effect =
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
        * and 614.1c: a replacement effect), so they are there when anything triggers from the entering.
        */
-      readonly withCounters?: { readonly counter: string; readonly count: number };
+      readonly withCounters?: EnteringCounters;
       /**
        * "Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less" (CR 303.4f, 303.4g,
        * D-207): the Aura card enters the battlefield already attached to the target the effect names, which is not a choice of its controller. Only
@@ -3797,6 +3823,11 @@ export type Effect =
       readonly cost: readonly Cost[];
       readonly effect: Effect;
       readonly optional?: true;
+      /**
+       * "That opponent may pay {X}, where X is the number of cards in their hand" (Champions of Minas Tirith, CR 107.3, 118.12a): the {X} symbols of the mana cost are the number of cards in the
+       * hand of the player asked, counted as that player is asked (a player with no card in hand pays nothing and is not asked: the cost is paid). Only a mana cost whose symbols are {X}.
+       */
+      readonly xIsHandSize?: true;
       /**
        * Marks the payment of an Echo trigger (CR 702.30a, D-127): the decisions it asks carry `upkeep: 'echo'`
        * so that the player is told why they are paying. Only the engine's expansion of Echo sets it.
@@ -4252,7 +4283,12 @@ export type Effect =
         | 'forAsLongAsYouControlThis'
         | 'forAsLongAsThisRemains'
         | 'untilNextUntapStep'
-        | 'thisCombat';
+        | 'thisCombat'
+        /**
+         * "Until your next turn, those creatures can't block" (CR 611.2a, 500.1; Taunt from the Rampart): only with `cantBlock`; the objects named as the effect resolves (CR 611.2c) can't block until the next turn
+         * of the controller of the effect begins, the turn it resolves in not counted (as `grantKeyword` does).
+         */
+        | 'untilYourNextTurn';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -4433,7 +4469,15 @@ export type Effect =
   | {
       readonly kind: 'creaturesCantAttackYou';
       readonly creatures: ObjectFilter;
-      readonly duration: 'untilYourNextTurn';
+      /**
+       * `thisCombat` (Champions of Minas Tirith: "they can't attack you this combat", CR 508.1a, 511.3): it ends as the end of combat step ends (`expireEndOfCombatEffects`), not at the end of the turn.
+       */
+      readonly duration: 'untilYourNextTurn' | 'thisCombat';
+      /**
+       * "That opponent can't attack you this combat" (CR 508.1a, 603.7c): only the creatures this one player controls are barred (the first player the selector names as the effect runs, fixed
+       * then; `creatures` still narrows them, as it does without this). Nobody is named once that player has left the game: nothing is barred.
+       */
+      readonly player?: PlayerSelector;
       /**
        * "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures." (CR 508.1d, 508.1h, 611.2c; Summon: Yojimbo): the creatures are not barred
        * but taxed: each creature `creatures` matches that is declared attacking the controller of the effect as a player costs `tax` (mana only, no {X}) to its own controller, as an `attackTax`
@@ -5011,6 +5055,25 @@ export type Effect =
       readonly player: PlayerSelector;
     }
   /**
+   * "You can't attack that player this turn" (Call for Aid, CR 508.1a, 611.2a): until end of turn no creature the controller of the effect controls (as they are when attackers are declared, a creature that
+   * arrives or changes control later too) can be declared attacking a player `players` names as the effect resolves (CR 611.2c). Only the players: their planeswalkers and battles can still be attacked.
+   */
+  | {
+      readonly kind: 'youCantAttackPlayers';
+      readonly players: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "You can't sacrifice those creatures this turn" (Call for Aid, CR 701.21a, 101.2, 611.2a, 611.2c): until end of turn the controller of the effect can't sacrifice the permanents `objects` names as the
+   * effect resolves, while they control them: `sacrifice` does nothing for them and they are no choice for a cost or an effect that has their controller sacrifice (as `cantBeSacrificed` of a static ability). A
+   * permanent another player controls is not held by it (CR 701.21a: only its controller can sacrifice it).
+   */
+  | {
+      readonly kind: 'youCantSacrifice';
+      readonly objects: ObjectSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
    * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, Jace, Multiverse Architect, issue 81): the creatures `objects` names (fixed as the effect
    * begins) can't be declared attacking a planeswalker of the subtype `subtype` that the controller of the effect controls, until end of turn. The player and their other
    * planeswalkers can still be attacked.
@@ -5519,7 +5582,11 @@ export type Trigger =
   | {
       readonly kind: 'step';
       readonly step: TriggerStep;
-      readonly whose: 'you' | 'each' | 'opponent';
+      /**
+       * `monarch` (Archivist of Gondor, "At the beginning of the monarch's end step", CR 725.2, 603.2b): the turn of the player who is the monarch as the step begins;
+       * with no monarch it never triggers. `triggerPlayer` is that player.
+       */
+      readonly whose: 'you' | 'each' | 'opponent' | 'monarch';
       /**
        * "At the beginning of each of your main phases" (CR 505.1, 603.2b; issue 103): it triggers as `alsoStep` begins too, a second step of the same turn.
        * Never the same as `step`.
@@ -5595,6 +5662,16 @@ export type Trigger =
    */
   | {
       readonly kind: 'dealtDamageToPlayer';
+      readonly who: 'you' | 'opponent' | 'player';
+    }
+  /**
+   * "Whenever damage that would be dealt to you is prevented" (Selfless Squire; CR 615.6, 120.2, 603.2c): damage of any kind, from any source, that would have been dealt to a player `who`
+   * names (`you`: the controller of this ability; `opponent`: a player the controller does not control, CR 113.7a; `player`: any player) and that a prevention effect prevented, once for each
+   * source and each player in one damage event, when at least 1 point was prevented. `triggerDamage` is the amount prevented ("that many") and `triggerPlayer` the player whose damage it was.
+   * Damage that was not prevented, or that was redirected, is not this event (CR 614.9).
+   */
+  | {
+      readonly kind: 'damageToPlayerPrevented';
       readonly who: 'you' | 'opponent' | 'player';
     }
   /**
@@ -5931,6 +6008,18 @@ export type Trigger =
        * each player attacked with `atLeast` or more creatures `what` names, whoever declares them. `triggerAttacked` is that player alone. Not with `attackedEnchantedPlayer`.
        */
       readonly eachAttackedPlayer?: true;
+      /**
+       * "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1, 603.2c): the permanent with the ability must itself be one of the creatures the declaration
+       * holds that match `what`, and `atLeast` counts it (so "and at least two other creatures" is `atLeast` 3). Only with `who` `you`: the creature is the controller's own attacker.
+       */
+      readonly includesSource?: true;
+      /**
+       * "Whenever one or more creatures attack one of your opponents or a planeswalker they control" (Frontier Warmonger, CR 508.1b, 506.3, 603.2c): only the creatures declared as
+       * attacking an opponent of the controller of this ability as a player, or a planeswalker an opponent controls, are counted (a creature attacking the controller, a planeswalker
+       * of the controller or a battle is not), whoever declares them. `triggerAttackers` is then those creatures alone ("those creatures"). Not with `eachAttackedPlayer` or
+       * `attackedEnchantedPlayer`.
+       */
+      readonly attackingYourOpponents?: true;
     }
   /**
    * "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 603.2, 508.1b): once for each player `who` names (relative to the controller
@@ -7174,6 +7263,11 @@ export type Condition =
       /** "If a Food entered the battlefield under your control this turn": subtypes (all of them) it had as it entered. */
       readonly subtypes?: readonly string[];
       readonly token?: boolean;
+      /**
+       * "If another Human entered the battlefield under your control this turn" (Éowyn, Shieldmaiden; CR 400.7): the permanent with the ability does not count, whatever it is. Only where
+       * a permanent has the condition (a triggered ability's intervening "if", a static ability); another reading of the condition fails it.
+       */
+      readonly other?: true;
     }
   /**
    * "As long as this Aura entered this turn" (D-423, CR 400.7, 611.3a): the permanent the condition belongs to entered the battlefield during this turn and is still the same
@@ -7980,7 +8074,14 @@ export type StaticEffect =
    * that step has run, CR 701.43b) and the `exerted` event triggers the abilities linked to this one (`trigger` `exerted`: "When you do, ...", CR 607.2h).
    * It is the ability of the creature itself: its own attack only.
    */
-  | { readonly kind: 'exertOnAttack' }
+  | {
+      readonly kind: 'exertOnAttack';
+      /**
+       * "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant; CR 701.43b: a permanent can be exerted more than once in a turn, so the printed
+       * condition is what limits it): the creature is asked only if it has not been exerted yet this turn, by this or any other exert (`TurnLog.exerted`).
+       */
+      readonly unlessExertedThisTurn?: true;
+    }
   /**
    * "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, 613.4; Galadriel group 3): when its controller taps the creature to pay a
    * crew cost (`tapCreatures`), its power counts `amount` more than the power it has (the power it has is not changed). The engine has Crew and not Saddle, so the part of the ability
@@ -8090,6 +8191,13 @@ export type StaticEffect =
    */
   | { readonly kind: 'goaded'; readonly subject: StaticSubject }
   /**
+   * "The monarch controls enchanted creature." (Fealty to the Realm; CR 613.1b, 613.7, 725.1): the permanent this one is attached to is controlled by the monarch, a layer 2 effect
+   * (`rules/control.ts`, `controllerOf`) with the timestamp of the permanent with the ability, which an Aura gets as it becomes attached (CR 613.7e) and a new monarch does not change.
+   * While there is no monarch it does nothing (the permanent stays with the controller the other layer 2 effects leave it). It ends when the permanent with the ability leaves the
+   * battlefield, stops being attached or loses its abilities (CR 611.3a, 613.1f).
+   */
+  | { readonly kind: 'controlAttached'; readonly by: 'monarch' }
+  /**
    * "Rhonas can't attack or block unless you control another creature with power 4 or greater" (D-145, CR 508.1a, 509.1a, 113.6): the
    * permanent has the restrictions `restrictions` (`cantAttack`, `cantBlock`) except while `unless` holds. `unless` is a full condition, read
    * for the controller of the permanent with the permanent as "this" (a count of permanents may compare power, toughness or keywords),
@@ -8118,6 +8226,11 @@ export type StaticEffect =
       readonly kind: 'costReduction';
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
       readonly amount: Amount;
+      /**
+       * "Flashback {8}{W}{W}. This spell costs {X} less to cast this way" (Visions of Glory, CR 702.34a, 118.9, 601.2f): the spell's own reduction applies only while the spell is cast for the
+       * alternative cost named (`flashback`), not when it is cast from the hand for its mana cost. Only the spell's own reduction (`spells: this`).
+       */
+      readonly forAlternative?: 'flashback';
       /**
        * Eminence (issue 81, The Ur-Sphinx; CR 113.6, 903.8): "As long as ~ is in the command zone or on the battlefield": the reduction also applies while the card with it is one
        * of its owner's commanders in the command zone, with that player as "you". Only with a filter of spells, not `this`.
@@ -8656,7 +8769,15 @@ export type Ability =
        */
       readonly functionsIn?: 'graveyard';
     }
-  | { readonly kind: 'replacement'; readonly replacement: Replacement }
+  | {
+      readonly kind: 'replacement';
+      readonly replacement: Replacement;
+      /**
+       * "As long as this card is in your graveyard, each Human creature you control enters with an additional +1/+1 counter on it." (Dearly Departed, CR 113.6b, 614.1c, 614.12): the
+       * replacement works while its card is in its owner's graveyard, and not on the battlefield; "you" is the owner of the card. Only an `othersEnterWithCounters` replacement.
+       */
+      readonly functionsIn?: 'graveyard';
+    }
   | {
       readonly kind: 'triggered';
       readonly trigger: Trigger;

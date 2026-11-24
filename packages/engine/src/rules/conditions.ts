@@ -587,7 +587,7 @@ export function evaluateCondition(
       return attackersTotalPower(state, ctx.controller) >= condition.atLeast;
     case 'enteredThisTurn':
       // D-151: permanents that entered under the controller's control this turn (Celebration).
-      return enteredThisTurnHolds(state, ctx.controller, condition);
+      return enteredThisTurnHolds(state, ctx.controller, condition, ctx.source);
     case 'thisEnteredThisTurn':
       // D-423, CR 400.7: the source is the object that entered the battlefield this turn (a permanent that left and came back is a new object).
       return ctx.source !== null && state.turnLog.entered.some((e) => e.object === ctx.source);

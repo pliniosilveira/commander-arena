@@ -41,6 +41,7 @@ import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
 import { MELD_STATIC_RULES } from './meld';
+import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
 import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
@@ -126,6 +127,8 @@ export const STATIC_RULES = [
   ...VRASKA_STATIC_RULES,
   // Stage P31 (D-140): flash for a kind of spell, what a linked exile gives, and "unless that player is the monarch".
   ...ARTIFACT_STATIC_RULES,
+  // Fealty to the Realm: "The monarch controls enchanted creature."
+  ...MONARCH_CONTROL_STATIC_RULES,
   // Issue 144 (Conspicuous Snoop): "As long as the top card of your library is a Goblin card, ~ has all activated abilities of that card."
   ...F144_STATIC_RULES,
   // Stage P32 (D-147): can't attack or block unless, an Aura that makes the creature something else, +X/+X for the commanders.

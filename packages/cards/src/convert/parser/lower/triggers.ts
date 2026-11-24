@@ -15,6 +15,7 @@ import type {
   TriggerStep,
   TriggerSubject,
 } from '@commander-arena/engine';
+import { ATTACKERS_REF } from '../ir/bind';
 import {
   type IrAbility,
   type IrAmount,
@@ -340,6 +341,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: 'dealtDamageToPlayer', who: t.damaged });
     }
+    case 'damageToPlayerPrevented': {
+      // "Whenever damage that would be dealt to you is prevented" (Selfless Squire, CR 615.6, 603.2c): damage to a player a prevention effect prevented, once for each source.
+      if (t.damaged !== 'you' && t.damaged !== 'opponent' && t.damaged !== 'player') {
+        return failure(t);
+      }
+      const missing = missingFeatures(['trigger:damageToPlayerPrevented']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'damageToPlayerPrevented', who: t.damaged });
+    }
     case 'noncombatDamageDealt': {
       // "Whenever a source you control deals noncombat damage to an opponent" (issue 25, D-333, CR 120.2b, 603.2c): whose source it is and which player it damaged.
       if (t.by === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
@@ -554,6 +564,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'upkeep':
     case 'endStep': {
+      // "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` of whoever is the monarch.
+      if (t.monarchTurn === true) {
+        const blocked = missingFeatures(['trigger:stepMonarch']);
+        if (blocked.length > 0) return { ...failure(t), needs: blocked };
+        return ok({ kind: 'step', step: t.event, whose: 'monarch' });
+      }
       const whose = whoseOf(t.actor);
       if (whose === null) return failure(t);
       // The engine's `upkeep` and `endStep` are for you and each player; another player's turn is `step`.
@@ -690,6 +706,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
+        ...(t.includesSource === true ? { includesSource: true as const } : {}),
+        ...(t.attackingYourOpponents === true ? { attackingYourOpponents: true as const } : {}),
       });
     }
     case 'entersBatch': {
@@ -896,7 +914,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       only.event === 'combatDamageBatch' ||
       only.event === 'damageBatch' ||
       only.event === 'noncombatDamageDealt' ||
-      only.event === 'playerDealtDamage') &&
+      only.event === 'playerDealtDamage' ||
+      only.event === 'damageToPlayerPrevented') &&
       only.recipient !== undefined);
   // The beginning of a step of another player's turn (CR 102.1: the active player is the player whose turn it is; CR 603.2b): "that player" is the active player, the engine's occurrence player of
   // `step`, `upkeep` and `endStep` (the beginning of your own step was answered above: "you").
@@ -1130,6 +1149,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       e.event === 'lifeGained' ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
+      e.event === 'damageToPlayerPrevented' ||
       // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.
       e.event === 'dealsCombatDamage' ||
       e.event === 'dealsDamage',
@@ -1403,7 +1423,18 @@ export function lowerTriggered(
   if (blocked.length > 0) return failure(written, blocked);
   return {
     ...lowered,
-    value: [{ kind: 'static', static: { kind: 'exertOnAttack' } }, ...lowered.value],
+    value: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'exertOnAttack',
+          ...(written.trigger.unlessExertedThisTurn === true
+            ? { unlessExertedThisTurn: true as const }
+            : {}),
+        },
+      },
+      ...lowered.value,
+    ],
   };
 }
 
@@ -1439,6 +1470,15 @@ function lowerTriggeredAbility(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  // Frontier Warmonger (CR 603.2c): "those creatures" of "Whenever one or more creatures attack one of your opponents or a planeswalker they control" are the creatures
+  // that attacked them, the engine's `triggerAttackers`.
+  if (
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attackBatch' && t.attackingYourOpponents === true)
+  ) {
+    const blocked = missingFeatures(['selector:triggerAttackers']);
+    if (blocked.length === 0) ctx.eachMentions.set(ATTACKERS_REF, { kind: 'triggerAttackers' });
+  }
   // D-648: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
   ctx.attackedPlayer =
     events.length === 1 && events[0]?.event === 'playerAttacksOpponent'
@@ -2094,6 +2134,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:lifeLost',
   'trigger:noncombatDamageDealt',
   'trigger:dealtDamageToPlayer',
+  'trigger:damageToPlayerPrevented',
   'trigger:countersAdded',
   'trigger:attackBatch',
   'trigger:unblockedAttackBatch',

@@ -84,6 +84,7 @@ The ready-made decks work without any setup:
 | Revival Trance | A Commander precon led by Terra, Herald of Hope. |
 | Counter Blitz | A Commander precon led by Tidus, Yuna's Guardian. |
 | Counter Intelligence | A Commander precon led by Kilo, Apogee Mind. |
+| Riders of Rohan | A Commander precon led by Éowyn, Shieldmaiden. |
 
 ## Playing with your own deck
 
