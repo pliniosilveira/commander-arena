@@ -4287,6 +4287,21 @@ export type Effect =
    */
   | { readonly kind: 'myriad'; readonly opponent?: SeatId }
   /**
+   * "If a permanent dealt damage this way would die this turn, exile it instead." (CR 614.1a, 614.6, 700.4; Chandra, Awakened Inferno): each permanent `objects` names that is on the
+   * battlefield is marked until the end of this turn (`GameObject.exileIfDiesTurn`): if it would be put into a graveyard from the battlefield that turn, for any reason (lethal damage,
+   * destroy, sacrifice, state-based actions), it is exiled instead. It belongs to the object, not to an ability. A card puts it behind a `conditional` on the damage the effects before it
+   * dealt, so a permanent that took no damage (it was prevented) is not marked.
+   */
+  | {
+      readonly kind: 'exileIfDiesThisTurn';
+      readonly objects: ObjectSelector;
+      /**
+       * "dealt damage this way": only when the `dealDamage` effects of this resolution before it dealt some damage (`thisWay` `damageDealt`, at least 1: damage that was prevented is not
+       * dealt, CR 615.6); with none, nothing is marked. Needs a `dealDamage` before it in the same resolution.
+       */
+      readonly ifDamageDealt?: true;
+    }
+  /**
    * "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6, D-459): the second half of a reanimation like
    * Whip of Erebos', after the effect of the same sequence that put the permanents onto the battlefield (`moveToZone`, `objects` is `moved`): each permanent it names that is
    * on the battlefield is marked (`GameObject.exileIfLeaves`), and from then on, whatever would move it from the battlefield to another zone moves it to exile instead

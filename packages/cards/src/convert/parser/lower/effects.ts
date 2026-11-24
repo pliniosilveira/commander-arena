@@ -464,6 +464,17 @@ const DAMAGE: Lowering<IrClause, Effects> = {
         ...(from === undefined ? {} : { from }),
       });
     }
+    // "If a permanent dealt damage this way would die this turn, exile it instead" (Chandra, Awakened Inferno; CR 614.1a, 614.6): a rider on the one damage to a target. The permanent is
+    // marked only when damage was dealt to it (prevented damage is not "dealt this way", CR 615.6), the engine's `exileIfDiesThisTurn` with `ifDamageDealt`.
+    if (arg(clause, 'exileIfDies') !== undefined) {
+      const [only] = effects;
+      if (effects.length !== 1 || only?.kind !== 'dealDamage' || only.to.kind !== 'target') {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['effect:exileIfDiesThisTurn']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      effects.push({ kind: 'exileIfDiesThisTurn', objects: only.to, ifDamageDealt: true });
+    }
     return { ok: true, value: effects, rule: clause.rule };
   },
 };

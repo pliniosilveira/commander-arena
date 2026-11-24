@@ -180,6 +180,12 @@ export interface GameObject {
    */
   readonly exileIfLeaves?: true;
   /**
+   * "If a permanent dealt damage this way would die this turn, exile it instead" (CR 614.1a, 614.6, Chandra, Awakened Inferno), set by the effect `exileIfDiesThisTurn`: the number of the
+   * turn (`TurnState.number`) it holds for. A permanent so marked is exiled instead of being put into a graveyard from the battlefield during that turn. Not a copiable value; a new
+   * object after any zone change (CR 400.7) has none.
+   */
+  readonly exileIfDiesTurn?: number;
+  /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
    * It is not a card and not a permanent, never leaves the command zone (CR 114.5) and is not a token that ceases to exist there (CR 704.5d is about the

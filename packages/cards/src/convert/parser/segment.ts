@@ -534,6 +534,13 @@ const PUT_THOSE_CARDS_SHUFFLE_REST =
  */
 const SEARCH_UP_TO_X_FIRST = /^search your library for up to X [^.,]*, where X is [^.]*\.$/i;
 const REVEAL_THOSE_PUT_SHUFFLE = /^reveal those cards, put them into your hand, then shuffle\.$/i;
+/**
+ * "~ deals 3 damage to target creature or planeswalker. If a permanent dealt damage this way would die this turn, exile it instead." (Chandra, Awakened Inferno, CR 614.1a): the damage
+ * and the replacement of what it kills are one instruction, kept together for `effect.damage-exile-if-dies`.
+ */
+const DEALS_DAMAGE_TO_TARGET = /^~ deals [^.]* damage to target [^.]*\.$/i;
+const EXILE_IF_WOULD_DIE_THIS_TURN =
+  /^if (?:a permanent dealt damage this way|that (?:creature|permanent)) would die this turn, exile it instead\.$/i;
 const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
 
 /**
@@ -1314,6 +1321,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       b !== undefined &&
+      said(a, DEALS_DAMAGE_TO_TARGET) &&
+      said(b, EXILE_IF_WOULD_DIE_THIS_TURN)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
       said(a, SEARCH_UP_TO_X_FIRST) &&
       said(b, REVEAL_THOSE_PUT_SHUFFLE)
     ) {
@@ -1753,6 +1768,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     // Issue 81 (Omnath): "If you would lose unspent mana, that mana becomes colorless instead." is a static ability of the permanent about its controller's pool (`static.unspent-mana-colorless`).
     (/ would /.test(text) &&
       / instead\b/.test(text) &&
+      // Chandra, Awakened Inferno: the second sentence of an instruction that deals damage is a rider of it, not a replacement effect of the ability.
+      !/\. if (?:a permanent dealt damage this way|that (?:creature|permanent)) would die this turn, exile it instead\.$/iu.test(
+        text,
+      ) &&
       !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text))
   ) {
     return { ...base, head: 'replacement' };

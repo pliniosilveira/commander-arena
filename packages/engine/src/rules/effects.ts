@@ -2169,6 +2169,18 @@ function runEffect(
       });
     }
 
+    case 'exileIfDiesThisTurn': {
+      // CR 614.1a, 614.6 (Chandra, Awakened Inferno): each permanent named is marked for the rest of this turn; `moveObject` exiles it when it would die.
+      let next = state;
+      if (effect.ifDamageDealt === true && (ctx.thisWay?.damageDealt ?? 0) < 1) return done(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        if (next.objects[id]?.zone === 'battlefield') {
+          next = patchObject(next, id, { exileIfDiesTurn: state.turn.number });
+        }
+      }
+      return done(next);
+    }
+
     case 'exileIfLeaves': {
       // CR 614.1a, 614.6 (D-459): "If it would leave the battlefield, exile it instead of putting it anywhere else": each permanent the effect before it put onto the
       // battlefield is marked; `moveObject` exiles it when it would go anywhere else. A token the effect named is marked too (it ceases to exist in exile, CR 111.8).

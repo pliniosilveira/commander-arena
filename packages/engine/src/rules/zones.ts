@@ -474,6 +474,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 614.1a, 614.6 (Chandra, Awakened Inferno): "If a permanent dealt damage this way would die this turn, exile it instead": the permanent the effect marked this turn.
+  if (
+    old.zone === 'battlefield' &&
+    to === 'graveyard' &&
+    old.exileIfDiesTurn !== undefined &&
+    old.exileIfDiesTurn === state.turn.number
+  ) {
+    to = 'exile';
+    toSeat = null;
+  }
   // CR 122.1h (D-230): "If this permanent would be put into a graveyard from the battlefield, exile it instead": the replacement effect that one or more
   // finality counters create (Excava, the Risen Past). It belongs to the object, not to an ability, so it holds when the permanent lost its abilities.
   if (old.zone === 'battlefield' && to === 'graveyard' && (old.counters.finality ?? 0) > 0) {

@@ -488,6 +488,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'myriad',
     // D-459: "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a).
     'exileIfLeaves',
+    // Chandra, Awakened Inferno: "If a permanent dealt damage this way would die this turn, exile it instead."
+    'exileIfDiesThisTurn',
     // D-145: "reveal cards from the top of your library until you reveal a land card. Put it onto the battlefield tapped and the rest
     // on the bottom in a random order" (CR 701.20).
     'revealUntil',
@@ -3217,6 +3219,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedSacrifice: true,
   myriad: true,
   exileIfLeaves: true,
+  exileIfDiesThisTurn: true,
   proliferate: true,
   eachPlayerChoosesDestroy: true,
   chooseOnePerOpponentDestroy: true,

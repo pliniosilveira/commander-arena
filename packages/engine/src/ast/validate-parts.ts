@@ -6693,6 +6693,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'exileIfDiesThisTurn':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.ifDamageDealt !== undefined && e.ifDamageDealt !== true) {
+        issue(out, `${path}.ifDamageDealt`, 'ifDamageDealt must be true when present');
+      }
+      break;
     case 'exileIfLeaves':
       // CR 614.1a (D-459): the object is what the effect before it put onto the battlefield.
       if (kindOf(e.objects) !== 'moved') {

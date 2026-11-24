@@ -181,6 +181,7 @@ import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
+import { PLANESWALKER_PARTY_EFFECT_RULES } from './planeswalker-party';
 import {
   EFFECT_DISCARD,
   EFFECT_DISCARD_HAND,
@@ -1344,6 +1345,8 @@ export const EFFECT_RULES = [
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
+  // Planeswalker Party deck (Chandra, Awakened Inferno): the damage and the exile of what dies, before the plain damage, which would read the first sentence and leave the rest.
+  ...PLANESWALKER_PARTY_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
