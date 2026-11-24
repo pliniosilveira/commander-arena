@@ -774,6 +774,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'flanking',
     'extort',
     'affinity',
+    // CR 702.125a: Undaunted.
+    'undaunted',
     'convoke',
     'improvise',
     'delve',
@@ -3376,6 +3378,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flanking: true,
   extort: true,
   affinity: true,
+  undaunted: true,
   convoke: true,
   improvise: true,
   delve: true,
