@@ -141,6 +141,20 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
   ]
     .filter(Boolean)
     .join(' ');
+  const picture = isFaceDownPermanent(o) ? (
+    // D-315: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
+    <FaceDownArt version="art_crop" className="board-tile-art" />
+  ) : (
+    <Art
+      name={art.name}
+      back={art.back}
+      isToken={o.isToken}
+      eager
+      {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
+      version={top === null ? 'art_crop' : 'normal'}
+      className={top === null ? 'board-tile-art' : 'board-tile-art board-tile-top'}
+    />
+  );
   return (
     <button
       type="button"
@@ -179,26 +193,19 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
         pairing.setFocus([]);
       }}
     >
-      {count > 1 && <span className="board-tile-stack" aria-hidden="true" />}
+      {count > 1 && (
+        // Two cards behind the front one, each drawn with the card's own picture, so the stack reads as cards.
+        <span className="board-tile-stack" aria-hidden="true">
+          <span className="board-tile-layer">{picture}</span>
+          <span className="board-tile-layer">{picture}</span>
+        </span>
+      )}
       <span className="board-tile-inner">
         <span
           className="board-tile-band"
           style={{ background: bandBackground(framed ? frameColors(o) : o.colors) }}
         />
-        {isFaceDownPermanent(o) ? (
-          // D-315: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
-          <FaceDownArt version="art_crop" className="board-tile-art" />
-        ) : (
-          <Art
-            name={art.name}
-            back={art.back}
-            isToken={o.isToken}
-            eager
-            {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
-            version={top === null ? 'art_crop' : 'normal'}
-            className={top === null ? 'board-tile-art' : 'board-tile-art board-tile-top'}
-          />
-        )}
+        {picture}
         {top !== null && top.cover < 1 && (
           // A frame whose type line stands higher (a planeswalker): what the cut would show under it is covered.
           <span

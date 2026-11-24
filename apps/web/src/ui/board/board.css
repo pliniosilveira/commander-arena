@@ -1297,32 +1297,36 @@
   display: inline-flex;
 }
 
-.board-tile-stack,
-.board-tile-stack::before {
-  position: absolute;
-  /* Far lighter than a tile, with a dark edge between them, so the cards behind the front one read as cards on any board. */
-  background: color-mix(in srgb, var(--text) 75%, var(--bg-raised));
-  border: 1px solid var(--bg-sunken);
-  border-radius: 6px;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--bg-sunken) 80%, transparent);
-}
-
-/* A stack of equal permanents: the front card is a little smaller than its tile and two cards stand behind it, up and to the
-   right, whatever the number (the count says how many, the stack says "several"). All of it is inside the tile's own box, so no
-   row clips it and no neighbour covers it. */
+/* A stack of equal permanents: the front card is a little smaller than its tile (in the same shape, so its picture is cut
+   where a single card's is) and two cards stand behind it, up and to the right, whatever the number: the count says how many,
+   the stack says "several". Each card behind is drawn with the card's own picture, a little darker the further back, so what
+   shows of it is the edge of a real card. All of it is inside the tile's own box: no row clips it, no neighbour covers it. */
 .board-tile.is-group .board-tile-inner {
-  inset: 8px 12px 0 0;
+  inset: 11px 12px 0 0;
+  /* The tile's centre, so a tapped front card turns with the cards behind it. */
+  transform-origin: calc(50% + 6px) calc(50% - 5.5px);
 }
 
 .board-tile-stack {
-  inset: 0 0 8px 12px;
+  position: absolute;
+  inset: 0;
+  transition: transform 0.22s ease;
 }
 
-/* The nearer of the two, drawn over the farther one. */
-.board-tile-stack::before {
-  content: "";
-  inset: -1px;
-  transform: translate(-6px, 4px);
+.board-tile-layer {
+  position: absolute;
+  inset: 0 0 11px 12px;
+  overflow: hidden;
+  background: var(--bg-raised);
+  border: 1px solid var(--bg-sunken);
+  border-radius: 6px;
+  box-shadow: -1px 1px 3px color-mix(in srgb, var(--bg-sunken) 90%, transparent);
+  filter: brightness(0.6);
+}
+
+.board-tile-layer + .board-tile-layer {
+  inset: 5.5px 6px 5.5px 6px;
+  filter: brightness(0.8);
 }
 
 /* A stack is tapped or untapped as a whole (grouping never mixes the two), so the cards behind the front one tilt with it. */

@@ -13,9 +13,10 @@ const IMAGE_H = 680;
 
 /**
  * Where the type line ends on the regular modern frame, as a share of the card's height. Measured
- * on five cards the owner supplied (a creature, an enchantment, a land, a multicoloured card).
+ * on five cards the owner supplied (a creature, an enchantment, a land, a multicoloured card), then
+ * lowered from 0.632: that cut showed a thin strip of the frame under the type box (issue 579).
  */
-const REGULAR_CUT = 0.632;
+const REGULAR_CUT = 0.626;
 /** A planeswalker's type line stands higher (measured on one modern planeswalker). */
 const PLANESWALKER_CUT = 0.55;
 /**

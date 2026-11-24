@@ -35,8 +35,8 @@ describe('the top of the printed card on a tile', () => {
   test('a tile is wider than tall, and keeps that shape at any width', () => {
     expect(CARD_TOP_ASPECT).toBeGreaterThan(1.05);
     expect(CARD_TOP_ASPECT).toBeLessThan(1.2);
-    expect(cardTopHeight(150)).toBe(136);
-    expect(cardTopHeight(135)).toBe(123);
+    expect(cardTopHeight(150)).toBe(135);
+    expect(cardTopHeight(135)).toBe(121);
   });
 
   test('a regular card shows its whole top; a planeswalker is covered under its higher type line', () => {
