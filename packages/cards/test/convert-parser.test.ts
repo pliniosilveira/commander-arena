@@ -1445,6 +1445,7 @@ describe('unmatched abilities', () => {
       'static.cast-self-as-though-flash',
       'static.linked-exile',
       'static.attached-unless-monarch',
+      'static.monarch-controls-attached',
       'static.top-card-abilities',
       'static.linked-exile-abilities',
       'static.cant-attack-block-unless',

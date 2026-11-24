@@ -1470,6 +1470,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
+    // Fealty to the Realm: "The monarch controls enchanted creature." (CR 613.1b, 725.1).
+    'controlAttached',
     // D-125: "You may play an additional land on each of your turns."
     'additionalLandDrops',
     // D-125: "You may look at the top card of your library any time."
@@ -2599,6 +2601,8 @@ export const STATIC_KINDS = [
   'grantEnergyAlternative',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
+  /** "The monarch controls enchanted creature." (CR 613.1b, 725.1): the engine's `controlAttached`. */
+  'controlAttached',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */

@@ -549,12 +549,24 @@ function effectOf(
         return ok({
           kind: 'cantAttackYou',
           creatures: { hostOfSource: true },
-          planeswalkers: true,
+          // Riders of Rohan, group E (Fealty to the Realm): "can't attack you" bars the player only.
+          ...(effect.playersOnly === true ? {} : { planeswalkers: true as const }),
         });
       }
+      if (effect.playersOnly === true) return failure(at);
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
+    case 'controlByMonarch': {
+      // CR 613.1b, 725.1 (Fealty to the Realm): "The monarch controls enchanted creature.": only the creature an Aura is attached to, with no other modifier.
+      const plain =
+        subject.kind === 'attached' &&
+        subject.types?.length === 1 &&
+        subject.types[0] === 'creature' &&
+        Object.keys(subject).length === 2;
+      if (!plain) return failure(at);
+      return ok({ kind: 'controlAttached', by: 'monarch' });
+    }
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
@@ -615,6 +627,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
+    case 'controlByMonarch':
+      return ['static:controlAttached'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':

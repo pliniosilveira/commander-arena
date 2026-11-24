@@ -99,6 +99,11 @@ export interface GameObject {
    * that is later than the start of their turn (`rules/control.ts`, `controlledSince`). Absent for a permanent whose control never went back.
    */
   readonly controlChangedAt?: number;
+  /**
+   * The controller this permanent had when a static control effect on it ("The monarch controls enchanted creature.", `rules/static-control.ts`) was last looked at, set only
+   * while one applies to it: the state-based actions compare it with the controller it has now to see the effect begin, change hands or end (`rules/static-control-sync.ts`).
+   */
+  readonly staticControlSeen?: SeatId;
   /** Tokens carry their own characteristics and abilities. */
   readonly token: TokenData | null;
   /**
