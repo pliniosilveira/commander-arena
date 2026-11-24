@@ -440,6 +440,7 @@ describe('supported feature gate', () => {
       'interveningIf',
       'alone',
       'attacksAt',
+      'attacksWithOthers',
       // D-135: "enters untapped" and "dies or is put into exile".
       'entersUntapped',
       'leavesToAnyOf',

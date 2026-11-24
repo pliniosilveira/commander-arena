@@ -145,6 +145,65 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.add-counters-each-of-those`: "put a +1/+1 counter on each of those creatures" (Unbreakable Formation, CR 608.2c, 122.1): counters on the group an earlier instruction of the text
+ * named, which the binding pass resolves as it does "those creatures". Its words are those of `noun.paired-creatures` (a static ability), so the group is read here, after "counters on".
+ * Not read: a count with "for each", "those creatures you control", "each of those" alone, other things than creatures.
+ */
+export const EFFECT_ADD_COUNTERS_EACH_OF_THOSE = defineRule<Clauses>({
+  id: 'effect.add-counters-each-of-those',
+  family: 'effect',
+  leading: ['put'],
+  cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 122.1 (Counters)'],
+  examples: [
+    'put a +1/+1 counter on each of those creatures',
+    'put two +1/+1 counters on each of those creatures',
+  ],
+  rejects: [
+    'put a +1/+1 counter on each of those creatures you control',
+    'put a +1/+1 counter on each of those',
+    'put a +1/+1 counter on each of those creatures for each creature you control',
+    'put a +1/+1 counter on each of those permanents',
+    'put a +1/+1 counter on those creatures',
+  ],
+  parse: single(
+    'effect.add-counters-each-of-those',
+    sequence(
+      literal('put '),
+      family<IrAmount>('amount', { only: ['amount.number', 'amount.article'] }),
+      literal(' '),
+      map(
+        spanned(pattern(COUNTER_NAME)),
+        ({ value, span }): IrCounterSpec => ({
+          kind: 'counterSpec',
+          name: value[0].toLowerCase(),
+          span,
+          rule: 'effect.add-counters-each-of-those',
+        }),
+      ),
+      pattern(/ counters? on /i),
+      spanned(pattern(/each of those creatures(?![\p{L}\p{N}'’])(?! you control)/iu)),
+    ),
+    ([, count, , counter, , group]) => ({
+      verb: 'addCounters',
+      args: {
+        count,
+        counter,
+        objects: {
+          kind: 'noun',
+          det: 'anaphor',
+          filter: { raw: 'those creatures' },
+          upTo: false,
+          plural: true,
+          other: false,
+          span: group.span,
+          rule: 'effect.add-counters-each-of-those',
+        } satisfies IrNoun,
+      },
+    }),
+  ),
+});
+
 /** The objects the counters of a kind can be doubled on: this permanent, "it", a target, or a group as the effect resolves. */
 const DOUBLE_COUNTER_OPERANDS = [
   'noun.self',
@@ -715,6 +774,7 @@ export const COUNTER_RULES = [
   // Before the plain rule, which would read the first half and leave " and a +1/+1 counter on ..." unread.
   EFFECT_ADD_COUNTERS_SELF_AND_OTHER,
   EFFECT_ADD_COUNTERS_OTHER_AND_SELF,
+  EFFECT_ADD_COUNTERS_EACH_OF_THOSE,
   EFFECT_ADD_COUNTERS,
   EFFECT_DOUBLE_COUNTERS,
   EFFECT_DOUBLE_PLAYER_COUNTERS,

@@ -178,9 +178,9 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (filter.controller !== undefined) return fail(ctx, end);
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
-    } else if (filter.attacking === true && other.value && filter.controller === undefined) {
+    } else if (filter.attacking === true && filter.controller === undefined) {
       // CR 508.1k (Ghalta and Mavren): "other attacking creatures" names the objects by what they do, whoever controls them, and needs no "on the battlefield".
-      // Only with "other": the creatures attacking besides the source.
+      // With "other": the creatures attacking besides the source. Without (Jazal Goldmane, "the number of attacking creatures"): every attacking creature.
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
       const itsController = targeted.ok ? null : ITS_CONTROLLER_CONTROLS(ctx, end);

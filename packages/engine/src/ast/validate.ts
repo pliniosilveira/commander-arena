@@ -1064,7 +1064,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
   if (at !== undefined) {
     if (t?.kind !== 'attacks') {
       issue(out, `${path}.at`, 'at (whom it attacks) belongs to an attacks trigger');
-    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers'])) {
+    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers', 'opponent'])) {
       issue(out, `${path}.at`, `unknown attack target ${JSON.stringify(at)}`);
     }
   }
@@ -1126,6 +1126,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-110: "attacks alone" (CR 506.5) is a flag of the attacks trigger.
       if (t.kind === 'attacks' && t.alone !== undefined && t.alone !== true) {
         issue(out, `${path}.alone`, 'alone must be true when present');
+      }
+      // CR 508.1, 603.2 (Battalion): "~ and at least two other creatures attack" counts the other creatures of the declaration.
+      if (
+        t.kind === 'attacks' &&
+        t.withOthers !== undefined &&
+        (!Number.isInteger(t.withOthers) || t.withOthers < 1 || t.alone === true)
+      ) {
+        issue(
+          out,
+          `${path}.withOthers`,
+          'withOthers must be a whole number of 1 or more, and it does not go with alone',
+        );
       }
       // D-151: "attacks for the first time each turn".
       if (
@@ -2181,10 +2193,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
-        ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
+        ...(a.trigger?.kind === 'attackBatch' ||
+        a.trigger?.kind === 'playerAttacksOpponent' ||
+        (a.trigger?.kind === 'attacks' && a.trigger.at === 'opponent')
           ? { triggerAttacked: true }
           : {}),
         ...(a.trigger?.kind === 'playerAttacksOpponent' ||
+        (a.trigger?.kind === 'attacks' && a.trigger.at === 'opponent') ||
         (a.trigger?.kind === 'attackBatch' && a.trigger.eachAttackedPlayer === true)
           ? { triggerAttackedSingle: true }
           : {}),

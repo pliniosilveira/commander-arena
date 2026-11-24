@@ -5230,6 +5230,11 @@ export type Trigger =
       readonly what: TriggerSubject;
       readonly alone?: true;
       /**
+       * "Whenever ~ and at least two other creatures attack" (Battalion, CR 207.2c, 508.1, 603.2; Frontline Medic): only when at least this many creatures besides the one the
+       * trigger is about were declared as attackers in the same declaration. A whole number of 1 or more; not with `alone`.
+       */
+      readonly withOthers?: number;
+      /**
        * "Whenever this creature attacks for the first time each turn" (D-151): only the first time this creature has been declared as an attacker this
        * turn (it may attack again in an additional combat phase, CR 500.8).
        */
@@ -5239,7 +5244,7 @@ export type Trigger =
        * ability as a player) or "attacks you or a planeswalker you control" (`youOrPlaneswalkers`: also an attack on a
        * planeswalker that controller controls). Left out, an attack on anyone triggers it.
        */
-      readonly at?: 'you' | 'youOrPlaneswalkers';
+      readonly at?: 'you' | 'youOrPlaneswalkers' | 'opponent';
     }
   /**
    * "Whenever you cast a spell", "whenever an opponent casts a spell" (CR 601.2i, 603.2): `by` is the

@@ -24,6 +24,7 @@ import {
 } from '../../combinators';
 import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { romanValue } from '../../roman';
+import { quantity } from '../amount/index';
 import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
@@ -348,8 +349,11 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
     'another creature attacks you',
     'a creature with flying attacks you or a planeswalker you control',
     'a nontoken creature attacks you',
+    'a creature attacks one of your opponents',
   ],
   rejects: [
+    'a creature attacks one of your opponent',
+    'a creature attacks one of your opponents and',
     'a creature attacks',
     'a creature attacks you or',
     'a creature attacks you or a planeswalker',
@@ -369,6 +373,11 @@ export const TRIGGER_ATTACKS_YOU = defineRule<IrTrigger>({
           () => 'youOrPlaneswalkers' as const,
         ),
         map(pattern(/ attacks you(?![\p{L}\p{N}]| or )/iu), () => 'you' as const),
+        // CR 508.1b, 508.6, 603.2 (Calculating Lich): a creature declared as attacking one of the controller's opponents as a player.
+        map(
+          pattern(/ attacks one of your opponents(?![\p{L}\p{N}'’]| (?:and|or)(?![\p{L}\p{N}]))/iu),
+          () => 'opponent' as const,
+        ),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -426,6 +435,57 @@ export const TRIGGER_ATTACKS_ALONE = defineRule<IrTrigger>({
           subject: r.value[0],
         }),
         alone: true,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `trigger.attacks-with-others`: "~ and at least two other creatures attack" (Battalion, Frontline Medic; CR 207.2c ability word, 508.1, 603.2): the engine's `attacks` of this
+ * creature with `withOthers`, the number of other creatures the same declaration must hold. Not read: another subject, "one other", "at most", more words after "attack".
+ */
+export const TRIGGER_ATTACKS_WITH_OTHERS = defineRule<IrTrigger>({
+  id: 'trigger.attacks-with-others',
+  family: 'trigger',
+  leading: ['~'],
+  cites: [
+    'CR 207.2c (Ability Words)',
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 603.2 (Handling Triggered Abilities)',
+  ],
+  examples: [
+    '~ and at least two other creatures attack',
+    '~ and at least three other creatures attack',
+  ],
+  rejects: [
+    '~ and at least two other creatures attacks',
+    '~ and at least two other creatures attack alone',
+    '~ and at least two other creatures attack you',
+    '~ and at least one other creature attack',
+    '~ and two other creatures attack',
+    '~ and at most two other creatures attack',
+    'a creature and at least two other creatures attack',
+    '~ attacks',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(literal('~')),
+      literal(' and at least '),
+      satisfy(quantity, (n) => n >= 2),
+      pattern(/ other creatures attack(?![\p{L}\p{N}'’])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        ...trigger('trigger.attacks-with-others', span, 'attacks', {
+          subject: makeNoun('trigger.attacks-with-others', r.value[0].span, 'self', {
+            raw: '~',
+          }),
+        }),
+        withOthers: r.value[2],
       },
       pos: r.pos,
     };
@@ -1396,6 +1456,7 @@ export const TRIGGER_RULES = [
   // Before the plain event: "attacks" is a prefix of "attacks alone" and of "attacks you or a planeswalker you control"
   // (stage P29), and the first rule that reads a prefix wins.
   TRIGGER_ATTACKS_YOU,
+  TRIGGER_ATTACKS_WITH_OTHERS,
   TRIGGER_ATTACKS_ALONE,
   // Stage P32 (D-147): "attacks while you don't control another Dinosaur", of which "attacks" is a prefix.
   ...DINOSAUR_TRIGGER_RULES,

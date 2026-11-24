@@ -646,6 +646,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'interveningIf',
     'alone',
     'attacksAt',
+    'attacksWithOthers',
     'entersUntapped',
     'leavesToAnyOf',
     // D-145: "attacks while you don't control another Dinosaur" (`triggerCondition`).
@@ -970,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // `mana` cost, with the value announced as the spell is cast or the ability activated.
   costKinds: [
     'tap',
+    // CR 107.6 (Order of Whiteclay): the untap symbol {Q}, "Untap this permanent".
+    'untap',
     'mana',
     'payLife',
     'payXLife',
@@ -2018,6 +2021,8 @@ export const TRIGGER_FEATURES = [
   'interveningIf',
   'alone',
   'attacksAt',
+  /** "Whenever ~ and at least two other creatures attack" (Battalion, CR 207.2c, 508.1): the engine's `attacks` with `withOthers`. */
+  'attacksWithOthers',
   'entersUntapped',
   'leavesToAnyOf',
   /** "Whenever it attacks while you don't control another Dinosaur" (CR 603.2, D-145): the engine's `triggerCondition`. */
@@ -3288,6 +3293,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   interveningIf: true,
   alone: true,
   attacksAt: true,
+  attacksWithOthers: true,
   entersUntapped: true,
   leavesToAnyOf: true,
   triggerCondition: true,

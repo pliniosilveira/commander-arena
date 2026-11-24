@@ -269,11 +269,17 @@ function occurrences(
       if (event.kind !== 'attackersDeclared') return [];
       // CR 506.5, 702.83b: a creature attacks alone if it is the only creature declared as an attacker.
       if (trigger.alone === true && event.attackers.length !== 1) return [];
+      // CR 508.1, 603.2 (Battalion): "and at least two other creatures attack": the declaration holds the creature and that many others.
+      if (trigger.withOthers !== undefined && event.attackers.length - 1 < trigger.withOthers) {
+        return [];
+      }
       return event.attackers.map((a) => ({
         subject: a.object,
         seat: event.seat,
         attackTarget: a.target,
         player: event.seat,
+        // CR 508.6: the player this creature attacks (not a planeswalker or battle), what "that player" of an `at: 'opponent'` trigger is.
+        ...(a.target.kind === 'player' ? { attacked: [a.target.seat] } : {}),
       }));
     case 'castSpell':
       // D-218 (CR 707.10): a copy put onto the stack is not cast, but "cast or copy" counts it, under the control of the player who has it.
@@ -872,12 +878,14 @@ function matchesWhat(
  */
 function attacksAt(
   state: GameState,
-  at: 'you' | 'youOrPlaneswalkers' | undefined,
+  at: 'you' | 'youOrPlaneswalkers' | 'opponent' | undefined,
   target: AttackTarget | undefined,
   you: SeatId,
 ): boolean {
   if (at === undefined) return true;
   if (target === undefined) return false;
+  // CR 508.1b, 508.6: "attacks one of your opponents": a player other than the controller, as a player.
+  if (at === 'opponent') return target.kind === 'player' && target.seat !== you;
   if (target.kind === 'player') return target.seat === you;
   if (at === 'you') return false;
   const permanent = objectOrLki(state, target.object);

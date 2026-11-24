@@ -354,6 +354,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.becomes-tapped': whenever,
   // Stage P21: blocks and becomes blocked.
   'trigger.attacks-alone': whenever,
+  'trigger.attacks-with-others': whenever,
   'trigger.blocks': whenever,
   'trigger.becomes-blocked': whenever,
   'trigger.or': whenever,
@@ -505,6 +506,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
+  'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
