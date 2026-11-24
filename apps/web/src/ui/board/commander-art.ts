@@ -51,15 +51,17 @@ const queue = createRequestQueue({
 const lookupPrinting = createPrintingLookup(queue);
 
 /**
- * The picture of the printing the deck's list names for the card `name`.
+ * The picture of the printing the list of the deck of seat `owner` names for the card `name`; a card with no owner is drawn by name.
  * `pending` while it is asked for, so the card is not first drawn in another printing; `url` null when the list names none, or
  * when Scryfall answers another card or a printing under another name (then the card is drawn by name).
  */
 export function useListedArt(
   name: string | null,
   version: ArtVersion,
+  owner: number | undefined,
 ): { readonly pending: boolean; readonly url: string | null } {
-  const printing = name === null || name === '' ? null : printingOf(name);
+  const printing =
+    name === null || name === '' || owner === undefined ? null : printingOf(name, owner);
   const key =
     printing === null || name === null ? null : `${printing.set}/${printing.collector}\n${name}`;
   const [found, setFound] = useState<{ key: string; art: CardArt | null } | null>(null);

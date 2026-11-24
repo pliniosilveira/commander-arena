@@ -65,6 +65,8 @@ interface ArtProps {
   readonly tokenDefinition?: TokenDefinition;
   /** The object is an emblem: its card is found by name among Scryfall's emblems (the Ring); an effect's generic emblem has none. */
   readonly emblem?: boolean;
+  /** The seat whose deck the card is from: the card is drawn in the printing that deck's list names. None: drawn by name. */
+  readonly owner?: number;
   /** Load at once instead of when scrolled near (a battlefield tile: Safari never loads those it deems offscreen, issue 474). */
   readonly eager?: boolean;
 }
@@ -79,6 +81,7 @@ export function Art({
   style,
   tokenDefinition,
   emblem = false,
+  owner,
   eager = false,
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
@@ -88,6 +91,7 @@ export function Art({
   const listed = useListedArt(
     !isToken && tokenDefinition === undefined && !back ? name : null,
     version,
+    owner,
   );
   if (listed.pending) return null;
   // Issue 32: a token that is a copy of a card has the card's mana cost (no real token has one) and no token card of its

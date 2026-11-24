@@ -47,7 +47,7 @@ test('the menu starts a game from two prepared precons, with their cards and the
 });
 
 test('a game draws the printings of its decks, the player’s own on a card both name', async () => {
-  // Both lists name their basic land in another printing: the one the player's deck names is drawn, whatever the preparing order.
+  // Both lists name their basic land in another printing: each seat is drawn in its own deck's, whoever is the player.
   const named = async (id: string, printing: string) => {
     const snapshot = await playableSnapshot(id);
     return {
@@ -61,10 +61,12 @@ test('a game draws the printings of its decks, the player’s own on a card both
   ]);
   setGamePrintings([]);
   await startFromForm(async () => {}, form('synthetic-a', 'synthetic-b'), precons);
-  expect(printingOf('Forest')).toEqual({ set: 'aaa', collector: '1' });
-  // The same decks the other way round: now the other list is the player's.
+  expect(printingOf('Forest', 0)).toEqual({ set: 'aaa', collector: '1' });
+  expect(printingOf('Forest', 1)).toEqual({ set: 'bbb', collector: '2' });
+  // The same decks the other way round: the seats swap their printings.
   await startFromForm(async () => {}, form('synthetic-b', 'synthetic-a'), precons);
-  expect(printingOf('Forest')).toEqual({ set: 'bbb', collector: '2' });
+  expect(printingOf('Forest', 0)).toEqual({ set: 'bbb', collector: '2' });
+  expect(printingOf('Forest', 1)).toEqual({ set: 'aaa', collector: '1' });
 });
 
 test('an empty seed is picked when the game starts; a bad seed starts nothing', async () => {

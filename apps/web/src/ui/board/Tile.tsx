@@ -152,6 +152,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
       back={art.back}
       isToken={o.isToken}
       eager
+      owner={o.owner}
       {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
       version={top === null ? 'art_crop' : 'normal'}
       className={top === null ? 'board-tile-art' : 'board-tile-art board-tile-top'}
