@@ -37,6 +37,7 @@ type ContinuousNode = Extract<
     kind:
       | 'modifyPt'
       | 'setPt'
+      | 'switchPt'
       | 'loseAllAbilities'
       | 'loseHexproofShroud'
       | 'setTypes'
@@ -359,6 +360,7 @@ export function checkContinuousEffect(
     }
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
+    case 'switchPt':
       break;
     case 'setTypes':
       checkSetTypes(e, path, out);

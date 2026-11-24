@@ -283,6 +283,14 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
     const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
     ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
+    // Curse of Verbosity: the clause before "does the same" was one plain draw by the controller.
+    ctx.drewCards =
+      only?.kind === 'draw' &&
+      only.player.kind === 'you' &&
+      only.upTo === undefined &&
+      only.reveal === undefined
+        ? only
+        : null;
     // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
     ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
     // Death Toll deck (Winter): "put a permanent card from among them onto the battlefield" after the exile of any number of cards with a card type minimum.

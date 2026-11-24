@@ -2556,6 +2556,8 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   /** `null` leaves that characteristic as the other effects before it set it (CR 701.12g: an exchange sets only a power or only a toughness). */
   | { readonly kind: 'setPt'; readonly power: number | null; readonly toughness: number | null }
+  /** "Switch its power and toughness" (`switchPt`, CR 613.4d): layer 7d, after every other power and toughness effect. */
+  | { readonly kind: 'switchPt' }
   | { readonly kind: 'loseAllAbilities' }
   /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp
