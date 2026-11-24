@@ -1090,9 +1090,12 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
     case 'anyCombination':
-      return spec.what.distinct === true
-        ? { kind: 'anyCombination', count: spec.what.count, distinct: true }
-        : { kind: 'anyCombination', count: spec.what.count };
+      return {
+        kind: 'anyCombination',
+        count: spec.what.count,
+        ...(spec.what.distinct === true ? { distinct: true as const } : {}),
+        ...(spec.what.colors === undefined ? {} : { colors: spec.what.colors }),
+      };
     case 'combination':
       // The engine stores a combination in the order W, U, B, R, G, C (CR 106.4: the pool does not
       // order mana), so {R}{W} is `['W', 'R']`.
@@ -1252,7 +1255,7 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
           {
             kind: 'chooseOne',
             times: spec.what.count,
-            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+            options: (spec.what.colors ?? (['W', 'U', 'B', 'R', 'G'] as const)).map((color) => ({
               label: `{${color}}`,
               effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
             })),

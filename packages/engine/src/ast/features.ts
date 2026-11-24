@@ -136,6 +136,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRider',
     // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
     'manaDistinctColors',
+    // "Add two mana in any combination of {U}, {B}, and/or {R}." (`anyCombination` with `colors`, CR 106.1b).
+    'manaColorSubset',
     // D-328: "When that mana is spent to cast a red instant or sorcery spell, copy that spell" (`spentRider` with `copySpell`, a color of the spell).
     'manaSpentRiderCopy',
     // Issue 241: "If you spend this mana to cast your commander, it enters with ... additional +1/+1 counters" (`spentRider.grants.countersCommanderCasts`).
@@ -1926,6 +1928,8 @@ export const ABILITY_FEATURES = [
   'manaSpentRider',
   /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
   'manaDistinctColors',
+  /** "Add two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b): `anyCombination` with `colors`, a subset of the five. */
+  'manaColorSubset',
   /** "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy" (D-328): `spentRider` with `copySpell`. */
   'manaSpentRiderCopy',
   /** Issue 241: `spentRider.grants.countersCommanderCasts`: the commander cast with the mana enters with extra +1/+1 counters. */
@@ -2977,6 +2981,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   manaDistinctColors: true,
+  manaColorSubset: true,
   manaSpentRiderCopy: true,
   manaSpentRiderCounters: true,
   manaSpentRiderExile: true,

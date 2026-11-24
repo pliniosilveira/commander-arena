@@ -1180,7 +1180,13 @@ export interface IrManaSpec extends IrNode {
       }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
-    | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+    | {
+        readonly kind: 'anyCombination';
+        readonly count: number;
+        readonly distinct?: true;
+        // "two mana in any combination of {U}, {B}, and/or {R}" (CR 106.1b): each mana one of these colors
+        readonly colors?: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+      }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
     // "one mana of that color for each charge counter on ~" (CR 605.3b, 106.1b): after "Choose a color.", as many mana of it as the `times` amount of the clause

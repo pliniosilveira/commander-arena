@@ -1,0 +1,29 @@
+/**
+ * SYNTHETIC CARDS FOR SMALL PRIMITIVES OF THE HOSTS OF MORDOR DECK (issue 150). NOT REAL MAGIC CARDS.
+ *
+ * Invented for the scenario tests of mana in any combination of listed colors, a spell that costs less when its target was dealt damage, a cost
+ * reduced by the greatest count among the opponents, damage divided among targets, a hand discarded for as much as the damage dealt to a player,
+ * a payment that taps and stuns the opponents' creatures, and a cycling trigger. Names start with "SYNTHETIC "; oracleId is null. The text
+ * describes what the AST does; it is not Oracle text.
+ */
+import type { CardDefinition } from '../definition';
+import { singleFace } from './helpers';
+
+export const SYNTHETIC_HOSTS_MISC_LIST: readonly CardDefinition[] = [
+  // "{T}: Add two mana in any combination of {U}, {B}, and/or {R}." (CR 106.1b, 605.3b)
+  singleFace({
+    name: 'SYNTHETIC Tricolor Relic',
+    manaCost: ['4'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: '{T}: Add two mana in any combination of {U}, {B}, and/or {R}.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'anyCombination', count: 2, colors: ['U', 'B', 'R'] },
+      },
+    ],
+  }),
+];

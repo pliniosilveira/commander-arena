@@ -5038,7 +5038,16 @@ export type ManaProduction =
    * least 2. `distinct: true` (D-319, "Add two mana of different colors."): no color is chosen twice, so the combinations are the sets of `count` different
    * colors of the five (ten pairs for two mana; colorless is not a color, CR 105.1, 106.1b, so never one of them). At most 4 mana still.
    */
-  | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+  | {
+      readonly kind: 'anyCombination';
+      readonly count: number;
+      readonly distinct?: true;
+      /**
+       * "Add two mana in any combination of {U}, {B}, and/or {R}." (CR 106.1b, 605.3b): each mana is one of these colors (two or more different ones, in any order)
+       * rather than any of the five; with `distinct` it is a set of different ones. Left out: any of the five colors.
+       */
+      readonly colors?: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+    }
   | {
       readonly kind: 'anyColor';
       /**
