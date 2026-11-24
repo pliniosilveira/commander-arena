@@ -635,7 +635,18 @@ function discardChosen(state: GameState, events: GameEvent[], chosen: readonly O
   if (!casting) return fail('No activation is in progress');
   const moved = discardObjects(state, casting.seat, chosen);
   if (moved === null) return fail('Those cards cannot be discarded');
-  return payExileCards(moved.state, [...events, ...moved.events]);
+  // CR 602.2b, 701.9a: the ability remembers the cards its cost discarded (as they are now, in the graveyard or in exile), which "if the discarded card was ..." reads.
+  const landed = moved.events.flatMap((e) =>
+    e.kind === 'discarded' && e.to !== null ? [e.to] : [],
+  );
+  const stack = moved.state.objects[casting.object]?.stack;
+  const next =
+    stack == null || landed.length === 0
+      ? moved.state
+      : patchObject(moved.state, casting.object, {
+          stack: { ...stack, discardedAsCost: [...(stack.discardedAsCost ?? []), ...landed] },
+        });
+  return payExileCards(next, [...events, ...moved.events]);
 }
 
 /**

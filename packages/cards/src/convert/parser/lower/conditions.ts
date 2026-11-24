@@ -596,6 +596,22 @@ export function lowerCondition(
       if (filter.value.powerGreaterThanSource === true) at.comparedPowerOf = of;
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'discardedAsCostMatches': {
+      // CR 602.2b, 701.9a (Moria Scavenger): the card the cost of this activated ability discarded, as it last was.
+      const blocked = missingFeatures(['condition:discardedAsCostMatches']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const matched = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: test.filter,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      });
+      return matched.ok ? ok({ kind: 'discardedAsCostMatches', filter: matched.value }) : matched;
+    }
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of the target an earlier instruction of the text named (or the object it moved), against an amount read as the instruction runs.
       const blocked = missingFeatures(['condition:manaValueAtMostAmount']);

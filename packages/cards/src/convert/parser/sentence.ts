@@ -38,12 +38,13 @@ const SENTENCE_END: Parser<string> = choice(literal('.'), QUOTE_ENDS_SENTENCE);
 /**
  * The bare comma between the instructions of a list of three or more ("Shuffle your graveyard into your library, draw X cards, untap up to five lands, and you
  * have no maximum hand size", CR 608.2c: followed in the order written): only when the sentence goes on to a closing ", and " (the last join of the list), so a
- * comma that ends an instruction before something else ("..., where X is ...") is not taken for one.
+ * comma that ends an instruction before something else ("..., where X is ...") is not taken for one. The list may close with ", then " as well
+ * ("Amass Orcs 5, mill five cards, then return a creature card from your graveyard to the battlefield", CR 608.2c).
  */
 const LIST_COMMA: Parser<string> = (ctx, pos) => {
   const comma = literal(', ')(ctx, pos);
   if (!comma.ok) return comma;
-  return /^[^.]*, and /u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
+  return /^[^.]*, (?:and |then )/u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
 };
 
 const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = listWithJoins(
@@ -58,6 +59,8 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
 const RECURSION_LEAD_CONDITIONS = [
   'condition.exiled-this-way',
   'condition.it-matches',
+  // Moria Scavenger (CR 602.2b, 701.9a): "If the discarded card was a creature card, amass Orcs 1." in the body of an activated ability whose cost discards.
+  'condition.discarded-card-matches',
   // D-298: "If its mana value was 3 or less, scry 1."
   'condition.its-mana-value',
   'condition.gift-promised',

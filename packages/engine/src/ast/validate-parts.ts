@@ -3716,6 +3716,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'movedShareAllCardTypes':
     case 'manaValueAtMostAmount':
     case 'objectMatches':
+    case 'discardedAsCostMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
       break;
@@ -5273,6 +5274,26 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'discardedAsCostMatches':
+      // CR 602.2b, 701.9a: the card the cost discarded; the face is checked as a whole (`checkDiscardedAsCost`: only an activated ability whose cost discards from the hand).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        filterSome(
+          c.filter,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'discardedAsCostMatches describes the card (type, subtype, color, ...): no zone, controller, owner or stackKind',
+        );
+      }
+      break;
     case 'movedTotalManaValue':
       // D-661 (CR 202.3): the cards an earlier moving effect of the sequence moved, added up, against a whole number.
       checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);

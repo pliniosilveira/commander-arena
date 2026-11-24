@@ -1346,6 +1346,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 700.4, 608.2h (Saw in Half): "If that creature dies this way".
     'diedThisWay',
     'objectMatches',
+    // CR 602.2b, 701.9a (Moria Scavenger): "If the discarded card was a creature card".
+    'discardedAsCostMatches',
     'giftPromised',
     'opponentControlsAtLeast',
     // D-139: "if you control the artifact with the greatest mana value or tied for the greatest mana value".
@@ -2429,6 +2431,8 @@ export const CONDITION_KINDS = [
   'thisMatches',
   /** "If it's a Zombie card", "if it's an Angel" (D-135): the engine's `objectMatches`. */
   'objectMatches',
+  /** "If the discarded card was a creature card" (CR 602.2b, 701.9a): the engine's `discardedAsCostMatches`. */
+  'discardedAsCostMatches',
   /** "If the gift was promised" (CR 702.174k, D-135): the engine's `giftPromised`. */
   'giftPromised',
   /** "If an opponent controls four or more nonbasic lands" (D-135): the engine's `opponentControlsAtLeast`. */

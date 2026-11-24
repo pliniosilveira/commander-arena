@@ -630,6 +630,11 @@ export interface StackData {
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
+   * For an activated ability whose cost discarded cards from the hand (CR 602.2b, 701.9a): the ids the cards have after the discard (in the graveyard, or in exile for madness), which
+   * the condition `discardedAsCostMatches` reads (from last-known information once they have moved on, CR 113.7a). Absent for every other object.
+   */
+  readonly discardedAsCost?: readonly ObjectId[];
+  /**
    * For a spell cast with Convoke (CR 702.51a): the creatures the caster tapped to help pay for it, in the order chosen, which the `convokers` reference reads ("each creature that
    * convoked this spell"). Absent when no creature was tapped for it, and for every other object.
    */
@@ -2258,6 +2263,8 @@ export interface ResolutionContext {
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What `discardedAsCostMatches` reads: `StackData.discardedAsCost`. */
+  readonly costDiscarded?: readonly ObjectId[];
   /** What the attacker returned to pay the cost of the activated ability that is resolving was attacking (`StackData.returnedAttack`), for `enterAttacking.asReturned` (Ninjutsu). Absent for any other spell or ability. */
   readonly costReturnedAttack?: Pick<AttackerState, 'target' | 'defender' | 'targetGone'>;
   /** What `tappedAsCostPower` means (CR 702.184a): `StackData.tappedPowerAsCost`. */

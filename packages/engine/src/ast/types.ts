@@ -6806,6 +6806,12 @@ export type Condition =
       readonly any?: true;
     }
   /**
+   * "If the discarded card was a creature card" (Moria Scavenger, CR 602.2b, 701.9a, 608.2h): the card the cost of this activated ability discarded matches the filter, as it is in
+   * the graveyard or as it last was once it has left (a card discarded for madness is in exile). With several discarded cards, any of them. The filter describes the card (type,
+   * subtype, color, ...): no zone, controller, owner or stackKind. Only in a `conditional` effect of an activated ability whose cost discards cards from the hand (`validateCard`).
+   */
+  | { readonly kind: 'discardedAsCostMatches'; readonly filter: ObjectFilter }
+  /**
    * "During your first, second, or third turn of the game" (CR 500.1, D-149): it is the turn of the player the condition is read for and
    * the number of turns they have had, this one included, satisfies the comparison (`atMost` 3 is the first three).
    */
