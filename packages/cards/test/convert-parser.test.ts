@@ -818,6 +818,8 @@ describe('unmatched abilities', () => {
       'effect.put-permanent-from-among-exiled',
       'effect.damage-exile-if-dies',
       'effect.move-counter-from-self',
+      'effect.remove-counter-from-each-chosen',
+      'effect.exile-that-many-top',
       'effect.may-cast-moved-card',
       'effect.lead-may-cast-kind-from-those-free',
       'effect.each-deals-damage-to-that',

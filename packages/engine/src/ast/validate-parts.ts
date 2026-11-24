@@ -2002,7 +2002,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
   excessDamageDealt: 'a dealDamage effect',
-  countersRemoved: 'a removeAllCounters or removeChosenCounters effect',
+  countersRemoved: 'a removeAllCounters, removeChosenCounters or removeCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
@@ -2054,7 +2054,11 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'addCounters') return ['countersPut'];
   // "You may reveal the top card of your library. Draw a card if it's an artifact card": what the effect done for a card of the kind produced.
   if (e?.kind === 'revealTop' && e.onMatch !== undefined) return thisWayProduced(e.onMatch);
-  if (e?.kind === 'removeAllCounters' || e?.kind === 'removeChosenCounters') {
+  if (
+    e?.kind === 'removeAllCounters' ||
+    e?.kind === 'removeChosenCounters' ||
+    e?.kind === 'removeCounters'
+  ) {
     return ['countersRemoved'];
   }
   // Oversimplify: the creatures an exile really exiled, by controller.

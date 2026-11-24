@@ -2282,7 +2282,11 @@ function countsWhatHappened(
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it. Eventide's Shadow: "the number of counters removed this way" after counters the
       // controller chose to remove.
-      return earlier.verb === 'removeAllCounters' || earlier.verb === 'removeChosenCounters';
+      return (
+        earlier.verb === 'removeAllCounters' ||
+        earlier.verb === 'removeChosenCounters' ||
+        earlier.verb === 'removeCounterFromEachChosen'
+      );
     case 'excessDamageDealt':
     // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':

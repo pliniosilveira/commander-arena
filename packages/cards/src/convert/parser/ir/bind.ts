@@ -740,6 +740,23 @@ class Binder {
     }
     // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": "that card" is the card the exile moved, which the engine
     // names `moved`. Pushed after the clause's own noun, so that it is the most recent object of the text.
+    // Chandra, Legacy of Fire: "Exile that many cards from the top of your library. You may play them this turn": "them" are the cards the exile moved (the engine's `moved`).
+    if (clause.verb === 'exileTopThatMany') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'cards' },
+          upTo: false,
+          plural: true,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
     if (clause.verb === 'exileChosenCard') {
       this.antecedents.push({
         kind: 'object',

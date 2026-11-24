@@ -256,12 +256,65 @@ const CAST_MOVED_NOW: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Remove a loyalty counter from each of any number of permanents you control" (Chandra, Legacy of Fire; CR 122.1, 608.2d): the controller chooses among their permanents that have the counter
+ * (the engine's `chooseObjects`, none to all) and one counter comes off each chosen one (`removeCounters`).
+ */
+const REMOVE_COUNTER_FROM_EACH_CHOSEN: Lowering<IrClause, Effects> = {
+  head: 'removeCounterFromEachChosen',
+  id: 'lower.remove-counter-from-each-chosen',
+  needs: ['effect:chooseObjects', 'effect:removeCounters', 'selector:chosen'],
+  lower(clause) {
+    const counter = arg(clause, 'counter');
+    if (counter?.kind !== 'counterSpec') return failure(clause);
+    const id = 'counterSources';
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'chooseObjects',
+          id,
+          filter: { controller: 'you', hasCounter: counter.name },
+          count: 100,
+        },
+        {
+          kind: 'removeCounters',
+          objects: { kind: 'chosen', id },
+          counter: counter.name,
+          count: 1,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** "Exile that many cards from the top of your library" (CR 701.13, 608.2c): the engine's `exileTop` of the counters the instruction before removed. */
+const EXILE_TOP_THAT_MANY: Lowering<IrClause, Effects> = {
+  head: 'exileTopThatMany',
+  id: 'lower.exile-top-that-many',
+  needs: ['effect:exileTop'],
+  lower(clause, ctx) {
+    // The cards exiled face up are what "play them" names next (the engine's `moved`).
+    ctx.exiled = 'top';
+    ctx.exiledFaceDown = false;
+    return {
+      ok: true,
+      value: [{ kind: 'exileTop', count: { kind: 'thisWay', what: 'countersRemoved' } }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** Features the lowerings of this file can name, for the dimension test. */
 export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:moveCounterFromThis',
   'effect:castCard',
+  'effect:chooseObjects',
+  'effect:removeCounters',
+  'effect:exileTop',
   'effect:dealDamageFromEach',
   'effect:setLifeTotal',
   'effect:exchangeLifeWithPt',
@@ -277,6 +330,8 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DEAL_DAMAGE_FROM_EACH,
   MAY_CAST_KIND_FROM_MOVED_FREE,
   CAST_MOVED_NOW,
+  REMOVE_COUNTER_FROM_EACH_CHOSEN,
+  EXILE_TOP_THAT_MANY,
   SET_LIFE_TOTAL,
   EXCHANGE_LIFE_PT,
 ];

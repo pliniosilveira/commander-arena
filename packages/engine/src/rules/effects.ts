@@ -4147,6 +4147,7 @@ function runEffect(
       const wanted = amountOf(state, effect.count, ctx, targets);
       if (wanted <= 0) return done(state);
       let anyRemoved = false;
+      let total = 0;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (obj?.zone !== 'battlefield') continue;
@@ -4154,6 +4155,7 @@ function runEffect(
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;
         anyRemoved = true;
+        total += removed;
         const left = had - removed;
         const { [effect.counter]: _gone, ...rest } = obj.counters;
         next = patchObject(next, id, {
@@ -4167,7 +4169,12 @@ function runEffect(
         });
       }
       // CR 608.2c: removing a counter is something done, which "if you do" reads.
-      return { ...done(next, events), performed: anyRemoved ? 1 : 0 };
+      // "Exile that many cards" (Chandra, Legacy of Fire; CR 608.2c): the counters really removed are what `thisWay` `countersRemoved` reads.
+      return {
+        ...done(next, events),
+        performed: anyRemoved ? 1 : 0,
+        ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
+      };
     }
 
     case 'modifyPt':

@@ -356,6 +356,97 @@ export const EFFECT_MAY_CAST_MOVED_CARD = defineRule<Clauses>({
   },
 });
 
+const REMOVE_EACH_ID = 'effect.remove-counter-from-each-chosen';
+
+/**
+ * `effect.remove-counter-from-each-chosen`: "Remove a loyalty counter from each of any number of permanents you control." (Chandra, Legacy of Fire; CR 122.1, 608.2d): the controller chooses
+ * any number of the permanents they control that have a counter of the kind (none up to all), and one counter comes off each. The engine's `chooseObjects` of the permanents with a counter
+ * and `removeCounters` of the ones chosen; the counters really removed are what "that many" of the next sentence reads. Not read: another number of counters, "target", "up to", permanents
+ * of another controller.
+ */
+export const EFFECT_REMOVE_COUNTER_FROM_EACH_CHOSEN = defineRule<Clauses>({
+  id: REMOVE_EACH_ID,
+  family: 'effect',
+  leading: ['remove'],
+  cites: [
+    'CR 122.1 (Counters)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 306.5b (Planeswalkers)',
+  ],
+  examples: [
+    'remove a loyalty counter from each of any number of permanents you control',
+    'remove a +1/+1 counter from each of any number of permanents you control',
+  ],
+  rejects: [
+    'remove two loyalty counters from each of any number of permanents you control',
+    'remove a loyalty counter from each of up to two permanents you control',
+    'remove a loyalty counter from each of any number of permanents',
+    'remove a loyalty counter from each of any number of permanents you control and draw a card',
+    'remove a loyalty counter from each of any number of creatures you control',
+    'remove a loyalty counter from target permanent you control',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('remove a '),
+      spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+      pattern(/ counter from each of any number of permanents you control(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, word] = r.value;
+    const counter: IrCounterSpec = {
+      kind: 'counterSpec',
+      name: word.value[0].toLowerCase(),
+      span: word.span,
+      rule: REMOVE_EACH_ID,
+    };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          REMOVE_EACH_ID,
+          'removeCounterFromEachChosen',
+          { counter },
+          { start: pos, end: r.pos },
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+const EXILE_THAT_MANY_ID = 'effect.exile-that-many-top';
+
+/**
+ * `effect.exile-that-many-top`: "Exile that many cards from the top of your library." (Chandra, Legacy of Fire; CR 701.13, 608.2c): the number of counters the instruction before it
+ * removed. The engine's `exileTop` with that number. Not read: another number ("the top two cards" is `effect.exile-top`), another library, "face down".
+ */
+export const EFFECT_EXILE_THAT_MANY_TOP = defineRule<Clauses>({
+  id: EXILE_THAT_MANY_ID,
+  family: 'effect',
+  leading: ['exile'],
+  cites: ['CR 701.13 (Exile)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['exile that many cards from the top of your library'],
+  rejects: [
+    'exile that many cards from the top of their library',
+    'exile that many cards from your library',
+    'exile that many cards from the top of your library face down',
+    'exile that many cards from the top of your graveyard',
+    'exile those cards from the top of your library',
+    'exile that card from the top of your library',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /exile that many cards from the top of your library(?![\p{L}\p{N}])(?!\s+face down)/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause(EXILE_THAT_MANY_ID, 'exileTopThatMany', {}, { start: pos, end: r.pos })],
+      pos: r.pos,
+    };
+  },
+});
+
 const MOVE_ID = 'effect.move-counter-from-self';
 
 /**
@@ -417,6 +508,8 @@ export const EFFECT_MOVE_COUNTER_FROM_SELF = defineRule<Clauses>({
 export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_DAMAGE_EXILE_IF_DIES),
   quietly(EFFECT_MOVE_COUNTER_FROM_SELF),
+  quietly(EFFECT_REMOVE_COUNTER_FROM_EACH_CHOSEN),
+  quietly(EFFECT_EXILE_THAT_MANY_TOP),
   quietly(EFFECT_MAY_CAST_MOVED_CARD),
   quietly(EFFECT_LEAD_MAY_CAST_KIND_FROM_THOSE_FREE),
   quietly(EFFECT_EACH_DEALS_DAMAGE_TO_THAT),
