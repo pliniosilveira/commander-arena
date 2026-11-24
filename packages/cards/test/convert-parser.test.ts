@@ -760,6 +760,7 @@ describe('unmatched abilities', () => {
       'effect.damage-it-opponents-and-their-creatures',
       'effect.exile-that-many-from-top',
       'effect.cast-among-exiled-any-color',
+      'effect.lead-gain-next-turn',
       'effect.choose-an-opponent',
       'effect.choose-a-number',
       'effect.each-player-keeps-creatures-and-sacrifices-the-rest',

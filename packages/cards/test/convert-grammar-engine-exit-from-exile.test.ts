@@ -396,3 +396,41 @@ describe('"When ~ enters, put three +1/+1 counters on each of any number of targ
     expect(() => g.act(0).chooseTargets('Serra Angel')).toThrow();
   });
 });
+
+describe('"Until your next turn, up to one target creature gains reach and vigilance." (CR 611.2a, 613.1f, 500.1)', () => {
+  const gift = parsed(
+    'SYNTHETIC Wilds Gift',
+    'Instant',
+    'Until your next turn, up to one target creature gains reach and vigilance.',
+    { manaCost: '{G}', colors: ['G'] },
+  );
+  const build = () =>
+    scenario()
+      .define(gift)
+      .seat(0)
+      .hand(gift.name)
+      .battlefield('Forest', 'Grizzly Bears')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the creature has reach and vigilance now and keeps them through the opponent’s turn', () => {
+    const g = build();
+    g.act(0).cast(gift.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.derived('Grizzly Bears', { keywords: ['reach', 'vigilance'] });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.derived('Grizzly Bears', { keywords: ['reach', 'vigilance'] });
+  });
+
+  test('they are gone once the controller’s next turn begins', () => {
+    const g = build();
+    g.act(0).cast(gift.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.derived('Grizzly Bears', { keywords: [] });
+  });
+});

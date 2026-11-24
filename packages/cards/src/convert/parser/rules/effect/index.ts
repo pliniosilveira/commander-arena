@@ -141,6 +141,7 @@ import { KEFKA_EFFECT_RULES } from './kefka';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
+import { LEAD_GAIN_NEXT_TURN_EFFECT_RULES } from './lead-gain-next-turn';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
@@ -1306,6 +1307,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
+  ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
