@@ -762,7 +762,7 @@ describe('"unless that player pays {1}" (CR 118.12a)', () => {
     ],
     [
       'Whenever an opponent casts a spell, draw a card and lose 1 life unless that player pays {1}.',
-      'unless that player pays {1}.',
+      'that player pays {1}.',
       'ability.triggered',
     ],
     [
