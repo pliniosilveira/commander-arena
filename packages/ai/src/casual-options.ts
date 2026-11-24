@@ -11,6 +11,7 @@ import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@comman
 import { chooseCardType } from './casual-card-type';
 import { chooseCounterPick } from './casual-counter-pick';
 import { chooseNamedOption } from './casual-dragons';
+import { chooseDungeonRoom } from './casual-dungeon';
 import { chooseRiot } from './casual-keywords';
 import { chooseLifePaid } from './casual-life-paid';
 import { choosePile } from './casual-piles';
@@ -148,6 +149,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
     }
     return { kind: 'chooseOption', option: best ?? d.options[0] ?? '' };
   }
+  // CR 701.49b, 309.5a: the room to move a venture marker into (casual-dungeon.ts).
+  if (d.purpose === 'dungeonRoom') return chooseDungeonRoom(view, d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);
   // CR 122.1, 122.5, 608.2d: the counter to remove or move next (casual-counter-pick.ts).
