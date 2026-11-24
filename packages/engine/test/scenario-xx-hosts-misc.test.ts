@@ -435,7 +435,7 @@ describe('"costs {X} less to cast, where X is the greatest number of artifacts a
       .build();
 
   const castCost = (g: Game) =>
-    getView(g.state, 0).seats[0]?.hand.find((o) => o.name === WYRM)?.castCost;
+    getView(g.state, 0).seats[0]?.hand?.find((o) => o.name === WYRM)?.castCost;
 
   test('the card is valid and the amount is a listed feature', () => {
     expect(validateCard(syntheticCard(WYRM))).toEqual([]);
