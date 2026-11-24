@@ -123,7 +123,7 @@ export const EFFECT_PUT_CHOICE_OF_COUNTERS = defineRule<Clauses>({
         literal(' on '),
         operands(['noun.target-permanent', 'noun.up-to-one-permanent', 'noun.self'], CHOICE_ID),
       ),
-      ([, first, , second]) => first[2].name !== second[2].name || first[0] !== second[0],
+      ([, first, , second]) => first[2].name !== second[2].name,
     ),
     ([, first, , second, , objects]) => ({
       verb: 'putChoiceOfCounters',

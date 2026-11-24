@@ -228,7 +228,9 @@ export function counterCostsOf(
   ability: ManaAbility,
 ): readonly { readonly counter: string; readonly count: number }[] {
   return ability.cost.flatMap((c) =>
-    c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+    c.kind === 'removeCounters' && c.counter !== undefined
+      ? [{ counter: c.counter, count: c.count }]
+      : [],
   );
 }
 

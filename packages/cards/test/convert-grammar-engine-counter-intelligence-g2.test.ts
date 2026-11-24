@@ -8,7 +8,7 @@ import { type CardDefinition, type PendingDecision, validateCard } from '@comman
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
 
 const GOLDEN = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -33,6 +33,15 @@ const DEFENSE = real('Resourceful Defense');
 const INSPIRIT = real('Inspirit, Flagship Vessel');
 const RING = 'Sol Ring';
 const AUTOGEN = real('Empowered Autogenerator');
+const TEKUTHAL = real('Tekuthal, Inquiry Dominus');
+const MOXITE = real('Moxite Refinery');
+const DOUBLER = parsed(
+  'SYNTHETIC Proliferation Doubler',
+  'Creature — Horror',
+  'If you would proliferate, proliferate twice instead.',
+  { manaCost: '{1}', power: '1', toughness: '1' },
+);
+const PROLIF = parsed('SYNTHETIC Proliferate', 'Sorcery', 'Proliferate.', { manaCost: '{1}' });
 
 describe('Resourceful Defense', () => {
   test('is valid', () => {
@@ -337,5 +346,293 @@ describe('Empowered Autogenerator: put a charge counter, then add that many mana
   test('with no counter its one mana is not enough for a two-mana spell', () => {
     const g = start(0);
     expect(g.act(0).try.cast(BEARS).ok).toBe(false);
+  });
+});
+
+describe('Tekuthal, Inquiry Dominus: proliferate twice, and remove three counters from among other permanents', () => {
+  test('is valid, with a replacement of proliferate and a remove-any-counters cost', () => {
+    expect(validateCard(TEKUTHAL)).toEqual([]);
+    const abilities = TEKUTHAL.faces[0]?.abilities ?? [];
+    expect(abilities.find((a) => a.kind === 'replacement')).toMatchObject({
+      kind: 'replacement',
+      replacement: { kind: 'proliferateDouble' },
+    });
+    const activated = abilities.find((a) => a.kind === 'activated');
+    if (activated?.kind !== 'activated') throw new Error('no activated ability');
+    expect(activated.cost).toContainEqual({
+      kind: 'removeCounters',
+      count: 3,
+      among: {
+        controller: 'you',
+        other: true,
+        anyOf: [{ types: ['artifact'] }, { types: ['creature'] }, { types: ['planeswalker'] }],
+      },
+    });
+  });
+
+  describe('If you would proliferate, proliferate twice instead (CR 701.34a, 614.5)', () => {
+    const start = (tekuthals = 0, doublers = 0) => {
+      const b = scenario()
+        .define(TEKUTHAL)
+        .define(DOUBLER)
+        .define(PROLIF)
+        .seat(0)
+        .library(...FILLER)
+        .hand(PROLIF.name)
+        .battlefield('Island')
+        .battlefield(BEARS, { label: 'bears', counters: { charge: 1 } });
+      if (tekuthals > 0) b.battlefield(TEKUTHAL.name);
+      for (let i = 0; i < doublers; i += 1) b.battlefield(DOUBLER.name);
+      return b
+        .seat(1)
+        .library(...FILLER)
+        .battlefield(SPIDER, { label: 'theirs', counters: { charge: 1 } })
+        .at('precombatMain', { active: 0, turn: 3 })
+        .build();
+    };
+
+    test('without it, one proliferate: one choice', () => {
+      const g = start();
+      g.act(0).cast(PROLIF.name, { pay: true });
+      g.passAll();
+      g.act(0).choosePermanents('bears', 'theirs');
+      g.expect.counters('bears', { charge: 2 });
+      g.expect.counters('theirs', { charge: 2 });
+      g.expect.pending('priority', 0);
+    });
+
+    test('with it, two proliferates in a row, each its own choice: a counter is added twice', () => {
+      const g = start(1);
+      g.act(0).cast(PROLIF.name, { pay: true });
+      g.passAll();
+      g.act(0).choosePermanents('bears', 'theirs');
+      g.expect.counters('bears', { charge: 2 });
+      g.expect.pending('choosePermanent', 0);
+      g.act(0).choosePermanents('bears');
+      g.expect.counters('bears', { charge: 3 });
+      g.expect.counters('theirs', { charge: 2 });
+      g.expect.pending('priority', 0);
+      g.expect.invariants();
+    });
+
+    test('an opponent does not get it: it applies to the controller of the permanent only', () => {
+      const g = scenario({ seats: 3 })
+        .define(TEKUTHAL)
+        .define(PROLIF)
+        .seat(0)
+        .library(...FILLER)
+        .battlefield(TEKUTHAL.name)
+        .seat(1)
+        .library(...FILLER)
+        .hand(PROLIF.name)
+        .battlefield('Island')
+        .battlefield(BEARS, { label: 'bears', counters: { charge: 1 } })
+        .seat(2)
+        .library(...FILLER)
+        .at('precombatMain', { active: 1, turn: 3 })
+        .build();
+      g.act(1).cast(PROLIF.name, { pay: true });
+      g.passAll();
+      g.act(1).choosePermanents('bears');
+      g.expect.counters('bears', { charge: 2 });
+      g.expect.pending('priority', 1);
+    });
+
+    test('two of them apply once each (CR 614.5, as two doubling effects make four times as much): four proliferates', () => {
+      const g = start(1, 1);
+      g.act(0).cast(PROLIF.name, { pay: true });
+      g.passAll();
+      for (let i = 0; i < 4; i += 1) {
+        g.expect.pending('choosePermanent', 0);
+        g.act(0).choosePermanents('bears');
+      }
+      g.expect.counters('bears', { charge: 5 });
+      g.expect.pending('priority', 0);
+    });
+  });
+
+  describe('{1}{U/P}{U/P}, Remove three counters from among other artifacts, creatures, and planeswalkers you control: an indestructible counter on it (CR 118.3, 122.1)', () => {
+    const start = (
+      mine: Record<string, number>,
+      ring: Record<string, number>,
+      self: Record<string, number> = {},
+      seats = 2,
+    ) => {
+      const b = scenario({ seats })
+        .define(TEKUTHAL)
+        .seat(0)
+        .library(...FILLER)
+        .battlefield('Island', { count: 3 })
+        .battlefield(TEKUTHAL.name, { counters: self })
+        .battlefield(BEARS, { label: 'bears', counters: mine })
+        .battlefield(RING, { label: 'ring', counters: ring });
+      for (let seat = 1; seat < seats; seat += 1) {
+        b.seat(seat)
+          .library(...FILLER)
+          .battlefield(SPIDER, { label: `theirs${seat}`, counters: { charge: 5 } });
+      }
+      return b.at('precombatMain', { active: 0, turn: 3 }).build();
+    };
+
+    test('exactly as many counters as owed on other permanents: they come off without a question', () => {
+      const g = start({ charge: 2 }, { '+1/+1': 1 });
+      g.act(0).activate(TEKUTHAL.name, { pay: true });
+      g.passAll();
+      g.expect.counters('bears', {});
+      g.expect.counters('ring', {});
+      g.expect.counters(TEKUTHAL.name, { indestructible: 1 });
+      g.expect.derived(TEKUTHAL.name, { keywords: ['flying', 'indestructible'] });
+      g.expect.invariants();
+    });
+
+    test('more than owed: the player picks each counter, the permanent and the kind', () => {
+      const g = start({ charge: 2, '+1/+1': 1 }, { charge: 1 });
+      g.act(0).activate(TEKUTHAL.name, { pay: true });
+      g.expect.pending('chooseOption', 0);
+      expect(pickOptions(g.state)).toEqual([
+        'charge counter on Grizzly Bears (yours)',
+        '+1/+1 counter on Grizzly Bears (yours)',
+        'charge counter on Sol Ring (yours)',
+      ]);
+      g.act(0).chooseOption('+1/+1 counter on Grizzly Bears (yours)');
+      g.act(0).chooseOption('charge counter on Sol Ring (yours)');
+      // One counter is still owed and only one kind on one permanent is left: nothing to choose, the engine takes it.
+      g.passAll();
+      g.expect.counters('bears', { charge: 1 });
+      g.expect.counters('ring', {});
+      g.expect.counters(TEKUTHAL.name, { indestructible: 1 });
+    });
+
+    test('cancel takes the activation back', () => {
+      const g = start({ charge: 2, '+1/+1': 1 }, { charge: 1 });
+      g.act(0).activate(TEKUTHAL.name, { pay: true });
+      g.act(0).chooseOption('charge counter on Sol Ring (yours)');
+      g.act(0).cancel();
+      g.expect.counters('ring', { charge: 1 });
+      g.expect.counters('bears', { charge: 2, '+1/+1': 1 });
+      g.expect.pending('priority', 0);
+    });
+
+    test('its own counters and the opponents counters are not among them ("other", "you control"), whatever the seat count', () => {
+      for (const seats of [2, 3, 4]) {
+        const g = start({ charge: 1 }, {}, { charge: 4 }, seats);
+        expect(g.act(0).try.activate(TEKUTHAL.name).ok, `${seats} seats`).toBe(false);
+      }
+    });
+  });
+});
+
+describe('Moxite Refinery: remove X counters from one artifact or creature, then put X on a target (CR 107.3a, 118.3, 122.1, 602.2b)', () => {
+  test('is valid: a modal sorcery-speed ability whose cost is the X announced, all off one permanent', () => {
+    expect(validateCard(MOXITE)).toEqual([]);
+    const activated = MOXITE.faces[0]?.abilities.find((a) => a.kind === 'activated');
+    if (activated?.kind !== 'activated') throw new Error('no activated ability');
+    expect(activated.timing).toBe('sorcery');
+    expect(activated.cost).toEqual([
+      { kind: 'mana', symbols: ['2'] },
+      { kind: 'tap' },
+      {
+        kind: 'removeCounters',
+        count: 1,
+        countX: true,
+        fromOne: true,
+        among: { anyOf: [{ types: ['artifact'] }, { types: ['creature'] }], controller: 'you' },
+      },
+    ]);
+    expect(activated.modes).toHaveLength(2);
+  });
+
+  const start = (mine: Record<string, number>, ring: Record<string, number>, seats = 2) => {
+    const b = scenario({ seats })
+      .define(MOXITE)
+      .seat(0)
+      .library(...FILLER)
+      .battlefield('Island', { count: 2 })
+      .battlefield(MOXITE.name)
+      .battlefield(BEARS, { label: 'bears', counters: mine })
+      .battlefield(RING, { label: 'ring', counters: ring });
+    for (let seat = 1; seat < seats; seat += 1) {
+      b.seat(seat)
+        .library(...FILLER)
+        .battlefield(SPIDER, { label: `theirs${seat}`, counters: { charge: 9 } });
+    }
+    return b.at('precombatMain', { active: 0, turn: 3 }).build();
+  };
+
+  test('X = 2 from a creature with three charge counters, put on a target artifact as charge counters', () => {
+    const g = start({ charge: 3 }, {});
+    g.act(0).activate(MOXITE.name, { modes: [0], x: 2, targets: ['ring'], pay: true });
+    g.passAll();
+    g.expect.counters('bears', { charge: 1 });
+    g.expect.counters('ring', { charge: 2 });
+    g.expect.tapped(MOXITE.name, true);
+    g.expect.invariants();
+  });
+
+  test('the other mode puts X +1/+1 counters on a target creature', () => {
+    const g = start({}, { charge: 3 });
+    g.act(0).activate(MOXITE.name, { modes: [1], x: 3, targets: ['bears'], pay: true });
+    g.passAll();
+    g.expect.counters('ring', {});
+    g.expect.counters('bears', { '+1/+1': 3 });
+    g.expect.pt('bears', 5, 5);
+  });
+
+  test('all the counters come off one permanent: with two that have enough the player picks one and the rest follow it', () => {
+    const g = start({ charge: 2, '+1/+1': 1 }, { charge: 2 });
+    g.act(0).activate(MOXITE.name, { modes: [1], x: 2, targets: ['bears'], pay: true });
+    g.expect.pending('chooseOption', 0);
+    expect(pickOptions(g.state)).toEqual([
+      'charge counter on Grizzly Bears (yours)',
+      '+1/+1 counter on Grizzly Bears (yours)',
+      'charge counter on Sol Ring (yours)',
+    ]);
+    g.act(0).chooseOption('+1/+1 counter on Grizzly Bears (yours)');
+    // The bears are the permanent now: the Sol Ring is no longer offered, and only one kind is left on them.
+    g.passAll();
+    // One counter is still owed: the bears have one kind left, so it comes off without a question. The mode puts the two +1/+1 counters on.
+    g.expect.counters('bears', { charge: 1, '+1/+1': 2 });
+    g.expect.counters('ring', { charge: 2 });
+  });
+
+  test('a permanent with fewer counters than X is not a choice: the one that has enough gives them', () => {
+    const g = start({ charge: 1 }, { charge: 3 });
+    g.act(0).activate(MOXITE.name, { modes: [1], x: 3, targets: ['bears'], pay: true });
+    g.passAll();
+    g.expect.counters('ring', {});
+    g.expect.counters('bears', { charge: 1, '+1/+1': 3 });
+  });
+
+  test('X is at most what one permanent has: counters spread over two permanents do not add up', () => {
+    const g = start({ charge: 2 }, { charge: 2 });
+    g.act(0).activate(MOXITE.name, { modes: [1] });
+    g.expect.pending('chooseX', 0);
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseX') throw new Error('no X question');
+    expect(d.max).toBe(2);
+  });
+
+  test('cancel takes the activation back', () => {
+    const g = start({ charge: 2, '+1/+1': 1 }, { charge: 2 });
+    g.act(0).activate(MOXITE.name, { modes: [1], x: 2, targets: ['bears'], pay: true });
+    g.expect.pending('chooseOption', 0);
+    g.act(0).cancel();
+    g.expect.counters('ring', { charge: 2 });
+    g.expect.counters('bears', { charge: 2, '+1/+1': 1 });
+    g.expect.tapped(MOXITE.name, false);
+  });
+
+  test('only counters on your own artifacts and creatures, whoever the opponents are (3 and 4 seats), and only as a sorcery', () => {
+    for (const seats of [2, 3, 4]) {
+      const g = start({}, {}, seats);
+      // The opponents' spiders hold nine counters each, none of them usable: X can only be 0.
+      g.act(0).activate(MOXITE.name, { modes: [0], targets: ['ring'], pay: true });
+      g.passAll();
+      g.expect.counters('ring', {});
+      for (let seat = 1; seat < seats; seat += 1) g.expect.counters(`theirs${seat}`, { charge: 9 });
+    }
+    const late = start({ charge: 2 }, {});
+    late.advanceTo('declareAttackers');
+    expect(late.act(0).try.activate(MOXITE.name).ok).toBe(false);
   });
 });

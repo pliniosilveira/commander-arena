@@ -1905,6 +1905,8 @@ function hasXCost(
       (c.kind === 'discard' && (c as { countX?: unknown }).countX === true) ||
       // D-488: "Sacrifice X creatures" announces X as the ability is activated.
       (c.kind === 'sacrifice' && (c as { countX?: unknown }).countX === true) ||
+      // Moxite Refinery: "Remove X counters from an artifact or creature you control" announces X as the ability is activated.
+      (c.kind === 'removeCounters' && (c as { countX?: unknown }).countX === true) ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),

@@ -47,6 +47,16 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'spending only mana of the chosen color is a restriction on the cost of an activated ability, not of a mana ability',
       );
     }
+    if (
+      c?.kind === 'removeCounters' &&
+      (c.counter === undefined || c.countX !== undefined || c.fromOne !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.cost[${i}]`,
+        'a mana ability takes a named kind of counter off its own permanent: no X, no choice of kind, no single permanent',
+      );
+    }
     if (c?.kind === 'removeCounters' && c.among !== undefined) {
       issue(
         out,

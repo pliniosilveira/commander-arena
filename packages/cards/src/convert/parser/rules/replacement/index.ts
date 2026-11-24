@@ -9,6 +9,7 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
@@ -341,6 +342,7 @@ export const REPLACEMENT_RULES = [
   ...DIE_REPLACEMENT_RULES,
   // Stage P33 (D-150): "If you would gain life, you gain that much life plus 1 instead."
   ...ANGEL_REPLACEMENT_RULES,
+  ...COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES,
   // Quandrix Unlimited deck, group A: "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
   ...COUNTERS_PLUS_REPLACEMENT_RULES,
   // Stage P34 (D-152): "As ~ enters, you may have it become a copy of any creature on the battlefield ...".

@@ -570,7 +570,11 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
-  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  const removingAmong = costs.filter(
+    (c) =>
+      c.kind === 'removeCounters' &&
+      (c.among !== undefined || c.counter === undefined || c.countX === true || c.fromOne === true),
+  );
   if (
     removingAmong.length > 1 ||
     (removingAmong.length === 1 &&

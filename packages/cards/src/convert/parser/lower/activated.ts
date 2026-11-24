@@ -849,7 +849,9 @@ function prepare(
       // "Sacrifice X creatures" (D-488, CR 107.3a): the X is announced as the ability is activated.
       (c.kind === 'sacrifice' && c.countX === true) ||
       // Issue 101 (CR 107.3a): "Discard X cards".
-      (c.kind === 'discard' && c.countX === true),
+      (c.kind === 'discard' && c.countX === true) ||
+      // Moxite Refinery (CR 107.3a, 602.2b): "Remove X counters from an artifact or creature you control".
+      (c.kind === 'removeCounters' && c.countX === true),
   );
   // CR 606.2 (stage P47, D-202): a loyalty symbol is the cost of an ability of a planeswalker, once, and nothing else is paid with it
   // that the rules of 606 do not know (a loyalty ability has no "Activate only" restriction of its own, CR 606.3).
@@ -870,6 +872,10 @@ function prepare(
       : []),
     ...(costs.value.some((c) => c.kind === 'discard' && c.countX === true)
       ? (['ability:discardCostX'] as const)
+      : []),
+    // Moxite Refinery: "Remove X counters from an artifact or creature you control".
+    ...(costs.value.some((c) => c.kind === 'removeCounters' && c.countX === true)
+      ? (['ability:removeCountersX'] as const)
       : []),
     // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard".
     ...(costs.value.some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
@@ -1147,6 +1153,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaSpendOnlyXCost',
   'ability:manaCountOwnCounters',
   'ability:manaPutCounter',
+  'ability:removeCountersX',
   'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',

@@ -1423,7 +1423,15 @@ function costColon(text: string): number {
 function costSpans(text: string, end: number): Span[] {
   const spans: Span[] = [];
   let from = 0;
+  // Counter Intelligence deck, group 2 (Tekuthal): "Remove three counters from among other artifacts, creatures, and planeswalkers you control" is one cost: the commas of a list of
+  // the permanents the counters come off do not separate costs.
+  const lists = [
+    ...text
+      .slice(0, end)
+      .matchAll(/\bfrom among (?:other )?[a-z]+s(?:, [a-z]+s)+,? and [a-z]+s you control\b/giu),
+  ].map((m) => ({ start: m.index ?? 0, end: (m.index ?? 0) + m[0].length }));
   for (const comma of topLevelCommas(text, 0, end)) {
+    if (lists.some((list) => comma > list.start && comma < list.end)) continue;
     spans.push(trimmed(text, from, comma));
     from = comma + 1;
   }

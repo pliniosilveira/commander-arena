@@ -1098,6 +1098,16 @@ export type IrCost = IrNode &
         readonly count: number;
         readonly what: IrNoun;
       }
+    // "Remove a counter from ~", "Remove three counters from among other artifacts, creatures, and planeswalkers you control", "Remove X counters from an artifact or creature you control"
+    // (Counter Intelligence deck, group 2, CR 118.3, 122.1, 602.2b): counters of any kind, the player choosing which. `count` how many (1 for `x`, the X announced); `what` the permanents
+    // they come off (null: the permanent with the ability); `fromOne` all of them off one permanent ("from an artifact or creature", not "from among ...").
+    | {
+        readonly kind: 'removeAnyCounters';
+        readonly count: number;
+        readonly x: boolean;
+        readonly what: IrNoun | null;
+        readonly fromOne: boolean;
+      }
     | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
     | { readonly kind: 'blight'; readonly count: number }

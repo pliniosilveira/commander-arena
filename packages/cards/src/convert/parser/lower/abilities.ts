@@ -791,6 +791,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       extra: amount.value,
     });
   }
+  if (event.verb === 'proliferateDouble') {
+    // CR 701.34a, 614.1a, 614.5 (Tekuthal, Inquiry Dominus): the controller proliferates twice each time they would.
+    if (event.condition !== undefined || Object.keys(event.args).length > 0)
+      return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:proliferateDouble']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'proliferateDouble' });
+  }
   if (event.verb === 'lifeGainDouble') {
     if (event.condition !== undefined || Object.keys(event.args).length > 0)
       return failure(ability);

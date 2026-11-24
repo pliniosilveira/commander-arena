@@ -3465,11 +3465,26 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'removeCounters':
     case 'putCounters':
-      if (typeof cost.counter !== 'string' || cost.counter === '') {
+      // Gavel of the Righteous, Moxite Refinery: a cost that removes counters may name no kind (counters of any kind, chosen by the player).
+      if (
+        (typeof cost.counter !== 'string' || cost.counter === '') &&
+        !(cost.kind === 'removeCounters' && cost.counter === undefined)
+      ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
+      }
+      if (cost.kind === 'removeCounters' && cost.countX !== undefined) {
+        // Moxite Refinery (CR 107.3a, 602.2b): "Remove X counters": the number is the X announced, so the cost counts one.
+        if (cost.countX !== true || cost.count !== 1) {
+          issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
+        }
+      }
+      if (cost.kind === 'removeCounters' && cost.fromOne !== undefined) {
+        if (cost.fromOne !== true || cost.among === undefined) {
+          issue(out, `${path}.fromOne`, 'fromOne must be true, with among naming the permanents');
+        }
       }
       if (cost.kind === 'removeCounters' && cost.among !== undefined) {
         // Federation Fleet group D (CR 118.3, 122.1): "Remove two +1/+1 counters from among creatures you control": permanents the player controls, on the battlefield.

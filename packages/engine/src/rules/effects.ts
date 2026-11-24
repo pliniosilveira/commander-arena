@@ -148,6 +148,7 @@ import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
+import { proliferateTimes } from './proliferate-replacement';
 import {
   givesProtectionOfCardTypeChoice,
   givesProtectionOfChoice,
@@ -3831,11 +3832,18 @@ function runEffect(
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
       // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      // CR 701.34a, 614.1a, 614.5 (Tekuthal): each `proliferateDouble` replacement of the controller doubles how many times.
       return done(
         state,
         [],
         Array.from(
-          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          {
+            length: proliferateTimes(
+              state,
+              ctx.controller,
+              effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets),
+            ),
+          },
           () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
         ),
       );
