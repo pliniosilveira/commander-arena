@@ -16,6 +16,9 @@ export function citysBlessingHolders(state: GameState): SeatId[] {
 /** The players who have a designation now. */
 export function designationHolders(state: GameState, designation: Designation): SeatId[] {
   if (designation === 'citysBlessing') return citysBlessingHolders(state);
+  if (designation === 'initiative') {
+    return state.initiative === undefined || state.initiative === null ? [] : [state.initiative];
+  }
   return state.monarch === null ? [] : [state.monarch];
 }
 

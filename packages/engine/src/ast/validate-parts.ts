@@ -3591,7 +3591,7 @@ export function loyaltyOffPlaneswalkerIssues(
   });
 }
 
-export const DESIGNATIONS = ['monarch', 'citysBlessing'];
+export const DESIGNATIONS = ['monarch', 'citysBlessing', 'initiative'];
 
 /** The players a condition names: no target and no trigger subject to read there (D-131). */
 function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): void {
@@ -6686,6 +6686,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'ringTempts':
       // CR 701.54a (D-196): no operand; the Ring tempts the controller of the effect.
       break;
+    case 'takeInitiative':
+      // CR 726.3: one player takes the initiative, so the selector names exactly one.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (
+        e.player?.kind === 'eachPlayer' ||
+        e.player?.kind === 'eachOpponent' ||
+        e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'eachPlayerExcept' ||
+        e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'triggerDamagedPlayers' ||
+        e.player?.kind === 'combatDamagedByNamed' ||
+        e.player?.kind === 'all'
+      ) {
+        issue(out, `${path}.player`, 'only one player can have the initiative (CR 726.3)');
+      }
+      break;
+    case 'ventureIntoDungeon':
+      // CR 701.49, 701.49d: the controller of the effect ventures into a dungeon the engine has.
+      if (!isOneOf(e.dungeon, ['undercity'])) {
+        issue(out, `${path}.dungeon`, 'the only dungeon built is Undercity');
+      }
+      break;
     case 'createEmblem':
       // CR 114.1, 114.4 (D-201): an emblem can have static, triggered or activated abilities that work from the command zone: at least one, and no other kind.
       if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
@@ -7236,6 +7258,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.take.tapped`,
           'tapped is true, and only for cards put onto the battlefield',
         );
+      }
+      if (e.take?.withCounters !== undefined) {
+        // CR 122.6, 614.1c: the card enters the battlefield with counters, so it goes there, taken by choice.
+        const w = e.take.withCounters;
+        if (
+          e.take.to !== 'battlefield' ||
+          e.take.elseAnyToHand !== undefined ||
+          typeof w.counter !== 'string' ||
+          w.counter === '' ||
+          !isCount(w.count) ||
+          w.count < 1
+        ) {
+          issue(
+            out,
+            `${path}.take.withCounters`,
+            'withCounters is a counter kind and a positive count, only for cards put onto the battlefield, with no elseAnyToHand',
+          );
+        }
       }
       if (e.take?.manaValueAtMost !== undefined) {
         const limit = e.take.manaValueAtMost;

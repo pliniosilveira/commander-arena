@@ -35,6 +35,14 @@ export function checkInvariants(state: GameState): string[] {
     const obj = state.objects[id];
     if (!obj) problems.push(`${id} is listed in ${where} but is not an object`);
   };
+  // CR 726.3, 726.4: the initiative is a seat of the game, and while the game goes on one still in it.
+  if (state.initiative !== undefined && state.initiative !== null) {
+    const holder = state.seats[state.initiative];
+    if (holder === undefined)
+      problems.push(`the initiative is held by seat ${state.initiative}, which does not exist`);
+    else if (holder.hasLost && state.result === null)
+      problems.push('the player with the initiative has left the game');
+  }
   // CR 725.3, 725.4 (D-127): the monarch is a seat of the game, and while the game goes on one still in it.
   if (state.monarch !== null) {
     const monarch = state.seats[state.monarch];

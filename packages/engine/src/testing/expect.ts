@@ -365,6 +365,36 @@ export function createExpectations(
         );
       }
     },
+    initiative(seat) {
+      const state = getState();
+      const holder = state.initiative ?? null;
+      if (holder !== seat) {
+        fail(
+          `Expected ${seat === null ? 'no initiative' : `seat ${seat} to have the initiative`} but ${holder === null ? 'there is none' : `seat ${holder} has it`}`,
+          state,
+        );
+      }
+    },
+    dungeon(seat, room) {
+      const state = getState();
+      const actual = state.seats[seat]?.dungeon?.room ?? null;
+      if (actual !== room) {
+        fail(
+          `Expected seat ${seat}'s venture marker ${room === null ? 'to be in no dungeon' : `on ${room}`} but it is ${actual === null ? 'in no dungeon' : `on ${actual}`}`,
+          state,
+        );
+      }
+    },
+    dungeonsCompleted(seat, count) {
+      const state = getState();
+      const actual = state.seats[seat]?.dungeonsCompleted ?? 0;
+      if (actual !== count) {
+        fail(
+          `Expected seat ${seat} to have completed ${count} dungeons but it has ${actual}`,
+          state,
+        );
+      }
+    },
     dayNight(designation) {
       const state = getState();
       if ((state.dayNight ?? null) !== designation) {

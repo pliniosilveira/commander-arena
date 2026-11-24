@@ -84,6 +84,7 @@ import {
   riderOf,
   slotOf,
 } from './rules/graveyard-play';
+import { initiativeAfterLoss } from './rules/initiative';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
@@ -131,6 +132,7 @@ import {
   answerResolutionSearchMay,
   answerResolutionUnlessConfirm,
   answerResolutionUnlessPayment,
+  answerResolutionVenture,
   continueResolution,
 } from './rules/stack';
 import type { PutResult } from './rules/trigger-stack';
@@ -329,7 +331,10 @@ function concede(state: GameState, seat: SeatId): Result {
   events.push(...left.events);
   const handed = monarchAfterLoss(left.state);
   events.push(...handed.events);
-  const end = evaluateGameEnd(handed.state);
+  // CR 726.4: the same for the initiative.
+  const initiative = initiativeAfterLoss(handed.state);
+  events.push(...initiative.events);
+  const end = evaluateGameEnd(initiative.state);
   events.push(...end.events);
   if (end.state.result) return ok(end.state, events);
   // CR 800.4j: the game goes on without the seat that left; the next seat in turn order gets priority.
@@ -553,6 +558,11 @@ function answerChooseOption(
     // CR 608.2d, 801.5b: the opponent the controller chose for "an opponent separates / chooses / copies ...".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
+  }
+  if (d.purpose === 'dungeonRoom') {
+    // CR 701.49b, 309.5a: the room the player chose to move their venture marker to.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionVenture(state, option));
   }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.

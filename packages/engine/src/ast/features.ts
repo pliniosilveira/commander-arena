@@ -414,6 +414,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cumulativeUpkeep',
     // D-127: "you become the monarch" (CR 725).
     'becomeMonarch',
+    // CR 726.3: "you take the initiative"; CR 701.49: "venture into Undercity".
+    'takeInitiative',
+    'ventureIntoDungeon',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
     // Issue 97 (Kefka): "each player who owns a spell you cast this way loses life equal to its mana value".
@@ -3203,6 +3206,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   encore: true,
   cumulativeUpkeep: true,
   becomeMonarch: true,
+  takeInitiative: true,
+  ventureIntoDungeon: true,
   extraTurn: true,
   loseLifeManaValue: true,
   delayedTrigger: true,

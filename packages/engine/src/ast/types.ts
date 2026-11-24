@@ -568,10 +568,13 @@ export type ThisWayKind =
   | 'returned';
 
 /**
- * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
- * any number of players, `SeatState.citysBlessing`); the initiative can join.
+ * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`), the city's blessing (CR 702.131c, D-264:
+ * any number of players, `SeatState.citysBlessing`) and the initiative (CR 726.1, one player at most, `GameState.initiative`).
  */
-export type Designation = 'monarch' | 'citysBlessing';
+export type Designation = 'monarch' | 'citysBlessing' | 'initiative';
+
+/** The dungeons the engine knows (CR 309, `data/dungeons.ts`): only Undercity is built. */
+export type DungeonId = 'undercity';
 
 /** What two players are compared by in "has more [life | cards in hand | creatures] than you" (D-131). */
 export type PlayerStat = 'life' | 'cardsInHand' | 'creatures' | 'lands';
@@ -3520,6 +3523,19 @@ export type Effect =
    */
   | { readonly kind: 'becomeMonarch'; readonly player: PlayerSelector }
   /**
+   * "[Player] takes the initiative" (CR 726.1, 726.3, 726.5): the designation moves to the player the selector names (one player), and the previous holder ceases to have it.
+   * A player who has it already takes it again: nothing moves, but the inherent ability "Whenever a player takes the initiative, that player ventures into Undercity" triggers
+   * (CR 726.5). Nothing happens when that player has left the game. The designation belongs to the player (`rules/initiative.ts`).
+   */
+  | { readonly kind: 'takeInitiative'; readonly player: PlayerSelector }
+  /**
+   * "[You] venture into [Dungeon]" (CR 701.49, 701.49d, 309.5): the controller of the effect puts the dungeon into the command zone and the venture marker on its topmost room if they are
+   * in no dungeon (CR 701.49a), else moves the marker to an adjacent room along an arrow pointing away from the room it is on, which the player chooses when two arrows do (a
+   * `chooseOption` decision of purpose 'dungeonRoom'). The room ability of the room entered triggers (CR 309.4c). On the bottommost room the dungeon is removed, completed
+   * (CR 309.7), and the dungeon is entered afresh (CR 701.49c). Only "you" and only Undercity are built (`data/dungeons.ts`). See `rules/dungeon.ts`.
+   */
+  | { readonly kind: 'ventureIntoDungeon'; readonly dungeon: DungeonId }
+  /**
    * "Take an extra turn after this one", "target player takes an extra turn after this one" (CR 500.7): each player the selector names (in APNAP order when several)
    * is given a turn that is added directly after the current one; the most recently created extra turn is taken first, and afterwards the turn order goes on from the
    * player whose turn they followed. A player who has left the game takes none.
@@ -4614,6 +4630,11 @@ export type Effect =
          */
         readonly min?: number;
         readonly tapped?: true;
+        /**
+         * "Put a creature card from among them onto the battlefield with three +1/+1 counters on it" (CR 122.6, 614.1c): the card taken enters with `count` counters of the kind, put
+         * on as it enters. Only with `to: 'battlefield'`.
+         */
+        readonly withCounters?: { readonly counter: string; readonly count: number };
         /**
          * "... with mana value less than or equal to the number of lands you control" (D-145, CR 202.3): only cards whose mana value is at
          * most this amount, worked out as the effect runs (an `Amount` the effect could read anywhere: a count, a greatest, ...).

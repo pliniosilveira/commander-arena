@@ -54,6 +54,8 @@ export interface ScenarioBuilder {
   citysBlessing(): ScenarioBuilder;
   /** The seat has this speed at the start (CR 702.179b): 1 to 4; without it the seat has no speed. */
   speed(speed: number): ScenarioBuilder;
+  /** The seat is in Undercity with its venture marker on this room, a room id of `data/dungeons.ts` such as 'forge' (CR 309.4, 701.49). */
+  inUndercity(room: string): ScenarioBuilder;
   hand(name: string, options?: PlaceOptions): ScenarioBuilder;
   hand(...names: string[]): ScenarioBuilder;
   /** Top of the library first. */
@@ -186,6 +188,10 @@ export function scenario(options: ScenarioOptions = {}): ScenarioBuilder {
     },
     speed(speed) {
       seatSpec('speed').speed = speed;
+      return builder;
+    },
+    inUndercity(room) {
+      seatSpec('inUndercity').dungeonRoom = room;
       return builder;
     },
     ring(tempted) {

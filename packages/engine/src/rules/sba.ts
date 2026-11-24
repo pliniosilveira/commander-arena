@@ -37,6 +37,8 @@ import { settleDayNight } from './day-night';
 import { derive } from './derive';
 import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
+import { completeDungeons } from './dungeon';
+import { initiativeAfterLoss } from './initiative';
 import { leaveGame } from './leave-game';
 import { exemptFromLegendRule, type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
@@ -142,6 +144,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     return { state: dayNight.state, events: dayNight.events, performed: true, decision: null };
   }
 
+  // CR 309.6, 309.7: a dungeon whose venture marker is on its bottommost room, with no room ability of it still to leave the stack, is removed: completed.
+  const dungeons = completeDungeons(state);
+  if (dungeons !== null) {
+    return { state: dungeons.state, events: dungeons.events, performed: true, decision: null };
+  }
+
   // CR 704.5aa, 702.179a: a player with a permanent with start your engines! and no speed gets speed 1.
   const started = gainStartingSpeeds(state);
   if (started !== null) {
@@ -226,6 +234,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     const handed = monarchAfterLoss(state);
     state = handed.state;
     events.push(...handed.events);
+    // CR 726.4: the same for the initiative.
+    const initiative = initiativeAfterLoss(state);
+    state = initiative.state;
+    events.push(...initiative.events);
   }
   const clearFlag = state.seats.filter((s) => s.drewFromEmptyLibrary);
   for (const s of clearFlag) state = patchSeat(state, s.id, { drewFromEmptyLibrary: false });
