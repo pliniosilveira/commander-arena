@@ -169,6 +169,7 @@ import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_CARD_LOWERINGS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
+import { RIDERS_B_LOWERINGS } from './riders-b';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -2802,6 +2803,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
+  ...RIDERS_B_LOWERINGS,
   ...COPY_CHOSEN_TOKEN_LOWERINGS,
   ...FLEET_E_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.

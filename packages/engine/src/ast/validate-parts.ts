@@ -4172,6 +4172,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exile' ||
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
+    // Call for Aid (CR 611.2c): "Untap those creatures. They gain haste": the permanents a `gainControl` took are "those creatures".
+    e?.kind === 'gainControl' ||
     // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
     (e?.kind === 'counter' && e.exileInstead === true) ||
     e?.kind === 'createToken' ||
@@ -8712,6 +8714,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'cantBeBlockedByPlayer':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'youCantAttackPlayers':
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, "'youCantAttackPlayers' lasts until end of turn");
+      }
+      break;
+    case 'youCantSacrifice':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, "'youCantSacrifice' lasts until end of turn");
+      }
       break;
     case 'cantAttackPlaneswalkers':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

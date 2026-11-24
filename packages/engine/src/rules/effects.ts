@@ -140,6 +140,7 @@ import { runNextSpellPayLife } from './next-spell-life';
 import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
+import { runYouCantAttackPlayers, runYouCantSacrifice } from './player-bans';
 import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerCantCast, runPlayerLock } from './player-lock';
@@ -4073,6 +4074,14 @@ function runEffect(
     case 'cantBeBlockedByPlayer':
       // CR 509.1b, 611.2a (The Black Gate): the creatures named can't be blocked by creatures a player controls this turn.
       return runCantBeBlockedByPlayer(state, effect, ctx, targets);
+
+    case 'youCantAttackPlayers':
+      // CR 508.1a, 611.2a (Call for Aid): the controller can't attack the players named with any creature this turn.
+      return runYouCantAttackPlayers(state, effect, ctx, targets);
+
+    case 'youCantSacrifice':
+      // CR 701.21a, 101.2, 611.2a (Call for Aid): the controller can't sacrifice the permanents named this turn.
+      return runYouCantSacrifice(state, effect, ctx, targets);
 
     case 'cantAttackPlaneswalkers':
       // CR 508.1a, 611.2a (issue 81): the creatures named can't attack the controller's planeswalkers of a subtype this turn.

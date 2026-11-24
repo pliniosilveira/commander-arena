@@ -4141,7 +4141,12 @@ export type Effect =
         | 'forAsLongAsYouControlThis'
         | 'forAsLongAsThisRemains'
         | 'untilNextUntapStep'
-        | 'thisCombat';
+        | 'thisCombat'
+        /**
+         * "Until your next turn, those creatures can't block" (CR 611.2a, 500.1; Taunt from the Rampart): only with `cantBlock`; the objects named as the effect resolves (CR 611.2c) can't block until the next turn
+         * of the controller of the effect begins, the turn it resolves in not counted (as `grantKeyword` does).
+         */
+        | 'untilYourNextTurn';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -4885,6 +4890,25 @@ export type Effect =
       readonly kind: 'cantBeBlockedByPlayer';
       readonly objects: ObjectSelector;
       readonly player: PlayerSelector;
+    }
+  /**
+   * "You can't attack that player this turn" (Call for Aid, CR 508.1a, 611.2a): until end of turn no creature the controller of the effect controls (as they are when attackers are declared, a creature that
+   * arrives or changes control later too) can be declared attacking a player `players` names as the effect resolves (CR 611.2c). Only the players: their planeswalkers and battles can still be attacked.
+   */
+  | {
+      readonly kind: 'youCantAttackPlayers';
+      readonly players: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "You can't sacrifice those creatures this turn" (Call for Aid, CR 701.21a, 101.2, 611.2a, 611.2c): until end of turn the controller of the effect can't sacrifice the permanents `objects` names as the
+   * effect resolves, while they control them: `sacrifice` does nothing for them and they are no choice for a cost or an effect that has their controller sacrifice (as `cantBeSacrificed` of a static ability). A
+   * permanent another player controls is not held by it (CR 701.21a: only its controller can sacrifice it).
+   */
+  | {
+      readonly kind: 'youCantSacrifice';
+      readonly objects: ObjectSelector;
+      readonly duration: 'untilEndOfTurn';
     }
   /**
    * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, Jace, Multiverse Architect, issue 81): the creatures `objects` names (fixed as the effect

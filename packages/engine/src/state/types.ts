@@ -2653,6 +2653,19 @@ export type ContinuousChange =
    * `seat` controls. A restriction of the rules, read where the legality of a block is worked out (`rules/combat-legality.ts`), not in a layer.
    */
   | { readonly kind: 'cantBeBlockedByPlayer'; readonly seat: SeatId }
+  /**
+   * "You can't attack that player this turn" (`youCantAttackPlayers`, Call for Aid, CR 508.1a): no creature `seat` controls can be declared attacking a player of `players`; no fixed set of objects (`objects`
+   * is empty), a restriction of the rules read in `rules/attack-bans.ts`.
+   */
+  | {
+      readonly kind: 'controllerCantAttackPlayers';
+      readonly seat: SeatId;
+      readonly players: readonly SeatId[];
+    }
+  /**
+   * "You can't sacrifice those creatures this turn" (`youCantSacrifice`, Call for Aid, CR 701.21a, 101.2): `seat` can't sacrifice the objects of the effect while it controls them; read in `rules/sacrifice-prevention.ts`.
+   */
+  | { readonly kind: 'controllerCantSacrifice'; readonly seat: SeatId }
   | {
       readonly kind: 'cantAttackPlayer';
       readonly seat: SeatId;

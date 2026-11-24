@@ -30,8 +30,11 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
     if (word?.kind !== 'keywordName' || word.protection !== undefined) return failure(clause);
     // CR 608.2c, 611.2c (Ardbert, Warrior of Darkness): "Put a +1/+1 counter on each legendary creature you control. They gain vigilance until end of turn.": "they" is the group
     // the counters went to, read again as the keyword is granted (a group of "each" is fixed as the effect resolves); only for a keyword of one turn.
+    // Call for Aid (CR 611.2c): "They gain haste until end of turn" after "gain control of all creatures target opponent controls": the permanents it took, the engine's `moved`.
     const group =
-      !aboutMadeTokens(ctx) && clause.duration !== undefined ? ctx.lastCounteredGroup : null;
+      !aboutMadeTokens(ctx) && clause.duration !== undefined
+        ? (ctx.lastCounteredGroup ?? (ctx.gainedGroup ? MOVED : null))
+        : null;
     if (!aboutMadeTokens(ctx) && group === null) return failure(clause);
     const kind = keywordKind(word.name);
     if (kind === undefined || !isGrantable(kind)) return failure(clause);
