@@ -213,6 +213,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'static.self-and-enchanted-pt-count': asIs,
+  'static.self-and-enchanted-pt-amount': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
