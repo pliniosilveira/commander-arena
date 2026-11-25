@@ -146,6 +146,21 @@ export interface PlayResult {
   readonly steps: readonly PlanStep[];
 }
 
+/** A priority decision whose only options are passing and mana abilities. */
+const onlyPass = (d: PendingDecision): boolean =>
+  d.kind === 'priority' &&
+  d.options.every((o) => o.kind === 'pass' || o.kind === 'activateAbility');
+
+/** Whether the agent's priority now could be in a window (the cheap test of `windowOf`, on the state). */
+function inWindow(state: GameState, me: SeatId): boolean {
+  if (state.stack.length > 0) return false;
+  const step = state.turn.step;
+  if (state.turn.activeSeat === me) {
+    return step === 'precombatMain' || step === 'postcombatMain' || step === 'declareBlockers';
+  }
+  return step === 'end';
+}
+
 /** Plays `line` on `state` for `me` to the start of its next turn (see the module comment). */
 export function playLine(
   state: GameState,
@@ -169,6 +184,14 @@ export function playLine(
     const d = current.pending;
     if (d === null) return { end: current, steps };
     const seat = d.seat;
+    // Nothing to do but pass (or tap mana, which no rule of the agent does by hand): pass without building a
+    // view, the costliest part of a step on a big board. A recorded window of the agent still needs its print.
+    if (onlyPass(d) && !(record && seat === me && inWindow(current, me))) {
+      const passed = applyAction(current, seat, { kind: 'pass' });
+      if (!passed.ok) return null;
+      current = passed.state;
+      continue;
+    }
     const view = getView(current, seat);
     const handlers = handlersOf(seat)(view);
     let action: Action;

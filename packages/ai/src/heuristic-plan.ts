@@ -109,6 +109,8 @@ export function choosePlan(
   if (sample === undefined || sample.pending?.kind !== 'priority' || sample.pending.seat !== me) {
     return null;
   }
+  // Today's choice may have used the search share already (its own vetting on the sample): no planning then.
+  if (think.budget.expired()) return null;
   const weights = think.weights;
   const all = scenariosOf(view, sample, weights);
   // With more than one opponent every opponent's turn is played out: fewer scenarios.
