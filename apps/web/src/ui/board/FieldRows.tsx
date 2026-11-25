@@ -5,8 +5,9 @@
  */
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-/** What keeps its own mouse behavior: a press on it never starts a scroll drag. */
-const INTERACTIVE = 'button, a, input, select, textarea, [draggable="true"], [role="button"]';
+/** What keeps its own mouse behavior: a press on it never starts a scroll drag. A card that may be
+ *  picked up (native drag and drop) is one; any other card, a button too, scrolls the rows. */
+const INTERACTIVE = 'a, input, select, textarea, [draggable="true"]';
 /** How far (px) the mouse moves before a press becomes a scroll drag, not a click. */
 const DRAG_SLOP = 5;
 
@@ -37,9 +38,9 @@ export function FieldRows({ children }: { readonly children: ReactNode }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [update]);
-  // Dragging the empty room between the cards with the mouse scrolls the rows sideways, as a swipe
-  // does on a trackpad. Cards, buttons and anything draggable keep their own behavior (native
-  // drag and drop, clicks), and a drag that moved never ends in a click.
+  // Dragging with the mouse, on the empty room or on a card, scrolls the rows sideways, as a swipe
+  // does on a trackpad. A card that can be picked up keeps native drag and drop, a press that
+  // does not move is still a click, and a drag that moved never ends in one.
   useEffect(() => {
     const el = scroller.current;
     if (el === null) return;
