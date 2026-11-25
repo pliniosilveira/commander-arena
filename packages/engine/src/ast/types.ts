@@ -8404,6 +8404,14 @@ export type Replacement =
        */
       readonly fromGraveyard?: true;
       /**
+       * "As The Mimeoplasm enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1 counters on it equal
+       * to the power of the other card." (CR 614.12, 707.9b, 122.6, 707.2): what is copied is a card in ANY graveyard (`what` names the zone `graveyard` and the cards the filter matches, with
+       * no `fromGraveyard`); the controller chooses the card to copy (none is an answer, and with fewer than two such cards nothing is asked) and then the other card, and both are exiled as
+       * the permanent enters. The permanent enters as a copy of the first with the values it had in the graveyard, and with as many counters of `counter` as the power of the other card
+       * (0 for a card whose power is not a number, CR 208.3). Needs `optional` and `duration` `permanent`. Only the ability of a card: a token that is a copy of one asks nothing (`docs/ROADMAP.md`).
+       */
+      readonly exileTwoFromGraveyards?: { readonly counter: string };
+      /**
        * "..., except her name is ~" (CR 707.9a): the permanent that enters keeps the name it has as a card, every other copiable value is the original's. Only `true`.
        */
       readonly keepName?: true;

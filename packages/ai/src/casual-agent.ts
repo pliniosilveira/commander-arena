@@ -131,8 +131,8 @@ export function createCasualHandlers(
                     ? chooseLegendToKeep(view, d)
                     : d.purpose === 'conniveOrder'
                       ? { kind: 'choosePermanents', objects: d.legal.slice(0, 1) } // CR 701.50c, D-223: every permanent connives; the first listed goes first
-                      : d.purpose === 'entersCopy'
-                        ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of
+                      : d.purpose === 'entersCopy' || d.purpose === 'entersCopyOther'
+                        ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of; The Mimeoplasm (CR 707.9b): the best creature card, then the next best for the counters
                         : d.purpose === 'entersRemoveCounters'
                           ? chooseCountersToRemove(view, d) // CR 614.12, 122.1, Sin: the opponents' counters come off, the agent's own only when they hurt it
                           : d.purpose === 'devour'

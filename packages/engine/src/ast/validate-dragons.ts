@@ -963,7 +963,11 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
     filterSome(
       r.what,
       (f) =>
-        (f.zone !== undefined && !(r.fromGraveyard === true && f.zone === 'graveyard')) ||
+        (f.zone !== undefined &&
+          !(
+            (r.fromGraveyard === true || r.exileTwoFromGraveyards !== undefined) &&
+            f.zone === 'graveyard'
+          )) ||
         f.stackKind !== undefined ||
         f.attacking !== undefined ||
         f.attackingYou !== undefined ||
@@ -982,6 +986,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
   }
   if (r.fromGraveyard === true && r.what?.zone !== 'graveyard') {
     issue(out, `${path}.what`, 'what names the zone graveyard when the copy is of a card there');
+  }
+  // The Mimeoplasm (CR 614.12, 707.9b, 122.6): "exile two creature cards from graveyards ... a copy of one of those cards with additional +1/+1 counters equal to the power of the other".
+  if (r.exileTwoFromGraveyards !== undefined) {
+    const x = r.exileTwoFromGraveyards;
+    if (typeof x !== 'object' || x === null || typeof x.counter !== 'string' || x.counter === '') {
+      issue(
+        out,
+        `${path}.exileTwoFromGraveyards.counter`,
+        'exileTwoFromGraveyards names a counter',
+      );
+    }
+    if (r.what?.zone !== 'graveyard' || r.fromGraveyard !== undefined) {
+      issue(
+        out,
+        `${path}.what`,
+        'the cards exiled from graveyards are in the zone graveyard, and the copy is not of one in the graveyard of the controller (fromGraveyard)',
+      );
+    }
+    if (r.optional !== true || r.duration !== 'permanent') {
+      issue(out, `${path}`, 'exiling two cards is a "may" and the copy lasts for good');
+    }
   }
   if (r.keepName !== undefined && r.keepName !== true) {
     issue(out, `${path}.keepName`, 'keepName is true when present');

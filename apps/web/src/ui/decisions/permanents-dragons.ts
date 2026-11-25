@@ -14,6 +14,19 @@ export function isEntersCopy(decision: Asked): boolean {
   return decision.purpose === 'entersCopy';
 }
 
+/** True for the second question of "exile two creature cards from graveyards" (The Mimeoplasm, CR 707.9b): the other card, whose power gives the counters. */
+export function isEntersCopyOther(decision: Asked): boolean {
+  return decision.purpose === 'entersCopyOther';
+}
+
+/** "Choose the other creature card to exile: its power is the number of +1/+1 counters, as The Mimeoplasm enters." */
+export function entersCopyOtherPrompt(
+  decision: Pick<ChoosePermanentDecision, 'subject' | 'source'>,
+  index: Index,
+): string {
+  return `Choose the other creature card to exile: its power is the number of +1/+1 counters, as ${entering(decision, index)} enters.`;
+}
+
 /** The permanent that is entering, by name: its own object while it is in a hand or on the stack, else "it". */
 function entering(
   decision: Pick<ChoosePermanentDecision, 'subject' | 'source'>,

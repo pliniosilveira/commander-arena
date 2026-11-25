@@ -437,9 +437,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     }
     if (
       (head.kind === 'move' || head.kind === 'enterToken') &&
-      state.resolution?.entersCopy !== undefined
+      (state.resolution?.entersCopy !== undefined ||
+        state.resolution?.entersCopyOther !== undefined)
     ) {
-      const { entersCopy: _answered, ...rest } = state.resolution;
+      const { entersCopy: _answered, entersCopyOther: _other, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // The opponent chosen belongs to the one effect that asked for it (rules/choose-opponent.ts): once that effect has started, the next one asks again.
@@ -616,6 +617,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
+      ...(res.entersCopyOther === undefined ? {} : { entersCopyOther: res.entersCopyOther }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
@@ -1224,7 +1226,13 @@ export function answerResolutionEntersCopy(
 ): ResolveOutcome | null {
   const res = state.resolution;
   const d = state.pending;
-  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'entersCopy') return null;
+  if (
+    !res ||
+    d?.kind !== 'choosePermanent' ||
+    (d.purpose !== 'entersCopy' && d.purpose !== 'entersCopyOther')
+  ) {
+    return null;
+  }
   const head = res.queue[0];
   // A token that is a copy of a permanent that may enter as a copy asks about the spell or ability that creates it (D-225).
   const entering =
@@ -1236,10 +1244,14 @@ export function answerResolutionEntersCopy(
           ? res.object
           : null;
   if (entering !== d.source) return null;
-  return continueResolution(
-    { ...state, pending: null, resolution: { ...res, entersCopy: chosen[0] ?? null } },
-    [],
-  );
+  // The Mimeoplasm (CR 707.9b): the second question of "exile two creature cards from graveyards" names the other card, whose power gives the counters.
+  const answered =
+    d.purpose === 'entersCopyOther'
+      ? chosen[0] === undefined
+        ? res
+        : { ...res, entersCopyOther: chosen[0] }
+      : { ...res, entersCopy: chosen[0] ?? null };
+  return continueResolution({ ...state, pending: null, resolution: answered }, []);
 }
 
 /**

@@ -835,6 +835,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-extra-counters': asIs,
   'replacement.enters-as-copy-except-quoted': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
+  'replacement.enters-as-copy-exile-two': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,

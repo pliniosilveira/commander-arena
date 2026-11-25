@@ -1141,7 +1141,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           : answerSacrificeCost(state, action.objects);
       }
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
-      if (d.purpose === 'entersCopy')
+      if (d.purpose === 'entersCopy' || d.purpose === 'entersCopyOther')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
       // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
       if (d.purpose === 'entersRemoveCounters')

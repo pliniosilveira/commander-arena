@@ -19,8 +19,10 @@ function real(name: string) {
 
 const AMALGAM = 'Thieving Amalgam';
 const OROCHI = 'Orochi Soul-Reaver';
+const MIMEOPLASM = 'The Mimeoplasm';
 const amalgam = real(AMALGAM);
 const orochi = real(OROCHI);
+const mimeoplasm = real(MIMEOPLASM);
 const BEARS = 'Grizzly Bears';
 /** The top card of the library of each seat, one different card each, so a card is told from the library it came from. */
 const TOPS = [undefined, BEARS, 'Giant Spider', 'Serra Angel'] as const;
@@ -29,6 +31,7 @@ describe('the cards are supported', () => {
   test.each([
     [AMALGAM, amalgam],
     [OROCHI, orochi],
+    [MIMEOPLASM, mimeoplasm],
   ])('%s has no ability left unread', (_name, imported) => {
     expect(imported.support.reasons).toEqual([]);
     expect(imported.support.unparsed).toEqual([]);
@@ -327,5 +330,42 @@ describe('Orochi Soul-Reaver played (CR 603.2c, 701.40a, 111.10)', () => {
     g.expect.zone('Treasure', 'battlefield', { seat: 0, count: 1 });
     g.expect.librarySize(2, 3);
     g.expect.librarySize(1, 4);
+  });
+});
+
+describe('The Mimeoplasm played (CR 614.12, 707.9b, 122.6)', () => {
+  const game = (seats: 3 | 4) => {
+    let b = scenario({ seats }).define(mimeoplasm.definition);
+    const graves = [[], ['Serra Angel'], ['Giant Spider'], []] as const;
+    for (let s = 0; s < seats; s++) {
+      b = b.seat(s as 0 | 1 | 2 | 3).library('Plains', 'Plains', 'Plains');
+      if (s === 0)
+        b = b.hand(MIMEOPLASM).battlefield('Swamp', 'Forest', 'Island', 'Swamp', 'Swamp');
+      for (const name of graves[s] ?? []) b = b.graveyard(name);
+    }
+    return b.seat(0).at('precombatMain').build();
+  };
+
+  test('the real card exiles two creature cards from any graveyards and enters as a copy of one with counters equal to the power of the other', () => {
+    const g = game(3);
+    g.act(0).cast(MIMEOPLASM, { pay: true });
+    g.passAll();
+    g.expect.pending('choosePermanent', 0);
+    g.act(0).choosePermanents({ name: 'Serra Angel', zone: 'graveyard', seat: 1 });
+    // Giant Spider is the only card left: no second question; it gives 2 counters.
+    g.expect.pt(MIMEOPLASM, 6, 6);
+    g.expect.counters(MIMEOPLASM, { '+1/+1': 2 });
+    g.expect.derived(MIMEOPLASM, { keywords: ['flying', 'vigilance'] });
+    g.expect.zone('Serra Angel', 'exile', { seat: 1 });
+    g.expect.zone('Giant Spider', 'exile', { seat: 2 });
+    g.expect.invariants();
+  });
+
+  test('on four seats the card of the third graveyard is a choice too', () => {
+    const g = game(4);
+    g.act(0).cast(MIMEOPLASM, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents({ name: 'Giant Spider', zone: 'graveyard', seat: 2 });
+    g.expect.pt(MIMEOPLASM, 6, 8);
   });
 });
