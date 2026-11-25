@@ -298,8 +298,26 @@ export function runDiscard(
   const hand = getSeat(state, seat).hand;
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
   // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
+  // Nantuko Cultivator: "discard any number of land cards": only the cards of the hand the filter matches may be chosen.
+  const offered =
+    instruction.cards === undefined
+      ? hand
+      : hand.filter((id) => {
+          const card = state.objects[id];
+          return (
+            card !== undefined &&
+            matchesFilter(
+              state,
+              card,
+              { ...instruction.cards, zone: 'hand' },
+              { controller: seat, source: res.source },
+            )
+          );
+        });
   const count =
-    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
+    instruction.anyNumber === true || instruction.hand === true
+      ? offered.length
+      : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined
@@ -333,7 +351,7 @@ export function runDiscard(
     instruction.chosen ??
     random?.cards ??
     (anyNumber || upTo
-      ? hand.length === 0
+      ? offered.length === 0
         ? []
         : null
       : hand.length <= count && !choice
@@ -347,9 +365,9 @@ export function runDiscard(
       source: res.object,
       purpose: 'discard',
       zone: 'hand',
-      legal: hand,
+      legal: offered,
       min: anyNumber || upTo ? 0 : choice ? 1 : count,
-      max: anyNumber ? hand.length : upTo ? max : choice ? max : count,
+      max: anyNumber ? offered.length : upTo ? max : choice ? max : count,
       reveal: true,
       prompt: anyNumber
         ? 'Discard any number of cards'

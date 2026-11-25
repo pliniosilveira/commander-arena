@@ -245,8 +245,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (cost.filter === undefined && cost.named === undefined) {
         return ok({ kind: 'discard', count: cost.amount.value });
       }
-      // D-207 (stage P50): "Discard a legendary card", "Discard another card named ~": the cost of an ordinary activated ability.
-      if (options.ordinary !== true) return failure(cost);
+      // D-207 (stage P50): "Discard a legendary card", "Discard another card named ~": the cost of an ordinary activated ability. A filter alone ("discard a land card")
+      // is also an additional cost of a spell (CR 118.8, 701.9): the engine's `discardFilter` of the cast.
+      if (options.ordinary !== true && !(options.additional === true && cost.named !== true)) {
+        return failure(cost);
+      }
       if (cost.named === true)
         return ok({ kind: 'discard', count: cost.amount.value, named: true });
       const narrowed = lowerFilter({

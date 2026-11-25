@@ -1778,6 +1778,8 @@ export type Instruction =
       readonly unless?: ObjectFilter;
       /** "Discard any number of cards" (`discard.anyNumber`, D-151): the player chooses none, some or all of the hand. */
       readonly anyNumber?: true;
+      /** "Discard any number of land cards" (`discard.cards`): with `anyNumber`, only the cards of the hand this filter matches may be chosen. */
+      readonly cards?: ObjectFilter;
       /** "Discard up to two cards" (`discard.upTo`, CR 701.9, 107.1c): the player chooses none to `count` of the hand. */
       readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */

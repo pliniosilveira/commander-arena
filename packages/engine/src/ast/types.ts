@@ -3731,6 +3731,11 @@ export type Effect =
        */
       readonly anyNumber?: true;
       /**
+       * "Discard any number of land cards" (CR 701.9, Nantuko Cultivator): the cards that may be chosen are those of the hand the filter matches (types, supertypes, subtypes;
+       * no zone, no controller); the others stay. Only with `anyNumber`. What was discarded is what a later `thisWay` `discarded` amount counts.
+       */
+      readonly cards?: ObjectFilter;
+      /**
        * "Discard up to two cards" (CR 701.9, 107.1c; Cathartic Pyre): the player chooses none, one or as many as `count` of the cards in their hand (all of a smaller hand may be chosen). What was
        * discarded is what a later `thisWay` `discarded` amount counts ("then draw that many cards"). Never with `anyNumber`, `hand`, `random`, `unless` or `together`.
        */

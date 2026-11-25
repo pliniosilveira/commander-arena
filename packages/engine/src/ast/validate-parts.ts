@@ -7163,6 +7163,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
           checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else if (typeof limit === 'object' && limit?.kind === 'x') {
+          // CR 107.3, 202.3 (Genesis Hydra): "with mana value X or less": the X of the spell or ability, read as the effect runs (checked like the count of cards looked at).
+          checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);
         } else {
           checkStateAmount(limit, `${path}.take.manaValueAtMost`, out, 'a mana value limit');
         }
@@ -7810,6 +7813,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.anyNumber`,
             'anyNumber is true, with a count of 0 and no "unless you discard"',
+          );
+        }
+      }
+      // CR 701.9 (Nantuko Cultivator): "Discard any number of land cards": a filter of the cards in the hand, only for a discard of any number.
+      if (e.kind === 'discard' && e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.anyNumber !== true) {
+          issue(out, `${path}.cards`, 'the kind of card goes with anyNumber only');
+        }
+        if (
+          filterSome(
+            e.cards,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.cards`,
+            'the card described is one in the hand: no zone, controller, owner or stackKind',
           );
         }
       }
