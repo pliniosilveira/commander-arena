@@ -27,6 +27,19 @@ export function entersCopyOtherPrompt(
   return `Choose the other creature card to exile: its power is the number of +1/+1 counters, as ${entering(decision, index)} enters.`;
 }
 
+/** True for the question of Cipher (CR 702.99): the creature a resolving spell's card is encoded on. */
+export function isCipher(decision: Asked): boolean {
+  return decision.purpose === 'cipher';
+}
+
+/** "Choose a creature to encode Arcane Heist on, or none." */
+export function cipherPrompt(
+  decision: Pick<ChoosePermanentDecision, 'subject' | 'source'>,
+  index: Index,
+): string {
+  return `Choose a creature to encode ${entering(decision, index)} on, or none. Whenever it deals combat damage to a player, you may cast a copy of the card.`;
+}
+
 /** The permanent that is entering, by name: its own object while it is in a hand or on the stack, else "it". */
 function entering(
   decision: Pick<ChoosePermanentDecision, 'subject' | 'source'>,

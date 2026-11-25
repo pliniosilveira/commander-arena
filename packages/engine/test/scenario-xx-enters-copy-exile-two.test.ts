@@ -120,7 +120,11 @@ describe('the copy and the counters', () => {
     g.act(0).choosePermanents({ name: SPIDER, zone: 'graveyard', seat: 2 });
     // A Serra Angel (4/4 flying) with two +1/+1 counters, the power of Giant Spider (2).
     g.expect.zone(MIMIC, 'battlefield', { seat: 0 });
-    g.expect.derived(MIMIC, { types: ['creature'], subtypes: ['Angel'], keywords: ['flying', 'vigilance'] });
+    g.expect.derived(MIMIC, {
+      types: ['creature'],
+      subtypes: ['Angel'],
+      keywords: ['flying', 'vigilance'],
+    });
     g.expect.pt(MIMIC, 6, 6);
     g.expect.counters(MIMIC, { '+1/+1': 2 });
     // Both cards were exiled; the third one stays where it was.

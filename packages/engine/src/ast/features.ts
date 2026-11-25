@@ -918,6 +918,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gravestorm',
     // CR 702.88a: Rebound.
     'rebound',
+    // CR 702.99: Cipher.
+    'cipher',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
     // D-139: Living weapon (CR 702.92).
@@ -3841,6 +3843,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   storm: true,
   gravestorm: true,
   rebound: true,
+  cipher: true,
   replicate: true,
   gift: true,
   livingWeapon: true,

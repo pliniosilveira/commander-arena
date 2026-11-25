@@ -55,6 +55,7 @@ export type SimpleKeyword = Extract<
   | 'undaunted'
   | 'aftermath'
   | 'rebound'
+  | 'cipher'
   | 'readAhead'
   | 'dethrone'
   | 'melee'
@@ -149,6 +150,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['aftermath', 'aftermath'],
   // CR 702.88a (Rebound): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['rebound', 'rebound'],
+  // CR 702.99 (Cipher): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
+  ['cipher', 'cipher'],
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],

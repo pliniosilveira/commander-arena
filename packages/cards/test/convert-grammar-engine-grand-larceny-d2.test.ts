@@ -369,3 +369,85 @@ describe('The Mimeoplasm played (CR 614.12, 707.9b, 122.6)', () => {
     g.expect.pt(MIMEOPLASM, 6, 8);
   });
 });
+
+describe('Arcane Heist played (CR 608.2g, 118.9, 614.1a, 702.99)', () => {
+  const heist = real('Arcane Heist');
+  const HEIST = 'Arcane Heist';
+  const BOLT = 'Lightning Bolt';
+
+  test('it is supported and its keyword is cipher', () => {
+    expect(heist.support.reasons).toEqual([]);
+    expect(heist.support.unparsed).toEqual([]);
+    expect(heist.support.status).toBe('supported');
+    expect(JSON.stringify(heist.definition.faces[0]?.abilities)).toContain('"cipher"');
+    expect(JSON.stringify(heist.definition.faces[0]?.spell)).toContain('"exileInstead":true');
+  });
+
+  const board = (seats: 3 | 4) => {
+    let b = scenario({ seats }).define(heist.definition);
+    for (let s = 0; s < seats; s++) {
+      b = b.seat(s as 0 | 1 | 2 | 3).library('Plains', 'Plains', 'Plains');
+      if (s === 0) b = b.hand(HEIST).battlefield('Island', 'Island', 'Island', 'Island', BEARS);
+      if (s === seats - 1) b = b.graveyard(BOLT);
+    }
+    return b.seat(0).at('precombatMain').build();
+  };
+
+  for (const seats of [3, 4] as const) {
+    test(`${seats} seats: it casts the Bolt of an opponent's graveyard for free, the Bolt is exiled instead of going to that graveyard, and the card is encoded`, () => {
+      const g = board(seats);
+      const owner = seats - 1;
+      g.act(0).cast(HEIST, {
+        targets: [{ name: BOLT, zone: 'graveyard', seat: owner }],
+        pay: true,
+      });
+      g.passAll();
+      g.expect.pending('confirmOptional', 0);
+      g.act(0).accept();
+      g.act(0).chooseTargets({ player: 1 });
+      // Cipher (as Arcane Heist finishes resolving, the Bolt it cast waits on the stack): the card is exiled encoded on a creature the controller chooses.
+      g.expect.pending('choosePermanent', 0);
+      g.act(0).choosePermanents(BEARS);
+      g.expect.stack([BOLT]);
+      g.passAll();
+      g.expect.life(1, 37);
+      // "If that spell would be put into their graveyard, exile it instead."
+      g.expect.zone(BOLT, 'exile');
+      g.expect.noObject(BOLT, { zone: 'graveyard' });
+      g.expect.zone(HEIST, 'exile', { seat: 0 });
+      g.expect.noObject(HEIST, { zone: 'graveyard' });
+      g.expect.invariants();
+    });
+  }
+
+  test('the creature that deals combat damage to a player lets its controller cast a copy of the card', () => {
+    const g = scenario({ seats: 3 })
+      .define(heist.definition)
+      .seat(0)
+      .library('Plains', 'Plains', 'Plains')
+      .hand(HEIST)
+      .battlefield('Island', 'Island', 'Island', 'Island', BEARS)
+      .seat(1)
+      .library('Plains', 'Plains', 'Plains')
+      .graveyard(BOLT)
+      .seat(2)
+      .library('Plains', 'Plains', 'Plains')
+      .graveyard('Divination')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(HEIST, { targets: [{ name: BOLT, zone: 'graveyard', seat: 1 }], pay: true });
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).chooseTargets({ player: 2 });
+    g.act(0).choosePermanents(BEARS);
+    g.passAll();
+    g.expect.zone(HEIST, 'exile', { seat: 0 });
+    g.playCombat({ attack: [{ attacker: BEARS, target: { player: 2 } }], until: 'combatDamage' });
+    g.passAll();
+    // The copy of Arcane Heist may be cast: the question names the one copy.
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error(`expected the cast question, got ${d?.kind}`);
+    expect(d.legal).toHaveLength(1);
+  });
+});

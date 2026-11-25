@@ -383,8 +383,9 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound') =>
-    abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
+  const has = (
+    kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound' | 'cipher',
+  ) => abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
   }
@@ -415,6 +416,10 @@ export function checkCastFace(
   // CR 702.88a: "Rebound appears on some instants and sorceries".
   if (has('rebound') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'rebound is on an instant or a sorcery (CR 702.88a)');
+  }
+  // CR 702.99: "Cipher appears on some instants and sorceries".
+  if (has('cipher') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
+    issue(out, `${path}.abilities`, 'cipher is on an instant or a sorcery (CR 702.99)');
   }
   // D-129: "if a replicate cost was paid for it" needs a replicate ability to pay.
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');

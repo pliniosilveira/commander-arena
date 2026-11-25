@@ -105,6 +105,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   replicate: ['Rep', 'Replicate'],
   // Rebound (CR 702.88a): on an instant or a sorcery.
   rebound: ['Rbd', 'Rebound'],
+  cipher: ['Cph', 'Cipher'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
   // Gift a card (D-135).

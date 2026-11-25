@@ -7280,6 +7280,13 @@ export type Keyword =
    */
   | { readonly kind: 'rebound' }
   /**
+   * CR 702.99 (Cipher; the number as the task gave it, unverified): "Then you may exile this spell card encoded on a creature you control. Whenever that creature deals combat damage to a
+   * player, its controller may cast a copy of the encoded card without paying its mana cost." A static ability of an instant or a sorcery that works while the spell is on the stack: as it
+   * resolves, after its other effects, its controller may choose a creature they control and the card is exiled, encoded on it, instead of going to the graveyard (`rules/cipher.ts`).
+   * A copy of the spell is not a card and is not encoded. Multiple instances are redundant.
+   */
+  | { readonly kind: 'cipher' }
+  /**
    * CR 702.56a (Replicate, D-129): "Replicate [cost]" means "As an additional cost to cast this spell, you may pay
    * [cost] any number of times" and "When you cast this spell, if a replicate cost was paid for it, copy it for each
    * time its replicate cost was paid. If the spell has any targets, you may choose new targets for any of the

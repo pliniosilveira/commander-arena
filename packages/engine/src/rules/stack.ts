@@ -25,6 +25,7 @@ import { giftEffectOf } from './cast-gift';
 import { runChangeTarget } from './change-target';
 import { DECLINE_OPTION } from './choose-one';
 import { asksWhichOpponent } from './choose-opponent';
+import { cipherCandidates, ciphers, encodeOn } from './cipher';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
@@ -599,12 +600,38 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       permanent,
       elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen,
     });
+    // CR 702.99 (Cipher): after its other effects, the controller of the spell may choose a creature they control to encode the card on; the card is then exiled instead of
+    // going to the graveyard. Asked once, with a creature to choose; a spell that another effect or keyword already places keeps that place.
+    const cipherable = ciphers(faceOf(next, obj), obj, {
+      permanent,
+      elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen || rebound,
+    });
+    if (cipherable && res.cipherOn === undefined) {
+      const legal = cipherCandidates(next, obj);
+      if (legal.length > 0) {
+        return {
+          state: setPending(collectTriggers(state, events), {
+            kind: 'choosePermanent',
+            seat: controllerOf(state, obj),
+            source: res.object,
+            subject: res.object,
+            purpose: 'cipher',
+            min: 0,
+            max: 1,
+            legal,
+          }),
+          events,
+          paused: true,
+        };
+      }
+    }
+    const encodedOn = cipherable && res.cipherOn != null ? res.cipherOn : null;
     const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled || timeCounters !== null || rebound
+        : adventure || exiled || timeCounters !== null || rebound || encodedOn !== null
           ? 'exile'
           : boughtBack
             ? 'hand'
@@ -702,6 +729,14 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
             reboundTrigger(moved.newObject, controllerOf(state, obj)),
           ],
         };
+      }
+      // CR 702.99 (Cipher): the card exiled as it resolved is encoded on the creature, which has the ability to copy it and cast the copy for as long as it stays on the battlefield.
+      if (
+        encodedOn !== null &&
+        moved.newObject !== null &&
+        next.objects[encodedOn]?.zone === 'battlefield'
+      ) {
+        next = encodeOn(next, moved.newObject, encodedOn);
       }
       // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {
@@ -1252,6 +1287,24 @@ export function answerResolutionEntersCopy(
         : { ...res, entersCopyOther: chosen[0] }
       : { ...res, entersCopy: chosen[0] ?? null };
   return continueResolution({ ...state, pending: null, resolution: answered }, []);
+}
+
+/**
+ * Records the creature the controller of a resolving spell with Cipher chose to encode the card on (CR 702.99; none is a legal answer), then continues: the spell is then put into exile
+ * or the graveyard. Null when no such question waits.
+ */
+export function answerResolutionCipher(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'cipher') return null;
+  if (d.source !== res.object) return null;
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, cipherOn: chosen[0] ?? null } },
+    [],
+  );
 }
 
 /**
