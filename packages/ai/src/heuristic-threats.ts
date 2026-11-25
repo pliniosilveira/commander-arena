@@ -164,18 +164,21 @@ export interface Threat {
   readonly count: number;
 }
 
-/** The threats of every opponent of the agent (`view.viewer`), most important first, before the cut. */
+/**
+ * The threats of every opponent of the agent (`view.viewer`), most important first, before the cut. `pools`
+ * holds the opponents' pools when the caller has read them already (`scenariosOf`), so none is read twice.
+ */
 export function threatsOf(
   view: GameView,
   sample: GameState,
   weights: AgentWeights,
-  see: ViewOf = getView,
+  pools?: ReadonlyMap<SeatId, readonly PoolCard[]>,
 ): Threat[] {
   const me = view.viewer;
   const out: Threat[] = [];
   for (const seat of view.seats) {
     if (seat.id === me || seat.hasLost || seat.handCount === 0) continue;
-    const pool = poolOf(sample, seat.id, see);
+    const pool = pools?.get(seat.id) ?? poolOf(sample, seat.id);
     const now = unitsOfSeat(view, seat.id, false);
     const later = unitsOfSeat(view, seat.id, true);
     const byKind = new Map<ThreatKind, PoolCard[]>();
@@ -275,7 +278,7 @@ export function scenariosOf(
     pools.set(seat.id, pool);
     kinds.set(seat.id, new Map(pool.map((c) => [c.card, c.kind])));
   }
-  const top = threatsOf(view, sample, weights, see).slice(0, MAX_THREATS);
+  const top = threatsOf(view, sample, weights, pools).slice(0, MAX_THREATS);
   let none = 1;
   for (const seat of view.seats) {
     const chosen = top.filter((t) => t.seat === seat.id);
