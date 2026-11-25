@@ -243,8 +243,9 @@ describe('trigger.cast: "Whenever you cast ... spell" (CR 601.2i)', () => {
 
   test.each([
     [
-      'Whenever an opponent casts their first spell each turn, you gain 1 life.',
-      'their first spell each turn, you gain 1 life.',
+      // Mind's Dilation reads "their first spell each turn"; a kind of spell in it is another trigger.
+      'Whenever an opponent casts their first creature spell each turn, you gain 1 life.',
+      'their first creature spell each turn, you gain 1 life.',
     ],
     [
       'Whenever you cast a creature spell of the chosen player, you gain 1 life.',

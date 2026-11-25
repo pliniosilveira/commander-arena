@@ -878,6 +878,7 @@ export function answerResolutionCards(
       head.kind !== 'lookSplit' &&
       head.kind !== 'pileSeparate' &&
       head.kind !== 'opponentChoosesCard' &&
+      head.kind !== 'handCards' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&

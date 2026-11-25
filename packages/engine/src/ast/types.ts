@@ -2536,6 +2536,12 @@ export interface ChooseSelector {
    */
   readonly fromHandOf?: PlayerSelector;
   /**
+   * "You may put any number of land cards that player owns from exile onto the battlefield under your control" (Oblivion Sower, CR 608.2d, 108.3, 406.3): the candidates are the matching
+   * cards in exile that the player this selector names owns, whoever exiled them and whenever (not only the cards an earlier effect moved); the chooser still makes the choice. Only for
+   * `moveToZone` onto the battlefield, with `filter.zone` `exile` and no `fromMoved`, `fromHandOf` or `alsoGraveyard`.
+   */
+  readonly fromExileOf?: PlayerSelector;
+  /**
    * "Then you may exile a creature or planeswalker card from each graveyard" (King Narfi's Betrayal, CR 608.2d, 404.1): one choice for each graveyard, in turn order from the controller,
    * each among the cards in that player's graveyard that the filter matches (the controller chooses in all of them: the cards are not theirs). With `optional`, one card or none from
    * each, with `count` 1. Only for `moveToZone` to exile, with `filter.zone` `graveyard` and no `fromMoved`.
@@ -3553,6 +3559,17 @@ export type Effect =
        * creature card (a card of any other kind stays where it is). Needs `castOnly`.
        */
       readonly creatureSpellsOnly?: true;
+      /**
+       * "You may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost." (Nashi, Moon Sage's Scion; CR 118.9, 119.4, 601.2f):
+       * a spell cast with this permission is cast by the alternative cost `lifeForMana` (no mana cost, life equal to its mana value, an {X} counting as the X announced) and not paying its
+       * mana cost; a land card is played as usual. Not with `free`, `lessGeneric`, `undaunted`, `anyManaColor` or `anyManaType` (there is no mana cost to change).
+       */
+      readonly lifeForMana?: true;
+      /**
+       * "Until end of turn, you may play one of those cards" (Nashi, CR 601.2, 305.1): the permission is for one card among all the cards `objects` names: casting or playing one of them ends
+       * the permissions of the others (`rules/play-permission-one.ts`).
+       */
+      readonly oneOf?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -3657,6 +3674,13 @@ export type Effect =
        */
       readonly restToBottom?: true;
     }
+  /**
+   * "Target opponent chooses X cards from their hand. Look at those cards." and "Look at that player's hand." (Extract Brain, Silent-Blade Oni; CR 608.2d, 402.3): `player` names one
+   * player (a target, the player of a trigger). With `count` that player chooses that many cards of their own hand, as many as they can when it holds fewer (a `chooseCards` decision of
+   * purpose `handChoice`; the cards stay hidden from the other players); without it every card of the hand is named. The cards named stay in the hand and are what `moved` names afterwards;
+   * the controller looks at them as the `castFree` with `fromHand` after it asks which one to cast. Nothing is moved.
+   */
+  | { readonly kind: 'handCards'; readonly player: PlayerSelector; readonly count?: Amount }
   /**
    * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-660, Plargg and Nassari): an opponent of the controller (the first one in turn order who is still in
    * the game: with more than two players the controller does not choose which, as for `revealAndSeparate`) chooses one of the cards `moved` names that `filter` matches, among the
@@ -5441,6 +5465,12 @@ export type Effect =
       readonly paying?: true;
       /** "... and mana of any type can be spent to cast that spell" (CR 609.4b): the spell cast with `paying` can be paid with any mana for any symbol of its cost. Needs `paying`. */
       readonly anyManaType?: true;
+      /**
+       * "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain; CR 608.2g, 118.9, 402.3): the cards
+       * `moved` names (`handCards`) are in a hand, whoever's it is; the controller looks at them and casts one from there, as the cast of CR 608.2g says. The spell is the controller's
+       * and its card stays its owner's. Only with `objects` a `moved` reference, and with no `play`, `max`, `perOwner`, `player`, `remember`, `paying` or `creatureGains`.
+       */
+      readonly fromHand?: true;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it

@@ -140,6 +140,7 @@ import {
   playPermissionExiles,
 } from './play-permission-color';
 import { playPermissionLess } from './play-permission-cost';
+import { endOneOfPermissions } from './play-permission-one';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -185,6 +186,8 @@ export function beginCast(
     readonly payInstead?: readonly Cost[];
     /** Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...", kept for the permanent the spell becomes. */
     readonly creatureGains?: readonly Ability[];
+    /** Silent-Blade Oni, Extract Brain (CR 608.2g, 402.3): the card is cast from a hand that is not the caster's (`castFree.fromHand`). */
+    readonly fromHand?: boolean;
   } = {},
   /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
   permanentType?: CardType,
@@ -207,6 +210,7 @@ export function beginCast(
                 : 'free',
           riders.anyManaType === true,
           riders.payInstead,
+          riders.fromHand === true,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -369,6 +373,8 @@ export function beginCast(
       continuousEffects: next.continuousEffects.filter((e) => e.id !== freeUse.id),
     };
   }
+  // Nashi (CR 601.2): "you may play one of those cards": casting one of them from exile ends the permissions for the others (a cancelled cast restores the state before it, CR 733).
+  if (zone === 'exile' && !resolving) next = endOneOfPermissions(next, seat, objectId);
   // CR 601.2 (`mayCastOneMilled`): "you may cast a spell from among those cards" is one spell for all the cards, so casting one of them from the graveyard uses up the permissions
   // the effect made for the others.
   if (zone === 'graveyard' && !resolving && alternative === undefined) {

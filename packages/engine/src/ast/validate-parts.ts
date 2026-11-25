@@ -4671,6 +4671,7 @@ function movesObjects(e: Effect): boolean {
     // D-660, D-661, D-663: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
     e?.kind === 'exileUntilFound' ||
     e?.kind === 'opponentChoosesCard' ||
+    e?.kind === 'handCards' ||
     e?.kind === 'exileTopAnyNumber' ||
     e?.kind === 'exilePiles' ||
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
@@ -4953,6 +4954,7 @@ function checkChooseMove(
     (sel.anyNumber !== undefined &&
       sel.minCardTypes === undefined &&
       sel.fromMoved !== true &&
+      sel.fromExileOf === undefined &&
       (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(
@@ -5011,7 +5013,12 @@ function checkChooseMove(
     );
   }
   // D-207, CR 607.2a: "a card exiled with this artifact": the permanent's own linked exile, so an ability's.
-  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability' && sel.fromMoved !== true) {
+  if (
+    sel.filter?.zone === 'exile' &&
+    scope.owner !== 'ability' &&
+    sel.fromMoved !== true &&
+    sel.fromExileOf === undefined
+  ) {
     issue(
       out,
       `${path}.filter.zone`,
@@ -5109,6 +5116,23 @@ function checkChooseMove(
     }
     if (sel.fromHandOf.kind !== 'defendingPlayer') {
       issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
+    }
+  }
+  // Oblivion Sower: "land cards that player owns from exile": the cards in exile of one named player, the chooser choosing.
+  if (sel.fromExileOf !== undefined) {
+    checkPlayerSelector(sel.fromExileOf, `${path}.fromExileOf`, scope, out);
+    if (
+      sel.filter?.zone !== 'exile' ||
+      sel.fromMoved === true ||
+      sel.fromHandOf !== undefined ||
+      sel.alsoGraveyard !== undefined ||
+      sel.fromAnyGraveyard !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.fromExileOf`,
+        'a choice among the cards in exile of one player names exile as its zone and is not a choice among moved cards, from a hand or from a graveyard',
+      );
     }
   }
   if (sel.count !== undefined) {
@@ -7178,6 +7202,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'handCards':
+      // Extract Brain, Silent-Blade Oni (CR 608.2d, 402.3): one player, and the number of cards that player chooses from their hand (the whole hand when it is left out).
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
+      break;
     case 'exilePiles':
       // D-663 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
       checkAmount(e.count, `${path}.count`, scope, out);
@@ -7895,7 +7924,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (
           zone === 'exile' &&
           e.to === 'battlefield' &&
-          (e.objects as ChooseSelector).fromMoved !== true
+          (e.objects as ChooseSelector).fromMoved !== true &&
+          (e.objects as ChooseSelector).fromExileOf === undefined
         ) {
           issue(
             out,
@@ -8564,6 +8594,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.paying`,
             "paying is true, on the cards exiled with this permanent ('linkedExile'), with no play, max, perOwner, player, remember or exileInstead; anyManaType needs paying",
+          );
+        }
+      }
+      // Silent-Blade Oni, Extract Brain (CR 608.2g, 402.3): the cards a `handCards` named, cast from the hand they are in.
+      if (e.fromHand !== undefined) {
+        if (
+          e.fromHand !== true ||
+          kindOf(objects) !== 'moved' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.player !== undefined ||
+          e.remember !== undefined ||
+          e.paying !== undefined ||
+          e.creatureGains !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.fromHand`,
+            "fromHand is true, on the cards an effect before moved ('moved'), with no play, max, perOwner, player, remember, paying or creatureGains",
           );
         }
       }

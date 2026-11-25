@@ -221,6 +221,8 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'separate') return chooseSeparation(view, d);
   // CR 608.2d (D-661): the card an opponent sets aside among the cards exiled (Plargg and Nassari).
   if (d.purpose === 'opponentChoice') return chooseCardToSetAside(view, d);
+  // CR 608.2d, 402.3 (Extract Brain): the cards of the agent's own hand an opponent will look at and may cast: the cards wanted least, as for a discard.
+  if (d.purpose === 'handChoice') return chooseCostDiscard(view, d);
   // CR 701.4 (D-151): behold a Dragon; "discard any number of cards" (a discard with no minimum that is no cost).
   if (d.purpose === 'behold') return chooseBehold(view, d);
   if (d.purpose === 'discard' && d.min === 0 && d.forCost !== true && d.orSingle === undefined) {

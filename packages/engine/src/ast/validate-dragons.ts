@@ -46,12 +46,17 @@ export function checkDragonsEffect(
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
           owner !== 'triggerDamagedPlayers' &&
-          owner !== 'eachOpponent'
+          owner !== 'eachOpponent' &&
+          // Mind's Dilation (CR 608.2h): "that player exiles the top card of their library" in a cast trigger: the controller of the spell that was cast, from last-known information.
+          !(
+            e.from.kind === 'controllerOf' &&
+            kindOf((e.from as { of: unknown }).of as never) === 'triggerSubject'
+          )
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer'), the controller of the spell that caused the trigger or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -142,6 +147,33 @@ export function checkDragonsEffect(
         if (e.undaunted !== true)
           issue(out, `${path}.undaunted`, 'undaunted must be true when present');
         if (e.free === true) issue(out, `${path}.undaunted`, 'a free play has no cost to reduce');
+      }
+      // Nashi, Moon Sage's Scion (CR 118.9, 601.2): "pay life equal to its mana value rather than paying its mana cost" and "play one of those cards".
+      if (e.lifeForMana !== undefined) {
+        if (
+          e.lifeForMana !== true ||
+          e.free !== undefined ||
+          e.lessGeneric !== undefined ||
+          e.undaunted !== undefined ||
+          e.anyManaColor !== undefined ||
+          e.anyManaType !== undefined ||
+          kindOf(e.objects) !== 'moved'
+        ) {
+          issue(
+            out,
+            `${path}.lifeForMana`,
+            "lifeForMana is true, on the cards an effect before moved ('moved'), with no free, lessGeneric, undaunted, anyManaColor or anyManaType (a spell paid for with life has no mana cost to change)",
+          );
+        }
+      }
+      if (e.oneOf !== undefined) {
+        if (e.oneOf !== true || kindOf(e.objects) !== 'moved' || e.lasts !== 'endOfTurn') {
+          issue(
+            out,
+            `${path}.oneOf`,
+            "oneOf is true, on the cards an effect before moved ('moved'), for a permission that lasts until end of turn",
+          );
+        }
       }
       if (e.creatureSpellsOnly !== undefined) {
         if (e.creatureSpellsOnly !== true || e.castOnly !== true) {

@@ -151,6 +151,18 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
     if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown && !lookedAtOnExile) {
       return failure(clause);
     }
+    // Nashi: a permission for one card, the spell paid for with life.
+    if (arg(clause, 'oneOf') !== undefined || arg(clause, 'lifeForMana') !== undefined) {
+      const blocked = missingFeatures(['ability:mayPlayOneLifeForMana']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      if (
+        arg(clause, 'oneOf')?.kind !== 'flag' ||
+        arg(clause, 'lifeForMana')?.kind !== 'flag' ||
+        lasts !== 'endOfTurn'
+      ) {
+        return failure(clause);
+      }
+    }
     ctx.mayPlayLasts = lasts;
     return {
       ok: true,
@@ -169,6 +181,9 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           ...(arg(clause, 'exileInstead')?.kind === 'flag' ? { exileInstead: true as const } : {}),
           // Issue 101 (Gix): "you may play lands and cast spells from among cards exiled this way without paying their mana costs".
           ...(arg(clause, 'free')?.kind === 'flag' ? { free: true as const } : {}),
+          // Nashi, Moon Sage's Scion (CR 118.9, 601.2): "you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost".
+          ...(arg(clause, 'oneOf')?.kind === 'flag' ? { oneOf: true as const } : {}),
+          ...(arg(clause, 'lifeForMana')?.kind === 'flag' ? { lifeForMana: true as const } : {}),
           // Issue 101 (Neriv): "during any turn you attacked with a commander, you may play those cards".
           ...(arg(clause, 'duringCommanderAttackTurns')?.kind === 'flag'
             ? { duringTurnsAttackedWithCommander: true as const }

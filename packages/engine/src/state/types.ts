@@ -1722,6 +1722,17 @@ export type Instruction =
       readonly pick?: 1 | 2;
     }
   /**
+   * "Target opponent chooses X cards from their hand" (`handCards`, Extract Brain, CR 608.2d, 402.3): `seat` chooses `count` of the `cards` of their hand, a `chooseCards` decision of
+   * purpose `handChoice`; `chosen` is null until it is answered. The cards chosen stay in the hand and are what `moved` names afterwards. See rules/hand-cards.ts.
+   */
+  | {
+      readonly kind: 'handCards';
+      readonly seat: SeatId;
+      readonly count: number;
+      readonly cards: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
    * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-660, CR 608.2d): `seat` is the opponent who chooses, `cards` the cards of `moved` the filter
    * matches (face up in exile), `chosen` is null until the question is answered. The card chosen is left out of `moved` afterwards. See rules/choose-aside.ts.
    */
@@ -2332,6 +2343,8 @@ export type Instruction =
       /** `castFree.paying` (Summon: Esper Valigarmanda): the spell is cast paying its mana cost, with `anyManaType` as a rider of that spell. */
       readonly paying?: true;
       readonly anyManaType?: true;
+      /** `castFree.fromHand` (Silent-Blade Oni): the cards are in a hand, whoever's it is, and were looked at. */
+      readonly fromHand?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -2682,6 +2695,10 @@ export type ContinuousChange =
       readonly undaunted?: true;
       /** "... you may cast it if it's a creature spell" (`mayPlay.creatureSpellsOnly`, Vivien, CR 601.2): only a creature card may be cast with this permission. */
       readonly creatureSpellsOnly?: true;
+      /** "If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (`mayPlay.lifeForMana`, Nashi, CR 118.9): the spell is cast by the alternative cost `lifeForMana`, and no other way. */
+      readonly lifeForMana?: true;
+      /** "You may play one of those cards" (`mayPlay.oneOf`, Nashi): the permissions of one effect share this key, and casting or playing one of the cards ends the others (`rules/play-permission-one.ts`). */
+      readonly oneOf?: string;
       /**
        * "You may play that card until you exile another card with this enchantment" (`mayPlay.lasts` `untilSourceExilesAnother`, Furious Rise, CR 607.2a): the permanent whose linked
        * ability exiled the card; the permission is removed as that permanent exiles another card with `exileTop` `linked` (`rules/impulse.ts`).
