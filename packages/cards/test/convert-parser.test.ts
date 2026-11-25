@@ -808,6 +808,7 @@ describe('unmatched abilities', () => {
       'effect.put-from-among-those-cards-onto-battlefield',
       'effect.put-any-number-from-among-them-onto-battlefield',
       'effect.put-all-permanent-cards-exiled-with-then-sacrifice',
+      'effect.add-mana-combination-of-two-colors',
       'effect.exile-that-many-from-top',
       'effect.cast-among-exiled-any-color',
       'effect.lead-gain-next-turn',

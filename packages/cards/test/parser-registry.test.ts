@@ -501,6 +501,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     () =>
       'Exile the top four cards of your library. You may put any number of land cards from among them onto the battlefield.',
   ),
+  'effect.add-mana-combination-of-two-colors': spell(
+    () =>
+      'Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control.',
+  ),
   'effect.put-all-permanent-cards-exiled-with-then-sacrifice': permanent(
     () =>
       'At the beginning of your upkeep, exile the top four cards of your library. Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',

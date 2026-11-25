@@ -21,6 +21,7 @@ import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, landwalkOf, plainKeyword } from '../rules/keyword/vocabulary';
 import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
+import { ADD_MANA_COMBINATION_LOWERINGS } from './add-mana-combination';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
 import { AHOY_G7_LOWERINGS } from './ahoy-g7';
@@ -3114,6 +3115,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
   ...CHOOSE_ONE_OF_THEM_LOWERINGS,
   ...PUT_ALL_LINKED_EXILED_LOWERINGS,
+  ...ADD_MANA_COMBINATION_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

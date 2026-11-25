@@ -1820,6 +1820,8 @@ export type Instruction =
       readonly min: number;
       readonly max: number;
       readonly amount: number | null;
+      /** `addManaCombination` (Xenagos): once answered, `amount` mana of the first color and the rest (`max` less `amount`) of the second are added to the pool of `seat`. */
+      readonly manaSplit?: readonly [ManaColor, ManaColor];
     }
   /**
    * "Behold a Dragon" (`behold`, CR 701.4, D-151): `seat` chooses a card in their hand or a permanent they control that `filter` matches

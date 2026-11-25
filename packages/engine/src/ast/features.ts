@@ -255,6 +255,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseCreatureType',
     // Expel the Interlopers: "Choose a number between 0 and 10" (`chooseNumber`, CR 608.2d).
     'chooseNumber',
+    // Exit from Exile deck (Xenagos, the Reveler): "Add X mana in any combination of {R} and/or {G}" as an effect (`addManaCombination`).
+    'addManaCombination',
     'dealDamage',
     'destroy',
     'exile',
@@ -3498,6 +3500,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseOne: true,
   chooseCreatureType: true,
   chooseNumber: true,
+  addManaCombination: true,
   vote: true,
   voteFor: true,
   ringTempts: true,

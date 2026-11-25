@@ -1034,6 +1034,25 @@ function runEffect(
               seat,
             })),
       );
+    case 'addManaCombination': {
+      // CR 106.1b, 608.2d (Xenagos, the Reveler): the controller chooses how many of the first color; the rest are the second (rules/choose-number.ts).
+      const total = amountOf(state, effect.amount, ctx, targets);
+      if (total <= 0) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseNumber',
+            seat: res.controller,
+            min: 0,
+            max: total,
+            amount: null,
+            manaSplit: effect.colors,
+          },
+        ],
+      );
+    }
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): the controller chooses a whole number from `min` to `max`.
       return done(

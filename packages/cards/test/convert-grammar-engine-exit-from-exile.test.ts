@@ -894,3 +894,53 @@ describe('"−6: Exile the top seven cards of your library. You may put any numb
     g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
   });
 });
+
+describe('"+1: Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control." (CR 106.1b, 608.2d, 107.3c)', () => {
+  const walker = parsed(
+    'SYNTHETIC Combo Walker',
+    'Legendary Planeswalker — Test',
+    '+1: Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control.',
+    { manaCost: '{4}{R}{G}', colors: ['R', 'G'], loyalty: '4' },
+  );
+  const build = () =>
+    scenario()
+      .define(walker)
+      .seat(0)
+      .battlefield(walker.name, 'Grizzly Bears', 'Grizzly Bears', 'Serra Angel')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the player chooses how many are red; the rest are green', () => {
+    const g = build();
+    g.act(0).activate(walker.name, { ability: 0 });
+    g.passAll();
+    g.act(0).chooseX(2);
+    g.expect.pool(0, 'RRG');
+  });
+
+  test('all of one color is a legal combination', () => {
+    const g = build();
+    g.act(0).activate(walker.name, { ability: 0 });
+    g.passAll();
+    g.act(0).chooseX(0);
+    g.expect.pool(0, 'GGG');
+  });
+
+  test('with no creature nothing is asked and nothing is added', () => {
+    const g = scenario()
+      .define(walker)
+      .seat(0)
+      .battlefield(walker.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(walker.name, { ability: 0 });
+    g.passAll();
+    g.expect.pool(0, '');
+  });
+});

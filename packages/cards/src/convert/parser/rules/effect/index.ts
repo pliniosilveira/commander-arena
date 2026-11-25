@@ -25,6 +25,7 @@ import { defineRule, family, spanned } from '../registry';
 import { ABOLETH_EFFECT_RULES } from './aboleth';
 import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
+import { ADD_MANA_COMBINATION_EFFECT_RULES } from './add-mana-combination';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
 import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
@@ -1405,6 +1406,7 @@ export const EFFECT_RULES = [
   ...CHOOSE_ONE_OF_THEM_EFFECT_RULES,
   ...PUT_FROM_AMONG_EXILED_EFFECT_RULES,
   ...PUT_ALL_LINKED_EXILED_EFFECT_RULES,
+  ...ADD_MANA_COMBINATION_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

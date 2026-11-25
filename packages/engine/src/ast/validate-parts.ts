@@ -6120,6 +6120,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
       if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
+    case 'addManaCombination':
+      // CR 106.1b (Xenagos): two different colors of the five, and an amount read as the effect runs.
+      if (
+        !Array.isArray(e.colors) ||
+        e.colors.length !== 2 ||
+        e.colors[0] === e.colors[1] ||
+        e.colors.some((c) => !['W', 'U', 'B', 'R', 'G'].includes(c))
+      ) {
+        issue(out, `${path}.colors`, 'addManaCombination names two different colors of the five');
+      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
+      break;
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): "Choose a number between 0 and 10": whole numbers, the least first.
       if (!Number.isInteger(e.min) || !Number.isInteger(e.max) || e.min < 0 || e.max < e.min) {

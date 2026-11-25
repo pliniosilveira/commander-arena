@@ -2583,6 +2583,16 @@ export type Effect =
    */
   | { readonly kind: 'chooseNumber'; readonly min: number; readonly max: number }
   /**
+   * "Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control." (Xenagos, the Reveler, CR 106.1b, 608.2d, 107.3c): an effect (not a mana ability: it
+   * uses the stack) that adds `amount` mana, read as the effect runs, each of the first or the second color: the controller chooses how many of the first (a whole number from 0 to the amount,
+   * a `chooseX` decision of purpose `chooseNumber`), the rest are the second. The two colors are different. Nothing is asked, and nothing added, for an amount of 0 or less.
+   */
+  | {
+      readonly kind: 'addManaCombination';
+      readonly colors: readonly [ManaColor, ManaColor];
+      readonly amount: Amount;
+    }
+  /**
    * `effect` is done once for each player `players` names, by the controller of the ability (a "for each opponent" that repeats an effect). With `runsAs: 'each'` (Sail into the West:
    * "Each player returns up to two cards from their graveyard to their hand", CR 101.4, 608.2d) each player in turn order does it themselves: that player is "you" in `effect`,
    * and the choices in it are theirs. A player who has lost the game does nothing.
