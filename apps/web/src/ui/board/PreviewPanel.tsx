@@ -9,8 +9,8 @@
  * Not available from the engine's view yet, so not drawn (do not fake): the "modified" marker
  * against printed P/T and which abilities were lost.
  */
-import type { ObjectView } from '@commander-arena/engine';
-import { useMemo } from 'react';
+import type { ObjectId, ObjectView } from '@commander-arena/engine';
+import { useEffect, useMemo, useState } from 'react';
 import { activatedStackIds } from '../../game/activation';
 import { alternativeBadge } from '../../game/alt-cost';
 import { chosenLabel } from '../../game/chosen';
@@ -24,7 +24,7 @@ import type { RevealedCard } from '../../game/revealed-cards';
 import { roomFacts } from '../../game/room-text';
 import { midNameOf, seatNameOf, startNameOf, startPossessiveOf } from '../../game/seat-name';
 import { castCostChanged, costsX, costText, symbolsText, withX } from '../decisions/cast-cost';
-import { faceCostText, faceFacts, faceRole } from '../decisions/layouts';
+import { asFace, faceCostText, faceFacts, faceRole, otherFaceOf } from '../decisions/layouts';
 import { chosenModeTexts } from '../decisions/modes-picker';
 import { kickedWords, replicatedWords, typeLine } from '../format';
 import { ManaCost } from '../mana';
@@ -489,6 +489,33 @@ export function PreviewPanel() {
   const object = view !== null && id !== null ? findObject(view, id) : null;
   // The card behind the viewer's own face-down permanent (D-315), or null.
   const real = object === null ? null : realCardOf(object);
+  // The other face of a double-faced card in a hand, a graveyard or exile, which the player asked to see (`otherFaceOf`): the pointer is
+  // on the card, not on the panel, so the key T (F is Full Control) asks for it as well as the button.
+  const [flippedId, setFlippedId] = useState<ObjectId | null>(null);
+  const other = object === null || real !== null ? null : otherFaceOf(object);
+  const objectId = object?.id ?? null;
+  // Another card in the panel shows its face up, and so does this card when it comes back. The panel hides for a moment as a lifted card
+  // moves from under the pointer, so a gap with no card does not end the turn.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the id is the trigger, not a value read
+  useEffect(() => {
+    if (objectId !== null) setFlippedId((current) => (current === objectId ? current : null));
+  }, [objectId]);
+  useEffect(() => {
+    if (other === null || objectId === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 't' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+      ) {
+        return;
+      }
+      setFlippedId((current) => (current === objectId ? null : objectId));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [other, objectId]);
   // A tap on the preview closes it: it drops the hover, a reveal and the stack's card.
   const dismiss = () => {
     hover(null);
@@ -513,6 +540,8 @@ export function PreviewPanel() {
   }
   // Nothing to read: the panel floats over the board, so it is not drawn at all.
   if (object === null) return null;
+  const flipped = other !== null && flippedId === object.id;
+  const shown = flipped && other !== null ? asFace(object, other) : object;
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: a tap closes the preview; Esc already does it from the keyboard
     <aside
@@ -530,6 +559,25 @@ export function PreviewPanel() {
         ) : (
           <span className="board-dim">Click closes</span>
         )}
+        {other !== null && (
+          <button
+            type="button"
+            className="board-preview-flip"
+            data-preview-flip={flipped ? 'back' : 'front'}
+            title="Show the other face of this card (key T)"
+            onClick={(e) => {
+              e.stopPropagation();
+              setFlippedId(flipped ? null : object.id);
+            }}
+          >
+            Show{' '}
+            {faceRole(
+              object.layout ?? 'transform',
+              flipped ? (object.face ?? 0) : other,
+            ).toLowerCase()}{' '}
+            (T)
+          </button>
+        )}
       </div>
       {real !== null && (
         // CR 708.5 (D-315): the player who controls a face-down permanent may look at the card. The marker says what the others see.
@@ -539,7 +587,7 @@ export function PreviewPanel() {
         </p>
       )}
       <div className="board-preview-card" data-preview-id={object.id}>
-        <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
+        <CardFace object={real ?? shown} variant="full" activated={activated.has(object.id)} />
       </div>
       <StackWords object={object} />
       <PreviewDetails object={object} />

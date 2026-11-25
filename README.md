@@ -104,7 +104,7 @@ Your imported decks are saved in your browser and appear on the **My decks** pag
 ## Controls
 
 - **Click or drag** a card to play it.
-- **Hover** over a card to see it larger. Any action you take closes it.
+- **Hover** over a card to see it larger. Any action you take closes it. A double-faced card in your hand, graveyard or exile has a button in the preview, and the key **T**, that turn it to its other face.
 - **Space** passes or confirms. The button always says where it takes you.
 - **P** passes the rest of your turn. **Esc** cancels.
 - **Ctrl+Z** takes back a small action, such as tapping a land for mana.
