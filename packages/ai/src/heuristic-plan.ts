@@ -29,6 +29,9 @@ import {
 } from './heuristic-plan-sim';
 import { scenariosOf } from './heuristic-threats';
 
+/** The most play-outs of one planning, whatever the clock says (a bound of the search, not a weight). */
+const MAX_PLAY_OUTS = 40;
+
 export interface TurnPlan {
   /** The turn the plan was made in. */
   readonly turn: number;
@@ -49,6 +52,12 @@ export interface PlanRecord {
   /** The value of today's line and of the chosen one. */
   readonly today: number;
   readonly value: number;
+  /** How many play-outs were run, and the milliseconds of the decision's clock used when it ended. */
+  readonly playOuts: number;
+  readonly elapsed: number;
+  /** The turn and the window it was made in. */
+  readonly turn: number;
+  readonly window: Window;
 }
 
 /** The plan step for `view`'s decision `d` in window `when`, from `plan.next` on, or null. */
@@ -107,7 +116,7 @@ export function choosePlan(
     const scores: number[] = [];
     let steps: readonly PlanStep[] = [];
     for (const [j, s] of scenarios.entries()) {
-      if (i > 0 && think.budget.expired(done)) break outer;
+      if (i > 0 && (think.budget.expired(done) || done >= MAX_PLAY_OUTS)) break outer;
       const result = playLine(s.state, me, line, ctx, j === 0);
       done += 1;
       if (result === null) break;
@@ -151,6 +160,10 @@ export function choosePlan(
       chosen: lines[best.index]?.label ?? '?',
       today: today.value,
       value: best.value,
+      playOuts: done,
+      elapsed: think.budget.elapsed(),
+      turn: view.turn,
+      window: now,
     },
   };
 }

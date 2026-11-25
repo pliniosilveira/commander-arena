@@ -55,7 +55,7 @@ import {
   type TurnPlan,
 } from './heuristic-plan';
 import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
-import { type SimAgents, windowOf } from './heuristic-plan-sim';
+import { type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
 import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
 import { chooseRemovalTargets, creatureToHelp } from './heuristic-targets';
@@ -64,6 +64,9 @@ import { firstSafeAction } from './legal';
 import { MIN_KEEP_SIZE } from './random-agent';
 import { type ExplainingAgent, type Reason, type ReasonRecord, summarizeAction } from './reasons';
 import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
+
+/** The most plannings in one turn: the first plan, and replans after surprises (a bound, not a weight). */
+const MAX_PLANS_PER_TURN = 4;
 
 export interface HeuristicAgentOptions {
   readonly seed: number;
@@ -90,6 +93,12 @@ export class HeuristicAgent implements ExplainingAgent {
   /** The plan of the turn (`heuristic-plan.ts`); its end-step steps last into the opponents' turns. */
   private plan: TurnPlan | null = null;
   private readonly planList: PlanRecord[] = [];
+  /** The plannings tried this turn (see `priorityChoice`). */
+  private tries: { turn: number; count: number; failed: Set<Window> } = {
+    turn: -1,
+    count: 0,
+    failed: new Set(),
+  };
 
   constructor(options: HeuristicAgentOptions) {
     this.name = options.name ?? `heuristic#${options.seed}`;
@@ -165,8 +174,17 @@ export class HeuristicAgent implements ExplainingAgent {
       lines = windowLines(view, d, when, today.action);
     }
     if (lines.length < 2) return today;
+    // At most MAX_PLANS_PER_TURN plannings a turn, and none again in a window where one failed (no time,
+    // a refused play-out): on a huge board every decision of the window would otherwise use the budget.
+    if (this.tries.turn !== view.turn)
+      this.tries = { turn: view.turn, count: 0, failed: new Set() };
+    if (this.tries.count >= MAX_PLANS_PER_TURN || this.tries.failed.has(when)) return today;
+    this.tries.count += 1;
     const planned = choosePlan(view, when, lines, think, this.simAgents);
-    if (planned === null) return today;
+    if (planned === null) {
+      this.tries.failed.add(when);
+      return today;
+    }
     const replan = this.plan !== null;
     this.plan = planned.plan;
     this.planList.push(planned.record);
@@ -262,15 +280,9 @@ export class HeuristicAgent implements ExplainingAgent {
         }
         return casual.targets(d);
       },
+      // The attack is not taken from the plan: the plan's play-out chose it from the view alone, and the
+      // attack search on the sample (`heuristic-attacks.ts`) is the stronger rule and costs little.
       declareAttackers: (d) => {
-        const step =
-          ctx?.sample !== undefined && windowOf(view, d) === 'attack'
-            ? followPlan(this.plan, view, d, 'attack')
-            : null;
-        if (step !== null) {
-          note('plan');
-          return step.action;
-        }
         const choice = chooseHeuristicAttack(view, d, {
           sample: think.sample(),
           budget: think.budget,
