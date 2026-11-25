@@ -16,9 +16,9 @@
  */
 import type { Action, AttackTarget, GameState, GameView, SeatId } from '@commander-arena/engine';
 import { getView } from '@commander-arena/engine';
-import { findObject } from './casual-view';
+import { findObject, isCreature } from './casual-view';
 import { COMMANDER_LETHAL, commanderClock, POISON_LETHAL } from './evaluate';
-import { hitDamage } from './heuristic-danger';
+import { futureAttackers, hitDamage } from './heuristic-danger';
 import { isRemovalSpell, threatValue } from './heuristic-targets';
 import type { ActionStep } from './runner';
 
@@ -34,6 +34,14 @@ export interface AttackGroup {
   readonly life: number;
 }
 
+/** An opponent as an attack was declared. */
+export interface OpponentRow {
+  readonly seat: SeatId;
+  readonly life: number;
+  /** The power of the creatures it could attack with next turn: what it would put on the table, before any block. */
+  readonly incoming: number;
+}
+
 export type TableEvent =
   | {
       readonly kind: 'attack';
@@ -46,6 +54,12 @@ export type TableEvent =
       /** Every creature that could attack did. */
       readonly allIn: boolean;
       readonly groups: readonly AttackGroup[];
+      /** The attacker's life as it declared. */
+      readonly life: number;
+      /** Its untapped creatures that stay home (they can block on the next turn). */
+      readonly home: number;
+      /** The opponents still in the game: their life, and the power their creatures could send next turn (`futureAttackers`). */
+      readonly opponents: readonly OpponentRow[];
     }
   | {
       readonly kind: 'block';
@@ -110,6 +124,17 @@ function attackEvent(step: ActionStep, view: GameView, action: Action): TableEve
     const g = groups.get(key) ?? { seat, attackers: 0, power: 0 };
     groups.set(key, { seat, attackers: g.attackers + 1, power: g.power + hit });
   }
+  const going = new Set(action.attacks.map((a) => a.attacker));
+  const home = view.battlefield.filter(
+    (o) => o.controller === step.seat && isCreature(o) && !o.tapped && !going.has(o.id),
+  ).length;
+  const opponents = view.seats
+    .filter((s) => s.id !== step.seat && !s.hasLost)
+    .map((s) => ({
+      seat: s.id,
+      life: s.life,
+      incoming: futureAttackers(view, s.id).reduce((n, o) => n + hitDamage(o), 0),
+    }));
   return {
     kind: 'attack',
     turn: view.turn,
@@ -122,6 +147,9 @@ function attackEvent(step: ActionStep, view: GameView, action: Action): TableEve
       ...g,
       life: g.seat === null ? 0 : (view.seats.find((s) => s.id === g.seat)?.life ?? 0),
     })),
+    life: view.seats.find((s) => s.id === step.seat)?.life ?? 0,
+    home,
+    opponents,
   };
 }
 

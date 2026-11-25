@@ -169,7 +169,18 @@ describe('formatTableReport', () => {
           meanEliminationTurn: 31.8,
           causes: { life: 5, commander: 1 },
         },
-        attack: { attacks: 31, allIn: 26, meanPower: 18.2, allInThenOut: 1 },
+        attack: {
+          attacks: 31,
+          allIn: 26,
+          meanPower: 18.2,
+          allInThenOut: 1,
+          atLowest: 20,
+          notLowest: 5,
+          ties: 8,
+          tiesAtLowestSeat: 6,
+          exposedAllIn: 4,
+          exposedAllInOut: 1,
+        },
         block: {
           declarations: 12,
           noBlocks: 5,
@@ -199,6 +210,8 @@ describe('formatTableReport', () => {
     expect(text).toContain('mean place 2.50 (1 best), wins 2, first out 2, eliminated 6/8');
     expect(text).toContain('mean elimination turn 31.8, by life 5, commander 1');
     expect(text).toContain('all-in 26 (83.9%)');
+    expect(text).toContain('at the lowest-life opponent 20 (80.0%), at another 5');
+    expect(text).toContain('ties for the lowest 8, of which at the lowest seat number 6 (75.0%)');
     expect(text).toContain('no block 5 (41.7%)');
     expect(text).toContain('avoidable 118 (37.0%)');
     expect(text).toContain('by value <2 / 2-4 / 4-6 / 6+: 0 / 1 / 1 / 4');
@@ -210,7 +223,18 @@ describe('formatTableReport', () => {
       agents: [
         {
           ...(report.agents[0] as TableReport['agents'][number]),
-          attack: { attacks: 0, allIn: 0, meanPower: 0, allInThenOut: 0 },
+          attack: {
+            attacks: 0,
+            allIn: 0,
+            meanPower: 0,
+            allInThenOut: 0,
+            atLowest: 0,
+            notLowest: 0,
+            ties: 0,
+            tiesAtLowestSeat: 0,
+            exposedAllIn: 0,
+            exposedAllInOut: 0,
+          },
           block: {
             declarations: 0,
             noBlocks: 0,

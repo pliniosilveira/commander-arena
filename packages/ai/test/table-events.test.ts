@@ -142,12 +142,109 @@ describe('the attack event', () => {
       power: 5,
       allIn: true,
       groups: [{ seat: 0, attackers: 2, power: 5, life: 20 }],
+      life: 40,
+      home: 0,
+      opponents: [{ seat: 0, life: 20, incoming: 0 }],
     });
     const one = observe(g, 1, {
       kind: 'declareAttackers',
       attacks: [{ attacker: g.id(V3), target: at }],
     });
-    expect(one[0]).toMatchObject({ attackers: 1, candidates: 2, allIn: false });
+    expect(one[0]).toMatchObject({ attackers: 1, candidates: 2, allIn: false, home: 1 });
+  });
+});
+
+describe('the aim of an attack in the report', () => {
+  const at = (seat: number, life: number) => ({ seat, attackers: 1, power: 5, life });
+  const attack = (
+    turn: number,
+    allIn: boolean,
+    target: ReturnType<typeof at>,
+    opponents: { seat: number; life: number; incoming: number }[],
+    life = 20,
+  ): TableEvent => ({
+    kind: 'attack',
+    turn,
+    seat: 0,
+    attackers: 1,
+    candidates: 1,
+    power: 5,
+    allIn,
+    groups: [target],
+    life,
+    home: 0,
+    opponents,
+  });
+  const result = (events: TableEvent[]) =>
+    ({
+      labels: ['a'],
+      seats: 4,
+      games: 1,
+      wins: [0],
+      winsByAgentSeat: [[0, 0, 0, 0]],
+      winsBySeat: [0, 0, 0, 0],
+      draws: 0,
+      unfinished: 0,
+      averageTurns: 5,
+      fallbacks: 0,
+      rejectedActions: 0,
+      reasons: [{}],
+      log: [
+        {
+          seed: 1,
+          deck: 0,
+          rotation: 0,
+          winner: null,
+          winnerSeat: null,
+          end: 'result',
+          drew: false,
+          turns: 5,
+          places: [4, 1, 2, 3],
+          startingSeat: 0,
+          events,
+        },
+      ],
+    }) as unknown as Parameters<typeof tableReport>[0];
+
+  test('counts the attacks at the lowest-life opponent, the ties and where they went, and the exposed all-ins', () => {
+    const full = (seat: number, life: number, incoming = 0) => ({ seat, life, incoming });
+    const events: TableEvent[] = [
+      // at the only lowest (seat 2, 12 life), not all-in
+      attack(1, false, at(2, 12), [full(1, 20), full(2, 12), full(3, 20)]),
+      // at an opponent that is not the lowest
+      attack(2, false, at(1, 20), [full(1, 20), full(2, 12), full(3, 20)]),
+      // a three-way tie for 20 life: it went at seat 1, the lowest seat number of them
+      attack(3, false, at(1, 20), [full(1, 20), full(2, 20), full(3, 20)]),
+      // the same tie, aimed at seat 3: a tie not won by the lowest seat
+      attack(4, false, at(3, 20), [full(1, 20), full(2, 20), full(3, 20)]),
+      // all-in while seat 2's board could deal 20 (the attacker's life) next turn; it goes out at turn 5, within a round
+      attack(5, true, at(1, 20), [full(1, 20), full(2, 20, 20), full(3, 20)]),
+    ];
+    const events2: TableEvent[] = [
+      ...events,
+      {
+        kind: 'eliminated',
+        turn: 6,
+        seat: 0,
+        cause: 'life',
+        life: 0,
+        poison: 0,
+        commander: 0,
+        library: 30,
+        place: 4,
+      },
+    ];
+    const [a] = tableReport(result(events2)).agents;
+    expect(a?.attack).toMatchObject({
+      attacks: 5,
+      allIn: 1,
+      atLowest: 4,
+      notLowest: 1,
+      ties: 3,
+      tiesAtLowestSeat: 2,
+      exposedAllIn: 1,
+      exposedAllInOut: 1,
+    });
   });
 });
 

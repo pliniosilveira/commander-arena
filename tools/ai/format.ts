@@ -138,6 +138,7 @@ export function formatTableReport(r: TableReport): string {
       `  survival: mean place ${s.meanPlace.toFixed(2)} (1 best), wins ${a.wins}, first out ${s.firstOut}, eliminated ${s.eliminated}/${s.games}` +
         `, mean elimination turn ${s.meanEliminationTurn === null ? '-' : s.meanEliminationTurn.toFixed(1)}${causes === '' ? '' : `, by ${causes}`}`,
       `  attacks: ${t.attacks}, all-in ${t.allIn} (${pct(t.allIn, t.attacks)}), mean power ${t.meanPower.toFixed(1)}, all-in then out within a round ${t.allInThenOut}`,
+      `  aim: at the lowest-life opponent ${t.atLowest} (${pct(t.atLowest, t.atLowest + t.notLowest)}), at another ${t.notLowest}; ties for the lowest ${t.ties}, of which at the lowest seat number ${t.tiesAtLowestSeat} (${pct(t.tiesAtLowestSeat, t.ties)}); all-in while an opponent's board could deal my life ${t.exposedAllIn}, then out within a round ${t.exposedAllInOut}`,
       `  blocks (declarations facing an attack): ${b.declarations}, no block ${b.noBlocks} (${pct(b.noBlocks, b.declarations)}), lethal unblocked ${b.lethal}` +
         `, damage through ${b.unblocked}, avoidable ${b.avoidable} (${pct(b.avoidable, b.unblocked)}), avoidable >=5 in ${b.avoidableAtLeast5}, >=10 in ${b.avoidableAtLeast10}` +
         `, per declaration ${avg(b.unblocked, b.declarations)} through / ${avg(b.avoidable, b.declarations)} avoidable`,

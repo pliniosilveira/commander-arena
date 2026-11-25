@@ -35,6 +35,15 @@ export interface AttackStats {
   readonly meanPower: number;
   /** All-in attacks after which the attacker was out within one round of turns. */
   readonly allInThenOut: number;
+  /** Attacks at a player: the main target (the one given the most power) had the least life among the opponents, ties included, or did not. */
+  readonly atLowest: number;
+  readonly notLowest: number;
+  /** Attacks whose main target was one of several opponents tied for the least life, and how many of those went at the lowest seat number among them. */
+  readonly ties: number;
+  readonly tiesAtLowestSeat: number;
+  /** All-in attacks with some opponent's whole board able to deal the attacker's life next turn (`incoming` >= life), and those after which it was out within a round. */
+  readonly exposedAllIn: number;
+  readonly exposedAllInOut: number;
 }
 
 export interface BlockStats {
@@ -129,6 +138,12 @@ function attackOf(games: readonly TableGame[], agent: number, seats: number): At
   let attacks = 0;
   let allIn = 0;
   let allInThenOut = 0;
+  let atLowest = 0;
+  let notLowest = 0;
+  let ties = 0;
+  let tiesAtLowestSeat = 0;
+  let exposedAllIn = 0;
+  let exposedAllInOut = 0;
   const power: number[] = [];
   for (const g of games) {
     const events = g.events ?? [];
@@ -136,13 +151,43 @@ function attackOf(games: readonly TableGame[], agent: number, seats: number): At
       if (e.kind !== 'attack' || e.attackers === 0 || agentAt(g, e.seat, seats) !== agent) continue;
       attacks += 1;
       power.push(e.power);
+      const out = events.find((x) => x.kind === 'eliminated' && x.seat === e.seat);
+      const outSoon = out !== undefined && out.turn >= e.turn && out.turn - e.turn <= seats;
+      // The main target: the player given the most power.
+      const main = e.groups
+        .filter((x) => x.seat !== null)
+        .sort((a, b) => b.power - a.power || (a.seat ?? 0) - (b.seat ?? 0))[0];
+      if (main !== undefined && e.opponents.length > 0) {
+        const least = Math.min(...e.opponents.map((o) => o.life));
+        if (main.life <= least) atLowest += 1;
+        else notLowest += 1;
+        const tied = e.opponents.filter((o) => o.life === least);
+        if (tied.length > 1 && main.life === least) {
+          ties += 1;
+          if (main.seat === Math.min(...tied.map((o) => o.seat))) tiesAtLowestSeat += 1;
+        }
+      }
       if (!e.allIn) continue;
       allIn += 1;
-      const out = events.find((x) => x.kind === 'eliminated' && x.seat === e.seat);
-      if (out !== undefined && out.turn >= e.turn && out.turn - e.turn <= seats) allInThenOut += 1;
+      if (outSoon) allInThenOut += 1;
+      if (Math.max(0, ...e.opponents.map((o) => o.incoming)) >= e.life) {
+        exposedAllIn += 1;
+        if (outSoon) exposedAllInOut += 1;
+      }
     }
   }
-  return { attacks, allIn, meanPower: mean(power), allInThenOut };
+  return {
+    attacks,
+    allIn,
+    meanPower: mean(power),
+    allInThenOut,
+    atLowest,
+    notLowest,
+    ties,
+    tiesAtLowestSeat,
+    exposedAllIn,
+    exposedAllInOut,
+  };
 }
 
 function blockOf(games: readonly TableGame[], agent: number, seats: number): BlockStats {
