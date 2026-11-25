@@ -385,6 +385,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.landfall': whenever,
   // Brainstealer Dragon.
   'trigger.enters-under-your-control-opponent-owned': whenever,
+  'trigger.creature-not-owned-dies': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
   'trigger.enters-from-graveyard': whenever,

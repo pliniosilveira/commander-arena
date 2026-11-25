@@ -383,6 +383,8 @@ class Binder {
             // player, "that player" is that player and never the "you" of the sentence.
             !(
               (this.playerAsked ||
+                // Thieving Amalgam (CR 701.40a): "you manifest the top card of that player's library": the library is another player's, never the subject's.
+                this.clauseVerb === 'manifest' ||
                 (this.inAmount && this.antecedents.some((x) => x.noun.ref === 'trigActor'))) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())

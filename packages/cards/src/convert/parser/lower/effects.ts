@@ -1671,7 +1671,19 @@ const MANIFEST: Lowering<IrClause, Effects> = {
     if (who?.kind !== 'noun') return failure(clause);
     const player = playerSelectorOf(who, ctx);
     if (!player.ok) return player;
-    return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+    // CR 701.40a: "the top card of that player's library" is the library of another player (the player of the trigger).
+    const owner = arg(clause, 'from');
+    if (owner === undefined) {
+      return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+    }
+    if (owner.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    return {
+      ok: true,
+      value: [{ kind: 'manifest', player: player.value, fromLibraryOf: from.value }],
+      rule: clause.rule,
+    };
   },
 };
 
