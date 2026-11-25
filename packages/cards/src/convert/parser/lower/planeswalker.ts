@@ -306,7 +306,7 @@ const EXILE_TOP_THAT_MANY: Lowering<IrClause, Effects> = {
         {
           kind: 'exileTop',
           count:
-            said.ok && said.value.kind !== 'thisWay'
+            said.ok && (typeof said.value === 'number' || said.value.kind !== 'thisWay')
               ? said.value
               : { kind: 'thisWay', what: 'countersRemoved' },
         },
