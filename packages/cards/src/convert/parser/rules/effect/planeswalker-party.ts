@@ -344,6 +344,7 @@ export const EFFECT_MAY_CAST_MOVED_CARD = defineRule<Clauses>({
   examples: ['cast that card', 'Cast that card'],
   rejects: [
     'cast that card this turn',
+    'cast that card until the end of your next turn',
     'cast that card without paying its mana cost',
     'cast target card',
     'cast them',
@@ -353,7 +354,7 @@ export const EFFECT_MAY_CAST_MOVED_CARD = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = pattern(
-      /cast that card(?![\p{L}\p{N}])(?!\s+(?:this|without|and|then|from)(?![\p{L}\p{N}]))/iu,
+      /cast that card(?![\p{L}\p{N}])(?!\s+(?:this|without|and|then|from|until)(?![\p{L}\p{N}]))/iu,
     )(ctx, pos);
     if (!r.ok) return r;
     const span = { start: pos, end: r.pos };
