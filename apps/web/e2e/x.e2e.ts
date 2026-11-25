@@ -106,12 +106,11 @@ test('an X burn spell: the dialog offers the right maximum, X is typed and stepp
   await expect(stack.locator('[data-x="3"]')).toHaveText('X = 3');
   // The cost on the stack is what was paid: {3}{R}.
   await expect(stack.getByLabel('3 mana')).toBeVisible();
-  // Issues 82 and 107: with nothing hovered the highlight box already shows the spell on top of the
-  // stack, with the X written into its text, so there is no trip with the pointer to read it.
+  // Issues 82 and 107: the spell on the stack is previewed with the X written into its text. The
+  // player's own cast closed the preview of the top of the stack (#594), so it is read by hovering the item.
   const preview = page.getByRole('complementary', { name: 'Card preview' });
-  await expect(preview.locator('[data-preview-stack]')).toBeVisible();
-  await expect(preview).toContainText('Deals X (3) damage to any target.');
   await stack.locator('.pnl-stack-item').first().hover();
+  await expect(preview).toContainText('Deals X (3) damage to any target.');
   await expect(preview).toContainText('3 (mana cost paid: {3}{R})');
 
   await primary(page).click();
