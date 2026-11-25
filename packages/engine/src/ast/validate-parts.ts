@@ -816,6 +816,24 @@ export function checkFilter(
       "sharesCardTypeWith 'sacrificed' is read in the filter of a sacrifice that follows another sacrifice (or the offer of one) in the same sequence",
     );
   }
+  // CR 105.1 (Ringsight): "shares a color with a legendary creature you control": a filter of permanents on the battlefield, with no such filter of its own.
+  if (f.sharesColorWith !== undefined) {
+    const inner = f.sharesColorWith;
+    if (
+      typeof inner !== 'object' ||
+      inner === null ||
+      (inner.zone !== undefined && inner.zone !== 'battlefield') ||
+      inner.sharesColorWith !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.sharesColorWith`,
+        'sharesColorWith is a filter of permanents on the battlefield without a sharesColorWith of its own',
+      );
+    } else {
+      checkFilter(inner, `${path}.sharesColorWith`, out);
+    }
+  }
   if (f.manaValueExact === true && f.manaValueAtMost === undefined) {
     issue(out, `${path}.manaValueExact`, 'manaValueExact needs the manaValueAtMost it makes exact');
   }
@@ -1488,6 +1506,20 @@ export function declareTargets(
           out,
           `${p}.differentFrom`,
           'differentFrom names an earlier target slot of the same ability',
+        );
+      }
+    }
+    if (spec.sameControllerAs !== undefined) {
+      // CR 115.1, 109.4: "another target creature that player controls": an earlier object slot of the ability, and permanents on the battlefield.
+      if (
+        typeof spec.sameControllerAs !== 'string' ||
+        declared.get(spec.sameControllerAs) !== 'object' ||
+        what?.kind !== 'object'
+      ) {
+        issue(
+          out,
+          `${p}.sameControllerAs`,
+          'sameControllerAs names an earlier object target slot of the same ability',
         );
       }
     }

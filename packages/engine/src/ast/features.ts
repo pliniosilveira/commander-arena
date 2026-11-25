@@ -1296,6 +1296,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
     'sharesCardTypeWith',
+    // CR 105.1, 109.4 (Ringsight): "a card that shares a color with a legendary creature you control" (`ObjectFilter.sharesColorWith`).
+    'sharesColorWith',
     // D-111: `ObjectFilter` comparisons with power, toughness and mana value, and the trigger subject
     // "equipped / enchanted creature" (`attached`).
     'power',
@@ -1386,6 +1388,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'totalPowerAtMost',
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
+    // CR 115.1, 109.4: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
+    'sameControllerAs',
     'greatest',
     'least',
     'giftRecipient',
@@ -2511,6 +2515,8 @@ export const SELECTOR_KINDS = [
   'manaValueBelow',
   /** "That shares a card type with it" (CR 205.2a, issue 100): the engine's `ObjectFilter.sharesCardTypeWith`. */
   'sharesCardTypeWith',
+  /** "A card that shares a color with a legendary creature you control" (CR 105.1, 109.4, Ringsight): the engine's `ObjectFilter.sharesColorWith`. */
+  'sharesColorWith',
   /** "Power 4 or greater", "toughness 2 or less", "mana value 3" (D-111): the engine's `ObjectFilter` `power`, `toughness`, `manaValue`. */
   'power',
   'toughness',
@@ -2612,6 +2618,8 @@ export const SELECTOR_KINDS = [
   'totalPowerAtMost',
   /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
   'ownedByTarget',
+  /** "Another target creature that player controls" (CR 115.1, 109.4, Breaking of the Fellowship): the engine's `TargetSpec.sameControllerAs`. */
+  'sameControllerAs',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "A creature with the least power among creatures they control" (CR 701.21a): the engine's `ChooseSelector.least`. */

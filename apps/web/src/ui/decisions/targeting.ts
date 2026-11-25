@@ -135,6 +135,16 @@ export function repeatsOtherSlot(
   const chosenIn = (specId: string) =>
     picks.some((p) => p.specId === specId && sameTarget(p, target));
   if (spec.differentFrom !== undefined && chosenIn(spec.differentFrom)) return true;
+  // CR 115.1, 109.4 (`sameControllerAs`): a target of another controller than the one already chosen in the slot this one is tied to, or in the slot tied to this one.
+  const tiedGroup = (tied: TargetChoiceSpec | undefined): SeatId | undefined => {
+    const pick = tied === undefined ? undefined : picks.find((p) => p.specId === tied.specId);
+    return tied === undefined || pick === undefined ? undefined : groupOf(tied, pick);
+  };
+  const mine = groupOf(spec, target);
+  const named = tiedGroup(specs.find((o) => o.specId === spec.sameControllerAs));
+  if (named !== undefined && named !== mine) return true;
+  const dependents = specs.filter((o) => o.sameControllerAs === spec.specId);
+  if (dependents.some((o) => tiedGroup(o) !== undefined && tiedGroup(o) !== mine)) return true;
   return specs.some((other) => other.differentFrom === spec.specId && chosenIn(other.specId));
 }
 

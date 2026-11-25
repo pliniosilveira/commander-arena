@@ -197,8 +197,10 @@ import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_ROOM_LIST } from './synthetic-rooms';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
+import { SYNTHETIC_SAME_CONTROLLER_LIST } from './synthetic-same-controller';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
 import { SYNTHETIC_SEARCH_ZONES_LIST } from './synthetic-search-zones';
+import { SYNTHETIC_SHARES_COLOR_LIST } from './synthetic-shares-color';
 import { SYNTHETIC_SLIVER_B_LIST } from './synthetic-sliver-b';
 import { SYNTHETIC_SLIVER_C_LIST } from './synthetic-sliver-c';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
@@ -590,6 +592,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_VOTE_LIST,
   ...SYNTHETIC_COUNCIL_LIST,
   ...SYNTHETIC_RING_LIST,
+  ...SYNTHETIC_SAME_CONTROLLER_LIST,
+  ...SYNTHETIC_SHARES_COLOR_LIST,
   ...SYNTHETIC_SNOW_LIST,
   ...SYNTHETIC_BRUNA_SEARCH_LIST,
   ...SYNTHETIC_HULK_SEARCH_LIST,

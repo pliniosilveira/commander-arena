@@ -1202,6 +1202,12 @@ export interface ObjectFilter {
    * a `sacrifice` that comes after that sacrifice (or the `may` of one) in the same sequence.
    */
   readonly sharesCardTypeWith?: 'triggerSubject' | 'sacrificed';
+  /**
+   * "A card that shares a color with a legendary creature you control" (CR 105.1, 105.2, 109.4, Ringsight): the object has at least one color that at least one permanent on
+   * the battlefield matching this filter has, read now (so a colorless object shares none: colorless is no color, CR 105.2c). The filter names its own controller ("you control"); its
+   * zone is the battlefield and it has no `sharesColorWith` of its own. Read anywhere a filter is matched against the game, and in particular in the filter of a `search`.
+   */
+  readonly sharesColorWith?: ObjectFilter;
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
@@ -1747,6 +1753,12 @@ export interface TargetSpec {
    * otherwise share a target.
    */
   readonly differentFrom?: string;
+  /**
+   * "Target creature an opponent controls deals damage equal to its power to another target creature that player controls" (CR 115.1, 109.4, 608.2b, Breaking of the Fellowship): every target of
+   * this slot is a permanent controlled by the controller of the target of the earlier object slot this id names. They are chosen together (the decision's `group` is the controller), and as the
+   * spell or ability resolves a target is legal only while it is controlled by the controller of that slot's target, when that target is still on the battlefield.
+   */
+  readonly sameControllerAs?: string;
   /**
    * "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature" (CR 115.3): also none of the
    * targets of these earlier slots of the same ability (`differentFrom` names the nearest one; a third target differs from both). Only with `differentFrom`.
