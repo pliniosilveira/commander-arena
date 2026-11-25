@@ -31,6 +31,8 @@ import { scenariosOf } from './heuristic-threats';
 
 /** The most play-outs of one planning, whatever the clock says (a bound of the search, not a weight). */
 const MAX_PLAY_OUTS = 40;
+/** The most engine steps of all the play-outs of one planning (a bound of the search, not a weight). */
+const MAX_PLAN_STEPS = 6000;
 
 export interface TurnPlan {
   /** The turn the plan was made in. */
@@ -54,6 +56,8 @@ export interface PlanRecord {
   readonly value: number;
   /** How many play-outs were run, and the milliseconds of the decision's clock used when it ended. */
   readonly playOuts: number;
+  /** The engine steps of all its play-outs. */
+  readonly steps: number;
   readonly elapsed: number;
   /** The turn and the window it was made in. */
   readonly turn: number;
@@ -109,7 +113,7 @@ export function choosePlan(
   const all = scenariosOf(view, sample, weights);
   // With more than one opponent every opponent's turn is played out: fewer scenarios.
   const scenarios = view.seats.length > 2 ? all.slice(0, 2) : all;
-  const ctx = { agents, budget: think.budget, weights };
+  const ctx = { agents, budget: think.budget, weights, work: { steps: 0, limit: MAX_PLAN_STEPS } };
   let done = 0;
   const scored: { index: number; value: number; steps: readonly PlanStep[] }[] = [];
   outer: for (const [i, line] of lines.entries()) {
@@ -117,6 +121,8 @@ export function choosePlan(
     let steps: readonly PlanStep[] = [];
     for (const [j, s] of scenarios.entries()) {
       if (i > 0 && (think.budget.expired(done) || done >= MAX_PLAY_OUTS)) break outer;
+      // The next line is started only when it can finish at the average cost of the ones so far.
+      if (i > 0 && ctx.work.steps + ctx.work.steps / done > MAX_PLAN_STEPS) break outer;
       const result = playLine(s.state, me, line, ctx, j === 0);
       done += 1;
       if (result === null) break;
@@ -161,6 +167,7 @@ export function choosePlan(
       today: today.value,
       value: best.value,
       playOuts: done,
+      steps: ctx.work.steps,
       elapsed: think.budget.elapsed(),
       turn: view.turn,
       window: now,

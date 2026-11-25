@@ -70,6 +70,12 @@ export interface PlayContext {
   readonly agents: SimAgents;
   readonly budget: Budget;
   readonly weights: AgentWeights;
+  /**
+   * The engine steps every play-out of one planning has taken, and the most it may take: a bound of the
+   * work that holds whatever the clock says (a logical clock never runs out). A play-out that would pass it
+   * is dropped.
+   */
+  readonly work: { steps: number; readonly limit: number };
 }
 
 /** Enough actions for a turn of the agent and one turn of each opponent on a big board. */
@@ -158,7 +164,8 @@ export function playLine(
     if (current.result !== null) return { end: current, steps };
     if (current.turn.activeSeat === me && current.turn.number > start)
       return { end: current, steps };
-    if (ctx.budget.over()) return null;
+    if (ctx.budget.over() || ctx.work.steps >= ctx.work.limit) return null;
+    ctx.work.steps += 1;
     const d = current.pending;
     if (d === null) return { end: current, steps };
     const seat = d.seat;
