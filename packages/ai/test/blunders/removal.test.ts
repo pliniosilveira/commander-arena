@@ -12,9 +12,8 @@
 import type { CardDefinition, ChosenTarget } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { HeuristicAgent } from '../../src/index';
 import { askHeuristic, creature } from '../heuristic-helpers';
-import { nameOf, playUntilPass } from './drive';
+import { blunderAgent, nameOf, playUntilPass } from './drive';
 
 const V1 = 'SYNTHETIC Vanilla 1/1';
 const V5 = 'SYNTHETIC Vanilla 5/5';
@@ -52,7 +51,7 @@ async function targetsOf(
   g: ReturnType<typeof removalSetup>,
   spell: string,
 ): Promise<ChosenTarget[] | null> {
-  const agent = new HeuristicAgent({ seed: 1 });
+  const agent = blunderAgent();
   const cast = await askHeuristic(g, agent);
   if (cast.kind !== 'castSpell' || cast.object !== g.id(spell)) return null;
   g.choose(cast);

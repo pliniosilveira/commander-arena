@@ -11,9 +11,8 @@
 import type { Action, CardDefinition } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { HeuristicAgent } from '../../src/index';
 import { askHeuristic, creature } from '../heuristic-helpers';
-import { nameOf } from './drive';
+import { blunderAgent, nameOf } from './drive';
 
 const V1 = 'SYNTHETIC Vanilla 1/1';
 const V3 = 'SYNTHETIC Vanilla 3/3';
@@ -57,7 +56,7 @@ function blockSetup(
 
 /** The blocks of the agent's answer as [blocker name, attacker name] pairs. */
 async function blocks(g: ReturnType<typeof blockSetup>): Promise<[string, string][]> {
-  const action: Action = await askHeuristic(g, new HeuristicAgent({ seed: 1 }));
+  const action: Action = await askHeuristic(g, blunderAgent());
   if (action.kind !== 'declareBlockers')
     throw new Error(`declareBlockers expected: ${action.kind}`);
   return action.blocks.map((x) => [nameOf(g, x.blocker), nameOf(g, x.attacker)]);
@@ -93,7 +92,7 @@ describe('never take lethal with a blocker at home', () => {
 
   test('at 4 life against three 3/3s, enough blockers stop the damage below 4', async () => {
     const g = blockSetup([V3, V3, V3], [BEARS, BEARS, SPIDER], 4);
-    const action = await askHeuristic(g, new HeuristicAgent({ seed: 1 }));
+    const action = await askHeuristic(g, blunderAgent());
     const blocked = action.kind === 'declareBlockers' ? action.blocks.map((x) => x.attacker) : [];
     const unblocked = 3 - new Set(blocked).size;
     // Wrong to leave two unblocked here: 6 damage is lethal at 4; two blocks or more leave 3 through, alive at 1.
