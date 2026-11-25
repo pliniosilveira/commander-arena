@@ -308,7 +308,7 @@ describe('landwalk (CR 702.14): a keyword with a land type', () => {
       reason: 'unrecognised',
       closestRule: 'static.attached',
     });
-    expect(dropped('Equipped creature has desertwalk.', 'artifact', ['Equipment'])).toMatchObject({
+    expect(dropped('Equipped creature has gatewalk.', 'artifact', ['Equipment'])).toMatchObject({
       reason: 'unrecognised',
     });
   });

@@ -88,8 +88,8 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
         produces,
         tier: tierOfAbility(state, obj, ability),
         snow: d.supertypes.includes('snow'),
-        // D-183: the mana it makes carries the card types of the permanent.
-        types: d.types,
+        // D-183: the mana it makes carries the card types of the permanent, and its subtypes (Cataclysmic Prospecting: "mana from a Desert").
+        types: [...d.types, ...d.subtypes],
         // D-149: "Spend this mana only to cast an Angel spell".
         restriction: spendRestrictionOf(ability, obj),
         ...(symbols.length > 0 ? { cost: parseManaCost(symbols) } : {}),

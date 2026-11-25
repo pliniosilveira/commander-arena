@@ -225,6 +225,8 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the total mana value of the cards milled this way';
     case 'milledCreature':
       return 'the number of creature cards milled this way';
+    case 'milledLand':
+      return 'the number of land cards milled this way';
     case 'discardedCreature':
       return 'the number of creature cards discarded this way';
     case 'discardedNoncreature':

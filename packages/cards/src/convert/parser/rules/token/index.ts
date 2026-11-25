@@ -79,7 +79,7 @@ const COUNT = choice(
   // which `validateCard` allows only in a trigger that has damage; the tokens are plural.
   map(
     spanned(pattern(/that many(?![\p{L}\p{N}])/iu)),
-    ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+    ({ span }): IrAmount => ({ kind: 'triggerDamage', thatMany: true, span }),
   ),
 );
 

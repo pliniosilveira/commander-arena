@@ -252,6 +252,16 @@ export function lowerAmount(
         if (moved !== null) return moved;
         return { ok: true, value: { kind: 'movedCount' }, rule };
       }
+      // CR 608.2c (Vengeful Regrowth): "Return up to three target land cards ... to the battlefield. Create that many ... tokens": after cards were moved, "that many" is how many.
+      if (
+        amount.thatMany === true &&
+        ctx.lastEffectKind === 'moveToZone' &&
+        ctx.owner === 'spell'
+      ) {
+        const moved = needs('movedCount');
+        if (moved !== null) return moved;
+        return { ok: true, value: { kind: 'movedCount' }, rule };
+      }
       // "You gain that much life" (stage P29, D-133): the damage of the event that caused the trigger; `validateCard`
       // checks the trigger is one that has it.
       const blocked = needs('triggerDamage');

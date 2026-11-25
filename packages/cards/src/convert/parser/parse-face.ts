@@ -345,7 +345,12 @@ const STATION_SYMBOL = /^(\d+)\+ \| (.+)$/su;
 /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): a limit on the X of the spell, read as the line of its own it is. */
 const X_AT_MOST_PLAYERS = /^X can['’]t be greater than the number of players in the game\.$/u;
 
-const INSTEAD_LINE = /^If [^\n]+?(?:, instead (?!of\b)|[^\n]* instead\.$)/u;
+/**
+ * Unholy Heat (CR 207.2c, 608.2c, 614.1a): "Delirium — ~ deals 6 damage instead if there are four or more card types among cards in your graveyard." is, without its ability word, a line
+ * that says what replaces the damage of the line before it, as the "If ..., ~ deals 6 damage instead." of one line does.
+ */
+const INSTEAD_LINE =
+  /^(?:If [^\n]+?(?:, instead (?!of\b)|[^\n]* instead\.$)|~ deals [^\n.]+? damage instead if [^\n.]+\.$)/u;
 
 function joinInsteadLines(lines: readonly string[]): string[] {
   const out: string[] = [];

@@ -33,7 +33,7 @@ import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
-import { lowerMayInstead, lowerSentences } from './sentences';
+import { lowerMayInstead, lowerSentences, withoutAnyNumberOffer } from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -867,9 +867,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (t.subject?.det === 'self') {
         return ok({ kind: 'putIntoGraveyard', who: 'any', from: 'anywhere', self: true });
       }
+      // A land type ("a Desert card", Yuma, CR 205.3i) is a filter on the card as it is in the graveyard as well.
       const kind = t.subject?.filter;
       const filter =
-        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+        t.subject === undefined ||
+        (kind?.types === undefined && kind?.notTypes === undefined && kind?.subtypes === undefined)
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;
@@ -1896,7 +1898,7 @@ function lowerTriggeredAbility(
   // (the question comes after the payment, CR 118.12a), so the sentence keeps it and the ability's
   // `optional` is for the other sentences.
   type Sentence = Triggered['body']['sentences'][number];
-  const sentences = ability.body.sentences;
+  const sentences = withoutAnyNumberOffer(ability.body.sentences);
   // "You may return ... If that land is a Plains, you may return that card to the battlefield instead." (stage P33, D-150): the two offers.
   const instead = lowerMayInstead(sentences, ctx);
   if (instead !== null) {

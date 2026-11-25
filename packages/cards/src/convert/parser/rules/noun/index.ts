@@ -35,6 +35,7 @@ import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
+import { DESERT_BLOOM_NOUN_RULES } from './desert-bloom';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
@@ -456,6 +457,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Blue Mage's Cane (CR 508.5): the graveyard of the player an attacking creature attacks.
     "target instant or sorcery card from defending player's graveyard",
     "up to one target instant or sorcery card from defending player's graveyard",
+    // Kirri, Talented Sprout (CR 205.2a, 205.3m): creature types and a card type in one list.
+    'target Plant or land card from your graveyard',
+    'target Plant, Treefolk, or land card from your graveyard',
     // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
     'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
   ],
@@ -471,6 +475,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target nonlegendary nonlegendary creature card from your graveyard',
     'target nonlegendary creature or planeswalker card from your graveyard',
     'target nonlegendary Dragon creature card or Ugin planeswalker card from your graveyard',
+    'target Plant or Treefolk card from your graveyard',
+    'target Plant, land card from your graveyard',
+    'target Plant or land from your graveyard',
     'target creature',
     'target card',
     'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
@@ -1209,6 +1216,8 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  // Desert Bloom deck, group G5 (Dune Chanter): "lands you control and land cards you own that aren't on the battlefield", which `noun.plain-permanents` would stop in the middle of.
+  ...DESERT_BLOOM_NOUN_RULES,
   // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
   NOUN_OTHER_SUBTYPE_PAIR,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.

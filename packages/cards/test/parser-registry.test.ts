@@ -239,6 +239,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-spell-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'static.triggers-additional-time-entering-types': asIs,
+  'static.triggers-additional-time-entering-land': asIs,
   'static.pay-energy-alt-cost-permanents': asIs,
   'effect.each-player-may-choose': permanent(
     (e) => `When ~ enters, ${e}. Destroy each permanent chosen this way.`,
@@ -1115,6 +1116,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.permanents-and-cards-off-battlefield': permanent(
+    (e) => `${cap(e)} are Deserts in addition to their other types.`,
+  ),
   'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),

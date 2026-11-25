@@ -1385,6 +1385,34 @@ export function graveyardPhrase(
       pos: r.pos,
     };
   };
+  // "Plant, Treefolk, or land card" (Kirri, Talented Sprout, CR 205.2a, 205.3m): one card that is any of the listed creature types or card types, the list sharing the one word
+  // "card". Both kinds must be present (a list of types alone is `choiceOfTypes`, of creature types alone `subtypeChoiceWords`, which needs the word "creature").
+  const mixedChoiceWords: Parser<CardWords> = (ctx, pos) => {
+    const r = sequence(
+      satisfy(typeChoice(`${SUBTYPE_WORD}|${CARD_TYPES}`, true), (list) => {
+        const isType = (w: string) => w === w.toLowerCase();
+        return (
+          list.some(isType) &&
+          list.some((w) => !isType(w)) &&
+          list.every((w) => isType(w) || (readCreatureType(w)?.plural ?? false) !== true)
+        );
+      }),
+      literal(' '),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [list] = r.value;
+    const isType = (w: string) => w === w.toLowerCase();
+    return {
+      ok: true,
+      value: {
+        types: [],
+        anyOf: list.filter(isType),
+        subtypes: [],
+        extra: list.filter((w) => !isType(w)).map((w): IrFilter => ({ subtypes: [w], raw: w })),
+      },
+      pos: r.pos,
+    };
+  };
   // "Aura or Equipment card" (issue 89, Forum Filibuster, CR 205.3g, 205.3h): a card that is an Aura or is an Equipment, one card only (the subtypes of an enchantment and of an
   // Limit Break deck, group 1 (Unfinished Business): "up to two target Aura and/or Equipment cards", the same cards said with "and/or", also in the plural.
   // artifact; no type word is said).
@@ -1430,6 +1458,7 @@ export function graveyardPhrase(
         permanentCards,
         withNonAura,
         choiceOfTypes,
+        quiet(mixedChoiceWords),
         quiet(subtypeChoiceWords),
         auraOrEquipment,
         quiet(permanentSubtypeChoice),

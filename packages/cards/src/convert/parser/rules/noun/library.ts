@@ -112,8 +112,36 @@ function sharedSuffix(
 const NAMED_SUFFIX =
   / named (\p{Lu}[\p{L}'’-]*(?:,? [\p{L}'’-]+)*?)(?= and put (?:it|that card) |, put |, reveal |$)/u;
 
+/**
+ * "<what> cards and/or <what> cards" (Map the Frontier, CR 701.23a): plural cards that are of either kind, or of both at once across the cards found; each kind is a card
+ * phrase of its own ("basic land cards and/or Desert cards"). Each card found is any one of the kinds, so the filter is their choice (CR 205.4g, 205.3i).
+ */
+function libraryAndOr(ctx: Parameters<Parser<IrFilter>>[0], pos: number) {
+  const first = libraryPhraseOne(true)(ctx, pos);
+  if (!first.ok) return first;
+  const joined = literal(' and/or ')(ctx, first.pos);
+  if (!joined.ok) return joined;
+  const second = libraryPhraseOne(true)(ctx, joined.pos);
+  if (!second.ok) return second;
+  const base = toFilter('library', NO_PARTS, ctx.text.slice(pos, second.pos));
+  return {
+    ok: true as const,
+    value: { ...base, card: true, anyOf: [first.value, second.value] },
+    pos: second.pos,
+  };
+}
+
 /** The filter of "<what> card(s)", with the library as its zone (CR 401.1) and no owner. */
 export function libraryPhrase(plural: boolean): Parser<IrFilter> {
+  const one = libraryPhraseOne(plural);
+  if (!plural) return one;
+  return (ctx, pos) => {
+    const both = libraryAndOr(ctx, pos);
+    return both.ok ? both : one(ctx, pos);
+  };
+}
+
+function libraryPhraseOne(plural: boolean): Parser<IrFilter> {
   const cardWord = CARD_WORD(plural);
   return (ctx, pos) => {
     // A choice first: it starts like a single type or subtype.
@@ -296,6 +324,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an Aura or Equipment card',
     'up to two basic land cards',
     'up to three Forest cards',
+    'up to two basic land cards and/or Desert cards',
     'up to X basic land cards',
     'a snow permanent card',
     'a nonland permanent card',
@@ -337,6 +366,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a card from your hand',
     'a creature card with mana value 3 or less',
     'a basic land cards',
+    'up to two basic land cards and/or',
+    'up to two basic land cards and/or Desert card',
+    'a basic land card and/or a Desert card',
     'a nonpermanent card',
     'a snow permanent card, a legendary card, a Saga card',
     'a snow permanent card, or a Saga card, or a legendary card',

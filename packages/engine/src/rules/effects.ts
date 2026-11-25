@@ -2948,16 +2948,22 @@ function runEffect(
         const card = next.objects[id];
         return card !== undefined && derive(next, card).types.includes('creature');
       }).length;
+      // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards of the cards milled, as they are in the graveyard.
+      const milledLands = cardsMilled.filter((id) => {
+        const card = next.objects[id];
+        return card !== undefined && derive(next, card).types.includes('land');
+      }).length;
       return {
         ...done(next, events),
         performed: milled,
         lastMoved: cardsMilled,
         milledCards: cardsMilled,
-        ...(value > 0 || milledCreatures > 0
+        ...(value > 0 || milledCreatures > 0 || milledLands > 0
           ? {
               thisWay: {
                 ...(value > 0 ? { milledValue: value } : {}),
                 ...(milledCreatures > 0 ? { milledCreature: milledCreatures } : {}),
+                ...(milledLands > 0 ? { milledLand: milledLands } : {}),
               },
             }
           : {}),
@@ -3637,6 +3643,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(effect.cards === undefined ? {} : { cards: effect.cards }),
           ...(effect.upTo === true ? { upTo: true as const } : {}),
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),

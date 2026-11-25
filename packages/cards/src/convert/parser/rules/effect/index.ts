@@ -76,6 +76,7 @@ import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
+import { DAMAGE_SELF_INSTEAD_EFFECT_RULES } from './damage-self-instead';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -1617,6 +1618,8 @@ export const EFFECT_RULES = [
   ...PLANESWALKER_EFFECT_RULES,
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
+  // Unholy Heat: "~ deals 6 damage instead if ..." (Delirium).
+  ...DAMAGE_SELF_INSTEAD_EFFECT_RULES,
   // Aetherdrift energy deck (issue 105): "destroy each permanent chosen this way", whose first words are those of `effect.destroy`.
   ...EACH_PLAYER_CHOOSES_RULES,
   EFFECT_DESTROY,

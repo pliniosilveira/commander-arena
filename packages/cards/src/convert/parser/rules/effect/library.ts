@@ -568,13 +568,15 @@ export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
   examples: [
     'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may put a creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    // CR 110.2a, 614.1c (Elvish Rejuvenator): the card put onto the battlefield enters tapped.
+    'look at the top five cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order',
   ],
   rejects: [
+    'look at the top five cards of your library. You may put a land card from among them onto the battlefield untapped. Put the rest on the bottom of your library in a random order',
     'look at the top eight cards of your library. You may put a Dragon creature card from among them into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in any order',
     'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest into your graveyard',
     'look at the top card of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
-    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order',
   ],
   parse: single(
     'effect.look-put-onto',
@@ -583,15 +585,28 @@ export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
       AT_LEAST(2),
       literal(' cards of your library. you may put '),
       TAKEN_CARD,
-      literal(
-        ' from among them onto the battlefield. put the rest on the bottom of your library in a random order',
+      literal(' from among them onto the battlefield'),
+      optional(
+        map(literal(' tapped'), () => true as const),
+        false as boolean,
       ),
+      literal('. put the rest on the bottom of your library in a random order'),
     ),
-    ([, count, , take]) => ({
+    ([, count, , take, , tapped]) => ({
       verb: 'lookTake',
       args: {
         count,
         take,
+        ...(tapped
+          ? {
+              tapped: {
+                kind: 'flag' as const,
+                value: true,
+                span: take.span,
+                rule: 'effect.look-put-onto',
+              },
+            }
+          : {}),
         toGraveyard: { kind: 'flag', value: false, span: take.span, rule: 'effect.look-put-onto' },
         ontoBattlefield: {
           kind: 'flag',

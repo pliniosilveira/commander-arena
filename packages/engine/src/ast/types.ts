@@ -120,7 +120,7 @@ export type Amount =
   /**
    * "The amount of mana spent to cast it", "for each mana from an artifact source spent to cast it" (CR 601.2h, D-183): how much mana was spent on
    * the cost of the spell in all, or, with `fromType`, how much of it was made by a source with that card type ("artifact": a Treasure, a Sol Ring, an
-   * artifact creature). The spell is the source of a "When you cast this spell" ability (`castSpell` with `self`: read from its stack data, or from
+   * artifact creature) or subtype ("Desert": Cataclysmic Prospecting, "for each mana from a Desert spent to cast this spell"). The spell is the source of a "When you cast this spell" ability (`castSpell` with `self`: read from its stack data, or from
    * last-known information if it has left the stack, CR 113.7a), and the permanent that enters, for the `count` of `othersEnterWithCounters`
    * (a permanent that did not come from a spell cast for mana has 0). Mana that paid the activation cost of a mana ability, life paid for
    * Phyrexian mana and what Convoke, Improvise or Delve paid are not counted; a copy of a spell was not cast and has 0 (CR 707.10).
@@ -593,6 +593,8 @@ export type ThisWayKind =
   | 'milledValue'
   // Dread Summons (CR 701.17a): "for each creature card put into a graveyard this way": the creature cards the `mill` effects of this resolution milled, whoever's they are.
   | 'milledCreature'
+  // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards the `mill` effects of this resolution milled, whoever's they are.
+  | 'milledLand'
   | 'discardedCreature'
   | 'discardedNoncreature'
   // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.
@@ -4215,6 +4217,11 @@ export type Effect =
        * unread. What was discarded is what a later `thisWay` `discarded` amount counts ("then draw that many cards").
        */
       readonly anyNumber?: true;
+      /**
+       * "Discard any number of land cards" (CR 701.9, Nantuko Cultivator): the cards that may be chosen are those of the hand the filter matches (types, supertypes, subtypes;
+       * no zone, no controller); the others stay. Only with `anyNumber`. What was discarded is what a later `thisWay` `discarded` amount counts.
+       */
+      readonly cards?: ObjectFilter;
       /**
        * "Discard up to two cards" (CR 701.9, 107.1c; Cathartic Pyre): the player chooses none, one or as many as `count` of the cards in their hand (all of a smaller hand may be chosen). What was
        * discarded is what a later `thisWay` `discarded` amount counts ("then draw that many cards"). Never with `anyNumber`, `hand`, `random`, `unless` or `together`.
@@ -9461,6 +9468,19 @@ export type StaticEffect =
       readonly kind: 'giveChosenCreatureType';
       readonly what: ObjectFilter;
       readonly alsoCardsAndSpells?: true;
+    }
+  /**
+   * "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types." (Dune Chanter, CR 613.1d, 205.1b, 604.3, 305.6): the cards its
+   * controller owns outside the battlefield and the stack (a graveyard, a hand, a library, exile, the command zone: the effect works in every zone, as Changeling does, CR 702.73a) that
+   * `what` matches (`controller` is absent or "you", read as "you own"; no zone, owner or combat) also have these `subtypes` and `types`, in layer 4 with the permanent's timestamp. At least one list
+   * is not empty. The permanents on the battlefield are the business of a `setTypes` static of their own. What `what` matches is read from the object before this effect (CR 613.8: no effect of
+   * this kind depends on another one). A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'giveTypesToCardsOffBattlefield';
+      readonly what: ObjectFilter;
+      readonly subtypes?: readonly Subtype[];
+      readonly types?: readonly CardType[];
     }
   /**
    * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (CR 702.141a, 613.1f, 604.3, 202.3): a static ability of a permanent on the battlefield that

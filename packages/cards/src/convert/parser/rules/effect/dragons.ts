@@ -101,7 +101,10 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
 /** The cards an earlier instruction exiled: "that card", "those cards", "it", "them". */
 // Stage P63 (D-216): "You may play the exiled card this turn." (Expressive Iteration: the card its own instruction exiled).
 const THOSE_CARDS = pattern(
-  new RegExp(`(?:that card|those cards|the exiled cards?|it|them)${BOUNDARY}`, 'iu'),
+  new RegExp(
+    `(?:that card|those cards|the exiled cards?|cards exiled this way|it|them)${BOUNDARY}`,
+    'iu',
+  ),
 );
 
 /**
@@ -130,6 +133,7 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'until end of turn, you may play that card',
     'you may play those cards until your next end step',
     'you may play those cards until the end of your next turn',
+    'you may play cards exiled this way until the end of your next turn',
     'you may cast it this turn',
     'you may cast that card this turn',
     'cast that card this turn',

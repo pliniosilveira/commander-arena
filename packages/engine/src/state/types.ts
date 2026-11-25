@@ -395,6 +395,8 @@ export type StackAbility = TriggeredAbility | ActivatedAbility;
 export interface ManaSpent {
   readonly total: number;
   readonly fromTypes: Readonly<Record<string, number>>;
+  /** The same for the subtypes of the sources ("for each mana from a Desert", CR 205.3i); left out when no source had one. */
+  readonly fromSubtypes?: Readonly<Record<string, number>>;
   /** How many of them came from a snow source (CR 107.4h, 106.3: "for each {S} spent to cast this spell"); left out when none did. */
   readonly snow?: number;
   /** Issue 310 (Converge, CR 105.1): the colors of the mana spent, of the five (colorless mana is no color), in the order W, U, B, R, G. */
@@ -1903,6 +1905,8 @@ export type Instruction =
       readonly unless?: ObjectFilter;
       /** "Discard any number of cards" (`discard.anyNumber`, D-151): the player chooses none, some or all of the hand. */
       readonly anyNumber?: true;
+      /** "Discard any number of land cards" (`discard.cards`): with `anyNumber`, only the cards of the hand this filter matches may be chosen. */
+      readonly cards?: ObjectFilter;
       /** "Discard up to two cards" (`discard.upTo`, CR 701.9, 107.1c): the player chooses none to `count` of the hand. */
       readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
@@ -2479,6 +2483,8 @@ export interface ThisWayCounts {
   readonly milledValue?: number;
   /** The creature cards milled by `mill` effects, for "for each creature card put into a graveyard this way" (Dread Summons). */
   readonly milledCreature?: number;
+  /** The land cards milled by `mill` effects, for "for each land card milled this way" (Dune Chanter). */
+  readonly milledLand?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
   /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */

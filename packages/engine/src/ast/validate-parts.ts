@@ -4,7 +4,13 @@
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
 import { TOKEN_PRESETS } from '../cards/tokens';
-import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import {
+  CARD_TYPES,
+  COLORS,
+  isNonCreatureSubtype,
+  LAND_TYPES,
+  SUPERTYPES,
+} from '../characteristics';
 import { FILTERABLE_KEYWORDS } from './features';
 import type {
   Ability,
@@ -2135,6 +2141,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
   milledCreature: 'a mill effect',
+  milledLand: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
@@ -2191,7 +2198,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedMost',
       'discardedTypeCount',
     ];
-  if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
+  if (e?.kind === 'mill') return ['milledValue', 'milledCreature', 'milledLand'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
   // Federation Fleet group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way".
   if (e?.kind === 'addCounters') return ['countersPut'];
@@ -2362,8 +2369,9 @@ export function checkManaSpentType(
   out: Out,
   snow?: unknown,
 ): void {
-  if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
-    issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
+  // Cataclysmic Prospecting (CR 205.3i): "for each mana from a Desert": or a land type, the source being that land.
+  if (type !== undefined && !isOneOf(type, CARD_TYPES) && !isOneOf(type, LAND_TYPES)) {
+    issue(out, path, `fromType is a card type or a land type, not ${JSON.stringify(type)}`);
   }
   // D-260: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
   if (snow !== undefined && (snow !== true || type !== undefined)) {
@@ -8857,6 +8865,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.anyNumber`,
             'anyNumber is true, with a count of 0 and no "unless you discard"',
+          );
+        }
+      }
+      // CR 701.9 (Nantuko Cultivator): "Discard any number of land cards": a filter of the cards in the hand, only for a discard of any number.
+      if (e.kind === 'discard' && e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.anyNumber !== true) {
+          issue(out, `${path}.cards`, 'the kind of card goes with anyNumber only');
+        }
+        if (
+          filterSome(
+            e.cards,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.cards`,
+            'the card described is one in the hand: no zone, controller, owner or stackKind',
           );
         }
       }
