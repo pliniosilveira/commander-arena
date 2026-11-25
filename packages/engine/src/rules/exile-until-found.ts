@@ -52,7 +52,7 @@ export function runExileUntilFound(
     }
   }
   // CR 701.13, 401.4, 110.2a (Venture Forth): the card found goes onto the battlefield, the others on the bottom of the library in a random order (the seeded generator's).
-  if (effect.then !== undefined) {
+  if (effect.outcome !== undefined) {
     const rest = exiled.filter((id) => id !== found);
     const [order, rng] = shuffle(rest, next.rng);
     const moves = [

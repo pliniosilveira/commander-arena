@@ -24,7 +24,7 @@ export const EXILE_UNTIL_PUT_REST_BOTTOM: Lowering<IrClause, Effects> = {
           kind: 'exileUntilFound',
           players: { kind: 'you' },
           filter: filter.value,
-          then: { found: 'battlefield', rest: 'bottomRandom' },
+          outcome: { found: 'battlefield', rest: 'bottomRandom' },
         },
       ],
       rule: clause.rule,

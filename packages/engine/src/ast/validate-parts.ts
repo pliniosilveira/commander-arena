@@ -6962,16 +6962,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
       // Venture Forth (CR 701.13, 401.4): the card found goes onto the battlefield, the rest to the bottom of the library; the library is the controller's own.
-      if (e.then !== undefined) {
-        if (e.then.found !== 'battlefield' || e.then.rest !== 'bottomRandom') {
+      if (e.outcome !== undefined) {
+        if (e.outcome.found !== 'battlefield' || e.outcome.rest !== 'bottomRandom') {
           issue(
             out,
-            `${path}.then`,
+            `${path}.outcome`,
             'then puts the card found onto the battlefield and the rest on the bottom in a random order',
           );
         }
         if (kindOf(e.players) !== 'you') {
-          issue(out, `${path}.then`, 'then is for the controller of the effect: players is you');
+          issue(out, `${path}.outcome`, 'outcome is for the controller of the effect: players is you');
         }
       }
       break;

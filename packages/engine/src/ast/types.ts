@@ -3538,7 +3538,7 @@ export type Effect =
        * CR 701.13, 401.4, 110.2a): what is done with the cards as the effect ends. The card found, if any, goes onto the battlefield under the control of the player; the other cards go on the
        * bottom of that player's library in a random order from the seeded generator. Only for `players` `you`.
        */
-      readonly then?: { readonly found: 'battlefield'; readonly rest: 'bottomRandom' };
+      readonly outcome?: { readonly found: 'battlefield'; readonly rest: 'bottomRandom' };
     }
   /**
    * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-660, Plargg and Nassari): an opponent of the controller (the first one in turn order who is still in
