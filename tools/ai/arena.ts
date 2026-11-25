@@ -35,10 +35,11 @@
 import '../corpus/register.ts';
 import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import type { Agent, AgentFactory, MatchDeck, TableDeck } from '@commander-arena/ai';
+import type { Agent, AgentFactory, MatchDeck, PlanWork, TableDeck } from '@commander-arena/ai';
 import {
   type DecisionTimes,
   formatMatch,
+  formatPlanning,
   formatRound,
   formatTable,
   formatTableReport,
@@ -125,6 +126,20 @@ const {
   tableReport,
 } = await import('@commander-arena/ai');
 
+/** The agents that plan their turns (the HeuristicAgent), per label: their plannings are read at the end. */
+const planners = new Map<string, { readonly plannings: readonly PlanWork[] }[]>();
+const plansTurns = (a: Agent): a is Agent & { readonly plannings: readonly PlanWork[] } =>
+  'plannings' in a;
+/** The planning lines of the report (issue 653): one for each label whose agents plan. */
+const planningLines = (): string[] =>
+  [...planners].flatMap(([label, agents]) => {
+    const line = formatPlanning(
+      label,
+      agents.flatMap((a) => a.plannings),
+    );
+    return line === null ? [] : [line];
+  });
+
 /** Measures the time of every `decide` of the agents it makes, per label. */
 const stats = new Map<
   string,
@@ -135,6 +150,9 @@ function timed(factory: AgentFactory): AgentFactory {
     label: factory.label,
     create: (seed) => {
       const inner = factory.create(seed);
+      if (plansTurns(inner)) {
+        planners.set(factory.label, [...(planners.get(factory.label) ?? []), inner]);
+      }
       const record = stats.get(factory.label) ?? {
         decisions: 0,
         totalMs: 0,
@@ -253,6 +271,7 @@ if (seats > 2) {
     }\n`,
   );
   process.stdout.write(`${formatTimes(tableTimes, DEFAULT_BUDGET_MS)}\n`);
+  for (const line of planningLines()) process.stdout.write(`${line}\n`);
   process.stdout.write(
     `${formatRound({
       decisions: tableTimes.reduce((n, t) => n + t.decisions, 0),
@@ -293,6 +312,7 @@ process.stdout.write(
   }\n`,
 );
 process.stdout.write(`${formatTimes(times, DEFAULT_BUDGET_MS)}\n`);
+for (const line of planningLines()) process.stdout.write(`${line}\n`);
 process.stdout.write(
   `${formatRound({
     decisions: times.reduce((n, t) => n + t.decisions, 0),
