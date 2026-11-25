@@ -139,10 +139,14 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- A permanent that a group's "lose all abilities" strikes still applies its own static control effect ("The monarch controls enchanted creature"); that file cannot read groups without an import cycle.
+- A group's "lose all abilities" reads types and colors from the copiable values (layer 1): a layer 4 or 5 effect that changes them is not seen. "Choose a nonland card name" accepts any name, land or not, typed.
 - The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.
 - "Whenever one or more creatures you control deal combat damage to one or more players this turn" (`delayedCombatDamageBatchTurn`) triggers once for each player damaged, not once for the event; harmless for "you become the monarch".
 - Notion Thief's draw replacement goes before dredge and "draw two instead"; with thieves of different controllers on one draw the oldest applies first. The player who would draw is not asked the order (CR 616.1).
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
+- A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
+- Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).
 - "That was dealt damage this turn" is read only in "costs {3} less to cast if it targets a creature that was dealt damage this turn"; as a target or group wording elsewhere it stays unread.
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
@@ -592,6 +596,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- "Spend blue mana as though it were any color to activate those abilities" (Grell Philosopher) applies to the mana cost of a granted activated ability, not to a granted mana ability that has a mana cost.
+- "A creature entering causes a triggered ability of that creature to trigger" (Aboleth Spawn) puts its copy trigger above the ability it names, so it resolves first; the two cannot be ordered the other way round (CR 603.3b).
 - Aven Mindcensor limits only a search of the searcher's own library; searches of another player's library or of other zones are not limited.
 - Escalate with a tap cost holds one tap requirement per spell: a card whose alternative cost also taps permanents is not read.
 - An attack tax made by an effect ("until your next turn, creatures can't attack you unless their controller pays") covers attacks on the player only, not their planeswalkers.

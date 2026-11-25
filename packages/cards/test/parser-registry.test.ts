@@ -182,6 +182,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-654: "an enchanted creature dies".
   'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
+  'keyword.replicate-tap': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
   'keyword.station': asIs,
@@ -190,6 +191,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
+  // Endless Evil: a copy of the enchanted creature with a set power and toughness.
+  'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
   'token.copy-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),
@@ -220,6 +223,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'static.self-and-enchanted-pt-count': asIs,
+  'static.self-and-enchanted-pt-amount': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
@@ -367,8 +371,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attacks-alone': whenever,
   'trigger.blocks': whenever,
   'trigger.becomes-blocked': whenever,
+  'trigger.attacks-unblocked': whenever,
   'trigger.or': whenever,
   'trigger.landfall': whenever,
+  // Brainstealer Dragon.
+  'trigger.enters-under-your-control-opponent-owned': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
   'trigger.enters-from-graveyard': whenever,
@@ -663,6 +670,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.players-cant-gain-life': asIs,
   'static.damage-cant-be-prevented': asIs,
   'static.all-damage-as-though-wither': asIs,
+  // Phyrexian Revoker: the line stands alone.
+  'static.activated-abilities-of-chosen-name': asIs,
+  // Sludge Monster: the line stands alone.
+  'static.group-loses-abilities-base-pt': asIs,
   'static.opponent-search-top-only': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
@@ -967,8 +978,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.defined-pt': spell((e) => `Create ${e}.`),
   'token.noncreature-named': spell((e) => `Create ${e}.`),
   'static.creature-off-battlefield': asIs,
+  'static.begin-game-on-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-causes-trigger': permanent((e) => `Whenever ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
   // Stage P49 (D-206): the Vraska deck's triggers, conditions and statics. A trigger follows "Whenever"; a condition follows the trigger it conditions or
   // "Then if" in a spell; the static is a line of its own.
@@ -1076,6 +1090,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,
+  'trigger.milled': whenever,
   'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
@@ -1121,6 +1136,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
   ),
   'condition.descended-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'condition.played-land-this-turn': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
   'amount.for-each-nontoken-destroyed': spell(
@@ -1342,6 +1360,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.graveyard-events': whenever,
   // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
   'trigger.put-into-graveyard': whenever,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
+  'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.this-exploits': whenever,
+  'condition.this-suspended': permanent(
+    (e) =>
+      `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,
+  ),
   'trigger.self-put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
@@ -1645,6 +1670,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
+  ),
+  'noun.target-card-in-opponent-graveyard-from-library': spell(
+    (e) => `Choose ${e}. Put it onto the battlefield under your control.`,
   ),
   // Scions & Spellcraft deck, group A: the life lost and the combat damage dealt this turn, by the players of a group.
   'condition.a-player-lost-life-this-turn': permanent(

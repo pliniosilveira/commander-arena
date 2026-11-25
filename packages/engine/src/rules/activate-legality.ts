@@ -15,6 +15,7 @@ import { encoreGrantSources } from './derive-statics';
 import { hasSorceryTiming } from './legality';
 import { isLoyaltyAbility, loyaltyLimitReached } from './loyalty';
 import { legalModeSets, modalOfAbility } from './modes';
+import { activationLockedByName } from './name-locks';
 import { hasRestriction } from './restrictions';
 import { legalTargets, targetBounds } from './select';
 import { splitSecondOnStack } from './split-second';
@@ -97,6 +98,10 @@ export function activationRefusal(
   // the abilities of a keyword included, CR 605.1a, 606.1).
   if (zone === 'battlefield' && hasRestriction(state, obj, 'cantActivateAbilities')) {
     return 'The activated abilities of that permanent cannot be activated';
+  }
+  // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated": wherever the source is.
+  if (activationLockedByName(state, obj)) {
+    return 'The activated abilities of a source with the chosen name cannot be activated';
   }
   if (ability.activator === 'opponents') {
     // CR 602.2: "Only your opponents may activate this ability": a player the permanent's controller is an opponent of (CR 102.2).

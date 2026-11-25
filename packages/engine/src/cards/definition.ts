@@ -35,7 +35,7 @@ export interface CardFace extends Characteristics {
    * without X), and together with `additionalCosts` at most one sacrifice and one discard. A way that cannot be paid is not offered; the question
    * is not asked when only one can. The caster is asked with a `confirmOptional` of purpose `costChoice`: accepting is the first option.
    */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /** Alternative costs the card's text gives it (CR 118.9): see `AlternativeCost`. At most one. */
   readonly alternativeCosts?: readonly AlternativeCost[];
   /** Resolution text for spells (instants, sorceries, and permanents with "when cast" text). */

@@ -460,6 +460,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           'cardType',
           'planeswalkerType',
           'lifePaid',
+          'player',
+          'cardName',
         ])
       ) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
@@ -788,6 +790,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'noMaximumHandSize':
+    case 'beginGameOnBattlefield':
       break;
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
@@ -1085,6 +1088,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'restrictionUnless':
     case 'setColors':
     case 'loseAllAbilities':
+    case 'cantActivateChosenName':
       checkDinosaursStatic(s, path, out);
       break;
     case 'loseTypes':
@@ -1157,6 +1161,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
       // CR 509.3d (Flanking): the filter the blocking creature must match, on the battlefield, no zone, owner or combat.
@@ -1222,7 +1227,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'castSpell':
       checkFilter(t.filter, `${path}.filter`, out);
-      if (!isOneOf(t.by, ['you', 'opponent', 'any']))
+      if (!isOneOf(t.by, ['you', 'opponent', 'any', 'chosenPlayer']))
         issue(out, `${path}.by`, `unknown caster ${String(t.by)}`);
       // D-120: "When you cast this spell" (CR 702.85a): the spell's own ability, for itself only.
       if (t.self !== undefined) {
@@ -1288,6 +1293,41 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'classLevel':
       if (!isCount(t.level) || t.level < 2) {
         issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
+      }
+      break;
+    case 'milled':
+      // CR 701.17a: a card read where it went (a graveyard), so no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards milled are read in the graveyard: the filter names no zone, controller or owner',
+          );
+        }
+      }
+      if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
+    case 'entersCausesTrigger':
+      // Aboleth Spawn: the permanent that entered (a filter that names no zone) and its controller, relative to the controller of this ability.
+      checkFilter(t.what, `${path}.what`, out);
+      if (t.what?.zone !== undefined || t.what?.controller !== undefined) {
+        issue(
+          out,
+          `${path}.what`,
+          'the permanent that entered names no zone or controller: `who` says whose',
+        );
+      }
+      if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
       break;
     case 'votingFinished':
@@ -1518,6 +1558,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'exploits':
+      // CR 702.110b: no parameters; the creature with the ability.
+      break;
     case 'doorUnlocked':
       // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1525,8 +1568,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'putIntoGraveyard':
       // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
-      if (!isOneOf(t.who, ['you', 'any'])) {
+      if (!isOneOf(t.who, ['you', 'any', 'opponent'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      if (
+        t.who === 'opponent' &&
+        (t.firstTimeEachTurn === true || t.batch === true || t.self === true)
+      ) {
+        issue(
+          out,
+          `${path}.who`,
+          "an opponent's graveyard goes with a trigger for each card, not a batch, first-time or self trigger",
+        );
       }
       if (!isOneOf(t.from, ['anywhere', 'library', 'notBattlefield'])) {
         issue(
@@ -1788,6 +1841,8 @@ function hasDamage(t: Trigger): boolean {
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
+    // CR 119.3: "Whenever an opponent loses life, ... that many": the life that event lost. A batch spans several events, so it has no one amount.
+    (t?.kind === 'lifeLost' && t.batch !== true) ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||
     t?.kind === 'surveils'
@@ -1844,6 +1899,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
     case 'landfall':
     case 'diesBatch':
@@ -1862,6 +1918,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesTarget':
     case 'crimeCommitted':
     case 'activatesAbility':
+    case 'entersCausesTrigger':
       return 'stack';
     case 'tokenCreated':
       return 'permanent';
@@ -1869,6 +1926,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       // One card for each occurrence; a batch is about several cards and has no one subject.
       return t.batch === true ? undefined : 'permanent';
     case 'doorUnlocked':
+    case 'exploits':
       return 'permanent';
     default:
       return undefined;
@@ -2427,6 +2485,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
         for (const kind of [
           'subjectControlledByYou',
+          'subjectMatches',
           'subjectStat',
           'subjectGreaterThanEach',
           'subjectPowerLessThanThis',
@@ -2519,6 +2578,18 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           "thisInYourGraveyard needs functionsIn: 'graveyard': an ability that works on the battlefield has its card there",
         );
       }
+      // CR 702.62b: "if this card is suspended" is true only for a card in exile, which the ability must say it works from (CR 113.6b).
+      if (
+        (conditionHas(a.interveningIf, 'thisSuspended') ||
+          conditionHas(a.triggerCondition, 'thisSuspended')) &&
+        a.functionsIn !== 'exile'
+      ) {
+        issue(
+          out,
+          `${path}.interveningIf`,
+          "thisSuspended needs functionsIn: 'exile': an ability that works on the battlefield has its card there",
+        );
+      }
       // D-145: "attacks while you don't control another Dinosaur": the condition of the event itself, read once.
       if (a.triggerCondition !== undefined) {
         checkCondition(a.triggerCondition, `${path}.triggerCondition`, out);
@@ -2549,6 +2620,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
         for (const kind of [
           'subjectControlledByYou',
+          'subjectMatches',
           'subjectStat',
           'subjectGreaterThanEach',
           'subjectPowerLessThanThis',

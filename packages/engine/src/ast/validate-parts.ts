@@ -347,6 +347,7 @@ export function checkFilter(
       'triggerPlayer',
       'defendingPlayer',
       'monarch',
+      'chosenPlayer',
     ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);
@@ -410,6 +411,7 @@ export function checkFilter(
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'discardedOrFromLibraryThisTurn',
+    'putFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
@@ -595,6 +597,13 @@ export function checkFilter(
     issue(
       out,
       `${path}.discardedOrFromLibraryThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
+  if (f.putFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.putFromLibraryThisTurn`,
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
@@ -938,6 +947,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
+  f.putFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.dealtDamageThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
@@ -3044,12 +3054,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'countOf needs a filter');
       } else if (
         a.filter.owner !== undefined &&
-        kindOf(a.filter.owner) === 'target' &&
+        (kindOf(a.filter.owner) === 'target' || kindOf(a.filter.owner) === 'defendingPlayer') &&
         a.filter.zone !== undefined &&
         a.filter.zone !== 'battlefield'
       ) {
         // D-649 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
-        // the amount is read, with the targets.
+        // the amount is read, with the targets. CR 508.5 (Guiltfeeder): "defending player loses 1 life for each card in their graveyard": the one player the attacking source attacks.
         const { owner, ...rest } = a.filter;
         checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
         if (rest.controller !== undefined || rest.controlledBy !== undefined) {
@@ -3066,7 +3076,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.filter.owner`,
-          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player owns",
+          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player or the defending player owns",
         );
         if (rest.controlledBy !== undefined) {
           issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
@@ -3398,6 +3408,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       checkManaSymbols(cost.symbols, `${path}.symbols`, out);
       if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
         issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
+      }
+      if (cost.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blueAsAnyColor is given by an effect to the abilities it grants, a card does not write it',
+        );
       }
       break;
     case 'tap':
@@ -3965,6 +3982,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'cardLeftYourGraveyard':
     case 'descendedThisTurn':
+    case 'playedLandThisTurn':
     case 'yourMainPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
@@ -4157,6 +4175,18 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       if (!isOneOf(c.stat, ['power', 'toughness'])) {
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      break;
+    case 'subjectMatches':
+      // CR 603.10a (Endless Evil): the filter describes the permanent the event is about; where it may stand is checked with the trigger (validate.ts).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
       }
       break;
     case 'subjectControlledByYou':
@@ -4365,6 +4395,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
+    case 'thisSuspended':
+      // CR 702.62b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'thisOnBattlefield':
       // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
@@ -5099,6 +5132,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
     case 'target':
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'attached':
+      // CR 707.2, 303.4b (Endless Evil, Helm of the Host): "a token that's a copy of enchanted creature": the permanent the Aura or Equipment is attached to.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     case 'chosen':
       // D-642 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
       checkRef(ref, 'object', path, scope, out);
@@ -5734,6 +5771,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectMatches':
     case 'subjectStat':
     case 'subjectPowerLessThanThis':
     case 'subjectGreaterThanEach':
@@ -6311,6 +6349,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'another player can sacrifice only permanents they choose: use a choose selector',
           );
         }
+      }
+      if (e.exploit !== undefined) {
+        // CR 702.110b: the sacrifice of the engine's own Exploit ability; a card writes the keyword.
+        issue(
+          out,
+          `${path}.exploit`,
+          "exploit is the sacrifice of the engine's Exploit ability (CR 702.110a); a card writes the keyword",
+        );
       }
       if (e.byController !== undefined) {
         // D-196: "its controller sacrifices it": a named permanent, sacrificed by whoever controls it; no player and no choice.
@@ -7040,6 +7086,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         issue(out, `${path}.object`, 'changeTarget names a target spell or ability');
       }
+      // CR 115.7b: the named new target is the ability's source.
+      if (e.to !== undefined && kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'changeTarget changes a target to the source of the ability');
+      }
       break;
     case 'copySpell':
       // CR 707.10 (D-129): a target spell, or the spell whose casting caused the trigger.
@@ -7437,6 +7487,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // D-230: "return that card to the battlefield" of a dies trigger.
         if (scope.triggerSubject !== 'permanent') {
           issue(out, `${path}.objects`, "'triggerCard' needs a trigger about a permanent");
+        }
+      } else if (kindOf(e.objects) === 'triggerSubject') {
+        // CR 603.2, 400.3 ("Whenever a creature you control becomes blocked, you may return it to its owner's hand"): the permanent the trigger is about, still on the battlefield,
+        // goes to a zone that is not the battlefield (a permanent put onto the battlefield would be a new object, CR 400.7).
+        checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
+        if (e.to === 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'the permanent a trigger is about is not put onto the battlefield',
+          );
         }
       } else if (kindOf(e.objects) === 'thisCard') {
         // D-110: the card the source became, in an ability; it can be put onto the battlefield only.
@@ -9337,6 +9398,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'gainActivatedAbilitiesOf':
       // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (e.blueAsAnyColor !== undefined && e.blueAsAnyColor !== true) {
+        issue(out, `${path}.blueAsAnyColor`, 'blueAsAnyColor must be true when present');
+      }
+      if (kindOf(e.from) === 'target') {
+        // Grell Philosopher (CR 611.2c, 613.1f): "each Horror you control gains all activated abilities of target artifact": a group, fixed as the effect resolves, gets those of a target.
+        checkRef(e.from, 'object', `${path}.from`, scope, out);
+        if (kindOf(e.to) === 'each') {
+          checkObjectSelector(e.to, `${path}.to`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.to`,
+            'the abilities of a target go to a group (each) the effect names',
+          );
+        }
+        break;
+      }
       if (kindOf(e.to) !== 'this') {
         issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
       }
@@ -9344,6 +9422,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
       } else {
         checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blue mana is spent as any color only for the abilities of a target',
+        );
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');

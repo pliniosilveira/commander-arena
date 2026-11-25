@@ -461,6 +461,26 @@ export function lowerAmount(
         // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
         // as the count is made.
         const itsController = controller.noun.det === 'controllerOf';
+        // Guiltfeeder (CR 108.3, 404.1): "for each card in their graveyard": the cards of the one player the instruction is about (`ctx.theirPlayer`), counted as it runs.
+        if (controller.noun.rule === 'noun.their-zone') {
+          const outside =
+            amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
+          if (
+            !outside ||
+            ctx.theirPlayer === null ||
+            controller.orPlaneswalkerController === true
+          ) {
+            return { ok: false, needs: [], at: amount.span, rule };
+          }
+          const { controller: _their, ...rest } = amount.of.filter;
+          const plain = countFilter({ ...amount.of, filter: rest });
+          if (!plain.ok) return plain;
+          return {
+            ok: true,
+            value: { kind: 'countOf', filter: { ...plain.value, owner: ctx.theirPlayer } },
+            rule,
+          };
+        }
         // Cavern-Hoard Dragon (CR 109.4, 608.2c): "for each artifact that player controls" after "deals combat damage to a player": the player the trigger is about, read as the count is made.
         const triggerPlayer = controller.noun.det === 'triggerActor';
         if (

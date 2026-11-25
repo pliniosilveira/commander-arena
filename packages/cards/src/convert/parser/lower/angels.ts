@@ -66,6 +66,7 @@ export type AngelStaticEffect = Extract<
       | 'cantGainLife'
       | 'damageCantBePrevented'
       | 'damageAsThoughWither'
+      | 'cantActivateChosenName'
       | 'opponentSearchTopOnly'
       | 'preventDamageToThis'
       | 'cantCastThis'
@@ -81,6 +82,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'cantGainLife' ||
     effect.kind === 'damageCantBePrevented' ||
     effect.kind === 'damageAsThoughWither' ||
+    effect.kind === 'cantActivateChosenName' ||
     effect.kind === 'opponentSearchTopOnly' ||
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'cantCastThis' ||
@@ -258,7 +260,8 @@ export function lowerAngelStatic(
         break;
       }
       case 'damageCantBePrevented':
-      case 'damageAsThoughWither': {
+      case 'damageAsThoughWither':
+      case 'cantActivateChosenName': {
         // CR 615.12, 702.80a: a rule of the game, whoever controls the permanent; the line is its own statement.
         if (effects.length !== 1) return failure(ability);
         const blocked = missingFeatures(['ability:static', `static:${effect.kind}`]);
@@ -319,6 +322,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:cantGainLife',
   'static:damageCantBePrevented',
   'static:damageAsThoughWither',
+  'static:cantActivateChosenName',
   'static:opponentSearchTopOnly',
   'static:preventDamageToThis',
   'static:cantCastThis',

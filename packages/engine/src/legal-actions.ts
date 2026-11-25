@@ -408,8 +408,12 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       ];
     case 'chooseOption':
       // CR 614.12a: one action per option, in the decision's order (every creature type, or five colors).
+      // CR 201.2: "choose a nonland card name" is free text, so these are only the suggestions; with none to suggest, the name of the permanent that asks is one.
       return [
-        ...d.options.map((option) => ({ kind: 'chooseOption' as const, option })),
+        ...(d.purpose === 'cardName' && d.options.length === 0 && d.sourceName !== ''
+          ? [d.sourceName]
+          : d.options
+        ).map((option) => ({ kind: 'chooseOption' as const, option })),
         // CR 733: the counters removed to pay a cost can be taken back, which rewinds the activation.
         ...(d.forCost === true ? [{ kind: 'cancel' as const }] : []),
         { kind: 'concede' },

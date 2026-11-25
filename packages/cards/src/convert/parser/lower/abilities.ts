@@ -255,13 +255,13 @@ function lowerCostedKeyword(
     name === 'embalm' ||
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
-    name === 'replicate' ||
     name === 'buyback' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
-      : // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
-        name === 'escalate'
+      : // CR 702.56a (Psionic Ritual): a replicate cost is mana or the tapping of an untapped permanent, paid once for each copy.
+        // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
+        name === 'replicate' || name === 'escalate'
         ? ['mana', 'tapPermanents']
         : name === 'ward'
           ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
@@ -274,7 +274,7 @@ function lowerCostedKeyword(
       ? { x: true }
       : name === 'ward'
         ? { ward: true }
-        : name === 'escalate'
+        : (name === 'replicate' && only.kind === 'tapPermanents') || name === 'escalate'
           ? { ordinary: true }
           : {},
   );

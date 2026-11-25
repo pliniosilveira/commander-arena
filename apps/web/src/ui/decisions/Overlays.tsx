@@ -21,6 +21,7 @@ import { setAttackTarget } from './attack';
 import { attackTaxDetail, taxRows, taxRowText, taxRowWarning } from './attack-tax';
 import { BarButtons } from './BarButtons';
 import { blockCostRow, blockCostText, blockCostWarning, blockTaxDetail } from './block-tax';
+import { CardNameDialog } from './CardNameDialog';
 import { CardPickerPanel } from './CardPickerPanel';
 import { toggleCard } from './cards';
 import { commanderZoneDetail } from './commander-zone';
@@ -243,10 +244,14 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       ) : d.purpose === 'lifePaid' ? (
         // CR 119.4, 614.12: "As this artifact enters, pay any amount of life": a number from 0 to the life total, not a list of buttons.
         <LifePaidDialog key={d.id} d={d} act={act} />
+      ) : d.purpose === 'cardName' ? (
+        // CR 201.2, 614.12a: "choose a nonland card name" is typed, with the names the game shows as suggestions.
+        <CardNameDialog key={d.id} d={d} act={act} />
       ) : d.purpose === 'pile' ? (
         // D-303 (CR 700.3): the two piles the other player made, with their cards.
         <PilesDialog key={d.id} d={d} view={view} act={act} />
       ) : d.purpose === 'option' ||
+        d.purpose === 'player' ||
         d.purpose === 'cardType' ||
         d.purpose === 'effect' ||
         d.purpose === 'riot' ||

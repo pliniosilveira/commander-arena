@@ -287,7 +287,21 @@ export function runGainActivatedAbilitiesOf(
   const object = state.objects[fromId];
   const abilities =
     object !== undefined ? derive(state, object).abilities : (state.lki[fromId]?.abilities ?? []);
-  const gained = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  const own = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  // Grell Philosopher (CR 609.4b, 602.2b): "You may spend blue mana as though it were mana of any color to activate those abilities": the copies given carry it on their mana costs.
+  const gained =
+    effect.blueAsAnyColor === true
+      ? own.map((a) =>
+          a.kind === 'activated'
+            ? {
+                ...a,
+                cost: a.cost.map((c) =>
+                  c.kind === 'mana' ? { ...c, blueAsAnyColor: true as const } : c,
+                ),
+              }
+            : a,
+        )
+      : own;
   if (gained.length === 0) return done(state);
   return runContinuous(
     state,

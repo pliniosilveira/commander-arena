@@ -34,6 +34,7 @@ import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
 import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
+import { TIME_COUNTER } from './time-counter';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
 /** A prime number: a whole number of 2 or more with no divisor but 1 and itself (`amountIsPrime`); 0, 1 and negative numbers are not. */
@@ -551,6 +552,9 @@ export function evaluateCondition(
       return state.turnLog.graveyardEntries.some(
         (e) => e.seat === ctx.controller && e.types.some(isPermanentType),
       );
+    case 'playedLandThisTurn':
+      // CR 305.1, 305.2: the land plays of the controller this turn (a land put onto the battlefield by an effect is not played).
+      return getSeat(state, ctx.controller).landsPlayedThisTurn > 0;
     case 'manaSpentAtLeast': {
       // CR 601.2h (D-206): the spell that caused the cast trigger, as it is on the stack.
       const spell =
@@ -703,6 +707,18 @@ export function evaluateCondition(
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
     }
+    case 'thisSuspended': {
+      // CR 702.62b, 603.4, 400.7: the card itself is in exile, has Suspend and a time counter; read live, a card that left exile is another object.
+      const card = ctx.source === null ? undefined : state.objects[ctx.source];
+      return (
+        card !== undefined &&
+        card.zone === 'exile' &&
+        (card.counters[TIME_COUNTER] ?? 0) >= 1 &&
+        derive(state, card).abilities.some(
+          (a) => a.kind === 'keyword' && a.keyword.kind === 'suspend',
+        )
+      );
+    }
     case 'thisOnBattlefield': {
       // CR 603.4, 400.7 (Animate Dead): "if it's on the battlefield": the live object, which is a new one elsewhere once it has left.
       const from = ctx.source === null ? undefined : state.objects[ctx.source];
@@ -755,6 +771,21 @@ export function evaluateCondition(
         if (theirs !== null && theirs >= mine) return false;
       }
       return true;
+    }
+    case 'subjectMatches': {
+      // CR 603.10a, 113.7a (Endless Evil): "if that creature was a Horror": the permanent the event is about, as it is or as it last was once it has left, against the filter in the
+      // zone it is in (a creature that died is read from its last-known information, with the types it had on the battlefield).
+      if (ctx.triggerSubject === undefined) return false;
+      const subject = objectOrLki(state, ctx.triggerSubject);
+      return (
+        subject !== null &&
+        matchesFilter(
+          state,
+          subject,
+          { ...condition.filter, zone: subject.zone },
+          { controller: ctx.controller, source: ctx.source },
+        )
+      );
     }
     case 'subjectStat': {
       // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.
