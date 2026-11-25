@@ -137,6 +137,21 @@ export function checkDragonsEffect(
           issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
         }
       }
+      // Durnan (CR 702.125a): "That spell has undaunted": a cost reduction, so a cost that is not free.
+      if (e.undaunted !== undefined) {
+        if (e.undaunted !== true)
+          issue(out, `${path}.undaunted`, 'undaunted must be true when present');
+        if (e.free === true) issue(out, `${path}.undaunted`, 'a free play has no cost to reduce');
+      }
+      if (e.creatureSpellsOnly !== undefined) {
+        if (e.creatureSpellsOnly !== true || e.castOnly !== true) {
+          issue(
+            out,
+            `${path}.creatureSpellsOnly`,
+            'creatureSpellsOnly is true and is about the spell that is cast: needs castOnly',
+          );
+        }
+      }
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');

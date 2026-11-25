@@ -1169,3 +1169,91 @@ describe('"Whenever you cast a spell from exile, copy it. ... If it\'s a permane
     expect(g.find({ name: 'Grizzly Bears', zone: 'battlefield', seat: 0 })).toHaveLength(1);
   });
 });
+
+describe('"Whenever ~ attacks, look at the top four cards of your library. You may exile a creature card from among them. ... For as long as that card remains exiled, you may cast it. That spell has undaunted." (CR 401.2, 406.3, 702.125a)', () => {
+  const durnan = parsed(
+    'SYNTHETIC Portal Keeper',
+    'Legendary Creature — Human Warrior',
+    'Whenever ~ attacks, look at the top four cards of your library. You may exile a creature card from among them. Put the rest on the bottom of your library in any order. For as long as that card remains exiled, you may cast it. That spell has undaunted.',
+    { manaCost: '{3}{G}', power: '3', toughness: '3', colors: ['G'] },
+  );
+  const build = () =>
+    scenario()
+      .define(durnan)
+      .seat(0)
+      .life(20)
+      .battlefield(durnan.name, 'Forest')
+      .library('Giant Spider', 'Grizzly Bears', 'Lightning Bolt', 'Sol Ring', ...FILLER)
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  const attacked = () => {
+    const g = build();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: durnan.name }]);
+    g.passAll();
+    g.act(0).chooseCards('Grizzly Bears');
+    g.act(0).arrange({ top: [], other: ['Sol Ring', 'Giant Spider', 'Lightning Bolt'] });
+    return g;
+  };
+
+  test('the creature card is exiled and the rest go to the bottom', () => {
+    const g = attacked();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    expect(g.find({ name: 'Giant Spider', zone: 'library', seat: 0 })).toHaveLength(1);
+    expect(g.find({ name: 'Lightning Bolt', zone: 'library', seat: 0 })).toHaveLength(1);
+  });
+
+  test('it may be cast for {1} less for each opponent: {G} is enough for Grizzly Bears', () => {
+    const g = attacked();
+    g.advanceTo('postcombatMain');
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+});
+
+describe('"−2: Look at the top three cards of your library. Exile one face down and put the rest on the bottom ... you may cast it if it\'s a creature spell." (CR 401.2, 406.3, 601.2, 611.2)', () => {
+  const walker = parsed(
+    'SYNTHETIC Wilds Walker',
+    'Legendary Planeswalker — Vivien',
+    "−2: Look at the top three cards of your library. Exile one face down and put the rest on the bottom of your library in any order. For as long as it remains exiled, you may cast it if it's a creature spell.",
+    { manaCost: '{2}{G}', loyalty: '4', colors: ['G'] },
+  );
+  const build = (taken: string) =>
+    scenario()
+      .define(walker)
+      .seat(0)
+      .life(20)
+      .battlefield(walker.name, 'Forest', 'Forest', 'Mountain')
+      .library(taken, 'Giant Spider', 'Sol Ring', ...FILLER)
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+  const used = (taken: string) => {
+    const g = build(taken);
+    g.act(0).activate(walker.name, { ability: 0 });
+    g.passAll();
+    g.act(0).chooseCards(taken);
+    g.act(0).arrange({ top: [], other: ['Giant Spider', 'Sol Ring'] });
+    return g;
+  };
+
+  test('a creature card exiled this way may be cast', () => {
+    const g = used('Grizzly Bears');
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+  });
+
+  test('a card that is not a creature card cannot be cast', () => {
+    const g = used('Lightning Bolt');
+    g.expect.zone('Lightning Bolt', 'exile', { seat: 0 });
+    g.expect.illegal(0, { cast: { name: 'Lightning Bolt', zone: 'exile' } });
+  });
+});

@@ -205,6 +205,7 @@ import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
 import { PARTY_EFFECT_RULES } from './party';
+import { DURNAN_EFFECT_RULES } from './durnan';
 import { PARTY_TIME_LIBRARY_EFFECT_RULES } from './party-time-library';
 import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
@@ -1470,6 +1471,7 @@ export const EFFECT_RULES = [
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
+  ...DURNAN_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

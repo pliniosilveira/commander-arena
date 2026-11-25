@@ -1758,7 +1758,7 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
+      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'castFree' | 'top';
       /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
       readonly libraryOf?: SeatId;
       /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
@@ -2637,6 +2637,10 @@ export type ContinuousChange =
       readonly exileInstead?: true;
       /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
       readonly lessGeneric?: number;
+      /** "That spell has undaunted" (`mayPlay.undaunted`, Durnan, CR 702.125a): the spell costs {1} less to cast for each opponent of its caster still in the game (`rules/play-permission-cost.ts`). */
+      readonly undaunted?: true;
+      /** "... you may cast it if it's a creature spell" (`mayPlay.creatureSpellsOnly`, Vivien, CR 601.2): only a creature card may be cast with this permission. */
+      readonly creatureSpellsOnly?: true;
       /**
        * "You may play that card until you exile another card with this enchantment" (`mayPlay.lasts` `untilSourceExilesAnother`, Furious Rise, CR 607.2a): the permanent whose linked
        * ability exiled the card; the permission is removed as that permanent exiles another card with `exileTop` `linked` (`rules/impulse.ts`).

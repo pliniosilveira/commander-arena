@@ -187,6 +187,10 @@ export function lookAtTopText(
     const which = plain && one ? 'one of them' : `${taken} from among them`;
     return `${look}. Exile ${which} face down. ${REST_WORDS[rest]}`;
   }
+  // Durnan of the Yawning Portal (CR 406.3): "You may exile a creature card from among them", face up.
+  if (take.to === 'exile') {
+    return `${look}. You may exile ${taken} from among them. ${REST_WORDS[rest]}`;
+  }
   // D-324 (CR 701.20a): "Put two of them into your hand", with no reveal.
   if (take.hidden === true) {
     const which =

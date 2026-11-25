@@ -166,6 +166,10 @@ export function runMayPlay(
         ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
         // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast".
         ...(effect.lessGeneric === undefined ? {} : { lessGeneric: effect.lessGeneric }),
+        // Durnan of the Yawning Portal (CR 702.125a): "That spell has undaunted".
+        ...(effect.undaunted === true ? { undaunted: true as const } : {}),
+        // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell".
+        ...(effect.creatureSpellsOnly === true ? { creatureSpellsOnly: true as const } : {}),
         // Furious Rise (CR 607.2a): "until you exile another card with this enchantment".
         ...(effect.lasts === 'untilSourceExilesAnother' && res.source !== null
           ? { endsWhenExilesAnother: res.source }

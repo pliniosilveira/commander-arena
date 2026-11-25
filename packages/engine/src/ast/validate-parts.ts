@@ -4553,7 +4553,8 @@ function movesObjects(e: Effect): boolean {
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
     // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
-    (e?.kind === 'lookAtTop' && e.take?.to === 'exileFaceDownUnlinked') ||
+    (e?.kind === 'lookAtTop' &&
+      (e.take?.to === 'exileFaceDownUnlinked' || e.take?.to === 'exile')) ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -7918,11 +7919,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
       }
-      if ((e.from !== undefined) !== (e.take?.to === 'exileFaceDownUnlinked')) {
+      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked') {
         issue(
           out,
           `${path}.from`,
-          "from (another player's library) and take.to 'exileFaceDownUnlinked' go together",
+          "from (another player's library) needs take.to 'exileFaceDownUnlinked'",
         );
       }
       if (
@@ -7937,7 +7938,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           e.take.manaValueAtMost !== undefined ||
           e.take.elseAnyToHand !== undefined ||
           e.revealAll !== undefined ||
-          e.rest !== 'bottomRandom')
+          (e.rest !== 'bottomRandom' && (e.from !== undefined || e.rest !== 'bottomChosen')))
       ) {
         issue(
           out,
@@ -7982,6 +7983,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'battlefield',
           'exileFaceDown',
           'exileFaceDownUnlinked',
+          'exile',
           'castFree',
           'top',
         ])

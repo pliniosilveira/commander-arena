@@ -1070,12 +1070,57 @@ const TROI_CAST =
 const TROI_COPY = /^if they do, you copy that spell\. you may choose new targets for the copy\.$/i;
 const TROI_ELSE_DRAW = /^if they don['’]t, you draw a card\.$/i;
 
+/**
+ * "Look at the top four cards of your library. You may exile a creature card from among them. Put the rest on the bottom of your library in any order. For as long as that card remains
+ * exiled, you may cast it. That spell has undaunted." (Durnan of the Yawning Portal, CR 401.2, 406.3, 702.125a): five sentences, one instruction (`effect.look-exile-creature-cast-undaunted`).
+ */
+const LOOK_AT_TOP_OWN = /(?:^|, )look at the top [^.]* cards of your library\.$/i;
+const MAY_EXILE_CREATURE_FROM_AMONG = /^you may exile a creature card from among them\.$/i;
+const PUT_REST_ANY_ORDER = /^put the rest on the bottom of your library in any order\.$/i;
+const CAST_THAT_CARD_WHILE_EXILED = /^for as long as that card remains exiled, you may cast it\.$/i;
+const THAT_SPELL_HAS_UNDAUNTED = /^that spell has undaunted\.$/i;
+/**
+ * "Look at the top three cards of your library. Exile one face down and put the rest on the bottom of your library in any order. For as long as it remains exiled, you may cast it if it's a
+ * creature spell." (Vivien, Champion of the Wilds, CR 401.2, 406.3): three sentences, one instruction (`effect.look-exile-face-down-cast-creature`).
+ */
+const EXILE_ONE_FACE_DOWN_REST_ANY_ORDER =
+  /^exile one face down and put the rest on the bottom of your library in any order\.$/i;
+const CAST_IT_IF_CREATURE =
+  /^for as long as it remains exiled, you may cast it if it['’]s a creature spell\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
     const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    const e = spans[i + 4];
+    // Durnan of the Yawning Portal: the look, the offer of a creature card, the rest, the permission and undaunted.
+    if (
+      a !== undefined &&
+      e !== undefined &&
+      said(a, LOOK_AT_TOP_OWN) &&
+      said(b, MAY_EXILE_CREATURE_FROM_AMONG) &&
+      said(c, PUT_REST_ANY_ORDER) &&
+      said(d, CAST_THAT_CARD_WHILE_EXILED) &&
+      said(e, THAT_SPELL_HAS_UNDAUNTED)
+    ) {
+      out.push({ start: a.start, end: e.end });
+      i += 4;
+      continue;
+    }
+    // Vivien, Champion of the Wilds: the look, the card exiled face down with the rest, and the permission to cast it if it is a creature.
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, LOOK_AT_TOP_OWN) &&
+      said(b, EXILE_ONE_FACE_DOWN_REST_ANY_ORDER) &&
+      said(c, CAST_IT_IF_CREATURE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
     // Genesis Wave: the reveal, the take of any number of permanents and the rest into the graveyard (`effect.reveal-any-permanents-x`).
     if (
       a !== undefined &&

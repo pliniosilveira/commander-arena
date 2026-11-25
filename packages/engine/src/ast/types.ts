@@ -3453,6 +3453,16 @@ export type Effect =
        * reduction of the total cost, never below the colored and hybrid symbols). A land card is played as usual. A positive whole number; not with `free` (there is nothing to reduce).
        */
       readonly lessGeneric?: number;
+      /**
+       * "That spell has undaunted." (Durnan of the Yawning Portal, CR 702.125a, 702.125b, 601.2f): a spell cast with this permission costs {1} less to cast for each opponent of its caster still in
+       * the game, counted as the cost is determined. A cost reduction like `lessGeneric`: not with `free`.
+       */
+      readonly undaunted?: true;
+      /**
+       * "For as long as it remains exiled, you may cast it if it's a creature spell." (Vivien, Champion of the Wilds, CR 601.2, 611.2a): the permission is to cast the card only when it is a
+       * creature card (a card of any other kind stays where it is). Needs `castOnly`.
+       */
+      readonly creatureSpellsOnly?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -5029,6 +5039,8 @@ export type Effect =
          * 401.4): the card taken stays where it is, in the library, unrevealed, and what is left goes where `rest` says (the bottom), so it is the top card afterwards; with `hidden`,
          * `min` and `max` of 1, no `tapped`, `totalManaValue`, `all` or `elseAnyToHand`, and `rest` the bottom or the graveyard.
          */
+        // `exile` (Durnan of the Yawning Portal, CR 406.3, 701.13): "You may exile a creature card from among them": the card taken is exiled face up (no permanent remembers it); it is what `moved` names
+        // afterwards, for a `mayPlay` of it (`whileExiled`). `min` and `max` of 1 or `max` of 1 with "you may"; the rest goes where `rest` says.
         // `exileFaceDownUnlinked` (Gonti, CR 406.3): exiled face down as `exileFaceDown` is, but no permanent remembers the card: it is what `moved` names afterwards, for a `mayPlay` of it
         // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` and `max` of 1, and the rest on the bottom in a random order.
         readonly to?:
@@ -5036,6 +5048,7 @@ export type Effect =
           | 'battlefield'
           | 'exileFaceDown'
           | 'exileFaceDownUnlinked'
+          | 'exile'
           | 'castFree'
           | 'top';
         /**

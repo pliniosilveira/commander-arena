@@ -131,7 +131,7 @@ export function lookTakeRevealed(
 }
 
 /** Where a looked-at card goes when taken (D-145): into the hand (the default), onto the battlefield, or into exile face down; or it stays on top of the library (Cream of the Crop). */
-export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'top';
+export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top';
 
 /**
  * Where the card taken from the top of the library goes, read from the `lookAtTop` of the ability on the stack; the hand
@@ -200,6 +200,8 @@ export function confirmLabel(
   if (decision.purpose === 'lookTake') {
     // CR 702.75a: Hideaway exiles the card it must take; "put it onto the battlefield" may take none.
     if (to === 'exileFaceDown') return 'Exile face down';
+    // Durnan of the Yawning Portal: "You may exile a creature card from among them".
+    if (to === 'exile') return chosen.length === 0 ? 'Exile none' : 'Exile';
     if (to === 'top') return 'Put on top';
     if (to === 'battlefield') return chosen.length === 0 ? 'Put none' : 'Put onto battlefield';
     return chosen.length === 0 ? 'Take none' : 'Put into hand';

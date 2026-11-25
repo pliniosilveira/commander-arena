@@ -228,6 +228,8 @@ export function mayPlayFromExile(
         (asLand || (e.change.free === true) === free) &&
         // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
         !(asLand && e.change.castOnly === true) &&
+        // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell": the permission is for a creature card only.
+        (e.change.creatureSpellsOnly !== true || derive(state, obj).types.includes('creature')) &&
         // Issue 101 (Neriv, CR 903.3): "during any turn you attacked with a commander".
         (e.change.whenAttackedWithCommander !== true || attackedWithCommanderThisTurn(state, seat)),
     )

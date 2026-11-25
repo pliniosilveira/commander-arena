@@ -486,7 +486,7 @@ function groupLevels(input: { abilities: Ability[]; refused: number[] }): {
 }
 
 /** Whether the effect moves the cards of the permanent's linked exile (the engine's `linkedExile`, "return the exiled card"; stage P68, D-230), at its own level (not inside a token's ability). */
-function movesLinkedExile(effect: Effect): boolean {
+function movesLinkedExile(effect: Effect, castReads = true): boolean {
   switch (effect.kind) {
     case 'moveToZone':
       // Journey to the Lost City: or every permanent card the permanent exiled (`each` with `exiledWithSource`).
@@ -502,16 +502,17 @@ function movesLinkedExile(effect: Effect): boolean {
           JSON.stringify(effect.token.ptAmount ?? null).includes('"kind":"linkedExile"'))
       );
     // Izzet Chemister (CR 607.2a): "Cast any number of cards exiled with ~ without paying their mana costs" reads the cards the permanent exiled.
+    // The cast reads the cards the permanent exiled; `castReads` false leaves it out, to tell a face whose cast is the only reader (the link is made elsewhere: Hideaway, Forger's Foundry).
     case 'castFree':
-      return effect.objects.kind === 'linkedExile';
+      return castReads && effect.objects.kind === 'linkedExile';
     case 'may':
-      return movesLinkedExile(effect.effect);
+      return movesLinkedExile(effect.effect, castReads);
     case 'sequence':
-      return effect.effects.some(movesLinkedExile);
+      return effect.effects.some((e) => movesLinkedExile(e, castReads));
     case 'conditional':
       return (
-        movesLinkedExile(effect.effect) ||
-        (effect.else !== undefined && movesLinkedExile(effect.else))
+        movesLinkedExile(effect.effect, castReads) ||
+        (effect.else !== undefined && movesLinkedExile(effect.else, castReads))
       );
     default:
       return false;
@@ -519,8 +520,8 @@ function movesLinkedExile(effect: Effect): boolean {
 }
 
 /** Whether the effect moves a card chosen from the permanent's linked exile (the engine's `choose` selector with the zone `exile`). */
-function choosesFromLinkedExile(effect: Effect): boolean {
-  return choosesFromExile(effect) || movesLinkedExile(effect);
+function choosesFromLinkedExile(effect: Effect, castReads = true): boolean {
+  return choosesFromExile(effect) || movesLinkedExile(effect, castReads);
 }
 
 /**
@@ -643,6 +644,20 @@ function linkExile(abilities: readonly Ability[]): {
     (one.kind === 'triggered' || one.kind === 'activated') &&
     exilesIn(one.effect) === 1;
   if (!linkable) {
+    // A cast of the exiled cards ("Cast any number of cards exiled with ~") is no reader when nothing else on the face is: Hideaway, Forger's Foundry and a Saga link their cards
+    // elsewhere, and what this pass cannot link is left as it is, never refused for a read it did not make.
+    const strong = readers.filter((i) => {
+      const a = abilities[i];
+      return !(
+        (a?.kind === 'triggered' || a?.kind === 'activated') &&
+        !choosesFromLinkedExile(a.effect, false) &&
+        !JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true') &&
+        !JSON.stringify(a.kind === 'activated' ? (a.cost ?? null) : null).includes(
+          '"putLinkedExileInGraveyard"',
+        )
+      );
+    });
+    if (strong.length === 0) return { abilities: [...abilities], refused: [] };
     return { abilities: abilities.filter((_, i) => !readers.includes(i)), refused: readers };
   }
   return {

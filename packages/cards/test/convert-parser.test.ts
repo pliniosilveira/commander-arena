@@ -893,6 +893,8 @@ describe('unmatched abilities', () => {
       'effect.look-exile-cast-any-type',
       'effect.exile-any-number-until-leaves',
       'effect.look-take-kinds',
+      'effect.look-exile-creature-cast-undaunted',
+      'effect.look-exile-face-down-cast-creature',
       'effect.damage',
       'effect.damage-count',
       'effect.bite',
