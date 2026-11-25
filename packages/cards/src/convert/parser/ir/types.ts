@@ -179,6 +179,11 @@ export interface IrNoun extends IrNode {
    */
   readonly otherTarget?: true;
   /**
+   * "another target creature that player controls" after "target creature an opponent controls" (Breaking of the Fellowship, CR 115.1, 115.3): with `otherTarget`, the target is controlled by the
+   * controller of the target of the slot just before it (the engine's `TargetSpec.sameControllerAs`).
+   */
+  readonly sameControllerAsPrevious?: true;
+  /**
    * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
    * this one, not only the slot just before it.
    */
@@ -372,6 +377,11 @@ export interface IrFilter {
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
    */
   readonly sharesCreatureTypeWithIt?: true;
+  /**
+   * "that shares a color with a legendary creature you control" (Ringsight, CR 105.1, 109.4): the card has a color that a permanent this filter describes has (the engine's
+   * `sharesColorWith`). The filter is a permanent phrase that says "you control".
+   */
+  readonly sharesColorWith?: IrFilter;
   /**
    * "each other attacking creature that shares a creature type with it" (Shared Animosity, CR 508.1, 205.3m): the count leaves out the creature the trigger is about, with
    * `sharesCreatureTypeWithIt`. The engine's `otherThanTriggerSubject`.
