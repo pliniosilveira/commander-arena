@@ -1,5 +1,8 @@
 /**
- * Priority decisions of the HeuristicAgent (M7c, PRIOR_ART 7.2 heuristics 5, 6 and 8, D-163).
+ * Priority decisions of the HeuristicAgent (M7c, PRIOR_ART 7.2 heuristics 5, 6 and 8, D-163): today's
+ * choice. With a sample the agent's main phase goes through the turn planner (`heuristic-plan.ts`), for which
+ * this choice is the first step of TODAY'S LINE, the line every other line must beat; the sets below live in
+ * `heuristic-sets.ts`, shared with the planner's lines.
  *
  * MAIN PHASE (its own turn, a main phase, empty stack):
  *  1. A land (`heuristic-lands.ts`): the one that lets the best spell be cast, or that adds a colour; it is

@@ -7,6 +7,10 @@
  * it does not take over is answered by the casual handlers (`createCasualHandlers`), so it handles every
  * kind and cannot deadlock. The module comments of the `heuristic-*.ts` files hold the rules.
  *
+ * - Its main phase goes through the turn planner (`heuristic-plan.ts`, issue 624): at the first priority
+ *   decision of a main phase it scores candidate lines of the whole turn on threat scenarios and follows
+ *   the chosen plan while the board is the one it expected (reasons `plan` and `replan`); today's choice
+ *   (`heuristic-main.ts`) is one of the lines and the answer whenever planning cannot run.
  * - It considers every candidate its generators produce (the Easy level of D-163 was removed, D-168).
  * - It owns a seeded PRNG (`seed`): tie-breaks of the casual handlers and the seeds of the samples. The
  *   game's PRNG is never read.
