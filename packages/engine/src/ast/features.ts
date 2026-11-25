@@ -489,6 +489,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedCast',
     // Jaya's Phoenix, Leori, Repeated Reverberation: "copy the next loyalty ability you activate this turn" (`delayedCopy`, CR 603.7, 707.10).
     'delayedCopy',
+    // Jace, Architect of Thought: "until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn" (`delayedAttackerPump`).
+    'delayedAttackerPump',
     // CR 702.44a, 702.44d: "it gains sunburst" (a spell on the stack gains the keyword whose counters its permanent enters with).
     'spellGainsKeyword',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
@@ -1877,7 +1879,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dieResult',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
-  searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
+  searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library', 'exile'],
   // D-121, D-124: the named alternative costs (Overload, Evoke, Dash, Spectacle, Escape).
   castAlternatives: [
     // Issue 105: energy rather than the mana cost, granted by a static ability of a permanent (`grantEnergyAlternative`).
@@ -3484,6 +3486,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   repeat: true,
   delayedCast: true,
   delayedCopy: true,
+  delayedAttackerPump: true,
   spellGainsKeyword: true,
   removeTimeCounter: true,
   castExiled: true,

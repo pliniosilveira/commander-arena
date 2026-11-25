@@ -5377,7 +5377,7 @@ export function checkReplacementToken(spec: unknown, path: string, out: Out): vo
   }
 }
 
-const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard', 'library'];
+const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard', 'library', 'exile'];
 
 /** CR 701.23 (Search): the filter, the number of cards and where the cards found go. */
 function checkSearch(
@@ -5562,6 +5562,31 @@ function checkSearch(
   if (!Array.isArray(e.destinations) || e.destinations.length === 0) {
     issue(out, `${path}.destinations`, 'a search needs at least one destination');
     return;
+  }
+  // CR 701.23a (Jace, Architect of Thought): the controller searches the library of each player named and exiles the cards found.
+  if (e.byController !== undefined) {
+    if (
+      e.byController !== true ||
+      e.optional !== undefined ||
+      e.zones !== undefined ||
+      e.mayPut !== undefined ||
+      e.reveal === true ||
+      e.destinations.some((d) => d?.zone !== 'exile') ||
+      e.max !== 1
+    ) {
+      issue(
+        out,
+        `${path}.byController`,
+        'byController is true, for one card exiled, with no optional, zones, mayPut or reveal',
+      );
+    }
+  }
+  if (e.destinations.some((d) => d?.zone === 'exile') && e.byController !== true) {
+    issue(
+      out,
+      `${path}.destinations`,
+      'a search exiles the card only when the controller searches (byController)',
+    );
   }
   let fixed = 0;
   let hasRest = false;
@@ -7061,6 +7086,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
+      break;
+    case 'delayedAttackerPump':
+      // CR 603.7 (Jace, Architect of Thought): whole numbers for the change to the attacking creature.
+      if (!Number.isInteger(e.power) || !Number.isInteger(e.toughness)) {
+        issue(out, path, 'a delayed attacker change gives whole numbers of power and toughness');
+      }
       break;
     case 'delayedCopy': {
       // CR 603.7, 707.10 (Jaya's Phoenix, Leori, Repeated Reverberation): the spells it waits for are cast spells; an activation, a loyalty one or one of a planeswalker of the chosen type.
@@ -9830,9 +9861,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.separator`, 'the piles are separated by an opponent or by you');
       }
       for (const field of ['chosenTo', 'otherTo'] as const) {
-        if (e[field] !== 'hand' && e[field] !== 'graveyard') {
+        if (
+          e[field] !== 'hand' &&
+          e[field] !== 'graveyard' &&
+          !(field === 'otherTo' && e[field] === 'libraryBottom')
+        ) {
           issue(out, `${path}.${field}`, 'a pile goes into the hand or the graveyard');
         }
+      }
+      if (e.otherTo === 'libraryBottom' && e.chosenTo !== 'hand') {
+        issue(
+          out,
+          `${path}.otherTo`,
+          'the pile on the bottom of the library goes with a chosen pile in the hand',
+        );
       }
       if (e.chosenTo === e.otherTo) {
         issue(out, path, 'the two piles go to different places');

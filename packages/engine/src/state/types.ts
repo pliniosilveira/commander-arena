@@ -1024,6 +1024,11 @@ export interface DelayedTrigger {
   readonly untilEndOfTurn?: true;
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
+  /**
+   * "Until your next turn" (`delayedAttackerPump`, CR 500.1): the ability ends as the next turn of `seat` begins, once `turnsTaken` of that player's turns have begun (the turn it was made in
+   * not counted); `expireTurnStartEffects`.
+   */
+  readonly until?: { readonly seat: SeatId; readonly turnsTaken: number };
   /** More events the ability waits for besides `ability.trigger` (`delayedCopy`: "cast an instant, cast a sorcery or activate a loyalty ability"): the first of any of them is the one. */
   readonly also?: readonly Trigger[];
   readonly watched?: ObjectId;
@@ -1690,7 +1695,7 @@ export type Instruction =
       readonly chooser: SeatId;
       readonly cards: readonly ObjectId[];
       readonly chosenTo: 'hand' | 'graveyard';
-      readonly otherTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
       readonly faceDownPile?: true;
       readonly first?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;

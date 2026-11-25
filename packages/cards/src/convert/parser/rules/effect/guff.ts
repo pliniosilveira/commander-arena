@@ -204,7 +204,94 @@ export const EFFECT_EACH_PLAYER_MAY_CAST_EXILED_NONLAND = defineRule<Clauses>({
   },
 });
 
+const SEARCH_ID = 'effect.for-each-player-search-exile-nonland';
+
+/**
+ * `effect.for-each-player-search-exile-nonland`: "For each player, search that player's library for a nonland card and exile it, then that player shuffles." (Jace, Architect of Thought; CR 701.23a,
+ * 701.24, 101.4): the controller searches the library of each player, in turn order, and exiles a nonland card from each (what is exiled is "those cards" for the sentence after it), then the
+ * owner of each library shuffles. The engine's `search` of each player with `byController`. Not read: "each opponent", a card of another kind, "up to", "you search", reveal, another zone.
+ */
+export const EFFECT_FOR_EACH_PLAYER_SEARCH_EXILE_NONLAND = defineRule<Clauses>({
+  id: SEARCH_ID,
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 701.23a (Search)',
+    'CR 701.24 (Shuffle)',
+    'CR 101.4 (Starting Player)',
+    'CR 701.13 (Exile)',
+  ],
+  examples: [
+    "for each player, search that player's library for a nonland card and exile it, then that player shuffles",
+    'For each player, search that player’s library for a nonland card and exile it, then that player shuffles',
+  ],
+  rejects: [
+    "for each opponent, search that player's library for a nonland card and exile it, then that player shuffles",
+    "for each player, search that player's library for a land card and exile it, then that player shuffles",
+    "for each player, search that player's library for a nonland card and exile it",
+    "for each player, search that player's library for up to one nonland card and exile it, then that player shuffles",
+    "for each player, search that player's library for a nonland card and put it into your hand, then that player shuffles",
+    'for each player, search their library for a nonland card and exile it, then that player shuffles',
+    "for each player, search that player's library for a nonland card and exile it, then that player shuffles and draws a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /for each player, search that player['’]s library for a nonland card and exile it, then that player shuffles(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause(SEARCH_ID, 'searchEachExileNonland', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
+const CAST_FREE_ID = 'effect.may-cast-those-cards-free';
+
+/**
+ * `effect.may-cast-those-cards-free`: "You may cast those cards without paying their mana costs." (Jace, Architect of Thought; CR 608.2g, 118.9, 601.2): any number of the cards the instruction
+ * before it exiled may be cast for no mana cost as this resolves, the controller choosing each in turn and stopping when they like. The engine's `castFree` of `moved` with `max` any.
+ * Read only after an instruction that exiled cards. Not read: "up to", a number of cards, "this turn", another cost, "must".
+ */
+export const EFFECT_MAY_CAST_THOSE_CARDS_FREE = defineRule<Clauses>({
+  id: CAST_FREE_ID,
+  family: 'effect',
+  leading: ['you', 'cast'],
+  cites: [
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 601.2 (Casting Spells)',
+  ],
+  examples: [
+    'you may cast those cards without paying their mana costs',
+    'cast those cards without paying their mana costs',
+  ],
+  rejects: [
+    'you may cast those cards',
+    'you may cast those cards without paying their mana costs this turn',
+    'you may cast up to two of those cards without paying their mana costs',
+    'you may cast those cards without paying their mana cost',
+    'you may cast those cards without paying their mana costs and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/(?:you may )?cast those cards without paying their mana costs(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause(CAST_FREE_ID, 'castThoseCardsFree', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
 export const GUFF_EFFECT_RULES = [
+  EFFECT_MAY_CAST_THOSE_CARDS_FREE,
+  EFFECT_FOR_EACH_PLAYER_SEARCH_EXILE_NONLAND,
   EFFECT_FOR_EACH_PLAYER_CHOOSE_TARGET,
   EFFECT_THOSE_OWNERS_SHUFFLE_THEM_IN,
   EFFECT_THOSE_CONTROLLERS_EXILE_UNTIL_NONLAND,

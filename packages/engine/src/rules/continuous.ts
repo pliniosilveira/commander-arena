@@ -617,8 +617,14 @@ export function expireTurnStartEffects(
   seat: SeatId,
 ): { state: GameState; events: GameEvent[] } {
   const taken = state.seats[seat]?.turnsTaken ?? 0;
+  // CR 500.1 (Jace, Architect of Thought): a delayed triggered ability of "until your next turn" ends the same way.
+  const delayed = state.delayedTriggers.filter(
+    (d) => d.until === undefined || d.until.seat !== seat || d.until.turnsTaken > taken,
+  );
   return dropEffects(
-    state,
+    delayed.length === state.delayedTriggers.length
+      ? state
+      : { ...state, delayedTriggers: delayed },
     (e) =>
       typeof e.until === 'object' &&
       e.until.kind === 'turnStart' &&

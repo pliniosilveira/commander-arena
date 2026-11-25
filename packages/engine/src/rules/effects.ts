@@ -2346,6 +2346,37 @@ function runEffect(
       });
     }
 
+    case 'delayedAttackerPump': {
+      // CR 603.7, 500.1 (Jace, Architect of Thought): each creature an opponent of the controller declares as an attacker until the controller's next turn gets the change until end of turn.
+      const ability: TriggeredAbility = {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { controller: 'opponent', types: ['creature'] } },
+        effect: {
+          kind: 'modifyPt',
+          objects: { kind: 'triggerSubject' },
+          power: effect.power,
+          toughness: effect.toughness,
+          duration: 'untilEndOfTurn',
+        },
+      };
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            ability,
+            repeat: true,
+            until: {
+              seat: res.controller,
+              turnsTaken: (state.seats[res.controller]?.turnsTaken ?? 0) + 1,
+            },
+          },
+        ],
+      });
+    }
+
     case 'delayedCopy': {
       // CR 603.7, 603.7a, 603.7b, 707.10 (Jaya's Phoenix, Leori, Repeated Reverberation): a delayed ability of the controller that waits for the first cast or activation it names
       // after this, then copies that spell or ability. It is found after the events that happen after this, triggers once and ends with the turn (`repeat`: at each one).

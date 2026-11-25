@@ -2512,7 +2512,7 @@ export interface AttackedBySelector {
  * `shuffle` is then true.
  */
 export interface SearchDestination {
-  readonly zone: 'battlefield' | 'hand' | 'graveyard' | 'library';
+  readonly zone: 'battlefield' | 'hand' | 'graveyard' | 'library' | 'exile';
   readonly tapped?: boolean;
   readonly count: number | 'rest';
 }
@@ -3820,6 +3820,17 @@ export type Effect =
       readonly activation?: { readonly loyalty?: true; readonly ofChosenType?: true };
       readonly count?: number;
       readonly repeat?: true;
+    }
+  /**
+   * "Until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn." (CR 603.7, 603.7c, 500.1, 508.1, 611.2a; Jace, Architect of Thought): a delayed
+   * triggered ability of the controller, made as this resolves, that triggers at each attack of a creature of a player who is an opponent of the controller and gives it `power` and
+   * `toughness` until end of turn (as the attack is declared), until the controller's next turn begins (the turn it resolves in not counted). It is no ability of any object, so it
+   * goes on whatever happens to the source.
+   */
+  | {
+      readonly kind: 'delayedAttackerPump';
+      readonly power: number;
+      readonly toughness: number;
     }
   /**
    * "That creature enters with two additional +1/+1 counters on it" (Yuna, Grand Summoner, CR 614.1c, 122.6, 603.7): only in the effect of a `delayedCast` whose filter names creature spells: the spell
@@ -5399,7 +5410,11 @@ export type Effect =
       readonly count: Amount;
       readonly separator: 'opponent' | 'you';
       readonly chosenTo: 'hand' | 'graveyard';
-      readonly otherTo: 'hand' | 'graveyard';
+      /**
+       * `libraryBottom` (CR 401.4, Jace, Architect of Thought: "Put one pile into your hand and the other on the bottom of your library in any order"): the other pile goes to the bottom of
+       * the controller's library in the order the controller chooses (`arrange`, purpose `bottom`). Only for the pile not chosen into the hand.
+       */
+      readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
       /** The separator privately looks at the cards; pile 1 is face down, pile 2 face up (D-579). */
       readonly faceDownPile?: true;
     }
@@ -5513,6 +5528,13 @@ export type Effect =
        * `zones`, `maxAmount`, `totalManaValue` or `anyNumber`, `reveal` and `shuffle` as the text says).
        */
       readonly mayPut?: { readonly condition: Condition; readonly tapped?: true };
+      /**
+       * "For each player, search that player's library for a nonland card and exile it, then that player shuffles" (CR 701.23a, 701.24, 101.4; Jace, Architect of Thought): the controller of the
+       * effect, not the owner of the library, looks through each library `player` names and chooses the cards (every question goes to the controller, in turn order of the libraries);
+       * the owner's library is shuffled after it, when `shuffle` says so. A card found goes to its owner's zone `destinations` names, and is what `moved` names after the effect when a
+       * destination is `exile`. Only with a `player` that is not `you`, an `exile` destination and no `optional`, `zones`, `mayPut`, `reveal`.
+       */
+      readonly byController?: true;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

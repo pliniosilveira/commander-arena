@@ -908,7 +908,8 @@ const PUT_ALL_REVEALED_HAND =
  */
 const PUT_HAND_REST_GRAVEYARD =
   /^put one of them into your hand and the rest into your graveyard\.$/i;
-const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
+const PUT_ONE_PILE =
+  /^put one pile into your hand and the other (?:into your graveyard|on the bottom of your library in any order)\.$/i;
 /**
  * "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield. Then put all cards revealed this
  * way that weren't put onto the battlefield into your graveyard." (Genesis Wave, CR 701.20a): three sentences that are one instruction, kept together for

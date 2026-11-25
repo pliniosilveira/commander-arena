@@ -3,7 +3,7 @@
  */
 import type { Effect } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
-import { arg, type Effects, failure } from './clauses';
+import { amountArg, arg, type Effects, failure } from './clauses';
 import type { Lowering } from './types';
 
 const flagged = (clause: IrClause, name: string): boolean => {
@@ -58,7 +58,29 @@ const CHOOSE_PLANESWALKER_TYPE: Lowering<IrClause, Effects> = {
   }),
 };
 
+/** "Until your next turn, whenever a creature an opponent controls attacks, it gets -N/-M until end of turn": the engine's `delayedAttackerPump` (the numbers are what the creature loses). */
+const DELAYED_ATTACKER_PUMP: Lowering<IrClause, Effects> = {
+  head: 'delayedAttackerPump',
+  id: 'lower.delayed-attacker-pump',
+  needs: ['effect:delayedAttackerPump'],
+  lower(clause, ctx) {
+    const power = amountArg(clause, 'power', ctx);
+    const toughness = amountArg(clause, 'toughness', ctx);
+    if (!power.ok) return power;
+    if (!toughness.ok) return toughness;
+    if (typeof power.value !== 'number' || typeof toughness.value !== 'number') {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ kind: 'delayedAttackerPump', power: -power.value, toughness: -toughness.value }],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const COPY_LOYALTY_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  DELAYED_ATTACKER_PUMP,
   DELAYED_COPY,
   CHOOSE_PLANESWALKER_TYPE,
 ];

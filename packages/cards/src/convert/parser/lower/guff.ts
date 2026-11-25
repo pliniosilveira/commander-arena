@@ -69,7 +69,43 @@ const EACH_OWNER_MAY_CAST_EXILED: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "For each player, search that player's library for a nonland card and exile it, then that player shuffles": the engine's `search` of each player, made by the controller. */
+const SEARCH_EACH_EXILE_NONLAND: Lowering<IrClause, Effects> = {
+  head: 'searchEachExileNonland',
+  id: 'lower.search-each-exile-nonland',
+  needs: ['effect:search'],
+  lower(clause) {
+    const effect: Effect = {
+      kind: 'search',
+      player: { kind: 'eachPlayer' },
+      filter: NOT_LAND,
+      max: 1,
+      byController: true,
+      destinations: [{ zone: 'exile', count: 'rest' }],
+      reveal: false,
+      shuffle: true,
+    };
+    return { ok: true, value: [effect], rule: clause.rule };
+  },
+};
+
+/** "You may cast those cards without paying their mana costs": only after the search that exiled them. */
+const CAST_THOSE_CARDS_FREE: Lowering<IrClause, Effects> = {
+  head: 'castThoseCardsFree',
+  id: 'lower.cast-those-cards-free',
+  needs: ['effect:castFree', 'selector:moved'],
+  acceptsOptional: true,
+  lower(clause, ctx) {
+    // The engine asks the controller which cards to cast and lets them stop, which is the "may": a cast with no "you may" would be a duty.
+    if (ctx.lastEffectKind !== 'search' || !clause.optional) return failure(clause);
+    const effect: Effect = { kind: 'castFree', objects: { kind: 'moved' }, max: 'any' };
+    return { ok: true, value: [effect], rule: clause.rule };
+  },
+};
+
 export const GUFF_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  CAST_THOSE_CARDS_FREE,
+  SEARCH_EACH_EXILE_NONLAND,
   OWNERS_SHUFFLE_THEM_IN,
   CONTROLLERS_EXILE_UNTIL_NONLAND,
   EACH_OWNER_MAY_CAST_EXILED,

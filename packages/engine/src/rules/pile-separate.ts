@@ -180,9 +180,21 @@ export function runPileSeparate(
     names: ins.faceDownPile === true && ins.pick === 1 ? [] : namesOf(state, chosenPile),
     ...(ins.faceDownPile === true && ins.pick === 1 ? { faceDown: true as const } : {}),
   };
-  return done(
-    state,
-    [event],
-    [...moveInstructions(chosenPile, ins.chosenTo), ...moveInstructions(otherPile, ins.otherTo)],
-  );
+  // CR 401.4 (Jace, Architect of Thought): "the other on the bottom of your library in any order": the controller arranges the pile, which stays in the library meanwhile (rules/arrange.ts).
+  const rest: Instruction[] =
+    ins.otherTo === 'libraryBottom'
+      ? otherPile.length === 0
+        ? []
+        : [
+            {
+              kind: 'arrange',
+              purpose: 'bottom',
+              seat: ins.seat,
+              count: otherPile.length,
+              cards: otherPile,
+              arranged: null,
+            },
+          ]
+      : moveInstructions(otherPile, ins.otherTo);
+  return done(state, [event], [...moveInstructions(chosenPile, ins.chosenTo), ...rest]);
 }

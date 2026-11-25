@@ -211,7 +211,66 @@ export const EFFECT_CHOOSE_PLANESWALKER_TYPE = defineRule<Clauses>({
   },
 });
 
+const PUMP_ID = 'effect.until-next-turn-attackers-get';
+
+/**
+ * `effect.until-next-turn-attackers-get`: "Until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn." (Jace, Architect of Thought; CR 603.7,
+ * 500.1, 508.1, 611.2a): a delayed triggered ability, made as the ability resolves, that gives each creature an opponent attacks with the change when it is declared an attacker, until the
+ * controller's next turn begins. The engine's `delayedAttackerPump`. Not read: another duration, "you control", another number of players, another change, "until end of combat", a rider.
+ */
+export const EFFECT_UNTIL_NEXT_TURN_ATTACKERS_GET = defineRule<Clauses>({
+  id: PUMP_ID,
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 603.7 (Delayed Triggered Abilities)',
+    'CR 500.1 (Beginning of the Turn)',
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    'until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn',
+    'until your next turn, whenever a creature an opponent controls attacks, it gets -2/-0 until end of turn',
+  ],
+  rejects: [
+    'until end of turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn',
+    'until your next turn, whenever a creature you control attacks, it gets -1/-0 until end of turn',
+    'until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0',
+    'until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of combat',
+    'until your next turn, whenever a creature an opponent controls attacks, it gets +1/-0 until end of turn',
+    'until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn and you draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /until your next turn, whenever a creature an opponent controls attacks, it gets -(\d+)\/-(\d+) until end of turn(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const found = r.value.value;
+    const num = (n: string | undefined) => ({
+      kind: 'number' as const,
+      value: Number(n),
+      span,
+    });
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          PUMP_ID,
+          'delayedAttackerPump',
+          { power: num(found[1]), toughness: num(found[2]) },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 export const COPY_LOYALTY_EFFECT_RULES = [
+  EFFECT_UNTIL_NEXT_TURN_ATTACKERS_GET,
   EFFECT_COPY_NEXT_LOYALTY_ABILITY,
   EFFECT_UNTIL_EOT_ACTIVATE_OF_TYPE_COPY,
   EFFECT_NEXT_CAST_OR_LOYALTY_COPY_TWICE,
