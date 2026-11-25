@@ -1,5 +1,5 @@
 {
-  "parserVersion": 208,
+  "parserVersion": 209,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -913,6 +913,14 @@
       "reasons": [],
       "ast": "a535fe90"
     },
+    "0dfdf1a1-a3a9-490f-bd9d-dcba088c6785": {
+      "name": "Teyo, Geometric Tactician",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4c6db57"
+    },
     "0e3246ef-e0b4-49bc-a715-b69c4b6be461": {
       "name": "Skola Grovedancer",
       "group": "acceptance",
@@ -1124,19 +1132,10 @@
     "12cc800c-c7be-4811-8207-fd01a99cc892": {
       "name": "Chandra, Torch of Defiance",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "+1: Exile the top card of your library. You may cast that card. If you don't, ~ deals 2 damage to each opponent.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "bb2f6358"
+      "ast": "7b0041d1"
     },
     "131096a3-2d53-4ec2-96d3-fcb58e698a13": {
       "name": "Vraska, Golgari Queen",
@@ -1675,6 +1674,14 @@
       "reasons": [],
       "ast": "3d88eb3e"
     },
+    "1cdf30de-d88c-421a-80df-4917bbd2f09e": {
+      "name": "Silent Arbiter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5c715c87"
+    },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
@@ -1946,6 +1953,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e5dba4ba"
+    },
+    "2274c7ae-5a40-4fd4-a4ac-6f56b23034e4": {
+      "name": "Jace, Architect of Thought",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f37a2da0"
     },
     "22c3b484-0f96-4051-807c-fc0fcb7cd1a8": {
       "name": "Seven of Nine, Tertiary Adjunct",
@@ -2330,6 +2345,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9564f29c"
+    },
+    "2a31cd16-fb30-4bb0-b775-d5e8b9221dd4": {
+      "name": "Gatewatch Beacon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0559b1f5"
     },
     "2a3712f9-6bed-4068-9064-2b5240fc7b28": {
       "name": "Gluttonous Troll",
@@ -3386,6 +3409,14 @@
       "reasons": [],
       "ast": "a408d891"
     },
+    "3a2bb47d-228d-499e-a34b-9e10d99e9b2c": {
+      "name": "Fog Bank",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4e69b8a1"
+    },
     "3a3cb6fe-24ef-4c09-8ff8-f303fc472a8b": {
       "name": "Malakir Blood-Priest",
       "group": "acceptance",
@@ -3425,6 +3456,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "94f727e1"
+    },
+    "3aeba3c2-5517-4870-8802-29b0fa70ffae": {
+      "name": "Semester's End",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eb0f9d2f"
     },
     "3b21abb0-9a58-4e62-9650-4b04ce2bfb12": {
       "name": "Dack Fayden, Helping Hand",
@@ -4273,6 +4312,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "25cb7996"
+    },
+    "4c2196e5-6ed7-4cd2-b8e7-f01aff236569": {
+      "name": "The Wanderer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe4c2ef0"
     },
     "4c340b82-22e1-445a-b236-82471b442031": {
       "name": "Frontline Heroism",
@@ -5281,6 +5328,14 @@
       "reasons": [],
       "ast": "e4b2006b"
     },
+    "5e674793-6586-44a4-b936-a71203c5850a": {
+      "name": "Sparkshaper Visionary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2fd7ecce"
+    },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
       "group": "acceptance",
@@ -5873,6 +5928,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7dc278bb"
+    },
+    "67dbc5dd-6d05-43e7-83f7-70e10eb54807": {
+      "name": "Sarkhan the Masterless",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "58d7399c"
     },
     "67ee7c8b-afcc-4f09-a184-3db01f2ab175": {
       "name": "Enter the God-Eternals",
@@ -6923,6 +6986,14 @@
       "reasons": [],
       "ast": "973b74f5"
     },
+    "7b2a600b-d6c8-45ff-a7fc-06105d27111f": {
+      "name": "Chandra, Awakened Inferno",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6a899a06"
+    },
     "7b600c0e-5ad2-48a2-a147-346ca78c8629": {
       "name": "Liliana's Standard Bearer",
       "group": "acceptance",
@@ -7256,6 +7327,14 @@
       "reasons": [],
       "ast": "077cdd35"
     },
+    "7ff7af5f-e4e3-40af-8882-756564bfa479": {
+      "name": "Guff Rewrites History",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6112afcd"
+    },
     "800cfd70-6a97-40eb-8dc0-40b762e4db76": {
       "name": "Unfinished Business",
       "group": "acceptance",
@@ -7552,6 +7631,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b648a836"
+    },
+    "86851bdb-9b2f-4407-97a1-a6a9f2e0ef66": {
+      "name": "Vronos, Masked Inquisitor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2ca68135"
     },
     "868882d2-ed4e-4171-a17c-478a341080fb": {
       "name": "Prossh, Skyraider of Kher",
@@ -7915,6 +8002,14 @@
       "reasons": [],
       "ast": "c20762ee"
     },
+    "8dcb35e5-ae44-455f-86e3-4a77d496ff34": {
+      "name": "Spark Double",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d4a513a6"
+    },
     "8dcd7e2b-75a9-476a-a0a0-798613e8dad6": {
       "name": "Sauron, the Necromancer",
       "group": "acceptance",
@@ -7947,6 +8042,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8196a270"
+    },
+    "8dfa789d-ae1c-4f18-a55c-f49a363a5e33": {
+      "name": "Chandra, Legacy of Fire",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a0d2f735"
     },
     "8e04a5e0-e22c-430b-a39a-c9f38e16ea86": {
       "name": "Guardian of Faith",
@@ -8027,6 +8130,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "60bdb358"
+    },
+    "90249526-1875-450a-882d-bf6f6bfd37a6": {
+      "name": "Ajani Steadfast",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "946512a5"
     },
     "9070c98b-fd01-4eeb-a4ec-fc464946c7c0": {
       "name": "Stridehangar Automaton",
@@ -8396,6 +8507,14 @@
       "reasons": [],
       "ast": "896d0351"
     },
+    "978e0d87-3ff2-4a73-916c-ff0dc0ab2797": {
+      "name": "Urza's Ruinous Blast",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "49281bcc"
+    },
     "97b2fb8b-0c69-4ed2-b2d0-8a780f9b5b97": {
       "name": "Dauntless Veteran",
       "group": "acceptance",
@@ -8507,6 +8626,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6b2bb81b"
+    },
+    "9a664735-6e38-407f-9d2f-a6d279cd6309": {
+      "name": "Repeated Reverberation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4c778d39"
     },
     "9a8f6e5e-6cde-49df-861c-a26cb09c9b12": {
       "name": "Muddle, the Ever-Changing",
@@ -9076,6 +9203,14 @@
       "reasons": [],
       "ast": "b5fdbb98"
     },
+    "a3055ae8-990d-495a-9cb5-971407990cfa": {
+      "name": "Oreskos Explorer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "74900873"
+    },
     "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
       "name": "Ganax, Astral Hunter",
       "group": "acceptance",
@@ -9536,26 +9671,10 @@
     "ab26fbe2-e808-48b9-8d0d-3fbb6c3d554f": {
       "name": "Narset, Parter of Veils",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Each opponent can't draw more than one card each turn.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: Look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.look-take"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c49226a0"
+      "ast": "aee6290a"
     },
     "ab42398c-f0a1-4b94-ac5f-b8768e1b4e05": {
       "name": "Presence of Gond",
@@ -9837,6 +9956,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2660e610"
+    },
+    "aeaf7768-ed67-487d-8506-e667babb88ba": {
+      "name": "Narset, Enlightened Master",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1786423a"
     },
     "aebfdcc0-c5b9-4737-8498-764a5021b087": {
       "name": "Graaz, Unstoppable Juggernaut",
@@ -10224,6 +10351,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "71fca4cd"
+    },
+    "b7ac6e89-941f-4ad9-a437-38ec38ec5263": {
+      "name": "Narset of the Ancient Way",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0c6da243"
     },
     "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
       "name": "Realmwalker",
@@ -10961,6 +11096,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "905d70a1"
+    },
+    "c6a67820-5066-462f-a621-1ecab8bf4f97": {
+      "name": "Jaya's Phoenix",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a71f16c3"
     },
     "c6d89c4a-351f-4d63-ba57-b978a695191e": {
       "name": "Seedship Impact",
@@ -11756,6 +11899,14 @@
       "reasons": [],
       "ast": "6d6d2558"
     },
+    "d492eb9a-1f3b-4bf2-9a5d-0f4a4433f33f": {
+      "name": "Nahiri, the Harbinger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "152a8d0c"
+    },
     "d4a84e78-d9b9-4c67-8a4b-4329e65f0f15": {
       "name": "Hullbreaker Horror",
       "group": "acceptance",
@@ -12501,6 +12652,14 @@
       "reasons": [],
       "ast": "90b0e9dd"
     },
+    "e17ea7eb-362e-4c61-97cd-537f3921bced": {
+      "name": "Deploy the Gatewatch",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "221f68f8"
+    },
     "e1c9783a-1d1b-40d7-872e-0ca11b229ce6": {
       "name": "Uthros Research Craft",
       "group": "acceptance",
@@ -12916,6 +13075,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e9da4a94"
+    },
+    "eb2094cf-b4be-4f52-8615-e179ef7c741d": {
+      "name": "Mobilized District",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "042fc0bd"
     },
     "eb56141a-eb43-40e9-8ff1-e0ef5424f6a4": {
       "name": "Subjugate the Hobbits",
@@ -13793,6 +13960,14 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
+    "f8bf3d91-cb50-48ce-88c6-cdcb37b64b57": {
+      "name": "Kazuul, Tyrant of the Cliffs",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2e3d4297"
+    },
     "f8dab16e-1d50-443e-9431-8b6f1cf61c9c": {
       "name": "Notion Thief",
       "group": "acceptance",
@@ -13977,6 +14152,14 @@
       "reasons": [],
       "ast": "6a63a653"
     },
+    "fb88fb3d-6a85-4bb1-b316-7f759b45a0fa": {
+      "name": "The Chain Veil",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "48596c79"
+    },
     "fbb70f54-8c33-4de0-b05c-f0bff9ffa6ce": {
       "name": "Song of the Worldsoul",
       "group": "acceptance",
@@ -14138,6 +14321,14 @@
       "reasons": [],
       "ast": "4babdb53"
     },
+    "ff94e2d5-8ba1-4f6c-916d-58235a60743e": {
+      "name": "Leori, Sparktouched Hunter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4f617833"
+    },
     "ffd34151-457a-4a93-82db-24b18319a06b": {
       "name": "Omnath, Locus of the Roil",
       "group": "acceptance",
@@ -14165,8 +14356,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1460,
-      "total": 1479
+      "supported": 1489,
+      "total": 1506
     }
   }
 }
