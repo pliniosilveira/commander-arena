@@ -436,6 +436,7 @@ describe('supported feature gate', () => {
       'each',
       'moved',
       'putWithThis',
+      'triggerSubject',
     ]);
     expect(SUPPORTED_FEATURES.tokenPresets).toEqual([
       'Treasure',
