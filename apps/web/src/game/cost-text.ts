@@ -69,12 +69,17 @@ export function mergeRepeated(cost: readonly Cost[]): Cost[] {
 export function unlessCostPhrase(cost: readonly Cost[], third = false): string {
   const s = third ? 's' : '';
   const pay = mergeRepeated(cost)
-    .filter((c) => c.kind !== 'discard')
+    .filter((c) => c.kind !== 'discard' && c.kind !== 'sacrifice')
     .map(kickerCostPart);
   const total = cost.reduce((sum, c) => sum + (c.kind === 'discard' ? c.count : 0), 0);
   const cards = total === 0 ? null : `discard${s} ${countText(total, 'card', 'cards')}`;
-  if (pay.length === 0) return cards ?? `pay${s}`;
-  return `pay${s} ${pay.join(' and ')}${cards === null ? '' : ` and ${cards}`}`;
+  // CR 701.21a (Ward—Sacrifice a legendary artifact or legendary creature): the payer sacrifices permanents they control.
+  const gone = cost.flatMap((c) =>
+    c.kind === 'sacrifice' ? [`sacrifice${s} ${sacrificeWhat(c.what, c.count)}`] : [],
+  );
+  const doing = [...(cards === null ? [] : [cards]), ...gone];
+  if (pay.length === 0) return doing.length === 0 ? `pay${s}` : doing.join(' and ');
+  return `pay${s} ${pay.join(' and ')}${doing.length === 0 ? '' : ` and ${doing.join(' and ')}`}`;
 }
 
 /** "Pay {2}", "Pay 3 life", "Discard a card": the question's ask (the phrase, capitalised). */

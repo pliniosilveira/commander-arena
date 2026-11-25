@@ -356,9 +356,16 @@ export function sacrificeGroups(
   source: ObjectId,
   costs: Pick<CostBreakdown, 'sacrifice' | 'sacrificeAlongside'>,
 ): ObjectId[][] {
-  if (costs.sacrifice === null || costs.sacrifice === 'this') return [];
-  return [costs.sacrifice, ...costs.sacrificeAlongside].map((filter) =>
-    sacrificeCandidates(state, seat, source, filter),
+  if (costs.sacrifice === null) return [];
+  // "Sacrifice ~ and a legendary artifact" (Mount Doom, CR 701.21a): the source is the first part; the others are different permanents, never the source itself.
+  const parts =
+    costs.sacrifice === 'this'
+      ? costs.sacrificeAlongside
+      : [costs.sacrifice, ...costs.sacrificeAlongside];
+  return parts.map((filter) =>
+    sacrificeCandidates(state, seat, source, filter).filter(
+      (id) => costs.sacrifice !== 'this' || id !== source,
+    ),
   );
 }
 
@@ -602,6 +609,13 @@ export function costRefusal(
     }
     // CR 701.21a, 101.2: a permanent that can't be sacrificed can't pay "Sacrifice this".
     if (cantBeSacrificed(state, source.id)) return "it can't be sacrificed";
+    // CR 701.21a, 118.3: "Sacrifice ~ and a legendary artifact" needs a different permanent for each other part.
+    if (
+      parts.sacrificeAlongside.length > 0 &&
+      !canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))
+    ) {
+      return 'you do not control permanents to sacrifice for every part of the cost';
+    }
   } else if (parts.sacrifice !== null && parts.sacrificeAlongside.length > 0) {
     // CR 701.21a, 118.3: each part of "Sacrifice a Swamp and a Forest" needs a permanent of its own.
     if (!canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))) {

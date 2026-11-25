@@ -436,6 +436,7 @@ describe('supported feature gate', () => {
       'each',
       'moved',
       'putWithThis',
+      'triggerSubject',
     ]);
     expect(SUPPORTED_FEATURES.tokenPresets).toEqual([
       'Treasure',
@@ -485,6 +486,8 @@ describe('supported feature gate', () => {
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
       'stepMonarch',
+      'dealtDamageNoncombat',
+      'dealtDamageExcess',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

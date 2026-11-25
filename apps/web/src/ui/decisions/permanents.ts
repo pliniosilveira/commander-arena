@@ -362,7 +362,8 @@ export function effectDestination(oracleText: string): string | null {
 
 /** "Choose a land you control to return to its owner's hand." / "Choose a land you control for Name." */
 function effectPrompt(
-  decision: Pick<ChoosePermanentDecision, 'min' | 'max' | 'source' | 'legal'>,
+  decision: Pick<ChoosePermanentDecision, 'min' | 'max' | 'source' | 'legal'> &
+    Partial<Pick<ChoosePermanentDecision, 'seat'>>,
   index: Index,
 ): string {
   const noun = legalNoun(decision.legal, index);
@@ -371,7 +372,11 @@ function effectPrompt(
       ? `${/^[aeiou]/.test(noun) ? 'an' : 'a'} ${noun}`
       : permanentRange(decision.min, decision.max).replace('permanent', noun);
   const where = effectDestination(index.get(decision.source)?.oracleText ?? '');
-  return `Choose ${what} you control ${where ?? `for ${nameOf(index, decision.source)}`}.`;
+  // Mount Doom (CR 608.2d): "choose up to two creatures" among everyone's: "you control" only when every one listed is the chooser's own.
+  const own =
+    decision.seat === undefined ||
+    decision.legal.every((id) => index.get(id)?.controller === decision.seat);
+  return `Choose ${what}${own ? ' you control' : ''} ${where ?? `for ${nameOf(index, decision.source)}`}.`;
 }
 
 /**

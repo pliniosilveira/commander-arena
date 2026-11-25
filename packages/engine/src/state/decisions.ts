@@ -186,6 +186,8 @@ export interface TargetChoiceSpec {
   readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /** "Another target creature that player controls" (`TargetSpec.sameControllerAs`, CR 115.1, 109.4): every target of this slot has the controller (the `group` of the legal list) of the target chosen for the slot with this id. */
+  readonly sameControllerAs?: string;
   /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes, or, with `TargetSpec.alsoDifferentFrom`, more earlier slots of the ability: "a third target creature"). */
   readonly differentFromAll?: readonly string[];
   /**

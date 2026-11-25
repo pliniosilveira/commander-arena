@@ -180,10 +180,14 @@ describe('"When ~ enters, sacrifice it unless it escaped." (CR 702.138b; backlog
     expect(dropped('Destroy target creature. Sacrifice it.', 'instant')).toMatchObject({
       reason: 'notRunnable',
     });
-    // About another creature's entering it is that creature, which no lowering sacrifices.
-    expect(read('Whenever another creature enters, sacrifice it.', 'creature').abilities).toEqual(
-      [],
-    );
+    // About another creature's entering it is that creature (the trigger subject); only its controller can sacrifice it (CR 701.21a).
+    expect(read('Whenever another creature enters, sacrifice it.', 'creature').abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { types: ['creature'], other: true } },
+        effect: { kind: 'sacrifice', objects: { kind: 'triggerSubject' } },
+      },
+    ]);
   });
 });
 

@@ -264,10 +264,16 @@ export function dealDamageAsking(
   }
   const info = sourceInfo(made.state, source);
   let state = made.state;
+  // CR 120.10: the excess of this damage is read now, before it is marked on the permanent (`made.state` has none of it yet).
+  const recipient = to.kind === 'object' ? made.state.objects[to.id] : undefined;
+  const excess =
+    recipient === undefined
+      ? 0
+      : excessDamageTo(made.state, recipient, amount, info?.deathtouch === true);
   const events: GameEvent[] = [
     ...shielded.events,
     ...made.events,
-    { kind: 'damageDealt', source, to, amount, combat },
+    { kind: 'damageDealt', source, to, amount, combat, ...(excess > 0 ? { excess } : {}) },
   ];
 
   if (to.kind === 'player') {
