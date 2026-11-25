@@ -206,10 +206,10 @@ function removalEvent(step: ActionStep, view: GameView, action: Action): TableEv
     spell: source.name,
     target: target?.name ?? null,
     targetOwner: target?.controller ?? null,
-    targetValue: target === undefined ? 0 : threatValue(target, DEFAULT_WEIGHTS),
+    targetValue: target === undefined ? 0 : threatValue(view, target, DEFAULT_WEIGHTS),
     targetToken: target?.isToken ?? false,
     attackingSeat: attack === undefined ? null : asPlayer(attack.target),
-    bestValue: Math.max(0, ...opposing.map((o) => threatValue(o, DEFAULT_WEIGHTS))),
+    bestValue: Math.max(0, ...opposing.map((o) => threatValue(view, o, DEFAULT_WEIGHTS))),
   };
 }
 
