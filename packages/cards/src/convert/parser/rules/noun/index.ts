@@ -35,6 +35,7 @@ import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
+import { DESERT_BLOOM_NOUN_RULES } from './desert-bloom';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
@@ -74,6 +75,7 @@ import {
   spellPhrase,
   withColorList,
 } from './phrases';
+import { PLANESWALKER_PARTY_NOUN_RULES } from './planeswalker-party';
 import { PLAYER_NOUN_RULES } from './players';
 import { PLAYERS_WHO_NOUN_RULES } from './players-who';
 import { PLAYERS_WHO_CONTROL_NOUN_RULES } from './players-who-control';
@@ -195,6 +197,22 @@ function targetOf(
         otherTarget: true,
       }),
   );
+  // "up to two other target planeswalkers you control" (Vronos, Masked Inquisitor, CR 115.1, 109.1): none to that many targets, none of them the source of the ability.
+  const upToOther: Parser<Bare> = map(
+    sequence(
+      literal('up to '),
+      spanned(satisfy(quantity, (n) => n >= 2)),
+      literal(' other target '),
+      targetPhrase(true),
+    ),
+    ([, count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: count.value, span: count.span },
+        plural: true,
+        upTo: true,
+        other: true,
+      }),
+  );
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
@@ -226,6 +244,7 @@ function targetOf(
       oneOrTwo,
       oneToThree,
       upToOneOther,
+      upToOther,
       upTo,
       upToThatMany,
       counted,
@@ -438,6 +457,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Blue Mage's Cane (CR 508.5): the graveyard of the player an attacking creature attacks.
     "target instant or sorcery card from defending player's graveyard",
     "up to one target instant or sorcery card from defending player's graveyard",
+    // Kirri, Talented Sprout (CR 205.2a, 205.3m): creature types and a card type in one list.
+    'target Plant or land card from your graveyard',
+    'target Plant, Treefolk, or land card from your graveyard',
     // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
     'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
   ],
@@ -453,6 +475,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target nonlegendary nonlegendary creature card from your graveyard',
     'target nonlegendary creature or planeswalker card from your graveyard',
     'target nonlegendary Dragon creature card or Ugin planeswalker card from your graveyard',
+    'target Plant or Treefolk card from your graveyard',
+    'target Plant, land card from your graveyard',
+    'target Plant or land from your graveyard',
     'target creature',
     'target card',
     'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
@@ -797,10 +822,14 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'three target nonland permanents',
     'target creature or planeswalker',
     'target artifact or enchantment',
+    // Planeswalker Party deck (Nahiri): a member with no modifier before members that have one.
+    'target enchantment, tapped artifact, or tapped creature',
     'target artifact, creature, enchantment, or land',
     'target artifact or enchantment you control',
     'up to one target creature',
     'up to two target creatures',
+    // Vronos, Masked Inquisitor: none to that many targets, none of them the source.
+    'up to two other target planeswalkers you control',
     // D-295 (CR 115.1, 601.2c): at least one target and at most two.
     'one or two target creatures',
     'one or two target nonland permanents you control',
@@ -846,6 +875,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   ],
   rejects: [
     'up to one target creatures',
+    'up to one other target creatures',
+    'up to two other target creature',
     'another target creatures',
     'target creature you control other than',
     'each of target creature',
@@ -1155,6 +1186,7 @@ export const NOUN_RULES = [
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
+  ...PLANESWALKER_PARTY_NOUN_RULES,
   ...ENCHANTED_BY_YOU_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
   ...HYLDA_G2_EARLY_NOUN_RULES,
@@ -1184,6 +1216,8 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  // Desert Bloom deck, group G5 (Dune Chanter): "lands you control and land cards you own that aren't on the battlefield", which `noun.plain-permanents` would stop in the middle of.
+  ...DESERT_BLOOM_NOUN_RULES,
   // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
   NOUN_OTHER_SUBTYPE_PAIR,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.

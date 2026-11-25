@@ -3,6 +3,7 @@
  */
 import { fail, literal, pattern, sequence } from '../../combinators';
 import type {
+  IrAmount,
   IrBasePt,
   IrClause,
   IrColorSpec,
@@ -105,6 +106,112 @@ export const EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS = defineRule<Clauses>({
       const keyword = { kind: 'keywordName' as const, name, span: keywords.span, rule: ID };
       clauses.push({
         ...makeClause(ID, 'grantKeyword', { objects: subject, keyword }, keywords.span),
+        duration,
+        ...(i < keywords.value.length - 1 ? { connector: 'and' as const } : {}),
+      });
+    });
+    return { ok: true, value: clauses, pos: r.pos };
+  },
+});
+
+const WHERE_X_ID = 'effect.lead-becomes-land-creature-where-x';
+
+/**
+ * `effect.lead-becomes-land-creature-where-x`: "Until end of turn, ~ becomes an X/X green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a
+ * land." (Cactus Preserve, CR 107.3c, 611.2a, 613.1d, 613.1e, 613.1f, 613.4b, 205.1b, 903.3): `effect.lead-becomes-land-creature-keywords` with base power and toughness X/X, X being the amount the
+ * text defines inside the sentence, worked out as the effect resolves (CR 608.2h). Only `~` itself. Not read: another duration, another subject, a number for the power and toughness, no
+ * "where", a definition `amount.where-x` does not read, no color, no creature type, no keyword, "that's still a land", the second sentence left out.
+ */
+export const EFFECT_LEAD_BECOMES_LAND_CREATURE_WHERE_X = defineRule<Clauses>({
+  id: WHERE_X_ID,
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 107.3c (Numbers and Symbols)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "until end of turn, ~ becomes an X/X green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a land",
+    'Until end of turn, ~ becomes an X/X green Plant creature with reach, where X is the number of Zombies you control. It’s still a land',
+  ],
+  rejects: [
+    'Until end of turn, ~ becomes an X/X green Plant creature with reach, where X is the greatest mana value among your commanders.',
+    "Until end of turn, ~ becomes an X/X green Plant creature with reach. It's still a land",
+    "Until end of turn, ~ becomes a 4/4 green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a land",
+    "Until end of turn, ~ becomes an X/Y green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a land",
+    "Until your next turn, ~ becomes an X/X green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a land",
+    "Until end of turn, target land becomes an X/X green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a land",
+    "Until end of turn, ~ becomes an X/X Plant creature with reach, where X is the greatest mana value among your commanders. It's still a land",
+    "Until end of turn, ~ becomes an X/X green Plant creature, where X is the greatest mana value among your commanders. It's still a land",
+    "Until end of turn, ~ becomes an X/X green Plant creature with reach, where X is your life. It's still a land",
+    "Until end of turn, ~ becomes an X/X green Plant creature with reach, where X is the greatest mana value among your commanders. It's still a planeswalker",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrDuration>('duration'),
+      literal(', '),
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      literal(' becomes an X/X '),
+      spanned(
+        pattern(
+          /(white|blue|black|red|green)(?: and (white|blue|black|red|green))?(?![\p{L}\p{N}]) /iu,
+        ),
+      ),
+      spanned(CREATURE_TYPE_LIST),
+      literal(' creature with '),
+      spanned(KEYWORD_WORDS),
+      literal(', '),
+      spanned(family<IrAmount>('amount', { only: ['amount.where-x'] })),
+      pattern(/\. It['’]s still a land(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [duration, , subject, , colorWords, types, , keywords, , defined] = r.value;
+    const colors = [colorWords.value[1], colorWords.value[2]]
+      .filter((c): c is string => c !== undefined)
+      .map((c) => c.toLowerCase());
+    if (new Set(colors).size !== colors.length) return fail(ctx, pos);
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: 0,
+      toughness: 0,
+      amount: defined.value,
+      span: defined.span,
+      rule: WHERE_X_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value,
+      cardTypes: ['creature'],
+      additive: true,
+      span: types.span,
+      rule: WHERE_X_ID,
+    };
+    const colorSpec: IrColorSpec = {
+      kind: 'colorSpec',
+      colors,
+      span: colorWords.span,
+      rule: WHERE_X_ID,
+    };
+    const clauses: IrClause[] = [
+      {
+        ...makeClause(
+          WHERE_X_ID,
+          'becomes',
+          { objects: subject, types: typeList, colors: colorSpec, basePt },
+          types.span,
+        ),
+        duration,
+        connector: 'and' as const,
+      },
+    ];
+    keywords.value.forEach((name, i) => {
+      const keyword = { kind: 'keywordName' as const, name, span: keywords.span, rule: WHERE_X_ID };
+      clauses.push({
+        ...makeClause(WHERE_X_ID, 'grantKeyword', { objects: subject, keyword }, keywords.span),
         duration,
         ...(i < keywords.value.length - 1 ? { connector: 'and' as const } : {}),
       });
@@ -356,9 +463,109 @@ export const EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES = defineRule<Clauses>({
   },
 });
 
+const SELF_KEYWORDS_ID = 'effect.becomes-land-creature-keywords-trailing';
+
+/**
+ * `effect.becomes-land-creature-keywords-trailing`: "~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land." (Mobilized District; CR 613.1d, 613.1f, 613.4b,
+ * 205.1b, 611.2a): the land itself is also a creature until the end of the turn, with the base power and toughness, the creature types and the keywords the text says, its colors
+ * unchanged (a land is colorless). "It's still a land" says its types are added to, not replaced. Only `~`, with no colors and the duration after the keywords. Not read: another
+ * duration, another subject, a color (`effect.becomes-land-creature-trailing` and the lead rule read colors), no creature type, no keyword, "that's still a land", the second sentence
+ * left out.
+ */
+export const EFFECT_BECOMES_LAND_CREATURE_KEYWORDS_TRAILING = defineRule<Clauses>({
+  id: SELF_KEYWORDS_ID,
+  family: 'effect',
+  leading: ['~'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land",
+    '~ becomes a 3/3 Citizen creature with vigilance until end of turn. It’s still a land',
+    "~ becomes a 4/4 Elemental creature with trample and haste until end of turn. It's still a land",
+  ],
+  rejects: [
+    '~ becomes a 3/3 Citizen creature with vigilance until end of turn.',
+    "~ becomes a 3/3 Citizen creature with vigilance until your next turn. It's still a land",
+    "target land becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land",
+    "~ becomes a 3/3 green Citizen creature with vigilance until end of turn. It's still a land",
+    "~ becomes a Citizen creature with vigilance until end of turn. It's still a land",
+    "~ becomes a 3/3 creature with vigilance until end of turn. It's still a land",
+    "~ becomes a 3/3 Citizen creature until end of turn. It's still a land",
+    "~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land and you draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      pattern(/ becomes an? /iu),
+      spanned(pattern(/(\d+)\/(\d+) /)),
+      spanned(CREATURE_TYPE_LIST),
+      literal(' creature with '),
+      spanned(KEYWORD_WORDS),
+      literal(' '),
+      family<IrDuration>('duration'),
+      pattern(/\. It['’]s still a land(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , pt, types, , keywords, , duration] = r.value;
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: Number(pt.value[1]),
+      toughness: Number(pt.value[2]),
+      span: pt.span,
+      rule: SELF_KEYWORDS_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value,
+      cardTypes: ['creature'],
+      additive: true,
+      span: types.span,
+      rule: SELF_KEYWORDS_ID,
+    };
+    const clauses: IrClause[] = [
+      {
+        ...makeClause(
+          SELF_KEYWORDS_ID,
+          'becomes',
+          { objects: subject, types: typeList, basePt },
+          types.span,
+        ),
+        duration,
+        connector: 'and' as const,
+      },
+    ];
+    keywords.value.forEach((name, i) => {
+      const keyword = {
+        kind: 'keywordName' as const,
+        name,
+        span: keywords.span,
+        rule: SELF_KEYWORDS_ID,
+      };
+      clauses.push({
+        ...makeClause(
+          SELF_KEYWORDS_ID,
+          'grantKeyword',
+          { objects: subject, keyword },
+          keywords.span,
+        ),
+        duration,
+        ...(i < keywords.value.length - 1 ? { connector: 'and' as const } : {}),
+      });
+    });
+    return { ok: true, value: clauses, pos: r.pos };
+  },
+});
+
 export const LAND_CREATURE_KEYWORDS_EFFECT_RULES = [
   EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS,
+  EFFECT_LEAD_BECOMES_LAND_CREATURE_WHERE_X,
   EFFECT_BECOMES_LAND_CREATURE_TRAILING,
   EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES,
+  EFFECT_BECOMES_LAND_CREATURE_KEYWORDS_TRAILING,
   EFFECT_IT_BECOMES_LAND_CREATURE_KEYWORDS,
 ];

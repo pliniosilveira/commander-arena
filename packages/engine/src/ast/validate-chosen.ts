@@ -59,6 +59,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   if (o.kind === 'chosenOption') found.add('option');
   // CR 119.4: "the life paid as it entered" reads the amount the permanent paid.
   if (o.kind === 'lifePaidAsEntered') found.add('lifePaid');
+  // CR 614.12a, 607.2d (Stuffy Doll): "the chosen player" reads the player the permanent chose.
+  if (o.kind === 'enteredChosenPlayer') found.add('player');
   for (const [key, v] of Object.entries(o)) {
     if (key === 'definition' && o.kind === 'custom') continue;
     referencedChoices(v, found);

@@ -172,12 +172,15 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 601.2h (D-183): the mana spent to cast a spell belongs to a spell, is at least 1 when present, and no card type has more of it than there is.
     if (obj.stack?.manaSpent !== undefined) {
-      const { total, fromTypes, snow } = obj.stack.manaSpent;
+      const { total, fromTypes, fromSubtypes, snow } = obj.stack.manaSpent;
       if (
         obj.stack.kind !== 'spell' ||
         !Number.isSafeInteger(total) ||
         total < 1 ||
         Object.values(fromTypes).some((n) => !Number.isSafeInteger(n) || n < 1 || n > total) ||
+        Object.values(fromSubtypes ?? {}).some(
+          (n) => !Number.isSafeInteger(n) || n < 1 || n > total,
+        ) ||
         (snow !== undefined && (!Number.isSafeInteger(snow) || snow < 1 || snow > total))
       ) {
         problems.push(`${id} has mana spent that it cannot have`);
@@ -377,7 +380,8 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${id} is on an Adventure but is not a card in exile`);
     }
     // CR 614.12a, 400.7 (D-100): a choice made as a permanent entered belongs to a permanent whose card
-    // or token asks that question, and is one of its options; it is gone when the permanent leaves.
+    // or token asks that question, and is one of its options; it is gone when the permanent leaves (phasing out is
+    // no change of zone: a phased-out permanent keeps it, CR 702.26b).
     if (obj.chosen !== undefined) {
       const { creatureType, color, cardType, planeswalkerType, lifePaid, player, cardName } =
         obj.chosen;
@@ -386,7 +390,7 @@ export function checkInvariants(state: GameState): string[] {
           entersChoice,
         ),
       );
-      if (obj.zone !== 'battlefield') {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
         problems.push(`${id} has a choice but is not on the battlefield`);
       }
       if (
@@ -408,6 +412,13 @@ export function checkInvariants(state: GameState): string[] {
         (!PLANESWALKER_TYPES.includes(planeswalkerType) || !kinds.has('planeswalkerType'))
       ) {
         problems.push(`${id} chose planeswalker type ${planeswalkerType}, which it cannot have`);
+      }
+      // CR 614.12a: a chosen player is a seat of the game, and only a card that asks to choose a player has one.
+      if (
+        player !== undefined &&
+        (!state.seats.some((s) => s.id === player) || !kinds.has('player'))
+      ) {
+        problems.push(`${id} chose player ${player}, which it cannot have`);
       }
       // CR 119.4: the life paid as it entered is a whole number, and only a card that asks to pay life has one.
       if (

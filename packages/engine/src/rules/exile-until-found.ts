@@ -26,8 +26,9 @@ export function runExileUntilFound(
   let next = state;
   const events: GameEvent[] = [];
   const exiled: ObjectId[] = [];
-  let found: ObjectId | null = null;
+  const found: ObjectId[] = [];
   for (const seat of apnapOrder(state, resolvePlayers(state, effect.players, ctx, targets))) {
+    const rest: ObjectId[] = [];
     for (;;) {
       const top = getSeat(next, seat).library[0];
       const card = top === undefined ? undefined : next.objects[top];
@@ -46,20 +47,32 @@ export function runExileUntilFound(
       events.push(...moved.events);
       if (moved.newObject !== null) exiled.push(moved.newObject);
       if (match) {
-        found = moved.newObject;
+        found.push(...(moved.newObject === null ? [] : [moved.newObject]));
         break;
+      }
+      rest.push(...(moved.newObject === null ? [] : [moved.newObject]));
+    }
+    // CR 401.4 (Guff Rewrites History): "then puts the rest on the bottom of their library in a random order": the order is the seeded generator's, nobody sees or chooses it.
+    if (effect.restToBottom === true && rest.length > 0) {
+      const [order, rng] = shuffle(rest, next.rng);
+      next = { ...next, rng };
+      for (const card of order) {
+        const back = moveObject(next, { object: card, to: 'library', position: 'bottom' });
+        if (back.kind !== 'done') continue;
+        next = back.state;
+        events.push(...back.events);
       }
     }
   }
   // CR 701.13, 401.4, 110.2a (Venture Forth): the card found goes onto the battlefield, the others on the bottom of the library in a random order (the seeded generator's).
   if (effect.outcome !== undefined) {
-    const rest = exiled.filter((id) => id !== found);
+    const rest = exiled.filter((id) => !found.includes(id));
     const [order, rng] = shuffle(rest, next.rng);
     const moves = [
-      ...(found === null ? [] : moveInstructions([found], 'battlefield', 'top', false, 'you')),
+      ...(found.length === 0 ? [] : moveInstructions(found, 'battlefield', 'top', false, 'you')),
       ...moveInstructions(order, 'library', 'bottom'),
     ];
     return { ...done({ ...next, rng }, events, moves), lastMoved: exiled };
   }
-  return { ...done(next, events), lastMoved: exiled };
+  return { ...done(next, events), lastMoved: effect.restToBottom === true ? found : exiled };
 }

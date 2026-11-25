@@ -374,6 +374,16 @@ export const SYNTHETIC_PT_LIST: readonly CardDefinition[] = [
     },
   ),
   instant(
+    'SYNTHETIC Flip Over',
+    ['U'],
+    'U',
+    "Switch target creature's power and toughness until end of turn.",
+    {
+      targets: [CREATURE_TARGET],
+      effect: { kind: 'switchPt', objects: T1, duration: END },
+    },
+  ),
+  instant(
     'SYNTHETIC Dress Down',
     ['1', 'U'],
     'U',

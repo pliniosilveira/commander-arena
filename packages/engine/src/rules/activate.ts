@@ -855,7 +855,9 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
           object: activation.source,
           abilityIndex: activation.abilityIndex,
           // CR 606.3 (D-200): a loyalty ability of this permanent was activated this turn.
-          ...(isLoyaltyAbility(activation.ability.cost) ? { loyalty: true as const } : {}),
+          ...(isLoyaltyAbility(activation.ability.cost)
+            ? { loyalty: true as const, activator: casting.seat }
+            : {}),
           // Issue 159: "activated an ability of a card in a graveyard this turn": the card was in a graveyard as the ability was activated (`casting.fromZone`, read
           // before the cost moved it).
           ...(casting.fromZone === 'graveyard' ? { fromGraveyard: casting.seat } : {}),

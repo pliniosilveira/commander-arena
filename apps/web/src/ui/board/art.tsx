@@ -9,6 +9,7 @@ import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
 import { useListedArt } from './commander-art';
+import { isGameCard } from './deck-printings';
 import type { ArtVersion } from './image-uris';
 import { createFailureMemory, RETRY_AFTER_MS } from './lookup-cache';
 import { useEmblemArt, useTokenArt } from './token-art';
@@ -94,9 +95,11 @@ export function Art({
     owner,
   );
   if (listed.pending) return null;
-  // Issue 32: a token that is a copy of a card has the card's mana cost (no real token has one) and no token card of its
-  // own on Scryfall, so it is drawn with the art of the card it copies.
-  const copiesACard = tokenDefinition !== undefined && tokenDefinition.manaCost !== null;
+  // Issue 32: a token that is a copy of a card has no token card of its own on Scryfall, so it is drawn with the art of the
+  // card it copies. It has the card's mana cost (no real token has one), or, made by Embalm or Eternalize, no mana cost
+  // (CR 702.128a, 702.129a) but still the card's name, which a deck of the game lists.
+  const copiesACard =
+    tokenDefinition !== undefined && (tokenDefinition.manaCost !== null || isGameCard(name));
   const url = emblem
     ? emblemUrl
     : copiesACard

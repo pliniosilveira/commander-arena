@@ -294,7 +294,7 @@ const SEARCH: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Search your library for up to two cards, then shuffle and put them on top.',
-    expect: no(', then shuffle and put them on top.', 'effect.search'),
+    expect: no(', then shuffle and put them on top.', 'effect.search-reveal-may-put-else-hand'),
     note: 'SYNTHETIC; still not read (D-405): several cards put on top need an order the engine does not ask for',
   },
   {

@@ -97,17 +97,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
         break;
       case 'discard':
         discards += 1;
-        // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
-        if (
-          cost.filter !== undefined ||
-          cost.named !== undefined ||
-          cost.hand !== undefined ||
-          cost.countX !== undefined
-        ) {
+        // D-207: a name picks out cards for the cost of an activated ability. A filter ("discard a land card", CR 701.9, 118.8) is read by a spell's cost too (`discardFilter`).
+        if (cost.named !== undefined || cost.hand !== undefined || cost.countX !== undefined) {
           issue(
             out,
             p,
-            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
+            'an additional cost discards any cards: no name and not the whole hand (D-207, D-626)',
           );
         }
         break;

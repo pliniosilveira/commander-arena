@@ -386,6 +386,7 @@ describe('supported feature gate', () => {
         // CR 709.5h: "When you unlock this door".
         'doorUnlocked',
         'drawn',
+        'dungeonCompleted',
         'endStep',
         'entersBatch',
         'entersBattlefield',

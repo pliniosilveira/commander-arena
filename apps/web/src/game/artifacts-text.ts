@@ -344,7 +344,13 @@ export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' 
     const counter =
       effect.withCounters === undefined
         ? ''
-        : ` with ${effect.withCounters.count === 1 ? 'a' : numberWord(effect.withCounters.count)} ${effect.withCounters.counter} counter${effect.withCounters.count === 1 ? '' : 's'} on it`;
+        : ` with ${[effect.withCounters]
+            .flat()
+            .map(
+              (c) =>
+                `${c.count === 1 ? 'a' : numberWord(c.count)} ${c.counter} counter${c.count === 1 ? '' : 's'}`,
+            )
+            .join(' and ')} on it`;
     return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them onto the battlefield${effect.tapped === true ? ' tapped' : ''}${counter}`;
   }
   // Issue 104 (CR 406.1, 608.2d): "You may exile a creature card from your graveyard": a card the controller chooses among those of their hand or graveyard and exiles.

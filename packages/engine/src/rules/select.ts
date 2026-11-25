@@ -899,6 +899,12 @@ export function resolveObjects(
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
+    case 'putCountersOn': {
+      // CR 608.2c: the objects the `addCounters` effects of this resolution put counters on (of the kind the text names, when it names one), each once.
+      const byKind = ctx.thisWay?.countersPutOn ?? {};
+      const kinds = selector.counter === undefined ? Object.keys(byKind) : [selector.counter];
+      return [...new Set(kinds.flatMap((kind) => byKind[kind] ?? []))];
+    }
     case 'triggerSubject':
       return ctx.triggerSubject === undefined ? [] : [ctx.triggerSubject];
     case 'sacrificed':
@@ -1115,6 +1121,26 @@ export function resolvePlayers(
         ),
       );
     }
+    case 'eachPlayerControllingMore': {
+      // CR 102.1, 109.4, 101.4 (Oreskos Explorer): the other players who control more battlefield permanents matching the filter than the controller of the effect.
+      const filter = {
+        ...selector.filter,
+        zone: 'battlefield' as const,
+        controller: 'you' as const,
+      };
+      const battlefield = objectsInZone(state, 'battlefield');
+      const count = (seat: SeatId): number =>
+        battlefield.filter((id) =>
+          matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+        ).length;
+      const mine = count(ctx.controller);
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) => seat !== ctx.controller && count(seat) > mine,
+        ),
+      );
+    }
     case 'all':
       // D-131: "you and target opponent": the players the members name, each once, in APNAP order (CR 101.4).
       return apnapOrder(
@@ -1135,6 +1161,11 @@ export function resolvePlayers(
       // CR 508.5: the player the source creature attacks (or attacked), D-110.
       const seat = defendingPlayerOfAbility(state, ctx);
       return seat === null ? [] : [seat];
+    }
+    case 'enteredChosenPlayer': {
+      // CR 614.12a, 607.2d (Stuffy Doll): the player the permanent chose as it entered, read from it or from its last-known information; nobody when it has left the game.
+      const seat = chosenOf(state, ctx.source)?.player;
+      return seat === undefined || getSeat(state, seat).hasLost ? [] : [seat];
     }
     case 'chosenPlayer':
       // The Black Gate: the player the `choosePlayer` before it chose; nobody when it has left the game.
@@ -1307,12 +1338,14 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'eachOtherOpponent' ||
     sel.kind === 'eachPlayerExcept' ||
     sel.kind === 'eachPlayerControlling' ||
+    sel.kind === 'eachPlayerControllingMore' ||
     sel.kind === 'all' ||
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'playerToYourRight' ||
     sel.kind === 'chosenPlayer' ||
+    sel.kind === 'enteredChosenPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||

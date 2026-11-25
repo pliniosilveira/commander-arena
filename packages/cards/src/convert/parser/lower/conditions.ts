@@ -320,6 +320,13 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): "that creature had to attack this combat" is the intervening "if" of a trigger about a creature, read from the creature the trigger is about.
+      const blocked = missingFeatures(['condition:subjectHadToAttack']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectHadToAttack' });
+    }
     case 'subjectGreaterThanEach': {
       // CR 603.10a, 208.1, 608.2c (Selvala, Heart of the Wilds): "its power is greater than each other creature's power" is read as the instruction comes up (a conditional effect, not the
       // intervening "if"), of the permanent the trigger is about.
@@ -765,6 +772,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'attackedHasMoreLifeThanOtherOpponent' });
     }
+    case 'loyaltyActivatedThisTurn': {
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:loyaltyAbilityActivatedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'loyaltyAbilityActivatedThisTurn' });
+    }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
       // anywhere else.
@@ -939,6 +953,7 @@ export function lowerCondition(
     }
     case 'costContainsX':
     case 'notDeclaredAttacker':
+    case 'youAreDefendingPlayer':
     case 'damageDealtByType':
     case 'enteredFromGraveyard':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
@@ -1060,6 +1075,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectControlledByYou',
   'condition:subjectMatches',
   'condition:subjectStat',
+  'condition:subjectHadToAttack',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
   'condition:counterPutOnThisThisTurn',

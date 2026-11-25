@@ -287,6 +287,14 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
     const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
     ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
+    // Curse of Verbosity: the clause before "does the same" was one plain draw by the controller.
+    ctx.drewCards =
+      only?.kind === 'draw' &&
+      only.player.kind === 'you' &&
+      only.upTo === undefined &&
+      only.reveal === undefined
+        ? only
+        : null;
     // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
     ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
     // Death Toll deck (Winter): "put a permanent card from among them onto the battlefield" after the exile of any number of cards with a card type minimum.
@@ -1777,8 +1785,11 @@ function lowerYouDont(
   // again, `rules/cast-free.ts`), and "you don't" is that no spell was cast: declined, or none could be.
   const afterFreeCast =
     previous?.effects.length === 1 && last?.kind === 'castFree' && last.max === undefined;
+  // Chandra, Torch of Defiance (CR 608.2c, 608.2g): "You may cast that card. If you don't, ...": the cast of the exiled card is the offer, and "you don't" is that no spell was cast (declined, or it
+  // could not be cast: a land, nothing to pay with).
+  const afterCastCard = previous?.effects.length === 1 && last?.kind === 'castCard';
   if (
-    !(afterChoice || afterFreeCast) ||
+    !(afterChoice || afterFreeCast || afterCastCard) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -1923,11 +1934,17 @@ function lowerAfterDiscard(
   }
   const discards = steps
     .flatMap((s) => s.effects)
-    .some((e) => e.kind === 'discard' && e.player.kind === 'you');
+    .some(
+      (e) =>
+        (e.kind === 'discard' && e.player.kind === 'you') ||
+        // Narset of the Ancient Way: "then you may discard a card": the discard is the controller's offer.
+        (e.kind === 'may' && e.effect.kind === 'discard' && e.effect.player.kind === 'you'),
+    );
   if (!discards) return refused();
   const blocked = missingFeatures(['effect:reflexive']);
   if (blocked.length > 0) return refused(blocked);
-  ctx.discardedCardValue = sentence.afterDiscard === 'any';
+  // "that card's mana value" is the card discarded, of either wording (a nonland card: Narset of the Ancient Way; CR 202.3, 608.2c).
+  ctx.discardedCardValue = true;
   const effect = lowerReflexive(sentence, ctx);
   ctx.discardedCardValue = false;
   if (!effect.ok) return { stopped: effect };
@@ -2557,13 +2574,18 @@ function countsWhatHappened(
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it. Eventide's Shadow: "the number of counters removed this way" after counters the
       // controller chose to remove.
-      return earlier.verb === 'removeAllCounters' || earlier.verb === 'removeChosenCounters';
+      return (
+        earlier.verb === 'removeAllCounters' ||
+        earlier.verb === 'removeChosenCounters' ||
+        earlier.verb === 'removeCounterFromEachChosen'
+      );
     case 'excessDamageDealt':
     // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';
     case 'milledCreature':
+    case 'milledLand':
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
@@ -3432,7 +3454,10 @@ function lowerPlayersMay(
       return refused(refuse(sentence));
     }
   }
+  const wasAsked = ctx.askedActs;
+  ctx.askedActs = askedActs;
   const body = lowerClauses(sentence.clauses, ctx);
+  ctx.askedActs = wasAsked;
   if (!body.ok) return refused(body);
   const next = sentences[i + 1];
   const declines = next?.condition?.test.kind === 'declined';
@@ -3707,11 +3732,25 @@ function splitBeforeOffer(sentences: readonly IrSentence[]): readonly IrSentence
   return out;
 }
 
+/**
+ * CR 701.9 (Nantuko Cultivator): "you may discard any number of cards" says what "discard any number of cards" says: the player may choose none, so the offer is not
+ * asked on its own. The clause loses its `optional`.
+ */
+export function withoutAnyNumberOffer(sentences: readonly IrSentence[]): readonly IrSentence[] {
+  const offer = (c: IrClause) =>
+    c.optional && c.verb === 'discard' && c.args.anyNumber !== undefined;
+  return sentences.map((s) =>
+    s.clauses.some(offer)
+      ? { ...s, clauses: s.clauses.map((c) => (offer(c) ? { ...c, optional: false } : c)) }
+      : s,
+  );
+}
+
 export function lowerSentences(
   input: readonly IrSentence[],
   ctx: LowerContext,
 ): LowerResult<Effects> {
-  const sentences = splitBeforeOffer(input);
+  const sentences = splitBeforeOffer(withoutAnyNumberOffer(input));
   // D-525 (CR 706.3): the rows of a results table make the whole text of the roll one ability.
   const firstRow = sentences.findIndex((s) => s.dieRow !== undefined);
   if (firstRow >= 0) return lowerDieTable(sentences, firstRow, ctx);

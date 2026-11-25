@@ -11,7 +11,7 @@ import type {
   DoorValues,
   DungeonId,
   Effect,
-  EnteringCounters,
+  EntryCounter,
   InlineChoice,
   Keyword,
   NamedAlternativeKind,
@@ -19,6 +19,7 @@ import type {
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  Trigger,
   UndercityRoom,
   Zone,
 } from '../ast/types';
@@ -182,11 +183,22 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
+   * The X of the monstrosity action that made this permanent monstrous (CR 701.37c: "other abilities of that permanent may also refer to X", with the value of X as the permanent became
+   * monstrous), `monstrousX` of an amount. Set with `monstrous`; a new object after any zone change (CR 400.7) has none.
+   */
+  readonly monstrousX?: number;
+  /**
    * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-459), set by the effect `exileIfLeaves` on the permanent an earlier
    * effect put onto the battlefield (Whip of Erebos): it is exiled instead of going to any other zone, whatever its abilities. Not a copiable value; a new object after any
    * zone change (CR 400.7) has none.
    */
   readonly exileIfLeaves?: true;
+  /**
+   * "If a permanent dealt damage this way would die this turn, exile it instead" (CR 614.1a, 614.6, Chandra, Awakened Inferno), set by the effect `exileIfDiesThisTurn`: the number of the
+   * turn (`TurnState.number`) it holds for. A permanent so marked is exiled instead of being put into a graveyard from the battlefield during that turn. Not a copiable value; a new
+   * object after any zone change (CR 400.7) has none.
+   */
+  readonly exileIfDiesTurn?: number;
   /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
@@ -383,6 +395,8 @@ export type StackAbility = TriggeredAbility | ActivatedAbility;
 export interface ManaSpent {
   readonly total: number;
   readonly fromTypes: Readonly<Record<string, number>>;
+  /** The same for the subtypes of the sources ("for each mana from a Desert", CR 205.3i); left out when no source had one. */
+  readonly fromSubtypes?: Readonly<Record<string, number>>;
   /** How many of them came from a snow source (CR 107.4h, 106.3: "for each {S} spent to cast this spell"); left out when none did. */
   readonly snow?: number;
   /** Issue 310 (Converge, CR 105.1): the colors of the mana spent, of the five (colorless mana is no color), in the order W, U, B, R, G. */
@@ -1023,6 +1037,13 @@ export interface DelayedTrigger {
   readonly untilEndOfTurn?: true;
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
+  /**
+   * "Until your next turn" (`delayedAttackerPump`, CR 500.1): the ability ends as the next turn of `seat` begins, once `turnsTaken` of that player's turns have begun (the turn it was made in
+   * not counted); `expireTurnStartEffects`.
+   */
+  readonly until?: { readonly seat: SeatId; readonly turnsTaken: number };
+  /** More events the ability waits for besides `ability.trigger` (`delayedCopy`: "cast an instant, cast a sorcery or activate a loyalty ability"): the first of any of them is the one. */
+  readonly also?: readonly Trigger[];
   readonly watched?: ObjectId;
   /** "Whenever a creature you control deals combat damage to that player this turn" (issue 144, CR 603.7c): the ability triggers only for damage dealt to this player, fixed as it was created. */
   readonly damagedPlayer?: SeatId;
@@ -1204,6 +1225,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */
+      readonly asChooser?: true;
       readonly anyNumber?: true;
       readonly fromMoved?: true;
       readonly chosen: readonly ObjectId[] | null;
@@ -1229,6 +1252,8 @@ export type Instruction =
   | {
       readonly kind: 'chooseCreatureType';
       readonly chosen: string | null;
+      /** `chooseCreatureType.planeswalker`: the options are the planeswalker types. */
+      readonly planeswalker?: true;
       /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
       readonly seat?: SeatId;
     }
@@ -1604,7 +1629,7 @@ export type Instruction =
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
@@ -1685,7 +1710,7 @@ export type Instruction =
       readonly chooser: SeatId;
       readonly cards: readonly ObjectId[];
       readonly chosenTo: 'hand' | 'graveyard';
-      readonly otherTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
       readonly faceDownPile?: true;
       readonly first?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -1767,7 +1792,7 @@ export type Instruction =
       readonly min?: number;
       readonly tapped?: true;
       /** The counters the cards taken enter the battlefield with (`take.withCounters`, CR 122.6). */
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /** Only cards with this mana value or less may be taken (`take.manaValueAtMost`, D-145), worked out when the effect started. */
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
@@ -1858,7 +1883,7 @@ export type Instruction =
       readonly object: ObjectId;
       readonly tapped: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1890,6 +1915,8 @@ export type Instruction =
       readonly unless?: ObjectFilter;
       /** "Discard any number of cards" (`discard.anyNumber`, D-151): the player chooses none, some or all of the hand. */
       readonly anyNumber?: true;
+      /** "Discard any number of land cards" (`discard.cards`): with `anyNumber`, only the cards of the hand this filter matches may be chosen. */
+      readonly cards?: ObjectFilter;
       /** "Discard up to two cards" (`discard.upTo`, CR 701.9, 107.1c): the player chooses none to `count` of the hand. */
       readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
@@ -2223,7 +2250,7 @@ export type Instruction =
       /** Enter the battlefield under the owner's control or the resolving ability's controller's. */
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
@@ -2468,6 +2495,8 @@ export interface ThisWayCounts {
   readonly milledValue?: number;
   /** The creature cards milled by `mill` effects, for "for each creature card put into a graveyard this way" (Dread Summons). */
   readonly milledCreature?: number;
+  /** The land cards milled by `mill` effects, for "for each land card milled this way" (Dune Chanter). */
+  readonly milledLand?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
   /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */
@@ -2484,6 +2513,8 @@ export interface ThisWayCounts {
   readonly discardedValue?: number;
   /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
   readonly countersPut?: number;
+  /** The objects `addCounters` effects really put counters on, by kind of counter, each once (Spectacular Showdown: "each creature that had a double strike counter put on it this way", CR 608.2c); left out until some are. */
+  readonly countersPutOn?: Readonly<Record<string, readonly ObjectId[]>>;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
   /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */
@@ -2523,6 +2554,11 @@ export interface AttackerState {
    * deals no combat damage) once the permanent leaves, changes controller or protector, or stops being a planeswalker or battle (CR 506.4).
    */
   readonly defender?: SeatId;
+  /**
+   * The creature was required to attack as the attackers were declared (CR 508.1d, 701.15b): an effect or a requirement ("attacks each combat if able", goad) applied to it
+   * and it was able to attack. Read by "if that creature had to attack this combat".
+   */
+  readonly hadToAttack?: true;
   /** The attacked planeswalker or battle was removed from combat (CR 506.4): the creature attacks no player, planeswalker or battle any more (CR 506.4c). */
   readonly targetGone?: true;
 }
@@ -2667,6 +2703,16 @@ export type ContinuousChange =
       readonly grants?: 'storm' | 'cascade';
     }
   /**
+   * "Until your next turn, instant, sorcery, and planeswalker spells that player casts cost {2} less to cast" (`playerSpellsCostLess`, CR 601.2f, 118.7a): every spell `seat` casts that
+   * `spells` describes costs `lessGeneric` less (generic mana only) while the effect lasts. No layer: read where the cost is determined (`rules/spell-discount.ts`).
+   */
+  | {
+      readonly kind: 'spellsCostLess';
+      readonly seat: SeatId;
+      readonly spells: ObjectFilter;
+      readonly lessGeneric: number;
+    }
+  /**
    * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, CR 118.9, 601.2b): `seat` may cast their next
    * spell by the alternative cost `lifeForMana`. The next spell `seat` casts uses it up, whether or not they pay that way (`rules/next-spell-life.ts`). No layer: read where casting is decided.
    */
@@ -2674,6 +2720,8 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   /** `null` leaves that characteristic as the other effects before it set it (CR 701.12g: an exchange sets only a power or only a toughness). */
   | { readonly kind: 'setPt'; readonly power: number | null; readonly toughness: number | null }
+  /** "Switch its power and toughness" (`switchPt`, CR 613.4d): layer 7d, after every other power and toughness effect. */
+  | { readonly kind: 'switchPt' }
   | { readonly kind: 'loseAllAbilities' }
   /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp
@@ -2750,6 +2798,14 @@ export type ContinuousChange =
    * "Until your next turn, creatures can't attack you" (`creaturesCantAttackYou`, CR 508.1a, 611.2c): no layer and no fixed set (`objects` is empty): read where attackers are declared
    * (`rules/attack-bans.ts`), for each creature `filter` matches then, with `controller` as "you": none of them may be declared attacking `controller` as a player.
    */
+  /**
+   * "Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent" (`attackOnlyNearestOpponent`,
+   * Teyo, Geometric Tactician): no layer and no fixed set (`objects` is empty): read where attackers are declared (`rules/attack-bans.ts`), for every creature.
+   */
+  | {
+      readonly kind: 'attackOnlyNearest';
+      readonly direction: 'left' | 'right';
+    }
   | {
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;
@@ -2981,6 +3037,10 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly abilityIndex: number;
     readonly loyalty?: true;
+    /** The player who activated the loyalty ability (The Chain Veil: "if you didn't activate a loyalty ability of a planeswalker this turn"). */
+    readonly activator?: SeatId;
+    /** The activation no longer counts toward the one loyalty ability of a permanent a turn (CR 606.3): `forgetLoyaltyActivations` (The Chain Veil). It still happened. */
+    readonly forgotten?: true;
     /**
      * The player who activated an ability of a card that was in a graveyard as it was activated (issue 159, "activated an ability of a card in a graveyard this turn").
      * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.

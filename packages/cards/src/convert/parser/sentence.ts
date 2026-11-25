@@ -307,6 +307,8 @@ const TRAILING_CONDITIONS = [
   'condition.this-power',
   // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
   'condition.exiled-mana-value-at-least',
+  // Descend upon the Sinful, Unholy Heat (CR 207.2c, 205.2a): "Create a 4/4 ... token if there are four or more card types among cards in your graveyard." (Delirium).
+  'condition.card-types-among',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -825,6 +827,8 @@ export const LOYALTY_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Narset of the Ancient Way: "Draw a card, then you may discard a card. When you discard a nonland card this way, ~ deals damage equal to that card's mana value to target creature or planeswalker."
+  afterDiscard: true,
   delayed: true,
 });
 

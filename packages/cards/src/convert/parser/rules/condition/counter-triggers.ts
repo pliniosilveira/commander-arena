@@ -206,8 +206,48 @@ export const CONDITION_YOU_PUT_COUNTER_THIS_TURN = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.that-creature-had-to-attack`: "that creature had to attack this combat" (Firkraag, Cunning Instigator; CR 508.1d, 701.15b: the creature the trigger is about was required to
+ * attack, by a goad or "attacks each combat if able", as the attackers of this combat were declared and was able to). The engine's `subjectHadToAttack`, the intervening "if" of a
+ * trigger about a creature. Not read: another noun ("it", "that permanent", "a creature"), another tense or span ("has to", "had to attack last combat", "this turn"), words after it.
+ */
+export const CONDITION_THAT_CREATURE_HAD_TO_ATTACK = defineRule<IrCondition>({
+  id: 'condition.that-creature-had-to-attack',
+  family: 'condition',
+  leading: ['that'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 701.15b (Goad)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
+  examples: ['that creature had to attack this combat'],
+  rejects: [
+    'that creature had to attack',
+    'that creature had to attack this turn',
+    'that creature had to attack last combat',
+    'that creature has to attack this combat',
+    'that permanent had to attack this combat',
+    'it had to attack this combat',
+    'a creature had to attack this combat',
+    'that creatures had to attack this combat',
+    'that creature had to attack this combat and',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(new RegExp(`that creature had to attack this combat${END}`, 'iu'))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: condition('condition.that-creature-had-to-attack', pos, r.pos, {
+        kind: 'subjectHadToAttack',
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const COUNTER_TRIGGER_CONDITION_RULES = [
   CONDITION_CONTROL_THAT_CREATURE,
   CONDITION_ITS_STAT_WAS,
+  CONDITION_THAT_CREATURE_HAD_TO_ATTACK,
   CONDITION_YOU_PUT_COUNTER_THIS_TURN,
 ];

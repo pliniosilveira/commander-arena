@@ -333,6 +333,17 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
     const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'gu');
     out = out.replace(re, '~');
   }
+  // A planeswalker "<Name> of <Title>" may be called by its first word ("Narset deals damage ..."), except as the type of a permanent ("a Narset planeswalker").
+  const walker = options.legendary
+    ? /^(\p{Lu}[\p{L}'’-]{2,}) of (?:the )?\p{Lu}/u.exec(options.name)?.[1]
+    : undefined;
+  if (walker !== undefined && PLANESWALKER_TYPES.includes(walker)) {
+    const re = new RegExp(
+      `(?<![\\p{L}\\p{N}])${escapeRegExp(walker)}(?![\\p{L}\\p{N}'’])(?! planeswalker)`,
+      'gu',
+    );
+    out = out.replace(re, '~');
+  }
   out = out.replace(SELF_NOUN_RE, '~');
   out = tokenSelfInQuotes(out);
   let spree = false;

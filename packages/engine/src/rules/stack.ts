@@ -309,6 +309,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 milledValue: (res.thisWay?.milledValue ?? 0) + (out.thisWay.milledValue ?? 0),
                 milledCreature:
                   (res.thisWay?.milledCreature ?? 0) + (out.thisWay.milledCreature ?? 0),
+                milledLand: (res.thisWay?.milledLand ?? 0) + (out.thisWay.milledLand ?? 0),
                 discardedCreature:
                   (res.thisWay?.discardedCreature ?? 0) + (out.thisWay.discardedCreature ?? 0),
                 discardedNoncreature:
@@ -329,6 +330,15 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   ? {}
                   : {
                       countersPut: (res.thisWay?.countersPut ?? 0) + (out.thisWay.countersPut ?? 0),
+                    }),
+                ...(res.thisWay?.countersPutOn === undefined &&
+                out.thisWay.countersPutOn === undefined
+                  ? {}
+                  : {
+                      countersPutOn: mergePutOn(
+                        res.thisWay?.countersPutOn,
+                        out.thisWay.countersPutOn,
+                      ),
                     }),
                 // Left out until there is some, so the state of every game that never reads it is what it was.
                 ...(res.thisWay?.discardedValue === undefined &&
@@ -475,6 +485,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
 
 /** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
 /** The card types of two `thisWay` tallies of discarded cards, each type once (CR 205.2a: a type counts once however many cards have it). */
+/** The objects counters were put on, by kind of counter: each kind's objects joined, each once. */
+function mergePutOn(
+  a: Readonly<Record<string, readonly ObjectId[]>> | undefined,
+  b: Readonly<Record<string, readonly ObjectId[]>> | undefined,
+): Readonly<Record<string, readonly ObjectId[]>> {
+  const out: Record<string, readonly ObjectId[]> = { ...a };
+  for (const [kind, ids] of Object.entries(b ?? {})) {
+    out[kind] = [...new Set([...(out[kind] ?? []), ...ids])];
+  }
+  return out;
+}
+
 function mergeTypes(
   a: readonly string[] | undefined,
   b: readonly string[] | undefined,

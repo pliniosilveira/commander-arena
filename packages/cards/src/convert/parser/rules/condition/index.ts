@@ -562,6 +562,7 @@ export const CONDITION_RULES = [
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
   ...THEY_ATTACKED_YOU_CONDITION_RULES,
+  // Kazuul: "you're the defending player", the intervening "if" of an attack trigger.
   ...THEY_ARENT_ATTACKING_YOU_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
   // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.

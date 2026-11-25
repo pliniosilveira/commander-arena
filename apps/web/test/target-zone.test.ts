@@ -121,6 +121,18 @@ describe('the zone to open for a library search', () => {
     expect(questionZoneToOpen(search({ purpose: 'lookTake', legal: [] }))).toBeNull();
   });
 
+  test('the cards of a split into piles open the same list (Expressive Iteration)', () => {
+    expect(questionZoneToOpen(search({ purpose: 'lookSplit', to: 'hand' }))).toEqual({
+      zone: { kind: 'cards' },
+      name: 'cards',
+    });
+    expect(questionZoneToOpen(search({ purpose: 'lookSplit', to: 'bottom' }))).toEqual({
+      zone: { kind: 'cards' },
+      name: 'cards',
+    });
+    expect(questionZoneToOpen(search({ purpose: 'lookSplit', legal: [] }))).toBeNull();
+  });
+
   test('a choice in a graveyard or in exile opens the list of its cards (Grapple with the Past, Something Worth Saving)', () => {
     const grave = search({ purpose: 'move', zone: 'graveyard' });
     expect(questionZoneToOpen(grave)).toEqual({ zone: { kind: 'cards' }, name: 'graveyard' });

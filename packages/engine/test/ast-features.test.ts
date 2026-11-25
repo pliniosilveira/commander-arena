@@ -120,6 +120,7 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
+      'subjectHadToAttack',
       'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',
@@ -206,6 +207,7 @@ describe('the dimensions', () => {
       'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
+      'loyaltyAbilityActivatedThisTurn',
       'thisAttackedThisTurn',
       'dieResult',
       // CR 701.30d: "If you win" after a clash.
@@ -296,11 +298,14 @@ describe('the dimensions', () => {
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',
+      'preventDamageAround',
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',
       'cantAttackItsOwner',
       'cantGainLife',
+      'drawLimit',
+      'combatCreatureLimit',
       'damageCantBePrevented',
       'damageAsThoughWither',
       'opponentSearchTopOnly',
@@ -334,6 +339,7 @@ describe('the dimensions', () => {
       // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
+      'giveTypesToCardsOffBattlefield',
       'grantEncoreToGraveyardCards',
       'grantUnearthToGraveyardCards',
     ]);
@@ -361,7 +367,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('searchDestination:hand')).toBe(true);
     expect(isFeatureSupported('searchDestination:graveyard')).toBe(true);
     expect(isFeatureSupported('searchDestination:library')).toBe(true);
-    expect(isFeatureSupported('searchDestination:exile')).toBe(false);
+    expect(isFeatureSupported('searchDestination:exile')).toBe(true);
     expect(isFeatureSupported('effect:modifyPt')).toBe(true);
     expect(isFeatureSupported('duration:untilEndOfTurn')).toBe(true);
     expect(isFeatureSupported('duration:permanent')).toBe(false);

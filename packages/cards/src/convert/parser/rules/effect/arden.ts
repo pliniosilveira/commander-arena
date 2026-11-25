@@ -169,4 +169,65 @@ export const EFFECT_FLIP_COIN = defineRule<Clauses>({
   },
 });
 
-export const ARDEN_EFFECT_RULES = [EFFECT_ROLL_DIE, EFFECT_CLASH, EFFECT_FLIP_COIN].map(quietly);
+/**
+ * `effect.each-player-rolls-bar-highest`: "each player rolls a d20. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this
+ * combat." (CR 706.1, 706.2, 508.1a, 511.3: Chaos Dragon). Two sentences that `segment.ts` keeps together; the creature is the card itself. The engine's `eachPlayerRollsBarHighest`.
+ * Not read: another creature, another duration than this combat, "each opponent rolls", a roll without a size, "a die".
+ */
+export const EFFECT_EACH_PLAYER_ROLLS_BAR_HIGHEST = defineRule<Clauses>({
+  id: 'effect.each-player-rolls-bar-highest',
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 706.1 (Rolling a Die)',
+    'CR 706.2 (Rolling a Die)',
+    'CR 508.1a (Declare Attackers Step)',
+    'CR 511.3 (End of Combat Step)',
+  ],
+  examples: [
+    "each player rolls a d20. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this combat",
+    'Each player rolls a d6. If one or more opponents had the highest result, ~ can’t attack those players or planeswalkers they control this combat',
+  ],
+  rejects: [
+    'each player rolls a d20',
+    "each player rolls a d20. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this turn",
+    "each player rolls a d20. If one or more opponents had the highest result, target creature can't attack those players or planeswalkers they control this combat",
+    "each opponent rolls a d20. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this combat",
+    "each player rolls a die. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this combat",
+    "each player rolls a d1. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this combat",
+    "each player rolls a d20. If one or more opponents had the highest result, ~ can't attack those players this combat",
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `each player rolls a d(\\d+)\\. if one or more opponents had the highest result, ~ can['’]t attack those players or planeswalkers they control this combat${BOUNDARY}`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { value: match, span } = r.value;
+    const sides = Number(match[1]);
+    if (!(sides >= 2 && sides <= MOST_SIDES)) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          'effect.each-player-rolls-bar-highest',
+          'eachPlayerRollsBarHighest',
+          { sides: { kind: 'number', value: sides, span } },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const ARDEN_EFFECT_RULES = [
+  EFFECT_ROLL_DIE,
+  EFFECT_CLASH,
+  EFFECT_FLIP_COIN,
+  EFFECT_EACH_PLAYER_ROLLS_BAR_HIGHEST,
+].map(quietly);

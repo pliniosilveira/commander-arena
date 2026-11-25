@@ -127,6 +127,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 701.37c (Death Kiss): in the becomes monstrous trigger of the permanent itself X is the X of the monstrosity that made it monstrous.
+      if (ctx.monstrousX) {
+        const blockedMonstrous = needs('monstrousX');
+        return blockedMonstrous ?? { ok: true, value: { kind: 'monstrousX' }, rule };
+      }
       // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
       if (ctx.castTriggerX) {
         const blockedCast = needs('triggerSpellX');
@@ -243,6 +248,16 @@ export function lowerAmount(
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
       if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {
+        const moved = needs('movedCount');
+        if (moved !== null) return moved;
+        return { ok: true, value: { kind: 'movedCount' }, rule };
+      }
+      // CR 608.2c (Vengeful Regrowth): "Return up to three target land cards ... to the battlefield. Create that many ... tokens": after cards were moved, "that many" is how many.
+      if (
+        amount.thatMany === true &&
+        ctx.lastEffectKind === 'moveToZone' &&
+        ctx.owner === 'spell'
+      ) {
         const moved = needs('movedCount');
         if (moved !== null) return moved;
         return { ok: true, value: { kind: 'movedCount' }, rule };
@@ -1225,6 +1240,7 @@ function cardTypesInDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:monstrousX',
   'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
   'amount:lifePaidAsEntered',

@@ -34,14 +34,24 @@ describe('restrict until your next turn', () => {
     expect(issues(effect)).toEqual([]);
   });
 
-  test('another restriction may not', () => {
+  test('cantBeBlocked may last until your next turn (Sly Instigator)', () => {
     const effect: Effect = {
       kind: 'restrict',
       objects: EACH,
       restriction: 'cantBeBlocked',
       duration: 'untilYourNextTurn',
     };
-    expect(issues(effect).join('|')).toContain('duration of cantBlock only');
+    expect(issues(effect)).toEqual([]);
+  });
+
+  test('another restriction may not', () => {
+    const effect: Effect = {
+      kind: 'restrict',
+      objects: EACH,
+      restriction: 'attacksEachCombat',
+      duration: 'untilYourNextTurn',
+    };
+    expect(issues(effect).join('|')).toContain('duration of cantBlock and cantBeBlocked only');
   });
 });
 

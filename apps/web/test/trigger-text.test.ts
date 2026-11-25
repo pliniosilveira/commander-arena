@@ -219,6 +219,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   exiledFromLibraryOrGraveyard: { kind: 'exiledFromLibraryOrGraveyard', who: 'you' },
   putIntoGraveyard: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
   ringTempted: { kind: 'ringTempted' },
+  dungeonCompleted: { kind: 'dungeonCompleted' },
   doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
   exploits: { kind: 'exploits' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
@@ -355,6 +356,20 @@ describe('spells with {X} in their mana cost (Quandrix Unlimited group E)', () =
         ctx,
       ),
     ).toBeNull();
+  });
+});
+
+describe('"Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1)', () => {
+  test('is said as it is, and the dungeon trigger too', () => {
+    expect(
+      triggerWording(
+        { kind: 'attackBatch', who: 'you', atLeast: 1, attackedInitiativeHolder: true },
+        ctx,
+      ),
+    ).toBe('Whenever you attack the player who has the initiative');
+    expect(triggerWording({ kind: 'dungeonCompleted' }, ctx)).toBe(
+      'Whenever you complete a dungeon',
+    );
   });
 });
 

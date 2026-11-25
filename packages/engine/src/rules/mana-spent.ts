@@ -19,5 +19,7 @@ export function manaSpentOf(
   // Converge (issue 310, CR 105.1): the number of different colors among the mana spent.
   if (colors) return spent.colors?.length ?? 0;
   if (snow) return spent.snow ?? 0;
-  return fromType === undefined ? spent.total : (spent.fromTypes[fromType] ?? 0);
+  return fromType === undefined
+    ? spent.total
+    : (spent.fromTypes[fromType] ?? spent.fromSubtypes?.[fromType] ?? 0);
 }

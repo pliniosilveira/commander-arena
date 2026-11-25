@@ -4,11 +4,28 @@
  * quantity of one like `amount.for-each` does ("Draw a card for each time ~ was kicked."), so the
  * quantity is the count; the effect rules that take a counted amount take this one too.
  */
-import { pattern } from '../../combinators';
+import { type Parser, pattern } from '../../combinators';
 import type { IrAmount } from '../../ir/types';
 import { defineRule } from '../registry';
 
 const TIMES_KICKED = /for each time (it|~) was kicked(?![\p{L}\p{N}])/iu;
+const NUMBER_OF_TIMES_KICKED = /the number of times (it|~) was kicked(?![\p{L}\p{N}])/iu;
+
+/**
+ * "the number of times ~ was kicked", read after "where X is" and "equal to" (`amount/value.ts`; Marshal's Anthem, CR 702.33c, 107.3c): the engine's `timesKicked`, the kicks of the
+ * spell that is resolving or the permanent the ability is on. As for "for each time", the lowering decides which object "it" is. Not read: "the number of times that creature was
+ * kicked", "the number of times it was cast", "the number of times".
+ */
+export const TIMES_KICKED_VALUE: Parser<IrAmount> = (ctx, pos) => {
+  const r = pattern(NUMBER_OF_TIMES_KICKED)(ctx, pos);
+  if (!r.ok) return r;
+  const who = r.value[1] === '~' ? ('self' as const) : ('it' as const);
+  return {
+    ok: true,
+    value: { kind: 'timesKicked', who, span: { start: pos, end: r.pos } },
+    pos: r.pos,
+  };
+};
 
 /**
  * `amount.times-kicked`: "for each time it was kicked" and "for each time ~ was kicked" (a card's

@@ -1,6 +1,6 @@
 // The report of `pnpm ai:arena`: one match result as plain text. Pure, so a test can pin it.
 
-import type { MatchResult, TableResult } from '@commander-arena/ai';
+import type { MatchResult, TableReport, TableResult } from '@commander-arena/ai';
 
 const pct = (n: number, of: number): string => (of === 0 ? '-' : `${((100 * n) / of).toFixed(1)}%`);
 
@@ -102,6 +102,50 @@ export function formatTable(r: TableResult, context: { seed: number; command: st
     `fallbacks: ${r.fallbacks}, rejected actions: ${r.rejectedActions}`,
     ...r.labels.map((label, k) => `reasons ${k} ${label}: ${reasonLine(r.reasons[k] ?? {})}`),
   ];
+  return lines.join('\n');
+}
+
+const avg = (sum: number, n: number): string => (n === 0 ? '-' : (sum / n).toFixed(1));
+
+/**
+ * The measuring report of a table run made with events (`tableReport`): survival, the race, blocks and
+ * removal of each agent, in plain text. Counts come with their denominator so a rate can be read off.
+ */
+export function formatTableReport(r: TableReport): string {
+  const slot = (label: string, rows: TableReport['bySeat']): string =>
+    `${label}: ${rows
+      .map(
+        (p, i) =>
+          `${i} ${p.wins}/${p.games} (${pct(p.wins, p.games)}) place ${p.meanPlace.toFixed(2)}`,
+      )
+      .join(' | ')}`;
+  const lines: string[] = [
+    `table report: ${r.games} games at ${r.seats} seats`,
+    slot('by seat number', r.bySeat),
+    slot('by turn order (0 took the first turn)', r.byPosition),
+    '',
+  ];
+  for (const a of r.agents) {
+    const s = a.survival;
+    const t = a.attack;
+    const b = a.block;
+    const m = a.removal;
+    const causes = Object.entries(s.causes)
+      .map(([c, n]) => `${c} ${n}`)
+      .join(', ');
+    lines.push(
+      `${a.label}`,
+      `  survival: mean place ${s.meanPlace.toFixed(2)} (1 best), wins ${a.wins}, first out ${s.firstOut}, eliminated ${s.eliminated}/${s.games}` +
+        `, mean elimination turn ${s.meanEliminationTurn === null ? '-' : s.meanEliminationTurn.toFixed(1)}${causes === '' ? '' : `, by ${causes}`}`,
+      `  attacks: ${t.attacks}, all-in ${t.allIn} (${pct(t.allIn, t.attacks)}), mean power ${t.meanPower.toFixed(1)}, all-in then out within a round ${t.allInThenOut}`,
+      `  aim: at the lowest-life opponent ${t.atLowest} (${pct(t.atLowest, t.atLowest + t.notLowest)}), at another ${t.notLowest}; ties for the lowest ${t.ties}, of which at the lowest seat number ${t.tiesAtLowestSeat} (${pct(t.tiesAtLowestSeat, t.ties)}); all-in while an opponent's board could deal my life ${t.exposedAllIn}, then out within a round ${t.exposedAllInOut}`,
+      `  blocks (declarations facing an attack): ${b.declarations}, no block ${b.noBlocks} (${pct(b.noBlocks, b.declarations)}), lethal unblocked ${b.lethal}` +
+        `, damage through ${b.unblocked}, avoidable ${b.avoidable} (${pct(b.avoidable, b.unblocked)}), avoidable >=5 in ${b.avoidableAtLeast5}, >=10 in ${b.avoidableAtLeast10}` +
+        `, per declaration ${avg(b.unblocked, b.declarations)} through / ${avg(b.avoidable, b.declarations)} avoidable`,
+      `  removal: ${m.casts} aimed at a permanent, tokens ${m.tokens}, by value <2 / 2-4 / 4-6 / 6+: ${m.bands.join(' / ')}` +
+        `, mean share of the best target ${m.meanShareOfBest.toFixed(2)}, at an attacker ${m.atAttacker}, at one attacking the caster ${m.atAttackerOfMine}`,
+    );
+  }
   return lines.join('\n');
 }
 

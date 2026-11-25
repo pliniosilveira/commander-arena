@@ -371,6 +371,52 @@ export const EFFECT_RETURN_TO_COMMAND_AT_END_STEP = defineRule<Clauses>({
 });
 
 /**
+ * `effect.return-to-hand-at-end-step`: "Return it to your hand at the beginning of the next end step." (Nahiri, the Harbinger; CR 603.7, 603.7c, 400.7: a delayed triggered ability about the
+ * permanent the instruction before it put onto the battlefield; once that object has changed zones it is a new object and the ability does nothing). The engine's `delayedTrigger` at the end
+ * step of each turn, whose effect moves the `moved` objects to their owner's hand. Not read: "your next end step", another object than "it", another zone, another step, "its owner's hand".
+ */
+export const EFFECT_RETURN_TO_HAND_AT_END_STEP = defineRule<Clauses>({
+  id: 'effect.return-to-hand-at-end-step',
+  family: 'effect',
+  leading: ['return'],
+  cites: [
+    'CR 603.7 (Delayed Triggered Abilities)',
+    'CR 603.7c (Delayed Triggered Abilities)',
+    'CR 400.7 (General)',
+  ],
+  examples: [
+    'return it to your hand at the beginning of the next end step',
+    'Return it to your hand at the beginning of the next end step',
+  ],
+  rejects: [
+    'return it to your hand at the beginning of your next end step',
+    'return it to your hand at the beginning of the next end step and draw a card',
+    'return it to your hand',
+    'return it to your hand at the beginning of the next end',
+    'return them to your hand at the beginning of the next end step',
+    "return it to its owner's hand at the beginning of the next end step",
+    'return target creature to your hand at the beginning of the next end step',
+    'return ~ to your hand at the beginning of the next end step',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.return-to-hand-at-end-step';
+    const r = sequence(
+      literal('return '),
+      IT(),
+      pattern(/ to your hand at the beginning of the next end step(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'returnToHandAtEndStep', { objects: r.value[1] }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.put-commander-from-command-zone`: "You may put a commander you own from the command zone onto the battlefield." (issue 103, Hellkite Courser; CR 903.3, 400.7, 110.2a:
  * the card enters under the control of the player who puts it; CR 608.2d: the player chooses it as the instruction runs). A commander its owner designated, among the cards in the
  * command zone of that player; with "you may" the player may choose none. Not read: another zone, "target", a number, "under its owner's control", tapped, "a commander" of any owner.
@@ -441,6 +487,7 @@ export const EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE = defineRule<Clauses>({
 export const GISA_G4_EFFECT_RULES = [
   quietly(EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE),
   quietly(EFFECT_RETURN_TO_COMMAND_AT_END_STEP),
+  quietly(EFFECT_RETURN_TO_HAND_AT_END_STEP),
   quietly(EFFECT_GAIN_KEYWORD_FOR_GOOD),
   quietly(EFFECT_EXILE_AT_END_STEP),
   quietly(EFFECT_EXILE_INSTEAD_WHEN_LEAVING),

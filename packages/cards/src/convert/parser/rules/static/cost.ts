@@ -788,6 +788,7 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
       'cost.behold',
       'cost.sacrifice',
       'cost.discard',
+      'cost.discard-filtered',
       'cost.discard-x',
       'cost.pay-life',
       'cost.pay-x-life',
@@ -832,6 +833,9 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice an artifact or creature.',
     'As an additional cost to cast ~, sacrifice a land.',
     'As an additional cost to cast ~, discard two cards.',
+    // CR 701.9, 118.8 (Magmatic Insight): the card discarded is of a kind.
+    'As an additional cost to cast ~, discard a land card.',
+    'As an additional cost to cast ~, discard a creature card.',
     'As an additional cost to cast ~, pay 3 life.',
     'As an additional cost to cast ~, pay {2}.',
     'As an additional cost to cast ~, sacrifice a creature and discard a card.',
@@ -872,9 +876,10 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, you may sacrifice a creature, discard a card, or pay 4 life.',
     'As an additional cost to cast ~, sacrifice an artifact or creature or.',
     'As an additional cost to cast ~, sacrifice a creature or.',
-    'As an additional cost to cast ~, discard a creature card.',
     'As an additional cost to cast ~, discard X cards at random.',
     'As an additional cost to cast ~, discard Y cards.',
+    'As an additional cost to cast ~, discard a land.',
+    'As an additional cost to cast ~, discard two land cards.',
     'As an additional cost to cast ~, behold another Jace or pay {1}.',
     'As an additional cost to cast ~, exile a card from your graveyard.',
     'As an additional cost to cast ~, tap an untapped creature you control.',
@@ -1246,6 +1251,71 @@ export const STATIC_FIRST_X_SPELL_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.first-typed-spell-cost-reduction`: "The first artifact spell you cast each turn costs {1} less to cast." (Artifact Class; CR 118.7a, 601.2f, 601.2i, 604.2: a static ability
+ * of a permanent that reduces the generic mana of the first spell of a card type its controller casts each turn, read as the cost is determined). The engine's `costReduction` of the
+ * spells of the type with `firstOfTypeThisTurn`. Not read: "first" without a card type (a spell with nothing before it), two types, another caster, "each turn" missing, "more", a
+ * colored reduction.
+ */
+export const STATIC_FIRST_TYPED_SPELL_COST_REDUCTION = defineRule<IrStatic>({
+  id: 'static.first-typed-spell-cost-reduction',
+  family: 'static',
+  leading: ['The', 'the'],
+  cites: [
+    'CR 118.7a (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'The first artifact spell you cast each turn costs {1} less to cast.',
+    'The first creature spell you cast each turn costs {2} less to cast.',
+    'The first instant spell you cast each turn costs {1} less to cast for each +1/+1 counter on ~.',
+  ],
+  rejects: [
+    'The first artifact spell you cast each turn costs {1} less to cast',
+    'The first spell you cast each turn costs {1} less to cast.',
+    'The first artifact spell your opponents cast each turn costs {1} less to cast.',
+    'The first artifact spell you cast costs {1} less to cast.',
+    'The first artifact spell you cast each turn costs {1} more to cast.',
+    'The first artifact spell you cast each turn costs {W} less to cast.',
+    'The first artifact or creature spell you cast each turn costs {1} less to cast.',
+    'The first artifact spells you cast each turn costs {1} less to cast.',
+    'The second artifact spell you cast each turn costs {1} less to cast.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.first-typed-spell-cost-reduction';
+    const head = pattern(
+      /[Tt]he first (artifact|creature|enchantment|instant|sorcery|planeswalker|battle) spell you cast each turn costs /u,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const r = sequence(reduction(), PERIOD)(ctx, head.pos);
+    if (!r.ok) return r;
+    const [amount] = r.value;
+    const type = head.value[1] ?? '';
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: {
+        controller: 'you',
+        types: [type],
+        firstOfTypeThisTurn: true,
+        raw: ctx.text.slice(pos, head.pos - ' costs '.length),
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: head.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: statement(id, subject, { kind: 'costReduction', amount }, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 const ORDINALS: Readonly<Record<string, number>> = { second: 2, third: 3, fourth: 4, fifth: 5 };
 
 /**
@@ -1322,6 +1392,7 @@ export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION_THIS_WAY,
   STATIC_FIRST_X_SPELL_COST_REDUCTION,
   STATIC_NTH_SPELL_COST_REDUCTION,
+  STATIC_FIRST_TYPED_SPELL_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
   STATIC_SPELLS_AFFINITY,
   // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.

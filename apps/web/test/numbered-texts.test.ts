@@ -5,6 +5,7 @@ import { type GameEvent, type GameState, getView } from '@commander-arena/engine
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { describeEvent } from '../src/game/describe';
+import { giftedText } from '../src/game/recursion-text';
 import {
   bareMidPossessiveOf,
   midNameOf,
@@ -176,5 +177,14 @@ describe('the strips and the prompt of the board', () => {
     expect(priorityPrompt(theirs, new Map())).toBe("Opponent 2's turn, Main 1");
     const two = { ...getView(table(2).state, 0), activeSeat: 1 };
     expect(priorityPrompt(two, new Map())).toBe("Opponent's turn, Main 1");
+  });
+});
+
+describe('the gift promised in the log line of a cast', () => {
+  test('two seats keep "Opponent", more seats number the opponent', () => {
+    expect(giftedText(1, 0)).toBe(', promising Opponent a gift');
+    expect(giftedText(0, 0)).toBe(', promising you a gift');
+    expect(giftedText(2, 0, 3)).toBe(', promising Opponent 2 a gift');
+    expect(giftedText(undefined, 0, 3)).toBe('');
   });
 });

@@ -12,7 +12,6 @@ import {
   phaseLabel,
   playBlockers,
   progressFraction,
-  sampleOf,
   splitNameProblems,
   validationSummary,
 } from '../src/ui/import/model';
@@ -201,17 +200,6 @@ describe('name problems and play blockers', () => {
     expect(lines).toContain('2 names could not be resolved.');
     expect(lines).toContain('1 close match still need your answer.');
     expect(lines).toContain('No commander is chosen yet.');
-  });
-});
-
-describe('sample', () => {
-  test('is the real list of the first installed precon, and nothing when none is installed', () => {
-    expect(sampleOf([])).toBeNull();
-    const first = { name: 'SYNTHETIC one', decklist: 'Commander\n1 X\n' };
-    expect(sampleOf([first, { name: 'SYNTHETIC two', decklist: 'y' }])).toEqual({
-      name: 'SYNTHETIC one',
-      text: 'Commander\n1 X\n',
-    });
   });
 });
 

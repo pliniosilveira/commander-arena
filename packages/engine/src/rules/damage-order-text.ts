@@ -48,6 +48,16 @@ export function modifierText(
   }
   if (origin.kind === 'static') {
     const { prevention } = origin;
+    if (prevention.around === 'dealtByThis') {
+      return `Prevent all ${SCOPE_WORDS[prevention.scope]} that would be dealt by ${nameOf(state, prevention.object)}`;
+    }
+    if (prevention.around === 'dealtToYouAndYourPlaneswalkers') {
+      const but = prevention.keep === undefined ? 'all' : `all but ${prevention.keep} of the`;
+      return `Prevent ${but} ${SCOPE_WORDS[prevention.scope]} that would be dealt to its controller and their planeswalkers`;
+    }
+    if (prevention.around === 'dealtToYouAndYourOtherPermanents') {
+      return `Prevent all ${SCOPE_WORDS[prevention.scope]} that would be dealt to its controller and their other permanents (${nameOf(state, prevention.object)})`;
+    }
     return `Prevent all ${SCOPE_WORDS[prevention.scope]} that would be dealt to ${nameOf(state, prevention.object)}`;
   }
   const c = origin.shield.change;

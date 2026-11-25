@@ -3,7 +3,7 @@
  * D-303, CR 700.3, 701.20): the engine's `revealAndSeparate`. The three sentences are one instruction (the second and third only make sense with the cards the first reveals), so
  * `splitSentences` keeps them together (`segment.ts`) and one rule reads the whole.
  */
-import { literal, type Parser, satisfy, sequence } from '../../combinators';
+import { choice, literal, map, type Parser, satisfy, sequence } from '../../combinators';
 import type { IrArg } from '../../ir/types';
 import { defineRule, family } from '../registry';
 import { type Clauses, single } from './operands';
@@ -54,10 +54,30 @@ export const EFFECT_REVEAL_SEPARATE_PILES = defineRule<Clauses>({
       literal('reveal the top '),
       TWO_OR_MORE,
       literal(
-        ' cards of your library. an opponent separates those cards into two piles. put one pile into your hand and the other into your graveyard',
+        ' cards of your library. an opponent separates those cards into two piles. put one pile into your hand and the other ',
+      ),
+      // Jace, Architect of Thought (CR 401.4): the other pile may go on the bottom of the library in any order, where Fact or Fiction puts it into the graveyard.
+      choice(
+        map(literal('into your graveyard'), () => false),
+        map(literal('on the bottom of your library in any order'), () => true),
       ),
     ),
-    ([, count]) => ({ verb: 'revealAndSeparate', args: { count } }),
+    ([, count, , bottom]) => ({
+      verb: 'revealAndSeparate',
+      args: {
+        count,
+        ...(bottom
+          ? {
+              bottom: {
+                kind: 'flag' as const,
+                value: true,
+                span: count.span,
+                rule: 'effect.reveal-separate-piles',
+              },
+            }
+          : {}),
+      },
+    }),
   ),
 });
 

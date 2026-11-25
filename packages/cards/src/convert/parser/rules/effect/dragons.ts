@@ -140,6 +140,7 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'until end of turn, you may play that card',
     'you may play those cards until your next end step',
     'you may play those cards until the end of your next turn',
+    'you may play cards exiled this way until the end of your next turn',
     'you may cast it this turn',
     'you may cast that card this turn',
     'cast that card this turn',

@@ -21,7 +21,7 @@
 
 import '../corpus/register.ts';
 import { parseArgs } from 'node:util';
-import type { Agent } from '@commander-arena/ai';
+import { newLostSeatCounters, watchLostSeats } from './lost-seat-counters.ts';
 
 const KINDS = ['random', 'casual', 'greedy', 'heuristic'] as const;
 
@@ -76,36 +76,7 @@ if (values.precons) {
   if (pool.length < players) fail('--precons needs at least as many playable precons as players');
 }
 
-const anomalies = {
-  permanentsOfLostPlayer: 0,
-  activeSeatLost: 0,
-  lostSeatAsked: 0,
-  stackOfLostPlayer: 0,
-};
-/** Counts what the view of each decision shows about players who have lost; plays like the inner agent. */
-function watched(inner: Agent): Agent {
-  const wrapper: Agent = {
-    get name() {
-      return inner.name;
-    },
-    async decide(view, decision, ctx) {
-      const lost = new Set(view.seats.filter((s) => s.hasLost).map((s) => s.id));
-      if (lost.size > 0) {
-        if (view.battlefield.some((o) => lost.has(o.controller))) {
-          anomalies.permanentsOfLostPlayer += 1;
-        }
-        if (lost.has(view.activeSeat)) anomalies.activeSeatLost += 1;
-        if (lost.has(view.viewer)) anomalies.lostSeatAsked += 1;
-        if (view.stack.some((o) => lost.has(o.controller))) anomalies.stackOfLostPlayer += 1;
-      }
-      return inner.decide(view, decision, ctx);
-    },
-  };
-  if (inner.fallbacks !== undefined) {
-    Object.defineProperty(wrapper, 'fallbacks', { get: () => inner.fallbacks });
-  }
-  return wrapper;
-}
+const anomalies = newLostSeatCounters();
 const factory = AGENT_FACTORIES[kind as (typeof KINDS)[number]];
 
 const totals = { rejected: 0, fallbacks: 0, turns: 0 };
@@ -120,7 +91,9 @@ for (let i = 0; i < games; i += 1) {
     seed,
     decks: decks.filter((d): d is NonNullable<typeof d> => d !== undefined),
   };
-  const agents = Array.from({ length: players }, (_, s) => watched(factory.create(seed * 10 + s)));
+  const agents = Array.from({ length: players }, (_, s) =>
+    watchLostSeats(factory.create(seed * 10 + s), anomalies),
+  );
   let key: string;
   try {
     const run = await runGame(config, agents, limits);

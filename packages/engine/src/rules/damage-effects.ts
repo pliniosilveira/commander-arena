@@ -169,6 +169,35 @@ export function runDealDamageToSelf(
 }
 
 /**
+ * "Each Dragon you control deals 1 damage to that creature" (CR 120.3; Sarkhan the Masterless): every source the selector names that is on the battlefield deals `amount` damage to each
+ * object `to` names, as a damage event of its own. Like every damage instruction it returns the question of a replacement effect (CR 616.1) and runs again with the answer.
+ */
+export function runDealDamageFromEach(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'dealDamageFromEach' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const sources = resolveObjects(state, effect.sources, ctx, targets).filter(
+    (id) => state.objects[id]?.zone === 'battlefield',
+  );
+  const recipients = resolveObjects(state, effect.to, ctx, targets);
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const source of sources) {
+    for (const id of recipients) {
+      if (next.objects[id]?.zone !== 'battlefield') continue;
+      const r = dealDamageAsking(next, source, { kind: 'object', id }, effect.amount, false, flow);
+      if (r.kind === 'asked') return asking(state, r);
+      next = r.state;
+      events.push(...r.events);
+    }
+  }
+  return done(next, events);
+}
+
+/**
  * "Each creature deals 1 damage to its controller" (CR 120.3, 109.4, 608.2h; issue 279, Rakdos Charm): every object the selector names on the battlefield is the source of one
  * damage event of its own to the player who controls it, the controllers read from the state the instruction began with (so a change of control in the middle of the list changes
  * nothing). Like every damage instruction it returns the question of a replacement effect (CR 616.1) with nothing dealt, and runs again with the answer.

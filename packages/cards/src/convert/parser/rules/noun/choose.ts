@@ -556,6 +556,58 @@ export const NOUN_EACH_PERMANENT_THEY_CONTROL = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.a-permanent-they-control`: "a creature they control" (Agitator Ant, CR 608.2d, 101.4): one permanent of the kind that the player asked chooses among those they control, as
+ * the instruction of "each player may put ... on a creature they control" resolves. The controller is the player the sentence names ("they"; the lowering reads it only where
+ * the asked player acts as "you", never for another sentence). Not read: a count, "another", "other", a controller said twice, "an opponent controls".
+ */
+export const NOUN_A_PERMANENT_THEY_CONTROL = defineRule<IrNoun>({
+  id: 'noun.a-permanent-they-control',
+  family: 'noun',
+  leading: ['a', 'an'],
+  cites: ['CR 608.2d (Resolving Spells and Abilities)', 'CR 101.4 (Players)'],
+  examples: ['a creature they control', 'an artifact they control'],
+  rejects: [
+    'a creature',
+    'a creature you control',
+    'a creature they control they control',
+    'two creatures they control',
+    'another creature they control',
+    'a creature an opponent controls',
+    'a creature that player controls',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      pattern(/an? /iu),
+      permanentPhrase(false, 'all'),
+      literal(' '),
+      family<IrNoun>('noun', { only: ['noun.they'] }),
+      pattern(new RegExp(` control${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter, , player] = r.value;
+    if (filter.controller !== undefined) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: {
+        kind: 'noun',
+        det: 'a',
+        filter: withoutZone({
+          ...filter,
+          controller: { noun: player },
+          raw: ctx.text.slice(pos, r.pos),
+        }),
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: r.pos },
+        rule: 'noun.a-permanent-they-control',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `noun.a-token`: "a token", "another token", "two tokens": the acting player chooses among the tokens they control (CR 111.1, 701.21a), as in
  * "Sacrifice a token". A token of any kind: no type word, so `noun.a-permanent` (which wants one) does not read it.
  */
@@ -600,6 +652,8 @@ export const CHOOSE_NOUN_RULES = [
   NOUN_A_GREATEST_PERMANENT,
   // Meren deck, Braids: "a permanent of their choice that shares a card type with it", before the plain "a permanent" that would read its first words.
   ...BRAIDS_NOUN_RULES,
+  // Before the plain "a creature", which would stop at "they control" (Agitator Ant).
+  NOUN_A_PERMANENT_THEY_CONTROL,
   NOUN_A_PERMANENT,
   NOUN_EACH_OF_UP_TO_PERMANENTS,
   NOUN_A_TOKEN,

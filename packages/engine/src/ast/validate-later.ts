@@ -123,6 +123,13 @@ export function checkDelayedTrigger(
     }
     return;
   }
+  // Vronos, Masked Inquisitor (CR 603.7c, 702.26a): "... phase out at the beginning of the next end step", about the targets of the ability as they are when it is created.
+  if (kind === 'phaseOut') {
+    if (kindOf((inner as Extract<Effect, { kind: 'phaseOut' }>).objects) !== 'target') {
+      issue(out, `${path}.effect.objects`, 'a delayed phase out names the targets of the ability');
+    }
+    return;
+  }
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
     // Issue 103 (CR 903.9, 603.7c, 400.7j): "Return it to the command zone at the beginning of the next end step", about the commander an earlier effect of the same

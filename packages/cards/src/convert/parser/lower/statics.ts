@@ -149,6 +149,8 @@ function groupSubject(noun: IrNoun, keywords = false): LowerResult<StaticSubject
 }
 
 function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResult<StaticSubject> {
+  // The cards outside the battlefield that the noun also names are given types by `lowerGroupAndCardsOffBattlefield` alone; any other reading would drop them.
+  if (noun.alsoCardsYouOwnOffBattlefield === true) return failure(noun);
   // `~` is the ability's own permanent, or the spell for "This spell can't be countered".
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
@@ -770,6 +772,12 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':
       return ['static:cantBeSacrificed'];
+    case 'combatCreatureLimit':
+      return ['static:combatCreatureLimit'];
+    case 'drawLimit':
+      return ['static:drawLimit'];
+    case 'preventDamageAround':
+      return ['static:preventDamageAround'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -815,10 +823,13 @@ function readsCombat(filter: ObjectFilter): boolean {
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
     // D-416 (CR 700.9): "modified" is read from the counters and attachments (`subjectAffects`, issue 345), so a subject may name it.
-    // CR 701.15b: the designation is read from the game, which `derive` does not have while it matches a subject.
-    filter.goaded === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, names a goaded creature (CR 701.15b). */
+function readsGoaded(filter: ObjectFilter): boolean {
+  return filter.goaded === true || (filter.anyOf?.some(readsGoaded) ?? false);
 }
 
 /** "You have no maximum hand size." (CR 402.2). */
@@ -1056,6 +1067,15 @@ function lowerPart(
   // Resolution-only values cannot be read by a static ability.
   if (subject.value.kind === 'filter' && readsCombat(subject.value.filter))
     return failure(part.subject);
+  // CR 701.15b, 613.11 (Bothersome Quasit): "goaded creatures your opponents control can't block" is a restriction, read where the rule acts after the layers and after the
+  // abilities that goad (`derive-statics.ts`); any other effect on a goaded group reads the designation before it is settled, which `validateCard` would refuse.
+  if (
+    subject.value.kind === 'filter' &&
+    readsGoaded(subject.value.filter) &&
+    part.effects.some((e) => e.kind !== 'restriction')
+  ) {
+    return failure(part.subject);
+  }
   const needs: FeatureRef[] = ['ability:static', `staticSubject:${subject.value.kind}`];
   if (subject.value.kind === 'filter' && namesKeyword(subject.value.filter)) {
     needs.push('selector:keywords');
@@ -1329,6 +1349,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
+  // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types."
+  if (statement.subject.alsoCardsYouOwnOffBattlefield === true) {
+    return lowerGroupAndCardsOffBattlefield(ability, ctx);
+  }
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
     ...(statement.also ?? []),
@@ -1790,6 +1814,57 @@ function lowerOwnStatic(
   };
 }
 
+/**
+ * "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types." (Dune Chanter, CR 613.1d, 205.1b): two static abilities in layer 4,
+ * the engine's `setTypes` for the permanents and `giveTypesToCardsOffBattlefield` for the cards of the same kind its controller owns anywhere else. Only the one effect "are [types] in addition
+ * to their other types", with no condition and no other subject: the cards outside the battlefield take no other effect (a keyword or a bonus would have nothing to work on there).
+ */
+function lowerGroupAndCardsOffBattlefield(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const [only, ...more] = statement.effects;
+  if (
+    only?.kind !== 'addTypes' ||
+    more.length > 0 ||
+    statement.condition !== undefined ||
+    statement.also !== undefined
+  ) {
+    return failure(ability);
+  }
+  const { alsoCardsYouOwnOffBattlefield: _also, ...plain } = statement.subject;
+  const group = subjectOf(plain, ctx);
+  if (!group.ok) return group;
+  if (group.value.kind !== 'filter' || group.value.other === true) return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'staticSubject:filter',
+    'static:setTypes',
+    'static:giveTypesToCardsOffBattlefield',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const battlefield = effectOf(only, group.value, ability, ctx);
+  if (!battlefield.ok) return battlefield;
+  const { controller: _you, ...what } = group.value.filter;
+  return {
+    ok: true,
+    value: [
+      { kind: 'static', static: battlefield.value },
+      {
+        kind: 'static',
+        static: {
+          kind: 'giveTypesToCardsOffBattlefield',
+          what: { ...what, controller: 'you' },
+          subtypes: [...only.subtypes],
+          ...(only.types === undefined ? {} : { types: only.types as CardType[] }),
+        },
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** Features the static lowerings can name, for the dimension test. */
 export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
@@ -1809,6 +1884,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:setTypes',
   'static:loseTypes',
   'static:allCreatureTypes',
+  'static:giveTypesToCardsOffBattlefield',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
   'static:grantAlternativeCostToSpells',
