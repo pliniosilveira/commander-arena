@@ -167,6 +167,11 @@ export interface IrNoun extends IrNode {
   /** another, other than ~ */
   readonly other: boolean;
   /**
+   * "lands you control and land cards you own that aren't on the battlefield" (Dune Chanter, CR 613.1d): the group is `filter` (the permanents of a type you control) and also the cards of that type you own outside the
+   * battlefield. Only a static "are Deserts in addition to their other types" reads it; every other lowering refuses a noun that has it.
+   */
+  readonly alsoCardsYouOwnOffBattlefield?: true;
+  /**
    * "each of up to two other targets" (stage P34, D-152, CR 115.3): the targets of this slot are none of the targets of the slot of the same
    * ability before it, which a target noun without it may share.
    */
@@ -1385,6 +1390,8 @@ export interface IrBasePt extends IrNode {
   readonly toughness: number;
   /** "base power and toughness X/X" (CR 107.3, 613.4b): the X of the ability; `power` and `toughness` are 0 and are not read. */
   readonly x?: true;
+  /** "becomes an X/X ... creature, where X is the greatest mana value among your commanders" (CR 107.3c, 613.4b): the amount the text defines X as, written inside the clause; `power` and `toughness` are 0 and are not read. */
+  readonly amount?: IrAmount;
   /** "become equal to ~'s power and toughness" (CR 613.4b, 611.2c): the source's power and toughness as the effect resolves; `power` and `toughness` are 0 and are not read. */
   readonly fromSource?: true;
 }

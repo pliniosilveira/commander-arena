@@ -9139,6 +9139,19 @@ export type StaticEffect =
       readonly alsoCardsAndSpells?: true;
     }
   /**
+   * "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types." (Dune Chanter, CR 613.1d, 205.1b, 604.3, 305.6): the cards its
+   * controller owns outside the battlefield and the stack (a graveyard, a hand, a library, exile, the command zone: the effect works in every zone, as Changeling does, CR 702.73a) that
+   * `what` matches (`controller` is absent or "you", read as "you own"; no zone, owner or combat) also have these `subtypes` and `types`, in layer 4 with the permanent's timestamp. At least one list
+   * is not empty. The permanents on the battlefield are the business of a `setTypes` static of their own. What `what` matches is read from the object before this effect (CR 613.8: no effect of
+   * this kind depends on another one). A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'giveTypesToCardsOffBattlefield';
+      readonly what: ObjectFilter;
+      readonly subtypes?: readonly Subtype[];
+      readonly types?: readonly CardType[];
+    }
+  /**
    * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (CR 702.141a, 613.1f, 604.3, 202.3): a static ability of a permanent on the battlefield that
    * gives the cards in its controller's graveyard that `what` matches (the cards as they are in the graveyard: its types and the like; no zone, controller or owner) an Encore ability
    * whose cost is the generic mana of the card's own mana value. It works from the graveyard only (the ability functions there), is read as the cards are looked at (a card that enters

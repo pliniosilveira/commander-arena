@@ -512,6 +512,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'All creatures have haste.',
     'All Slivers have flying.',
     'Lands you control have "{T}: Add {G}."',
+    // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): the cards you own outside the battlefield too.
+    "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types.",
     'Other creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.',
     "Juggernauts you control can't be blocked by Walls.",
     // Issue 133 (Shifting Sliver, CR 509.1b): the blockers are the creatures that are not of the type.
@@ -560,10 +562,13 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Nontoken creatures you control are Desert lands in addition to their other types.',
     'Nontoken creatures you control are Forest land in addition to their other types.',
     'Creatures you control that are Zombies or tokens get +1/+1.',
+    "Lands you control and land cards you own that aren't on the battlefield are Deserts.",
   ],
   parse: statement(
     'static.permanents',
     [
+      // Desert Bloom deck, group G5 (Dune Chanter): before `noun.plain-permanents`, which would stop after "lands you control".
+      'noun.permanents-and-cards-off-battlefield',
       'noun.plain-permanents',
       // Issue 345 (Tavern Brawler): "Commander creatures you own have ...".
       'noun.commander-creatures-you-own',

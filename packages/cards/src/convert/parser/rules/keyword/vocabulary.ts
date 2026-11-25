@@ -204,6 +204,8 @@ export const LANDWALKS: readonly (readonly [string, string])[] = [
   ['swampwalk', 'Swamp'],
   ['mountainwalk', 'Mountain'],
   ['forestwalk', 'Forest'],
+  // CR 702.14a: the land type may be any land type; Desert is one (Hazezon, Shaper of Sand).
+  ['desertwalk', 'Desert'],
   ['nonbasic landwalk', 'nonbasic'],
 ];
 

@@ -750,6 +750,38 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.alsoCardsAndSpells`, 'alsoCardsAndSpells is true or absent');
       }
       break;
+    case 'giveTypesToCardsOffBattlefield':
+      // CR 613.1d: the cards a filter names outside the battlefield get types in addition to their own.
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'giveTypesToCardsOffBattlefield needs a filter of the cards');
+        break;
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            (f.controller !== undefined && f.controller !== 'you') ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          "the cards are named by what they are: no zone, owner, stackKind or combat, and the controller is 'you' or absent",
+        );
+      }
+      checkEnumList(out, `${path}.types`, s.types, CARD_TYPES, 'card type');
+      if (
+        (s.types === undefined || s.types.length === 0) &&
+        (s.subtypes === undefined || s.subtypes.length === 0)
+      ) {
+        issue(out, path, 'giveTypesToCardsOffBattlefield names at least one type or subtype');
+      }
+      break;
     case 'grantUnearthToGraveyardCards':
     case 'grantEncoreToGraveyardCards':
       // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.

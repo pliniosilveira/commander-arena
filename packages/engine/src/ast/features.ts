@@ -1701,6 +1701,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'legendRuleDoesntApply',
     // "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types." (CR 613.1d), "Each Sliver creature card in your graveyard has encore {X}" (CR 702.141a).
     'giveChosenCreatureType',
+    // "Land cards you own that aren't on the battlefield are Deserts in addition to their other types." (CR 613.1d, 205.1b).
+    'giveTypesToCardsOffBattlefield',
     'grantEncoreToGraveyardCards',
     // "Each creature card in your graveyard that's a Cleric ... has unearth {1}{B}" (CR 702.84a).
     'grantUnearthToGraveyardCards',
@@ -2942,6 +2944,8 @@ export const STATIC_KINDS = [
   'legendRuleDoesntApply',
   /** "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types" (CR 613.1d): the engine's `giveChosenCreatureType`. */
   'giveChosenCreatureType',
+  /** "Land cards you own that aren't on the battlefield are Deserts in addition to their other types" (CR 613.1d, 205.1b, Dune Chanter): the engine's `giveTypesToCardsOffBattlefield`. */
+  'giveTypesToCardsOffBattlefield',
   /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
   'grantEncoreToGraveyardCards',
   /** "Each creature card in your graveyard that's a Cleric has unearth {1}{B}" (CR 702.84a): the engine's `grantUnearthToGraveyardCards`. */
