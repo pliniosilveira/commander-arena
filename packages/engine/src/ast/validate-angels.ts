@@ -510,7 +510,11 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) === 'creatureAttacks' || kindOf(s.cause) === 'permanentEnters') {
+        if (
+          kindOf(s.cause) === 'creatureAttacks' ||
+          kindOf(s.cause) === 'creatureDealsCombatDamageToPlayer' ||
+          kindOf(s.cause) === 'permanentEnters'
+        ) {
           // Issue 81 (CR 603.2d): a creature attacking, no parameter. Issue 105: the entering permanent may be limited to card types.
           const entering = (s.cause as { entering?: unknown }).entering;
           if (
@@ -526,7 +530,7 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
           issue(
             out,
             `${path}.cause`,
-            'the cause of an additional trigger is castOrCopySpell, creatureAttacks or permanentEnters',
+            'the cause of an additional trigger is castOrCopySpell, creatureAttacks, creatureDealsCombatDamageToPlayer or permanentEnters',
           );
         } else {
           const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;

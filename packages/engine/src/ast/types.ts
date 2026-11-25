@@ -9364,6 +9364,8 @@ export type StaticEffect =
         | { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter }
         // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
         | { readonly kind: 'creatureAttacks' }
+        // Felix Five-Boots (CR 603.2d, 510.2): "If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature the doubler's controller controls dealing combat damage to a player (`dealsCombatDamage` to a player, or a `combatDamageBatch` of creatures you control) counts.
+        | { readonly kind: 'creatureDealsCombatDamageToPlayer' }
         // Yarok, the Desecrated (CR 603.2d, 603.6a): "If a permanent entering causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a permanent entering the battlefield, under any player's control (`entersBattlefield`, `entersBatch`, `landfall`) counts.
         | {
             readonly kind: 'permanentEnters';
