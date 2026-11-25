@@ -994,9 +994,6 @@ export function lowerCondition(
         ...(test.other === true ? { other: true as const } : {}),
       });
     }
-    case 'youAreDefendingPlayer':
-      // Only the intervening "if" of an `attacks` trigger, which the trigger's lowering folds into the event (`at`).
-      return failure(c, []);
     case 'hadCounters':
       // Only the intervening "if" of a trigger about a permanent that left, which the trigger's lowering folds into its filter.
       return failure(c, []);
