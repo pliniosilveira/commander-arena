@@ -11,13 +11,13 @@
  * combat decision the attack or the block search. A search starts its next candidate only when the work so
  * far plus what one of its own candidates has cost on average fits in `WORK_BUDGET`, and a play-out still
  * running at `WORK_LIMIT` is dropped. A decision therefore does the same work on a slow device as on a fast
- * one, and the benchmark (a logical clock) plays as the web app does.
+ * one, and the benchmark (a logical clock) plays as the web app does, unless the clock cuts it.
  *
  * CLOCK. The agent never reads a clock itself: `ctx.now` is injected (SPEC 9, A28). It only guards the time
- * limit (SPEC 9: at most 5 s a decision, D-172), well above what the work budget normally costs: a search
- * starts no candidate once `SEARCH_SHARE` of `ctx.budgetMs` is used (with the same projection, in time), and
- * a running play-out is dropped at `HARD_SHARE`. Only a slow device reaches it, and only there does a
- * decision differ from the benchmark's; the arena report counts how often (`Cut`).
+ * limit (SPEC 9: at most 5 s a decision, D-172), far above what a decision normally costs: a search starts no
+ * candidate once `SEARCH_SHARE` of `ctx.budgetMs` is used (with the same projection, in time), and a running
+ * play-out is dropped at `HARD_SHARE`. Only the largest plannings reach it, on a device too slow for the work
+ * budget, and only there does a decision differ from the benchmark's; the arena report counts how often (`Cut`).
  */
 import {
   type Action,
@@ -54,14 +54,17 @@ export const CALL_COST = 10;
 
 /**
  * The work units the searches of one decision may use before they stop (a bound of the search, not a weight).
- * Calibrated on the precons (issue 653) so that a planning costs about what it cost when the clock bounded
- * it (about 0.045 ms a unit on the machine measured); the pull request of step 2 has the numbers. Most
- * decisions use far less: about 94 plannings in 100 on the precons end before it.
+ * Set on the precons (issue 653) so that it stops only the largest plannings, about 1 in 80: a budget that
+ * cut where the clock used to (50,000 and 80,000 units, 13% and 6% of plannings) lost 16 to 22 Elo to the
+ * unbounded search of the benchmark. At about 0.045 ms a unit on the machine measured, the whole budget
+ * takes some 7 s there, so on such a device the safety clock still cuts the largest plannings (about 7 in
+ * 100, as the clock did before); on a device 2.5 times as fast the budget cuts them first. Most decisions use
+ * far less: half of the plannings use under 12,000 units. The pull request of step 2 has the numbers.
  */
-export const WORK_BUDGET = 80_000;
+export const WORK_BUDGET = 160_000;
 
 /** The work units at which a play-out that is still running is dropped (7/6 of the budget, as the shares). */
-export const WORK_LIMIT = 93_000;
+export const WORK_LIMIT = 186_000;
 
 /** The share of the time budget after which a search starts no candidate (the safety cutoff). */
 export const SEARCH_SHARE = 0.6;
