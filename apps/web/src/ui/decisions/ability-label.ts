@@ -545,6 +545,8 @@ function recipientText(
       return 'each other player';
     case 'eachPlayerControlling':
       return 'each player who controls one';
+    case 'eachPlayerControllingMore':
+      return 'each player who controls more of them than you';
     case 'controllerOf':
       return 'its controller';
     case 'ownerOf':
@@ -771,6 +773,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
     case 'eachPlayer':
       return { who: 'they', third: false };
     case 'controllerOf':
@@ -926,7 +929,12 @@ function moveText(
     const kind = nounOf(objects.filter);
     const kept = effect.withCounters;
     const withCounters =
-      kept === undefined ? '' : ` with ${quantity(kept.count, defs, counters(kept.counter))} on it`;
+      kept === undefined
+        ? ''
+        : ` with ${[kept]
+            .flat()
+            .map((c) => quantity(c.count, defs, counters(c.counter)))
+            .join(' and ')} on it`;
     const control =
       effect.controller === 'owner' ? " under its owner's control" : ' under your control';
     return `Put each ${kind} card exiled with this ${self} onto the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
@@ -965,7 +973,10 @@ function moveText(
       const withCounters =
         kept === undefined
           ? ''
-          : ` with ${quantity(kept.count, defs, counters(kept.counter))} on ${objects.kind === 'each' ? 'them' : 'it'}`;
+          : ` with ${[kept]
+              .flat()
+              .map((c) => quantity(c.count, defs, counters(c.counter)))
+              .join(' and ')} on ${objects.kind === 'each' ? 'them' : 'it'}`;
       // The card itself comes back to its owner's control anyway; a target or a group says it.
       const control =
         effect.controller === 'owner' && (objects.kind === 'target' || objects.kind === 'each')

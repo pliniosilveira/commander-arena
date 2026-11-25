@@ -376,6 +376,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttackSource',
     // "Until your next turn, creatures can't attack you." (CR 508.1a, 611.2a, Chronomantic Escape).
     'creaturesCantAttackYou',
+    'attackOnlyNearestOpponent',
     // CR 609.4, 611.2c (Wakestone Gargoyle): "Creatures you control with defender can attack this turn as though they didn't have defender", a group effect that reaches creatures that match later.
     'restrictGroup',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
@@ -493,6 +494,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'repeat',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
+    // Jaya's Phoenix, Leori, Repeated Reverberation: "copy the next loyalty ability you activate this turn" (`delayedCopy`, CR 603.7, 707.10).
+    'delayedCopy',
+    // Jace, Architect of Thought: "until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn" (`delayedAttackerPump`).
+    'delayedAttackerPump',
     // CR 702.44a, 702.44d: "it gains sunburst" (a spell on the stack gains the keyword whose counters its permanent enters with).
     'spellGainsKeyword',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
@@ -540,6 +545,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDropThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
+    // Gatewatch Beacon: "move a loyalty counter from this artifact onto that planeswalker" (CR 122.1).
+    'moveCounterFromThis',
+    'forgetLoyaltyActivations',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -547,6 +555,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'myriad',
     // D-459: "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a).
     'exileIfLeaves',
+    // Chandra, Awakened Inferno: "If a permanent dealt damage this way would die this turn, exile it instead."
+    'exileIfDiesThisTurn',
     // D-145: "reveal cards from the top of your library until you reveal a land card. Put it onto the battlefield tapped and the rest
     // on the bottom in a random order" (CR 701.20).
     'revealUntil',
@@ -558,6 +568,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'distributeCounters',
     // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
     'dealDamageToSelf',
+    'dealDamageFromEach',
     // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
@@ -1125,6 +1136,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayerExcept',
     // Shatter the Sky: "each player who controls a creature with power 4 or greater" (`eachPlayerControlling`, CR 102.1).
     'eachPlayerControlling',
+    // Planeswalker Party deck: "the number of players who control more lands than you".
+    'eachPlayerControllingMore',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -1362,6 +1375,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
     'differentControllers',
+    // Guff Rewrites History (CR 115.1, 601.2c): "for each player, choose target ... that player controls" (`TargetSpec.everyController`).
+    'everyController',
     // Reunion of the House (CR 115.1, 208.1): "any number of target creature cards with total power 10 or less" (`TargetSpec.totalPowerAtMost`).
     'totalPowerAtMost',
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
@@ -1538,6 +1553,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastLastTurn',
     // Issue 279: "if you attacked with three or more creatures this turn".
     'attackedWithCreaturesThisTurn',
+    // The Chain Veil: "if you didn't activate a loyalty ability of a planeswalker this turn".
+    'loyaltyAbilityActivatedThisTurn',
     // CR 702.142a: "Boast" ("Activate only if this creature attacked this turn").
     'thisAttackedThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
@@ -1671,6 +1688,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "Prevent all combat damage that would be dealt to this creature", "You have hexproof", "You can't lose the game and your
     // opponents can't win the game" (`cantLoseGame`, `opponentsCantWin`), "You can't cast ~ during your first, second, or third turns".
     'preventDamageToThis',
+    // Planeswalker Party deck: "Prevent all combat damage that would be dealt by this creature", "... to you and other permanents you control".
+    'preventDamageAround',
     'playerHexproof',
     'cantLoseGame',
     'opponentsCantWin',
@@ -1678,6 +1697,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cantAttackItsOwner',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
+    // Planeswalker Party deck (CR 121.2b): "Each opponent can't draw more than one card each turn."
+    'drawLimit',
+    // Silent Arbiter (CR 508.1c, 509.1b): "No more than one creature can attack each combat."
+    'combatCreatureLimit',
     // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
     'damageCantBePrevented',
     'damageAsThoughWither',
@@ -1879,7 +1902,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dieResult',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
-  searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
+  searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library', 'exile'],
   // D-121, D-124: the named alternative costs (Overload, Evoke, Dash, Spectacle, Escape).
   castAlternatives: [
     // Issue 105: energy rather than the mana cost, granted by a static ability of a permanent (`grantEnergyAlternative`).
@@ -2298,6 +2321,8 @@ export const SELECTOR_KINDS = [
   'eachPlayerExcept',
   /** "Each player who controls a creature with power 4 or greater" (CR 102.1, 109.4, Shatter the Sky): the engine's `PlayerSelector` `eachPlayerControlling`. */
   'eachPlayerControlling',
+  /** "The number of players who control more lands than you" (CR 102.1, Oreskos Explorer): the engine's `PlayerSelector` `eachPlayerControllingMore`. */
+  'eachPlayerControllingMore',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
@@ -2570,6 +2595,8 @@ export const SELECTOR_KINDS = [
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
   'differentControllers',
+  /** "For each player, choose target nonland permanent that player controls" (CR 115.1, 601.2c, Guff Rewrites History): the engine's `TargetSpec.everyController`, a target for each player who has a legal one. */
+  'everyController',
   /** "Any number of target creature cards with total power 10 or less" (CR 115.1, 208.1, Reunion of the House): the engine's `TargetSpec.totalPowerAtMost`. */
   'totalPowerAtMost',
   /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
@@ -2766,6 +2793,8 @@ export const CONDITION_KINDS = [
   'spellsCastLastTurn',
   /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
   'attackedWithCreaturesThisTurn',
+  /** "If you didn't activate a loyalty ability this turn" (CR 606.3, The Chain Veil): the engine's `loyaltyAbilityActivatedThisTurn`. */
+  'loyaltyAbilityActivatedThisTurn',
   /** "Boast —" (CR 702.142a): "Activate only if this creature attacked this turn", the engine's `thisAttackedThisTurn`. */
   'thisAttackedThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
@@ -2923,6 +2952,8 @@ export const STATIC_KINDS = [
   'setColors',
   /** "Prevent all combat damage that would be dealt to this creature" (CR 615.1, D-149): the engine's `preventDamageToThis`. */
   'preventDamageToThis',
+  /** "Prevent all combat damage that would be dealt by ~" and "Prevent all noncombat damage that would be dealt to you and other permanents you control" (CR 615.1): `preventDamageAround`. */
+  'preventDamageAround',
   /** "You have hexproof" (CR 702.11b, D-149): the engine's `playerHexproof`. */
   'playerHexproof',
   /** "You can't lose the game" and "your opponents can't win the game" (CR 104.2, 104.3, D-149): `cantLoseGame` and `opponentsCantWin`. */
@@ -2932,6 +2963,10 @@ export const STATIC_KINDS = [
   'cantAttackItsOwner',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
+  /** "Each opponent can't draw more than one card each turn" (CR 121.2b): the engine's `drawLimit`. */
+  'drawLimit',
+  /** "No more than one creature can attack (or block) each combat" (CR 508.1c, 509.1b): the engine's `combatCreatureLimit`. */
+  'combatCreatureLimit',
   /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
   'damageCantBePrevented',
   'damageAsThoughWither',
@@ -3421,6 +3456,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   attackRandomOpponent: true,
   requireAttackSource: true,
   creaturesCantAttackYou: true,
+  attackOnlyNearestOpponent: true,
   restrictGroup: true,
   permanentsEnterTapped: true,
   doubleTokens: true,
@@ -3490,6 +3526,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   forEachPlayer: true,
   repeat: true,
   delayedCast: true,
+  delayedCopy: true,
+  delayedAttackerPump: true,
   spellGainsKeyword: true,
   removeTimeCounter: true,
   castExiled: true,
@@ -3506,6 +3544,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDividedDamage: true,
   distributeCounters: true,
   dealDamageToSelf: true,
+  dealDamageFromEach: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
   mayPlayCounterCard: true,
@@ -3529,10 +3568,13 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   blight: true,
   additionalLandDropThisTurn: true,
   moveCountersOnto: true,
+  moveCounterFromThis: true,
+  forgetLoyaltyActivations: true,
   createEmblem: true,
   delayedSacrifice: true,
   myriad: true,
   exileIfLeaves: true,
+  exileIfDiesThisTurn: true,
   proliferate: true,
   eachPlayerChoosesDestroy: true,
   chooseOnePerOpponentDestroy: true,

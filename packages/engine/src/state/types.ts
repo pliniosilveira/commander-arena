@@ -11,7 +11,7 @@ import type {
   DoorValues,
   DungeonId,
   Effect,
-  EnteringCounters,
+  EntryCounter,
   InlineChoice,
   Keyword,
   NamedAlternativeKind,
@@ -19,6 +19,7 @@ import type {
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  Trigger,
   UndercityRoom,
   Zone,
 } from '../ast/types';
@@ -192,6 +193,12 @@ export interface GameObject {
    * zone change (CR 400.7) has none.
    */
   readonly exileIfLeaves?: true;
+  /**
+   * "If a permanent dealt damage this way would die this turn, exile it instead" (CR 614.1a, 614.6, Chandra, Awakened Inferno), set by the effect `exileIfDiesThisTurn`: the number of the
+   * turn (`TurnState.number`) it holds for. A permanent so marked is exiled instead of being put into a graveyard from the battlefield during that turn. Not a copiable value; a new
+   * object after any zone change (CR 400.7) has none.
+   */
+  readonly exileIfDiesTurn?: number;
   /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
@@ -1022,6 +1029,13 @@ export interface DelayedTrigger {
   readonly untilEndOfTurn?: true;
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
+  /**
+   * "Until your next turn" (`delayedAttackerPump`, CR 500.1): the ability ends as the next turn of `seat` begins, once `turnsTaken` of that player's turns have begun (the turn it was made in
+   * not counted); `expireTurnStartEffects`.
+   */
+  readonly until?: { readonly seat: SeatId; readonly turnsTaken: number };
+  /** More events the ability waits for besides `ability.trigger` (`delayedCopy`: "cast an instant, cast a sorcery or activate a loyalty ability"): the first of any of them is the one. */
+  readonly also?: readonly Trigger[];
   readonly watched?: ObjectId;
   /** "Whenever a creature you control deals combat damage to that player this turn" (issue 144, CR 603.7c): the ability triggers only for damage dealt to this player, fixed as it was created. */
   readonly damagedPlayer?: SeatId;
@@ -1230,6 +1244,8 @@ export type Instruction =
   | {
       readonly kind: 'chooseCreatureType';
       readonly chosen: string | null;
+      /** `chooseCreatureType.planeswalker`: the options are the planeswalker types. */
+      readonly planeswalker?: true;
       /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
       readonly seat?: SeatId;
     }
@@ -1605,7 +1621,7 @@ export type Instruction =
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
@@ -1686,7 +1702,7 @@ export type Instruction =
       readonly chooser: SeatId;
       readonly cards: readonly ObjectId[];
       readonly chosenTo: 'hand' | 'graveyard';
-      readonly otherTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
       readonly faceDownPile?: true;
       readonly first?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -1766,7 +1782,7 @@ export type Instruction =
       readonly min?: number;
       readonly tapped?: true;
       /** The counters the cards taken enter the battlefield with (`take.withCounters`, CR 122.6). */
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /** Only cards with this mana value or less may be taken (`take.manaValueAtMost`, D-145), worked out when the effect started. */
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
@@ -1855,7 +1871,7 @@ export type Instruction =
       readonly object: ObjectId;
       readonly tapped: boolean;
       readonly controller?: 'owner' | 'you';
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2218,7 +2234,7 @@ export type Instruction =
       /** Enter the battlefield under the owner's control or the resolving ability's controller's. */
       readonly controller?: 'owner' | 'you';
       /** Enters the battlefield with these counters on it (`moveToZone.withCounters`). */
-      readonly withCounters?: EnteringCounters;
+      readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
@@ -2760,6 +2776,14 @@ export type ContinuousChange =
    * "Until your next turn, creatures can't attack you" (`creaturesCantAttackYou`, CR 508.1a, 611.2c): no layer and no fixed set (`objects` is empty): read where attackers are declared
    * (`rules/attack-bans.ts`), for each creature `filter` matches then, with `controller` as "you": none of them may be declared attacking `controller` as a player.
    */
+  /**
+   * "Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent" (`attackOnlyNearestOpponent`,
+   * Teyo, Geometric Tactician): no layer and no fixed set (`objects` is empty): read where attackers are declared (`rules/attack-bans.ts`), for every creature.
+   */
+  | {
+      readonly kind: 'attackOnlyNearest';
+      readonly direction: 'left' | 'right';
+    }
   | {
       readonly kind: 'creaturesCantAttackPlayer';
       readonly filter: ObjectFilter;
@@ -2991,6 +3015,10 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly abilityIndex: number;
     readonly loyalty?: true;
+    /** The player who activated the loyalty ability (The Chain Veil: "if you didn't activate a loyalty ability of a planeswalker this turn"). */
+    readonly activator?: SeatId;
+    /** The activation no longer counts toward the one loyalty ability of a permanent a turn (CR 606.3): `forgetLoyaltyActivations` (The Chain Veil). It still happened. */
+    readonly forgotten?: true;
     /**
      * The player who activated an ability of a card that was in a graveyard as it was activated (issue 159, "activated an ability of a card in a graveyard this turn").
      * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.

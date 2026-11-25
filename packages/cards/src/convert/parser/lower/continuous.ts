@@ -447,6 +447,52 @@ export const BECOMES: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature" (Sarkhan the Masterless; CR 613.1d, 613.1e, 613.4b, 611.2a, 205.1a): the group is fixed as each
+ * effect begins, so the colors come before the types (the objects are still the planeswalkers then), and the types, with the base power and toughness, are one effect that replaces the card types
+ * (the permanent is no longer a planeswalker, and keeps its loyalty counters and abilities).
+ */
+export const BECOMES_CREATURE_GROUP: Lowering<IrClause, Effects> = {
+  head: 'becomesCreatureGroup',
+  id: 'lower.becomes-creature-group',
+  needs: ['effect:setTypes', 'effect:setColors', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const subject = operand(clause, 'objects');
+    const types = arg(clause, 'types');
+    const colors = arg(clause, 'colors');
+    const base = arg(clause, 'basePt');
+    if (subject === undefined || !endsWithTurn(clause)) return failure(clause);
+    if (types?.kind !== 'typeList' || colors?.kind !== 'colorSpec' || base?.kind !== 'basePt') {
+      return failure(clause);
+    }
+    const letters: Color[] = [];
+    for (const word of colors.colors) {
+      const letter = colorLetter(word);
+      if (letter === undefined) return failure(clause);
+      letters.push(letter);
+    }
+    const effects: Effect[] = [];
+    for (const item of itemsOf(subject)) {
+      const objects = objectSelectorOf(item, ctx, TRIGGER_SUBJECT);
+      if (!objects.ok) return objects;
+      if (objects.value.kind !== 'each') return failure(clause);
+      effects.push(
+        { kind: 'setColors', objects: objects.value, colors: letters, duration: END },
+        {
+          kind: 'setTypes',
+          objects: objects.value,
+          types: (types.cardTypes ?? []) as CardType[],
+          ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
+          basePt: { power: base.power, toughness: base.toughness },
+          duration: END,
+        },
+      );
+    }
+    return { ok: true, value: effects, rule: clause.rule };
+  },
+};
+
 function becoming(
   objects: ObjectSelector,
   types: IrTypeList | undefined,

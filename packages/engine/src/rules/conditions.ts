@@ -659,6 +659,11 @@ export function evaluateCondition(
         ? counts.every((n) => n === 0)
         : counts.some((n) => n >= (condition.atLeast ?? 1));
     }
+    case 'loyaltyAbilityActivatedThisTurn':
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, whatever happened to its permanent since.
+      return state.turnLog.activated.some(
+        (a) => a.loyalty === true && a.activator === ctx.controller,
+      );
     case 'attackedWithCreaturesThisTurn':
       // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
       return (

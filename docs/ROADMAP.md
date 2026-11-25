@@ -139,6 +139,9 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Vronos, Masked Inquisitor: "can't be blocked" given for good is a rules-modifying effect, not a granted ability, so "loses all abilities" does not remove it.
+- Jace, Architect of Thought: the +1 "until your next turn" ability does not end early when its controller leaves the game (CR 800.4m).
+- Sarkhan the Masterless and Sparkshaper Visionary: a planeswalker that becomes a creature keeps its planeswalker subtypes besides the creature types given.
 - A permanent that a group's "lose all abilities" strikes still applies its own static control effect ("The monarch controls enchanted creature"); that file cannot read groups without an import cycle.
 - A group's "lose all abilities" reads types and colors from the copiable values (layer 1): a layer 4 or 5 effect that changes them is not seen. "Choose a nonland card name" accepts any name, land or not, typed.
 - The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.

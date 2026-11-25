@@ -335,7 +335,24 @@ export const PLAIN_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
  * The card a look at the top cards lets the player take: one list of card types or subtypes ("an artifact card", "a creature or land card", "a Dragon
  * card"), or a list of both kinds, "an instant, sorcery, or Dragon card" (issue 25).
  */
+/**
+ * "a noncreature, nonland card" (Narset, Parter of Veils; CR 205.2a): a card that has none of the card types the "non" words name. Two or more "non" words, joined by a comma, or one.
+ */
+const NON_TYPE_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
+  const r = pattern(
+    /an? ((?:non(?:creature|land|artifact|enchantment|instant|sorcery|planeswalker)(?:, | ))+)card(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const types = (r.value[1] ?? '')
+    .split(/,\s*|\s+/)
+    .filter((w) => w.length > 0)
+    .map((w) => w.toLowerCase().slice('non'.length));
+  if (new Set(types).size !== types.length) return fail(ctx, pos);
+  return takenNoun(ctx, pos, pos + r.value[0].length, { notTypes: types });
+};
+
 export const TAKEN_CARD: Parser<IrNoun> = choice(
+  NON_TYPE_TAKEN_CARD,
   PERMANENT_TAKEN_CARD,
   PLAIN_TAKEN_CARD,
   MIXED_TAKEN_CARD,
@@ -427,6 +444,8 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
   leading: ['look'],
   cites: ['CR 401.2 (Library)', 'CR 701.20a (Reveal)', 'CR 401.4 (Library)'],
   examples: [
+    // Narset, Parter of Veils (CR 205.2a): a card that is none of the types the "non" words name.
+    'look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top four cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest into your graveyard',
     'look at the top five cards of your library. You may reveal a creature or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',

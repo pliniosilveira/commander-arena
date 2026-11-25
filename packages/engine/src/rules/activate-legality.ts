@@ -113,9 +113,8 @@ export function activationRefusal(
   }
   // CR 606.3: a loyalty ability is activated only any time you could cast a sorcery, ...
   const loyalty = isLoyaltyAbility(ability.cost);
-  if (loyalty && !derive(state, obj).types.includes('planeswalker')) {
-    return 'A loyalty ability can be activated only from a planeswalker';
-  }
+  // CR 606.1, 606.3 (Sarkhan the Masterless, Sparkshaper Visionary): a planeswalker that is no longer a planeswalker (it is a creature for the turn) keeps its loyalty abilities, and
+  // they may still be activated, once each turn, as the rulings say: the ability is the permanent's, not the type's.
   if ((ability.timing === 'sorcery' || loyalty) && !hasSorceryTiming(state, seat)) {
     return 'That ability can be activated only at sorcery speed';
   }

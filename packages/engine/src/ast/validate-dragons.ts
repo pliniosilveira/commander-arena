@@ -137,6 +137,16 @@ export function checkDragonsEffect(
           issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
         }
       }
+      // Narset, Enlightened Master: only the cards the filter describes, and only to cast them.
+      if (e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.castOnly !== true) {
+          issue(out, `${path}.cards`, 'a filter of the cards that may be cast needs castOnly');
+        }
+        if (e.cards.zone !== undefined || e.cards.controller !== undefined) {
+          issue(out, `${path}.cards`, 'the filter of the cards names no zone or controller');
+        }
+      }
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
@@ -951,6 +961,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
     } else {
       checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
+    }
+  }
+  if (r.notLegendary !== undefined && r.notLegendary !== true) {
+    issue(out, `${path}.notLegendary`, 'notLegendary is true when present');
+  }
+  if (r.extraCounters !== undefined) {
+    if (!Array.isArray(r.extraCounters) || r.extraCounters.length === 0) {
+      issue(out, `${path}.extraCounters`, 'extraCounters is a non-empty list when present');
+    } else {
+      r.extraCounters.forEach((c, i) => {
+        if (!isOneOf(c?.type, ['creature', 'planeswalker'])) {
+          issue(
+            out,
+            `${path}.extraCounters[${i}].type`,
+            'the card type is creature or planeswalker',
+          );
+        }
+        if (typeof c?.counter !== 'string' || c.counter === '') {
+          issue(out, `${path}.extraCounters[${i}].counter`, 'a kind of counter');
+        }
+      });
     }
   }
   if (r.optional !== undefined && r.optional !== true) {

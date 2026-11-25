@@ -356,9 +356,108 @@ export const EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES = defineRule<Clauses>({
   },
 });
 
+const SELF_KEYWORDS_ID = 'effect.becomes-land-creature-keywords-trailing';
+
+/**
+ * `effect.becomes-land-creature-keywords-trailing`: "~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land." (Mobilized District; CR 613.1d, 613.1f, 613.4b,
+ * 205.1b, 611.2a): the land itself is also a creature until the end of the turn, with the base power and toughness, the creature types and the keywords the text says, its colors
+ * unchanged (a land is colorless). "It's still a land" says its types are added to, not replaced. Only `~`, with no colors and the duration after the keywords. Not read: another
+ * duration, another subject, a color (`effect.becomes-land-creature-trailing` and the lead rule read colors), no creature type, no keyword, "that's still a land", the second sentence
+ * left out.
+ */
+export const EFFECT_BECOMES_LAND_CREATURE_KEYWORDS_TRAILING = defineRule<Clauses>({
+  id: SELF_KEYWORDS_ID,
+  family: 'effect',
+  leading: ['~'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land",
+    '~ becomes a 3/3 Citizen creature with vigilance until end of turn. It’s still a land',
+    "~ becomes a 4/4 Elemental creature with trample and haste until end of turn. It's still a land",
+  ],
+  rejects: [
+    '~ becomes a 3/3 Citizen creature with vigilance until end of turn.',
+    "~ becomes a 3/3 Citizen creature with vigilance until your next turn. It's still a land",
+    "target land becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land",
+    "~ becomes a 3/3 green Citizen creature with vigilance until end of turn. It's still a land",
+    "~ becomes a Citizen creature with vigilance until end of turn. It's still a land",
+    "~ becomes a 3/3 creature with vigilance until end of turn. It's still a land",
+    "~ becomes a 3/3 Citizen creature until end of turn. It's still a land",
+    "~ becomes a 3/3 Citizen creature with vigilance until end of turn. It's still a land and you draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      pattern(/ becomes an? /iu),
+      spanned(pattern(/(\d+)\/(\d+) /)),
+      spanned(CREATURE_TYPE_LIST),
+      literal(' creature with '),
+      spanned(KEYWORD_WORDS),
+      literal(' '),
+      family<IrDuration>('duration'),
+      pattern(/\. It['’]s still a land(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , pt, types, , keywords, , duration] = r.value;
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: Number(pt.value[1]),
+      toughness: Number(pt.value[2]),
+      span: pt.span,
+      rule: SELF_KEYWORDS_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: types.value,
+      cardTypes: ['creature'],
+      additive: true,
+      span: types.span,
+      rule: SELF_KEYWORDS_ID,
+    };
+    const clauses: IrClause[] = [
+      {
+        ...makeClause(
+          SELF_KEYWORDS_ID,
+          'becomes',
+          { objects: subject, types: typeList, basePt },
+          types.span,
+        ),
+        duration,
+        connector: 'and' as const,
+      },
+    ];
+    keywords.value.forEach((name, i) => {
+      const keyword = {
+        kind: 'keywordName' as const,
+        name,
+        span: keywords.span,
+        rule: SELF_KEYWORDS_ID,
+      };
+      clauses.push({
+        ...makeClause(
+          SELF_KEYWORDS_ID,
+          'grantKeyword',
+          { objects: subject, keyword },
+          keywords.span,
+        ),
+        duration,
+        ...(i < keywords.value.length - 1 ? { connector: 'and' as const } : {}),
+      });
+    });
+    return { ok: true, value: clauses, pos: r.pos };
+  },
+});
+
 export const LAND_CREATURE_KEYWORDS_EFFECT_RULES = [
   EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS,
   EFFECT_BECOMES_LAND_CREATURE_TRAILING,
   EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES,
+  EFFECT_BECOMES_LAND_CREATURE_KEYWORDS_TRAILING,
   EFFECT_IT_BECOMES_LAND_CREATURE_KEYWORDS,
 ];

@@ -156,6 +156,7 @@ export interface IrNoun extends IrNode {
     | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
     | 'lostLifeThisTurn' // "each opponent who lost life this turn" (CR 119.3): the players of the group `whoGroup` who lost life this turn
     | 'combatDamagedThisTurn' // "your opponents who were dealt combat damage by ~ or a Dragon this turn" (CR 120.2a): the players of the group `whoGroup` that source hurt
+    | 'eachPlayerControllingMore' // "the number of players who control more lands than you" (CR 102.1): the other players with more battlefield permanents like `of` than the controller
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
@@ -191,6 +192,8 @@ export interface IrNoun extends IrNode {
   readonly anyNumber?: true;
   /** "any number of target tapped creatures with different controllers" (Hylda group 3, CR 115.1, 601.2c): with `anyNumber` on a target, no two of them have the same controller. */
   readonly differentControllers?: true;
+  /** "For each player, choose target nonland permanent that player controls" (Guff Rewrites History, CR 115.1, 601.2c): with `differentControllers`, a target for each player who has a legal one. */
+  readonly everyController?: true;
   /** "one or more Treasures" (stage P41, D-188, CR 701.21): with `anyNumber`, the player chooses at least one of them. */
   readonly atLeastOne?: true;
   /**
@@ -868,6 +871,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'ringBearerChosen' }
     // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
     | { readonly kind: 'notDeclaredAttacker' }
+    /** "you activated a loyalty ability of a planeswalker this turn" (The Chain Veil; CR 606.3): "you didn't" is `not` of this. */
+    | { readonly kind: 'loyaltyActivatedThisTurn' }
     // "if any of that damage was dealt by a Warrior" (issue 101, Mindblade Render, CR 510.2, 603.4): a part of the filter of the sources of a combat damage batch trigger
     | { readonly kind: 'damageDealtByType'; readonly subtype: string }
     // "they entered or were cast from a graveyard" (Twilight Diviner, CR 603.4, 603.6a): part of the event of "one or more creatures enter", read by the trigger's lowering
@@ -2275,6 +2280,29 @@ export type IrStaticEffect =
       /** "..., prevent that damage and remove a +1/+1 counter from it." (issue 159): the counter removed for each damage event prevented. */
       readonly removeCounter?: string;
     }
+  /**
+   * "Prevent all combat damage that would be dealt by ~." and "Prevent all noncombat damage that would be dealt to you and other permanents you control." (Planeswalker
+   * Party deck, CR 615.1): the engine's `preventDamageAround`. The subject is `~`.
+   */
+  | {
+      readonly kind: 'preventDamageAround';
+      readonly scope: 'all' | 'combat' | 'noncombat';
+      readonly events:
+        | 'dealtByThis'
+        | 'dealtToYouAndYourOtherPermanents'
+        | 'dealtToYouAndYourPlaneswalkers';
+      /** "Prevent all but 1 of that damage" (Ajani Steadfast's emblem): the damage left. */
+      readonly keep?: number;
+    }
+  /**
+   * "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils, CR 121.2b): the engine's `drawLimit`. The subject is `~`.
+   */
+  | {
+      readonly kind: 'combatCreatureLimit';
+      readonly what: 'attack' | 'block';
+      readonly max: number;
+    }
+  | { readonly kind: 'drawLimit'; readonly who: 'opponents' | 'players'; readonly max: number }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.

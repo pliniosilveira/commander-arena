@@ -299,6 +299,47 @@ const LOOK_PUT_TOTAL: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+ * (Deploy the Gatewatch; CR 401.2, 701.20): the engine's `lookAtTop` taking up to that many cards of the type onto the battlefield, the rest to the bottom in a random order.
+ */
+const LOOK_PUT_UP_TO: Lowering<IrClause, Effects> = {
+  head: 'lookPutUpTo',
+  id: 'lower.look-put-up-to',
+  needs: ['effect:lookAtTop'],
+  lower: (clause) => {
+    const count = arg(clause, 'count');
+    const most = arg(clause, 'most');
+    const cardType = arg(clause, 'cardType');
+    if (count?.kind !== 'number' || most?.kind !== 'number' || cardType?.kind !== 'keywordName') {
+      return failure(clause);
+    }
+    const type = cardType.name;
+    if (
+      type !== 'artifact' &&
+      type !== 'creature' &&
+      type !== 'enchantment' &&
+      type !== 'land' &&
+      type !== 'planeswalker' &&
+      type !== 'battle'
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: { types: [type] }, max: most.value, to: 'battlefield' },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "The exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card" (CR 607.2a, 111.2, 202.3): the owner of the card the
  * permanent exiled with its linked ability creates the token; its power and toughness are that card's mana value as the token is created.
  */
@@ -600,6 +641,7 @@ export const HOFRI_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EACH_EXILES_THEN_COUNTERS,
   CREATE_LINKED_EXILE_TOKEN,
   LOOK_PUT_TOTAL,
+  LOOK_PUT_UP_TO,
   CREATE_COPY_TOKEN,
   PLAYER_ADDS_MANA,
   COPY_THIS_SPELL,

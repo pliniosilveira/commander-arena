@@ -73,6 +73,7 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     // Nazgûl Battle-Mace (CR 119.4, 118.3): a payment of life.
     'unless that player pays 3 life',
     'unless you pay 2 life',
+    "unless that creature's controller pays {3}",
   ],
   rejects: [
     'unless that player pays {X}',

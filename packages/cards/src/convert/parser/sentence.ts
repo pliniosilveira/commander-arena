@@ -825,6 +825,8 @@ export const LOYALTY_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Narset of the Ancient Way: "Draw a card, then you may discard a card. When you discard a nonland card this way, ~ deals damage equal to that card's mana value to target creature or planeswalker."
+  afterDiscard: true,
   delayed: true,
 });
 

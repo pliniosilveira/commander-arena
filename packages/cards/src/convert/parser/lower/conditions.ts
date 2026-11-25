@@ -771,6 +771,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'attackedHasMoreLifeThanOtherOpponent' });
     }
+    case 'loyaltyActivatedThisTurn': {
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:loyaltyAbilityActivatedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'loyaltyAbilityActivatedThisTurn' });
+    }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
       // anywhere else.
@@ -945,6 +952,7 @@ export function lowerCondition(
     }
     case 'costContainsX':
     case 'notDeclaredAttacker':
+    case 'youAreDefendingPlayer':
     case 'damageDealtByType':
     case 'enteredFromGraveyard':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
@@ -986,9 +994,6 @@ export function lowerCondition(
         ...(test.other === true ? { other: true as const } : {}),
       });
     }
-    case 'youAreDefendingPlayer':
-      // Only the intervening "if" of an `attacks` trigger, which the trigger's lowering folds into the event (`at`).
-      return failure(c, []);
     case 'hadCounters':
       // Only the intervening "if" of a trigger about a permanent that left, which the trigger's lowering folds into its filter.
       return failure(c, []);
