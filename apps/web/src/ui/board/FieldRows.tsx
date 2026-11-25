@@ -3,7 +3,7 @@
  * empty room at both ends (half the view, board.css `.board-row-scroll`) lets the outermost card be
  * brought to the middle of the screen, clear of the stack panel on the right.
  */
-import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export function FieldRows({ children }: { readonly children: ReactNode }) {
   const scroller = useRef<HTMLDivElement>(null);
@@ -32,6 +32,21 @@ export function FieldRows({ children }: { readonly children: ReactNode }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [update]);
+  // A mouse wheel only reports vertical movement, and the scrollbar is hidden: turn it into a
+  // sideways scroll (a trackpad's own sideways movement is left alone). Like the hand does.
+  useEffect(() => {
+    const el = scroller.current;
+    if (el === null) return;
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      // Line and page modes (some mice) report small units: scale them to pixels.
+      const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? el.clientWidth : 1;
+      el.scrollLeft += e.deltaY * unit;
+      e.preventDefault();
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
   const scrollBy = (dx: number) => scroller.current?.scrollBy({ left: dx, behavior: 'smooth' });
   return (
     <div className="board-field-rows-wrap">
