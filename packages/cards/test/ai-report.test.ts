@@ -120,7 +120,9 @@ describe('the block', () => {
   test('is collapsed, names the format, and gives back its payload', () => {
     const payload = 'A'.repeat(200);
     const block = aiReportBlock(payload, 2);
-    expect(block).toContain(`<summary>${AI_REPORT_SUMMARY} (format 1, 2 actions, gzip+base64url)</summary>`);
+    expect(block).toContain(
+      `<summary>${AI_REPORT_SUMMARY} (format 1, 2 actions, gzip+base64url)</summary>`,
+    );
     expect(block.split('\n').every((line) => line.length <= 120)).toBe(true);
     expect(aiReportPayload(`Some words\n\n${block}\n\nmore`)).toBe(payload);
     expect(aiReportPayload(block.replace(/\n/g, '\r\n'))).toBe(payload);

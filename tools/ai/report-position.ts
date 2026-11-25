@@ -5,6 +5,7 @@
 
 import type { AiReport } from '@commander-arena/cards';
 import {
+  type CardId,
   type GameState,
   type GameView,
   getView,
@@ -73,7 +74,7 @@ const isManaSource = (o: ObjectView): boolean =>
   !o.tapped && (o.types.includes('land') || /\bAdd \{/.test(o.oracleText));
 
 /** The name of a commander by its card id: which cards are commanders is public (CR 903.3). */
-function commanderName(state: GameState, cardId: string): string {
+function commanderName(state: GameState, cardId: CardId): string {
   const card = state.cards[cardId];
   return (
     (card === undefined ? undefined : state.definitions[card.definition]?.name) ?? 'a commander'
@@ -90,7 +91,7 @@ function seatPosition(
     .filter(([key, damage]) => key.startsWith(`${seat.id}:`) && damage > 0)
     .map(([key, damage]) => ({
       from: view.commanderDamageSources[key] ?? -1,
-      commander: commanderName(state, key.slice(key.indexOf(':') + 1)),
+      commander: commanderName(state, key.slice(key.indexOf(':') + 1) as CardId),
       damage,
     }));
   const mine = view.battlefield.filter((o) => o.controller === seat.id);
