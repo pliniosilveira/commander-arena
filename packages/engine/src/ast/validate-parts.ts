@@ -6971,7 +6971,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
         if (kindOf(e.players) !== 'you') {
-          issue(out, `${path}.outcome`, 'outcome is for the controller of the effect: players is you');
+          issue(
+            out,
+            `${path}.outcome`,
+            'outcome is for the controller of the effect: players is you',
+          );
         }
       }
       break;
