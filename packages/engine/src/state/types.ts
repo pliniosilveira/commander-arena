@@ -2020,7 +2020,7 @@ export type Instruction =
       readonly kind: 'counterUnlessPays';
       readonly object: ObjectId;
       readonly cost: readonly Cost[];
-      readonly stage: 'ask' | 'discard' | 'blight' | 'pay';
+      readonly stage: 'ask' | 'discard' | 'blight' | 'sacrifice' | 'pay';
       readonly purpose: 'ward' | 'counterUnlessPays';
     }
   /**
@@ -2034,7 +2034,7 @@ export type Instruction =
       readonly kind: 'unlessPays';
       readonly seat: SeatId;
       readonly cost: readonly Cost[];
-      readonly stage: 'ask' | 'discard' | 'blight' | 'pay';
+      readonly stage: 'ask' | 'discard' | 'blight' | 'sacrifice' | 'pay';
       readonly effect: Effect;
       readonly optional: boolean;
       /**

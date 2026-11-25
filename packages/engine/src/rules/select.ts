@@ -12,7 +12,7 @@ import type {
   PlayerSelector,
   TargetSpec,
 } from '../ast/types';
-import type { CardType, Subtype } from '../characteristics';
+import type { CardType, Color, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { VoteCast } from '../state/decisions';
 import {
@@ -329,6 +329,10 @@ export function matchesFilter(
     ...(filter.manaValueBelow !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
       : {}),
+    // CR 105.1, 109.4 (Ringsight): the colors of the permanents "a legendary creature you control" names, now.
+    ...(filter.sharesColorWith === undefined
+      ? {}
+      : { sharedColors: colorsOfMatching(state, filter.sharesColorWith, ctx) }),
     attackersOfYou: attackersOfPlayer(state, ctx.controller),
     ...(filter.attackingYou === 'orPlaneswalkers' ||
     (filter.anyOf?.some((m) => m.attackingYou === 'orPlaneswalkers') ?? false)
@@ -433,6 +437,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.powerAtMostMoved === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
+    f.sharesColorWith !== undefined ||
     f.notTriggerCard === true ||
     f.otherThanTriggerSubject === true ||
     f.controller === 'defendingPlayer' ||
@@ -461,6 +466,22 @@ function readsSacrificedType(f: ObjectFilter): boolean {
 /** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the source of the ability (Titan of Littjara). */
 function readsSourceType(f: ObjectFilter): boolean {
   return f.sharesCreatureTypeWith === 'source' || (f.anyOf?.some(readsSourceType) ?? false);
+}
+
+/** The colors of the permanents on the battlefield that match the filter (`sharesColorWith`, CR 105.1): each color once. */
+function colorsOfMatching(
+  state: GameState,
+  filter: ObjectFilter,
+  ctx: SelectContext,
+): readonly Color[] {
+  const colors = new Set<Color>();
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = getObject(state, id);
+    if (matchesFilter(state, obj, { ...filter, zone: 'battlefield' }, ctx)) {
+      for (const c of derive(state, obj).colors) colors.add(c);
+    }
+  }
+  return [...colors];
 }
 
 /** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */
@@ -793,6 +814,19 @@ function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext):
       matchesFilter(state, obj, filter, matchingContext) &&
       canBeTargetedBy(state, obj, ctx.controller, ctx.source)
     ) {
+      // CR 115.1, 109.4, 608.2b (Breaking of the Fellowship): "another target creature that player controls": once the targets are chosen, the target stays legal only while the
+      // controller of the target of the slot named still controls it (a target that left the battlefield leaves the rule nothing to compare: that one is illegal by itself).
+      if (spec.sameControllerAs !== undefined) {
+        const named = (ctx.targets ?? []).find(
+          (t) => t.kind === 'object' && t.specId === spec.sameControllerAs,
+        );
+        if (named?.kind === 'object') {
+          const first = state.objects[named.id];
+          if (first !== undefined && first.zone === 'battlefield') {
+            if (controllerOf(state, first) !== controllerOf(state, obj)) continue;
+          }
+        }
+      }
       // D-149: a slot with one target for each opponent says whose each target is.
       // Hylda group 3: "with different controllers" says whose each target is as well.
       // CR 115.1, 608.2b: cards "from their graveyard": the graveyard of the player an earlier slot names. Once the targets are chosen (as the spell or ability

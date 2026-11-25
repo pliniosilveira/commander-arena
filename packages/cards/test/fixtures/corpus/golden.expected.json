@@ -1,5 +1,5 @@
 {
-  "parserVersion": 212,
+  "parserVersion": 213,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -2764,6 +2764,14 @@
       "reasons": [],
       "ast": "a9e8d550"
     },
+    "2f9a5e7c-f463-4773-bf67-a07339ce9b5d": {
+      "name": "Orcish Medicine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0db1c71f"
+    },
     "2fdc0d17-b683-4263-949e-4f74ec76badf": {
       "name": "Temur Battle Rage",
       "group": "acceptance",
@@ -3036,6 +3044,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8be4aebc"
+    },
+    "33c0a8c0-d1d9-4b03-869d-65dab8ace3df": {
+      "name": "Fall of Cair Andros",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c912569c"
     },
     "33e3793c-098f-4897-88f3-9f9ce9081e0f": {
       "name": "Pompous Battlemage // Improvised Act",
@@ -6041,6 +6057,14 @@
       "reasons": [],
       "ast": "dadc1005"
     },
+    "65c5e120-7a3d-475f-9bb2-8ddb5062e4ba": {
+      "name": "Surrounded by Orcs",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "76f19a2b"
+    },
     "65d9b8b6-5215-4037-8e50-e0ca80c5dc9e": {
       "name": "Valiant Changeling",
       "group": "acceptance",
@@ -6104,6 +6128,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cdda8239"
+    },
+    "66e42be3-5125-41b4-9efe-8a6a66899bb6": {
+      "name": "Ringsight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56544d73"
     },
     "66f0f43c-829d-44d6-adda-d8885bfbfbaf": {
       "name": "Swashbuckler Extraordinaire",
@@ -8644,6 +8676,14 @@
       "reasons": [],
       "ast": "4ece6bfc"
     },
+    "9259e918-ace5-4f13-9035-d8bc8c820d25": {
+      "name": "March from the Black Gate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a55f6ea0"
+    },
     "9270eb03-4600-40cc-83a5-ea987d5d4978": {
       "name": "Gix's Command",
       "group": "acceptance",
@@ -8876,6 +8916,14 @@
       "reasons": [],
       "ast": "379cf205"
     },
+    "96e081d2-ec72-41fc-ad81-2e31ab823ae0": {
+      "name": "Breaking of the Fellowship",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3b2c212c"
+    },
     "97024e8e-dfde-4769-bc27-c3d6fad19e7c": {
       "name": "Proteus Staff",
       "group": "acceptance",
@@ -9019,6 +9067,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "16d9d7e4"
+    },
+    "995c8dac-fd27-468a-abd4-02372cf0c850": {
+      "name": "Mount Doom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3438009f"
     },
     "9965d9c5-2ebf-4a6c-930e-55c5890979be": {
       "name": "Thought Vessel",
@@ -9483,6 +9539,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "799e936a"
+    },
+    "9f8f29ba-7e64-455d-be05-ec7973f2bd0a": {
+      "name": "Sauron, the Dark Lord",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bfd0e603"
     },
     "9f9e4be0-814a-4cab-948b-114769035a4a": {
       "name": "Mind into Matter",
@@ -12404,6 +12468,14 @@
       "reasons": [],
       "ast": "b041ae31"
     },
+    "d2aa50d2-d22d-495e-afc9-23a51c8c8f32": {
+      "name": "Assault on Osgiliath",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88294173"
+    },
     "d30d8968-ec24-4155-97e2-28efd52c8810": {
       "name": "Malevolent Rumble",
       "group": "acceptance",
@@ -13517,6 +13589,14 @@
       "reasons": [],
       "ast": "32ad9deb"
     },
+    "e77e97d7-58ff-4454-ba49-66182e550f12": {
+      "name": "Gorbag of Minas Morgul",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "53ed63d0"
+    },
     "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7": {
       "name": "Crippling Fear",
       "group": "acceptance",
@@ -13748,6 +13828,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d451c01"
+    },
+    "ebd6a3a0-ae8d-44e6-8d0b-048da6dd1f03": {
+      "name": "Uglúk of the White Hand",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "29eed7d5"
     },
     "ebe1448e-21c5-4b73-8296-03d3e5097c50": {
       "name": "Will of the Temur",
@@ -15013,8 +15101,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1569,
-      "total": 1587
+      "supported": 1580,
+      "total": 1598
     }
   }
 }

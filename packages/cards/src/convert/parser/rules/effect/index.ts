@@ -123,6 +123,7 @@ import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
+import { GAIN_KEYWORD_CHOICE_EFFECT_RULES } from './gain-keyword-choice';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GAIN_NEXT_TURN_EFFECT_RULES } from './gain-next-turn';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
@@ -157,6 +158,7 @@ import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
+import { KEEP_DESTROY_REST_EFFECT_RULES } from './keep-destroy-rest';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
 import { KENRITH_EFFECT_RULES } from './kenrith';
@@ -1471,6 +1473,8 @@ export const EFFECT_RULES = [
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
   ...KEEPS_UP_TO_EFFECT_RULES,
+  ...KEEP_DESTROY_REST_EFFECT_RULES,
+  ...GAIN_KEYWORD_CHOICE_EFFECT_RULES,
   // Stick Together (CR 700.8d): "each player chooses a party from among creatures they control, then sacrifices the rest" (read quietly: it starts like the other "each player" rules).
   ...PARTY_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,

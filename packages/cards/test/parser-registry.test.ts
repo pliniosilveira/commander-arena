@@ -604,6 +604,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
+  // Sauron deck (Uglúk of the White Hand): the creature that died, said as one of two creature types.
+  'condition.that-was-either': permanent(
+    (e) =>
+      `Whenever another creature you control dies, put a +1/+1 counter on ~. If ${e}, put two +1/+1 counters on ~ instead.`,
+  ),
   'condition.discarded-card-matches': permanent(
     (e) => `{T}, Discard a card: Draw a card. If ${e}, you gain 1 life.`,
   ),
@@ -1039,6 +1044,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
   'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
+  // Sauron deck (March from the Black Gate): one ability that two events cause.
+  'trigger.enters-and-attacks': permanent((e) => `When ${e}, you gain 1 life.`),
   'trigger.enters-causes-trigger': permanent((e) => `Whenever ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
   // Stage P49 (D-206): the Vraska deck's triggers, conditions and statics. A trigger follows "Whenever"; a condition follows the trigger it conditions or
@@ -1399,6 +1406,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  // Breaking of the Fellowship: a second target of the controller of the first.
+  'noun.another-target-of-same-controller': spell(
+    (e) => `Target creature an opponent controls deals damage equal to its power to ${e}.`,
+  ),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,

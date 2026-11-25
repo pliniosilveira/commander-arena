@@ -265,7 +265,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // CR 115.3 (D-151): "other targets": a slot that must differ from an earlier one lists only the answers that do.
       if (
         d.specs.some(
-          (spec) => spec.differentFrom !== undefined || spec.differentFromAll !== undefined,
+          (spec) =>
+            spec.differentFrom !== undefined ||
+            spec.differentFromAll !== undefined ||
+            spec.sameControllerAs !== undefined,
         )
       ) {
         acc = acc.filter((targets) => targetAnswerError(d, targets) === null);

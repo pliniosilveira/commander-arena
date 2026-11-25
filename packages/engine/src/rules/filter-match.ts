@@ -170,6 +170,8 @@ export interface FilterContext {
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
+  /** The colors of the permanents `sharesColorWith` names (CR 105.1), read from the battlefield by the caller; absent fails the flag closed. */
+  readonly sharedColors?: readonly Color[];
   /** The card types of the spell the trigger is about (`sharesCardTypeWith`, CR 205.2a): read by the caller; absent fails the flag closed. */
   readonly subjectTypes?: readonly CardType[];
   /**
@@ -643,6 +645,11 @@ export function matchesFilterWith(
   if (filter.sharesCardTypeWith !== undefined) {
     const theirs = ctx.subjectTypes;
     if (theirs === undefined || !d.types.some((t) => theirs.includes(t))) return false;
+  }
+  // CR 105.1, 105.2c (Ringsight): "shares a color with a legendary creature you control": a color that both have; a colorless object has none to share.
+  if (filter.sharesColorWith !== undefined) {
+    const theirs = ctx.sharedColors;
+    if (theirs === undefined || !d.colors.some((c) => theirs.includes(c))) return false;
   }
   if (filter.anyOf !== undefined) {
     // A disjunction (CR 115.1: "artifact or enchantment" names one set of legal targets). The

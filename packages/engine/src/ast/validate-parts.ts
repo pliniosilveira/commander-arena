@@ -839,6 +839,24 @@ export function checkFilter(
       "sharesCardTypeWith 'sacrificed' is read in the filter of a sacrifice that follows another sacrifice (or the offer of one) in the same sequence",
     );
   }
+  // CR 105.1 (Ringsight): "shares a color with a legendary creature you control": a filter of permanents on the battlefield, with no such filter of its own.
+  if (f.sharesColorWith !== undefined) {
+    const inner = f.sharesColorWith;
+    if (
+      typeof inner !== 'object' ||
+      inner === null ||
+      (inner.zone !== undefined && inner.zone !== 'battlefield') ||
+      inner.sharesColorWith !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.sharesColorWith`,
+        'sharesColorWith is a filter of permanents on the battlefield without a sharesColorWith of its own',
+      );
+    } else {
+      checkFilter(inner, `${path}.sharesColorWith`, out);
+    }
+  }
   if (f.manaValueExact === true && f.manaValueAtMost === undefined) {
     issue(out, `${path}.manaValueExact`, 'manaValueExact needs the manaValueAtMost it makes exact');
   }
@@ -1512,6 +1530,20 @@ export function declareTargets(
           out,
           `${p}.differentFrom`,
           'differentFrom names an earlier target slot of the same ability',
+        );
+      }
+    }
+    if (spec.sameControllerAs !== undefined) {
+      // CR 115.1, 109.4: "another target creature that player controls": an earlier object slot of the ability, and permanents on the battlefield.
+      if (
+        typeof spec.sameControllerAs !== 'string' ||
+        declared.get(spec.sameControllerAs) !== 'object' ||
+        what?.kind !== 'object'
+      ) {
+        issue(
+          out,
+          `${p}.sameControllerAs`,
+          'sameControllerAs names an earlier object target slot of the same ability',
         );
       }
     }
@@ -3634,8 +3666,8 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         if (!Array.isArray(cost.alongside) || cost.alongside.length < 1) {
           issue(out, `${path}.alongside`, 'alongside lists at least one more filter');
         } else {
+          // "Sacrifice ~ and a legendary artifact" (Mount Doom, CR 701.21a, 118.3): `this` is the first part and `alongside` names the others.
           if (
-            kindOf(cost.what) === 'this' ||
             cost.count !== undefined ||
             cost.countX !== undefined ||
             cost.anyNumber !== undefined
@@ -3643,7 +3675,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
             issue(
               out,
               `${path}.alongside`,
-              'a sacrifice of several different permanents names each by a filter: no this, count, X or any number',
+              'a sacrifice of several different permanents names each part by a filter (or the first by this): no count, X or any number',
             );
           }
           cost.alongside.forEach((filter, j) => {
@@ -4688,6 +4720,12 @@ function checkSacrificeSelector(
   scope: Scope,
   out: Out,
 ): void {
+  // CR 701.21a, 603.2c (Gorbag of Minas Morgul): "you may sacrifice it" in a trigger about a permanent: the engine sacrifices the permanent the event is about if its controller
+  // (the controller of the ability) still controls it.
+  if (kindOf(sel) === 'triggerSubject') {
+    checkSubjectRef(sel as ObjectRef, 'permanent', path, scope, out);
+    return;
+  }
   if (kindOf(sel) !== 'choose') {
     checkObjectSelector(sel as ObjectSelector, path, scope, out);
     return;

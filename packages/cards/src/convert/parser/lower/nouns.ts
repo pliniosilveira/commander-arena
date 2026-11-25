@@ -119,6 +119,10 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:differentControllers',
   // Guff Rewrites History: "for each player, choose target ... that player controls" (`TargetSpec.everyController`).
   'selector:everyController',
+  // Ringsight: "a card that shares a color with a legendary creature you control" (`ObjectFilter.sharesColorWith`).
+  'selector:sharesColorWith',
+  // Breaking of the Fellowship: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
+  'selector:sameControllerAs',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
@@ -474,6 +478,15 @@ function lowerFilterAt(
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
   if (filter.otherThanIt === true) parts.push('selector:otherThanTriggerSubject');
+  // CR 105.1, 109.4 (Ringsight): "that shares a color with a legendary creature you control", read where the filter is matched against the game; never a member of a choice.
+  let sharesColorWith: ObjectFilter | undefined;
+  if (filter.sharesColorWith !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:sharesColorWith');
+    const permanents = lowerFilterAt(filter.sharesColorWith, noun, false);
+    if (!permanents.ok) return permanents;
+    sharesColorWith = permanents.value;
+  }
   // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
   if (filter.sharesCreatureTypeWithSacrificed === true) {
     parts.push('selector:sharesCreatureTypeWithSacrificed');
@@ -723,6 +736,7 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
     ...(filter.otherThanIt === true ? { otherThanTriggerSubject: true as const } : {}),
+    ...(sharesColorWith === undefined ? {} : { sharesColorWith }),
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
@@ -1173,6 +1187,15 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       // "another target artifact or creature you control" after a first target (stage P64, D-217, CR 115.3): not the target of the slot before it.
       const apart = noun.otherTarget === true ? ctx.targets[ctx.targets.length - 1]?.id : undefined;
       if (noun.otherTarget === true && apart === undefined) return failure(noun, []);
+      // "another target creature that player controls" (Breaking of the Fellowship, CR 115.3, 109.4): controlled by the controller of the target of the slot before it, which is an object.
+      let sameController: string | undefined;
+      if (noun.sameControllerAsPrevious === true) {
+        const blocked = missingFeatures(['selector:sameControllerAs']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        const before = ctx.targets[ctx.targets.length - 1];
+        if (apart === undefined || before?.what.kind !== 'object') return failure(noun, []);
+        sameController = before.id;
+      }
       if (anyNumberTarget) {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -1250,6 +1273,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                         ? { differentControllers: true as const }
                         : {}),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
+                      ...(sameController === undefined ? {} : { sameControllerAs: sameController }),
                       // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
                       ...(apart === undefined ||
                       noun.otherTargetAll !== true ||

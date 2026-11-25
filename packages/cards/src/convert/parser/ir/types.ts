@@ -179,6 +179,11 @@ export interface IrNoun extends IrNode {
    */
   readonly otherTarget?: true;
   /**
+   * "another target creature that player controls" after "target creature an opponent controls" (Breaking of the Fellowship, CR 115.1, 115.3): with `otherTarget`, the target is controlled by the
+   * controller of the target of the slot just before it (the engine's `TargetSpec.sameControllerAs`).
+   */
+  readonly sameControllerAsPrevious?: true;
+  /**
    * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
    * this one, not only the slot just before it.
    */
@@ -374,6 +379,11 @@ export interface IrFilter {
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
    */
   readonly sharesCreatureTypeWithIt?: true;
+  /**
+   * "that shares a color with a legendary creature you control" (Ringsight, CR 105.1, 109.4): the card has a color that a permanent this filter describes has (the engine's
+   * `sharesColorWith`). The filter is a permanent phrase that says "you control".
+   */
+  readonly sharesColorWith?: IrFilter;
   /**
    * "each other attacking creature that shares a creature type with it" (Shared Animosity, CR 508.1, 205.3m): the count leaves out the creature the trigger is about, with
    * `sharesCreatureTypeWithIt`. The engine's `otherThanTriggerSubject`.
@@ -771,12 +781,16 @@ export type IrAmount =
       readonly kind: 'triggerDamage';
       readonly life?: true;
       readonly scry?: true;
+      /** "where X is that excess damage" (Fall of Cair Andros, CR 120.10): the excess of the damage of a "dealt excess damage" trigger, read only in the body of such a trigger. */
+      readonly excess?: true;
       /** "create that many ... tokens": after an instruction that moved cards, the cards it moved (CR 608.2c); in a damage trigger, the event's amount. */
       readonly thatMany?: true;
       readonly span: Span;
     }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
+  // Surrounded by Orcs (CR 701.47a, 701.47b, 208.1): "where X is the amassed Army's power": the power of the Army the amass before it chose, read as the effect runs
+  | { readonly kind: 'amassedArmyPower'; readonly span: Span }
   // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"
   | { readonly kind: 'lifePaidAsEntered'; readonly span: Span }
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
@@ -1788,6 +1802,10 @@ export interface IrTrigger extends IrNode {
   readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'opponent';
   /** 'dealtDamage': "is dealt combat damage" rather than "is dealt damage" (stage P29, D-133). */
   readonly combat?: true;
+  /** 'dealtDamage': "is dealt noncombat damage" (CR 120.2b, 603.2). */
+  readonly noncombat?: true;
+  /** 'dealtDamage': "is dealt excess damage" (CR 120.10, 603.2): only damage that was more than lethal, its excess being the amount of the event. */
+  readonly excess?: true;
   /** 'enters': "enters untapped" (`false`) or "enters tapped" (`true`), how the permanent entered (stage P30, CR 603.6a). */
   readonly entersTapped?: boolean;
   /**
@@ -2673,6 +2691,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'thisWay',
   'triggerDamage',
   'dieResult',
+  'amassedArmyPower',
   'lifePaidAsEntered',
   'triggerTargetCount',
   'triggerAttackerCount',

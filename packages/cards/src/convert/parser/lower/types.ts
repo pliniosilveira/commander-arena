@@ -314,6 +314,8 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** Every trigger of the ability is "is dealt excess damage" (CR 120.10): "that excess damage" is the amount of its event. */
+  excessDamageTrigger: boolean;
   /** True while the reflexive ability of a payment made any number of times is lowered (issue 121, CR 603.12): the number of times paid is the number its event carries. */
   payReflexive: boolean;
   /** True while the "If you do" sentence of "you may pay one or more {E}" is lowered (issue 105, CR 107.14, 608.2c): "that many" is the number of energy counters paid, the X of the payment. */
@@ -514,6 +516,7 @@ export function newContext(
     discardedCardValue: false,
     lifeGainTrigger: false,
     scryTrigger: false,
+    excessDamageTrigger: false,
     payReflexive: false,
     payEnergyX: false,
     triggeredBody: false,

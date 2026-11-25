@@ -1037,6 +1037,38 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'loseLife',
 ]);
 
+/**
+ * "..., you may sacrifice it." before "When you do, choose one —" (Gorbag of Minas Morgul; CR 603.12, 608.2d, 701.21): the offer, one optional sacrifice, as the engine's `may` of
+ * it (the instruction whose doing the engine can tell). No test, "instead", "where" or other part is read in the sentence; it is refused, never guessed.
+ */
+export function lowerOfferSentence(sentence: IrSentence, ctx: LowerContext): LowerResult<Effect> {
+  const [clause, ...more] = sentence.clauses;
+  if (
+    clause === undefined ||
+    more.length > 0 ||
+    !clause.optional ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:may']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const offered = lowerClauses([{ ...clause, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  const [only, ...rest] = offered.value;
+  if (only === undefined || rest.length > 0 || only.kind !== 'sacrifice') {
+    return refuse(sentence);
+  }
+  return { ok: true, value: { kind: 'may', effect: only }, rule: clause.rule };
+}
+
 /** "Those creatures get +4/+4 until end of turn." as the first instruction of an attack batch trigger: the engine's `modifyPt` of the `triggerAttackers`. */
 function lowerThoseAttackers(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> {
   const rule = sentence.clauses[0]?.rule ?? sentence.rule;

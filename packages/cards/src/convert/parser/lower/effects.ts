@@ -112,6 +112,7 @@ import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { FLEET_E_LOWERINGS } from './fleet-e';
 import { FOOD_D_LOWERINGS } from './food-d';
+import { GAIN_KEYWORD_CHOICE_LOWERINGS } from './gain-keyword-choice';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
@@ -138,6 +139,7 @@ import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
+import { KEEP_DESTROY_REST_LOWERINGS } from './keep-destroy-rest';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KEFKA_LOWERINGS } from './kefka';
 import { KENRITH_LOWERINGS } from './kenrith';
@@ -2053,6 +2055,15 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       if (!ref.ok) return ref;
       return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
     }
+    // "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it." (Gorbag of Minas Morgul, CR 701.21a, 603.2c): "it" is the permanent the trigger is
+    // about, which its controller (the controller of the ability) sacrifices; the engine's `sacrifice` of the `triggerSubject`.
+    if (what.det === 'triggerSubject' && arg(clause, 'player') === undefined) {
+      const blocked = missingFeatures(['selector:triggerSubject']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const ref = objectRefOf(what, ctx, { triggerSubject: true });
+      if (!ref.ok) return ref;
+      return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
+    }
     if (what.det !== 'a') return failure(clause);
     // "Any number of other permanents" and "a creature with the greatest power among creatures they control" (stage P30, D-135).
     const blocked = missingFeatures([
@@ -3155,6 +3166,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,
+  ...KEEP_DESTROY_REST_LOWERINGS,
+  ...GAIN_KEYWORD_CHOICE_LOWERINGS,
   ...PARTY_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
   ...KENRITH_LOWERINGS,

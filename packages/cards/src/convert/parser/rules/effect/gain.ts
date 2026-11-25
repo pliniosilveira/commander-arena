@@ -285,8 +285,12 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
     'creatures your opponents control gain defender until end of turn',
     // Issue 347: a creature type and a land type.
     'Treefolk and Forests you control gain indestructible until end of turn',
+    // Assault on Osgiliath (CR 205.3m): two creature types said in the plural.
+    'Goblins and Orcs you control gain double strike and haste until end of turn',
   ],
   rejects: [
+    'Goblins and Orcs you control gain flying',
+    'Goblins or Orcs you control gain flying until end of turn',
     'creatures you control gains flying until end of turn',
     'creatures you control gain flying',
     'creatures you control gain flying until your next turn',
@@ -303,6 +307,8 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
       'noun.all-permanents',
       'noun.creature-land-pair',
       'noun.token-permanents',
+      // CR 205.3m: "Goblins and Orcs you control gain double strike and haste until end of turn" (Assault on Osgiliath).
+      'noun.subtype-pair',
     ],
     true,
   ),

@@ -49,6 +49,7 @@ import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { ENCHANTED_MANA_TRIGGER_RULES } from './enchanted-mana';
 import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
+import { ENTERS_AND_ATTACKS_TRIGGER_RULES } from './enters-and-attacks';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
 import { EXILE_CAST_TRIGGER_RULES } from './exile-cast';
@@ -1537,6 +1538,8 @@ export const TRIGGER_RULES = [
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,
   ...EXILE_CAST_TRIGGER_RULES,
+  // Sauron deck (March from the Black Gate): "~ enters and whenever an Army you control attacks" starts like `trigger.enters`, which stops before the rest.
+  ...ENTERS_AND_ATTACKS_TRIGGER_RULES,
   // Quandrix Unlimited deck, group E: "you cast a spell with {X} in its mana cost" and its first-each-turn form start like `trigger.cast`, which stops before the rest.
   ...QUANDRIX_E_TRIGGER_RULES,
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.

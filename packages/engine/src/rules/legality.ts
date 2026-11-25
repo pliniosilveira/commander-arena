@@ -54,7 +54,7 @@ import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
-import { flashSlotOf, slotCanBeFilled } from './target-choice';
+import { flashSlotOf, sameControllerFillable, slotCanBeFilled } from './target-choice';
 import { hasX, spellXCost } from './x-value';
 
 export type { CastAlternative, CastFrom };
@@ -720,8 +720,9 @@ export function targetsPossible(
     // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
     const restricted = only === null ? -1 : flashSlotOf(specs);
     if (only !== null && restricted < 0) return false;
-    return specs.every((spec, i) =>
-      slotCanBeFilled(state, spec, ctx, i === restricted ? only : null),
+    return (
+      specs.every((spec, i) => slotCanBeFilled(state, spec, ctx, i === restricted ? only : null)) &&
+      sameControllerFillable(state, specs, ctx)
     );
   });
 }
