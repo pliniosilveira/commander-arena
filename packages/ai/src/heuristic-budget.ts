@@ -54,17 +54,16 @@ export const CALL_COST = 10;
 
 /**
  * The work units the searches of one decision may use before they stop (a bound of the search, not a weight).
- * Set on the precons (issue 653) so that it stops only the largest plannings, about 1 in 80: a budget that
- * cut where the clock used to (50,000 and 80,000 units, 13% and 6% of plannings) lost 16 to 22 Elo to the
- * unbounded search of the benchmark. At about 0.045 ms a unit on the machine measured, the whole budget
- * takes some 7 s there, so on such a device the safety clock still cuts the largest plannings (about 7 in
- * 100, as the clock did before); on a device 2.5 times as fast the budget cuts them first. Most decisions use
- * far less: half of the plannings use under 12,000 units. The pull request of step 2 has the numbers.
+ * Set on the precons (issue 653) so that a planning costs about what it cost when the clock bounded it: half
+ * of the plannings use under 12,000 units, and about 6 in 100 reach the budget. At about 0.045 ms a unit on
+ * the machine measured, a decision that used all of it would take some 3.5 s, so there the safety clock still
+ * cuts the largest plannings; on a faster device the budget cuts them first. The pull request of step 2 has
+ * the numbers.
  */
-export const WORK_BUDGET = 160_000;
+export const WORK_BUDGET = 80_000;
 
 /** The work units at which a play-out that is still running is dropped (7/6 of the budget, as the shares). */
-export const WORK_LIMIT = 186_000;
+export const WORK_LIMIT = 93_000;
 
 /** The share of the time budget after which a search starts no candidate (the safety cutoff). */
 export const SEARCH_SHARE = 0.6;
