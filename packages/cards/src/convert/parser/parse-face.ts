@@ -501,6 +501,9 @@ function movesLinkedExile(effect: Effect): boolean {
         (effect.token.kind === 'custom' &&
           JSON.stringify(effect.token.ptAmount ?? null).includes('"kind":"linkedExile"'))
       );
+    // Izzet Chemister (CR 607.2a): "Cast any number of cards exiled with ~ without paying their mana costs" reads the cards the permanent exiled.
+    case 'castFree':
+      return effect.objects.kind === 'linkedExile';
     case 'may':
       return movesLinkedExile(effect.effect);
     case 'sequence':

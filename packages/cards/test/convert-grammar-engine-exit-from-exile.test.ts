@@ -1020,3 +1020,40 @@ describe('"Exile the top three cards of your library. Until the end of your next
     g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
   });
 });
+
+describe('"{1}{R}, {T}, Sacrifice ~: Cast any number of cards exiled with ~ without paying their mana costs." (CR 607.2a, 608.2g, 118.9)', () => {
+  const chemist = parsed(
+    'SYNTHETIC Izzet Test Goblin',
+    'Creature — Goblin Wizard',
+    'Haste\n{R}, {T}: Exile target instant or sorcery card from your graveyard.\n{1}{R}, {T}, Sacrifice ~: Cast any number of cards exiled with ~ without paying their mana costs.',
+    { manaCost: '{2}{R}', power: '2', toughness: '2', colors: ['R'] },
+  );
+  const build = () =>
+    scenario()
+      .define(chemist)
+      .seat(0)
+      .battlefield(chemist.name, 'Mountain', 'Mountain', 'Mountain')
+      .graveyard('Lightning Bolt')
+      .library(...FILLER)
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card it exiled is cast for free when it is sacrificed', () => {
+    const g = build();
+    g.act(0).activate(chemist.name, { ability: 1, targets: ['Lightning Bolt'], pay: true });
+    g.passAll();
+    g.expect.zone('Lightning Bolt', 'exile', { seat: 0 });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.act(0).activate(chemist.name, { ability: 2, pay: true });
+    g.passAll();
+    g.act(0).chooseCards('Lightning Bolt');
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBe(17);
+    g.expect.zone(chemist.name, 'graveyard', { seat: 0 });
+  });
+});
