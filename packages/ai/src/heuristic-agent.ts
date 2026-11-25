@@ -366,7 +366,9 @@ export class HeuristicAgent implements ExplainingAgent {
           calls: budget.calls(),
           units: budget.used(),
           cut: budget.cut(),
-          ms: budget.elapsed(),
+          // The clock as the searches last read it: one more read would make the decision longer on a host
+          // whose clock moves with every read.
+          ms: budget.seen(),
         });
       }
       this.reasonList.push({

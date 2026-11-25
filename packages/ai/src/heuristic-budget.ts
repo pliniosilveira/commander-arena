@@ -126,8 +126,9 @@ export class Work implements Engine {
 export interface Search {
   /**
    * What stops the search before its next candidate, or null to go on. `done` is how many candidates this
-   * search has played so far: the next one is expected to cost what they cost on average, and it is started
-   * only when that fits (D-164). The clock is named when both would stop it.
+   * search has played so far: the next one is expected to cost what they cost on average (its own work, or
+   * the decision's time so far over `done`, as before), and it is started only when that fits (D-164). The
+   * clock is named when both would stop it.
    */
   readonly expired: (done: number) => Cut | null;
 }
@@ -139,12 +140,17 @@ export interface Budget {
   readonly used: () => number;
   /** The engine calls made so far. */
   readonly calls: () => number;
-  /** A search that starts now. */
+  /** A search that starts now (it reads no clock: its first check does). */
   readonly search: () => Search;
   /** What drops a running play-out now (`WORK_LIMIT`, or `HARD_SHARE` of the clock), or null. */
   readonly over: () => Cut | null;
-  /** The milliseconds of the decision's clock used so far. */
+  /** The milliseconds of the decision's clock used so far (a read of the clock). */
   readonly elapsed: () => number;
+  /**
+   * The milliseconds of the decision's clock at its last read, without reading it again: a host measures the
+   * decision on the same clock, so the budget reads it no more often than the searches need.
+   */
+  readonly seen: () => number;
   /** The first cut any search of the decision met, the clock first when both did; null when none did. */
   readonly cut: () => Cut | null;
 }
@@ -168,6 +174,13 @@ export function startBudget(
   const searchMs = SEARCH_SHARE * ctx.budgetMs;
   const hardMs = HARD_SHARE * ctx.budgetMs;
   const work = new Work();
+  // The clock is read only where the searches check it, as before the work budget: a host measures the
+  // decision on the same clock, and a slow one moves with every read.
+  let last = 0;
+  const read = (): number => {
+    last = ctx.now() - start;
+    return last;
+  };
   let first: Cut | null = null;
   const note = (why: Cut | null): Cut | null => {
     if (why !== null && first !== 'clock') first = why;
@@ -179,11 +192,10 @@ export function startBudget(
     calls: () => work.calls,
     search: () => {
       const since = work.units;
-      const from = ctx.now() - start;
       return {
         expired: (done) => {
-          const ms = ctx.now() - start;
-          if (ms + (done > 0 ? (ms - from) / done : 0) >= searchMs) return note('clock');
+          const ms = read();
+          if (ms + (done > 0 ? ms / done : 0) >= searchMs) return note('clock');
           const next = done > 0 ? (work.units - since) / done : 0;
           const full = work.units >= bounds.budget || work.units + next > bounds.budget;
           return note(full ? 'work' : null);
@@ -191,10 +203,11 @@ export function startBudget(
       };
     },
     over: () => {
-      if (ctx.now() - start >= hardMs) return note('clock');
+      if (read() >= hardMs) return note('clock');
       return note(work.units >= bounds.limit ? 'work' : null);
     },
-    elapsed: () => ctx.now() - start,
+    elapsed: read,
+    seen: () => last,
     cut: () => first,
   };
 }
@@ -207,5 +220,6 @@ export const NO_BUDGET: Budget = {
   search: () => ({ expired: () => null }),
   over: () => null,
   elapsed: () => 0,
+  seen: () => 0,
   cut: () => null,
 };

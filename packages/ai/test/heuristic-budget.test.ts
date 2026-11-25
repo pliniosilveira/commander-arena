@@ -143,6 +143,32 @@ describe('the safety clock', () => {
     expect(budget.cut()).toBe('clock');
   });
 
+  test('the clock is read only by the checks: starting a search and the last time seen read nothing', () => {
+    // A host measures the decision on the same clock, and a slow clock moves with every read.
+    let reads = 0;
+    const budget = startBudget(
+      {
+        budgetMs: 1000,
+        now: () => {
+          reads += 1;
+          return 100 * reads;
+        },
+      },
+      { budget: 1000, limit: 1200 },
+    );
+    expect(reads).toBe(1);
+    const search = budget.search();
+    expect(reads).toBe(1);
+    expect(search.expired(0)).toBeNull();
+    expect(budget.over()).toBeNull();
+    expect(reads).toBe(3);
+    expect(budget.seen()).toBe(200);
+    expect(budget.seen()).toBe(200);
+    expect(reads).toBe(3);
+    expect(budget.elapsed()).toBe(300);
+    expect(reads).toBe(4);
+  });
+
   test('a budget with no deadline never runs out and counts nothing', () => {
     expect(NO_BUDGET.search().expired(5)).toBeNull();
     expect(NO_BUDGET.over()).toBeNull();
