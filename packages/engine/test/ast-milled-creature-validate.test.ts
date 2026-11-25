@@ -6,7 +6,7 @@ import { syntheticCard, validateCard } from '../src/index';
 
 const NAME = 'SYNTHETIC Necrotic Sweep';
 const you = { kind: 'you' } as const;
-const zombie = (what: 'milledCreature' | 'sacrificed') => ({
+const zombie = (what: 'milledCreature' | 'milledLand' | 'sacrificed') => ({
   kind: 'createToken',
   token: {
     kind: 'custom',
@@ -54,6 +54,17 @@ describe('milledCreature', () => {
       validateCard(withEffects([{ kind: 'draw', player: you, count: 1 }, zombie('milledCreature')]))
         .length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe('milledLand (Dune Chanter, "for each land card milled this way")', () => {
+  const mill = { kind: 'mill', player: you, count: 2 };
+
+  test('is valid after a mill, refused without one', () => {
+    expect(validateCard(withEffects([mill, zombie('milledLand')]))).toEqual([]);
+    expect(JSON.stringify(validateCard(withEffects([zombie('milledLand')])))).toContain(
+      'a mill effect',
+    );
   });
 });
 

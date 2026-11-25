@@ -1990,6 +1990,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
   milledCreature: 'a mill effect',
+  milledLand: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
@@ -2045,7 +2046,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedMost',
       'discardedTypeCount',
     ];
-  if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
+  if (e?.kind === 'mill') return ['milledValue', 'milledCreature', 'milledLand'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
   // Federation Fleet group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way".
   if (e?.kind === 'addCounters') return ['countersPut'];

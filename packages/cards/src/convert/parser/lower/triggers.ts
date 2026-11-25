@@ -782,9 +782,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (t.subject?.det === 'self') {
         return ok({ kind: 'putIntoGraveyard', who: 'any', from: 'anywhere', self: true });
       }
+      // A land type ("a Desert card", Yuma, CR 205.3i) is a filter on the card as it is in the graveyard as well.
       const kind = t.subject?.filter;
       const filter =
-        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+        t.subject === undefined ||
+        (kind?.types === undefined && kind?.notTypes === undefined && kind?.subtypes === undefined)
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;

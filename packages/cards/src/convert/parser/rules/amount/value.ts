@@ -1024,6 +1024,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
     'for each creature card put into a graveyard this way',
+    'for each land card milled this way',
     'for each card returned this way',
   ],
   rejects: [
@@ -1113,6 +1114,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: milled.pos },
         },
         pos: milled.pos,
+      };
+    }
+    // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards the mill before it put into a graveyard.
+    const milledLand = pattern(/for each land card milled this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (milledLand.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'milledLand',
+          words: ['land'],
+          span: { start: pos, end: milledLand.pos },
+        },
+        pos: milledLand.pos,
       };
     }
     // Devout Invocation (CR 701.26a, 608.2c): "for each creature tapped this way": the permanents the `tap` of a chosen set before it tapped.

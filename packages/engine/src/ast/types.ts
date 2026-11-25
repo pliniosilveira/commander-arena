@@ -537,6 +537,8 @@ export type ThisWayKind =
   | 'milledValue'
   // Dread Summons (CR 701.17a): "for each creature card put into a graveyard this way": the creature cards the `mill` effects of this resolution milled, whoever's they are.
   | 'milledCreature'
+  // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards the `mill` effects of this resolution milled, whoever's they are.
+  | 'milledLand'
   | 'discardedCreature'
   | 'discardedNoncreature'
   // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.

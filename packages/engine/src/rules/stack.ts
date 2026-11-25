@@ -296,6 +296,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 milledValue: (res.thisWay?.milledValue ?? 0) + (out.thisWay.milledValue ?? 0),
                 milledCreature:
                   (res.thisWay?.milledCreature ?? 0) + (out.thisWay.milledCreature ?? 0),
+                milledLand: (res.thisWay?.milledLand ?? 0) + (out.thisWay.milledLand ?? 0),
                 discardedCreature:
                   (res.thisWay?.discardedCreature ?? 0) + (out.thisWay.discardedCreature ?? 0),
                 discardedNoncreature:

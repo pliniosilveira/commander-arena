@@ -703,6 +703,7 @@ export type IrAmount =
         | 'discarded'
         | 'milledValue'
         | 'milledCreature'
+        | 'milledLand'
         | 'discardedMost'
         | 'discardedTypeCount'
         | 'exiledCreatures'
