@@ -10,13 +10,15 @@ import type { ImportTab } from '../../store';
 import { usePrecons } from '../precons-context';
 import { useActions, useApp } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
-import { findPrints } from './card-prints';
+import { type CardPrint, findPrints } from './card-prints';
 import { DeckScreen } from './DeckScreen';
+import { withPreferredPrintings, withPrinting } from './deck-text';
 import { type EditingPrecon, InputPanel } from './InputPanel';
 import { useImportEnv } from './import-context';
 import { SavedDecksView } from './ListViews';
 import { loadNiceArt, saveNiceArt, withNiceCommanderArt } from './nice-art';
 import { PreconDecksView } from './PreconDecksView';
+import { preferPrint, preferredPrints } from './preferred-prints';
 import { OfflineNotice, ResultsView } from './ResultsView';
 import { useImportFlow } from './use-import-flow';
 import { WhyDialog } from './WhyDialog';
@@ -51,6 +53,7 @@ export function ImportScreen() {
     readonly service: ImportService;
     /** Absent for a built-in deck: its printings are not offered. */
     readonly onSave?: (text: string) => Promise<void>;
+    readonly onSaveAll?: (cardName: string, print: CardPrint) => Promise<void>;
   } | null>(null);
   const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
@@ -83,7 +86,9 @@ export function ImportScreen() {
   const save = async () => {
     // A commander chosen above, because the list marks none, is part of the deck: it is written
     // into the saved text, or the deck forgets it on the next load (issue 123).
-    const text = markCommanders(flow.text, flow.commanderNames);
+    const marked = markCommanders(flow.text, flow.commanderNames);
+    // A new deck gets the art the player chose for all decks (a deck being edited keeps its own list).
+    const text = editing === null ? withPreferredPrintings(marked, preferredPrints()) : marked;
     // No name typed: the commander names the deck, so Import never leaves a deck unsaved.
     const name = flow.name.trim() || report?.commanders[0]?.stored.name || DEFAULT_DECK_NAME;
     try {
@@ -262,6 +267,19 @@ export function ImportScreen() {
                 text: deck.text,
                 service: env.service,
                 onSave: (text) => env.decks.save({ name: deck.name, text }).then(refreshDecks),
+                onSaveAll: async (cardName, print) => {
+                  const set = print.setCode.toLowerCase();
+                  preferPrint(cardName, set, print.collector);
+                  // Every other saved deck that has the card gets the printing now.
+                  for (const other of await env.decks.list()) {
+                    if (other.id === deck.id) continue;
+                    const next = withPrinting(other.text, cardName, set, print.collector);
+                    if (next !== null && next !== other.text) {
+                      await env.decks.save({ name: other.name, text: next });
+                    }
+                  }
+                  refreshDecks();
+                },
               })
             }
             onRemove={(deck) => void env.decks.remove(deck.id).then(refreshDecks)}
