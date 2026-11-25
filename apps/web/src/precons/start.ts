@@ -7,6 +7,7 @@
 
 import type { ReplayDeck } from '@commander-arena/cards';
 import type { AiKind, NewGameOptions, OpponentOptions } from '../game/protocol';
+import { setGameImages } from '../ui/board/deck-images';
 import { setGamePrintings } from '../ui/board/deck-printings';
 import type { PreconDeck, Precons } from './build';
 import { type ChallengeLevel, emblemsFor } from './challenges/levels';
@@ -48,6 +49,10 @@ async function resolveId(
 const listOf = (deck: PreconDeck | { readonly ok: true; readonly hidden: true }): string =>
   'info' in deck && deck.info !== null ? deck.info.decklist : '';
 
+/** The stored cards of a prepared deck, which the board draws from their own picture links; a hidden test deck has none. */
+const imagesOf = (deck: PreconDeck | { readonly ok: true; readonly hidden: true }) =>
+  'images' in deck ? deck.images : [];
+
 /** How a resolved deck was built, for the replay of an AI report (issue 627); a hidden test deck is rebuilt from its id. */
 const replayOf = (
   deck: PreconDeck | { readonly ok: true; readonly hidden: true },
@@ -64,6 +69,7 @@ export async function startOptionsFor(
   if (!ai.ok) return { ok: false, reason: ai.reason };
   // The board draws each seat in the printings its own deck lists: the human is seat 0, the opponent seat 1.
   setGamePrintings([listOf(human), listOf(ai)]);
+  setGameImages([imagesOf(human), imagesOf(ai)]);
   const aiPreconName = precons.list.find((info) => info.id === request.aiDeck)?.name;
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   const options: NewGameOptions = {
@@ -104,11 +110,13 @@ export async function startTableOptionsFor(
   if (!human.ok) return { ok: false, reason: human.reason };
   const opponents: OpponentOptions[] = [];
   const lists: string[] = [];
+  const pictures = [imagesOf(human)];
   const replays: ReplayDeck[] = [replayOf(human, request.humanDeck)];
   for (const [index, id] of request.opponentDecks.entries()) {
     const resolved = await resolveId(precons, id, request.allowHidden);
     if (!resolved.ok) return { ok: false, reason: `Opponent ${index + 1}: ${resolved.reason}` };
     lists.push(listOf(resolved));
+    pictures.push(imagesOf(resolved));
     replays.push(replayOf(resolved, id));
     const preconName = precons.list.find((info) => info.id === id)?.name;
     opponents.push({
@@ -118,6 +126,7 @@ export async function startTableOptionsFor(
     });
   }
   setGamePrintings([listOf(human), ...lists]);
+  setGameImages(pictures);
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   const options: NewGameOptions = {
     seed: request.seed,
@@ -166,6 +175,7 @@ export async function startChallengeOptions(
     };
   }
   setGamePrintings([human.info.decklist, ai.info.decklist]);
+  setGameImages([imagesOf(human), imagesOf(ai)]);
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   return {
     ok: true,

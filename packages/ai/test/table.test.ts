@@ -1,7 +1,13 @@
 // The table harness (issue 482): three and four agents play one deck, each seed once for each rotation, so every agent sits in every seat on the same shuffles. Small limits: the point is
 // the bookkeeping (who sat where, who won, determinism), not the quality of play.
 import { describe, expect, test } from 'vitest';
-import { AGENT_FACTORIES, ARENA_DECKS, playTable, type TableOptions } from '../src/index';
+import {
+  AGENT_FACTORIES,
+  type AgentFactory,
+  ARENA_DECKS,
+  playTable,
+  type TableOptions,
+} from '../src/index';
 
 const deck = ARENA_DECKS.map((d) => (Array.isArray(d) ? d[0] : d));
 const options = (agents: TableOptions['agents'], games: number): TableOptions => ({
@@ -37,6 +43,26 @@ describe('playTable', () => {
         expect((g.winner + g.rotation) % 3).toBe(g.winnerSeat);
       }
     }
+  }, 60_000);
+
+  test('the agent seed goes with the seat: every rotation gives a seat the same seed', async () => {
+    const seen = new Set<string>();
+    const spy = (k: number): AgentFactory => ({
+      label: `spy ${k}`,
+      create: (seed) => {
+        const inner = AGENT_FACTORIES.random.create(seed);
+        return {
+          name: 'spy',
+          decide(view, decision, ctx) {
+            seen.add(`${view.viewer}:${seed}`);
+            return inner.decide(view, decision, ctx);
+          },
+        };
+      },
+    });
+    await playTable(options([spy(0), spy(1), spy(2)], 3));
+    // Three rotations of one seed, three seats: each seat saw one seed, whichever agent sat there.
+    expect([...seen].sort()).toEqual(['0:4', '1:5', '2:6']);
   }, 60_000);
 
   test('the same options give the same result', async () => {
