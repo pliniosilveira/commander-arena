@@ -1,0 +1,83 @@
+name: AI benchmark
+
+# The AI benchmark (issue 624, phase 1): the HeuristicAgent of the branch this workflow is started on
+# against the agent of the baseline ref, on the real precons, paired seeds with the seats swapped, in 8
+# shards. The report (verdict, score with its 95% interval, score per precon) is the run's summary.
+# Manual only: start it on a branch that changes the agent, with main as the baseline.
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: The ref whose agent is the baseline (a branch, tag or commit)
+        default: main
+      games:
+        description: Total games, a multiple of 16 (each seed is played twice, over 8 shards)
+        default: '400'
+      seed:
+        description: The first game seed
+        default: '1'
+
+concurrency:
+  group: ai-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  play:
+    name: play (${{ matrix.shard }}/8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    env:
+      BASELINE: ${{ github.event.inputs.baseline }}
+      GAMES: ${{ github.event.inputs.games }}
+      SEED: ${{ github.event.inputs.seed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Extract the baseline agent
+        run: |
+          git fetch --no-tags origin "$BASELINE"
+          node tools/ai/baseline.ts --ref FETCH_HEAD
+      - name: Play the shard
+        run: >
+          node tools/ai/benchmark.ts --games "$GAMES" --seed "$SEED"
+          --shard ${{ matrix.shard }}/8 --out shard-${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: benchmark-shard-${{ matrix.shard }}
+          path: shard-${{ matrix.shard }}.json
+
+  report:
+    needs: play
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      BASELINE: ${{ github.event.inputs.baseline }}
+      CANDIDATE: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: benchmark-shard-*
+          merge-multiple: true
+      - name: Report
+        run: |
+          node tools/ai/benchmark-report.ts --candidate "$CANDIDATE" --baseline "$BASELINE" shard-*.json \
+            | tee -a "$GITHUB_STEP_SUMMARY"
