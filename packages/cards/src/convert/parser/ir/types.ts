@@ -471,6 +471,8 @@ export interface IrFilter {
   readonly castFromExile?: true;
   /** "from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1): a spell its caster cast from their own graveyard (the engine's `castFromOwnGraveyard`). */
   readonly castFromOwnGraveyard?: true;
+  /** "from your graveyard or from exile" (Doc Aurlock, Grizzled Genius, CR 601.2a, 404.1, 406.1): a spell cast from exile or from its caster's own graveyard (the engine's `castFromOwnGraveyardOrExile`). */
+  readonly castFromOwnGraveyardOrExile?: true;
   /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
   readonly chosenByOpponent?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
@@ -2047,6 +2049,8 @@ export type IrStaticEffect =
   | { readonly kind: 'abilityCostReduction'; readonly amount: number; readonly targetsSelf?: true }
   // "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Limit Break deck, Professor Hojo, CR 601.2f, 602.2b)
   | { readonly kind: 'firstTargetingAbilityCostReduction'; readonly amount: number }
+  /** "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a): the engine's `plotCostReduction`, generic mana only. */
+  | { readonly kind: 'plotCostReduction'; readonly amount: number }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
   | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off

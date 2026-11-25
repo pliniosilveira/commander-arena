@@ -385,10 +385,30 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly fromGraveyard names nothing else');
       }
+      // CR 106.6, 108.3 (Thieving Varmint): "spells you don't own" stands alone.
+      if (only.notOwned !== undefined && only.notOwned !== true) {
+        issue(out, `${path}.spendOnly.notOwned`, 'notOwned must be true when present');
+      }
+      if (
+        only.notOwned === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined ||
+          only.notGeneric !== undefined ||
+          only.fromGraveyard !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly notOwned names nothing else');
+      }
       if (
         only.types === undefined &&
         only.subtypes === undefined &&
         only.fromGraveyard !== true &&
+        only.notOwned !== true &&
         only.chosenType !== true &&
         only.qualities === undefined &&
         only.xCost !== true &&

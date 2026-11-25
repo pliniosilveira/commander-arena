@@ -1076,6 +1076,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ deals combat damage to a player, gain control of ${e}.`,
   ),
   'static.first-targeting-ability-cost-reduction': asIs,
+  'static.plot-cost-reduction': asIs,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,

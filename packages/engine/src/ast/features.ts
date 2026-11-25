@@ -126,6 +126,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyNotGeneric',
     // Issue 102 (Lord of the Forsaken): "Spend this mana only to cast a spell from your graveyard." (`ManaAbility.spendOnly.fromGraveyard`)
     'manaSpendOnlyFromGraveyard',
+    // Thieving Varmint: "Spend this mana only to cast spells you don't own." (`ManaAbility.spendOnly.notOwned`)
+    'manaSpendOnlyNotOwned',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // Empowered Autogenerator: "Put a charge counter on this artifact. Add X mana ..." (`ManaAbility.putCounter`).
@@ -1183,6 +1185,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castSpellFromExile',
     // Scions of Spellcraft deck (Emet-Selch of the Third Seat): "spells you cast from your graveyard" (`ObjectFilter.castFromOwnGraveyard`).
     'castFromOwnGraveyard',
+    // Grand Larceny deck (Doc Aurlock, Grizzled Genius): "spells you cast from your graveyard or from exile" (`ObjectFilter.castFromOwnGraveyardOrExile`).
+    'castFromOwnGraveyardOrExile',
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
@@ -1756,6 +1760,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playLandsFromGraveyard',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
     'activateAsThoughHaste',
+    // CR 702.170a (Doc Aurlock, Grizzled Genius): "Plotting cards from your hand costs {2} less."
+    'plotCostReduction',
     // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
     'loyaltyActivationLimit',
     // D-179: "Your opponents can't cast spells during your turn."
@@ -2145,6 +2151,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyNotGeneric',
   /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): `ManaAbility.spendOnly.fromGraveyard`. */
   'manaSpendOnlyFromGraveyard',
+  /** "Spend this mana only to cast spells you don't own" (CR 106.6, 108.3, Thieving Varmint): `ManaAbility.spendOnly.notOwned`. */
+  'manaSpendOnlyNotOwned',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
@@ -2493,6 +2501,8 @@ export const SELECTOR_KINDS = [
   'castSpellFromExile',
   /** "Spells you cast from your graveyard" (CR 601.2a, 404.1, Emet-Selch of the Third Seat): the engine's `ObjectFilter.castFromOwnGraveyard`. */
   'castFromOwnGraveyard',
+  /** "Spells you cast from your graveyard or from exile" (CR 601.2a, 404.1, 406.1, Doc Aurlock, Grizzled Genius): the engine's `ObjectFilter.castFromOwnGraveyardOrExile`. */
+  'castFromOwnGraveyardOrExile',
   /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
@@ -3053,6 +3063,8 @@ export const STATIC_KINDS = [
   'playLandsFromGraveyard',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
   'activateAsThoughHaste',
+  /** "Plotting cards from your hand costs {2} less" (CR 702.170a, Doc Aurlock, Grizzled Genius): the engine's `plotCostReduction`. */
+  'plotCostReduction',
   /** "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once" (CR 606.3): the engine's `loyaltyActivationLimit`. */
   'loyaltyActivationLimit',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
@@ -3354,6 +3366,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyMonocolored: true,
   manaSpendOnlyNotGeneric: true,
   manaSpendOnlyFromGraveyard: true,
+  manaSpendOnlyNotOwned: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   manaPutCounter: true,

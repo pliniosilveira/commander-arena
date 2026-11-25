@@ -427,6 +427,7 @@ export function checkFilter(
     'castFromGraveyard',
     'castFromExile',
     'castFromOwnGraveyard',
+    'castFromOwnGraveyardOrExile',
     'xInManaCost',
     'firstXSpellThisTurn',
     'firstCastFromExileThisTurn',

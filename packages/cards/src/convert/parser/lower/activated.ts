@@ -94,6 +94,11 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   if (fromGraveyard?.kind === 'flag' && fromGraveyard.value) {
     return plainClause(clause) ? { fromGraveyard: true } : null;
   }
+  // "Spend this mana only to cast spells you don't own." (Thieving Varmint, CR 106.6, 108.3).
+  const notOwned = clause.args.notOwned;
+  if (notOwned?.kind === 'flag' && notOwned.value) {
+    return plainClause(clause) ? { notOwned: true } : null;
+  }
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
@@ -419,6 +424,7 @@ function lowerManaAbility(
       ? (['ability:manaSpendOnlyMonocolored'] as const)
       : []),
     ...(spendOnly?.fromGraveyard === true ? (['ability:manaSpendOnlyFromGraveyard'] as const) : []),
+    ...(spendOnly?.notOwned === true ? (['ability:manaSpendOnlyNotOwned'] as const) : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -1150,6 +1156,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaSpendOnlyMonocolored',
   'ability:manaSpendOnlyNotGeneric',
   'ability:manaSpendOnlyFromGraveyard',
+  'ability:manaSpendOnlyNotOwned',
   'ability:spendOnlyChosenColor',
   'manaCost:tap',
   'manaCost:mana',

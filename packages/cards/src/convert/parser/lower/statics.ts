@@ -690,6 +690,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
       return ['static:costPerExtraTarget'];
+    case 'plotCostReduction':
+      return ['static:plotCostReduction'];
     case 'restrictUnless':
       return ['static:restrictionUnless'];
     case 'ptAmount':
@@ -1580,6 +1582,20 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a).
+  if (first.kind === 'plotCostReduction') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:plotCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'plotCostReduction', amount: first.amount } }],
+      rule: ability.rule,
+    };
+  }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
@@ -1879,6 +1895,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:restriction',
   'static:costReduction',
   'static:costIncrease',
+  'static:plotCostReduction',
   // D-428 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   'static:abilityCostReduction',
   'static:setTypes',

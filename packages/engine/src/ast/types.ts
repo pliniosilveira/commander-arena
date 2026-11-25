@@ -867,6 +867,12 @@ export interface ObjectFilter {
    */
   readonly castFromOwnGraveyard?: true;
   /**
+   * "Spells you cast from your graveyard or from exile" (Doc Aurlock, Grizzled Genius, CR 601.2a, 404.1, 406.1, 108.3): the spell on the stack was cast from exile, or from a graveyard
+   * the card's owner is the caster of (as `castFromOwnGraveyard`). Read from the spell itself as it is cast (the zone it came from, `castFrom`), so only a spell is matched; in a cost
+   * reduction (`costReduction.spells`) it is read as the cost is determined. Not with `notCastFromHand`, `castFromHand`, `castFromGraveyard`, `castFromExile` or `castFromOwnGraveyard`.
+   */
+  readonly castFromOwnGraveyardOrExile?: true;
+  /**
    * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
    * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -9068,6 +9074,12 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
+   * "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a, 118.7): a static ability of a permanent on the battlefield that takes
+   * `amount` generic mana off the generic part of the plot cost of each card its controller plots from their hand. Plotting is a special action, not a spell or an ability, so
+   * this is no `costReduction`; it never takes the cost below zero and changes no colored mana, and every instance applies.
+   */
+  | { readonly kind: 'plotCostReduction'; readonly amount: number }
+  /**
    * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-461, CR 601.2f, 602.2b, 118.7, 113.6b): a static ability of a permanent on the
    * battlefield that takes `amount` generic mana off the generic part of the first mana cost of every activated ability (not a mana ability) of an object `objects` describes, whoever
    * activates it. The object is a card in the graveyard (`zone` is `graveyard`, `controller: 'you'` is "your graveyard", relative to the controller of the permanent with this ability)
@@ -9863,6 +9875,12 @@ export interface ManaAbility {
      * `monocoloredChosen`.
      */
     readonly fromGraveyard?: true;
+    /**
+     * "Spend this mana only to cast spells you don't own." (Thieving Varmint; CR 106.6, 108.3): the mana can pay for a spell whose owner is not the player who casts it, never for
+     * a spell of their own and never for an ability. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities`, `xCost`, `abilitiesOnly`, `monocoloredChosen`,
+     * `notGeneric` or `fromGraveyard`.
+     */
+    readonly notOwned?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

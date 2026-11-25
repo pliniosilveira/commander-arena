@@ -123,16 +123,10 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
     ) {
       return failure(clause);
     }
-    // Lorehold group 1: the card an `exile` of the text exiled is face up where it was and nobody looks at it: never "while exiled" (CR 406.3 asks cards exiled face down).
-    // Hostage Taker (CR 609.4b, 611.2b): "you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell": a card exiled face up where it was
-    // stays castable for as long as it stays in exile (a card that leaves exile is a new object, CR 400.7).
-    const whileExiledCast = lasts === 'whileExiled' && arg(clause, 'anyManaType') !== undefined;
-    if (
-      ctx.exiled === 'cards' &&
-      ((lasts === 'whileExiled' && !whileExiledCast) || arg(clause, 'lookAt') !== undefined)
-    ) {
-      return failure(clause);
-    }
+    // Lorehold group 1: the card an `exile` of the text exiled is face up where it was and nobody looks at it: "look at" is never read of it (CR 406.3 asks cards exiled face down).
+    // Hostage Taker (CR 609.4b, 611.2b), Savvy Trader: "you may play that card for as long as it remains exiled": a card exiled face up where it was stays playable for as long as it
+    // stays in exile (a card that leaves exile is a new object, CR 400.7).
+    if (ctx.exiled === 'cards' && arg(clause, 'lookAt') !== undefined) return failure(clause);
     // D-327 (CR 601.2, 305.1): the cards the controller milled are in their graveyard, face up: the permission lasts this turn or the next, never "while exiled",
     // and there is nothing to look at.
     if (ctx.exiled === 'milled') {
