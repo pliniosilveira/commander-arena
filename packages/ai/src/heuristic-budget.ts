@@ -54,13 +54,14 @@ export const CALL_COST = 10;
 
 /**
  * The work units the searches of one decision may use before they stop (a bound of the search, not a weight).
- * Calibrated on the precons (issue 653) so that a decision costs about what it cost when the clock alone
- * bounded it; the pull request of step 2 has the numbers.
+ * Calibrated on the precons (issue 653) so that a planning costs about what it cost when the clock bounded
+ * it (about 0.045 ms a unit on the machine measured); the pull request of step 2 has the numbers. Most
+ * decisions use far less: about 94 plannings in 100 on the precons end before it.
  */
-export const WORK_BUDGET = 50_000;
+export const WORK_BUDGET = 80_000;
 
-/** The work units at which a play-out that is still running is dropped. */
-export const WORK_LIMIT = 58_000;
+/** The work units at which a play-out that is still running is dropped (7/6 of the budget, as the shares). */
+export const WORK_LIMIT = 93_000;
 
 /** The share of the time budget after which a search starts no candidate (the safety cutoff). */
 export const SEARCH_SHARE = 0.6;
