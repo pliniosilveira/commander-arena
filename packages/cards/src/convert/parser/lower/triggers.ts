@@ -33,7 +33,12 @@ import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
-import { lowerMayInstead, lowerSentences } from './sentences';
+import {
+  lowerMayInstead,
+  lowerOfferSentence,
+  lowerSentences,
+  withoutAnyNumberOffer,
+} from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -199,12 +204,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ]);
         if (blocked.length > 0) return failure(t, blocked);
       }
+      if (t.fromExile === true) {
+        const blocked = missingFeatures(['trigger:entersBattlefieldFromExile']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
       return ok({
         kind: 'entersBattlefield',
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
         ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
+        ...(t.fromExile === true ? { fromExile: true as const } : {}),
         ...(t.fromGraveyard === true && t.yourGraveyard === true
           ? { graveyardOwner: 'you' as const }
           : {}),
@@ -236,13 +246,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dealtDamage': {
       // CR 120.3, 603.2g (D-133): once for each source that damages the permanent.
       const what = whatOf(t, ctx);
-      return what.ok
-        ? ok({
-            kind: 'dealtDamage',
-            what: what.value,
-            ...(t.combat === true ? { combat: true } : {}),
-          })
-        : what;
+      if (!what.ok) return what;
+      // CR 120.2b, 120.10: "noncombat damage" and "excess damage" are features of the engine's `dealtDamage` (`excess` makes its amount the excess).
+      const blocked = missingFeatures([
+        ...(t.noncombat === true ? (['trigger:dealtDamageNoncombat'] as const) : []),
+        ...(t.excess === true ? (['trigger:dealtDamageExcess'] as const) : []),
+      ]);
+      if (blocked.length > 0) return failure(t, blocked);
+      return ok({
+        kind: 'dealtDamage',
+        what: what.value,
+        ...(t.combat === true ? { combat: true } : {}),
+        ...(t.noncombat === true ? { noncombat: true } : {}),
+        ...(t.excess === true ? { excess: true } : {}),
+      });
     }
     case 'becomesTapped': {
       const what = whatOf(t, ctx);
@@ -348,7 +365,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever enchanted creature deals damage to an opponent" (issue 347, CR 120.2, 603.2c): damage of any kind to a player.
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
-      if (t.damaged !== 'player' && t.damaged !== 'opponent') return failure(t);
+      if (t.damaged !== 'player' && t.damaged !== 'opponent' && t.damaged !== 'you') {
+        return failure(t);
+      }
       const missing = missingFeatures(['trigger:dealsDamage']);
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: 'dealsDamage', what: what.value, to: t.damaged });
@@ -553,6 +572,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:ringTempted']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'ringTempted' });
     }
+    case 'dungeonCompleted': {
+      // "Whenever you complete a dungeon" (CR 309.7, 701.49c): the controller of the ability is the player whose dungeon was completed.
+      const blocked = missingFeatures(['trigger:dungeonCompleted']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'dungeonCompleted' });
+    }
     case 'ringBearerChosen': {
       // CR 701.54a: unlike `ringTempted`, this trigger needs a creature to have been chosen.
       const blocked = missingFeatures(['trigger:ringTempted']);
@@ -743,7 +767,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
+        ...(t.attackedInitiativeHolder === true ? { attackedInitiativeHolder: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
+        ...(t.eachAttackedOpponent === true ? { eachAttackedOpponent: true as const } : {}),
         ...(t.includesSource === true ? { includesSource: true as const } : {}),
         ...(t.attackingYourOpponents === true ? { attackingYourOpponents: true as const } : {}),
       });
@@ -858,9 +884,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (t.subject?.det === 'self') {
         return ok({ kind: 'putIntoGraveyard', who: 'any', from: 'anywhere', self: true });
       }
+      // A land type ("a Desert card", Yuma, CR 205.3i) is a filter on the card as it is in the graveyard as well.
       const kind = t.subject?.filter;
       const filter =
-        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+        t.subject === undefined ||
+        (kind?.types === undefined && kind?.notTypes === undefined && kind?.subtypes === undefined)
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;
@@ -951,6 +979,10 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
   }
+  // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked, which the engine gives as the trigger player.
+  if (only.event === 'attackBatch' && only.eachAttackedOpponent === true) {
+    return { selector: { kind: 'triggerPlayer' }, needs: ['selector:triggerPlayer'] };
+  }
   if (only.actor?.det === 'you') {
     return { selector: { kind: 'you' }, needs: ['selector:you'] };
   }
@@ -968,7 +1000,6 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ([
       'drawn',
       'sacrifice',
-      'becomesTarget',
       'lifeGained',
       'lifeLost',
       'attackBatch',
@@ -987,6 +1018,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'winsCoinFlip',
     ].includes(only.event) &&
       only.actor !== undefined) ||
+    // Exit from Exile deck (Bonecrusher Giant, CR 603.2, 115.1): the controller of the spell or ability that targeted is the player of the event, said or not ("that spell's controller").
+    only.event === 'becomesTarget' ||
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
@@ -1056,6 +1089,15 @@ function lowerPaidModalTriggered(
   const [sentence, ...rest] = ability.body.sentences;
   const [clause, ...more] = sentence?.clauses ?? [];
   const offer = clause?.args.cost;
+  // "..., you may sacrifice it. When you do, choose one —" (Gorbag of Minas Morgul, CR 603.12, 701.21): the offer is a sacrifice, not a payment.
+  if (
+    sentence !== undefined &&
+    rest.length === 0 &&
+    clause !== undefined &&
+    clause.verb === 'sacrifice'
+  ) {
+    return lowerSacrificeModalTriggered(ability, sentence, modal, triggers, own, ctx);
+  }
   if (
     sentence === undefined ||
     rest.length > 0 ||
@@ -1100,6 +1142,52 @@ function lowerPaidModalTriggered(
       modes: [...modes],
       chooseModes,
     },
+  };
+  return {
+    ok: true,
+    value: triggers.map((trigger) => ({
+      kind: 'triggered',
+      trigger,
+      effect,
+      ...(own.interveningIf === undefined ? {} : { interveningIf: own.interveningIf }),
+      ...(own.triggerCondition === undefined ? {} : { triggerCondition: own.triggerCondition }),
+      ...(own.once ? { oncePerTurn: true as const } : {}),
+    })),
+    rule: ability.trigger.rule,
+  };
+}
+
+/**
+ * "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it. When you do, choose one —" and its bullets (Gorbag of Minas Morgul; CR 603.12,
+ * 603.3c, 700.2b, 701.21): the engine's `may` of the sacrifice and, as the last effect of the same sequence, the modal `reflexive` ability, which is created only if the permanent was
+ * sacrificed and whose modes are chosen as it goes on the stack, not as the first ability triggers.
+ */
+function lowerSacrificeModalTriggered(
+  ability: Triggered,
+  sentence: Triggered['body']['sentences'][number],
+  modal: IrModes,
+  triggers: readonly Trigger[],
+  own: {
+    readonly interveningIf: Condition | undefined;
+    readonly triggerCondition: Condition | undefined;
+    readonly once: boolean;
+  },
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const blocked = missingFeatures(['effect:reflexive', 'ability:reflexiveModal']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const offer = lowerOfferSentence(sentence, ctx);
+  if (!offer.ok) return offer;
+  const lowered = lowerModes(modal, ctx);
+  if (!lowered.ok) return lowered;
+  if (lowered.value.usesX) return failure(ability);
+  const { modes, chooseModes } = lowered.value;
+  const effect: Effect = {
+    kind: 'sequence',
+    effects: [
+      offer.value,
+      { kind: 'reflexive', effect: NO_EFFECT, modes: [...modes], chooseModes },
+    ],
   };
   return {
     ok: true,
@@ -1585,6 +1673,8 @@ function lowerTriggeredAbility(
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.excessDamageTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'dealtDamage' && t.excess === true);
   ctx.triggeredBody = true;
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
@@ -1655,6 +1745,16 @@ function lowerTriggeredAbility(
     const blocked = missingFeatures(['selector:xInManaCost', 'trigger:activatesAbilityX']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers.splice(0, triggers.length, ...folded);
+  } else if (ifWritten?.test.kind === 'youAreDefendingPlayer') {
+    // "Whenever a creature an opponent controls attacks, if you're the defending player, ..." (Kazuul, CR 508.5, 603.4): whom the creature was declared as attacking is a part of the
+    // event of the one `attacks` trigger, read as the attack is declared (the engine's `at: 'defendingYou'`), not an intervening "if" of its own.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'attacks' || only.at !== undefined) {
+      return failure(ifWritten, []);
+    }
+    const blocked = missingFeatures(['trigger:attacksAt']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers[0] = { ...only, at: 'defendingYou' };
   } else if (ifWritten?.test.kind === 'enteredFromGraveyard') {
     // "Whenever one or more other creatures you control enter, if they entered or were cast from a graveyard, ..." (Twilight Diviner, CR 603.4, 603.6a): the zone each permanent came from
     // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
@@ -1760,6 +1860,10 @@ function lowerTriggeredAbility(
   ctx.entersX = triggers.every(
     (t) => t.kind === 'entersBattlefield' && 'kind' in t.what && t.what.kind === 'this',
   );
+  // CR 701.37c (Death Kiss): "When ~ becomes monstrous, goad up to X target creatures": the X is the one of the monstrosity.
+  ctx.monstrousX = triggers.every(
+    (t) => t.kind === 'becomesMonstrous' && 'kind' in t.what && t.what.kind === 'this',
+  );
   // A "dies" trigger of `~` itself: by the time the effect runs it is a card in a graveyard.
   // The same for "~ leaves the battlefield" (stage P18): it has left when the effect runs.
   ctx.selfGone = triggers.some(
@@ -1775,6 +1879,7 @@ function lowerTriggeredAbility(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  ctx.itIsDamageSource = triggers.length > 0 && triggers.every((t) => t.kind === 'dealsDamage');
   // CR 509.1h, 509.3c: after a creature becomes blocked (or unblocked) it is still the same permanent in combat, which "it" names.
   ctx.itStaysInCombat =
     triggers.length > 0 &&
@@ -1800,6 +1905,7 @@ function lowerTriggeredAbility(
         t.who === 'you' &&
         t.attackedEnchantedPlayer !== true &&
         t.eachAttackedPlayer !== true &&
+        t.eachAttackedOpponent !== true &&
         (t.what === undefined ||
           JSON.stringify(t.what) === JSON.stringify({ types: ['creature'] })),
     );
@@ -1867,7 +1973,7 @@ function lowerTriggeredAbility(
   // (the question comes after the payment, CR 118.12a), so the sentence keeps it and the ability's
   // `optional` is for the other sentences.
   type Sentence = Triggered['body']['sentences'][number];
-  const sentences = ability.body.sentences;
+  const sentences = withoutAnyNumberOffer(ability.body.sentences);
   // "You may return ... If that land is a Plains, you may return that card to the battlefield instead." (stage P33, D-150): the two offers.
   const instead = lowerMayInstead(sentences, ctx);
   if (instead !== null) {
@@ -1941,6 +2047,8 @@ function lowerTriggeredAbility(
       (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
+      // Journey to the Lost City: "you may put a land card from among those cards onto the battlefield": the engine's choice of none or one exiled card is the offer.
+      c.verb === 'putFromAmongExiled' ||
       // Kimahri, Valiant Guardian (CR 707.9b): "Then you may have ~ become a copy of that creature, except ...": the lowering wraps the copy in the engine's `may`.
       c.verb === 'becomeCopyKeepingAbility' ||
       // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
@@ -2223,6 +2331,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:alone',
   'trigger:attacksAt',
   'trigger:dealtDamage',
+  'trigger:dealtDamageNoncombat',
+  'trigger:dealtDamageExcess',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
   'trigger:becomesMonstrous',

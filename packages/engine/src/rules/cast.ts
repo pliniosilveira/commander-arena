@@ -34,7 +34,7 @@
  */
 
 import type { Ability, Cost } from '../ast/types';
-import { type CardType, COLORS } from '../characteristics';
+import { CARD_TYPES, type CardType, COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -52,7 +52,7 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
-import { evokeGrantData, grantedEnergyOf } from './alt-cost-grant';
+import { energyGrantFor, evokeGrantData } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
@@ -294,10 +294,13 @@ export function beginCast(
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
       ...(alternative === 'energyGrant'
-        ? {
-            energyGrant:
-              grantedEnergyOf(state, seat, castAs(obj, seat, face, alternative), zone) ?? 0,
-          }
+        ? (() => {
+            const granted = energyGrantFor(state, seat, castAs(obj, seat, face, alternative), zone);
+            return {
+              energyGrant: granted?.count ?? 0,
+              ...(granted?.once === undefined ? {} : { energyGrantOnce: granted.once }),
+            };
+          })()
         : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
@@ -1832,8 +1835,13 @@ function withManaSpent(
     return state;
   }
   const fromTypes: Record<string, number> = {};
+  // Cataclysmic Prospecting (CR 205.3i): "for each mana from a Desert": the source's subtypes come with its card types, and are kept apart.
+  const fromSubtypes: Record<string, number> = {};
   for (const types of spent) {
-    for (const type of new Set(types)) fromTypes[type] = (fromTypes[type] ?? 0) + 1;
+    for (const type of new Set(types)) {
+      const into = (CARD_TYPES as readonly string[]).includes(type) ? fromTypes : fromSubtypes;
+      into[type] = (into[type] ?? 0) + 1;
+    }
   }
   return patchObject(state, casting.object, {
     stack: {
@@ -1841,6 +1849,7 @@ function withManaSpent(
       manaSpent: {
         total: spent.length,
         fromTypes,
+        ...(Object.keys(fromSubtypes).length === 0 ? {} : { fromSubtypes }),
         // D-260: the mana from a snow source (CR 107.4h); left out when there was none, so a spell that was paid without snow keeps its shape.
         ...(spentSnow > 0 ? { snow: spentSnow } : {}),
         // Issue 310 (Converge, CR 105.1): the colors of the five that the mana spent had; colorless is no color.
@@ -1877,6 +1886,15 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       ...next,
       turnLog: {
         ...next.turnLog,
+        // CR 601.2b (Tlincalli Hunter): "once each turn": the permanent whose alternative cost this spell was cast for has been used.
+        ...(obj.stack.energyGrantOnce === undefined
+          ? {}
+          : {
+              oncePerTurnGrants: [
+                ...(next.turnLog.oncePerTurnGrants ?? []),
+                obj.stack.energyGrantOnce,
+              ],
+            }),
         castSpells: [
           ...next.turnLog.castSpells,
           {
@@ -1894,6 +1912,8 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
               : {}),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
+            // Wild-Magic Sorcerer: "the first spell you cast from exile each turn".
+            ...(obj.stack.castFrom === 'exile' ? { fromExile: true as const } : {}),
           },
         ],
       },

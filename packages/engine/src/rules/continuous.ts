@@ -42,6 +42,7 @@ export type ContinuousNode = Extract<
     kind:
       | 'modifyPt'
       | 'setPt'
+      | 'switchPt'
       | 'loseAllAbilities'
       | 'loseHexproofShroud'
       | 'setTypes'
@@ -73,6 +74,8 @@ function changeOf(
         toughness: ptAmountOf(state, node.toughness, ctx, targets, now),
       };
     }
+    case 'switchPt':
+      return { kind: 'switchPt' };
     case 'loseAllAbilities':
       return { kind: 'loseAllAbilities' };
     case 'loseHexproofShroud':
@@ -419,6 +422,28 @@ export function runCreaturesCantAttackYou(
 }
 
 /**
+ * "Until your next turn, each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent" (Teyo, Geometric Tactician; CR 508.1a,
+ * 611.2a, 500.1): one continuous effect with no set of objects, read where attackers are declared (`rules/attack-bans.ts`) for every creature. `until` is the start of the next turn of the
+ * controller (not this turn even when it is theirs), as for `runCreaturesCantAttackYou`.
+ */
+export function runAttackOnlyNearest(
+  state: GameState,
+  node: Extract<Effect, { kind: 'attackOnlyNearestOpponent' }>,
+  ctx: SelectContext,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    change: { kind: 'attackOnlyNearest', direction: node.direction },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "Creatures you control with defender can attack this turn as though they didn't have defender" (CR 609.4, 702.3b, 611.2a, 611.2c, 514.2): one continuous effect with no set of objects,
  * read by `hasRestriction` for the creatures its filter matches when the rule asks (it changes the rules and no characteristic, so a creature that matches later this turn is affected too:
  * Wakestone Gargoyle's rulings). It ends with the turn.
@@ -514,7 +539,10 @@ export function runRequireAttackSource(
   targets: readonly ChosenTarget[],
 ): StepOutcome {
   const source = ctx.source;
-  if (source === null || state.objects[source]?.zone !== 'battlefield') return done(state);
+  // CR 508.1d: "attacks if able" names no permanent, so it holds whether or not the source is still there; "attack this planeswalker" needs the planeswalker.
+  const permanent =
+    source !== null && state.objects[source]?.zone === 'battlefield' ? source : null;
+  if (node.anything !== true && permanent === null) return done(state);
   let next = state;
   const made: ContinuousEffect[] = [];
   for (const seat of resolvePlayers(state, node.player, ctx, targets)) {
@@ -529,7 +557,15 @@ export function runRequireAttackSource(
         seat,
         turnsTaken: (next.seats[seat]?.turnsTaken ?? 0) + 1,
       },
-      change: { kind: 'mustAttackPermanent', seat, permanent: source },
+      // "Each creature that player controls" is the group requirement read for that player as "you" (a creature that arrives later is required too, CR 611.2c).
+      change:
+        node.anything !== true && permanent !== null
+          ? { kind: 'mustAttackPermanent', seat, permanent }
+          : {
+              kind: 'requireAttack',
+              filter: { types: ['creature'], controller: 'you' },
+              controller: seat,
+            },
     });
   }
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
@@ -595,8 +631,14 @@ export function expireTurnStartEffects(
   seat: SeatId,
 ): { state: GameState; events: GameEvent[] } {
   const taken = state.seats[seat]?.turnsTaken ?? 0;
+  // CR 500.1 (Jace, Architect of Thought): a delayed triggered ability of "until your next turn" ends the same way.
+  const delayed = state.delayedTriggers.filter(
+    (d) => d.until === undefined || d.until.seat !== seat || d.until.turnsTaken > taken,
+  );
   return dropEffects(
-    state,
+    delayed.length === state.delayedTriggers.length
+      ? state
+      : { ...state, delayedTriggers: delayed },
     (e) =>
       typeof e.until === 'object' &&
       e.until.kind === 'turnStart' &&

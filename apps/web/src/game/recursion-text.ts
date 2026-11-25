@@ -4,6 +4,7 @@
  * from a card name. Pure.
  */
 import type { SeatId, StackAbility, Trigger } from '@commander-arena/engine';
+import { seatNameOf } from './seat-name';
 
 const ORDINALS: Readonly<Record<number, string>> = {
   2: 'second',
@@ -47,9 +48,9 @@ export function giftPrompt(
 }
 
 /** ", promising Opponent a gift" for the log line of a spell cast with its gift promised (CR 702.174a); '' when none. */
-export function giftedText(gift: SeatId | undefined, viewer: SeatId): string {
+export function giftedText(gift: SeatId | undefined, viewer: SeatId, seatCount = 2): string {
   if (gift === undefined) return '';
-  return `, promising ${gift === viewer ? 'you' : 'Opponent'} a gift`;
+  return `, promising ${gift === viewer ? 'you' : seatNameOf(gift, viewer, seatCount)} a gift`;
 }
 
 /**

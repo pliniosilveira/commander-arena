@@ -36,6 +36,14 @@ function encoreGrantedTo(state: GameState, obj: GameObject): boolean {
  * face lists the keyword is looked at, and, while a permanent gives Encore to graveyard cards (`grantEncoreToGraveyardCards`, CR 702.141a), the cards of its controller's
  * graveyard too. (An unearth ability a spell grants to a graveyard card is not supported.)
  */
+/** An activated ability of the card that works from exile (Greater Gargadon, CR 113.6b): offered only for cards that have one, so the exile is not read card by card otherwise. */
+function hasExileAbility(state: GameState, id: ObjectId): boolean {
+  const obj = getObject(state, id);
+  if (obj.card === null) return false;
+  const face = definitionOf(state, obj.card).faces[0];
+  return face?.abilities.some((a) => a.kind === 'activated' && a.functionsIn === 'exile') === true;
+}
+
 function hasGraveyardAbility(state: GameState, id: ObjectId): boolean {
   const obj = getObject(state, id);
   if (obj.card === null) return false;
@@ -113,9 +121,8 @@ export function activationRefusal(
   }
   // CR 606.3: a loyalty ability is activated only any time you could cast a sorcery, ...
   const loyalty = isLoyaltyAbility(ability.cost);
-  if (loyalty && !derive(state, obj).types.includes('planeswalker')) {
-    return 'A loyalty ability can be activated only from a planeswalker';
-  }
+  // CR 606.1, 606.3 (Sarkhan the Masterless, Sparkshaper Visionary): a planeswalker that is no longer a planeswalker (it is a creature for the turn) keeps its loyalty abilities, and
+  // they may still be activated, once each turn, as the rulings say: the ability is the permanent's, not the type's.
   if ((ability.timing === 'sorcery' || loyalty) && !hasSorceryTiming(state, seat)) {
     return 'That ability can be activated only at sorcery speed';
   }
@@ -194,6 +201,8 @@ export function activatableAbilities(
     ...zoneList(state, 'command', seat).filter((id) => state.objects[id]?.emblem === true),
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'graveyard', seat).filter((id) => hasGraveyardAbility(state, id)),
+    // CR 113.6b, 702.62b (Greater Gargadon): the cards of the seat in exile whose ability works only while they are suspended; `activationRefusal` asks that they are.
+    ...zoneList(state, 'exile', seat).filter((id) => hasExileAbility(state, id)),
   ];
   for (const id of candidates) {
     const obj = getObject(state, id);

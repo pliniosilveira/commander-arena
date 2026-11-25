@@ -13,6 +13,7 @@ import type {
   Effect,
   ManaColor,
   ManaProduction,
+  ObjectFilter,
   ObjectRef,
   PlayerSelector,
   TokenDefinition,
@@ -21,6 +22,7 @@ import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, landwalkOf, plainKeyword } from '../rules/keyword/vocabulary';
 import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
+import { ADD_MANA_COMBINATION_LOWERINGS } from './add-mana-combination';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
 import { AHOY_G7_LOWERINGS } from './ahoy-g7';
@@ -35,12 +37,14 @@ import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
+import { CHOOSE_ONE_OF_THEM_LOWERINGS } from './choose-one-of-them';
 import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
+  BECOMES_CREATURE_GROUP,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   CHOOSE_OPPONENT,
   CHOOSE_PLAYER,
@@ -58,11 +62,12 @@ import {
   RESTRICT,
   SET_PT,
 } from './continuous';
-import { GAIN_CONTROL } from './control';
+import { EXCHANGE_CONTROL_OF_ALL, GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
 import { COPY_CAST_PAYING_LOWERINGS } from './copy-cast-paying';
 import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
+import { COPY_LOYALTY_LOWERINGS } from './copy-loyalty';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
@@ -76,6 +81,7 @@ import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
+import { DAMAGE_UNPREVENTABLE_LOWERINGS } from './damage-unpreventable';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
@@ -83,8 +89,10 @@ import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
 import { DEATH_TOLL_C_LOWERINGS } from './death-toll-c';
 import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
+import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
+import { DURNAN_LOWERINGS } from './durnan';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
@@ -93,6 +101,7 @@ import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
+import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
@@ -103,6 +112,7 @@ import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { FLEET_E_LOWERINGS } from './fleet-e';
 import { FOOD_D_LOWERINGS } from './food-d';
+import { GAIN_KEYWORD_CHOICE_LOWERINGS } from './gain-keyword-choice';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
@@ -119,6 +129,7 @@ import { GRAVECAST_LOWERINGS } from './gravecast';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
+import { GUFF_LOWERINGS } from './guff';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
@@ -128,8 +139,10 @@ import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
+import { KEEP_DESTROY_REST_LOWERINGS } from './keep-destroy-rest';
 import { KEEPS_UP_TO_LOWERINGS } from './keeps-up-to';
 import { KEFKA_LOWERINGS } from './kefka';
+import { KENRITH_LOWERINGS } from './kenrith';
 import { KIMAHRI_LOWERINGS } from './kimahri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
@@ -139,6 +152,7 @@ import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
+import { MAY_PLAY_THIS_WAY_FREE_LOWERINGS } from './may-play-this-way-free';
 import { MELD_LOWERINGS } from './meld';
 import { MONARCH_LOWERINGS } from './monarch';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
@@ -169,6 +183,7 @@ import { PRIMORDIAL_LOWERINGS } from './primordial';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
+import { PUT_ALL_LINKED_EXILED_LOWERINGS } from './put-all-linked-exiled';
 import { PUT_MILLED_LOWERINGS } from './put-milled';
 import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
@@ -194,6 +209,7 @@ import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
+import { VRONOS_LOWERINGS } from './vronos';
 import { WIN_GAME_LOWERINGS } from './win-game';
 import { revealTopBranchesLowering, WITHERBLOOM_A_LOWERINGS } from './witherbloom-a';
 import { WITHERBLOOM_C_LOWERINGS } from './witherbloom-c';
@@ -282,6 +298,34 @@ const GOAD: Lowering<IrClause, Effects> = {
           kind: 'goad',
           objects: object.value,
           ...(forever?.kind === 'flag' && forever.value ? { forever: true as const } : {}),
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Goad each creature that had a double strike counter put on it this way" (Spectacular Showdown, CR 701.15a, 608.2c): the engine's `goad` of `putCountersOn`, the objects the counters of the
+ * instruction before it really went on. Only right after an `addCounters`: after any other instruction "this way" names nothing the engine tracks.
+ */
+const GOAD_COUNTERED: Lowering<IrClause, Effects> = {
+  head: 'goadCountered',
+  id: 'lower.goad-countered',
+  needs: ['effect:goad', 'selector:putCountersOn'],
+  lower(clause, ctx) {
+    if (ctx.lastEffectKind !== 'addCounters') return failure(clause);
+    const counter = arg(clause, 'counter');
+    if (counter !== undefined && counter.kind !== 'counterSpec') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'goad',
+          objects: {
+            kind: 'putCountersOn',
+            ...(counter === undefined ? {} : { counter: counter.name }),
+          },
         },
       ],
       rule: clause.rule,
@@ -487,6 +531,17 @@ const DAMAGE: Lowering<IrClause, Effects> = {
         to: recipient.value,
         ...(from === undefined ? {} : { from }),
       });
+    }
+    // "If a permanent dealt damage this way would die this turn, exile it instead" (Chandra, Awakened Inferno; CR 614.1a, 614.6): a rider on the one damage to a target. The permanent is
+    // marked only when damage was dealt to it (prevented damage is not "dealt this way", CR 615.6), the engine's `exileIfDiesThisTurn` with `ifDamageDealt`.
+    if (arg(clause, 'exileIfDies') !== undefined) {
+      const [only] = effects;
+      if (effects.length !== 1 || only?.kind !== 'dealDamage' || only.to.kind !== 'target') {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['effect:exileIfDiesThisTurn']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      effects.push({ kind: 'exileIfDiesThisTurn', objects: only.to, ifDamageDealt: true });
     }
     return { ok: true, value: effects, rule: clause.rule };
   },
@@ -789,7 +844,9 @@ const RETURN: Lowering<IrClause, Effects> = {
       zone === 'hand' || zone === 'battlefield'
         ? {
             thisCard: true,
-            ...(zone === 'hand' && ctx.itStaysInCombat ? { triggerSubject: true } : {}),
+            ...(zone === 'hand' && (ctx.itIsDamageSource || ctx.itStaysInCombat)
+              ? { triggerSubject: true }
+              : {}),
           }
         : {},
     );
@@ -1517,10 +1574,27 @@ function playerVerb(
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
+        // CR 701.9 (Nantuko Cultivator): "discard any number of land cards": only the cards of that kind may be chosen.
+        const kind = arg(clause, 'cards');
+        let cards: ObjectFilter | undefined;
+        if (kind !== undefined) {
+          if (kind.kind !== 'noun') return failure(clause);
+          const narrowed = lowerFilter(kind);
+          if (!narrowed.ok) return narrowed;
+          cards = narrowed.value;
+        }
         ctx.thisWay = 'discarded';
         return {
           ok: true,
-          value: [{ kind: 'discard', player: player.value, count: 0, anyNumber: true }],
+          value: [
+            {
+              kind: 'discard',
+              player: player.value,
+              count: 0,
+              anyNumber: true,
+              ...(cards === undefined ? {} : { cards }),
+            },
+          ],
           rule: clause.rule,
         };
       }
@@ -1821,6 +1895,10 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
         filter: filter.value,
         max: anyNumber && typeof count.value === 'number' ? count.value : 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
+        // CR 110.2a ("onto the battlefield tapped", Elvish Rejuvenator): the card taken enters tapped.
+        ...(toBattlefield && arg(clause, 'tapped')?.kind === 'flag'
+          ? { tapped: true as const }
+          : {}),
         ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
       },
@@ -1974,6 +2052,15 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
     const itself = what.det === 'self' || (what.det === 'anaphor' && what.ref === 'self');
     if (itself) {
       const ref = objectRefOf({ ...what, det: 'self' }, ctx);
+      if (!ref.ok) return ref;
+      return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
+    }
+    // "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it." (Gorbag of Minas Morgul, CR 701.21a, 603.2c): "it" is the permanent the trigger is
+    // about, which its controller (the controller of the ability) sacrifices; the engine's `sacrifice` of the `triggerSubject`.
+    if (what.det === 'triggerSubject' && arg(clause, 'player') === undefined) {
+      const blocked = missingFeatures(['selector:triggerSubject']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const ref = objectRefOf(what, ctx, { triggerSubject: true });
       if (!ref.ok) return ref;
       return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
     }
@@ -2148,12 +2235,18 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
       const who = playerSelectorOf(putter, ctx);
       if (!who.ok) return who;
     }
+    // Agitator Ant (CR 101.4, 608.2d): "each player may put two +1/+1 counters on a creature they control": "they" is the player asked, who acts as "you" in the effect, so the creature
+    // is one of the controller's own as the effect runs for that player. Anywhere else "they" names a player the engine does not run this as: refused.
+    const theyControl =
+      objectsArg?.kind === 'noun' && objectsArg.rule === 'noun.a-permanent-they-control';
+    if (theyControl && (!ctx.askedActs || clause.optional)) return failure(clause);
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&
       objectsArg.ref !== undefined &&
       // D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control" is one the controller must choose, as "up to one" is one they may.
       (objectsArg.upTo === true ||
+        theyControl ||
         (objectsArg.filter.controller === 'you' &&
           !objectsArg.plural &&
           objectsArg.count === undefined) ||
@@ -2163,7 +2256,11 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
           !objectsArg.plural &&
           objectsArg.count === undefined))
     ) {
-      const filter = lowerFilter(objectsArg);
+      const filter = lowerFilter(
+        theyControl
+          ? { ...objectsArg, filter: { ...objectsArg.filter, controller: 'you' as const } }
+          : objectsArg,
+      );
       if (!filter.ok) return filter;
       const count = amountArg(clause, 'count', ctx);
       if (!count.ok) return count;
@@ -2881,6 +2978,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  GOAD_COUNTERED,
   REMOVE_FROM_COMBAT,
   ATTACK_RANDOM_OPPONENT,
   ATTACK_RANDOM_OPPONENT_ANY,
@@ -2942,6 +3040,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
   BECOMES,
+  BECOMES_CREATURE_GROUP,
   GAIN_ALL_CREATURE_TYPES,
   SET_PT,
   FLICKER,
@@ -2989,6 +3088,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
   ...DEATH_TOLL_WINTER_LOWERINGS,
   ...PARTY_TIME_LIBRARY_LOWERINGS,
+  ...DURNAN_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
@@ -3018,6 +3118,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...COPY_CAST_PAYING_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
   ...PRISMARI_G3_LOWERINGS,
+  ...GUFF_LOWERINGS,
+  ...COPY_LOYALTY_LOWERINGS,
+  ...VRONOS_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
@@ -3063,8 +3166,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ADAPT_LOWERINGS,
   ...ABZAN_SPELLS_LOWERINGS,
   ...KEEPS_UP_TO_LOWERINGS,
+  ...KEEP_DESTROY_REST_LOWERINGS,
+  ...GAIN_KEYWORD_CHOICE_LOWERINGS,
   ...PARTY_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
+  ...KENRITH_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
   ...KEFKA_LOWERINGS,
@@ -3106,6 +3212,13 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Mirkwood Trapper: "that player chooses an attacking creature".
   ...PLAYER_CHOOSES_ATTACKER_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...DAMAGE_UNPREVENTABLE_LOWERINGS,
+  ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
+  ...CHOOSE_ONE_OF_THEM_LOWERINGS,
+  ...PUT_ALL_LINKED_EXILED_LOWERINGS,
+  ...ADD_MANA_COMBINATION_LOWERINGS,
+  ...MAY_PLAY_THIS_WAY_FREE_LOWERINGS,
+  ...EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
@@ -3123,6 +3236,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   BECOMES_LOSES_ALL,
   GIVE_POISON,
   GAIN_CONTROL,
+  EXCHANGE_CONTROL_OF_ALL,
 ];
 
 const BY_VERB = new Map(EFFECT_LOWERINGS.map((l) => [l.head, l]));
@@ -3201,13 +3315,15 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
         kind === 'notDeclaredAttacker' ||
+        kind === 'youAreDefendingPlayer' ||
         kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
         kind === 'diesThisWay' ||
         kind === 'thePlayerIs' ||
-        kind === 'cardsExiledWithSelf'
+        kind === 'cardsExiledWithSelf' ||
+        kind === 'loyaltyActivatedThisTurn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

@@ -10,8 +10,7 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
 /**
- * `effect.exile-top-each-library`: "exile the top card of each player's library", "exile the top two cards of each player's library" (CR 701.13, 401.1). Not read: "each opponent's
- * library", "target player's library" (`effect.exile-top-face-down`), your own library (`effect.exile-top`), "face down", a number of 0 or 1 in the plural, an instruction after it in
+ * `effect.exile-top-each-library`: "exile the top card of each player's library", "exile the top two cards of each player's library" (CR 701.13, 401.1). Not read: "target player's library" (`effect.exile-top-face-down`), your own library (`effect.exile-top`), "face down", a number of 0 or 1 in the plural, an instruction after it in
  * the same sentence.
  */
 export const EFFECT_EXILE_TOP_EACH_LIBRARY = defineRule<Clauses>({
@@ -60,7 +59,7 @@ export const EFFECT_EXILE_TOP_EACH_LIBRARY = defineRule<Clauses>({
     )(ctx, counted.pos);
     if (!owner.ok) return owner;
     const [, who] = owner.value;
-    // "each player": not "you", not "target player", not "each opponent".
+    // "each player": not "you", not "target player", not "each opponent" (`effect.exile-top-of-each-opponent`).
     if (who.det !== 'eachPlayer') return fail(ctx, pos);
     const { value, span } = counted.value;
     return {

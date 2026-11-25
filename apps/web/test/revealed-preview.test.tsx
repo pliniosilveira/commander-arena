@@ -43,6 +43,16 @@ test('with several reveals in one snapshot the latest one is kept', () => {
   expect(revealedCards(state, [])).toEqual([]);
 });
 
+test('dismissing the preview empties a reveal and leaves the rest of the preview state alone', () => {
+  const store = createAppStore({ client: {} as GameClient });
+  const revealed = revealedCards(state, [event(['c1'])]);
+  store.setState({ preview: { hovered: 'o5', revealed } });
+  expect(store.getState().preview.revealed).toHaveLength(1);
+  store.getState().dismissReveal();
+  expect(store.getState().preview.revealed).toEqual([]);
+  expect(store.getState().preview.hovered).toBe('o5');
+});
+
 test('the preview shows the revealed card, and a tap clears it', () => {
   const store = createAppStore({ client: {} as GameClient });
   const revealed = revealedCards(state, [event(['c1'])]);

@@ -26,7 +26,7 @@ import {
   seatLife,
   toughnessOf,
 } from './casual-view';
-import { withinBlockBudget } from './legal';
+import { withinAttackBudget, withinBlockBudget } from './legal';
 
 /** Below this much life the agent accepts a creature trade that costs it more than it wins. */
 export const TRADE_LIFE = 15;
@@ -131,7 +131,8 @@ export function chooseAttackers(view: GameView, d: DeclareAttackersDecision): Ac
     attacker: p.attacker,
     target: p.target,
   }));
-  return { kind: 'declareAttackers', attacks };
+  // "No more than N creatures can attack each combat" (CR 508.1c): never more than the limit.
+  return { kind: 'declareAttackers', attacks: withinAttackBudget(d, attacks) };
 }
 
 /**

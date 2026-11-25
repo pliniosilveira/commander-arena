@@ -262,13 +262,14 @@ export const STATIC_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
   },
 });
 
-/** The plural words of the basic land types, as the Oracle text of a card names them ("Forests", "Plains"), with the type each is. */
+/** The plural words of the basic land types (and "Desert lands", CR 205.3i), as the Oracle text of a card names them ("Forests", "Plains"), with the type each is. */
 const BASIC_LAND_PLURALS: ReadonlyMap<string, string> = new Map([
   ['plains', 'Plains'],
   ['islands', 'Island'],
   ['swamps', 'Swamp'],
   ['mountains', 'Mountain'],
   ['forests', 'Forest'],
+  ['desert lands', 'Desert'],
 ]);
 
 /**
@@ -292,9 +293,11 @@ export const STATIC_PLAY_LANDS_FROM_GRAVEYARD = defineRule<IrStatic>({
     'You may play Forests from your graveyard.',
     'You may play Plains from your graveyard.',
     'You may play Islands from your graveyard.',
+    'You may play Desert lands from your graveyard.',
   ],
   rejects: [
     'You may play lands from your graveyard',
+    'You may play Gate lands from your graveyard.',
     'You may play a land from your graveyard.',
     'You may play Forest from your graveyard.',
     'You may play Gates from your graveyard.',
@@ -310,7 +313,7 @@ export const STATIC_PLAY_LANDS_FROM_GRAVEYARD = defineRule<IrStatic>({
   ],
   parse: (ctx, pos) => {
     const r = pattern(
-      /you may play (lands|plains|islands|swamps|mountains|forests) from your graveyard\./i,
+      /you may play (lands|plains|islands|swamps|mountains|forests|desert lands) from your graveyard\./i,
     )(ctx, pos);
     if (!r.ok) return r;
     const word = (r.value[1] ?? '').toLowerCase();

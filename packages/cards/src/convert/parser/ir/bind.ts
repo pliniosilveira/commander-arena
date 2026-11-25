@@ -128,6 +128,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'defendingPlayer',
   // "the player to your right": one player the text names, so a later "that player" is bound to it.
   'playerToRight',
+  // "the chosen player": one player the permanent chose as it entered.
+  'enteredChosenPlayer',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
   // "each of those opponents" of a damage batch trigger: several players, as above.
@@ -139,6 +141,7 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'combatDamagedThisTurn',
   // "each player who controls a creature with power 4 or greater": several players, as above.
   'eachPlayerControlling',
+  'eachPlayerControllingMore',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {
@@ -158,6 +161,8 @@ function classify(raw: string): Pronoun | null {
   }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
+  // Exit from Exile deck (Bonecrusher Giant): "that spell's controller", the player a trigger about a spell that targeted names.
+  if (/^that spell['’]s controller$/u.test(word)) return { kind: 'player' };
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
@@ -422,6 +427,22 @@ class Binder {
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
         );
+        // Uglúk of the White Hand (CR 608.2c, 603.10a): "Whenever another creature you control dies, put a +1/+1 counter on ~. If that creature was a Goblin or Orc, ...": the
+        // source is named by "~", never by "that creature", which is the object the trigger is about (the creature that died), even when "~" was mentioned after it.
+        if (
+          found?.noun.ref === 'self' &&
+          /^that (?:creature|permanent)$/iu.test(noun.filter.raw.trim())
+        ) {
+          found =
+            recent.find(
+              (a) =>
+                a.kind === 'object' &&
+                a.token !== true &&
+                a.noun.ref === 'trig' &&
+                !a.noun.plural &&
+                compatible(a.noun.filter, pronoun.type),
+            ) ?? found;
+        }
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
         if (found === undefined && noun.itWord === true) {
           found = recent.find(
@@ -871,6 +892,23 @@ class Binder {
     }
     // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": "that card" is the card the exile moved, which the engine
     // names `moved`. Pushed after the clause's own noun, so that it is the most recent object of the text.
+    // Chandra, Legacy of Fire: "Exile that many cards from the top of your library. You may play them this turn": "them" are the cards the exile moved (the engine's `moved`).
+    if (clause.verb === 'exileTopThatMany') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'cards' },
+          upTo: false,
+          plural: true,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
     if (clause.verb === 'exileChosenCard') {
       this.antecedents.push({
         kind: 'object',
@@ -909,11 +947,13 @@ class Binder {
     // CR 701.9, 603.12 (Summon: Kujata): "Discard a card, then draw two cards. When you discard a card this way, ~ deals damage equal to that card's mana value": "that card" is the one card the
     // discard made the player discard, which the engine's `thisWay` `discardedValue` counts (`ref` 'discarded': only the lowering of the reflexive ability reads it).
     if (
-      clause.verb === 'discard' &&
-      clause.args.amount?.kind === 'number' &&
-      clause.args.amount.value === 1 &&
-      clause.args.random === undefined &&
-      clause.args.unless === undefined
+      // Narset of the Ancient Way: "then you may discard a card" is the same one discard, offered.
+      clause.verb === 'discardMayOne' ||
+      (clause.verb === 'discard' &&
+        clause.args.amount?.kind === 'number' &&
+        clause.args.amount.value === 1 &&
+        clause.args.random === undefined &&
+        clause.args.unless === undefined)
     ) {
       this.antecedents.push({
         kind: 'object',
@@ -1082,6 +1122,19 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   if (source.event === 'attackBatch' && source.attackingYourOpponents === true) {
     binder.seedAttackers(source);
   }
+  // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked.
+  if (source.event === 'attackBatch' && source.eachAttackedOpponent === true) {
+    binder.seedControllerOfSubject({
+      kind: 'noun',
+      det: 'a',
+      filter: { raw: '' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: source.span,
+      rule: source.rule,
+    });
+  }
   const subject = binder.seed(source.subject, 'triggerSubject', aboutSelf(source));
   const actor = binder.seed(source.actor, 'triggerActor');
   // The player a creature dealt combat damage to is the antecedent of "that player" (stage P18).
@@ -1095,6 +1148,15 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
     source.alternatives === undefined &&
     subject !== undefined &&
     subject.det !== 'self' &&
+    actor === undefined
+  ) {
+    binder.seedControllerOfSubject(subject);
+  }
+  // Exit from Exile deck (Bonecrusher Giant, CR 603.2): "that spell's controller" of "Whenever ~ becomes the target of a spell": the player of the event, the controller of the spell or ability that targeted.
+  if (
+    source.event === 'becomesTarget' &&
+    source.alternatives === undefined &&
+    subject !== undefined &&
     actor === undefined
   ) {
     binder.seedControllerOfSubject(subject);

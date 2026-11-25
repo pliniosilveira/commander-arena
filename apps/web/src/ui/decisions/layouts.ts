@@ -148,6 +148,43 @@ export function isBackFaceUp(card: ObjectView): boolean {
   );
 }
 
+/**
+ * The index of the face a player can ask to see instead of the one that is up, for a double-faced card (modal or transforming, CR 712)
+ * that is not on the battlefield or the stack: in a hand, a graveyard, exile or the command zone nothing has turned it, so the
+ * other face is only a printed card to read. A permanent or a spell is shown as it is. Null for every other object.
+ */
+export function otherFaceOf(card: ObjectView): number | null {
+  if (card.layout !== 'transform' && card.layout !== 'modal_dfc') return null;
+  if (card.zone === 'battlefield' || card.zone === 'stack') return null;
+  if (card.faces?.length !== 2 || card.face === undefined) return null;
+  return card.face === 0 ? 1 : 0;
+}
+
+/**
+ * The card as its face `index` prints it: name, cost, colors, types, rules text, power, toughness and loyalty of that face, for the
+ * preview of the other face of a card outside the game's board (`otherFaceOf`). A star power or toughness (a value the card sets
+ * itself) is not a number and is left out, as the view leaves it out. Everything else of the object (zone, owner, counters) stays.
+ */
+export function asFace(card: ObjectView, index: number): ObjectView {
+  const face = card.faces?.[index];
+  if (face === undefined) return card;
+  const { printedLoyalty: _loyalty, ...rest } = card;
+  return {
+    ...rest,
+    face: index,
+    name: face.name,
+    manaCost: face.manaCost,
+    colors: face.colors,
+    supertypes: face.supertypes,
+    types: face.types,
+    subtypes: face.subtypes,
+    oracleText: face.oracleText,
+    power: typeof face.power === 'number' ? face.power : null,
+    toughness: typeof face.toughness === 'number' ? face.toughness : null,
+    ...(face.loyalty === null ? {} : { printedLoyalty: face.loyalty }),
+  };
+}
+
 /** True for a melded permanent (D-277, CR 701.42a, 712.4a): one object that two cards represent. */
 export function isMelded(card: ObjectView): boolean {
   return card.meld !== undefined;

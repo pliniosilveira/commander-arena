@@ -98,7 +98,7 @@ function landTypesOf(state: GameState, id: ObjectId): string[] {
 
 function moveInstruction(
   object: ObjectId,
-  to: 'battlefield' | 'hand' | 'graveyard' | 'library',
+  to: 'battlefield' | 'hand' | 'graveyard' | 'library' | 'exile',
   tapped: boolean,
 ): Instruction {
   return { kind: 'move', object, to, position: 'top', tapped, commanderChoice: null };
@@ -139,14 +139,17 @@ export function runSearch(
   res: ResolutionContext,
   instruction: SearchInstruction,
 ): StepOutcome {
-  const { search, seat } = instruction;
-  const shuffle: Instruction[] = search.shuffle ? [{ kind: 'shuffle', seat }] : [];
+  const { search } = instruction;
+  // The library is `instruction.seat`'s; with `byController` the controller of the effect makes every choice (CR 701.23a, Jace, Architect of Thought).
+  const libraryOf = instruction.seat;
+  const seat = search.byController === true ? res.controller : instruction.seat;
+  const shuffle: Instruction[] = search.shuffle ? [{ kind: 'shuffle', seat: libraryOf }] : [];
   // CR 701.23i, 101.4 (`together`): what this player decided is held until the last player has; then the cards of every player who searched move and their libraries are shuffled, in
   // the order the players decided.
   const group = instruction.together;
   const hold = (accepted: boolean, cards: readonly ObjectId[]): StepOutcome => {
     if (group === undefined) throw new Error('A search with no group cannot be held');
-    const held = [...group.held, { seat, accepted, chosen: cards }];
+    const held = [...group.held, { seat: libraryOf, accepted, chosen: cards }];
     const next = group.later[0];
     if (next !== undefined) {
       return done(
@@ -191,7 +194,7 @@ export function runSearch(
     };
   }
   if (instruction.chosen === null) {
-    const legal = searchCandidates(state, seat, res.source, search.filter, search.zones);
+    const legal = searchCandidates(state, libraryOf, res.source, search.filter, search.zones);
     // CR 701.23c: with nothing to find the player still searched (and shuffles if told to).
     if (legal.length === 0 || search.max <= 0) {
       // CR 701.23c: in a group the player who searched and found nothing is held as one who found no card, and shuffles with the others.
@@ -323,7 +326,13 @@ export function runSearch(
     found,
   );
   const shuffled: Instruction[] = search.shuffle
-    ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
+    ? [
+        {
+          kind: 'shuffle',
+          seat: libraryOf,
+          ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}),
+        },
+      ]
     : [];
   const top = [...placed.onTop].reverse().map((id) => moveInstruction(id, 'library', false));
   return {
@@ -343,9 +352,25 @@ export function runDiscard(
   const hand = getSeat(state, seat).hand;
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
   // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
+  // Nantuko Cultivator: "discard any number of land cards": only the cards of the hand the filter matches may be chosen.
+  const offered =
+    instruction.cards === undefined
+      ? hand
+      : hand.filter((id) => {
+          const card = state.objects[id];
+          return (
+            card !== undefined &&
+            matchesFilter(
+              state,
+              card,
+              { ...instruction.cards, zone: 'hand' },
+              { controller: seat, source: res.source },
+            )
+          );
+        });
   const count =
     instruction.anyNumber === true || instruction.hand === true
-      ? hand.length
+      ? offered.length
       : instruction.leave !== undefined
         ? // CR 701.9 (Magus of the Balance): all but the cards the player keeps.
           Math.max(0, hand.length - instruction.leave)
@@ -383,7 +408,7 @@ export function runDiscard(
     instruction.chosen ??
     random?.cards ??
     (anyNumber || upTo
-      ? hand.length === 0
+      ? offered.length === 0
         ? []
         : null
       : instruction.leave !== undefined && count === 0
@@ -399,9 +424,9 @@ export function runDiscard(
       source: res.object,
       purpose: 'discard',
       zone: 'hand',
-      legal: hand,
+      legal: offered,
       min: anyNumber || upTo ? 0 : choice ? 1 : count,
-      max: anyNumber ? hand.length : upTo ? max : choice ? max : count,
+      max: anyNumber ? offered.length : upTo ? max : choice ? max : count,
       reveal: true,
       prompt: anyNumber
         ? 'Discard any number of cards'

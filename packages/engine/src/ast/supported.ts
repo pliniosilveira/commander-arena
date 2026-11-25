@@ -338,6 +338,7 @@ function walkEffect(
       return;
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'setTypes':
     case 'setColors':
@@ -352,6 +353,8 @@ function walkEffect(
           effect.kind === 'grantKeyword' ||
           // CR 613.1f, 611.2a: "Target creature becomes a Treasure artifact ... and loses all other card types and abilities" (Vraska, Betrayal's Sting): no end, a layer 6 loss.
           effect.kind === 'loseAllAbilities' ||
+          // Vronos, Masked Inquisitor (CR 509.1b, 611.2a): "gains ... 'This creature can't be blocked.'" with no end.
+          (effect.kind === 'restrict' && effect.restriction === 'cantBeBlocked') ||
           // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
           (effect.kind === 'setColors' && effect.additive === true))
       ) {
@@ -648,6 +651,34 @@ function activationCostIssues(
   }
 }
 
+/**
+ * CR 702.21a, 701.21a: "Ward—Sacrifice a legendary artifact or legendary creature." is paid as the ward ability resolves (`rules/pay-unless.ts`): the payer chooses `count` permanents they
+ * control that match, nothing else is paid with it. Not run: the source itself (the payer does not control the ward permanent), X, any number, several different permanents.
+ */
+function unlessSacrificeIssues(costs: readonly Cost[], path: string, out: AstIssue[]): void {
+  for (const [i, c] of costs.entries()) {
+    if (c.kind !== 'sacrifice') continue;
+    if (
+      'kind' in c.what ||
+      c.countX !== undefined ||
+      c.anyNumber !== undefined ||
+      c.alongside !== undefined
+    ) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'a sacrifice of Ward is a number of permanents the payer controls that match a filter: not the permanent itself, X, any number or several different kinds',
+      });
+    } else if (costs.length > 1) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'a sacrifice cost of Ward is the only cost of the ability: it is not combined with another',
+      });
+    }
+  }
+}
+
 /** Whether the filter, or one of its `anyOf` members, compares power or toughness (D-111). */
 function filterComparesPt(f: ObjectFilter): boolean {
   return (
@@ -750,6 +781,13 @@ function walkAbility(
             path: `${path}.cost[${i}]`,
             message:
               'a mana ability sacrifices a permanent of the battlefield: no zone in the filter',
+          });
+        } else if (c.kind === 'sacrifice' && c.alongside !== undefined) {
+          // CR 701.21a: the payment planner of a mana ability sacrifices one permanent; a cost of several different permanents is the cost of an ordinary activated ability.
+          out.push({
+            path: `${path}.cost[${i}]`,
+            message:
+              'a mana ability sacrifices one permanent: a sacrifice of several different permanents is not implemented by the engine yet',
           });
         } else if (c.kind === 'payLife' && typeof c.amount !== 'number') {
           // D-135: the life of a mana ability is a number (the payment planner reads it before anything resolves).
@@ -933,7 +971,9 @@ function walkAbility(
           'payLife',
           'discard',
           'blight',
+          'sacrifice',
         ]);
+        unlessSacrificeIssues(a.keyword.cost, `${path}.keyword.cost`, out);
       } else if (a.keyword.kind === 'kicker' || a.keyword.kind === 'multikicker') {
         // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);

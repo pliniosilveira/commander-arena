@@ -35,6 +35,9 @@ export function playerSubject(
     case 'eachPlayerControlling':
       // CR 102.1: the players with a battlefield permanent of a kind ("each player who controls a creature with power 4 or greater").
       return { text: 'each player who controls one', base: false };
+    case 'eachPlayerControllingMore':
+      // CR 102.1: the players who control more of a kind than you.
+      return { text: 'each player who controls more of them than you', base: false };
     case 'controllerOf':
       return { text: 'its controller', base: false };
     case 'ownerOf':
@@ -52,6 +55,9 @@ export function playerSubject(
     case 'playerToYourRight':
       // Hithlain Rope: the previous player in turn order.
       return { text: 'the player to your right', base: false };
+    case 'enteredChosenPlayer':
+      // CR 614.12a (Stuffy Doll): the player the permanent chose as it entered.
+      return { text: 'the chosen player', base: false };
     case 'chosenPlayer':
       // The Black Gate: the player "Choose a player with the most life or tied for most life" chose.
       return { text: 'that player', base: false };

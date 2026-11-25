@@ -9,6 +9,7 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COPY_EXCEPT_QUOTED_REPLACEMENT_RULES } from './copy-except-quoted';
 import { COUNTER_BLITZ_G_REPLACEMENT_RULES } from './counter-blitz-g';
 import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
@@ -152,6 +153,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     // Cloud Key (CR 205.2a): some of the card types.
     'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery.',
     'As ~ enters, choose creature or artifact.',
+    // Stuffy Doll (CR 614.12a, 607.2d): a player.
+    'As ~ enters, choose a player.',
+    'As ~ enters the battlefield, choose a player.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -174,6 +178,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose a nonland card name',
     'As ~ enters, choose a nonland card.',
     'As ~ enters, choose an opponent.',
+    'As ~ enters, choose two players.',
+    'As ~ enters, you may choose a player.',
+    'As ~ enters, choose a player other than you.',
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
     'As ~ enters, choose a card type',
@@ -415,6 +422,7 @@ export const REPLACEMENT_RULES = [
   ...ENTERS_AS_COPY_COUNTERS_RULES,
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
+  ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."

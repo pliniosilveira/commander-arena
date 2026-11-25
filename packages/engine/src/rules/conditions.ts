@@ -490,6 +490,14 @@ export function evaluateCondition(
       );
       return named.some((seat) => holders.includes(seat));
     }
+    case 'completedDungeon':
+      // CR 309.7, 701.49c (Sarevok's Tome): a player who completed a dungeon at some time in the game.
+      return resolvePlayers(
+        state,
+        condition.player,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      ).some((seat) => (getSeat(state, seat).dungeonsCompleted ?? 0) > 0);
     case 'maxSpeed': {
       // CR 702.179e: speed is 4. (The validator lets a condition name only players that need neither a target nor the trigger subject.)
       return resolvePlayers(
@@ -659,6 +667,11 @@ export function evaluateCondition(
         ? counts.every((n) => n === 0)
         : counts.some((n) => n >= (condition.atLeast ?? 1));
     }
+    case 'loyaltyAbilityActivatedThisTurn':
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, whatever happened to its permanent since.
+      return state.turnLog.activated.some(
+        (a) => a.loyalty === true && a.activator === ctx.controller,
+      );
     case 'attackedWithCreaturesThisTurn':
       // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
       return (
@@ -744,6 +757,13 @@ export function evaluateCondition(
       return (
         playerStatOf(state, them, condition.stat) >
         playerStatOf(state, ctx.controller, condition.stat)
+      );
+    }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): the creature the event is about was required to attack as this combat's attackers were declared.
+      if (ctx.triggerSubject === undefined) return false;
+      return (state.combat?.attackers ?? []).some(
+        (a) => a.object === ctx.triggerSubject && a.hadToAttack === true,
       );
     }
     case 'subjectControlledByYou': {

@@ -10,14 +10,15 @@ import type { ImportTab } from '../../store';
 import { usePrecons } from '../precons-context';
 import { useActions, useApp } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
-import { findPrints } from './card-prints';
+import { type CardPrint, findPrints } from './card-prints';
 import { DeckScreen } from './DeckScreen';
-import { type EditingPrecon, InputPanel } from './InputPanel';
+import { withPreferredPrintings, withPrinting } from './deck-text';
+import { InputPanel } from './InputPanel';
 import { useImportEnv } from './import-context';
 import { SavedDecksView } from './ListViews';
-import { sampleOf } from './model';
 import { loadNiceArt, saveNiceArt, withNiceCommanderArt } from './nice-art';
 import { PreconDecksView } from './PreconDecksView';
+import { preferPrint, preferredPrints } from './preferred-prints';
 import { OfflineNotice, ResultsView } from './ResultsView';
 import { useImportFlow } from './use-import-flow';
 import { WhyDialog } from './WhyDialog';
@@ -36,16 +37,11 @@ export function ImportScreen() {
   const env = useImportEnv();
   const actions = useActions();
   const precons = usePrecons();
-  const sample = sampleOf(precons.list);
   const initialTab = useApp((s) => s.importTab);
   const [tab, setTab] = useState<ImportTab>(initialTab);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [decks, setDecks] = useState<readonly SavedDeck[] | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  // The precon the editor is open on, when it is one (issue 93, D-215).
-  const [editing, setEditing] = useState<{ readonly id: string; readonly name: string } | null>(
-    null,
-  );
   // The deck on the deck screen (View), read through the service that knows its cards.
   const [viewing, setViewing] = useState<{
     readonly name: string;
@@ -53,6 +49,7 @@ export function ImportScreen() {
     readonly service: ImportService;
     /** Absent for a built-in deck: its printings are not offered. */
     readonly onSave?: (text: string) => Promise<void>;
+    readonly onSaveAll?: (cardName: string, print: CardPrint) => Promise<void>;
   } | null>(null);
   const { choices, refresh: refreshChoices, setPreconEnabled } = useDeckChoices();
 
@@ -85,26 +82,15 @@ export function ImportScreen() {
   const save = async () => {
     // A commander chosen above, because the list marks none, is part of the deck: it is written
     // into the saved text, or the deck forgets it on the next load (issue 123).
-    const text = markCommanders(flow.text, flow.commanderNames);
+    const marked = markCommanders(flow.text, flow.commanderNames);
+    // A new deck gets the art the player chose for all decks.
+    const text = withPreferredPrintings(marked, preferredPrints());
     // No name typed: the commander names the deck, so Import never leaves a deck unsaved.
     const name = flow.name.trim() || report?.commanders[0]?.stored.name || DEFAULT_DECK_NAME;
     try {
-      if (editing === null) {
-        await env.decks.save({ name, text });
-        setSaveMessage(`Imported and saved "${name}".`);
-        if (flow.name.trim() === '') flow.setName(name);
-      } else if (text.trim() === defaultListOf(editing.id).trim()) {
-        // The shipped list again: nothing to keep apart.
-        await env.decks.removeOverride(editing.id);
-        setSaveMessage(
-          `That is the list "${editing.name}" came with, so no version of yours is kept.`,
-        );
-      } else {
-        await env.decks.saveOverride(editing.id, editing.name, text);
-        setSaveMessage(
-          `Saved your version of "${editing.name}". The built-in deck is unchanged; Reset to default brings it back.`,
-        );
-      }
+      await env.decks.save({ name, text });
+      setSaveMessage(`Imported and saved "${name}".`);
+      if (flow.name.trim() === '') flow.setName(name);
       // The field shows what was kept, so editing on from here starts from the saved list.
       if (text !== flow.text) flow.setText(text);
       refreshDecks();
@@ -121,7 +107,7 @@ export function ImportScreen() {
     if (keepSaved.current && report !== null) void latestSave.current();
   }, [report]);
 
-  /** "Reset to default": forgets your version; an editor open on that precon shows the shipped list again. */
+  /** "Reset to default": forgets your version of a precon. */
   const resetPrecon = async (precon: { readonly id: string; readonly name: string }) => {
     try {
       await env.decks.removeOverride(precon.id);
@@ -129,31 +115,9 @@ export function ImportScreen() {
       setSaveMessage(`Could not reset: ${e instanceof Error ? e.message : String(e)}`);
       return;
     }
-    if (editing?.id === precon.id) {
-      keepSaved.current = false;
-      void flow.start({
-        text: defaultListOf(precon.id),
-        name: precon.name,
-        service: precons.editorService(precon.id),
-      });
-    }
     setSaveMessage(`"${precon.name}" is back to the list it came with.`);
     refreshDecks();
   };
-
-  const editingPrecon: EditingPrecon | null =
-    editing === null
-      ? null
-      : {
-          name: editing.name,
-          edited: choices.some((choice) => choice.id === editing.id && choice.edited),
-          onReset: () => void resetPrecon(editing),
-          onStop: () => {
-            setEditing(null);
-            flow.readFromScryfall();
-            setSaveMessage(null);
-          },
-        };
 
   const viewPrecon = async (precon: DeckChoice) => {
     const mine = (await env.decks.overrides()).find((deck) => deck.preconId === precon.id);
@@ -165,7 +129,6 @@ export function ImportScreen() {
   };
 
   const openSaved = (deck: SavedDeck) => {
-    setEditing(null);
     setSaveMessage(null);
     setTab('import');
     keepSaved.current = false;
@@ -218,7 +181,7 @@ export function ImportScreen() {
               setSaveMessage(null);
               void (async () => {
                 // The option writes a special printing on the commander's line before the list is imported.
-                if (niceArt && editingPrecon === null) {
+                if (niceArt) {
                   const next = await withNiceCommanderArt(flow.text, findPrints);
                   if (next !== flow.text) {
                     await flow.start({ text: next, name: flow.name });
@@ -228,15 +191,6 @@ export function ImportScreen() {
                 await flow.start();
               })();
             }}
-            onExample={
-              sample === null
-                ? null
-                : () => {
-                    flow.setText(sample.text);
-                    flow.setName(sample.name);
-                  }
-            }
-            precon={editingPrecon}
           />
           {flow.error !== null && (
             <div role="alert" className="imp-alert">
@@ -272,6 +226,19 @@ export function ImportScreen() {
                 text: deck.text,
                 service: env.service,
                 onSave: (text) => env.decks.save({ name: deck.name, text }).then(refreshDecks),
+                onSaveAll: async (cardName, print) => {
+                  const set = print.setCode.toLowerCase();
+                  preferPrint(cardName, set, print.collector);
+                  // Every other saved deck that has the card gets the printing now.
+                  for (const other of await env.decks.list()) {
+                    if (other.id === deck.id) continue;
+                    const next = withPrinting(other.text, cardName, set, print.collector);
+                    if (next !== null && next !== other.text) {
+                      await env.decks.save({ name: other.name, text: next });
+                    }
+                  }
+                  refreshDecks();
+                },
               })
             }
             onRemove={(deck) => void env.decks.remove(deck.id).then(refreshDecks)}

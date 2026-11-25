@@ -32,6 +32,11 @@ function filterOf(subject: Extract<StaticSubject, { kind: 'filter' }>): ObjectFi
   return filter;
 }
 
+/** Whether a filter, or a member of its `anyOf`, says "the same name as this creature". */
+function readsSourceName(filter: ObjectFilter): boolean {
+  return filter.sameNameAsSource === true || filter.anyOf?.some(readsSourceName) === true;
+}
+
 /** Whether a filter, or a member of its `anyOf`, says "modified". */
 function readsModified(filter: ObjectFilter): boolean {
   return filter.modified === true || filter.anyOf?.some(readsModified) === true;
@@ -86,11 +91,17 @@ export function subjectAffects(
     return partner !== null && (source.id === target.id || partner.id === target.id);
   }
   const filter = filterOf(subject);
-  const seen = readsModified(filter)
+  const withModified = readsModified(filter)
     ? { ...view, modified: modifiedBeforeLayers(state, target) }
     : view;
+  // CR 201.2, 707.2 (Mocking Doppelganger): the names compared are the copiable ones, which a copy effect (layer 1) has set.
+  const named = readsSourceName(filter);
+  const seen = named
+    ? { ...withModified, name: copiableValues(state, target).characteristics.name }
+    : withModified;
   return matchesFilterWith(state, target, () => seen, filter, {
     ...context,
+    ...(named ? { sourceName: copiableValues(state, source).characteristics.name } : {}),
     attackers: state.combat?.attackers.map((a) => a.object) ?? [],
   });
 }

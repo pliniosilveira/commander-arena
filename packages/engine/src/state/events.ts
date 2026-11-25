@@ -359,6 +359,11 @@ export type GameEvent =
       readonly amount: number;
       /** True for combat damage (CR 510); commander damage counts only combat damage. */
       readonly combat: boolean;
+      /**
+       * Excess damage (CR 120.10): how much of `amount`, dealt to a permanent, was more than lethal damage (or more than a planeswalker's loyalty) as it was before this damage.
+       * Present only when it is more than 0, so an event of damage that was not excess is the shape it always had.
+       */
+      readonly excess?: number;
     }
   /**
    * Damage that would have been dealt was prevented by a shield (CR 615.1, 615.6): `amount` is the

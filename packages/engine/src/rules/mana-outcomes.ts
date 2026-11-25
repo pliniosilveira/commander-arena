@@ -85,6 +85,7 @@ export function spendRestrictionOf(
   return {
     kind: 'spellMatch',
     ...(only.types === undefined ? {} : { types: [...only.types] }),
+    ...(only.notTypes === undefined ? {} : { notTypes: [...only.notTypes] }),
     ...(subtypes === undefined ? {} : { subtypes }),
     ...(only.alsoAbilities === true ? { alsoAbilities: true as const } : {}),
     ...(only.qualities === undefined ? {} : { qualities: only.qualities.map((q) => ({ ...q })) }),

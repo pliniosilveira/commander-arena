@@ -240,7 +240,7 @@ interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
   readonly keyword:
-    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
     | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;
@@ -277,7 +277,12 @@ export interface AltCostGrantSource {
   readonly alt:
     | { readonly kind: 'evoke'; readonly cost: readonly Cost[] }
     // Issue 105: energy counters rather than the mana cost.
-    | { readonly kind: 'energy'; readonly count: number };
+    | {
+        readonly kind: 'energy';
+        readonly count: number;
+        readonly from?: 'hand' | 'exile';
+        readonly oncePerTurn?: true;
+      };
   readonly condition?: Condition;
 }
 
@@ -291,6 +296,10 @@ interface BoardIndex {
   readonly deferred: EntryLists;
   /** The "+N/+N" static abilities whose subject names a keyword, in battlefield order (applied after `deferred`, D-149). */
   readonly late: EntryLists;
+  /** The restrictions whose subject names a goaded creature (CR 701.15b), applied last: they read who is goaded once every goad has been applied. */
+  readonly afterGoad: EntryLists;
+  /** The goad of a group that compares power with its source (CR 701.15a): applied once the target's power is settled, before `afterGoad`. */
+  readonly powerGoad: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
   /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
@@ -612,7 +621,12 @@ function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): Alt
       out.push({
         object,
         what: a.static.what,
-        alt: { kind: 'energy', count: a.static.energy },
+        alt: {
+          kind: 'energy',
+          count: a.static.energy,
+          ...(a.static.from === undefined ? {} : { from: a.static.from }),
+          ...(a.static.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
+        },
         ...(a.condition === undefined ? {} : { condition: a.condition }),
       });
     }
@@ -712,13 +726,24 @@ function buildIndex(state: GameState): BoardIndex {
   const immediate: ModifierEntry[] = [];
   const deferred: ModifierEntry[] = [];
   const late: ModifierEntry[] = [];
+  const afterGoad: ModifierEntry[] = [];
+  const powerGoad: ModifierEntry[] = [];
   let seq = 0;
   for (const source of sources) {
     for (const mod of source.modifiers) {
       const pt = dependsOnPt(mod);
       const keywords = dependsOnKeywords(mod);
       const isLate = keywords && mod.kind === 'modifyPt';
-      (isLate ? late : pt || keywords ? deferred : immediate).push({
+      (dependsOnSourcePower(mod)
+        ? powerGoad
+        : dependsOnGoaded(mod)
+          ? afterGoad
+          : isLate
+            ? late
+            : pt || keywords
+              ? deferred
+              : immediate
+      ).push({
         source,
         mod,
         pt,
@@ -736,6 +761,8 @@ function buildIndex(state: GameState): BoardIndex {
     immediate: listEntries(immediate),
     deferred: listEntries(deferred),
     late: listEntries(late),
+    afterGoad: listEntries(afterGoad),
+    powerGoad: listEntries(powerGoad),
     reductions,
     hasCostIncrease,
     hasStaticGrants,
@@ -926,6 +953,13 @@ export interface StaticBase extends FilterSubject {
    * keeps a count of keywords from reading itself.
    */
   readonly layer6Only?: boolean;
+  /**
+   * Set while the power of a source of a group goad is being read (`powerBeforeGoad`): the goad of a group that compares power with its source is not applied, which is
+   * what keeps two such sources from reading each other (goad changes no power).
+   */
+  readonly skipPowerGoad?: boolean;
+  /** The power of another object after layer 7, before the goad of a group that compares power with its source (CR 613.4); left out where no such goad is read. */
+  readonly powerBeforeGoadOf?: (other: GameObject) => number | null;
   readonly ptWith: (
     power: number,
     toughness: number,
@@ -943,6 +977,21 @@ function dependsOnPt(mod: Modifier): boolean {
   return (
     mod.subject.kind === 'filter' &&
     filterReads(mod.subject.filter, (f) => f.power !== undefined || f.toughness !== undefined)
+  );
+}
+
+/** Whether a static ability's subject compares power with its source (CR 701.15a, Baeloth Barrityl): only a `goaded` static ability may (the validator). */
+function dependsOnSourcePower(mod: Modifier): boolean {
+  return (
+    mod.subject.kind === 'filter' &&
+    filterReads(mod.subject.filter, (f) => f.powerLessThanSource === true)
+  );
+}
+
+/** Whether a static ability's subject names a goaded creature (CR 701.15b): it applies after the abilities that goad (`afterGoad`). */
+function dependsOnGoaded(mod: Modifier): boolean {
+  return (
+    mod.subject.kind === 'filter' && filterReads(mod.subject.filter, (f) => f.goaded !== undefined)
   );
 }
 
@@ -1288,6 +1337,28 @@ export function staticEffectsOn(
         ...(pt ? base.ptWith(power, toughness, sets) : {}),
         keywords: keywordsNow,
       });
+    }
+  }
+  // CR 701.15a (Baeloth Barrityl): "creatures ... with power less than ~'s power are goaded": the target's power as layer 7 leaves it, against the power of the source read
+  // without any such goad (goad changes no power, so two sources cannot loop). Applied before the restrictions that read who is goaded.
+  if (base.layer6Only !== true && base.skipPowerGoad !== true) {
+    for (const { source, mod } of entriesFor(index.powerGoad, target.id)) {
+      const sourcePower = base.powerBeforeGoadOf?.(source.object) ?? null;
+      apply({ ...source, context: { ...source.context, sourcePower } }, mod, {
+        ...base,
+        ...base.ptWith(power, toughness, sets),
+      });
+    }
+  }
+  // CR 701.15b: "goaded creatures ... can't block" reads whether the target is goaded now: by a goad effect, or by a static ability that goads (applied above).
+  if (base.layer6Only !== true) {
+    const goaded =
+      goadedBy.length > 0 ||
+      state.continuousEffects.some(
+        (e) => e.change.kind === 'goaded' && e.objects.includes(target.id),
+      );
+    for (const { source, mod } of entriesFor(index.afterGoad, target.id)) {
+      apply(source, mod, { ...base, goaded });
     }
   }
   const host = target.attachedTo === null ? undefined : state.objects[target.attachedTo];

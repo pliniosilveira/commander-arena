@@ -5,8 +5,16 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ObjectFilter, ObjectRef, ObjectSelector } from '../ast/types';
+import type {
+  Effect,
+  ManaAbility,
+  ObjectFilter,
+  ObjectRef,
+  ObjectSelector,
+  Trigger,
+} from '../ast/types';
 import { CREATURE_TYPES } from '../data/creature-types';
+import { PLANESWALKER_TYPES } from '../data/planeswalker-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
@@ -50,6 +58,7 @@ import { enterCombatAttacking } from './combat-enter';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
+  runAttackOnlyNearest,
   runBecomeCopy,
   runCantAttackPlaneswalkers,
   runCantBeBlockedByPlayer,
@@ -62,7 +71,12 @@ import {
   runRestrictGroup,
 } from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
+import {
+  runExchangeControl,
+  runExchangeControlOfAll,
+  runGainControl,
+  runReturnControl,
+} from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -73,6 +87,7 @@ import { putCountersOn } from './counter-put';
 import {
   asking,
   runDealDamage,
+  runDealDamageFromEach,
   runDealDamageToController,
   runDealDamageToSelf,
   runDealDividedDamage,
@@ -119,6 +134,7 @@ import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { runLoseLifeManaValue } from './lose-life-mana-value';
+import { spendRestrictionOf } from './mana-outcomes';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
 import {
@@ -172,6 +188,7 @@ import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
+import { runEachPlayerRollsBarHighest } from './roll-off';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
@@ -187,6 +204,7 @@ import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { increaseSpeed } from './speed';
+import { runPlayerSpellsCostLess } from './spell-discount';
 import { runSpellEntersWithCounters } from './spell-enters-counters';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
@@ -275,7 +293,7 @@ export function runInstruction(
         kind: 'chooseOption',
         seat: instruction.seat ?? res.controller,
         purpose: 'creatureType',
-        options: CREATURE_TYPES,
+        options: instruction.planeswalker === true ? PLANESWALKER_TYPES : CREATURE_TYPES,
         source: res.object,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
@@ -286,7 +304,7 @@ export function runInstruction(
     if (instruction.chosen !== null) return done(state);
     // CR 701.38a (`perVote`): the filter is read for the voter, who is "you" in it.
     const readFor =
-      instruction.asVoter === undefined
+      instruction.asVoter === undefined && instruction.asChooser !== true
         ? contextOf(state, res)
         : { ...contextOf(state, res), controller: instruction.seat ?? res.controller };
     // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
@@ -820,7 +838,14 @@ export function runInstruction(
                   ? {}
                   : { declinedBy: instruction.declinedBy }),
               }
-            : next,
+            : as !== undefined &&
+                next.kind === 'chooseObjects' &&
+                next.seat === undefined &&
+                next.asVoter === undefined
+              ? // CR 608.2d, 101.4 (Agitator Ant: "each player may put two +1/+1 counters on a creature they control"): the objects a player asked chooses are chosen by them,
+                // among the permanents the filter calls theirs ("you" is the player asked).
+                { ...next, seat: as, asChooser: true as const }
+              : next,
       ),
     };
   }
@@ -1022,6 +1047,9 @@ function runEffect(
       );
     }
     case 'chooseCreatureType':
+      if (effect.planeswalker === true) {
+        return done(state, [], [{ kind: 'chooseCreatureType', chosen: null, planeswalker: true }]);
+      }
       // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
       return done(
         state,
@@ -1034,6 +1062,25 @@ function runEffect(
               seat,
             })),
       );
+    case 'addManaCombination': {
+      // CR 106.1b, 608.2d (Xenagos, the Reveler): the controller chooses how many of the first color; the rest are the second (rules/choose-number.ts).
+      const total = amountOf(state, effect.amount, ctx, targets);
+      if (total <= 0) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseNumber',
+            seat: res.controller,
+            min: 0,
+            max: total,
+            amount: null,
+            manaSplit: effect.colors,
+          },
+        ],
+      );
+    }
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): the controller chooses a whole number from `min` to `max`.
       return done(
@@ -1061,6 +1108,10 @@ function runEffect(
 
     case 'dealDividedDamage':
       return runDealDividedDamage(state, res, effect, targets, flow);
+
+    case 'dealDamageFromEach':
+      // CR 120.3 (Sarkhan the Masterless): each source deals its own damage.
+      return runDealDamageFromEach(state, effect, ctx, targets, flow);
 
     case 'dealDamageToSelf':
       // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."
@@ -1604,6 +1655,16 @@ function runEffect(
       if (effect.exileInstead === true) {
         return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
       }
+      // CR 113.7a, 701.6a (Green Slime): "If a permanent's ability is countered this way, destroy that permanent": the permanents on the battlefield that were the sources of the abilities
+      // countered are what `moved` names afterwards. A countered spell names nothing (it is a card that goes to a graveyard, and no instruction reads it).
+      const sources = ids.flatMap((id) => {
+        const stack = state.objects[id]?.stack;
+        const source = stack?.kind === 'ability' ? stack.source : null;
+        return source !== null && state.objects[source]?.zone === 'battlefield' ? [source] : [];
+      });
+      if (sources.length > 0 || ids.some((id) => state.objects[id]?.stack?.kind === 'ability')) {
+        return { ...done(state, events, moveInstructions(ids, 'graveyard')), lastMoved: sources };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 
@@ -1772,7 +1833,9 @@ function runEffect(
         ...done(
           state,
           [],
-          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets, opponent)),
+          spells.flatMap((id) =>
+            copyInstructions(id, copies, effect.newTargets, opponent, effect.permanentGains),
+          ),
         ),
         performed: copies > 0 ? spells.length : 0,
       };
@@ -2137,7 +2200,12 @@ function runEffect(
       // CR 603.7c, 701.21a (Depthshaker Titan): "any number of target noncreature artifacts you control become 3/3 artifact creatures. Sacrifice them at the beginning of the next end
       // step.": one delayed ability about the permanents the targets of the effect named as it was created (`boundObjects`), found later only if each is still that object on the
       // battlefield. With no target chosen there is nothing to wait for.
-      if (effect.effect.kind === 'sacrifice' && effect.effect.objects.kind === 'target') {
+      // Vronos, Masked Inquisitor (CR 603.7c, 702.26a): "... phase out at the beginning of the next end step": the same, bound to the targets as they are now.
+      if (
+        (effect.effect.kind === 'sacrifice' || effect.effect.kind === 'phaseOut') &&
+        effect.effect.objects.kind === 'target'
+      ) {
+        const kind = effect.effect.kind;
         const ids = resolveObjects(state, effect.effect.objects, ctx, targets).filter(
           (id) => state.objects[id]?.zone === 'battlefield',
         );
@@ -2145,7 +2213,7 @@ function runEffect(
         const ability: TriggeredAbility = {
           kind: 'triggered',
           trigger,
-          effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
+          effect: { kind, objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
@@ -2323,6 +2391,86 @@ function runEffect(
       });
     }
 
+    case 'delayedAttackerPump': {
+      // CR 603.7, 500.1 (Jace, Architect of Thought): each creature an opponent of the controller declares as an attacker until the controller's next turn gets the change until end of turn.
+      const ability: TriggeredAbility = {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { controller: 'opponent', types: ['creature'] } },
+        effect: {
+          kind: 'modifyPt',
+          objects: { kind: 'triggerSubject' },
+          power: effect.power,
+          toughness: effect.toughness,
+          duration: 'untilEndOfTurn',
+        },
+      };
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            ability,
+            repeat: true,
+            until: {
+              seat: res.controller,
+              turnsTaken: (state.seats[res.controller]?.turnsTaken ?? 0) + 1,
+            },
+          },
+        ],
+      });
+    }
+
+    case 'delayedCopy': {
+      // CR 603.7, 603.7a, 603.7b, 707.10 (Jaya's Phoenix, Leori, Repeated Reverberation): a delayed ability of the controller that waits for the first cast or activation it names
+      // after this, then copies that spell or ability. It is found after the events that happen after this, triggers once and ends with the turn (`repeat`: at each one).
+      const triggers: Trigger[] = (effect.casts ?? []).map((filter) => ({
+        kind: 'castSpell',
+        filter,
+        by: 'you',
+      }));
+      if (effect.activation !== undefined) {
+        // Leori: the planeswalker type the controller chose, as it was as the ability was activated.
+        let ofSource: ObjectFilter | undefined;
+        if (effect.activation.ofChosenType === true) {
+          const chosen = res.chosenCreatureType;
+          if (chosen === undefined) return done(state);
+          ofSource = { types: ['planeswalker'], subtypes: [chosen] };
+        }
+        triggers.push({
+          kind: 'activatesAbility',
+          who: 'you',
+          anySource: true,
+          ...(effect.activation.loyalty === true ? { loyalty: true as const } : {}),
+          ...(ofSource === undefined ? {} : { ofSource }),
+        });
+      }
+      const [first, ...rest] = triggers;
+      if (first === undefined) return done(state);
+      const copy: Effect = {
+        kind: 'copySpell',
+        spell: { kind: 'triggerSubject' },
+        newTargets: 'may',
+        ...(effect.count === undefined ? {} : { count: effect.count }),
+      };
+      const ability: TriggeredAbility = { kind: 'triggered', trigger: first, effect: copy };
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            ability,
+            untilEndOfTurn: true,
+            ...(rest.length === 0 ? {} : { also: rest }),
+            ...(effect.repeat === true ? { repeat: true as const } : {}),
+          },
+        ],
+      });
+    }
+
     case 'spellGainsKeyword': {
       // CR 702.44a, 702.44d: "it gains sunburst": the spell the cast trigger is about, if it is still a spell on the stack as this resolves, remembers the keyword; the permanent it
       // becomes reads it as it enters (`rules/enters-keywords.ts`), one instance for each time it was gained. A copy of a spell was not cast (CR 707.10) and is not given one.
@@ -2367,6 +2515,10 @@ function runEffect(
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
+    case 'damageCantBePreventedThisTurn':
+      // CR 615.12, 611.2a: for the rest of this turn no damage is prevented (read by `damageCantBePrevented`, `rules/global-statics.ts`).
+      return done({ ...state, turn: { ...state.turn, damageUnpreventable: true } });
+
     case 'additionalLandDropThisTurn':
       // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.
       return done(
@@ -2387,6 +2539,55 @@ function runEffect(
     case 'blight':
       // CR 701.68a (Blight): the controller chooses a creature they control and puts the counters on it as the instruction runs (rules/blight-effect.ts).
       return done(state, [], [{ kind: 'blight', count: effect.count, chosen: null }]);
+
+    case 'forgetLoyaltyActivations': {
+      // CR 606.3 (The Chain Veil): the loyalty activations of these permanents this turn no longer count toward the limit of one.
+      const ids = new Set(resolveObjects(state, effect.objects, ctx, targets));
+      if (ids.size === 0) return done(state);
+      return done({
+        ...state,
+        turnLog: {
+          ...state.turnLog,
+          activated: state.turnLog.activated.map((a) =>
+            a.loyalty === true && ids.has(a.object) ? { ...a, forgotten: true as const } : a,
+          ),
+        },
+      });
+    }
+
+    case 'moveCounterFromThis': {
+      // CR 122.1, 122.6 (Gatewatch Beacon): the counters come off the permanent of the ability and go on the permanent the trigger is about; what the destination can't have is lost.
+      const sourceId = ctx.source;
+      const source = sourceId === null ? undefined : state.objects[sourceId];
+      if (sourceId === null || source === undefined || source.zone !== 'battlefield') {
+        return done(state);
+      }
+      const have = source.counters[effect.counter] ?? 0;
+      const moved = Math.min(effect.count, have);
+      if (moved <= 0) return done(state);
+      const [destination] = resolveObjects(state, effect.to, ctx, targets);
+      if (destination === undefined || destination === sourceId) return done(state);
+      if (state.objects[destination]?.zone !== 'battlefield') return done(state);
+      let next = patchObject(state, sourceId, {
+        counters: { ...source.counters, [effect.counter]: have - moved },
+      });
+      const events: GameEvent[] = [
+        { kind: 'counterRemoved', object: sourceId, counter: effect.counter, count: moved },
+      ];
+      const put = putCountersOn(
+        state,
+        next,
+        destination,
+        effect.counter,
+        moved,
+        ctx.controller,
+        counterBlockers(state),
+        counterBonuses(state),
+      );
+      next = put.state;
+      events.push(...put.events);
+      return done(next, events);
+    }
 
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): the counters move one at a time, each a choice of the controller, as the instruction runs (rules/move-counters.ts).
@@ -2466,6 +2667,18 @@ function runEffect(
           { source: blocker, controller: res.controller, ability },
         ],
       });
+    }
+
+    case 'exileIfDiesThisTurn': {
+      // CR 614.1a, 614.6 (Chandra, Awakened Inferno): each permanent named is marked for the rest of this turn; `moveObject` exiles it when it would die.
+      let next = state;
+      if (effect.ifDamageDealt === true && (ctx.thisWay?.damageDealt ?? 0) < 1) return done(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        if (next.objects[id]?.zone === 'battlefield') {
+          next = patchObject(next, id, { exileIfDiesTurn: state.turn.number });
+        }
+      }
+      return done(next);
     }
 
     case 'exileIfLeaves': {
@@ -2645,6 +2858,9 @@ function runEffect(
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);
+    case 'playerSpellsCostLess':
+      // CR 601.2f, 118.7a, 611.2a: "Until your next turn, ... spells that player casts cost {2} less to cast" (rules/spell-discount.ts).
+      return runPlayerSpellsCostLess(state, effect, ctx, targets);
     case 'spellEntersWithCounters':
       // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
       return runSpellEntersWithCounters(state, effect, ctx);
@@ -2767,16 +2983,22 @@ function runEffect(
         const card = next.objects[id];
         return card !== undefined && derive(next, card).types.includes('creature');
       }).length;
+      // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards of the cards milled, as they are in the graveyard.
+      const milledLands = cardsMilled.filter((id) => {
+        const card = next.objects[id];
+        return card !== undefined && derive(next, card).types.includes('land');
+      }).length;
       return {
         ...done(next, events),
         performed: milled,
         lastMoved: cardsMilled,
         milledCards: cardsMilled,
-        ...(value > 0 || milledCreatures > 0
+        ...(value > 0 || milledCreatures > 0 || milledLands > 0
           ? {
               thisWay: {
                 ...(value > 0 ? { milledValue: value } : {}),
                 ...(milledCreatures > 0 ? { milledCreature: milledCreatures } : {}),
+                ...(milledLands > 0 ? { milledLand: milledLands } : {}),
               },
             }
           : {}),
@@ -2976,12 +3198,17 @@ function runEffect(
           : live !== undefined
             ? derive(state, live).types
             : (state.lki[res.source]?.characteristics.types ?? []);
+      // Narset of the Ancient Way (CR 106.6): "Spend this mana only to cast a noncreature spell".
+      const restriction =
+        production.spendOnly === undefined
+          ? null
+          : spendRestrictionOf({ spendOnly: production.spendOnly } as ManaAbility);
       const added = Array.from({ length: Math.max(0, times) }, () =>
         production.mana.map((color) => ({
           color,
           snow: false,
           source: res.source,
-          restriction: null,
+          restriction,
           ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
           // D-650 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
           ...(production.staysUntilEndOfTurn === true ? { stays: true as const } : {}),
@@ -3048,9 +3275,22 @@ function runEffect(
         0,
       );
       // CR 603.12 (Auron, Venerated Guardian): "put a +1/+1 counter on it. When you do, ...": a counter really put is something done (`performed`).
+      // Spectacular Showdown (CR 608.2c): "each creature that had a double strike counter put on it this way" is the objects that really got a counter, each once.
+      const putOn = [
+        ...new Set(
+          events.flatMap((e) =>
+            e.kind === 'counterAdded' && e.counter === effect.counter ? [e.object] : [],
+          ),
+        ),
+      ];
       return {
         ...done(next, events),
-        ...(putCount > 0 ? { thisWay: { countersPut: putCount }, performed: 1 } : {}),
+        ...(putCount > 0
+          ? {
+              thisWay: { countersPut: putCount, countersPutOn: { [effect.counter]: putOn } },
+              performed: 1,
+            }
+          : {}),
       };
     }
 
@@ -3246,7 +3486,8 @@ function runEffect(
 
     case 'shuffle': {
       let shuffled = 0;
-      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+      // CR 701.24: a player named twice (the owner of two targets) shuffles once.
+      for (const seat of new Set(resolvePlayers(state, effect.player, ctx, targets))) {
         const r = shuffleLibrary(next, seat);
         next = r.state;
         events.push(...r.events);
@@ -3271,6 +3512,10 @@ function runEffect(
       const rolled = rollDie(next, res.controller, effect.sides);
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
     }
+
+    case 'eachPlayerRollsBarHighest':
+      // CR 706.1, 706.2, 508.1a (`rules/roll-off.ts`): everyone rolls; the creature can't attack the opponents with the highest result this combat.
+      return runEachPlayerRollsBarHighest(next, effect, ctx.source, res.controller);
 
     case 'repeatWhile': {
       // CR 608.2c (Grist, the Hunger Tide): the effects, then the test as an instruction of its own (read after them, so `moved` is what the last of them moved); when it holds
@@ -3433,6 +3678,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(effect.cards === undefined ? {} : { cards: effect.cards }),
           ...(effect.upTo === true ? { upTo: true as const } : {}),
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
@@ -3481,7 +3727,10 @@ function runEffect(
       }
       monstrousEvents.push({ kind: 'becameMonstrous', object: source.id });
       return {
-        ...done(patchObject(afterCounters, source.id, { monstrous: true }), monstrousEvents),
+        ...done(
+          patchObject(afterCounters, source.id, { monstrous: true, monstrousX: count }),
+          monstrousEvents,
+        ),
         performed: 1,
       };
     }
@@ -3798,28 +4047,34 @@ function runEffect(
       // CR 608.2g, 608.2b (D-350): "you may cast target [card] from a graveyard": the target, if it is still a legal one (rules/cast-card.ts).
       // A slot of several targets (one for each opponent) is asked about card by card, in the order the targets were chosen (CR 608.2g).
       const cards = resolveObjects(state, effect.object, ctx, targets);
-      if (cards.length === 0) return done(state);
-      return done(
-        state,
-        [],
-        cards.map((card) => ({
-          kind: 'castCard' as const,
-          stage: 'start' as const,
-          card,
-          anyManaType: effect.anyManaType === true,
-          exileInstead: effect.exileInstead === true,
-          ...(effect.free === true ? { free: true } : {}),
-          ...(effect.remember === true ? { remember: true } : {}),
-        })),
-      );
+      if (cards.length === 0) return { ...done(state), resetPerformed: true };
+      // CR 608.2c: "If you don't" reads whether a spell was cast by this instruction, not what an effect before it did.
+      return {
+        ...done(
+          state,
+          [],
+          cards.map((card) => ({
+            kind: 'castCard' as const,
+            stage: 'start' as const,
+            card,
+            anyManaType: effect.anyManaType === true,
+            exileInstead: effect.exileInstead === true,
+            ...(effect.free === true ? { free: true } : {}),
+            ...(effect.remember === true ? { remember: true } : {}),
+          })),
+        ),
+        resetPerformed: true,
+      };
     }
 
     case 'castFree': {
       // CR 608.2g, 101.4 (issue 81, The Ur-Sphinx): "For each player, you may cast a card that player milled this way": one question for each owner of the cards just
       // moved, in turn order from the active player, over the cards that owner has among them (those in a graveyard now).
       if (effect.perOwner === true) {
+        // Guff Rewrites History: with `byOwner` the cards are in exile and each owner casts their own.
+        const zone: 'exile' | 'graveyard' = effect.byOwner === true ? 'exile' : 'graveyard';
         const moved = resolveObjects(state, effect.objects as ObjectRef, ctx, targets).filter(
-          (id) => state.objects[id]?.zone === 'graveyard',
+          (id) => state.objects[id]?.zone === zone,
         );
         const asks = seatsInOrder(state, state.turn.activeSeat).flatMap((owner) => {
           const cards = moved.filter((id) => state.objects[id]?.owner === owner);
@@ -3831,7 +4086,8 @@ function runEffect(
                   objects: effect.objects,
                   play: false,
                   cards,
-                  cardsZone: 'graveyard' as const,
+                  cardsZone: zone,
+                  ...(effect.byOwner === true ? { seat: owner } : {}),
                   chosen: null,
                 },
               ];
@@ -4423,6 +4679,10 @@ function runEffect(
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
 
+    case 'attackOnlyNearestOpponent':
+      // CR 508.1a, 611.2a (Teyo, Geometric Tactician): a restriction on every creature, read when attackers are declared.
+      return runAttackOnlyNearest(state, effect, ctx);
+
     case 'creaturesCantAttackYou':
       // CR 508.1a, 611.2a, 611.2c: a restriction on a group of creatures, read when attackers are declared.
       return runCreaturesCantAttackYou(state, effect, ctx, targets);
@@ -4475,11 +4735,16 @@ function runEffect(
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).
       return runExchangeControl(state, effect, ctx, targets);
 
+    case 'exchangeControlOfAll':
+      // CR 701.12a, 613.1b: the two groups change hands together (`rules/control-effects.ts`).
+      return runExchangeControlOfAll(state, effect, ctx, targets);
+
     case 'removeCounters': {
       // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
       const wanted = amountOf(state, effect.count, ctx, targets);
       if (wanted <= 0) return done(state);
       let anyRemoved = false;
+      let total = 0;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         // CR 122.1: counters stay on a permanent and on a card in exile (a suspended card's time counters, CR 702.62b).
@@ -4488,6 +4753,7 @@ function runEffect(
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;
         anyRemoved = true;
+        total += removed;
         const left = had - removed;
         const { [effect.counter]: _gone, ...rest } = obj.counters;
         next = patchObject(next, id, {
@@ -4501,11 +4767,17 @@ function runEffect(
         });
       }
       // CR 608.2c: removing a counter is something done, which "if you do" reads.
-      return { ...done(next, events), performed: anyRemoved ? 1 : 0 };
+      // "Exile that many cards" (Chandra, Legacy of Fire; CR 608.2c): the counters really removed are what `thisWay` `countersRemoved` reads.
+      return {
+        ...done(next, events),
+        performed: anyRemoved ? 1 : 0,
+        ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
+      };
     }
 
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
     case 'setTypes':

@@ -96,7 +96,7 @@ export function leastAllowedX(
 const MOST_RESTRICTED_X = 60;
 
 /**
- * Whether a `cantCastThis` ability of the face `spell` is, stops `seat` from casting it now. `spell` is the card as it would be on the
+ * Whether a `cantCastThis` ability of the face `spell` is, or CR 205.4e (a legendary instant or sorcery with no legend to its caster), stops `seat` from casting it now. `spell` is the card as it would be on the
  * stack (`castAs`); its own abilities are read, as the engine does for a card anywhere but on the battlefield.
  */
 export function castForbiddenByOwnAbility(
@@ -107,6 +107,7 @@ export function castForbiddenByOwnAbility(
   const card = printedCard(spell);
   const face = card === null ? undefined : definitionOf(state, card).faces[spell.face];
   if (face === undefined) return false;
+  if (legendarySpellWithoutLegend(state, seat, face)) return true;
   return face.abilities.some(
     (a) =>
       a.kind === 'static' &&
@@ -114,6 +115,31 @@ export function castForbiddenByOwnAbility(
       (a.condition === undefined ||
         evaluateCondition(state, a.condition, { controller: seat, source: spell.id })),
   );
+}
+
+/**
+ * CR 205.4e (Supertypes): a legendary instant or sorcery spell can't be cast unless its caster controls a legendary creature or a legendary planeswalker. `face` is the
+ * face about to be cast; what the caster controls is read after the layers (CR 205.4a: a permanent that is legendary by an effect counts).
+ */
+function legendarySpellWithoutLegend(
+  state: GameState,
+  seat: SeatId,
+  face: { readonly supertypes: readonly string[]; readonly types: readonly string[] },
+): boolean {
+  if (!face.supertypes.includes('legendary')) return false;
+  if (!face.types.includes('instant') && !face.types.includes('sorcery')) return false;
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) !== seat) continue;
+    const d = derive(state, obj);
+    if (
+      d.supertypes.includes('legendary') &&
+      (d.types.includes('creature') || d.types.includes('planeswalker'))
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

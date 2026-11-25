@@ -57,7 +57,7 @@ import {
   verdict,
 } from './heuristic-danger';
 import { applyOrNull, playOut } from './heuristic-sim';
-import { withinBlockBudget } from './legal';
+import { withinAttackBudget, withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
 import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
 
@@ -233,7 +233,10 @@ export function chooseHeuristicAttack(
   const required = new Set(d.mustAttack);
   const declare = (set: readonly PlannedAttack[]): Action => ({
     kind: 'declareAttackers',
-    attacks: set.map((p) => ({ attacker: p.attacker, target: p.target })),
+    attacks: withinAttackBudget(
+      d,
+      set.map((p) => ({ attacker: p.attacker, target: p.target })),
+    ),
   });
   const mustGo = candidates.filter((c) => required.has(c.attacker));
   const armed = candidates.filter((c) => powerOf(c.object) > 0);

@@ -11,6 +11,7 @@ export function CardPrintsDialog({
   card,
   listed,
   onUse,
+  onUseForAll,
   onClose,
 }: {
   card: StoredCard;
@@ -18,6 +19,8 @@ export function CardPrintsDialog({
   listed: { readonly set: string; readonly collector: string } | null;
   /** Writes the printing into the deck; rejects with the reason when it cannot. */
   onUse?: (print: CardPrint) => Promise<void>;
+  /** Writes the printing into this deck and every other deck of the player, and remembers it for decks imported later. */
+  onUseForAll?: (print: CardPrint) => Promise<void>;
   onClose: () => void;
 }) {
   const state = useCardPrints(card.name);
@@ -36,10 +39,12 @@ export function CardPrintsDialog({
         );
   const selected: CardPrint | undefined = prints.find((p) => p.id === chosen) ?? current;
   const canUse = onUse !== undefined && selected !== undefined && selected.id !== current?.id;
-  const use = () => {
-    if (onUse === undefined || selected === undefined) return;
+  // "Use for all decks" also applies when the printing is already this deck's: the other decks may still differ.
+  const canUseAll = onUseForAll !== undefined && selected !== undefined;
+  const run = (action: ((print: CardPrint) => Promise<void>) | undefined) => {
+    if (action === undefined || selected === undefined) return;
     setSaving('busy');
-    onUse(selected).then(
+    action(selected).then(
       // Saved: the dialog has done its job.
       onClose,
       (e) => setSaving(e instanceof Error ? e.message : String(e)),
@@ -67,10 +72,20 @@ export function CardPrintsDialog({
                 type="button"
                 className="scr-btn"
                 disabled={!canUse || saving === 'busy'}
-                onClick={use}
+                onClick={() => run(onUse)}
               >
                 Use in this deck
               </button>
+              {onUseForAll !== undefined && (
+                <button
+                  type="button"
+                  className="scr-btn"
+                  disabled={!canUseAll || saving === 'busy'}
+                  onClick={() => run(onUseForAll)}
+                >
+                  Use for all decks
+                </button>
+              )}
               {saving !== 'idle' && saving !== 'busy' && (
                 <span role="alert" className="imp-alert">
                   {saving}

@@ -52,6 +52,8 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Exit from Exile deck (Sweet-Gum Recluse): "each of any number of target creatures that entered this turn".
+  'noun.each-of-any-number-targets',
   // Counter Blitz deck, group C (Collective Effort): "each creature target player controls".
   'noun.each-permanent-of-target-player',
   // Monstrosity of the Lake: "Tap all creatures your opponents control, then put a stun counter on each of those creatures." (the binding pass turns the words into the group before)
@@ -68,6 +70,8 @@ const ADD_COUNTERS_OPERANDS = [
   ...COUNTER_OPERANDS,
   // "Choose target creature attacking you. Put a stun counter on that creature.": the object the sentence before named (CR 608.2c).
   'noun.that-object',
+  // Agitator Ant: "a creature they control", the creature the asked player chooses (before the plain "a creature", which would stop at "they").
+  'noun.a-permanent-they-control',
   'noun.a-permanent',
   // "each of up to two Soldiers you control": a resolving choice of up to that many.
   'noun.each-of-up-to-permanents',
@@ -183,6 +187,67 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
       args: { count: each === null ? count : (scaled(count, each) ?? count), counter, objects },
     }),
   ),
+});
+
+/**
+ * `effect.add-counters-two-groups`: "put a +1/+1 counter on each creature you control and a loyalty counter on each other planeswalker you control" (Ajani Steadfast; CR 122.6, 306.5b):
+ * two instructions about two groups, each with its own counter. Two clauses of `addCounters`, joined by "and". Only "a" counter on "each" group of permanents (`noun.each-permanent`),
+ * each as `effect.add-counters` reads it. Not read: three groups, a number other than "a", a target, "for each".
+ */
+export const EFFECT_ADD_COUNTERS_TWO_GROUPS = defineRule<Clauses>({
+  id: 'effect.add-counters-two-groups',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 306.5b (Planeswalkers)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'put a +1/+1 counter on each creature you control and a loyalty counter on each other planeswalker you control',
+    'put a +1/+1 counter on each creature you control and a +1/+1 counter on each planeswalker you control',
+  ],
+  rejects: [
+    'put a +1/+1 counter on each creature you control',
+    'put a +1/+1 counter on each creature you control and a loyalty counter on target planeswalker',
+    'put a +1/+1 counter on each creature you control and two loyalty counters on each other planeswalker you control',
+    'put a +1/+1 counter on each creature you control and a loyalty counter on each other planeswalker you control and a charge counter on each artifact you control',
+    'put a +1/+1 counter on each creature you control and draw a card',
+    'put a +1/+1 counter on each creature you control, and a loyalty counter on each other planeswalker you control',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.add-counters-two-groups';
+    const one = (lead: Parser<unknown>) =>
+      sequence(
+        lead,
+        family<IrAmount>('amount', { only: ['amount.article'] }),
+        literal(' '),
+        map(
+          spanned(pattern(COUNTER_NAME)),
+          ({ value, span }): IrCounterSpec => ({
+            kind: 'counterSpec',
+            name: value[0].toLowerCase(),
+            span,
+            rule: id,
+          }),
+        ),
+        pattern(/ counter on /i),
+        operands(['noun.each-permanent'], id),
+      );
+    const r = sequence(one(literal('put ')), one(literal(' and ')))(ctx, pos);
+    if (!r.ok) return r;
+    const [first, second] = r.value;
+    const clause = (part: typeof first, last: boolean) => ({
+      ...makeClause(
+        id,
+        'addCounters',
+        { count: part[1], counter: part[3], objects: part[5] },
+        { start: pos, end: r.pos },
+      ),
+      ...(last ? {} : { connector: 'and' as const }),
+    });
+    return { ok: true, value: [clause(first, false), clause(second, true)], pos: r.pos };
+  },
 });
 
 /** The objects the counters of a kind can be doubled on: this permanent, "it", a target, or a group as the effect resolves. */
@@ -755,6 +820,7 @@ export const COUNTER_RULES = [
   // Before the plain rule, which would read the first half and leave " and a +1/+1 counter on ..." unread.
   EFFECT_ADD_COUNTERS_SELF_AND_OTHER,
   EFFECT_ADD_COUNTERS_OTHER_AND_SELF,
+  EFFECT_ADD_COUNTERS_TWO_GROUPS,
   EFFECT_ADD_COUNTERS,
   EFFECT_DOUBLE_COUNTERS,
   EFFECT_DOUBLE_PLAYER_COUNTERS,

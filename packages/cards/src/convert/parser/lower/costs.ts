@@ -159,6 +159,17 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3): a different permanent for each part, the cost of an ordinary activated ability.
       if (cost.also !== undefined) {
         if (options.ordinary !== true) return failure(cost);
+        // "Sacrifice ~ and a legendary artifact" (Mount Doom): the permanent itself is the first part, a different permanent pays each of the others.
+        if (what.det === 'self') {
+          const others: ObjectFilter[] = [];
+          for (const part of cost.also) {
+            if (part.det !== 'a' || part.count !== undefined) return failure(cost);
+            const filter = lowerFilter(part);
+            if (!filter.ok) return filter;
+            others.push(filter.value);
+          }
+          return ok({ kind: 'sacrifice', what: { kind: 'this' }, alongside: others });
+        }
         const parts = [what, ...cost.also];
         if (parts.some((part) => part.det !== 'a' || part.count !== undefined)) {
           return failure(cost);
@@ -264,8 +275,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (cost.filter === undefined && cost.named === undefined) {
         return ok({ kind: 'discard', count: cost.amount.value });
       }
-      // D-207 (stage P50): "Discard a legendary card", "Discard another card named ~": the cost of an ordinary activated ability.
-      if (options.ordinary !== true) return failure(cost);
+      // D-207 (stage P50): "Discard a legendary card", "Discard another card named ~": the cost of an ordinary activated ability. A filter alone ("discard a land card")
+      // is also an additional cost of a spell (CR 118.8, 701.9): the engine's `discardFilter` of the cast.
+      if (options.ordinary !== true && !(options.additional === true && cost.named !== true)) {
+        return failure(cost);
+      }
       if (cost.named === true)
         return ok({ kind: 'discard', count: cost.amount.value, named: true });
       const narrowed = lowerFilter({

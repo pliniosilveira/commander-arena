@@ -66,15 +66,23 @@ export function withinAttackBudget(
   d: DeclareAttackersDecision,
   attacks: readonly { attacker: ObjectId; target: AttackTarget }[],
 ): { attacker: ObjectId; target: AttackTarget }[] {
+  // "No more than N creatures can attack each combat" (CR 508.1c): the first N of the declaration, a creature that must attack kept before the others.
+  const capped =
+    d.maxAttackers === undefined || attacks.length <= d.maxAttackers
+      ? [...attacks]
+      : [
+          ...attacks.filter((a) => d.mustAttack.includes(a.attacker)),
+          ...attacks.filter((a) => !d.mustAttack.includes(a.attacker)),
+        ].slice(0, d.maxAttackers);
   const costs = d.attackCosts ?? [];
-  if (costs.length === 0) return [...attacks];
+  if (costs.length === 0) return capped;
   const same = (a: AttackTarget, b: AttackTarget) => JSON.stringify(a) === JSON.stringify(b);
   const taxed = (t: AttackTarget) => costs.find((c) => same(c.target, t));
   const freeTarget = (attacker: ObjectId) =>
     d.candidates.find((c) => c.attacker === attacker)?.targets.find((t) => taxed(t) === undefined);
   let using: AttackTarget | null = null;
   let used = 0;
-  return attacks.flatMap((a) => {
+  return capped.flatMap((a) => {
     const cost = taxed(a.target);
     if (cost === undefined) return [a];
     const free = freeTarget(a.attacker);
@@ -195,8 +203,13 @@ export function withinBlockBudget(
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
 ): { blocker: ObjectId; attacker: ObjectId }[] {
   const required = withRequiredBlocks(d, blocks);
-  if (d.blockCost === undefined) return required;
-  const kept = required.slice(0, d.blockCost.affordable);
+  // "No more than N creatures can block each combat" (CR 509.1b): the first N blockers.
+  const limit = Math.min(
+    d.maxBlockers ?? Number.POSITIVE_INFINITY,
+    d.blockCost?.affordable ?? Number.POSITIVE_INFINITY,
+  );
+  if (d.blockCost === undefined && d.maxBlockers === undefined) return required;
+  const kept = required.slice(0, limit);
   const count = new Map<ObjectId, number>();
   for (const b of kept) count.set(b.attacker, (count.get(b.attacker) ?? 0) + 1);
   const need = new Map(d.attackers.map((a) => [a.attacker, a.minBlockers] as const));

@@ -391,6 +391,11 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'boundObjects':
       // D-639: the engine's own form of `moved` inside a delayed ability.
       return 'it';
+    case 'putCountersOn':
+      // Spectacular Showdown (CR 608.2c): the objects the counters of the instruction before it went on.
+      return what.counter === undefined
+        ? 'each creature that had counters put on it this way'
+        : `each creature that had a ${what.counter} counter put on it this way`;
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
       // permanent or creature the trigger is about (D-133): "put a +1/+1 counter on it".
@@ -540,6 +545,8 @@ function recipientText(
       return 'each other player';
     case 'eachPlayerControlling':
       return 'each player who controls one';
+    case 'eachPlayerControllingMore':
+      return 'each player who controls more of them than you';
     case 'controllerOf':
       return 'its controller';
     case 'ownerOf':
@@ -555,6 +562,8 @@ function recipientText(
       return 'the defending player';
     case 'playerToYourRight':
       return 'the player to your right';
+    case 'enteredChosenPlayer':
+      return 'the chosen player';
     case 'chosenPlayer':
       return 'that player';
     case 'attackedBy':
@@ -607,6 +616,7 @@ function recipientText(
     case 'this':
     case 'thisSpell':
     case 'moved':
+    case 'putCountersOn':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -763,6 +773,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
     case 'eachPlayer':
       return { who: 'they', third: false };
     case 'controllerOf':
@@ -774,6 +785,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'playerToYourRight':
       return { who: 'the player to your right', third: true };
+    case 'enteredChosenPlayer':
+      return { who: 'the chosen player', third: true };
     case 'chosenPlayer':
       return { who: 'that player', third: true };
     case 'triggerPlayer':
@@ -916,7 +929,12 @@ function moveText(
     const kind = nounOf(objects.filter);
     const kept = effect.withCounters;
     const withCounters =
-      kept === undefined ? '' : ` with ${quantity(kept.count, defs, counters(kept.counter))} on it`;
+      kept === undefined
+        ? ''
+        : ` with ${[kept]
+            .flat()
+            .map((c) => quantity(c.count, defs, counters(c.counter)))
+            .join(' and ')} on it`;
     const control =
       effect.controller === 'owner' ? " under its owner's control" : ' under your control';
     return `Put each ${kind} card exiled with this ${self} onto the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
@@ -955,7 +973,10 @@ function moveText(
       const withCounters =
         kept === undefined
           ? ''
-          : ` with ${quantity(kept.count, defs, counters(kept.counter))} on ${objects.kind === 'each' ? 'them' : 'it'}`;
+          : ` with ${[kept]
+              .flat()
+              .map((c) => quantity(c.count, defs, counters(c.counter)))
+              .join(' and ')} on ${objects.kind === 'each' ? 'them' : 'it'}`;
       // The card itself comes back to its owner's control anyway; a target or a group says it.
       const control =
         effect.controller === 'owner' && (objects.kind === 'target' || objects.kind === 'each')
@@ -1236,6 +1257,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `Choose one: ${choices}`
         : `Repeat this choice ${defs.say(effect.times, { self })} times (choose independently): ${choices}`;
     }
+    case 'switchPt':
+      // CR 613.4d: "Switch this creature's power and toughness until end of turn".
+      return `Switch ${object(effect.objects)}'s power and toughness${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'modifyPt':
     case 'setPt': {
       // D-145 (CR 701.10): "Double the power and toughness of each creature you control until end of turn".
@@ -1643,6 +1667,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'exchangeControl':
       // Galadriel group 3 (CR 701.12): "Exchange control of this enchantment and target nonland permanent".
       return `Exchange control of ${object(effect.first)} and ${object(effect.second)}`;
+    case 'exchangeControlOfAll':
+      // CR 701.12a: "You and that player each gain control of all creatures the other controls until end of turn".
+      return `Exchange control of ${object(effect.objects)} with ${playerOwner(effect.player, ability).replace(/'s$/u, '')}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'removeCounters':
       // Galadriel group 3 (CR 122.1): "Remove a number of loyalty counters equal to that card's mana value from this planeswalker".
       if (

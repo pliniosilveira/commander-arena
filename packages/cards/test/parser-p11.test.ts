@@ -382,7 +382,7 @@ describe('"Its controller may search their library ..." (CR 701.23a, 608.2d, 110
     ],
     [
       'Exile target creature. Its controller may search their library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.',
-      'land cards, put them onto the battlefield tapped, then shuffle.',
+      ', put them onto the battlefield tapped, then shuffle.',
       'effect.search-by',
     ],
     [

@@ -386,6 +386,7 @@ describe('supported feature gate', () => {
         // CR 709.5h: "When you unlock this door".
         'doorUnlocked',
         'drawn',
+        'dungeonCompleted',
         'endStep',
         'entersBatch',
         'entersBattlefield',
@@ -435,6 +436,7 @@ describe('supported feature gate', () => {
       'each',
       'moved',
       'putWithThis',
+      'triggerSubject',
     ]);
     expect(SUPPORTED_FEATURES.tokenPresets).toEqual([
       'Treasure',
@@ -469,6 +471,8 @@ describe('supported feature gate', () => {
       // Issue 102: "enters from a graveyard" and "leaves your graveyard during your turn".
       'entersBattlefieldFromGraveyard',
       'entersBattlefieldFromYourGraveyard',
+      // Exit from Exile precon (issue 168): "a land you control enters from exile".
+      'entersBattlefieldFromExile',
       'leftGraveyardDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
@@ -484,6 +488,8 @@ describe('supported feature gate', () => {
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
       'stepMonarch',
+      'dealtDamageNoncombat',
+      'dealtDamageExcess',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

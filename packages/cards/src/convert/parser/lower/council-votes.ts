@@ -39,6 +39,34 @@ export const EACH_PLAYER_RETURNS_UP_TO: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "That player returns a card from their graveyard to their hand" after "choose an opponent" (Skullwinder, CR 608.2d, 400.3): the player the `choosePlayer` before it chose, as themselves,
+ * chooses a card of their own graveyard (not optional: a card must be returned when they have one), which goes to their hand. Refused with no such choice before it in the ability.
+ */
+export const CHOSEN_PLAYER_RETURNS_CARD: Lowering<IrClause, Effects> = {
+  head: 'chosenPlayerReturnsCard',
+  id: 'lower.chosen-player-returns-card',
+  needs: ['effect:forEachPlayer', 'effect:moveToZone', 'selector:choose', 'selector:chosenPlayer'],
+  lower(clause, ctx) {
+    if (!ctx.choseAPlayer) return failure(clause);
+    const effect: Effect = {
+      kind: 'forEachPlayer',
+      players: { kind: 'chosenPlayer' },
+      runsAs: 'each',
+      effect: {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: { zone: 'graveyard', controller: 'you' },
+          count: 1,
+        },
+        to: 'hand',
+      },
+    };
+    return { ok: true, value: [effect], rule: clause.rule };
+  },
+};
+
+/**
  * "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, 122.6): the engine's `addCounters` on the `ringBearer` object of the controller (nothing when they have none).
  */
 export const ADD_COUNTERS_RING_BEARER: Lowering<IrClause, Effects> = {
@@ -68,10 +96,12 @@ export const COUNCIL_VOTES_NEEDS: readonly FeatureRef[] = [
   'effect:repeat',
   'effect:addCounters',
   'selector:ringBearer',
+  'selector:chosenPlayer',
   'amount:votesFor',
 ];
 
 export const COUNCIL_VOTES_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EACH_PLAYER_RETURNS_UP_TO,
+  CHOSEN_PLAYER_RETURNS_CARD,
   ADD_COUNTERS_RING_BEARER,
 ];

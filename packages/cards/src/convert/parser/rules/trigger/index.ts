@@ -49,8 +49,10 @@ import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { ENCHANTED_MANA_TRIGGER_RULES } from './enchanted-mana';
 import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
+import { ENTERS_AND_ATTACKS_TRIGGER_RULES } from './enters-and-attacks';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
+import { EXILE_CAST_TRIGGER_RULES } from './exile-cast';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
@@ -62,6 +64,7 @@ import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
+import { LOOT_DISPUTE_TRIGGER_RULES } from './loot-dispute';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { MILL_TRIGGER_RULES } from './mill';
 import { MIND_FLAYARRRS_G8_TRIGGER_RULES } from './mind-flayarrrs-g8';
@@ -106,7 +109,9 @@ type EventName =
   // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
   | 'leavesBattlefield'
   // Stage P36 (D-178): "becomes the target of a spell", for the alternatives of `trigger.or` only.
-  | 'becomesTargetSpell';
+  | 'becomesTargetSpell'
+  // Exit from Exile deck (Tectonic Giant): "becomes the target of a spell an opponent controls", for the alternatives of `trigger.or` only.
+  | 'becomesTargetSpellOpponent';
 
 /** The words of each event after its subject (the 2024 wording drops "the battlefield"). */
 const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
@@ -158,6 +163,10 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
     pattern(/ becomes the target of a spell(?![\p{L}\p{N}])(?! or ability)/iu),
     (): EventName => 'becomesTargetSpell',
   ),
+  becomesTargetSpellOpponent: map(
+    pattern(/ becomes the target of a spell an opponent controls(?![\p{L}\p{N}])/iu),
+    (): EventName => 'becomesTargetSpellOpponent',
+  ),
 };
 
 const ANY_EVENT = choice(
@@ -175,7 +184,12 @@ const OR_SUBJECTS_EVENT = choice(ANY_EVENT, EVENT_WORDS.leavesBattlefield);
 
 /** The events of `trigger.or`: those of any trigger of one subject, and (stage P36, D-178) "becomes the target of a spell". */
 // CR 701.37a (Protector of the Wastes): "enters or becomes monstrous".
-const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell, EVENT_WORDS.becomesMonstrous);
+const OR_EVENT = choice(
+  ANY_EVENT,
+  EVENT_WORDS.becomesTargetSpellOpponent,
+  EVENT_WORDS.becomesTargetSpell,
+  EVENT_WORDS.becomesMonstrous,
+);
 
 function trigger(
   rule: string,
@@ -183,6 +197,19 @@ function trigger(
   event: string,
   parts: { subject?: IrNoun; actor?: IrNoun; alternatives?: readonly IrTrigger[] } = {},
 ): IrTrigger {
+  // Tectonic Giant: "becomes the target of a spell an opponent controls": the spell's controller is an opponent of the controller of the ability.
+  if (event === 'becomesTargetSpellOpponent') {
+    return {
+      kind: 'trigger',
+      event: 'becomesTarget',
+      spellOnly: true,
+      args: {},
+      ...parts,
+      actor: makeNoun(rule, span, 'eachOpponent', { raw: 'an opponent' }),
+      span,
+      rule,
+    };
+  }
   // "becomes the target of a spell" is the event `becomesTarget` for spells only.
   if (event === 'becomesTargetSpell') {
     return {
@@ -1510,6 +1537,9 @@ export const TRIGGER_RULES = [
   // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,
+  ...EXILE_CAST_TRIGGER_RULES,
+  // Sauron deck (March from the Black Gate): "~ enters and whenever an Army you control attacks" starts like `trigger.enters`, which stops before the rest.
+  ...ENTERS_AND_ATTACKS_TRIGGER_RULES,
   // Quandrix Unlimited deck, group E: "you cast a spell with {X} in its mana cost" and its first-each-turn form start like `trigger.cast`, which stops before the rest.
   ...QUANDRIX_E_TRIGGER_RULES,
   // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
@@ -1548,6 +1578,7 @@ export const TRIGGER_RULES = [
   // Mirkwood Trapper: "a player attacks you" and "a player attacks".
   ...PLAYER_ATTACKS_TRIGGER_RULES,
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
+  ...LOOT_DISPUTE_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,

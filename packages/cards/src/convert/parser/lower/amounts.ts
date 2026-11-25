@@ -127,6 +127,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 701.37c (Death Kiss): in the becomes monstrous trigger of the permanent itself X is the X of the monstrosity that made it monstrous.
+      if (ctx.monstrousX) {
+        const blockedMonstrous = needs('monstrousX');
+        return blockedMonstrous ?? { ok: true, value: { kind: 'monstrousX' }, rule };
+      }
       // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
       if (ctx.castTriggerX) {
         const blockedCast = needs('triggerSpellX');
@@ -228,6 +233,16 @@ export function lowerAmount(
       if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'dieResult' }, rule };
     }
+    case 'amassedArmyPower': {
+      // Surrounded by Orcs (CR 701.47a, 701.47b, 208.1): "the amassed Army" is the Army creature the amass before it in the same text chose, which the engine's `amass` leaves as what the
+      // resolution moved (`moved`), even when no counter was put on it. Refused after any other instruction, as the Army is only named by the amass just before.
+      if (ctx.lastEffectKind !== 'amass') return { ok: false, needs: [], at: amount.span, rule };
+      const blocked = needs('powerOf');
+      if (blocked !== null) return blocked;
+      const moved = missingFeatures(['selector:moved']);
+      if (moved.length > 0) return { ok: false, needs: moved, at: amount.span, rule };
+      return { ok: true, value: { kind: 'powerOf', of: { kind: 'moved' } }, rule };
+    }
     case 'lifePaidAsEntered': {
       // "where X is the life paid as ~ entered" (Phyrexian Processor, CR 119.4, 614.12): the amount the permanent paid as it entered; `validateCard` checks the card pays life as it enters.
       const blocked = needs('lifePaidAsEntered');
@@ -240,9 +255,22 @@ export function lowerAmount(
       // "The number of cards looked at while scrying this way" is the number of a scry event (CR 701.22), so it means nothing in the body of any other ability.
       if (amount.scry === true && !ctx.scryTrigger)
         return { ok: false, needs: [], at: amount.span, rule };
+      // "That excess damage" is the amount of a "dealt excess damage" trigger (CR 120.10), so it means nothing in the body of any other ability.
+      if (amount.excess === true && !ctx.excessDamageTrigger)
+        return { ok: false, needs: [], at: amount.span, rule };
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
       if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {
+        const moved = needs('movedCount');
+        if (moved !== null) return moved;
+        return { ok: true, value: { kind: 'movedCount' }, rule };
+      }
+      // CR 608.2c (Vengeful Regrowth): "Return up to three target land cards ... to the battlefield. Create that many ... tokens": after cards were moved, "that many" is how many.
+      if (
+        amount.thatMany === true &&
+        ctx.lastEffectKind === 'moveToZone' &&
+        ctx.owner === 'spell'
+      ) {
         const moved = needs('movedCount');
         if (moved !== null) return moved;
         return { ok: true, value: { kind: 'movedCount' }, rule };
@@ -1225,6 +1253,7 @@ function cardTypesInDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:monstrousX',
   'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
   'amount:lifePaidAsEntered',

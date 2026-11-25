@@ -137,6 +137,31 @@ export function checkDragonsEffect(
           issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
         }
       }
+      // Durnan (CR 702.125a): "That spell has undaunted": a cost reduction, so a cost that is not free.
+      if (e.undaunted !== undefined) {
+        if (e.undaunted !== true)
+          issue(out, `${path}.undaunted`, 'undaunted must be true when present');
+        if (e.free === true) issue(out, `${path}.undaunted`, 'a free play has no cost to reduce');
+      }
+      if (e.creatureSpellsOnly !== undefined) {
+        if (e.creatureSpellsOnly !== true || e.castOnly !== true) {
+          issue(
+            out,
+            `${path}.creatureSpellsOnly`,
+            'creatureSpellsOnly is true and is about the spell that is cast: needs castOnly',
+          );
+        }
+      }
+      // Narset, Enlightened Master: only the cards the filter describes, and only to cast them.
+      if (e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.castOnly !== true) {
+          issue(out, `${path}.cards`, 'a filter of the cards that may be cast needs castOnly');
+        }
+        if (e.cards.zone !== undefined || e.cards.controller !== undefined) {
+          issue(out, `${path}.cards`, 'the filter of the cards names no zone or controller');
+        }
+      }
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
@@ -197,6 +222,42 @@ export function checkDragonsEffect(
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       return true;
+    case 'playerSpellsCostLess': {
+      // CR 601.2f, 118.7a, 611.2a (Will Kenrith): the players named, the spells being cast (no zone, nothing the spell targets), a whole number of generic mana, until the controller's next turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      const { targetsObject, ...spell } = (e.spells ?? {}) as ObjectFilter;
+      if (e.spells === undefined || e.spells === null) {
+        issue(out, `${path}.spells`, 'playerSpellsCostLess names the spells it applies to');
+      } else {
+        checkFilter(spell, `${path}.spells`, out);
+        if (targetsObject !== undefined) {
+          issue(out, `${path}.spells`, 'playerSpellsCostLess cannot read what the spell targets');
+        }
+        if (
+          filterSome(
+            spell,
+            (f) =>
+              f.zone !== undefined ||
+              f.stackKind !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.spells`,
+            'the filter describes a spell being cast: no zone, stackKind, controller or owner (the player is `player`)',
+          );
+        }
+      }
+      if (!Number.isInteger(e.amount) || e.amount < 1) {
+        issue(out, `${path}.amount`, 'a whole number of generic mana, at least 1');
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'this lasts until the next turn of the controller');
+      }
+      return true;
+    }
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: no fields: the controller's next spell this turn may be cast by paying life equal to its mana value.
       return true;
@@ -597,8 +658,23 @@ export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[])
   if (where === undefined) return;
   if (where === 'exile') {
     // CR 113.6b, 702.62b (Nihilith): a triggered ability of a card in exile, which needs the card suspended (the card has no other way to be in exile with its abilities running).
+    // Greater Gargadon (CR 113.6b, 602.5b, 702.62b): or an activated ability that can be activated only while its card is suspended.
+    if (a.kind === 'activated') {
+      if (!JSON.stringify(a.activateOnlyIf ?? null).includes('"thisSuspended"')) {
+        issue(
+          out,
+          `${path}.functionsIn`,
+          "an activated ability that works from exile needs 'activateOnlyIf' thisSuspended",
+        );
+      }
+      return;
+    }
     if (a.kind !== 'triggered') {
-      issue(out, `${path}.functionsIn`, 'only a triggered ability works from exile here');
+      issue(
+        out,
+        `${path}.functionsIn`,
+        'only a triggered or an activated ability works from exile here',
+      );
       return;
     }
     if (!JSON.stringify(a.interveningIf ?? null).includes('"thisSuspended"')) {
@@ -915,6 +991,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
     } else {
       checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
+    }
+  }
+  if (r.notLegendary !== undefined && r.notLegendary !== true) {
+    issue(out, `${path}.notLegendary`, 'notLegendary is true when present');
+  }
+  if (r.extraCounters !== undefined) {
+    if (!Array.isArray(r.extraCounters) || r.extraCounters.length === 0) {
+      issue(out, `${path}.extraCounters`, 'extraCounters is a non-empty list when present');
+    } else {
+      r.extraCounters.forEach((c, i) => {
+        if (!isOneOf(c?.type, ['creature', 'planeswalker'])) {
+          issue(
+            out,
+            `${path}.extraCounters[${i}].type`,
+            'the card type is creature or planeswalker',
+          );
+        }
+        if (typeof c?.counter !== 'string' || c.counter === '') {
+          issue(out, `${path}.extraCounters[${i}].counter`, 'a kind of counter');
+        }
+      });
     }
   }
   if (r.optional !== undefined && r.optional !== true) {

@@ -293,7 +293,8 @@ export function activateManaAbility(
           made,
           spendRestrictionOf(found.ability, obj),
           spentRiderOf(found.ability, source),
-          derive(state, obj).types,
+          // D-183: the card types and (Cataclysmic Prospecting, "mana from a Desert") the subtypes of the source, as they were when the mana was made.
+          [...derive(state, obj).types, ...derive(state, obj).subtypes],
         ),
       ),
     },

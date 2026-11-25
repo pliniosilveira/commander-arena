@@ -59,6 +59,8 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
 const RECURSION_LEAD_CONDITIONS = [
   'condition.exiled-this-way',
   'condition.it-matches',
+  // Uglúk of the White Hand: "If that creature was a Goblin or Orc, put two +1/+1 counters on ~ instead."
+  'condition.that-was-either',
   // Moria Scavenger (CR 602.2b, 701.9a): "If the discarded card was a creature card, amass Orcs 1." in the body of an activated ability whose cost discards.
   'condition.discarded-card-matches',
   // D-298: "If its mana value was 3 or less, scry 1."
@@ -148,7 +150,7 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  * "If the result is 1, ..." (D-271, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
  * instruction; the lowering reads it only after a roll of the same text.
  */
-const DIE_CONDITIONS = ['condition.die-result'] as const;
+const DIE_CONDITIONS = ['condition.die-result', 'condition.die-result-range'] as const;
 
 /**
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
@@ -307,6 +309,8 @@ const TRAILING_CONDITIONS = [
   'condition.this-power',
   // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
   'condition.exiled-mana-value-at-least',
+  // Descend upon the Sinful, Unholy Heat (CR 207.2c, 205.2a): "Create a 4/4 ... token if there are four or more card types among cards in your graveyard." (Delirium).
+  'condition.card-types-among',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -825,6 +829,8 @@ export const LOYALTY_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Narset of the Ancient Way: "Draw a card, then you may discard a card. When you discard a nonland card this way, ~ deals damage equal to that card's mana value to target creature or planeswalker."
+  afterDiscard: true,
   delayed: true,
 });
 

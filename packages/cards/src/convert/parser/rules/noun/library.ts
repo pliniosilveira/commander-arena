@@ -31,6 +31,7 @@ import {
   MODIFIER,
   NO_PARTS,
   PERMANENT_CARD_TYPES,
+  permanentPhrase,
   toFilter,
   typeWords,
 } from './phrases';
@@ -76,9 +77,26 @@ const CARD_WORD = (plural: boolean, spaced = true) =>
 function sharedSuffix(
   plural: boolean,
 ): Parser<
-  Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharesCreatureTypeWithSacrificed' | 'sharedLandType'>
+  Pick<
+    IrFilter,
+    | 'sharesCreatureTypeWithIt'
+    | 'sharesCreatureTypeWithSacrificed'
+    | 'sharedLandType'
+    | 'sharesColorWith'
+  >
 > {
   return (ctx, pos) => {
+    // Ringsight (CR 105.1, 109.4): " that shares a color with a legendary creature you control", one card and the permanents of the player ("you control" is said).
+    if (!plural) {
+      const color = quiet(
+        sequence(literal(' that shares a color with '), pattern(/an? /iu), permanentPhrase(false)),
+      )(ctx, pos);
+      if (color.ok) {
+        const permanents = color.value[2];
+        if (permanents.controller !== 'you') return fail(ctx, pos);
+        return { ok: true, value: { sharesColorWith: permanents }, pos: color.pos };
+      }
+    }
     // Quiet: the words are optional, so their absence is no failure of the line (the diagnostics keep the position they had).
     const r = quiet(
       pattern(
@@ -112,8 +130,36 @@ function sharedSuffix(
 const NAMED_SUFFIX =
   / named (\p{Lu}[\p{L}'’-]*(?:,? [\p{L}'’-]+)*?)(?= and put (?:it|that card) |, put |, reveal |$)/u;
 
+/**
+ * "<what> cards and/or <what> cards" (Map the Frontier, CR 701.23a): plural cards that are of either kind, or of both at once across the cards found; each kind is a card
+ * phrase of its own ("basic land cards and/or Desert cards"). Each card found is any one of the kinds, so the filter is their choice (CR 205.4g, 205.3i).
+ */
+function libraryAndOr(ctx: Parameters<Parser<IrFilter>>[0], pos: number) {
+  const first = libraryPhraseOne(true)(ctx, pos);
+  if (!first.ok) return first;
+  const joined = literal(' and/or ')(ctx, first.pos);
+  if (!joined.ok) return joined;
+  const second = libraryPhraseOne(true)(ctx, joined.pos);
+  if (!second.ok) return second;
+  const base = toFilter('library', NO_PARTS, ctx.text.slice(pos, second.pos));
+  return {
+    ok: true as const,
+    value: { ...base, card: true, anyOf: [first.value, second.value] },
+    pos: second.pos,
+  };
+}
+
 /** The filter of "<what> card(s)", with the library as its zone (CR 401.1) and no owner. */
 export function libraryPhrase(plural: boolean): Parser<IrFilter> {
+  const one = libraryPhraseOne(plural);
+  if (!plural) return one;
+  return (ctx, pos) => {
+    const both = libraryAndOr(ctx, pos);
+    return both.ok ? both : one(ctx, pos);
+  };
+}
+
+function libraryPhraseOne(plural: boolean): Parser<IrFilter> {
   const cardWord = CARD_WORD(plural);
   return (ctx, pos) => {
     // A choice first: it starts like a single type or subtype.
@@ -296,6 +342,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an Aura or Equipment card',
     'up to two basic land cards',
     'up to three Forest cards',
+    'up to two basic land cards and/or Desert cards',
     'up to X basic land cards',
     'a snow permanent card',
     'a nonland permanent card',
@@ -305,6 +352,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an artifact card or a Saga card',
     'a legendary card, an Aura card, or an instant card',
     'a creature card that shares a creature type with it',
+    // Ringsight (CR 105.1, 109.4): a color shared with a permanent of the player.
+    'a card that shares a color with a legendary creature you control',
+    'a creature card that shares a color with a creature you control',
     'an artifact creature card that shares a creature type with it',
     'up to two basic land cards that share a land type',
     'up to three basic land cards that share a land type',
@@ -337,6 +387,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a card from your hand',
     'a creature card with mana value 3 or less',
     'a basic land cards',
+    'up to two basic land cards and/or',
+    'up to two basic land cards and/or Desert card',
+    'a basic land card and/or a Desert card',
     'a nonpermanent card',
     'a snow permanent card, a legendary card, a Saga card',
     'a snow permanent card, or a Saga card, or a legendary card',
@@ -348,6 +401,11 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a snow permanent card or legendary card',
     'a snow permanent card or a legendary card from your graveyard',
     'a land card that shares a creature type with it',
+    'a card that shares a color with a legendary creature',
+    'a card that shares a color with a legendary creature an opponent controls',
+    'a card that shares a color with a legendary creature you control and a land you control',
+    'cards that share a color with a legendary creature you control',
+    'up to two cards that share a color with a legendary creature you control',
     'a card that shares a creature type with it',
     'a creature card that shares a land type with it',
     'a creature card that shares a creature type',

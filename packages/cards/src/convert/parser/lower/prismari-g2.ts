@@ -88,8 +88,29 @@ const GRANT_KEYWORD_YOUR_TURN: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Switch ~'s power and toughness until end of turn" (CR 613.4d): the engine's `switchPt` of the permanent itself. */
+const SWITCH_SELF_PT: Lowering<IrClause, Effects> = {
+  head: 'switchPt',
+  id: 'lower.switch-self-pt',
+  needs: ['effect:switchPt', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const subject = operand(clause, 'objects');
+    if (subject?.kind !== 'noun' || subject.det !== 'self') return failure(clause);
+    if (clause.duration?.scope !== 'untilEndOfTurn') return failure(clause);
+    const objects = objectSelectorOf(subject, ctx);
+    if (!objects.ok) return objects;
+    return {
+      ok: true,
+      value: [{ kind: 'switchPt', objects: objects.value, duration: 'untilEndOfTurn' }],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const PRISMARI_G2_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_SELF_TIME_COUNTERS,
   COPY_CARD_AND_CAST,
   GRANT_KEYWORD_YOUR_TURN,
+  SWITCH_SELF_PT,
 ];

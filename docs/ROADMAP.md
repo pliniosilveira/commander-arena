@@ -139,11 +139,16 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Vronos, Masked Inquisitor: "can't be blocked" given for good is a rules-modifying effect, not a granted ability, so "loses all abilities" does not remove it.
+- Jace, Architect of Thought: the +1 "until your next turn" ability does not end early when its controller leaves the game (CR 800.4m).
+- Sarkhan the Masterless and Sparkshaper Visionary: a planeswalker that becomes a creature keeps its planeswalker subtypes besides the creature types given.
 - A permanent that a group's "lose all abilities" strikes still applies its own static control effect ("The monarch controls enchanted creature"); that file cannot read groups without an import cycle.
 - A group's "lose all abilities" reads types and colors from the copiable values (layer 1): a layer 4 or 5 effect that changes them is not seen. "Choose a nonland card name" accepts any name, land or not, typed.
 - The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.
 - "Whenever one or more creatures you control deal combat damage to one or more players this turn" (`delayedCombatDamageBatchTurn`) triggers once for each player damaged, not once for the event; harmless for "you become the monarch".
 - Notion Thief's draw replacement goes before dredge and "draw two instead"; with thieves of different controllers on one draw the oldest applies first. The player who would draw is not asked the order (CR 616.1).
+- An additional cost "discard a land card" on a card cast with jump-start or blitz would apply its kind of card to the discard of that alternative cost too.
+- Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
 - A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
 - Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).
@@ -331,6 +336,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Choose a card type": the web shows no preview of what the choice protects from.
 - Copy exceptions that retain the copier's own values (CR 707.9c) and exceptions to the supertypes, loyalty or defense of a copy are not built.
 - `token.copy-except` reads one shape ("except it's a P/T <colors> <creature types>"), not "it has no mana cost", "in addition to its other types" or a list of separate exceptions as a card line.
+- "Enters as a copy, except it has \"...\"" (`addStatics`) reads one quoted static ability. The plural token copy "except they're 3/3 Dragon creatures ... and they have flying" needs the keyword clause. `sameNameAsSource` matches only in a static subject.
 - `setCreatureTypes` keeps the original's other subtypes and card types (a copy of an artifact creature card is an artifact creature Zombie); read from CR 205.3d and 707.9b alone, unverified against Hashaton's rulings.
 - `trigger.discarded` reads one card kind ("a creature card", "a nonland card"), not "a creature or land card", a creature type or a color; the filter is read against the card where it went, not the hand it left.
 - A copy of a card discarded with madness: when the card is cast with madness before the ability resolves, the copy is made from its last-known information.
@@ -394,7 +400,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `exileOnResolve` is for an instant or sorcery card cast as a spell; an Adventure, a flashback spell and a spell with "exile it instead" get no return. It names the end step and the hand only.
 - Rebound (CR 702.88) with Buyback on one spell: Buyback wins and the card returns to the hand (the owner is not asked which replacement applies, CR 616.1).
 - "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature", "commander" in spell, cost and condition phrases, and a count in a static ability are not read.
-- Monstrosity: "Monstrosity X" (CR 701.37c), the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read.
+- Monstrosity: the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read; the X of "Monstrosity X" (CR 701.37c) is read only in the becomes monstrous trigger of the same permanent.
 - Spells cast this turn by kind: only card types; "noncreature", a color, a subtype ("a Dragon spell"), a count with a kind ("two or more creature spells"), an opponent's spells and the order ("your second spell") are not read.
 - "Another target creature" is read for a bite whose source is a target (the slot before it); for the creature of a trigger or for a list of two such nouns it is refused.
 - "Target creature or Vehicle": one card type and one subtype only; a list of three ("creature, Vehicle, or Elf") and "or" between a subtype and a modifier ("nonartifact creature or Vehicle") are not read.
@@ -541,6 +547,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Arcane Lighthouse: creatures that enter later follow CR 611.2c; unverified against the ruling.
 - "Each other creature that's attacking one of your opponents gets +N/+N until end of turn" only; the plural without "other", other effects and a battle protected by an opponent are not read.
 - Goad as an effect: one creature, a target or "it"; "goad each creature" and a group are not read.
+- A static subject names a goaded creature only for a restriction (Bothersome Quasit).
 - Protection from the chosen color: the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
 - Counters on a chosen creature: only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read.
 - The condition `attackedHasMoreLifeThanOtherOpponent` for three players is tested directly, not through a full game (the scenario DSL has two seats).
@@ -597,6 +604,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- `playerSpellsCostLess` reduces generic mana by a number for spells of card types, for a target player, until your next turn; other spell filters and durations are unread.
+- "Whenever you activate an ability that isn't a mana ability" is read for "you" only, not an opponent or a player.
 - "Spend blue mana as though it were any color to activate those abilities" (Grell Philosopher) applies to the mana cost of a granted activated ability, not to a granted mana ability that has a mana cost.
 - "A creature entering causes a triggered ability of that creature to trigger" (Aboleth Spawn) puts its copy trigger above the ability it names, so it resolves first; the two cannot be ordered the other way round (CR 603.3b).
 - Aven Mindcensor limits only a search of the searcher's own library; searches of another player's library or of other zones are not limited.

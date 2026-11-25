@@ -186,6 +186,8 @@ export interface TargetChoiceSpec {
   readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /** "Another target creature that player controls" (`TargetSpec.sameControllerAs`, CR 115.1, 109.4): every target of this slot has the controller (the `group` of the legal list) of the target chosen for the slot with this id. */
+  readonly sameControllerAs?: string;
   /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes, or, with `TargetSpec.alsoDifferentFrom`, more earlier slots of the ability: "a third target creature"). */
   readonly differentFromAll?: readonly string[];
   /**
@@ -344,6 +346,8 @@ export interface DeclareAttackersDecision extends DecisionBase {
    * that leaves one out is illegal. Always present, empty when nothing is required.
    */
   readonly mustAttack: readonly ObjectId[];
+  /** "No more than one creature can attack each combat" (CR 508.1c, Silent Arbiter): the most creatures that may be declared. Absent with no limit. */
+  readonly maxAttackers?: number;
   /**
    * What attacking costs (D-125, CR 508.1h), present only when some target is taxed ("Creatures can't attack you
    * unless their controller pays {2} for each creature they control that's attacking you"): for each taxed
@@ -377,6 +381,8 @@ export interface DeclareBlockersDecision extends DecisionBase {
     /** "Must be blocked if able" (D-206, CR 509.1c): a declaration that could block it and does not is refused. */
     readonly mustBeBlocked?: true;
   }[];
+  /** "No more than one creature can block each combat" (CR 509.1b, Silent Arbiter): the most creatures this declaration may block with (the limit less those already declared). Absent with no limit. */
+  readonly maxBlockers?: number;
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
@@ -1009,7 +1015,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly first: readonly ObjectId[];
     readonly second: readonly ObjectId[];
     readonly chosenTo: 'hand' | 'graveyard';
-    readonly otherTo: 'hand' | 'graveyard';
+    readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
     readonly separator: SeatId;
     readonly receiver: SeatId;
     /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */

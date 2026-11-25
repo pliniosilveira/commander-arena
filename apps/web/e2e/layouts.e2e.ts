@@ -186,3 +186,63 @@ test('the shock question of a back-face land names the land and keeps the face',
   await expect(mine(page, 'Shock Pass').first()).not.toHaveClass(/is-tapped/);
   expect(errors).toEqual([]);
 });
+
+test('the preview of a modal double-faced card in the hand turns to its back face with T and with the button', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(game(LAND_SEED));
+  await playUntil(page, async () => (await handCard(page, 'Ridge Drake').count()) > 0);
+
+  await settled(page);
+  const preview = page.locator('.board-preview');
+  const cardName = preview.locator('.board-preview-card .board-card-name');
+  const flip = preview.locator('[data-preview-flip]');
+  await handCard(page, 'Ridge Drake').first().hover();
+  await expect(cardName).toHaveText('Ridge Drake');
+  await expect(flip).toHaveText('Show back face (T)');
+  await expect(flip).toHaveAttribute('data-preview-flip', 'front');
+
+  // The pointer stays on the card: the key turns the preview, and again turns it back. A hand card that lifts from under the pointer
+  // hides the panel for a moment, and a key pressed then reaches nothing: the key is pressed again until the panel shows the face.
+  const hoverCard = async () => {
+    await page.mouse.move(0, 0);
+    await handCard(page, 'Ridge Drake').first().hover();
+  };
+  const turnTo = async (name: string) => {
+    await expect(async () => {
+      if ((await cardName.count()) === 0) {
+        await hoverCard();
+        await expect(cardName).toBeVisible({ timeout: 1000 });
+      }
+      if ((await cardName.textContent()) !== name) await page.keyboard.press('t');
+      await expect(cardName).toHaveText(name, { timeout: 1000 });
+    }).toPass();
+  };
+  await turnTo('Ridge Pass');
+  await expect(preview.locator('.board-preview-card .board-card-type')).toHaveText('Land');
+  await expect(flip).toHaveText('Show front face (T)');
+  await turnTo('Ridge Drake');
+
+  // The button does the same (the panel can be reached where there is no hover, such as a touch screen); a tap on it does not close the panel.
+  await expect(async () => {
+    if ((await cardName.count()) === 0) {
+      await hoverCard();
+      await expect(cardName).toBeVisible({ timeout: 1000 });
+    }
+    if ((await cardName.textContent()) !== 'Ridge Pass') {
+      await flip.dispatchEvent('click', undefined, { timeout: 1000 });
+    }
+    await expect(cardName).toHaveText('Ridge Pass', { timeout: 1000 });
+  }).toPass();
+  await expect(preview).toBeVisible();
+
+  // Another card of the hand takes the panel; the double-faced card is face up again when it comes back.
+  await page.locator('.board-hand-card').filter({ hasNotText: 'Ridge Drake' }).first().hover();
+  await expect(cardName).not.toHaveText(/Ridge/);
+  await handCard(page, 'Ridge Drake').first().hover();
+  await expect(cardName).toHaveText('Ridge Drake');
+  expect(errors).toEqual([]);
+});

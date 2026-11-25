@@ -36,11 +36,13 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY, permanentPhrase } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
+import { AMASSED_ARMY_POWER, EXCESS_DAMAGE_OF_TRIGGER } from './amassed';
 import { CARD_TYPES_AMONG_THOSE_VALUE, CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
+import { TIMES_KICKED_VALUE } from './kicked';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
 import { NUMBER_OF_OPPONENTS_WHO_CONTROL } from './opponents-who-control';
@@ -631,6 +633,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     CARD_TYPES_AMONG_THOSE_VALUE,
     // CR 700.8: "the number of creatures in your party", before the count of objects, which reads no "in your party".
     PARTY_SIZE_VALUE,
+    // CR 702.33c (Marshal's Anthem): "the number of times ~ was kicked".
+    TIMES_KICKED_VALUE,
     // CR 105.2 (Vivid): "the number of colors among permanents you control", before the count of objects, which reads no "colors among".
     COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
@@ -666,6 +670,10 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     LIFE_PAID_AS_ENTERED,
     // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way".
     DESTROYED_VALUE_AMOUNT,
+    // Surrounded by Orcs (CR 701.47a, 701.47b): "the amassed Army's power".
+    AMASSED_ARMY_POWER,
+    // Fall of Cair Andros (CR 120.10): "that excess damage".
+    EXCESS_DAMAGE_OF_TRIGGER,
   );
 
 /** "half <atom>, rounded down" (CR 107.1a: the text always says how it rounds). */
@@ -1031,6 +1039,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the result',
     // CR 205.2a: the card types of the cards of a graveyard.
     'where X is the number of card types among cards in your graveyard',
+    // CR 702.33c (Marshal's Anthem): the kicks of the spell the permanent came from.
+    'where X is the number of times ~ was kicked',
     // CR 105.2 (Vivid): the colors the permanents you control have between them, each once.
     'where X is the number of colors among permanents you control',
     // Death Toll deck, group D (CR 202.3, 608.2h): what a destroy before it in the text destroyed.
@@ -1045,8 +1055,19 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of cards looked at while scrying this way',
     // CR 120.2a: the opponents a source dealt combat damage to this turn.
     'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon this turn',
+    'where X is the number of players who control more lands than you',
+    // Surrounded by Orcs (CR 701.47a, 701.47b, 208.1): the Army the amass before it chose.
+    "where X is the amassed Army's power",
+    'where X is the amassed Army’s power',
+    // Fall of Cair Andros (CR 120.10): the excess of the damage the trigger is about.
+    'where X is that excess damage',
   ],
   rejects: [
+    "where X is the amassed Army's toughness",
+    'where X is the amassed Army',
+    "where X is the amassed creature's power",
+    'where X is that excess',
+    'where X is the excess damage',
     'where X is the total mana value of creatures destroyed this way',
     'where X is the total mana value of permanents destroyed',
     'where X is the greatest mana value of permanents destroyed this way',
@@ -1061,6 +1082,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is',
     'where X is 3',
     'where X is the number of creatures',
+    'where X is the number of times that creature was kicked',
+    'where X is the number of times it was cast',
     'where X is the number of opponents',
     'where X is the number of opponents you control',
     'where X is the number of times ~ was',
@@ -1204,6 +1227,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
     'for each creature card put into a graveyard this way',
+    'for each land card milled this way',
     'for each card returned this way',
   ],
   rejects: [
@@ -1293,6 +1317,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: milled.pos },
         },
         pos: milled.pos,
+      };
+    }
+    // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards the mill before it put into a graveyard.
+    const milledLand = pattern(/for each land card milled this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (milledLand.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'milledLand',
+          words: ['land'],
+          span: { start: pos, end: milledLand.pos },
+        },
+        pos: milledLand.pos,
       };
     }
     // Devout Invocation (CR 701.26a, 608.2c): "for each creature tapped this way": the permanents the `tap` of a chosen set before it tapped.

@@ -36,6 +36,8 @@ export type ManaRestriction =
   | {
       readonly kind: 'spellMatch';
       readonly types?: readonly string[];
+      /** "Spend this mana only to cast a noncreature spell" (CR 106.6): the spell has none of these card types. */
+      readonly notTypes?: readonly string[];
       readonly subtypes?: readonly string[];
       /**
        * D-151: "Spend this mana only to cast Dragon spells or activate abilities of Dragons": the mana may also pay for an activated ability of a permanent that

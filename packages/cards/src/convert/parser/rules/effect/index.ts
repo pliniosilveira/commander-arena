@@ -25,6 +25,7 @@ import { defineRule, family, spanned } from '../registry';
 import { ABOLETH_EFFECT_RULES } from './aboleth';
 import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
+import { ADD_MANA_COMBINATION_EFFECT_RULES } from './add-mana-combination';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
 import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
@@ -45,8 +46,10 @@ import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRAINSTEALER_G9_EFFECT_RULES } from './brainstealer-g9';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CAST_AMONG_EXILED_EFFECT_RULES } from './cast-among-exiled';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_ONE_OF_THEM_EFFECT_RULES } from './choose-one-of-them';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES } from './choose-opponent-library-card';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
@@ -76,6 +79,9 @@ import { DACK_EFFECT_RULES } from './dack';
 import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
+import { DAMAGE_SELF_INSTEAD_EFFECT_RULES } from './damage-self-instead';
+import { DAMAGE_THEIR_CREATURES_EFFECT_RULES } from './damage-their-creatures';
+import { DAMAGE_UNPREVENTABLE_EFFECT_RULES } from './damage-unpreventable';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -84,10 +90,12 @@ import { DEATH_TOLL_B_EFFECT_RULES } from './death-toll-b';
 import { DEATH_TOLL_C_EFFECT_RULES } from './death-toll-c';
 import { DEATH_TOLL_WINTER_EFFECT_RULES } from './death-toll-winter';
 import { DELAYED_RULES } from './delayed';
+import { DESTROY_COUNTERED_SOURCE_EFFECT_RULES } from './destroy-countered-source';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
+import { DURNAN_EFFECT_RULES } from './durnan';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
@@ -99,6 +107,7 @@ import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
+import { EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -114,6 +123,7 @@ import { FLICKER_RULES } from './flicker';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
+import { GAIN_KEYWORD_CHOICE_EFFECT_RULES } from './gain-keyword-choice';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GAIN_NEXT_TURN_EFFECT_RULES } from './gain-next-turn';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
@@ -124,6 +134,7 @@ import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
+import { GOAD_DRACONIC_EFFECT_RULES } from './goad-draconic';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
@@ -147,13 +158,16 @@ import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
+import { KEEP_DESTROY_REST_EFFECT_RULES } from './keep-destroy-rest';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
+import { KENRITH_EFFECT_RULES } from './kenrith';
 import { KIMAHRI_EFFECT_RULES } from './kimahri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES } from './land-creature-unblockable';
+import { LEAD_GAIN_NEXT_TURN_EFFECT_RULES } from './lead-gain-next-turn';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
@@ -171,6 +185,7 @@ import {
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
+import { MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES } from './may-play-this-way-free';
 import { MELD_EFFECT_RULES } from './meld';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -202,6 +217,7 @@ import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack'
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
+import { PLANESWALKER_PARTY_EFFECT_RULES } from './planeswalker-party';
 import {
   EFFECT_DISCARD,
   EFFECT_DISCARD_HAND,
@@ -229,7 +245,9 @@ import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
+import { PUT_ALL_LINKED_EXILED_EFFECT_RULES } from './put-all-linked-exiled';
 import { PUT_ANY_GRAVEYARD_RULES } from './put-any-graveyard';
+import { PUT_FROM_AMONG_EXILED_EFFECT_RULES } from './put-from-among-exiled';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -313,6 +331,8 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     // Stage P35 (D-176, CR 109.4): the controller of an object an earlier instruction named.
     '~ deals 2 damage to that permanent’s controller',
     '~ deals 2 damage to its controller',
+    // Rowan Kenrith: the creatures of a player the ability targets.
+    '~ deals 3 damage to each tapped creature target player controls',
   ],
   rejects: [
     '~ deals 2 damage to target creature and planeswalker',
@@ -341,6 +361,54 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     ([, amount, , to, each]) => ({
       verb: 'dealDamage',
       args: { amount: each === null ? amount : (scaled(amount, each) ?? amount), to },
+    }),
+  ),
+});
+
+/**
+ * `effect.damage-itself`: "~ deals 1 damage to itself" (CR 120.2, 120.3; Stuffy Doll): the permanent with the ability is the source and the recipient of the damage, the engine's
+ * `dealDamage` to `this`. Not read: an amount that is not a number or X ("equal to its power" is `dealDamageToSelf`'s), another recipient with it ("to itself and you"), "it deals".
+ */
+export const EFFECT_DAMAGE_ITSELF = defineRule<Clauses>({
+  id: 'effect.damage-itself',
+  family: 'effect',
+  leading: ['~'],
+  cites: ['CR 120.2 (Damage)', 'CR 120.3 (Damage)'],
+  examples: [
+    '~ deals 1 damage to itself',
+    '~ deals 2 damage to itself',
+    '~ deals X damage to itself',
+  ],
+  rejects: [
+    '~ deals 1 damage to itself and you',
+    '~ deals damage to itself',
+    '~ deals a damage to itself',
+    '~ deals 1 damage to himself',
+    '~ deals 1 damage to itselfs',
+  ],
+  parse: single(
+    'effect.damage-itself',
+    sequence(
+      literal('~ deals '),
+      DAMAGE_AMOUNT,
+      literal(' to '),
+      spanned(pattern(/itself(?![\p{L}\p{N}])/iu)),
+    ),
+    ([, amount, , itself]): { verb: string; args: Record<string, IrArg> } => ({
+      verb: 'dealDamage',
+      args: {
+        amount,
+        to: {
+          kind: 'noun',
+          det: 'self',
+          filter: { raw: 'itself' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: itself.span,
+          rule: 'effect.damage-itself',
+        },
+      },
     }),
   ),
 });
@@ -1184,6 +1252,7 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
         only: [
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
+          'noun.target-ability-from-source',
           'noun.target-activated-or-triggered-ability',
           // Issue 105 (Disallow).
           'noun.target-spell-activated-or-triggered-ability',
@@ -1389,10 +1458,23 @@ export const EFFECT_RULES = [
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
+  ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
+  ...DESTROY_COUNTERED_SOURCE_EFFECT_RULES,
+  ...CHOOSE_ONE_OF_THEM_EFFECT_RULES,
+  ...PUT_FROM_AMONG_EXILED_EFFECT_RULES,
+  ...PUT_ALL_LINKED_EXILED_EFFECT_RULES,
+  ...ADD_MANA_COMBINATION_EFFECT_RULES,
+  ...MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES,
+  ...EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES,
+  ...CAST_AMONG_EXILED_EFFECT_RULES,
+  ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
   ...KEEPS_UP_TO_EFFECT_RULES,
+  ...KEEP_DESTROY_REST_EFFECT_RULES,
+  ...GAIN_KEYWORD_CHOICE_EFFECT_RULES,
   // Stick Together (CR 700.8d): "each player chooses a party from among creatures they control, then sacrifices the rest" (read quietly: it starts like the other "each player" rules).
   ...PARTY_EFFECT_RULES,
   ...GAIN_KEYWORD_ABILITY_EFFECT_RULES,
@@ -1413,6 +1495,8 @@ export const EFFECT_RULES = [
   ...COUNTER_GROUP_A_EFFECT_RULES,
   // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
   ...NEXT_SPELL_EFFECT_RULES,
+  // Will Kenrith (issue 167): "Until your next turn, up to two target creatures each have base power and toughness 0/3 and lose all abilities" and "... spells that player casts cost {2} less to cast".
+  ...KENRITH_EFFECT_RULES,
   // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
   ...PUT_MILLED_EFFECT_RULES,
   // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
@@ -1440,12 +1524,18 @@ export const EFFECT_RULES = [
   ...SONG_FREYALISE_EFFECT_RULES,
   // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
   ...GAIN_NEXT_TURN_EFFECT_RULES,
+  // Draconic Dissent deck (issue 167): "Until your next turn, target creature can't be blocked".
+  ...GOAD_DRACONIC_EFFECT_RULES,
   ...RETURNED_LAND_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
+  // Planeswalker Party deck (Chandra, Awakened Inferno): the damage and the exile of what dies, before the plain damage, which would read the first sentence and leave the rest.
+  ...PLANESWALKER_PARTY_EFFECT_RULES,
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
+  ...DURNAN_EFFECT_RULES,
   EFFECT_DAMAGE,
+  EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
@@ -1557,6 +1647,8 @@ export const EFFECT_RULES = [
   ...PLANESWALKER_EFFECT_RULES,
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
+  // Unholy Heat: "~ deals 6 damage instead if ..." (Delirium).
+  ...DAMAGE_SELF_INSTEAD_EFFECT_RULES,
   // Aetherdrift energy deck (issue 105): "destroy each permanent chosen this way", whose first words are those of `effect.destroy`.
   ...EACH_PLAYER_CHOOSES_RULES,
   EFFECT_DESTROY,

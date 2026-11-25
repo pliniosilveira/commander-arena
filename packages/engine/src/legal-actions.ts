@@ -265,7 +265,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // CR 115.3 (D-151): "other targets": a slot that must differ from an earlier one lists only the answers that do.
       if (
         d.specs.some(
-          (spec) => spec.differentFrom !== undefined || spec.differentFromAll !== undefined,
+          (spec) =>
+            spec.differentFrom !== undefined ||
+            spec.differentFromAll !== undefined ||
+            spec.sameControllerAs !== undefined,
         )
       ) {
         acc = acc.filter((targets) => targetAnswerError(d, targets) === null);
@@ -524,7 +527,9 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         (d.attackCosts ?? []).every(
           (c) => attacks.filter((a) => same(a.target, c.target)).length <= c.affordable,
         );
-      const lists = [...base, ...alone, ...everyone].filter(payable);
+      const roomForAll = (attacks: readonly unknown[]) =>
+        d.maxAttackers === undefined || attacks.length <= d.maxAttackers;
+      const lists = [...base, ...alone, ...everyone].filter(payable).filter(roomForAll);
       const unique = [...new Map(lists.map((l) => [JSON.stringify(l), l] as const)).values()];
       return [
         ...unique.map((attacks) => ({ kind: 'declareAttackers' as const, attacks })),
@@ -552,7 +557,9 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           })),
       );
       // D-149: a block costs mana when something taxes it; with nothing affordable only "no block" is listed.
-      const canPay = d.blockCost === undefined || d.blockCost.affordable >= 1;
+      const canPay =
+        (d.blockCost === undefined || d.blockCost.affordable >= 1) &&
+        (d.maxBlockers === undefined || d.maxBlockers >= 1);
       return [
         ...(required.length === 0 ? [{ kind: 'declareBlockers' as const, blocks: [] }] : []),
         ...(canPay ? single : []),

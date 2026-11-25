@@ -98,6 +98,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   examples: [
     'you may cast a spell from among them without paying its mana cost',
     'you may cast any number of spells from among cards exiled with ~ without paying their mana costs',
+    // Izzet Chemister: any number of the cards exiled with the permanent.
+    'cast any number of cards exiled with ~ without paying their mana costs',
     'you may cast instant and sorcery spells with mana value X or less from among them without paying their mana costs',
     'you may cast instant and sorcery spells from among them without paying their mana costs',
     // Summons of Saruman (CR 608.2g, 202.3, 107.3a): one instant or sorcery spell of mana value up to the X of the spell, from among the cards just milled.
@@ -109,6 +111,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'cast up to two spells from among the other cards exiled this way without paying their mana costs',
   ],
   rejects: [
+    'cast any number of cards exiled with it without paying their mana costs',
+    'cast any number of cards exiled with ~ without paying its mana cost',
     'you may cast up to three spells from among them without paying their mana costs',
     'you may cast a spell from among them without paying their mana costs',
     'you may cast any number of spells from among them without paying its mana cost',
@@ -132,6 +136,32 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.cast-from-among';
+    // Izzet Chemister (CR 608.2g, 607.2a): "Cast any number of cards exiled with ~ without paying their mana costs": any number of the cards the permanent exiled, none being one of the
+    // numbers, so there is no "you may" to say.
+    const cards = pattern(
+      /(you may )?cast any number of cards exiled with ~ without paying their mana costs(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (cards.ok) {
+      const span = { start: pos, end: cards.pos };
+      return {
+        ok: true,
+        value: [
+          makeClause(
+            id,
+            'castFromAmong',
+            {
+              other: flag(id, false, span),
+              linked: flag(id, true, span),
+              may: flag(id, true, span),
+              remember: flag(id, false, span),
+              any: flag(id, true, span),
+            },
+            span,
+          ),
+        ],
+        pos: cards.pos,
+      };
+    }
     const head = pattern(
       /(you may )?cast (a spell|an instant or sorcery spell with mana value X or less|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~|cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);

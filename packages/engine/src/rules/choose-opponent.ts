@@ -21,6 +21,7 @@ export const opponentOption = (seat: SeatId): string => `seat:${seat}`;
 export function asksWhichOpponent(effect: Effect): boolean {
   switch (effect.kind) {
     case 'opponentChoosesCard':
+      return effect.byController !== true;
     case 'revealAndSeparate':
     case 'exilePiles':
     case 'splitCostExiled':

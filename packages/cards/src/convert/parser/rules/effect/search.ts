@@ -97,9 +97,10 @@ interface Tail {
 
 /**
  * The part after the noun: an optional reveal, the put, an optional shuffle. `yours` is false when
- * another player searches: they put the card onto the battlefield and nothing is revealed.
+ * another player searches: they put the card onto the battlefield and nothing is revealed. `newSentence` (Oreskos Explorer, CR 107.3c): the reveal may open a sentence of its own after
+ * the definition of X ("..., where X is the number of players who control more lands than you. Reveal those cards, put them into your hand, then shuffle.").
  */
-function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
+function tailFor(cards: IrNoun, yours = true, newSentence = false): Parser<Tail> {
   const plural = cards.plural;
   const max = cards.count?.kind === 'number' ? cards.count.value : 1;
   const zone = (place: Place, span: Span, count: number): IrZoneSpec => ({
@@ -126,7 +127,17 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
     // Another player's search reveals nothing: ", reveal" is not read, so the put fails on it.
     const reveal = yours
       ? map(
-          spanned(sequence(literal(', reveal '), referTo(plural))),
+          spanned(
+            sequence(
+              newSentence
+                ? choice(
+                    map(pattern(/\. reveal /i), (m) => m[0]),
+                    literal(', reveal '),
+                  )
+                : literal(', reveal '),
+              referTo(plural),
+            ),
+          ),
           ({ span }): IrFlag => flag(true, span),
         )(ctx, pos)
       : fail(ctx, pos);
@@ -237,6 +248,9 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for any number of nonland permanent cards with total mana value 4 or less, put them onto the battlefield tapped, then shuffle',
     // Issue 160 (D-626): "up to X", with X defined right after the noun.
     'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle',
+    // Oreskos Explorer (CR 107.3c, 701.23): the reveal is a sentence of its own after the definition of X.
+    'search your library for up to X Plains cards, where X is the number of players who control more lands than you. Reveal those cards, put them into your hand, then shuffle',
+    'search your library for up to X Plains cards, where X is the number of tapped creatures you control, reveal them, put them into your hand, then shuffle',
     'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
     // Issue 104 (Gate to the Afterlife, CR 701.23a): several zones of the searcher, and a card of a given name.
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
@@ -305,7 +319,7 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
         amount = defined.value[1];
         after = defined.pos;
       }
-      const tail = tailFor(cards)(ctx, after);
+      const tail = tailFor(cards, true, amount !== null)(ctx, after);
       if (!tail.ok) return tail;
       // Issue 104: with several zones the card is put at once, one card, with nothing revealed and no shuffle in the sentence.
       if (

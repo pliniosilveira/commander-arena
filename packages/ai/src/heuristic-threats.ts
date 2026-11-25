@@ -98,12 +98,15 @@ export interface PoolCard {
   readonly kind: ThreatKind | null;
 }
 
+/** How a view is built: `getView`, or the counted one of a planning (`heuristic-plan-work.ts`). */
+export type ViewOf = (state: GameState, seat: SeatId) => GameView;
+
 /**
  * The pool of `seat` on `sample` (its hand and library), read as its owner would see the cards in hand:
  * the view of a throwaway copy whose library is moved into the hand. Only the cards of the sample's hidden
  * slots are read, never the real game's.
  */
-export function poolOf(sample: GameState, seat: SeatId): PoolCard[] {
+export function poolOf(sample: GameState, seat: SeatId, see: ViewOf = getView): PoolCard[] {
   const s = sample.seats.find((x) => x.id === seat);
   if (s === undefined) return [];
   const ids = [...s.hand, ...s.library];
@@ -118,7 +121,7 @@ export function poolOf(sample: GameState, seat: SeatId): PoolCard[] {
     pending: null,
     seats: sample.seats.map((x) => (x.id === seat ? { ...x, hand: ids, library: [] } : x)),
   };
-  const hand = getView(copy, seat).seats.find((x) => x.id === seat)?.hand ?? [];
+  const hand = see(copy, seat).seats.find((x) => x.id === seat)?.hand ?? [];
   return hand.flatMap((view) => {
     const card = sample.objects[view.id]?.card;
     return card === undefined || card === null
@@ -161,13 +164,21 @@ export interface Threat {
   readonly count: number;
 }
 
-/** The threats of every opponent of the agent (`view.viewer`), most important first, before the cut. */
-export function threatsOf(view: GameView, sample: GameState, weights: AgentWeights): Threat[] {
+/**
+ * The threats of every opponent of the agent (`view.viewer`), most important first, before the cut. `pools`
+ * holds the opponents' pools when the caller has read them already (`scenariosOf`), so none is read twice.
+ */
+export function threatsOf(
+  view: GameView,
+  sample: GameState,
+  weights: AgentWeights,
+  pools?: ReadonlyMap<SeatId, readonly PoolCard[]>,
+): Threat[] {
   const me = view.viewer;
   const out: Threat[] = [];
   for (const seat of view.seats) {
     if (seat.id === me || seat.hasLost || seat.handCount === 0) continue;
-    const pool = poolOf(sample, seat.id);
+    const pool = pools?.get(seat.id) ?? poolOf(sample, seat.id);
     const now = unitsOfSeat(view, seat.id, false);
     const later = unitsOfSeat(view, seat.id, true);
     const byKind = new Map<ThreatKind, PoolCard[]>();
@@ -253,16 +264,21 @@ function arrange(
  * weighted so they sum to 1: the base gets the chance that no opponent holds any of the chosen kinds, the
  * threats share the rest in proportion to their chances.
  */
-export function scenariosOf(view: GameView, sample: GameState, weights: AgentWeights): Scenario[] {
+export function scenariosOf(
+  view: GameView,
+  sample: GameState,
+  weights: AgentWeights,
+  see: ViewOf = getView,
+): Scenario[] {
   const kinds = new Map<SeatId, Map<CardId, ThreatKind | null>>();
   const pools = new Map<SeatId, PoolCard[]>();
   for (const seat of view.seats) {
     if (seat.id === view.viewer || seat.hasLost) continue;
-    const pool = poolOf(sample, seat.id);
+    const pool = poolOf(sample, seat.id, see);
     pools.set(seat.id, pool);
     kinds.set(seat.id, new Map(pool.map((c) => [c.card, c.kind])));
   }
-  const top = threatsOf(view, sample, weights).slice(0, MAX_THREATS);
+  const top = threatsOf(view, sample, weights, pools).slice(0, MAX_THREATS);
   let none = 1;
   for (const seat of view.seats) {
     const chosen = top.filter((t) => t.seat === seat.id);

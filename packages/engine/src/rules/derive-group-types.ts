@@ -48,6 +48,13 @@ interface AllCreatureTypes {
   readonly scope: 'youControl' | 'youOwn';
 }
 
+interface OffBattlefieldTypes {
+  readonly kind: 'offBattlefield';
+  readonly what: ObjectFilter;
+  readonly subtypes: readonly Subtype[];
+  readonly types: readonly CardType[];
+}
+
 interface ChosenCreatureType {
   readonly kind: 'chosenCreatureType';
   readonly alsoCardsAndSpells: boolean;
@@ -62,6 +69,7 @@ interface TypeSource {
     | LinkedTypes
     | LostTypes
     | AllCreatureTypes
+    | OffBattlefieldTypes
     | ChosenCreatureType;
   /** "As long as ..." (D-151, Celebration): a condition that reads no characteristic, read each time the effects are looked at (CR 611.3a). */
   readonly condition?: Condition;
@@ -99,6 +107,19 @@ function scan(state: GameState): Index {
           object,
           subject: { kind: 'filter', filter: s.what },
           what: { kind: 'chosenCreatureType', alsoCardsAndSpells: s.alsoCardsAndSpells === true },
+          ...condition,
+        });
+      } else if (s.kind === 'giveTypesToCardsOffBattlefield') {
+        // CR 613.1d, 205.1b: "land cards you own that aren't on the battlefield are Deserts in addition to their other types".
+        sources.push({
+          object,
+          subject: { kind: 'filter', filter: s.what },
+          what: {
+            kind: 'offBattlefield',
+            what: s.what,
+            subtypes: s.subtypes ?? [],
+            types: s.types ?? [],
+          },
           ...condition,
         });
       } else if (s.kind === 'setTypes' && s.chosenType === undefined) {
@@ -299,6 +320,24 @@ export function groupTypeEffects(
             controllerOf(state, target) === you
           : target.zone !== 'battlefield' && target.card !== null && target.owner === you;
       if (!applies) continue;
+    } else if (src.what.kind === 'offBattlefield') {
+      // CR 613.1d: the cards its controller owns outside the battlefield (a spell on the stack is not a card there, CR 108.1) that the filter names as they are.
+      if (target.zone === 'battlefield' || target.zone === 'stack' || target.card === null)
+        continue;
+      if (target.owner !== controllerOf(state, src.object)) continue;
+      // The filter names what the cards are; whose they are was settled by the owner test above (`controller: 'you'` is "you own").
+      const { controller: _you, ...what } = src.what.what;
+      if (
+        !matchesFilterWith(
+          state,
+          target,
+          () => view,
+          { ...what, zone: target.zone },
+          { controller: target.owner, source: src.object.id },
+        )
+      ) {
+        continue;
+      }
     } else if (src.what.kind === 'chosenCreatureType') {
       // CR 607.2d: what the permanent chose as it entered; it chose none: nothing to give.
       if (src.object.chosen?.creatureType === undefined) continue;
@@ -332,6 +371,18 @@ export function groupTypeEffects(
       objects: [target.id],
       until: 'permanent' as const,
     };
+    if (src.what.kind === 'offBattlefield') {
+      out.push({
+        ...base,
+        change: {
+          kind: 'setTypes',
+          additive: true,
+          ...(src.what.subtypes.length === 0 ? {} : { subtypes: src.what.subtypes }),
+          ...(src.what.types.length === 0 ? {} : { types: src.what.types }),
+        },
+      });
+      continue;
+    }
     if (src.what.kind === 'named') {
       out.push({
         ...base,
