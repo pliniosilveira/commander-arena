@@ -85,6 +85,7 @@ import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN, NOUN_THE_TOKEN } from './p
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
+import { SAME_CONTROLLER_TARGET_NOUN_RULES } from './same-controller-target';
 import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
@@ -1171,6 +1172,8 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARDS,
   // D-521 (Hylda deck, group 2): "target creature that player controls", whose first words are those of `noun.target-permanent`.
   ...HYLDA_G2_TARGET_NOUN_RULES,
+  // Breaking of the Fellowship: "another target creature that player controls", whose first words are those of `noun.target-permanent`.
+  ...SAME_CONTROLLER_TARGET_NOUN_RULES,
   // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.
   ...ATTACKING_YOU_NOUN_RULES,
   // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.

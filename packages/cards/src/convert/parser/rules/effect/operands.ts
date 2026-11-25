@@ -115,6 +115,8 @@ export const DAMAGE_RECIPIENTS = [
   'noun.that-player',
   // "~ deals 2 damage to that permanent's controller" (stage P35, D-176, CR 109.4, 608.2h): the controller of an object the text named.
   'noun.its-controller',
+  // Breaking of the Fellowship (CR 115.3): "another target creature that player controls", a second target of the controller of the first.
+  'noun.another-target-of-same-controller',
   ...PERMANENT_OPERANDS,
   // "~ deals 1 damage to the player or planeswalker it's attacking" (stage P31, D-140): what the creature attacks.
   'noun.attacked-by-it',

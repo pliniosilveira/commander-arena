@@ -159,6 +159,17 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3): a different permanent for each part, the cost of an ordinary activated ability.
       if (cost.also !== undefined) {
         if (options.ordinary !== true) return failure(cost);
+        // "Sacrifice ~ and a legendary artifact" (Mount Doom): the permanent itself is the first part, a different permanent pays each of the others.
+        if (what.det === 'self') {
+          const others: ObjectFilter[] = [];
+          for (const part of cost.also) {
+            if (part.det !== 'a' || part.count !== undefined) return failure(cost);
+            const filter = lowerFilter(part);
+            if (!filter.ok) return filter;
+            others.push(filter.value);
+          }
+          return ok({ kind: 'sacrifice', what: { kind: 'this' }, alongside: others });
+        }
         const parts = [what, ...cost.also];
         if (parts.some((part) => part.det !== 'a' || part.count !== undefined)) {
           return failure(cost);

@@ -471,14 +471,17 @@ function occurrences(
     case 'dealtDamage':
       // CR 120.3, 603.2 (D-133): one occurrence for each source that damages a permanent, when the damage is dealt.
       // The controller of the source is the player "that creature's controller" names.
+      // CR 120.10 (excess damage): the occurrence is only damage that was more than lethal, and its amount is the excess.
       return event.kind === 'damageDealt' &&
         event.to.kind === 'object' &&
-        (trigger.combat !== true || event.combat)
+        (trigger.combat !== true || event.combat) &&
+        (trigger.noncombat !== true || !event.combat) &&
+        (trigger.excess !== true || (event.excess ?? 0) > 0)
         ? [
             {
               subject: event.to.id,
               seat: null,
-              damage: event.amount,
+              damage: trigger.excess === true ? (event.excess ?? 0) : event.amount,
               ...(controllerOfSource(state, event.source) === null
                 ? {}
                 : { player: controllerOfSource(state, event.source) as SeatId }),

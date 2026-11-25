@@ -1257,6 +1257,15 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.combat !== undefined && t.combat !== true) {
         issue(out, `${path}.combat`, 'combat must be true when present');
       }
+      if (t.noncombat !== undefined && t.noncombat !== true) {
+        issue(out, `${path}.noncombat`, 'noncombat must be true when present');
+      }
+      if (t.combat === true && t.noncombat === true) {
+        issue(out, `${path}.noncombat`, 'noncombat does not go with combat');
+      }
+      if (t.excess !== undefined && t.excess !== true) {
+        issue(out, `${path}.excess`, 'excess must be true when present');
+      }
       break;
     case 'castSpell':
       checkFilter(t.filter, `${path}.filter`, out);

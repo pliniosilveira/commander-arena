@@ -33,7 +33,12 @@ import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
-import { lowerMayInstead, lowerSentences, withoutAnyNumberOffer } from './sentences';
+import {
+  lowerMayInstead,
+  lowerOfferSentence,
+  lowerSentences,
+  withoutAnyNumberOffer,
+} from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -236,13 +241,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dealtDamage': {
       // CR 120.3, 603.2g (D-133): once for each source that damages the permanent.
       const what = whatOf(t, ctx);
-      return what.ok
-        ? ok({
-            kind: 'dealtDamage',
-            what: what.value,
-            ...(t.combat === true ? { combat: true } : {}),
-          })
-        : what;
+      if (!what.ok) return what;
+      // CR 120.2b, 120.10: "noncombat damage" and "excess damage" are features of the engine's `dealtDamage` (`excess` makes its amount the excess).
+      const blocked = missingFeatures([
+        ...(t.noncombat === true ? (['trigger:dealtDamageNoncombat'] as const) : []),
+        ...(t.excess === true ? (['trigger:dealtDamageExcess'] as const) : []),
+      ]);
+      if (blocked.length > 0) return failure(t, blocked);
+      return ok({
+        kind: 'dealtDamage',
+        what: what.value,
+        ...(t.combat === true ? { combat: true } : {}),
+        ...(t.noncombat === true ? { noncombat: true } : {}),
+        ...(t.excess === true ? { excess: true } : {}),
+      });
     }
     case 'becomesTapped': {
       const what = whatOf(t, ctx);
@@ -1071,6 +1083,15 @@ function lowerPaidModalTriggered(
   const [sentence, ...rest] = ability.body.sentences;
   const [clause, ...more] = sentence?.clauses ?? [];
   const offer = clause?.args.cost;
+  // "..., you may sacrifice it. When you do, choose one —" (Gorbag of Minas Morgul, CR 603.12, 701.21): the offer is a sacrifice, not a payment.
+  if (
+    sentence !== undefined &&
+    rest.length === 0 &&
+    clause !== undefined &&
+    clause.verb === 'sacrifice'
+  ) {
+    return lowerSacrificeModalTriggered(ability, sentence, modal, triggers, own, ctx);
+  }
   if (
     sentence === undefined ||
     rest.length > 0 ||
@@ -1115,6 +1136,52 @@ function lowerPaidModalTriggered(
       modes: [...modes],
       chooseModes,
     },
+  };
+  return {
+    ok: true,
+    value: triggers.map((trigger) => ({
+      kind: 'triggered',
+      trigger,
+      effect,
+      ...(own.interveningIf === undefined ? {} : { interveningIf: own.interveningIf }),
+      ...(own.triggerCondition === undefined ? {} : { triggerCondition: own.triggerCondition }),
+      ...(own.once ? { oncePerTurn: true as const } : {}),
+    })),
+    rule: ability.trigger.rule,
+  };
+}
+
+/**
+ * "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it. When you do, choose one —" and its bullets (Gorbag of Minas Morgul; CR 603.12,
+ * 603.3c, 700.2b, 701.21): the engine's `may` of the sacrifice and, as the last effect of the same sequence, the modal `reflexive` ability, which is created only if the permanent was
+ * sacrificed and whose modes are chosen as it goes on the stack, not as the first ability triggers.
+ */
+function lowerSacrificeModalTriggered(
+  ability: Triggered,
+  sentence: Triggered['body']['sentences'][number],
+  modal: IrModes,
+  triggers: readonly Trigger[],
+  own: {
+    readonly interveningIf: Condition | undefined;
+    readonly triggerCondition: Condition | undefined;
+    readonly once: boolean;
+  },
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const blocked = missingFeatures(['effect:reflexive', 'ability:reflexiveModal']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const offer = lowerOfferSentence(sentence, ctx);
+  if (!offer.ok) return offer;
+  const lowered = lowerModes(modal, ctx);
+  if (!lowered.ok) return lowered;
+  if (lowered.value.usesX) return failure(ability);
+  const { modes, chooseModes } = lowered.value;
+  const effect: Effect = {
+    kind: 'sequence',
+    effects: [
+      offer.value,
+      { kind: 'reflexive', effect: NO_EFFECT, modes: [...modes], chooseModes },
+    ],
   };
   return {
     ok: true,
@@ -1600,6 +1667,8 @@ function lowerTriggeredAbility(
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.excessDamageTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'dealtDamage' && t.excess === true);
   ctx.triggeredBody = true;
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
@@ -2254,6 +2323,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:alone',
   'trigger:attacksAt',
   'trigger:dealtDamage',
+  'trigger:dealtDamageNoncombat',
+  'trigger:dealtDamageExcess',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
   'trigger:becomesMonstrous',

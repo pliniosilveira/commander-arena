@@ -773,6 +773,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostBatch',
     // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
     'stepMonarch',
+    // "Whenever a creature is dealt noncombat damage" (`dealtDamage` with `noncombat`).
+    'dealtDamageNoncombat',
+    // Fall of Cair Andros: "Whenever a creature an opponent controls is dealt excess noncombat damage" (`dealtDamage` with `excess`).
+    'dealtDamageExcess',
   ],
   keywordKinds: [
     'flying',
@@ -1022,7 +1026,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
-  sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
+  // CR 701.21a, 603.2c (Gorbag of Minas Morgul): `triggerSubject`, "you may sacrifice it" in a trigger about a permanent its controller controls.
+  sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis', 'triggerSubject'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
   tokenPresets: [
     'Treasure',
@@ -1291,6 +1296,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
     'sharesCardTypeWith',
+    // CR 105.1, 109.4 (Ringsight): "a card that shares a color with a legendary creature you control" (`ObjectFilter.sharesColorWith`).
+    'sharesColorWith',
     // D-111: `ObjectFilter` comparisons with power, toughness and mana value, and the trigger subject
     // "equipped / enchanted creature" (`attached`).
     'power',
@@ -1381,6 +1388,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'totalPowerAtMost',
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
+    // CR 115.1, 109.4: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
+    'sameControllerAs',
     'greatest',
     'least',
     'giftRecipient',
@@ -2294,6 +2303,10 @@ export const TRIGGER_FEATURES = [
   'lifeLostBatch',
   /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
   'stepMonarch',
+  /** "Whenever a creature is dealt noncombat damage" (CR 120.2b, 603.2): the engine's `dealtDamage` with `noncombat`. */
+  'dealtDamageNoncombat',
+  /** "Whenever a creature is dealt excess damage" (CR 120.10, 603.2): the engine's `dealtDamage` with `excess`; `triggerDamage` is then the excess. */
+  'dealtDamageExcess',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -2502,6 +2515,8 @@ export const SELECTOR_KINDS = [
   'manaValueBelow',
   /** "That shares a card type with it" (CR 205.2a, issue 100): the engine's `ObjectFilter.sharesCardTypeWith`. */
   'sharesCardTypeWith',
+  /** "A card that shares a color with a legendary creature you control" (CR 105.1, 109.4, Ringsight): the engine's `ObjectFilter.sharesColorWith`. */
+  'sharesColorWith',
   /** "Power 4 or greater", "toughness 2 or less", "mana value 3" (D-111): the engine's `ObjectFilter` `power`, `toughness`, `manaValue`. */
   'power',
   'toughness',
@@ -2603,6 +2618,8 @@ export const SELECTOR_KINDS = [
   'totalPowerAtMost',
   /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
   'ownedByTarget',
+  /** "Another target creature that player controls" (CR 115.1, 109.4, Breaking of the Fellowship): the engine's `TargetSpec.sameControllerAs`. */
+  'sameControllerAs',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "A creature with the least power among creatures they control" (CR 701.21a): the engine's `ChooseSelector.least`. */
@@ -3688,6 +3705,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeLostBatch: true,
   votingFinished: true,
   stepMonarch: true,
+  dealtDamageNoncombat: true,
+  dealtDamageExcess: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

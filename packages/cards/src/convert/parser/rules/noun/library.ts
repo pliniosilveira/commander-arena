@@ -31,6 +31,7 @@ import {
   MODIFIER,
   NO_PARTS,
   PERMANENT_CARD_TYPES,
+  permanentPhrase,
   toFilter,
   typeWords,
 } from './phrases';
@@ -76,9 +77,26 @@ const CARD_WORD = (plural: boolean, spaced = true) =>
 function sharedSuffix(
   plural: boolean,
 ): Parser<
-  Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharesCreatureTypeWithSacrificed' | 'sharedLandType'>
+  Pick<
+    IrFilter,
+    | 'sharesCreatureTypeWithIt'
+    | 'sharesCreatureTypeWithSacrificed'
+    | 'sharedLandType'
+    | 'sharesColorWith'
+  >
 > {
   return (ctx, pos) => {
+    // Ringsight (CR 105.1, 109.4): " that shares a color with a legendary creature you control", one card and the permanents of the player ("you control" is said).
+    if (!plural) {
+      const color = quiet(
+        sequence(literal(' that shares a color with '), pattern(/an? /iu), permanentPhrase(false)),
+      )(ctx, pos);
+      if (color.ok) {
+        const permanents = color.value[2];
+        if (permanents.controller !== 'you') return fail(ctx, pos);
+        return { ok: true, value: { sharesColorWith: permanents }, pos: color.pos };
+      }
+    }
     // Quiet: the words are optional, so their absence is no failure of the line (the diagnostics keep the position they had).
     const r = quiet(
       pattern(
@@ -334,6 +352,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an artifact card or a Saga card',
     'a legendary card, an Aura card, or an instant card',
     'a creature card that shares a creature type with it',
+    // Ringsight (CR 105.1, 109.4): a color shared with a permanent of the player.
+    'a card that shares a color with a legendary creature you control',
+    'a creature card that shares a color with a creature you control',
     'an artifact creature card that shares a creature type with it',
     'up to two basic land cards that share a land type',
     'up to three basic land cards that share a land type',
@@ -380,6 +401,11 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a snow permanent card or legendary card',
     'a snow permanent card or a legendary card from your graveyard',
     'a land card that shares a creature type with it',
+    'a card that shares a color with a legendary creature',
+    'a card that shares a color with a legendary creature an opponent controls',
+    'a card that shares a color with a legendary creature you control and a land you control',
+    'cards that share a color with a legendary creature you control',
+    'up to two cards that share a color with a legendary creature you control',
     'a card that shares a creature type with it',
     'a creature card that shares a land type with it',
     'a creature card that shares a creature type',

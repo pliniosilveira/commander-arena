@@ -36,6 +36,7 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY, permanentPhrase } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
+import { AMASSED_ARMY_POWER, EXCESS_DAMAGE_OF_TRIGGER } from './amassed';
 import { CARD_TYPES_AMONG_THOSE_VALUE, CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
@@ -669,6 +670,10 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     LIFE_PAID_AS_ENTERED,
     // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way".
     DESTROYED_VALUE_AMOUNT,
+    // Surrounded by Orcs (CR 701.47a, 701.47b): "the amassed Army's power".
+    AMASSED_ARMY_POWER,
+    // Fall of Cair Andros (CR 120.10): "that excess damage".
+    EXCESS_DAMAGE_OF_TRIGGER,
   );
 
 /** "half <atom>, rounded down" (CR 107.1a: the text always says how it rounds). */
@@ -1051,8 +1056,18 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     // CR 120.2a: the opponents a source dealt combat damage to this turn.
     'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon this turn',
     'where X is the number of players who control more lands than you',
+    // Surrounded by Orcs (CR 701.47a, 701.47b, 208.1): the Army the amass before it chose.
+    "where X is the amassed Army's power",
+    'where X is the amassed Army’s power',
+    // Fall of Cair Andros (CR 120.10): the excess of the damage the trigger is about.
+    'where X is that excess damage',
   ],
   rejects: [
+    "where X is the amassed Army's toughness",
+    'where X is the amassed Army',
+    "where X is the amassed creature's power",
+    'where X is that excess',
+    'where X is the excess damage',
     'where X is the total mana value of creatures destroyed this way',
     'where X is the total mana value of permanents destroyed',
     'where X is the greatest mana value of permanents destroyed this way',
