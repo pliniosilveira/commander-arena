@@ -208,22 +208,45 @@ describe('training and hold-out coverage (D-066)', () => {
   });
 });
 
+/** A fixed amount of CPU work (integer arithmetic, no allocation): the yardstick of the budget below. */
+function spin(): number {
+  let h = 2166136261;
+  for (let i = 0; i < 20_000_000; i += 1) h = Math.imul(h ^ i, 16777619);
+  return h;
+}
+
+/** CPU time of this test's own process, in ms, for one call of `fn`. */
+function cpuMs(fn: () => unknown): number {
+  const start = process.cpuUsage();
+  fn();
+  const used = process.cpuUsage(start);
+  return (used.user + used.system) / 1000;
+}
+
 describe('budget', () => {
   // Per card and after one warm-up pass, so the guard does not tighten as the corpus grows and a
   // cold start does not count; still loose enough to catch only a pathological rule.
   test.skipIf(process.env.TEST_TIER === 'pr')(
-    'after a warm-up pass, the corpus parses 20 times in under 1.5 ms per card on average',
+    'after a warm-up pass, the corpus parses 20 times in under 0.08 times the CPU time of a fixed loop per card on average',
     () => {
       for (const card of cards) analyse(card);
-      // CPU time of this test's own process, not the clock: a shared CI runner that runs several test files at once makes the clock count the time spent waiting for a
-      // processor (the same code took 0.4 ms per card on a free machine and 1.8 ms on the runner), which says nothing about the parser. Each test file has a process of its own.
-      const start = process.cpuUsage();
-      for (let i = 0; i < 20; i++) for (const card of cards) analyse(card);
-      const used = process.cpuUsage(start);
-      const perCard = (used.user + used.system) / 1000 / (20 * cards.length);
-      expect(perCard).toBeLessThan(1.5);
+      // The budget is a ratio to a fixed loop timed in this same process, before and after the parse (the slower of the two counts), not a number of
+      // milliseconds: a shared CI runner is 3 to 4 times slower than a laptop, and by a different amount from one run to the next (0.5 ms per card on a laptop,
+      // 1.3 to 1.8 ms on the runner), so a limit in milliseconds failed the nightly at random. The ratio is about 0.025 on a laptop and the limit is as strict as the old 1.5 ms was there (a parse 3 times slower fails it); the
+      // measured numbers are logged so a run on the runner shows them. CPU time, not the clock: waiting for a processor says nothing about the parser. Each test file has a process of its own.
+      const before = cpuMs(spin);
+      const parse = cpuMs(() => {
+        for (let i = 0; i < 20; i++) for (const card of cards) analyse(card);
+      });
+      const after = cpuMs(spin);
+      const perCard = parse / (20 * cards.length);
+      const ratio = perCard / Math.max(before, after);
+      console.info(
+        `parse budget: ${perCard.toFixed(3)} ms per card, fixed loop ${Math.max(before, after).toFixed(1)} ms, ratio ${ratio.toFixed(4)}`,
+      );
+      expect(ratio).toBeLessThan(0.08);
       // The 20 passes outgrew the default timeout; the guard is the average per card.
     },
-    60_000,
+    120_000,
   );
 });
