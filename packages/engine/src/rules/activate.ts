@@ -465,6 +465,27 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
   if (costs.sacrifice === null || costs.sacrificeCount === 0) {
     return payBounce(state, events, payDiscard);
   }
+  // CR 701.21a, 118.3: "Sacrifice ~ and a legendary artifact": the source and a different permanent for each other part, sacrificed together.
+  if (costs.sacrifice === 'this' && costs.sacrificeAlongside.length > 0) {
+    const groups = sacrificeGroups(state, seat, activation.source, costs);
+    const sets = distinctAssignments(groups);
+    const [only] = sets;
+    if (only === undefined)
+      return fail('You do not control permanents to sacrifice for every part');
+    if (sets.length === 1)
+      return sacrificeChosen(state, events, [activation.source, ...only], true);
+    return pause({ ...state, casting: { ...casting, stage: 'sacrifice' } }, events, {
+      kind: 'choosePermanent',
+      seat,
+      source: casting.object,
+      purpose: 'sacrifice',
+      min: groups.length,
+      max: groups.length,
+      legal: [...new Set(groups.flat())],
+      forCost: true,
+      groups,
+    });
+  }
   if (costs.sacrifice === 'this') {
     const done = sacrificePermanent(state, activation.source, seat);
     if (done === null) return fail('The permanent you must sacrifice is gone');
@@ -760,7 +781,11 @@ export function answerSacrificeCost(state: GameState, chosen: readonly ObjectId[
   if (state.casting?.activation == null || state.casting.stage !== 'sacrifice') {
     return fail('No sacrifice is being chosen for a cost');
   }
-  return sacrificeChosen({ ...state, pending: null }, [], chosen, false);
+  // "Sacrifice ~ and a legendary artifact": the answer names the other parts; the source goes with them.
+  const costs = breakDown(state.casting.activation.ability.cost, state.casting.activation.x);
+  const withSource =
+    costs?.sacrifice === 'this' ? [state.casting.activation.source, ...chosen] : chosen;
+  return sacrificeChosen({ ...state, pending: null }, [], withSource, false);
 }
 
 /** The answer to the question of an untap cost (CR 701.26b): the permanents are untapped, then the sacrifice comes next. */
