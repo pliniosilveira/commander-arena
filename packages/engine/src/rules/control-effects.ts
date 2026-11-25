@@ -262,6 +262,56 @@ export function runExchangeControl(
 }
 
 /**
+ * Runs `exchangeControlOfAll` (CR 701.12a, 613.1b, 611.2a, 611.2c): the permanents `objects` names that the controller of the effect controls go to `player`, and the ones `player`
+ * controls come to the controller, both groups as they are now, all at the same moment: one layer 2 effect for each permanent, with the duration (the effects are made
+ * together, each with a timestamp, CR 613.7b). Permanents controlled by anyone else are left alone, and the same player on both sides does nothing. Afterwards `moved` names every
+ * permanent exchanged (CR 400.7j: "those creatures"), and a permanent that changed controller leaves combat (CR 506.4).
+ */
+export function runExchangeControlOfAll(
+  state: GameState,
+  node: Extract<Effect, { kind: 'exchangeControlOfAll' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const [other, ...more] = resolvePlayers(state, node.player, ctx, targets);
+  if (other === undefined || more.length > 0 || other === ctx.controller) return done(state);
+  const mine: ObjectId[] = [];
+  const theirs: ObjectId[] = [];
+  for (const id of resolveObjects(state, node.objects, ctx, targets)) {
+    const obj = state.objects[id];
+    if (obj === undefined || obj.zone !== 'battlefield') continue;
+    const now = controllerOf(state, obj);
+    if (now === ctx.controller) mine.push(id);
+    else if (now === other) theirs.push(id);
+  }
+  const affected = [...mine, ...theirs];
+  if (affected.length === 0) return done(state);
+  const before = controllersOf(state, affected);
+  const until: EffectEnd = node.duration === 'untilEndOfTurn' ? 'endOfTurn' : 'permanent';
+  let next = state;
+  const made: ContinuousEffect[] = [];
+  const give = (objects: readonly ObjectId[], seat: SeatId) => {
+    if (objects.length === 0) return;
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    made.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: [...objects],
+      until,
+      change: { kind: 'control', seat },
+    });
+  };
+  give(mine, other);
+  give(theirs, ctx.controller);
+  const changed = controlChanges(
+    { ...next, continuousEffects: [...next.continuousEffects, ...made] },
+    before,
+  );
+  return { ...done(changed.state, changed.events), lastMoved: affected };
+}
+
+/**
  * Removes the continuous effects `ends` names. A permanent whose controller changes because a control effect ended goes back to who had it: it is
  * summoning sick for them again (`controlChangedAt`, CR 302.6) and leaves combat (CR 506.4). Returns the state and the events.
  */

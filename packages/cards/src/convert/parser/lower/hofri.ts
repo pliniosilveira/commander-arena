@@ -189,15 +189,23 @@ const RETURN_FROM_DESTROYED: Lowering<IrClause, Effects> = {
 };
 
 /**
- * "Each opponent attacking that player does the same." (issue 159, CR 508.6, 111.2): the `createToken` the clause before it lowered to, for every opponent of the controller who
+ * "Each opponent attacking that player does the same." (issue 159, CR 508.6, 111.2; Curse of Verbosity: after "you draw a card" it is the same draw, for those players): the `createToken` the clause before it lowered to, for every opponent of the controller who
  * controls a creature attacking the player the trigger is about (`opponentsAttackingTriggerPlayer`). After any other clause "the same" names something this lowering does not know
  * (CR 608.2c).
  */
 const ATTACKERS_DO_SAME: Lowering<IrClause, Effects> = {
   head: 'attackersDoSame',
   id: 'lower.attackers-do-same',
-  needs: ['effect:createToken'],
+  needs: ['effect:createToken', 'effect:draw'],
   lower(clause, ctx) {
+    const drew = ctx.drewCards;
+    if (drew !== null) {
+      return {
+        ok: true,
+        value: [{ ...drew, player: { kind: 'opponentsAttackingTriggerPlayer' } }],
+        rule: clause.rule,
+      };
+    }
     const token = ctx.createdToken;
     if (token === null) return failure(clause);
     return {

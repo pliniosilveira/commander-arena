@@ -161,7 +161,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.
-- `anyCombinationAmount` lists every combination, C(X+4,4) of them: a large X slows the mana choice.
+- `anyCombinationAmount` lists every combination, C(X+4,4) of them, as actions and payment sources: a large X slows the mana choice. The planner tries only combinations that differ for the cost, and "could produce" lists none (issue 632).
+- The payment planner marks the mana of one outcome in 32-bit masks (`assignUnits`): past 31 mana in one outcome, the mana it reports spent and left over can be wrong.
 - "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
@@ -330,6 +331,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Choose a card type": the web shows no preview of what the choice protects from.
 - Copy exceptions that retain the copier's own values (CR 707.9c) and exceptions to the supertypes, loyalty or defense of a copy are not built.
 - `token.copy-except` reads one shape ("except it's a P/T <colors> <creature types>"), not "it has no mana cost", "in addition to its other types" or a list of separate exceptions as a card line.
+- "Enters as a copy, except it has \"...\"" (`addStatics`) reads one quoted static ability. The plural token copy "except they're 3/3 Dragon creatures ... and they have flying" needs the keyword clause. `sameNameAsSource` matches only in a static subject.
 - `setCreatureTypes` keeps the original's other subtypes and card types (a copy of an artifact creature card is an artifact creature Zombie); read from CR 205.3d and 707.9b alone, unverified against Hashaton's rulings.
 - `trigger.discarded` reads one card kind ("a creature card", "a nonland card"), not "a creature or land card", a creature type or a color; the filter is read against the card where it went, not the hand it left.
 - A copy of a card discarded with madness: when the card is cast with madness before the ability resolves, the copy is made from its last-known information.
@@ -393,7 +395,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `exileOnResolve` is for an instant or sorcery card cast as a spell; an Adventure, a flashback spell and a spell with "exile it instead" get no return. It names the end step and the hand only.
 - Rebound (CR 702.88) with Buyback on one spell: Buyback wins and the card returns to the hand (the owner is not asked which replacement applies, CR 616.1).
 - "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature", "commander" in spell, cost and condition phrases, and a count in a static ability are not read.
-- Monstrosity: "Monstrosity X" (CR 701.37c), the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read.
+- Monstrosity: the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read; the X of "Monstrosity X" (CR 701.37c) is read only in the becomes monstrous trigger of the same permanent.
 - Spells cast this turn by kind: only card types; "noncreature", a color, a subtype ("a Dragon spell"), a count with a kind ("two or more creature spells"), an opponent's spells and the order ("your second spell") are not read.
 - "Another target creature" is read for a bite whose source is a target (the slot before it); for the creature of a trigger or for a list of two such nouns it is refused.
 - "Target creature or Vehicle": one card type and one subtype only; a list of three ("creature, Vehicle, or Elf") and "or" between a subtype and a modifier ("nonartifact creature or Vehicle") are not read.
@@ -540,6 +542,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Arcane Lighthouse: creatures that enter later follow CR 611.2c; unverified against the ruling.
 - "Each other creature that's attacking one of your opponents gets +N/+N until end of turn" only; the plural without "other", other effects and a battle protected by an opponent are not read.
 - Goad as an effect: one creature, a target or "it"; "goad each creature" and a group are not read.
+- A static subject names a goaded creature only for a restriction (Bothersome Quasit).
 - Protection from the chosen color: the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
 - Counters on a chosen creature: only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read.
 - The condition `attackedHasMoreLifeThanOtherOpponent` for three players is tested directly, not through a full game (the scenario DSL has two seats).
@@ -596,6 +599,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- `playerSpellsCostLess` reduces generic mana by a number for spells of card types, for a target player, until your next turn; other spell filters and durations are unread.
+- "Whenever you activate an ability that isn't a mana ability" is read for "you" only, not an opponent or a player.
 - "Spend blue mana as though it were any color to activate those abilities" (Grell Philosopher) applies to the mana cost of a granted activated ability, not to a granted mana ability that has a mana cost.
 - "A creature entering causes a triggered ability of that creature to trigger" (Aboleth Spawn) puts its copy trigger above the ability it names, so it resolves first; the two cannot be ordered the other way round (CR 603.3b).
 - Aven Mindcensor limits only a search of the searcher's own library; searches of another player's library or of other zones are not limited.

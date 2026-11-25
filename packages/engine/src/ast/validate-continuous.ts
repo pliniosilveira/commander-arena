@@ -37,6 +37,7 @@ type ContinuousNode = Extract<
     kind:
       | 'modifyPt'
       | 'setPt'
+      | 'switchPt'
       | 'loseAllAbilities'
       | 'loseHexproofShroud'
       | 'setTypes'
@@ -328,9 +329,13 @@ export function checkContinuousEffect(
       issue(out, `${path}.duration`, '"this combat" is the duration of attacksEachCombat only');
     }
   } else if (e.kind === 'restrict' && e.duration === 'untilYourNextTurn') {
-    // CR 611.2a, 500.1 (Taunt from the Rampart): "until your next turn" is the duration of cantBlock only here (`runContinuous` ends it as the next turn of the controller begins).
-    if (e.restriction !== 'cantBlock') {
-      issue(out, `${path}.duration`, '"until your next turn" is the duration of cantBlock only');
+    // CR 611.2a, 500.1 (Taunt from the Rampart, Sly Instigator): "until your next turn" is the duration of cantBlock and cantBeBlocked only here (`runContinuous` ends it as the next turn of the controller begins).
+    if (e.restriction !== 'cantBlock' && e.restriction !== 'cantBeBlocked') {
+      issue(
+        out,
+        `${path}.duration`,
+        '"until your next turn" is the duration of cantBlock and cantBeBlocked only',
+      );
     }
   } else if (e.kind === 'grantKeyword' && e.duration === 'untilYourNextTurn') {
     // CR 611.2a, 500.1: the duration of a temporary grant of a keyword (`runContinuous` ends it as the next turn of the controller begins); only without parameters (below).
@@ -339,6 +344,11 @@ export function checkContinuousEffect(
     }
   } else if (e.kind === 'grantAbility' && e.duration === 'untilYourNextTurn') {
     // Issue 145 (Song of Freyalise, CR 611.2a, 500.1): the duration of a temporary grant of an activated, triggered or mana ability (`checkGrantAbility` checks the abilities).
+  } else if (
+    (e.kind === 'setPt' || e.kind === 'loseAllAbilities') &&
+    e.duration === 'untilYourNextTurn'
+  ) {
+    // CR 611.2a, 500.1 (Will Kenrith): "until your next turn" on base power and toughness and on losing all abilities (`runContinuous` ends it as the next turn of the controller begins).
   } else if (!isOneOf(e.duration, DURATIONS)) {
     issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
   }
@@ -360,6 +370,7 @@ export function checkContinuousEffect(
     }
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
+    case 'switchPt':
       break;
     case 'setTypes':
       checkSetTypes(e, path, out);

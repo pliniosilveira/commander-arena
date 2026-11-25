@@ -152,8 +152,15 @@ t('100 random-vs-random games all finish with a result and no faults', async () 
   // chosen-games.test.ts asks and answers it in every game it plays). X comes from cards that no
   // style of this mix plays either (D-103; x-games.test.ts), and so do the modes of a modal spell or
   // ability (D-114; modal-games.test.ts). The same holds for the pay options of Convoke, Improvise and
-  // Delve (D-120; keyword-batch2-games.test.ts).
-  const askedElsewhere: readonly DecisionKind[] = ['chooseX', 'chooseModes', 'choosePayOptions'];
+  // Delve (D-120; keyword-batch2-games.test.ts). The choice of a party comes from a card that makes
+  // each player choose a party and sacrifice the rest; none of these seeded games draws and casts it, so
+  // casual-party.test.ts asks and answers it.
+  const askedElsewhere: readonly DecisionKind[] = [
+    'chooseX',
+    'chooseModes',
+    'choosePayOptions',
+    'chooseParty',
+  ];
   // By construction, not by the seed of the generic games: every deck of the option style plays a creature that asks as it enters.
   if (OPTION_CREATURES.length > 0) expect([...optionKinds]).toContain('chooseOption');
   expect([...new Set([...decisionKinds, ...optionKinds])].sort()).toEqual(

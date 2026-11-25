@@ -120,6 +120,7 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
+      'subjectHadToAttack',
       'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',

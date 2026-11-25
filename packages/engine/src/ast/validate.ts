@@ -891,7 +891,8 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'restriction':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      // "Goaded creatures your opponents control can't block" (CR 701.15b): the subject may name a goaded creature.
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, false, true);
       if (!isOneOf(s.restriction, RESTRICTIONS)) {
         issue(out, `${path}.restriction`, `unknown restriction ${JSON.stringify(s.restriction)}`);
       }
@@ -911,7 +912,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'goaded':
       // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, false, false, true);
       break;
     case 'costReduction':
       checkCostReduction(s, path, out);
@@ -1141,7 +1142,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
   if (at !== undefined) {
     if (t?.kind !== 'attacks') {
       issue(out, `${path}.at`, 'at (whom it attacks) belongs to an attacks trigger');
-    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers', 'opponent'])) {
+    } else if (!isOneOf(at, ['you', 'youOrPlaneswalkers', 'defendingYou', 'opponent'])) {
       issue(out, `${path}.at`, `unknown attack target ${JSON.stringify(at)}`);
     }
   }
@@ -1284,6 +1285,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.fromExile !== undefined && t.fromExile !== true) {
         issue(out, `${path}.fromExile`, 'fromExile must be true when present');
       }
+      break;
+    case 'dungeonCompleted':
       break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
@@ -1756,7 +1759,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'dealsDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
-      if (!isOneOf(t.to, ['opponent', 'player'])) {
+      if (!isOneOf(t.to, ['opponent', 'player', 'you'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
@@ -2285,6 +2288,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         false,
         // CR 107.3m: the enters trigger of the permanent itself may take up to as many targets as the X of the spell it came from.
         a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
+        // CR 701.37c: the becomes monstrous trigger of the permanent itself may take up to as many targets as the X of its monstrosity.
+        a.trigger?.kind === 'becomesMonstrous' && kindOf(a.trigger.what) === 'this',
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -2357,7 +2362,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(a.trigger?.kind === 'playerAttacksOpponent' ||
         (a.trigger?.kind === 'attacks' && a.trigger.at === 'opponent') ||
-        (a.trigger?.kind === 'attackBatch' && a.trigger.eachAttackedPlayer === true)
+        (a.trigger?.kind === 'attackBatch' &&
+          (a.trigger.eachAttackedPlayer === true || a.trigger.eachAttackedOpponent === true))
           ? { triggerAttackedSingle: true }
           : {}),
         triggeredAbility: true,
@@ -2379,6 +2385,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
         ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
           ? { entersX: true }
+          : {}),
+        // CR 701.37c (Death Kiss): the becomes monstrous trigger of the permanent itself may refer to the X of its monstrosity.
+        ...(a.trigger?.kind === 'becomesMonstrous' && kindOf(a.trigger.what) === 'this'
+          ? { monstrousX: true }
           : {}),
         ...HOOKS,
       });
@@ -2485,6 +2495,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
         for (const kind of [
           'subjectControlledByYou',
+          'subjectHadToAttack',
           'subjectMatches',
           'subjectStat',
           'subjectGreaterThanEach',
@@ -2620,6 +2631,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
         for (const kind of [
           'subjectControlledByYou',
+          'subjectHadToAttack',
           'subjectMatches',
           'subjectStat',
           'subjectGreaterThanEach',
@@ -3175,6 +3187,24 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       issue(out, `${path}.abilities[${i}].effect`, 'X is read but the mana cost has no {X}');
     }
   });
+  // CR 707.9b (Mocking Doppelganger): "except it has \"<static ability>\"": a non-empty list of static abilities, each checked as an ability of its own.
+  face.abilities.forEach((a, i) => {
+    if (a?.kind !== 'replacement' || a.replacement?.kind !== 'entersAsCopy') return;
+    const statics = a.replacement.addStatics;
+    if (statics === undefined) return;
+    const at = `${path}.abilities[${i}].replacement.addStatics`;
+    if (!Array.isArray(statics) || statics.length === 0) {
+      issue(out, at, 'addStatics is a non-empty list when present');
+      return;
+    }
+    statics.forEach((inner, j) => {
+      if (inner?.kind !== 'static') {
+        issue(out, `${at}[${j}]`, 'addStatics holds static abilities only');
+      } else {
+        checkAbility(inner, `${at}[${j}]`, out);
+      }
+    });
+  });
   // CR 107.3m: the X of a copy's "enters with X additional counters" is the spell's X, so the cost needs an {X}.
   face.abilities.forEach((a, i) => {
     if (
@@ -3220,6 +3250,26 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.abilities[${i}].effect`,
         'enteredX is the X of the spell the permanent came from, but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 701.37c: "goad up to X target creatures" in the becomes monstrous trigger reads the X of a "Monstrosity X" of the permanent: without a monstrosity there is nothing to read.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      (JSON.stringify(a.effect ?? null).includes('"monstrousX"') ||
+        JSON.stringify(a.targets ?? null).includes('"monstrousX"')) &&
+      !face.abilities.some(
+        (other) =>
+          other?.kind === 'activated' &&
+          JSON.stringify(other.effect ?? null).includes('"kind":"monstrosity"'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].effect`,
+        'monstrousX is the X of a monstrosity of the permanent, but no ability of the face has one',
       );
     }
   });
