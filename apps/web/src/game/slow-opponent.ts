@@ -28,6 +28,7 @@ export function withSlowOpponent(
   return {
     newGame: (options) => client.newGame(options),
     undo: () => client.undo(),
+    gameRecord: () => client.gameRecord(),
     async act(action: Action): Promise<Snapshot> {
       const reply = await client.act(action);
       if (reply.steps.some((step) => step.seat !== HUMAN)) await sleep(delayMs);

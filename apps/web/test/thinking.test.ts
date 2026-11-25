@@ -26,6 +26,7 @@ function slowClient(slowCalls = 1) {
   const client: GameClient = {
     newGame: (o) => host.newGame(o),
     undo: () => host.undo(),
+    gameRecord: () => host.gameRecord(),
     act: async (action: Action): Promise<Snapshot> => {
       const reply = await host.act(action);
       held += 1;

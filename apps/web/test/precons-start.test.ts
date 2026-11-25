@@ -135,7 +135,16 @@ test('autostart accepts hidden test ids by id, the one deliberate exception', as
   });
   expect(result).toEqual({
     ok: true,
-    options: { seed: 1, humanDeck: 'white-knights', aiDeck: 'swamp-forest' },
+    options: {
+      seed: 1,
+      humanDeck: 'white-knights',
+      aiDeck: 'swamp-forest',
+      // Issue 627: a hidden test deck is replayed from its id alone.
+      replayDecks: [
+        { name: 'white-knights', hidden: 'white-knights' },
+        { name: 'swamp-forest', hidden: 'swamp-forest' },
+      ],
+    },
   });
 });
 
@@ -151,6 +160,12 @@ test('autostart also accepts real precon ids, prepared and checked; a real id wi
   if (!mixed.ok) return;
   expect(mixed.options.humanCards?.cards).toHaveLength(100);
   expect(mixed.options.aiCards).toBeUndefined();
+  // Issue 627: a shipped precon is replayed from its snapshot id and list, with no card data of its own.
+  const [human, ai] = mixed.options.replayDecks ?? [];
+  expect(human?.precon).toBe('white-knights');
+  expect(human?.decklist).not.toBe('');
+  expect(human?.cards).toBeUndefined();
+  expect(ai).toEqual({ name: 'swamp-forest', hidden: 'swamp-forest' });
 });
 
 test('autostart refuses an unknown id and a real precon that is not startable', async () => {
