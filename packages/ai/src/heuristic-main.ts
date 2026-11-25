@@ -31,19 +31,10 @@
  *
  * The numbers named `main.*` are fields of `AgentWeights` (`weights.ts`), read from `Think.weights`.
  */
-import type {
-  Action,
-  GameView,
-  ObjectId,
-  ObjectView,
-  PriorityDecision,
-} from '@commander-arena/engine';
+import type { Action, GameView, ObjectId, PriorityDecision } from '@commander-arena/engine';
 import { flashesForCommander, isAura } from './casual-attachments';
-import { hasStorm } from './casual-copies';
-import { discountsHand } from './casual-costs';
 import { turnUpCandidates } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
-import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import {
   choosePriorityAction,
@@ -52,134 +43,30 @@ import {
   spellPlays,
   spendOf,
   withFace,
-  withType,
 } from './casual-priority';
-import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
-import { creatureValue, evaluate } from './evaluate';
+import { manaValueOf } from './casual-view';
 import type { Think } from './heuristic-budget';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
-import { canPayAll, costSymbols, ownUnits } from './heuristic-mana';
+import { ownUnits } from './heuristic-mana';
 import { protectionPlay, protectionReserve } from './heuristic-protect';
+import {
+  bestSet,
+  castAction,
+  isCounter,
+  isInstantSpeed,
+  mainPlays,
+  order,
+  withCommanderRule,
+} from './heuristic-sets';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
-import type { AgentWeights } from './weights';
 
 export interface PriorityChoice {
   readonly action: Action;
   readonly reason: Reason;
   /** The mana symbols the payment of this cast keeps open for a protection spell (`heuristic-protect.ts`). */
   readonly reserve?: readonly string[];
-}
-
-/** The most plays a set is chosen among (2^n subsets; a bound of the search, not a weight). */
-const MAX_PLAYS = 9;
-
-const TARGETS_SPELL = /target (activated or triggered ability|(\w+ )?spell)/i;
-
-const isInstantSpeed = (o: ObjectView): boolean =>
-  o.types.includes('instant') || hasKeyword(o, 'flash');
-const isCounter = (o: ObjectView): boolean =>
-  isInstantSpeed(o) && TARGETS_SPELL.test(withoutReminder(o.oracleText));
-
-const castAction = (p: Play): Action => ({
-  kind: 'castSpell',
-  object: p.obj.id,
-  ...(p.free === true ? { alternative: 'free' as const } : {}),
-  ...(p.alt === undefined ? {} : { alternative: p.alt }),
-  ...(p.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
-  ...withFace(p.face),
-  ...withType(p),
-});
-
-const sym = (p: Play): readonly string[] => (p.free === true ? [] : costSymbols(p.obj, spendOf(p)));
-
-/** What a play is worth, for choosing between sets that spend the same mana. */
-function worthOf(view: GameView, p: Play, weights: AgentWeights): number {
-  const o = p.obj;
-  const w = weights.main;
-  if (o.types.includes('creature')) {
-    return (
-      creatureValue({ ...o, power: o.power ?? 0, toughness: o.toughness ?? 0 }, weights) +
-      (o.isCommander ? w.commanderBonus : 0)
-    );
-  }
-  if (isRemovalSpell(o)) return w.removalShare * (bestRemovalTarget(view, o, weights)?.value ?? 0);
-  return w.spellBase + w.spellPerMana * manaValueOf(o);
-}
-
-/** The set of `plays` that uses the most mana and is payable with `units`, most valuable among equals. */
-function bestSet(
-  view: GameView,
-  plays: readonly Play[],
-  units: ReturnType<typeof ownUnits>,
-  weights: AgentWeights,
-  /** Mana symbols that must stay payable besides the set (a protection spell held open). */
-  hold: readonly string[] | null = null,
-): Play[] {
-  const pool = [...plays]
-    .sort(
-      (a, b) =>
-        worthOf(view, b, weights) - worthOf(view, a, weights) || (a.obj.id < b.obj.id ? -1 : 1),
-    )
-    .slice(0, MAX_PLAYS);
-  let best: { set: Play[]; spend: number; value: number } = { set: [], spend: 0, value: 0 };
-  for (let mask = 1; mask < 1 << pool.length; mask += 1) {
-    const set = pool.filter((_, i) => (mask & (1 << i)) !== 0);
-    const spend = set.reduce((sum, p) => sum + spendOf(p), 0);
-    const value = set.reduce((sum, p) => sum + worthOf(view, p, weights), 0);
-    if (spend < best.spend || (spend === best.spend && value <= best.value)) continue;
-    if (canPayAll(hold === null ? set.map(sym) : [...set.map(sym), hold], units)) {
-      best = { set, spend, value };
-    }
-  }
-  return best.set;
-}
-
-/** The commander's tax: what it costs now beyond its printed cost (CR 903.8). */
-const taxOf = (p: Play): number => (p.obj.isCommander ? spendOf(p) - manaValueOf(p.obj) : 0);
-
-/** Drops a commander at a high tax unless the rule in the module comment lets it be cast. */
-function withCommanderRule(
-  view: GameView,
-  plays: Play[],
-  units: ReturnType<typeof ownUnits>,
-  weights: AgentWeights,
-): Play[] {
-  const w = weights.main;
-  const taxed = plays.filter((p) => taxOf(p) >= w.highTax);
-  if (taxed.length === 0) return plays;
-  const others = plays.filter((p) => !taxed.includes(p));
-  const spare = bestSet(view, others, units, weights).reduce((sum, p) => sum + spendOf(p), 0);
-  const losing = evaluate(view, view.viewer, weights).score < w.losing;
-  return spare < w.spareShare * units.length && !losing ? plays : others;
-}
-
-/** Order the plays of the set: reducers, removal at a big target, the rest, removal at a small one, Storm. */
-function order(view: GameView, set: readonly Play[], weights: AgentWeights): Play[] {
-  const worth = (p: Play): number => worthOf(view, p, weights);
-  const bestCreature = Math.max(
-    0,
-    ...set.filter((p) => p.obj.types.includes('creature')).map(worth),
-  );
-  const rank = (p: Play): number => {
-    if (discountsHand(view, p.obj) || grantsLandDrops(view, p.obj)) return 0;
-    if (hasStorm(p.obj)) return 4;
-    if (isRemovalSpell(p.obj)) return worth(p) / weights.main.removalShare >= bestCreature ? 1 : 3;
-    return 2;
-  };
-  return [...set].sort(
-    (a, b) => rank(a) - rank(b) || worth(b) - worth(a) || (a.obj.id < b.obj.id ? -1 : 1),
-  );
-}
-
-/** The plays that are made at sorcery timing: permanents, sorceries, and removal with a target worth it. */
-function mainPlays(view: GameView, plays: readonly Play[], weights: AgentWeights): Play[] {
-  return plays.filter((p) =>
-    isInstantSpeed(p.obj)
-      ? isRemovalSpell(p.obj) && bestRemovalTarget(view, p.obj, weights) !== null
-      : true,
-  );
 }
 
 /** The casual rules for what is left: the options without the lands and the hand casts. */

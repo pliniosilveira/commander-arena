@@ -27,7 +27,9 @@ import {
   handleDecision,
   nextInt,
   type PendingDecision,
+  type PriorityDecision,
   type RngState,
+  type SeatId,
 } from '@commander-arena/engine';
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
@@ -38,9 +40,18 @@ import { findObject } from './casual-view';
 import { chooseHeuristicAttack } from './heuristic-attacks';
 import { chooseHeuristicBlocks } from './heuristic-blocks';
 import { NO_BUDGET, startBudget, type Think } from './heuristic-budget';
-import { choosePriorityHeuristic } from './heuristic-main';
+import { choosePriorityHeuristic, type PriorityChoice } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
+import {
+  choosePlan,
+  firstAction,
+  followPlan,
+  type PlanRecord,
+  type TurnPlan,
+} from './heuristic-plan';
+import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
+import { type SimAgents, windowOf } from './heuristic-plan-sim';
 import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
 import { chooseRemovalTargets, creatureToHelp } from './heuristic-targets';
@@ -72,6 +83,9 @@ export class HeuristicAgent implements ExplainingAgent {
   private reserve: readonly string[] | null = null;
   /** How the opponent has blocked (heuristic-model.ts). */
   readonly opponent: OpponentModel;
+  /** The plan of the turn (`heuristic-plan.ts`); its end-step steps last into the opponents' turns. */
+  private plan: TurnPlan | null = null;
+  private readonly planList: PlanRecord[] = [];
 
   constructor(options: HeuristicAgentOptions) {
     this.name = options.name ?? `heuristic#${options.seed}`;
@@ -87,6 +101,78 @@ export class HeuristicAgent implements ExplainingAgent {
 
   get reasons(): readonly ReasonRecord[] {
     return this.reasonList;
+  }
+
+  /** Every planning the agent did, oldest first (lines, scenarios, the line chosen). */
+  get plans(): readonly PlanRecord[] {
+    return this.planList;
+  }
+
+  /** Inner agents for the planner's play-outs: the same rules and weights, no sample, so no planning. */
+  private readonly simAgents: SimAgents = {
+    start: () => {
+      const agents = new Map<SeatId, HeuristicAgent>();
+      return (seat) => {
+        let agent = agents.get(seat);
+        if (agent === undefined) {
+          agent = new HeuristicAgent({ seed: 7919 + seat, weights: this.weights });
+          agents.set(seat, agent);
+        }
+        const inner = agent;
+        return (view) => inner.decisionHandlers(view);
+      };
+    },
+  };
+
+  /**
+   * The priority choice: a step of the plan, a new plan, or today's choice (see `heuristic-plan.ts`).
+   * `planning` is false without a sample (the inner agents of a play-out, a host that gives none).
+   */
+  private priorityChoice(
+    view: GameView,
+    d: PriorityDecision,
+    think: Think,
+    answer: (v: GameView, pending: PendingDecision) => Action,
+    planning: boolean,
+  ): PriorityChoice {
+    if (this.plan !== null && view.activeSeat === view.viewer && view.turn > this.plan.turn) {
+      this.plan = null;
+    }
+    const when = planning ? windowOf(view, d) : null;
+    if (when !== null) {
+      const step = followPlan(this.plan, view, d, when);
+      if (step !== null) {
+        return {
+          action: step.action,
+          reason: 'plan',
+          ...(step.reserve === null ? {} : { reserve: step.reserve }),
+        };
+      }
+    }
+    const today = choosePriorityHeuristic(view, d, think, this.activations, answer);
+    if (when === null || when === 'attack') return today;
+    let lines: ReturnType<typeof mainLines>;
+    if (when === 'main1' || when === 'main2') {
+      if (today.action.kind === 'playLand') return today;
+      lines = mainLines(view, d, when, today, this.activations, this.weights);
+    } else {
+      const quiet = today.action.kind === 'pass' || today.action.kind === 'activate';
+      if (!quiet || ownActivations(view, d).length === 0) return today;
+      lines = windowLines(view, d, when, today.action);
+    }
+    if (lines.length < 2) return today;
+    const planned = choosePlan(view, when, lines, think, this.simAgents);
+    if (planned === null) return today;
+    const replan = this.plan !== null;
+    this.plan = planned.plan;
+    this.planList.push(planned.record);
+    if (planned.index === 0) return replan ? { ...today, reason: 'replan' } : today;
+    const reserve = planned.plan.steps[0]?.reserve ?? null;
+    return {
+      action: firstAction(planned),
+      reason: replan ? 'replan' : 'plan',
+      ...(reserve === null ? {} : { reserve }),
+    };
   }
 
   private draw(maxExclusive: number): number {
@@ -130,7 +216,7 @@ export class HeuristicAgent implements ExplainingAgent {
         this.opponent.observe(view);
         this.reserve = null;
         const open = withoutTriedCasts(view, d, this.activations);
-        const choice = choosePriorityHeuristic(view, open, think, this.activations, answer);
+        const choice = this.priorityChoice(view, open, think, answer, ctx?.sample !== undefined);
         noteCast(view, choice.action, this.activations);
         this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
         note(choice.reason);
@@ -173,6 +259,14 @@ export class HeuristicAgent implements ExplainingAgent {
         return casual.targets(d);
       },
       declareAttackers: (d) => {
+        const step =
+          ctx?.sample !== undefined && windowOf(view, d) === 'attack'
+            ? followPlan(this.plan, view, d, 'attack')
+            : null;
+        if (step !== null) {
+          note('plan');
+          return step.action;
+        }
         const choice = chooseHeuristicAttack(view, d, {
           sample: think.sample(),
           budget: think.budget,
