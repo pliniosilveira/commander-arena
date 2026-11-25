@@ -2,7 +2,7 @@
  * Effect rule of the Exit from Exile deck (Journey to the Lost City): "You may put a land card from among those cards onto the battlefield." after "exile the top four cards of your
  * library" (CR 608.2c, 608.2d, 110.2a). The lowering is `PUT_FROM_AMONG_EXILED` (`lower/troyan-g4.ts`), which refuses it unless the cards are those the exile before it moved.
  */
-import { fail, literal, map, optional, pattern, sequence } from '../../combinators';
+import { fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrFlag, IrNoun } from '../../ir/types';
 import { defineRule } from '../registry';
 import { TAKEN_CARD } from './library';
@@ -56,7 +56,8 @@ export const EFFECT_PUT_FROM_AMONG_THOSE_CARDS_ONTO_BATTLEFIELD = defineRule<Cla
   parse: single(
     ID,
     sequence(
-      optional(literal('you may '), null),
+      // One pattern, so that a text that is not a put fails where it starts ("you may draw" is no near miss of this rule).
+      map(pattern(/(?:you may )?(?=put\b)/iu), (m) => (m[0] === '' ? null : m[0])),
       literal('put '),
       TAKEN_CARD,
       literal(' from among those cards onto the battlefield'),
@@ -104,7 +105,8 @@ export const EFFECT_PUT_ANY_NUMBER_FROM_AMONG_THEM_ONTO_BATTLEFIELD = defineRule
   ],
   parse: (ctx, pos) => {
     const r = sequence(
-      optional(literal('you may '), null),
+      // One pattern, so that a text that is not a put fails where it starts ("you may draw" is no near miss of this rule).
+      map(pattern(/(?:you may )?(?=put\b)/iu), (m) => (m[0] === '' ? null : m[0])),
       literal('put any number of '),
       TYPES_CARDS,
       literal(' from among them onto the battlefield'),
