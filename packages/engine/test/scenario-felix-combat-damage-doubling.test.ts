@@ -115,7 +115,9 @@ describe('a creature you control deals combat damage to a player (CR 603.2d, 510
       .at('precombatMain', { active: 1 })
       .build();
     g.advanceTo('declareAttackers');
-    g.act(1).declareAttackers([{ attacker: { name: V22, seat: 1 as const }, target: { player: 2 } }]);
+    g.act(1).declareAttackers([
+      { attacker: { name: V22, seat: 1 as const }, target: { player: 2 } },
+    ]);
     g.advanceTo('combatDamage');
     expect(g.state.stack).toHaveLength(1);
   });

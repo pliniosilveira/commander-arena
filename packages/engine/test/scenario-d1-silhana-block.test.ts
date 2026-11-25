@@ -3,7 +3,7 @@
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-d1.ts) or fixtures.
 import { describe, expect, test } from 'vitest';
 import { syntheticCard, validateCard } from '../src/index';
-import { canBlock, attackedGame } from './restriction-helpers';
+import { attackedGame, canBlock } from './restriction-helpers';
 
 const SNEAK = 'SYNTHETIC Skyward Sneak';
 const SPIDER = 'SYNTHETIC Reach Spider';

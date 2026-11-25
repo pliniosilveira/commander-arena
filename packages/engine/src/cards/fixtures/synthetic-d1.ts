@@ -30,6 +30,27 @@ export const SYNTHETIC_D1_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever an opponent casts a spell from anywhere other than their hand, draw a card."
+  singleFace({
+    name: 'SYNTHETIC Foreign Cast Watcher',
+    manaCost: ['1'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'Whenever an opponent casts a spell from anywhere other than their hand, draw a card.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'castSpell',
+          filter: { stackKind: 'spell', notCastFromHand: true },
+          by: 'opponent',
+        },
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    ],
+  }),
   // "Reach"
   singleFace({
     name: 'SYNTHETIC Reach Spider',
