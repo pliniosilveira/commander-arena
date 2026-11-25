@@ -1109,9 +1109,6 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.didnt-activate-loyalty': permanent(
     (e) => `At the beginning of your end step, if ${e}, you lose 2 life.`,
   ),
-  'condition.youre-defending-player': permanent(
-    (e) => `Whenever a creature an opponent controls attacks, if ${e}, you gain 1 life.`,
-  ),
   // Twilight Diviner: the intervening "if" of a trigger about one or more creatures entering.
   'condition.entered-from-graveyard': permanent(
     (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,

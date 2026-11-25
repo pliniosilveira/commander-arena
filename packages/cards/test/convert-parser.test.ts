@@ -547,7 +547,6 @@ describe('unmatched abilities', () => {
       'condition.those-attacking-you',
       'condition.attacked-has-more-life',
       'condition.they-attacked-you',
-      'condition.youre-defending-player',
       'condition.they-arent-attacking-you',
       'condition.life-gained-this-turn',
       'condition.life-above-starting',

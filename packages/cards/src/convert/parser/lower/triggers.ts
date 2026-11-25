@@ -1695,14 +1695,6 @@ function lowerTriggeredAbility(
       ...only,
       what: { ...only.what, subtypes: [...(only.what.subtypes ?? []), ifWritten.test.subtype] },
     };
-  } else if (ifWritten?.test.kind === 'youAreDefendingPlayer') {
-    // "Whenever a creature an opponent controls attacks, if you're the defending player, ..." (Kazuul, CR 506.3d, 508.1b): the defending player is the player attacked or the controller of the
-    // planeswalker attacked, which is a part of the event of the one `attacks` trigger (the engine's `at: youOrPlaneswalkers`), not an intervening "if" of its own.
-    const [only] = triggers;
-    if (events.length !== 1 || only?.kind !== 'attacks' || only.at !== undefined) {
-      return failure(ifWritten, []);
-    }
-    triggers[0] = { ...only, at: 'youOrPlaneswalkers' };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
