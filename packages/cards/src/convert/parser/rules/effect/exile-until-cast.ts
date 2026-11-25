@@ -119,7 +119,56 @@ export const EFFECT_THAT_PLAYER_EXILES_UNTIL_CAST = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.target-player-exiles-until-cast-bottom`: "target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without
+ * paying its mana cost. Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." (Chaos Wand; CR 701.13, 608.2g, 118.9, 401.4): the
+ * three sentences are one instruction, kept together by the segmenter. As `effect.that-player-exiles-until-cast`, for the one player the ability targets. Not read: another player, another
+ * place for the rest, the rest on top, no "you may", another way to cast, a fourth sentence.
+ */
+export const EFFECT_TARGET_PLAYER_EXILES_UNTIL_CAST_BOTTOM = defineRule<Clauses>({
+  id: 'effect.target-player-exiles-until-cast-bottom',
+  family: 'effect',
+  leading: ['target'],
+  cites: [
+    'CR 701.13 (Exile)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 401.4 (Library)',
+  ],
+  examples: [
+    "target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren't cast this way on the bottom of that library in a random order",
+  ],
+  rejects: [
+    'target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost',
+    "target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card. Then put the exiled cards that weren't cast this way on the bottom of that library in a random order",
+    "target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren't cast this way into their graveyard",
+    "target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren't cast this way on top of that library in a random order",
+    "each opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren't cast this way on the bottom of that library in a random order",
+    "target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren't cast this way on the bottom of that library in a random order. Draw a card",
+  ],
+  parse: single(
+    'effect.target-player-exiles-until-cast-bottom',
+    sequence(
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.player'] }),
+        (noun) => noun.det === 'target' && noun.anyNumber !== true,
+      ),
+      literal(' exiles cards from the top of their library until they exile '),
+      family<IrNoun>('noun', { only: ['noun.library-card'] }),
+      literal('. you may cast that card without paying its mana cost. '),
+      pattern(
+        /then put the exiled cards that weren['’]t cast this way on the bottom of that library in a random order(?![\p{L}\p{N}])/iu,
+      ),
+    ),
+    ([player, , card]) => ({
+      verb: 'thatPlayerExilesUntilCast',
+      args: { player, card: { ...card, upTo: false, plural: false } },
+    }),
+  ),
+});
+
 export const EXILE_UNTIL_CAST_EFFECT_RULES = [
+  EFFECT_TARGET_PLAYER_EXILES_UNTIL_CAST_BOTTOM,
   EFFECT_PLAYER_EXILES_UNTIL_CAST,
   EFFECT_THAT_PLAYER_EXILES_UNTIL_CAST,
 ];

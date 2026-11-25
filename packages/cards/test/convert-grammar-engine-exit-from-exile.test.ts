@@ -944,3 +944,36 @@ describe('"+1: Add X mana in any combination of {R} and/or {G}, where X is the n
     g.expect.pool(0, '');
   });
 });
+
+describe('"{4}, {T}: Target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren\'t cast this way on the bottom of that library in a random order." (CR 701.13, 608.2g, 401.4)', () => {
+  const wand = parsed(
+    'SYNTHETIC Chaos Staff',
+    'Artifact',
+    "{4}, {T}: Target opponent exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then put the exiled cards that weren't cast this way on the bottom of that library in a random order.",
+    { manaCost: '{3}', colors: [] },
+  );
+  const build = () =>
+    scenario()
+      .define(wand)
+      .seat(0)
+      .life(20)
+      .battlefield(wand.name, 'Island', 'Island', 'Island', 'Island')
+      .library(...FILLER)
+      .seat(1)
+      .life(20)
+      .library('Forest', 'Grizzly Bears', 'Lightning Bolt', ...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the first instant or sorcery is cast for free by the wand’s controller; the other exiled cards go to the bottom', () => {
+    const g = build();
+    g.act(0).activate(wand.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.act(0).chooseCards({ name: 'Lightning Bolt', zone: 'exile', seat: 1 });
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    expect(g.state.seats[1]?.life).toBeLessThan(20);
+    g.expect.noObject('Forest', { zone: 'exile' });
+    g.expect.noObject('Grizzly Bears', { zone: 'exile' });
+  });
+});

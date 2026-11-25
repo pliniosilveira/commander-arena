@@ -1034,6 +1034,9 @@ const PLAYER_EXILES_UNTIL_CAST =
   /^target (?:opponent|player) exiles cards from the top of their library until they exile [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
 const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
+/** Chaos Wand (CR 401.4): "Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." closes the three sentences of the exile of a target player. */
+const THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY =
+  /^then put the exiled cards that weren['’]t cast this way on the bottom of that library in a random order\.$/i;
 const THAT_PLAYER_PUTS_REST_RANDOM =
   /^that player puts the rest of the revealed cards on the bottom of their library in a random order\.$/i;
 const CONTROLLER_REVEALS_UNTIL =
@@ -1102,7 +1105,11 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, PLAYER_EXILES_UNTIL_CAST) &&
       said(b, MAY_CAST_THAT_CARD_FREE)
     ) {
-      const last = c !== undefined && said(c, CREATURE_THIS_WAY_GAINS) ? c : b;
+      const last =
+        c !== undefined &&
+        (said(c, CREATURE_THIS_WAY_GAINS) || said(c, THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY))
+          ? c
+          : b;
       out.push({ start: a.start, end: last.end });
       i += last === b ? 1 : 2;
       continue;

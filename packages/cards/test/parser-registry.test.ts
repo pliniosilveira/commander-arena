@@ -1676,6 +1676,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.player-exiles-until-cast': permanent(
     (e) => `When ~ enters, ${e}${e.endsWith('"') ? '' : '.'}`,
   ),
+  'effect.target-player-exiles-until-cast-bottom': permanent((e) => `When ~ enters, ${e}.`),
   'effect.controller-reveals-until-puts': spell(
     (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
   ),

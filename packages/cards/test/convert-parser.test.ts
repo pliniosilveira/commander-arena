@@ -863,6 +863,7 @@ describe('unmatched abilities', () => {
       'effect.pay-hand-or-cant-attack-you',
       'effect.player-reveals-until-you-put',
       'effect.controller-reveals-until-puts',
+      'effect.target-player-exiles-until-cast-bottom',
       'effect.player-exiles-until-cast',
       'effect.that-player-exiles-until-cast',
       'effect.lead-becomes-land-creature-keywords',
