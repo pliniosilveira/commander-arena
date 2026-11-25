@@ -20,10 +20,12 @@ import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
+import { evaluateCondition } from './conditions';
 import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
+import { searchTopLimit } from './global-statics';
 import { discardOne } from './madness';
 import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
@@ -69,10 +71,13 @@ export function searchCandidates(
   zones: readonly SearchZone[] = ['library'],
 ): ObjectId[] {
   const found: { id: ObjectId; name: string }[] = [];
+  // CR 701.23, 614.1a (Aven Mindcensor): an opponent of the controller of such a permanent searches only the top cards of the library.
+  const topOnly = searchTopLimit(state, seat);
   // CR 701.23a: the cards of every zone searched ("your graveyard, hand, and/or library") that match, in one list.
   for (const zone of zones) {
     const scoped: ObjectFilter = { ...filter, zone };
-    for (const id of getSeat(state, seat)[zone]) {
+    const cards = getSeat(state, seat)[zone];
+    for (const id of zone === 'library' && topOnly !== null ? cards.slice(0, topOnly) : cards) {
       const obj = state.objects[id];
       if (obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source })) {
         found.push({ id, name: derive(state, obj).name });
@@ -249,19 +254,22 @@ export function runSearch(
   const found = instruction.chosen;
   // CR 701.23a: "found" counts the cards of the library alone for the event of a library search.
   const searched = searchedLibrary(state, search, found);
-  const events: GameEvent[] = searched
-    ? [
-        {
-          kind: 'librarySearched',
-          seat,
-          found:
-            search.zones === undefined
-              ? found.length
-              : found.filter((id) => state.objects[id]?.zone === 'library').length,
-        },
-      ]
-    : [];
-  if (search.reveal && found.length > 0) {
+  // `put` is set once the search and the reveal have been done and the question of `mayPut` came after them: nothing is announced twice.
+  const announced = instruction.put !== undefined;
+  const events: GameEvent[] =
+    searched && !announced
+      ? [
+          {
+            kind: 'librarySearched',
+            seat,
+            found:
+              search.zones === undefined
+                ? found.length
+                : found.filter((id) => state.objects[id]?.zone === 'library').length,
+          },
+        ]
+      : [];
+  if (search.reveal && found.length > 0 && !announced) {
     const cards = found.flatMap((id) => {
       const obj = state.objects[id];
       return obj?.card == null ? [] : [{ card: obj.card, name: derive(state, obj).name }];
@@ -274,9 +282,46 @@ export function runSearch(
       from: 'library',
     });
   }
+  // CR 608.2c, 608.2d (`mayPut`): "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand." The condition is
+  // read after the search and the reveal, which are done first; when it holds the searching player is asked, and a "no" leaves the card to the hand of `destinations`.
+  const mayPut = search.mayPut;
+  if (mayPut !== undefined && found.length > 0 && instruction.put === undefined) {
+    const asks = evaluateCondition(state, mayPut.condition, {
+      controller: res.controller,
+      source: res.source,
+    });
+    if (asks) return done(state, events, [{ ...instruction, put: null }]);
+  }
+  if (mayPut !== undefined && found.length > 0 && instruction.put === null) {
+    const info = sourceInfo(state, res.source);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'confirmOptional',
+        seat,
+        source: res.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+        purpose: 'searchPut',
+        ...(found[0] === undefined ? {} : { subject: found[0] }),
+      },
+    };
+  }
   // CR 701.24b (D-405): "then shuffle and put that card on top": the shuffle leaves the found cards out, then they go on top (the last one first,
   // so the first found ends on top).
-  const placed = placeFound(search, found);
+  const placed = placeFound(
+    instruction.put === true && mayPut !== undefined
+      ? {
+          ...search,
+          destinations: [
+            { zone: 'battlefield', ...(mayPut.tapped === true ? { tapped: true } : {}), count: 1 },
+          ],
+        }
+      : search,
+    found,
+  );
   const shuffled: Instruction[] = search.shuffle
     ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
     : [];
@@ -299,7 +344,12 @@ export function runDiscard(
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
   // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
   const count =
-    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
+    instruction.anyNumber === true || instruction.hand === true
+      ? hand.length
+      : instruction.leave !== undefined
+        ? // CR 701.9 (Magus of the Balance): all but the cards the player keeps.
+          Math.max(0, hand.length - instruction.leave)
+        : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined
@@ -336,9 +386,11 @@ export function runDiscard(
       ? hand.length === 0
         ? []
         : null
-      : hand.length <= count && !choice
-        ? hand
-        : null);
+      : instruction.leave !== undefined && count === 0
+        ? []
+        : hand.length <= count && !choice
+          ? hand
+          : null);
   if (chosen === null) {
     const max = Math.min(count, hand.length);
     const decision: Omit<ChooseCardsDecision, 'id'> = {

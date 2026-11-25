@@ -359,21 +359,22 @@ function tappedThings(filter: ObjectFilter, plural: boolean): string | null {
   return REGULAR_NOUNS.has(noun) ? [`${noun}s`, ...rest].join(' ') : null;
 }
 
-const WHOSE_STEP: Readonly<Record<'you' | 'each' | 'opponent', string>> = {
+const WHOSE_STEP: Readonly<Record<'you' | 'each' | 'opponent' | 'monarch', string>> = {
   you: 'your',
+  monarch: "the monarch's",
   each: "each player's",
   opponent: "each opponent's",
 };
 
 /** "At the beginning of combat on your turn", "At the beginning of each opponent's upkeep". */
-function stepWording(step: TriggerStep, whose: 'you' | 'each' | 'opponent'): string {
+function stepWording(step: TriggerStep, whose: 'you' | 'each' | 'opponent' | 'monarch'): string {
   // The two steps that are not "<player>'s <step>" read "on <player's> turn".
   if (step === 'beginCombat' || step === 'combatEnd') {
     const word = step === 'beginCombat' ? 'combat' : 'the end of combat';
     if (whose === 'each') {
       return `At the beginning of each ${step === 'beginCombat' ? 'combat' : 'end of combat'}`;
     }
-    return `At the beginning of ${word} on ${whose === 'you' ? 'your' : "each opponent's"} turn`;
+    return `At the beginning of ${word} on ${whose === 'you' ? 'your' : whose === 'monarch' ? "the monarch's" : "each opponent's"} turn`;
   }
   const w = STEP_WORDS[step];
   if (whose === 'each') return `At the beginning of each ${w}`;
@@ -453,6 +454,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes blocked`;
     }
+    case 'becomesUnblocked': {
+      // CR 509.1h: each attacking creature that no creature blocks.
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} attacks and isn't blocked`;
+    }
     case 'becomesBlockedBy': {
       // CR 509.3d, 702.25a (Flanking): once for each creature that blocks it; only the creature without flanking has words.
       const what = subjectPhrase(trigger.what, ctx);
@@ -490,6 +496,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'surveils':
       // CR 701.25 (Galadriel group 1): once each time the player surveils.
       return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
+    case 'votingFinished':
+      // CR 701.38a (Erestor of the Council): once each time every player has voted in a vote.
+      return 'Whenever players finish voting';
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): once each time the player wins a coin flip.
       return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;
@@ -505,6 +514,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       // CR 701.37a, 701.37b: "Whenever this creature becomes monstrous".
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes monstrous`;
+    }
+    case 'milled': {
+      // CR 701.17a, 603.2c: "Whenever a player mills one or more creature cards"; a filter the words do not cover leaves the trigger unsaid.
+      const who =
+        trigger.who === 'you' ? 'you' : trigger.who === 'opponent' ? 'an opponent' : 'a player';
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const said = base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards');
+      return `Whenever ${who} mill${trigger.who === 'you' ? '' : 's'} ${said}`;
     }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
@@ -532,6 +550,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'doorUnlocked':
       // CR 709.5h (Room): the half whose text has the ability.
       return 'When you unlock this door';
+    case 'exploits':
+      // CR 702.110b (Exploit): the creature with the ability.
+      return 'When this creature exploits a creature';
     case 'leftGraveyard': {
       // D-229 (CR 400.7, 603.2c): "one or more cards leave your graveyard", "a creature card leaves your graveyard".
       const base = trigger.filter === undefined ? 'a card' : discardedCardWords(trigger.filter);
@@ -638,6 +659,8 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
+      // CR 607.2d (Sewer Nemesis): "the chosen player" is a choice the card made as it entered; the card's own text says it.
+      if (trigger.by === 'chosenPlayer') return null;
       // Quandrix Unlimited group E (CR 601.2i): "your first spell with {X} in its mana cost each turn" says nothing else about the spell; with more words it cannot be said here.
       if (trigger.filter.firstXSpellThisTurn === true) {
         const { firstXSpellThisTurn: _first, ...rest } = trigger.filter;
@@ -681,6 +704,18 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
       return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
+    case 'entersCausesTrigger': {
+      // CR 603.2, 603.6a (Aboleth Spawn): the creature's own enters ability, as it triggers.
+      const what = filterPhrase(trigger.what);
+      if (what === null) return null;
+      const whose =
+        trigger.who === 'you'
+          ? 'your'
+          : trigger.who === 'opponent'
+            ? "an opponent's"
+            : "a player's";
+      return `Whenever ${what} entering under ${whose} control causes a triggered ability of that creature to trigger`;
+    }
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;
@@ -708,6 +743,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'damageToPlayerPrevented': {
+      // CR 615.6: "Whenever damage that would be dealt to you is prevented".
+      const to = { you: 'you', opponent: 'an opponent', player: 'a player' }[trigger.who];
+      return `Whenever damage that would be dealt to ${to} is prevented`;
+    }
     case 'unblockedAttackBatch':
       // CR 509.1h, 508.1b: the creatures of an opponent that attack you and have no blocker.
       return "Whenever one or more creatures an opponent controls attack you and aren't blocked";
@@ -726,6 +766,25 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       if (trigger.eachAttackedPlayer === true) {
         return trigger.who === 'you' && trigger.atLeast === 1
           ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
+          : null;
+      }
+      // CR 508.1b (Lulu, Stern Guardian; Mirkwood Trapper): "Whenever an opponent attacks you", "Whenever a player attacks you".
+      if (trigger.attackedYou === true) {
+        if (trigger.atLeast === 1 && trigger.what === undefined) {
+          if (trigger.who === 'opponent') return 'Whenever an opponent attacks you';
+          if (trigger.who === 'any') return 'Whenever a player attacks you';
+        }
+        return null;
+      }
+      // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
+      if (trigger.includesSource === true) {
+        const others = trigger.atLeast - 1;
+        return `Whenever this creature and at least ${SMALL_COUNT_WORDS[others] ?? String(others)} other creatures attack`;
+      }
+      // Frontier Warmonger (CR 508.1b, 506.3): only the creatures attacking one of your opponents or a planeswalker they control.
+      if (trigger.attackingYourOpponents === true) {
+        return trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever one or more creatures attack one of your opponents or a planeswalker they control'
           : null;
       }
       // D-187: "Whenever you attack" is one creature or more, said without the count.

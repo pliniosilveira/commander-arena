@@ -1,5 +1,18 @@
 import type { TokenDefinition } from '@commander-arena/engine';
 
+/** The keyword abilities of a token as the words Scryfall prints them in ("first strike", "flying"). */
+export function tokenKeywordWords(token: TokenDefinition): string[] {
+  return [
+    ...new Set(
+      token.abilities.flatMap((a) =>
+        a.kind === 'keyword'
+          ? [a.keyword.kind.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`)]
+          : [],
+      ),
+    ),
+  ];
+}
+
 /** Search printed token characteristics, never a permanent's counters or continuous effects. */
 export function tokenSearchQuery(
   token: TokenDefinition,

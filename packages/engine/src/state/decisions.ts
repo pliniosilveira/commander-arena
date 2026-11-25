@@ -8,7 +8,7 @@
  */
 import type { CastAlternativeKind } from '../ast/features';
 import type { Cost, TargetSpec, Trigger } from '../ast/types';
-import type { CardType, Color } from '../characteristics';
+import type { CardType, Color, PartyType } from '../characteristics';
 import type { CardId, DecisionId, ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { ChosenTarget } from './chosen';
@@ -454,6 +454,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'auraHost'
     | 'entersCopy'
     | 'devour'
+    | 'entersRemoveCounters'
     | 'ringBearer'
     | 'empowerJace'
     | 'amass'
@@ -475,6 +476,10 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'entersCopy'` (D-151, CR 707.9, 614.12: "As this artifact enters, you may have it become a copy of any creature on the battlefield"): `seat`, the
    * player the permanent `subject` enters under, chooses which permanent of `legal` it becomes a copy of; `min` is 0 when that is optional, `max` 1. The
    * permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'entersRemoveCounters'` (Sin, Unending Cataclysm, CR 614.12, 122.1: "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments"): `seat`, the player the
+   * permanent `subject` enters under, chooses which of the permanents in `legal` (those of every player that have a counter and match the filter) lose every counter; `min` is 0 and `max` is
+   * `legal.length`, and the permanent enters with counters for the number removed. The permanent has not entered yet: `source` and `subject` are the object it is now, or, for a token, the spell or
+   * ability creating it. The removal is not a cost and cannot be taken back.
    * For `'devour'` (D-185, CR 702.82a: "As this creature enters, you may sacrifice any number of creatures"): `seat`, the player the permanent
    * `subject` enters under, chooses which of the creatures in `legal` (all they control) to sacrifice; `min` is 0 and `max` is `legal.length`, and the
    * permanent enters with N +1/+1 counters for each one chosen. The permanent has not entered yet: `source` and `subject` are the object it is now,
@@ -780,7 +785,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
    * spell without it, and `cancel` rewinds the cast, as for the kicker. `'clash'` (CR 701.30a, 701.30c, "clash with an opponent"): `seat` is a player who clashed and revealed the card `subject` (public,
    * and still the top card of their library); accepting puts it on the bottom of their library, declining leaves it on top. `source` is the spell or ability that resolves. Asked of each clashing
-   * player in turn order, and the cards move only after the last has answered.
+   * player in turn order, and the cards move only after the last has answered. `'searchPut'` (CR 608.2d, 701.23; `search.mayPut`, "If an opponent controls more lands than you, you may put that
+   * card onto the battlefield tapped"): `seat` is the player who searched, `subject` the card they found (public: it was revealed), `source` the ability on the stack; accepting puts it onto the
+   * battlefield (tapped when the effect says so), declining puts it into the hand.
    */
   readonly purpose?:
     | 'kicker'
@@ -802,7 +809,10 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'buyback'
     | 'exileMore'
     | 'exert'
-    | 'clash';
+    | 'clash'
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield": `source` is the card in `seat`'s hand; accepting puts it onto the battlefield.
+    | 'openingHand'
+    | 'searchPut';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.
@@ -840,6 +850,12 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * could be paid. `cancel` is a legal answer and rewinds the cast (CR 733).
    */
   readonly otherCost?: readonly Cost[];
+  /**
+   * For purpose `'costChoice'` with three ways ("sacrifice a creature, discard a card, or pay 4 life", D-181): `cost` is the first, `otherCost` the second and `moreCost` the third; declining the
+   * first asks again between the second and the third. `costWays` are the indexes of the ways in the face's `additionalCostChoice` that the question is about (two or three).
+   */
+  readonly moreCost?: readonly Cost[];
+  readonly costWays?: readonly number[];
   /**
    * For purpose `'unlessPays'` when the question is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a) or
    * `'cumulativeUpkeep'` (CR 702.24a; `cost` is the whole payment, the cost of the keyword for each age counter
@@ -879,6 +895,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    // CR 614.12a, 607.2d: "As this enters, choose a player": the options are `seat:<n>`. `cardName`: "choose a nonland card name": `options` are suggestions (names the game shows), any non-empty name is an answer.
+    | 'player'
+    | 'cardName'
     | 'option'
     | 'attackTarget'
     | 'assignOpponent'
@@ -897,7 +916,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller of the effect chooses which opponent (`source` is the spell or ability): the options are `seat:<n>`.
     | 'chooseOpponent'
     // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
-    | 'protector';
+    | 'protector'
+    // CR 309.5a, 701.49b: a player venturing from a room with two arrows leaving it chooses the room to move their venture marker into: the options are the names of the rooms.
+    | 'dungeonRoom';
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second
@@ -910,6 +931,12 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly counter: string;
     readonly count: number;
   }[];
+  /**
+   * For purpose `'counterPick'` when the counters are the cost of an activated ability (CR 118.3, 122.1, 602.2b, "Remove a counter from this Equipment", "Remove three counters from
+   * among other artifacts, creatures, and planeswalkers you control"): the activating player picks the next counter to remove, there is no "Done" among the options, and `cancel` is a
+   * legal answer that rewinds the activation (CR 733). Absent for every other question.
+   */
+  readonly forCost?: true;
   /**
    * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
    * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
@@ -1088,8 +1115,27 @@ export interface VoteCast {
 /** The question of a `'vote'` choice (CR 701.38a, D-194): who controls the effect, and the votes already cast in it. */
 export interface VoteQuestion {
   readonly controller: SeatId;
+  /** The votes already cast; empty for a secret vote (CR 701.38a: nobody sees them until all are in). */
   readonly cast: readonly VoteCast[];
+  /** A secret vote: `cast` is left empty on purpose. */
+  readonly secret?: true;
+  /**
+   * For a vote for players or permanents (`voteFor`, CR 701.38b): what each of `options` (`seat:<n>`, `object:<id>`) stands for, in the same order, so a player can be shown who or
+   * what it is. Absent for a vote with words.
+   */
+  readonly choices?: readonly VoteChoice[];
 }
+
+/** One choice of a vote for players or permanents (CR 701.38b): a player, or a permanent with the name it has now. */
+export type VoteChoice =
+  | { readonly kind: 'player'; readonly seat: SeatId }
+  | {
+      readonly kind: 'object';
+      readonly object: ObjectId;
+      readonly name: string;
+      /** Who controls it now, so two permanents with one name can be told apart. */
+      readonly controller: SeatId;
+    };
 
 /** The question of a `'replacement'` choice: the damage event as it is now and the effects that can be applied first (CR 616.1, D-191). */
 export interface DamageReplacementQuestion {
@@ -1220,6 +1266,8 @@ export interface ChooseXDecision extends DecisionBase {
     readonly discard?: number;
     /** Permanents sacrificed for each point of X ("Sacrifice X creatures", D-488); absent for none. */
     readonly sacrifice?: number;
+    /** Counters removed for each point of X ("Remove X counters from an artifact or creature you control"); absent for none. */
+    readonly removeCounters?: number;
   };
   /** For `multikicker` and `replicate`: the cost paid each time. Absent for X. */
   readonly cost?: readonly Cost[];
@@ -1305,6 +1353,19 @@ export interface ChoosePayOptionsDecision extends DecisionBase {
   readonly choices: readonly (readonly ObjectId[])[];
 }
 
+/**
+ * Each player chooses a party from among creatures they control (Stick Together, CR 700.8d, 101.4): `seat` chooses, for each creature type of `slots` (Cleric, Rogue, Warrior, Wizard,
+ * in that order), up to one creature of `legal` (the creatures they control with that type, as `derive` gives them now); one creature fills at most one slot, so a creature with several of the types
+ * may fill any one of them but not two. Answered with a `chooseParty` action naming the slots filled; the creatures the player controls that are left out are sacrificed once the last player has
+ * chosen. Only asked when a creature of the player has one of the types. Public: the creatures are on the battlefield, and each player knows the parties chosen before theirs (CR 101.4b).
+ */
+export interface ChoosePartyDecision extends DecisionBase {
+  readonly kind: 'chooseParty';
+  /** The spell or ability that is resolving. */
+  readonly source: ObjectId;
+  readonly slots: readonly { readonly type: PartyType; readonly legal: readonly ObjectId[] }[];
+}
+
 export type PendingDecision =
   | PriorityDecision
   | MulliganDecision
@@ -1324,7 +1385,8 @@ export type PendingDecision =
   | ChooseOptionDecision
   | ChooseXDecision
   | ChooseModesDecision
-  | ChoosePayOptionsDecision;
+  | ChoosePayOptionsDecision
+  | ChoosePartyDecision;
 
 export type DecisionKind = PendingDecision['kind'];
 
@@ -1355,6 +1417,7 @@ export const DECISION_KINDS = [
   'chooseX',
   'chooseModes',
   'choosePayOptions',
+  'chooseParty',
 ] as const satisfies readonly DecisionKind[];
 
 /** A UI or AI handler per kind. Exhaustive by construction (SPEC 4.2). */
@@ -1403,6 +1466,8 @@ export function handleDecision<R>(d: PendingDecision, handlers: DecisionHandlers
       return handlers.chooseModes(d);
     case 'choosePayOptions':
       return handlers.choosePayOptions(d);
+    case 'chooseParty':
+      return handlers.chooseParty(d);
     default: {
       const unreachable: never = d;
       return unreachable;

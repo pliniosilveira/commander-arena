@@ -163,18 +163,18 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
 }
 
 /**
- * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two ways to pay, each a non-empty
+ * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two or three ways to pay, each a non-empty
  * list of the costs `additionalCosts` takes, and with the face's own `additionalCosts` at most one sacrifice and one discard. No "pay X life" and no {X}
- * (X is announced before the targets and the choice comes first), and the two ways are not the same.
+ * (X is announced before the targets and the choice comes first), and no two ways are the same.
  */
 export function checkAdditionalCostChoice(
-  choice: readonly [readonly Cost[], readonly Cost[]],
+  choice: readonly (readonly Cost[])[],
   fixed: readonly Cost[],
   path: string,
   out: Out,
 ): void {
-  if (!Array.isArray(choice) || choice.length !== 2) {
-    issue(out, path, 'additionalCostChoice has exactly two ways to pay');
+  if (!Array.isArray(choice) || choice.length < 2 || choice.length > 3) {
+    issue(out, path, 'additionalCostChoice has two or three ways to pay');
     return;
   }
   choice.forEach((way, i) => {
@@ -194,8 +194,9 @@ export function checkAdditionalCostChoice(
       issue(out, p, 'a choice of additional costs has no "you may sacrifice any number" (D-491)');
     }
   });
-  if (JSON.stringify(choice[0]) === JSON.stringify(choice[1])) {
-    issue(out, path, 'the two ways to pay are the same');
+  const seen = new Set(choice.map((way) => JSON.stringify(way)));
+  if (seen.size !== choice.length) {
+    issue(out, path, 'two ways to pay are the same');
   }
 }
 
@@ -371,6 +372,17 @@ export function checkCostReduction(
   path: string,
   out: Out,
 ): void {
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is the spell's own reduction, for its flashback cost.
+  if (
+    s.forAlternative !== undefined &&
+    (s.forAlternative !== 'flashback' || kindOf(s.spells) !== 'this')
+  ) {
+    issue(
+      out,
+      `${path}.forAlternative`,
+      "forAlternative is flashback, and only on the spell's own reduction",
+    );
+  }
   // CR 113.6 (issue 81, Eminence): "in the command zone" is for a reduction of other spells, not the spell's own `this` ability.
   if (s.inCommandZone !== undefined && (s.inCommandZone !== true || kindOf(s.spells) === 'this')) {
     issue(out, `${path}.inCommandZone`, 'inCommandZone is true, and only on a reduction by filter');

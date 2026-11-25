@@ -129,6 +129,7 @@ describe('the autopilot and the gate', () => {
         return host.act(action);
       },
       undo: () => host.undo(),
+      gameRecord: () => host.gameRecord(),
     };
     return { client, sent };
   }

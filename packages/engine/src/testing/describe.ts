@@ -74,6 +74,8 @@ export function describeAction(state: GameState, action: Action): string {
         .join(', ')}]`;
     case 'choosePermanents':
       return `choosePermanents [${action.objects.map(named).join(', ')}]`;
+    case 'chooseParty':
+      return `chooseParty [${action.party.map((m) => `${m.type} ${named(m.object)}`).join(', ')}]`;
     case 'choosePayOptions':
       return `choosePayOptions [${action.objects.map(named).join(', ')}]`;
     case 'orderTriggers':
@@ -178,6 +180,7 @@ export function dumpState(state: GameState): string {
     }
   }
   if (state.monarch !== null) lines.push(`monarch: seat ${state.monarch}`);
+  if (state.initiative !== undefined) lines.push(`initiative: seat ${state.initiative}`);
   if (state.dayNight !== undefined) lines.push(`it is ${state.dayNight}`);
   for (const s of state.seats) {
     const pool = s.manaPool.map((m) => m.color).join('');

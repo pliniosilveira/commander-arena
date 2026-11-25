@@ -23,20 +23,19 @@ import type { Budget } from './heuristic-budget';
 import { applyOrNull, playOut, type SimPolicy } from './heuristic-sim';
 import { withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
+import type { AgentWeights } from './weights';
 
 export interface BlockChoice {
   readonly action: Action;
   readonly reason: Reason;
 }
 
-/** What the block choice needs: the budget of the decision and the sample (if any). */
+/** What the block choice needs: the budget of the decision, the sample (if any) and the weights. */
 export interface BlockContext {
   readonly budget: Budget;
   readonly sample: GameState | undefined;
+  readonly weights: AgentWeights;
 }
-
-/** A block must beat not blocking by this much (score points) to be made. */
-const BLOCK_MARGIN = 0.05;
 
 const KIND_REASON: Readonly<Record<BlockPlan['kind'], Reason>> = {
   'no-block': 'no-block',
@@ -70,10 +69,11 @@ export function scoreBlocks(
   sample: GameState,
   seat: SeatId,
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
+  weights: AgentWeights,
   policy: SimPolicy = {},
 ): number | null {
   const end = simulateBlocks(sample, seat, blocks, policy);
-  return end === null ? null : evaluate(getView(end, seat), seat).score;
+  return end === null ? null : evaluate(getView(end, seat), seat, weights).score;
 }
 
 export function chooseHeuristicBlocks(
@@ -81,7 +81,7 @@ export function chooseHeuristicBlocks(
   d: DeclareBlockersDecision,
   ctx: BlockContext,
 ): BlockChoice {
-  const fallback = defaultPlan(view, d);
+  const fallback = defaultPlan(view, d, ctx.weights);
   const sample = ctx.sample;
   if (sample === undefined || sample.pending?.kind !== 'declareBlockers') {
     return asChoice(d, fallback);
@@ -90,7 +90,7 @@ export function chooseHeuristicBlocks(
   // Trim to what can be paid for first; plans that become the same declaration are scored once.
   const seen = new Set<string>();
   const trimmed: BlockPlan[] = [];
-  for (const plan of blockPlans(view, d)) {
+  for (const plan of blockPlans(view, d, ctx.weights)) {
     const blocks = withinBlockBudget(d, plan.blocks);
     const k = JSON.stringify(blocks.map((b) => [b.blocker, b.attacker]).sort());
     if (seen.has(k)) continue;
@@ -107,7 +107,7 @@ export function chooseHeuristicBlocks(
   for (const plan of ordered) {
     // Always look at the first two (no block and the default); the rest only while time is left.
     if (scored.length >= 2 && ctx.budget.expired(scored.length)) break;
-    const score = scoreBlocks(sample, seat, plan.blocks, { abort: ctx.budget.over });
+    const score = scoreBlocks(sample, seat, plan.blocks, ctx.weights, { abort: ctx.budget.over });
     if (score !== null) scored.push({ plan, score });
   }
   // No candidate, or fewer than the two that are always compared because a play-out ran out of time:
@@ -128,7 +128,7 @@ export function chooseHeuristicBlocks(
   const chosen =
     baseline !== undefined &&
     pick.plan !== baseline.plan &&
-    pick.score < baseline.score + BLOCK_MARGIN
+    pick.score < baseline.score + ctx.weights.blocks.margin
       ? baseline
       : pick;
   return asChoice(d, chosen.plan);

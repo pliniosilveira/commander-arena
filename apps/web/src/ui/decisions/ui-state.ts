@@ -10,6 +10,7 @@ import {
   defaultDivision,
   type ManaColor,
   type ObjectId,
+  type PartyMember,
   type PendingDecision,
   type SeatId,
 } from '@commander-arena/engine';
@@ -17,6 +18,7 @@ import { type Arrangement, defaultArrangement, NO_ARRANGEMENT } from './arrange'
 import { type AttackPick, requiredAttacks } from './attack';
 import { type BlockState, NO_BLOCKS } from './block';
 import { defaultResolveOrder, type ResolveOrder } from './order';
+import { initialParty } from './party';
 import type { Tap } from './payment';
 import { initialUntap, isUntapChoice } from './untap';
 import { initialX } from './x-picker';
@@ -47,6 +49,8 @@ export interface UiState {
   readonly modes: readonly number[];
   /** The creatures, artifacts or graveyard cards picked for a choosePayOptions decision (D-120). */
   readonly payOptions: readonly ObjectId[];
+  /** The party picked for a chooseParty decision (Stick Together, CR 700.8d): the creature that fills each type. */
+  readonly party: readonly PartyMember[];
   /** A source whose mana color (or ability) the player is choosing, and where its popover goes. */
   readonly chooser: ChooserAnchor | null;
 }
@@ -92,6 +96,7 @@ export function initialUi(pending: PendingDecision | null): UiState {
     modes: [],
     // The engine's own suggestion is the starting answer; the player edits it.
     payOptions: pending?.kind === 'choosePayOptions' ? pending.suggested : [],
+    party: pending?.kind === 'chooseParty' ? initialParty(pending) : [],
     chooser: null,
   };
 }

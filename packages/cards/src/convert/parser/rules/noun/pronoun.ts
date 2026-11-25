@@ -119,7 +119,7 @@ export const NOUN_EACH_OF_THEM = defineRule<IrNoun>({
     () => ({
       kind: 'noun',
       det: 'anaphor',
-      // The binding pass reads these words: the plural antecedent, several tokens included (Assemble the Entmoot).
+      // The binding pass reads these words: the plural antecedent, several tokens included (Assemble the Entmoot). "Each of those creatures" (Unbreakable Formation) is the same group.
       filter: { raw: 'each of them' },
       upTo: false,
       plural: true,

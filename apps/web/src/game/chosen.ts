@@ -27,12 +27,15 @@ export function optionText(
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    | 'player'
+    | 'cardName'
     | 'attackTarget'
     | 'assignOpponent'
     | 'clashOpponent'
     | 'playerChoice'
     | 'protector'
     | 'chooseOpponent'
+    | 'dungeonRoom'
     | 'option'
     | 'effect'
     | 'riot'
@@ -50,6 +53,7 @@ export function optionText(
     purpose === 'assignOpponent' ||
     purpose === 'clashOpponent' ||
     purpose === 'playerChoice' ||
+    purpose === 'player' ||
     purpose === 'protector' ||
     purpose === 'chooseOpponent'
   ) {
@@ -72,12 +76,15 @@ export function purposeNoun(
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    | 'player'
+    | 'cardName'
     | 'attackTarget'
     | 'assignOpponent'
     | 'clashOpponent'
     | 'playerChoice'
     | 'protector'
     | 'chooseOpponent'
+    | 'dungeonRoom'
     | 'option'
     | 'effect'
     | 'riot'
@@ -98,9 +105,11 @@ export function purposeNoun(
   if (purpose === 'attackTarget') return 'player or permanent to attack';
   if (purpose === 'assignOpponent') return 'opponent to gain control';
   if (purpose === 'clashOpponent') return 'opponent to clash with';
-  if (purpose === 'playerChoice') return 'player';
+  if (purpose === 'playerChoice' || purpose === 'player') return 'player';
+  if (purpose === 'cardName') return 'nonland card name';
   if (purpose === 'protector') return 'protector';
   if (purpose === 'chooseOpponent') return 'opponent';
+  if (purpose === 'dungeonRoom') return 'room';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
   if (purpose === 'planeswalkerType') return 'planeswalker type';
@@ -154,6 +163,19 @@ export function chosenLabel(object: Pick<ObjectView, 'chosen'>): ChosenLabel | n
       short: chosen.option,
       title: `Chosen option: ${chosen.option}`,
       heading: 'Chosen option',
+    };
+  }
+  // CR 614.12a, 607.2d (Sewer Nemesis): "choose a player", a seat (the web numbers the players from 1).
+  if (chosen.player !== undefined) {
+    const name = `player ${chosen.player + 1}`;
+    return { short: name, title: `Chosen player: ${name}`, heading: 'Chosen player' };
+  }
+  // CR 201.2, 607.2d (Phyrexian Revoker): "choose a nonland card name".
+  if (chosen.cardName !== undefined) {
+    return {
+      short: chosen.cardName,
+      title: `Chosen name: ${chosen.cardName}`,
+      heading: 'Chosen card name',
     };
   }
   // CR 119.4, 614.12: "pay any amount of life" as it entered (Phyrexian Processor), which its ability reads.

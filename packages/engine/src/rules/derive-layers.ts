@@ -213,6 +213,9 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   // CR 702.189a: each instance of firebending is its own triggered ability (the ruling: "Multiple instances of firebending on the same creature trigger separately").
   'firebending',
   'myriad',
+  'extort',
+  // CR 702.121b: if a creature has multiple instances of melee, each triggers separately.
+  'melee',
   'demonstrate',
   'storm',
   'cascade',
@@ -221,9 +224,13 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability; CR 702.56a: a Replicate given to a spell, with its trigger). */
 const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = [
   'decayed',
+  // CR 702.93a (Undying): a granted undying is the triggered ability the keyword stands for.
+  'undying',
   'cycling',
   'replicate',
   'encore',
+  // CR 702.84a: Unearth given to a card of a graveyard (Solemn Doomguide) is the activated ability it stands for.
+  'unearth',
   // CR 702.6a: a granted equip is the activated ability it stands for ("Treasures you control have equip {3}").
   'equip',
 ];

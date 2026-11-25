@@ -3,21 +3,18 @@
  * of "~ deals 4 damage to X and 2 damage to Y" is the ordinary `lower.damage` (the clause only has no subject of its own).
  */
 import type { IrClause } from '../ir/types';
-import { arg, type Effects, failure } from './clauses';
+import { amountArg, type Effects } from './clauses';
 import type { Lowering } from './types';
 
 const MONSTROSITY: Lowering<IrClause, Effects> = {
   head: 'monstrosity',
   id: 'lower.monstrosity',
   needs: ['effect:monstrosity'],
-  lower(clause) {
-    const count = arg(clause, 'count');
-    if (count?.kind !== 'number') return failure(clause);
-    return {
-      ok: true,
-      value: [{ kind: 'monstrosity', count: count.value }],
-      rule: clause.rule,
-    };
+  lower(clause, ctx) {
+    // "Monstrosity X, where X is ...": the amount the sentence defines, read once as the effect resolves (CR 701.37a).
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return { ok: true, value: [{ kind: 'monstrosity', count: count.value }], rule: clause.rule };
   },
 };
 

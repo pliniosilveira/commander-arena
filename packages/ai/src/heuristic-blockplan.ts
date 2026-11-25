@@ -31,6 +31,7 @@ import { findObject, hasKeyword, powerOf, toughnessOf } from './casual-view';
 import { creatureValue } from './evaluate';
 import { type Breakthrough, hitDamage, verdict } from './heuristic-danger';
 import { duel, gangWins } from './heuristic-duel';
+import type { AgentWeights } from './weights';
 
 export type BlockKind = 'no-block' | 'good-block' | 'trade-block' | 'gang-block' | 'chump-danger';
 
@@ -92,9 +93,11 @@ class Planner {
   readonly blockers = new Map<ObjectId, BlockerInfo>();
 
   private readonly view: GameView;
+  private readonly weights: AgentWeights;
 
-  constructor(view: GameView, d: DeclareBlockersDecision) {
+  constructor(view: GameView, d: DeclareBlockersDecision, weights: AgentWeights) {
     this.view = view;
+    this.weights = weights;
     this.attackers = d.attackers.flatMap((a) => {
       const object = findObject(view, a.attacker);
       return object === undefined
@@ -117,6 +120,11 @@ class Planner {
     }
   }
 
+  /** A creature's value under the planner's weights. */
+  private value(o: ObjectView): number {
+    return creatureValue(o, this.weights);
+  }
+
   private blocked(draft: Draft, attacker: ObjectId): boolean {
     return draft.blocks.some((b) => b.attacker === attacker);
   }
@@ -127,8 +135,7 @@ class Planner {
       .filter(([id, b]) => !draft.used.has(id) && b.canBlock.has(a.id))
       .map(([, b]) => b)
       .sort(
-        (x, y) =>
-          creatureValue(x.object) - creatureValue(y.object) || byId(x.object.id, y.object.id),
+        (x, y) => this.value(x.object) - this.value(y.object) || byId(x.object.id, y.object.id),
       );
   }
 
@@ -142,7 +149,7 @@ class Planner {
 
   private strongestFirst(): AttackerInfo[] {
     return [...this.attackers].sort(
-      (x, y) => creatureValue(y.object) - creatureValue(x.object) || byId(x.id, y.id),
+      (x, y) => this.value(y.object) - this.value(x.object) || byId(x.id, y.id),
     );
   }
 
@@ -170,9 +177,7 @@ class Planner {
       if (a.minBlockers !== 1 || this.blocked(draft, a.id)) continue;
       const pick = this.free(draft, a).find((b) => {
         const r = duel(a.object, b.object);
-        return (
-          r.attackerDies && r.blockerDies && creatureValue(a.object) >= creatureValue(b.object)
-        );
+        return r.attackerDies && r.blockerDies && this.value(a.object) >= this.value(b.object);
       });
       if (pick !== undefined) this.assign(draft, a, [pick], 'trade-block');
     }
@@ -189,8 +194,8 @@ class Planner {
           const [x, y] = [free[i], free[j]];
           if (x === undefined || y === undefined || !gangWins(a.object, x.object, y.object))
             continue;
-          const dear = Math.max(creatureValue(x.object), creatureValue(y.object));
-          if (creatureValue(a.object) < dear) continue;
+          const dear = Math.max(this.value(x.object), this.value(y.object));
+          if (this.value(a.object) < dear) continue;
           if (best === undefined) best = [x, y];
         }
       }
@@ -228,7 +233,7 @@ class Planner {
   }
 
   inDanger(draft: Draft): boolean {
-    return verdict(this.view, this.view.viewer, this.through(draft)).danger;
+    return verdict(this.view, this.view.viewer, this.through(draft), this.weights.danger).danger;
   }
 
   /** The chump fill: block the strongest attackers until the danger is gone or nothing is left to block with. */
@@ -243,7 +248,7 @@ class Planner {
         .sort(
           (x, y) =>
             hitDamage(y.object) - hitDamage(x.object) ||
-            creatureValue(y.object) - creatureValue(x.object) ||
+            this.value(y.object) - this.value(x.object) ||
             byId(x.id, y.id),
         );
       const decisive = open.find((a) => {
@@ -271,8 +276,12 @@ class Planner {
 }
 
 /** The candidate whole plans for a block decision (see the module comment), no block first. */
-export function blockPlans(view: GameView, d: DeclareBlockersDecision): BlockPlan[] {
-  const p = new Planner(view, d);
+export function blockPlans(
+  view: GameView,
+  d: DeclareBlockersDecision,
+  weights: AgentWeights,
+): BlockPlan[] {
+  const p = new Planner(view, d, weights);
   const plans = new Map<string, BlockPlan>();
   const add = (draft: Draft): void => {
     const k = key(draft.blocks);
@@ -306,8 +315,12 @@ export function blockPlans(view: GameView, d: DeclareBlockersDecision): BlockPla
 }
 
 /** Without a sample: the deepest tier with the chump fill (the last tier plan that adds the fill). */
-export function defaultPlan(view: GameView, d: DeclareBlockersDecision): BlockPlan {
-  const p = new Planner(view, d);
+export function defaultPlan(
+  view: GameView,
+  d: DeclareBlockersDecision,
+  weights: AgentWeights,
+): BlockPlan {
+  const p = new Planner(view, d, weights);
   const draft = emptyDraft();
   p.good(draft);
   p.trades(draft);
@@ -317,8 +330,12 @@ export function defaultPlan(view: GameView, d: DeclareBlockersDecision): BlockPl
 }
 
 /** What an opponent that blocks only when it is in danger does: the chump fill alone. */
-export function dangerOnlyPlan(view: GameView, d: DeclareBlockersDecision): BlockPlan {
-  const p = new Planner(view, d);
+export function dangerOnlyPlan(
+  view: GameView,
+  d: DeclareBlockersDecision,
+  weights: AgentWeights,
+): BlockPlan {
+  const p = new Planner(view, d, weights);
   const draft = emptyDraft();
   p.chump(draft);
   return finish(draft);

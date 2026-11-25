@@ -3,6 +3,7 @@
  * settings and the autopilot that sends `pass` and `payAuto` on the player's behalf (A18). A plain
  * zustand vanilla store, so tests drive it without React.
  */
+import type { GameRecord } from '@commander-arena/cards';
 import type { Action, GameView, ObjectId, StepId } from '@commander-arena/engine';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type {
@@ -130,6 +131,8 @@ export interface AppActions {
   act(action: Action): Promise<void>;
   /** Takes back the last small action when the Worker allows it (D-050). */
   undo(): Promise<void>;
+  /** The game as a replay, for the "That was a dumb move" report (issue 627); null when it cannot be replayed. */
+  gameRecord(): Promise<GameRecord | null>;
   /**
    * Clicking a permanent tapped for mana whose mana is unspent: takes back the mana abilities used since
    * then, down to this one (a shortcut for Undo, issue 19). Does nothing unless the engine allows it.
@@ -451,6 +454,10 @@ export function createAppStore(options: StoreOptions): AppStore {
         seized = true;
         gate?.release();
         set({ yieldTurn: null, passing: false });
+      },
+
+      gameRecord() {
+        return client.gameRecord();
       },
 
       async undo() {

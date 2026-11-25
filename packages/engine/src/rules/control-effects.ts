@@ -158,7 +158,8 @@ export function runGainControl(
     continuousEffects: [...stamped.continuousEffects, created],
   };
   const changed = controlChanges(next, before);
-  return done(changed.state, changed.events);
+  // CR 400.7j, 608.2c (Call for Aid): the permanents that were taken are "those creatures" of the instructions after it (`moved`).
+  return { ...done(changed.state, changed.events), lastMoved: affected };
 }
 
 /**

@@ -277,3 +277,32 @@ export const AMOUNT_FOR_EACH_OTHER_SPELL_CAST = defineRule<IrAmount>({
     };
   },
 });
+
+/**
+ * `amount.for-each-scried`: "for each card looked at while scrying this way" (Celeborn the Wise, CR 701.22, 603.2, 608.2c): the cards looked at by the scry that caused the trigger,
+ * the same number as "where X is the number of cards looked at while scrying this way" (`triggerDamage` with `scry`, read only in the body of a trigger of a scry, which the lowering
+ * checks). Not read: another count of cards, "each card looked at" with no "while scrying this way", "scried".
+ */
+export const AMOUNT_FOR_EACH_SCRIED = defineRule<IrAmount>({
+  id: 'amount.for-each-scried',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 701.22 (Scry)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: ['for each card looked at while scrying this way'],
+  rejects: [
+    'for each card looked at',
+    'for each card looked at while scrying',
+    'for each card scried this way',
+    'for each cards looked at while scrying this way',
+    'for each card looked at while surveilling this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/for each card looked at while scrying this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'triggerDamage', scry: true, span: { start: pos, end: r.pos } },
+      pos: r.pos,
+    };
+  },
+});

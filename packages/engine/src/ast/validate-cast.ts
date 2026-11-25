@@ -55,8 +55,22 @@ export function checkFlashbackCost(cost: readonly Cost[], path: string, out: Ast
       if (cost.filter((o) => o?.kind === 'sacrifice').length > 1) {
         issue(out, `${path}[${i}]`, 'a flashback cost has one sacrifice');
       }
+    } else if (c?.kind === 'exileFromGraveyard') {
+      // CR 702.34a, 107.3a, 118.9: "Flashback—{3}{U}{R}, Exile X cards from your graveyard": the X announced as the spell is cast, one such cost, of cards of any kind.
+      if (
+        c.countX !== true ||
+        c.count !== 1 ||
+        Object.keys(c.filter).length > 0 ||
+        cost.filter((o) => o?.kind === 'exileFromGraveyard').length > 1
+      ) {
+        issue(out, `${path}[${i}]`, 'a flashback exile of graveyard cards is X cards of any kind');
+      }
     } else if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana, life or a sacrifice only');
+      issue(
+        out,
+        `${path}[${i}]`,
+        'a flashback cost may be mana, life, a sacrifice or an exile of X graveyard cards only',
+      );
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }
@@ -406,6 +420,32 @@ export function checkCastFace(
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');
   if (!replicable && (mentionsReplicated(abilities) || mentionsReplicated(spell))) {
     issue(out, path, 'the replicated condition needs a replicate ability (CR 702.56a)');
+  }
+  // CR 702.56a (Psionic Ritual): a replicate cost that taps permanents is paid with the cost of tapping permanents the cast already has (a `tapPermanents` alternative cost, convoke, improvise
+  // or delve), which the engine does not combine.
+  const tapsReplicate = abilities.some(
+    (a) =>
+      a.kind === 'keyword' &&
+      a.keyword.kind === 'replicate' &&
+      Array.isArray(a.keyword.cost) &&
+      a.keyword.cost.some((c) => c?.kind === 'tapPermanents'),
+  );
+  if (
+    tapsReplicate &&
+    (alternatives.some((a) => a?.kind === 'tapPermanents') ||
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      ))
+  ) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'a replicate cost that taps permanents with a tapPermanents alternative cost, convoke, improvise or delve is not supported',
+    );
   }
   // D-135, CR 702.174: "Gift a card" is on a card that is cast (a permanent or an instant or sorcery); the conditions and
   // selectors that read the gift need a gift to be promised.

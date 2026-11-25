@@ -469,7 +469,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature has flying, first strike and vigilance.',
     "Enchanted creature can't attack or block alone.",
     "Enchanted creature can't attack you or planeswalkers.",
-    "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack your opponents.",
     'Enchanted creature loses flying and flying.',
     'Enchanted creature loses.',
     "Enchanted creature can attack as though it didn't have defender.",
@@ -519,6 +519,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
+    // CR 702.101b (Extort): a keyword whose instances each trigger, given to a group.
+    'Other creatures you control have extort.',
     'Other commanders you control get +2/+2 and have lifelink.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',

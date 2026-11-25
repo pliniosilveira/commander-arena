@@ -281,7 +281,7 @@ const SEARCH: readonly Line[] = [
     text: 'Search your library for a creature card with mana value X or greater, put it onto the battlefield, then shuffle.',
     expect: no(
       'with mana value X or greater, put it onto the battlefield, then shuffle.',
-      'effect.search',
+      'effect.search-reveal-may-put-else-hand',
     ),
     note: 'SYNTHETIC near miss of the X limit: only "or less" is read (issue 145)',
   },

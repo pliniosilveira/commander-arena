@@ -33,6 +33,7 @@ import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
 import { CHOSEN_PLAYER_CONDITION_RULES } from './chosen-player';
 import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
+import { COUNTER_GROUP_A_CONDITION_RULES } from './counter-group-a';
 import { COUNTER_TRIGGER_CONDITION_RULES } from './counter-triggers';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
@@ -64,10 +65,14 @@ import { LIBRARY_CONDITION_RULES } from './library';
 import { LIMIT_BREAK_G4_CONDITION_RULES } from './limit-break-g4';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
+import { MANA_VALUE_AT_LEAST_CONDITION_RULES } from './mana-value-at-least';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
+import { MIND_FLAYARRRS_G8_CONDITION_RULES } from './mind-flayarrrs-g8';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
+import { PARTY_CONDITION_RULES } from './party';
+import { PLAYED_LAND_CONDITION_RULES } from './played-land';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
@@ -83,9 +88,11 @@ import {
 } from './that-object-power';
 import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
+import { THEY_ARENT_ATTACKING_YOU_CONDITION_RULES } from './they-arent-attacking-you';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
 import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
+import { VOTE_RESULT_CONDITION_RULES } from './vote-results';
 import { VRASKA_CONDITION_RULES } from './vraska';
 import { CONDITION_X_AT_LEAST } from './x-at-least';
 
@@ -555,11 +562,14 @@ export const CONDITION_RULES = [
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
   ...THEY_ATTACKED_YOU_CONDITION_RULES,
+  ...THEY_ARENT_ATTACKING_YOU_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
   // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "this card is suspended".
+  ...MIND_FLAYARRRS_G8_CONDITION_RULES,
   // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
   ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Valakut Exploration: "there are cards exiled with ~", before the plain count whose phrase ("there are") is a prefix of it.
@@ -601,6 +611,7 @@ export const CONDITION_RULES = [
   ...KORVOLD_CONDITION_RULES,
   // Stage P49 (D-206): "at least four mana was spent to cast it", "a card left your graveyard this turn", "~ was cast from a graveyard".
   ...VRASKA_CONDITION_RULES,
+  ...PLAYED_LAND_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".
@@ -633,6 +644,8 @@ export const CONDITION_RULES = [
   // Lorwyn Eclipsed (Blight Curse deck): "you control that creature", "its toughness was less than 1", "you put a counter on a creature this turn".
   ...COUNTER_TRIGGER_CONDITION_RULES,
   ...SUBJECT_GREATER_CONDITION_RULES,
+  // Final Fantasy X counter group A: "a counter was put on ~ this turn", "its power is less than ~'s power".
+  ...COUNTER_GROUP_A_CONDITION_RULES,
   // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
   ...FEDERATION_D_CONDITION_RULES,
   // Limit Break deck, group 4: "~'s power is 7 or greater".
@@ -650,6 +663,8 @@ export const CONDITION_RULES = [
   ...HYLDA_G2_CONDITION_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
   ...LOREHOLD_G1_CONDITION_RULES,
+  // Issue 17 (Elven Council): "if time gets more votes", "if the vote is tied".
+  ...VOTE_RESULT_CONDITION_RULES,
   // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
   ...LOREHOLD_G3_CONDITION_RULES,
   // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "you have one or fewer cards in hand".
@@ -667,6 +682,9 @@ export const CONDITION_RULES = [
   CONDITION_THAT_OBJECT_GREATER_POWER_THAN_SELF,
   // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
   ...EXPERIENCE_CONDITION_RULES,
+  // CR 700.8c: "you have a full party".
+  ...PARTY_CONDITION_RULES,
+  ...MANA_VALUE_AT_LEAST_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

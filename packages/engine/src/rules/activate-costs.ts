@@ -22,7 +22,7 @@ import type { PaymentPlan } from '../mana';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
-import { exileCostCandidates } from './activation-exile';
+import { exileCostCandidates, linkedExileCandidates } from './activation-exile';
 import { blightCandidates } from './blight-candidates';
 import { controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
@@ -33,10 +33,11 @@ import { discardOne } from './madness';
 import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
-import { removalCounters } from './remove-counters-candidates';
+import { type RemoveCountersSpec, removeCountersRefusal } from './remove-counters-spec';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
+import { untapPermanent } from './untap';
 import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
@@ -44,6 +45,8 @@ import { moveObject } from './zones';
 /** An activation cost split by how it is paid. */
 export interface CostBreakdown {
   readonly tap: boolean;
+  /** The untap symbol {Q} (CR 107.6): untap the permanent the ability belongs to. */
+  readonly untap: boolean;
   readonly life: number;
   /** "Pay {E}{E}" (CR 107.14, 118.3, issue 105): the energy counters the payer removes from themselves. */
   readonly energy: number;
@@ -73,6 +76,8 @@ export interface CostBreakdown {
   readonly hasX: boolean;
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the mana of the cost is of the color the source chose as it entered. */
   readonly onlyChosenColor: boolean;
+  /** "You may spend blue mana as though it were mana of any color to activate those abilities" (Grell Philosopher, CR 609.4b): blue mana pays a symbol of any color of the cost. */
+  readonly blueAsAnyColor: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -89,6 +94,8 @@ export interface CostBreakdown {
   readonly bounceToLibraryBottom: boolean;
   /** "Exile two creature cards from your graveyard" (D-232): the cards of the graveyard the cost exiles, or null for none. */
   readonly exileCards: { readonly filter: ObjectFilter; readonly count: number } | null;
+  /** "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a): the filter of the cards the permanent exiled that may be chosen, or null for no such cost. */
+  readonly linkedExile: ObjectFilter | null;
   /** The untapped permanents to tap (D-133, "Tap three untapped Zombies you control"), or null. */
   readonly tapPermanents: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The tapped permanents to untap (CR 701.26b, "Untap two tapped creatures you control"), or null. */
@@ -98,11 +105,7 @@ export interface CostBreakdown {
   /** "Blight 1" (D-407, CR 701.68): the -1/-1 counters put on a creature the player controls, none when 0. */
   readonly blight: number;
   /** "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the counters taken off the player's permanents the filter matches, or null. */
-  readonly removeAmong: {
-    readonly counter: string;
-    readonly count: number;
-    readonly filter: ObjectFilter;
-  } | null;
+  readonly removeAmong: RemoveCountersSpec | null;
 }
 
 /**
@@ -114,6 +117,7 @@ export interface CostBreakdown {
  */
 export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
+  let untap = false;
   let life = 0;
   let energy = 0;
   let discardThis = false;
@@ -136,6 +140,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let bounces = 0;
   let exileCards: CostBreakdown['exileCards'] = null;
   let exileCardsCosts = 0;
+  let linkedExile: CostBreakdown['linkedExile'] = null;
+  let linkedExileCosts = 0;
   let tapPermanents: CostBreakdown['tapPermanents'] = null;
   let tapPermanentsCosts = 0;
   let untapPermanents: CostBreakdown['untapPermanents'] = null;
@@ -147,6 +153,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let removeAmong: CostBreakdown['removeAmong'] = null;
   let removeAmongCosts = 0;
   let onlyChosenColor = false;
+  let blueAsAnyColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
   const mana: string[] = [];
@@ -156,6 +163,9 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     switch (cost.kind) {
       case 'tap':
         tap = true;
+        break;
+      case 'untap':
+        untap = true;
         break;
       case 'payLife':
         // D-135: an amount that reads the game was worked out as the ability was activated (`rules/activate-adjust.ts`).
@@ -168,12 +178,24 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         energy += cost.count;
         break;
       case 'removeCounters':
-        if (cost.among !== undefined) {
-          removeAmongCosts += 1;
-          removeAmong = { counter: cost.counter, count: cost.count, filter: cost.among };
+        // Counters of a named kind off the permanent with the ability are paid with the other immediate costs; every other way to remove them is chosen by the player (`rules/activate-remove-counters.ts`).
+        if (
+          cost.among === undefined &&
+          cost.counter !== undefined &&
+          cost.countX !== true &&
+          cost.fromOne !== true
+        ) {
+          counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
           break;
         }
-        counters.set(cost.counter, (counters.get(cost.counter) ?? 0) + cost.count);
+        removeAmongCosts += 1;
+        removeAmong = {
+          counter: cost.counter,
+          // CR 107.3a, 602.2b: "Remove X counters" is the X announced for the ability.
+          count: cost.countX === true ? x : cost.count,
+          filter: cost.among ?? null,
+          fromOne: cost.fromOne === true,
+        };
         break;
       case 'loyalty':
         loyaltyCosts += 1;
@@ -216,6 +238,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'mana':
         mana.push(...withX(cost.symbols, x));
         if (cost.onlyChosenColor === true) onlyChosenColor = true;
+        if (cost.blueAsAnyColor === true) blueAsAnyColor = true;
         break;
       case 'sacrifice':
         sacrifices += 1;
@@ -230,6 +253,10 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         exileCardsCosts += 1;
         // Issue 102 (CR 107.3a, 602.2b): "Exile X cards from your graveyard" is X cards, the X announced for the ability.
         exileCards = { filter: cost.filter, count: cost.countX === true ? x : cost.count };
+        break;
+      case 'putLinkedExileInGraveyard':
+        linkedExileCosts += 1;
+        linkedExile = cost.filter;
         break;
       case 'tapPermanents':
         tapPermanentsCosts += 1;
@@ -259,6 +286,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     untapPermanentsCosts > 1 ||
     bounces > 1 ||
     exileCardsCosts > 1 ||
+    linkedExileCosts > 1 ||
     loyaltyCosts > 1 ||
     blightCosts > 1 ||
     removeAmongCosts > 1
@@ -286,10 +314,12 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   }
   return {
     tap,
+    untap,
     life,
     energy,
     hasX: hasX(abilityXCost(costs)),
     onlyChosenColor,
+    blueAsAnyColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -310,6 +340,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounceCount,
     bounceToLibraryBottom,
     exileCards,
+    linkedExile,
     tapPermanents,
     untapPermanents,
     tapCreatures,
@@ -341,6 +372,11 @@ function immediateRefusal(
   if (costs.tap) {
     if (source.zone !== 'battlefield' || source.tapped) return 'it is already tapped';
     // CR 602.5a, 302.6: a creature's {T} ability needs it to have been under control since the turn began.
+    if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
+  }
+  // CR 107.6, 602.5a: an untapped permanent can't be untapped to pay the cost, and a creature's {Q} ability needs it under control since the turn began.
+  if (costs.untap) {
+    if (source.zone !== 'battlefield' || !source.tapped) return 'it is already untapped';
     if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
   }
   // CR 119.4: life can be paid only if the life total is at least the amount.
@@ -395,6 +431,12 @@ export function payImmediateCosts(
   if (costs.tap) {
     state = patchObject(state, source, { tapped: true });
     events.push({ kind: 'tapped', object: source, by: seat });
+  }
+  if (costs.untap) {
+    // CR 122.1d: a stun counter is removed instead of untapping, and the cost is paid all the same.
+    const untapped = untapPermanent(state, source);
+    state = untapped.state;
+    events.push(...untapped.events);
   }
   if (costs.life > 0) {
     const life = getSeat(state, seat).life;
@@ -512,13 +554,15 @@ export function planActivationMana(
   const x = costs.hasX ? ({ hasX: true } as const) : {};
   // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability": the color the source chose as it entered, or none.
   const only = costs.onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
+  // Grell Philosopher (CR 609.4b): blue mana may pay any color of the cost.
+  const blue = costs.blueAsAnyColor ? ({ blueAsAnyColor: true } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true, ...x, ...only }
-      : { ability: true, ...x, ...only, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x, ...only, ...blue }
+      : { ability: true, ...x, ...only, ...blue, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 
@@ -585,11 +629,9 @@ export function costRefusal(
     }
   }
   if (parts.removeAmong !== null) {
-    // CR 118.3, 122.1: enough counters of the kind among the permanents that match.
-    const { counter, count, filter } = parts.removeAmong;
-    if (removalCounters(paid, seat, source.id, filter, counter).total < count) {
-      return `you control too few ${counter} counters to remove`;
-    }
+    // CR 118.3, 122.1: enough counters among the permanents that match (all on one permanent for "from an artifact or creature").
+    const refused = removeCountersRefusal(paid, seat, source.id, parts.removeAmong);
+    if (refused !== null) return refused;
   }
   if (parts.blight > 0 && blightCandidates(paid, seat).length === 0) {
     // CR 701.68b (D-407): a player with no creature that can take the counters can't choose to blight.
@@ -626,6 +668,12 @@ export function costRefusal(
     const found = exileCostCandidates(paid, seat, source.id, parts.exileCards.filter).length;
     if (found < parts.exileCards.count) {
       return `you have fewer than ${parts.exileCards.count} matching cards in your graveyard to exile`;
+    }
+  }
+  if (parts.linkedExile !== null) {
+    // CR 118.3, 607.2a: a card the permanent exiled with its linked ability, still in exile, that the filter matches.
+    if (linkedExileCandidates(paid, source.id, parts.linkedExile).length === 0) {
+      return 'there is no card exiled with it that you could put into a graveyard';
     }
   }
   if (parts.tapCreatures !== null) {

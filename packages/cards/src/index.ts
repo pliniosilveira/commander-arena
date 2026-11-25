@@ -29,6 +29,23 @@ export {
 } from './corpus/issue-block';
 export * from './decklist/index';
 export * from './precon/index';
+export {
+  AI_REPORT_COMMENT_MAX,
+  AI_REPORT_ENCODING,
+  AI_REPORT_FORMAT,
+  AI_REPORT_SUMMARY,
+  type AiReport,
+  aiReportBlock,
+  aiReportPayload,
+  aiReportText,
+  type GameRecord,
+  parseAiReportText,
+  type ReplayDeck,
+  type ReplayEmblem,
+  type ReplayStep,
+  replayCard,
+  reportComment,
+} from './replay/ai-report';
 export * from './scryfall/index';
 export type * from './types';
 export { RULE_FAMILIES, UNPARSED_REASONS } from './types';

@@ -123,6 +123,11 @@ export interface LowerContext {
   /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
+   * True in the body of "Whenever equipped creature attacks" (and the like, Lothlórien Blade, issue 98): every event of the trigger is about the permanent the Equipment or Aura is attached to,
+   * so "it" is the creature whose event it was, the engine's `triggerSubject` (CR 603.2, 113.7a), where a stat or a source of damage cannot name `attached`.
+   */
+  attachedTrigger: boolean;
+  /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
    * sentence are lowered, an X in them is this amount, written into each slot that says X. `used` is set when a slot
    * read it, so a definition no slot reads is refused. Null where X is the announced X (D-103).
@@ -189,6 +194,11 @@ export interface LowerContext {
    */
   deathOfOther: boolean;
   /**
+   * True in the body of "Whenever a permanent you control leaves the battlefield, if it had counters on it, ..." (Resourceful Defense, CR 603.10a, 122.1): the trigger is about another
+   * permanent that had a counter of some kind, which `foldHadCounters` made a part of the trigger's filter; "those counters" are the counters that permanent had as it last was.
+   */
+  hadCountersTrigger: boolean;
+  /**
    * The player the last instruction lowered was said of (a `player` of the effect): "each other player" is every player but that one ("its owner draws that many cards and each
    * other player loses that much life"). Null before the first instruction and after one that names no player.
    */
@@ -208,6 +218,16 @@ export interface LowerContext {
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
   itIsCard: boolean;
+  /**
+   * True when every event of the trigger is a creature becoming blocked or unblocked (CR 509.1h, 509.3c): the permanent the trigger is about is still on the battlefield, in combat, when the
+   * ability resolves, so "it" in "return it to its owner's hand" names it (the engine's `triggerSubject`; a permanent that left meanwhile is a new object, CR 400.7, and nothing moves).
+   */
+  itStaysInCombat: boolean;
+  /**
+   * The one player the instruction being lowered is about, where "their" in a count names them ("defending player loses 1 life for each card in their graveyard", CR 108.3, 404.1): set only
+   * while the amount of a loss of life is lowered, for a player the engine can name as one (a target, the defending player, the player of the trigger); null anywhere else.
+   */
+  theirPlayer: PlayerSelector | null;
   /**
    * True in the body of "When ~ is put into a graveyard from anywhere" (Troyan 2 deck, CR 603.6c, 400.7): "it" is the card of the ability itself, in the graveyard it is in as the
    * ability resolves, which the engine names `this` (the ability is found on that card).
@@ -366,10 +386,21 @@ export interface LowerContext {
    */
   lastCastRemembered: boolean;
   /**
-   * The group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
+   * The targets of the control effect the instruction just lowered gave (In the Darkness Bind Them, "Untap those creatures. They gain haste until end of turn."), or
+   * the group of "each" the instruction just lowered put counters on (Ardbert, Warrior of Darkness, CR 608.2c, 611.2c): "Put a +1/+1 counter on each legendary creature you control. They
    * gain vigilance until end of turn." reads "they" as that group, which the engine names by the selector again. Null after any other instruction. Filled by `lowerSentences`.
    */
   lastCounteredGroup: ObjectSelector | null;
+  /**
+   * True after a `gainControl` of a group of "each" (Call for Aid, CR 611.2c, 400.7j): "those creatures" and "they" of the instructions after it are the permanents it took, the engine's `moved`,
+   * until an instruction that moves, destroys, exiles, sacrifices or makes other objects is lowered. Filled by `lowerSentences`.
+   */
+  gainedGroup: boolean;
+  /**
+   * The id of the target the instruction just lowered made a creature for good (Depthshaker Titan, CR 603.7c: "any number of target noncreature artifacts you control become 3/3
+   * artifact creatures. Sacrifice them at the beginning of the next end step."): "them" is those targets. Null after any other instruction. Filled by `lowerSentences`.
+   */
+  becameTarget: string | null;
   /**
    * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
    * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
@@ -451,6 +482,7 @@ export function newContext(
     attackedPlayer: null,
     attackBatchPlayer: null,
     enchantedPlayerTrigger: false,
+    attachedTrigger: false,
     xIs: null,
     xDefined: false,
     exiled: null,
@@ -484,6 +516,8 @@ export function newContext(
     lastEffectKind: null,
     lastCastRemembered: false,
     lastCounteredGroup: null,
+    gainedGroup: false,
+    becameTarget: null,
     randomYardCard: false,
     choseAPlayer: false,
     comparedStat: null,
@@ -503,10 +537,13 @@ export function newContext(
     text: '',
     interveningCondition: false,
     deathOfOther: false,
+    hadCountersTrigger: false,
     lastPlayer: null,
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,
+    itStaysInCombat: false,
+    theirPlayer: null,
     selfGraveyardEntry: false,
     auraDies: false,
     returnedDyingCard: false,
@@ -585,7 +622,7 @@ export interface FaceCosts {
   readonly additionalCosts: readonly Cost[];
   readonly alternativeCosts: readonly AlternativeCost[];
   /** "Sacrifice an artifact or creature or pay {4}" (stage P38, D-182): the face's `additionalCostChoice`. */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /** The abilities the line makes besides the cost (D-492): "When you do, copy ~ for each creature sacrificed this way" is a "When you cast this spell" ability of the card. */
   readonly abilities?: readonly Ability[];
 }

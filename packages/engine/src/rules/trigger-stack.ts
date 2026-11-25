@@ -96,7 +96,9 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       (t.sacrificedBefore === undefined ? '' : `s${t.sacrificedBefore.join(',')}#`) +
       (t.thisWayBefore === undefined ? '' : `w${JSON.stringify(t.thisWayBefore)}#`) +
       (t.movedBefore === undefined ? '' : `m${t.movedBefore.join(',')}#`) +
-      (t.cards === undefined ? '' : `c${t.cards.join(',')}#`);
+      (t.cards === undefined ? '' : `c${t.cards.join(',')}#`) +
+      // CR 701.38a: a `votingFinished` ability reads the record of the vote that finished.
+      (t.votes === undefined ? '' : `v${JSON.stringify(t.votes)}#`);
     // Exalted (D-110) reads only the attacking creature, never the permanent with the keyword, and Extort
     // (D-120) only its controller: triggers of different permanents for one event are interchangeable (A18).
     const written = JSON.stringify(t.ability);
@@ -151,6 +153,7 @@ function pushTrigger(
     ...(trigger.thisWayBefore === undefined ? {} : { thisWayBefore: trigger.thisWayBefore }),
     ...(trigger.movedBefore === undefined ? {} : { movedBefore: trigger.movedBefore }),
     ...(trigger.cards === undefined ? {} : { cards: trigger.cards }),
+    ...(trigger.votes === undefined ? {} : { votes: trigger.votes }),
     ...(targets.length === 0 ? {} : { targets }),
     ...(modes.length === 0 ? {} : { modes }),
   });
@@ -160,19 +163,32 @@ function pushTrigger(
     trigger.source === null
       ? next
       : withModesChosen(next, trigger.source, modes, modal?.choose.notRepeatedBySource === true);
+  // CR 603.6a, 603.2 (Aboleth Spawn): the ability of a permanent that triggered as that permanent entered says so, for "a creature entering causes a triggered ability of that
+  // creature to trigger".
+  const entered =
+    trigger.source !== null &&
+    trigger.ability.trigger.kind === 'entersBattlefield' &&
+    'kind' in trigger.ability.trigger.what &&
+    trigger.ability.trigger.what.kind === 'this'
+      ? trigger.source
+      : undefined;
+  const event: GameEvent = {
+    kind: 'abilityTriggered',
+    seat: trigger.controller,
+    // An ability with no source (the monarch's, CR 725.2) names its own stack object, as `StackData` reads it.
+    source: trigger.source ?? id,
+    abilityIndex: trigger.abilityIndex,
+    stackObject: id,
+    ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
+    ...(entered === undefined ? {} : { entered }),
+  };
+  // What that triggers waits for the next round, as what a target chosen triggers does (CR 603.3b).
+  const settled = entered === undefined ? logged : collectDeferred(logged, [event]);
   return {
     // A new object on the stack: earlier passes in succession no longer count (CR 117.4).
-    state: { ...logged, turn: { ...logged.turn, passedInSuccession: [] } },
+    state: { ...settled, turn: { ...settled.turn, passedInSuccession: [] } },
     id,
-    event: {
-      kind: 'abilityTriggered',
-      seat: trigger.controller,
-      // An ability with no source (the monarch's, CR 725.2) names its own stack object, as `StackData` reads it.
-      source: trigger.source ?? id,
-      abilityIndex: trigger.abilityIndex,
-      stackObject: id,
-      ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
-    },
+    event,
   };
 }
 
@@ -191,16 +207,18 @@ function targetsChosen(
     ...becameTargetEvents(state, stackObject, seat),
     ...crimeEvents(state, stackObject, seat),
   ];
+  return { state: collectDeferred(state, events), events };
+}
+
+/** The triggers `events` cause, noted at once but waiting for the next round (CR 603.3b). */
+function collectDeferred(state: GameState, events: readonly GameEvent[]): GameState {
   const before = state.pendingTriggers.length;
   const collected = collectTriggers(state, events);
   return {
-    state: {
-      ...collected,
-      pendingTriggers: collected.pendingTriggers.map((t, i) =>
-        i < before ? t : { ...t, deferred: true as const },
-      ),
-    },
-    events,
+    ...collected,
+    pendingTriggers: collected.pendingTriggers.map((t, i) =>
+      i < before ? t : { ...t, deferred: true as const },
+    ),
   };
 }
 
@@ -232,8 +250,9 @@ function runQueue(input: GameState): PutResult {
     const trigger = ctx?.queue[0];
     if (ctx === null || trigger === undefined) break;
     state = { ...state, triggering: { ...ctx, queue: ctx.queue.slice(1), awaiting: null } };
-    if (trigger.source === null) {
-      // An inherent ability of the monarch (CR 725.2) has no modes and no targets: it goes on the stack as it is.
+    if (trigger.source === null && (trigger.ability.targets ?? []).length === 0) {
+      // An inherent ability of the monarch (CR 725.2) has no modes and no targets: it goes on the stack as it is. One with targets (a room ability of a dungeon, CR 309.4c, 603.3d)
+      // chooses them below as any triggered ability does.
       const pushed = pushTrigger(state, trigger);
       state = pushed.state;
       events.push(pushed.event);
@@ -256,9 +275,10 @@ function runQueue(input: GameState): PutResult {
         ? {}
         : { triggerSubject: trigger.subject }),
     };
-    const modal = modalOfAbility(trigger.ability);
+    // A modal ability always has a source (an inherent ability is never modal).
+    const modal = trigger.source === null ? null : modalOfAbility(trigger.ability);
     let modes: readonly number[] = [];
-    if (modal !== null) {
+    if (modal !== null && trigger.source !== null) {
       const sets = legalModeSets(state, modal, select);
       const only = sets[0];
       // D-524 (CR 700.2b): "choose up to one" with nothing to choose but no mode: the ability is removed, as with no legal choice at all.
@@ -329,15 +349,18 @@ function runQueue(input: GameState): PutResult {
       modal === null ? undefined : specModes(modal, modes),
     );
     if (choices.some((c) => c.legal.length < c.min)) {
-      // CR 603.3d: a required choice with no legal choice: the ability is simply removed.
-      events.push({
-        kind: 'abilityRemoved',
-        seat: trigger.controller,
-        source: trigger.source,
-        abilityIndex: trigger.abilityIndex,
-        reason: 'noLegalTargets',
-        ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
-      });
+      // CR 603.3d: a required choice with no legal choice: the ability is simply removed. An ability with no source (a room ability of a dungeon, CR 309.4c) has no object
+      // to name in the event; the `ventured` event that made it trigger is what the log shows.
+      if (trigger.source !== null) {
+        events.push({
+          kind: 'abilityRemoved',
+          seat: trigger.controller,
+          source: trigger.source,
+          abilityIndex: trigger.abilityIndex,
+          reason: 'noLegalTargets',
+          ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
+        });
+      }
       continue;
     }
     if (isForced(choices)) {

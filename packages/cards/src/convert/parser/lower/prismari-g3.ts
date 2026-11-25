@@ -62,7 +62,9 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
       !remember &&
       (other.value
         ? before !== 'opponentChoosesCard'
-        : before === null || !EXILES_CARDS.includes(before))
+        : // Summons of Saruman (CR 701.17a, 608.2g): "from among them" after the controller milled cards: the cards are in their graveyard.
+          !(before === 'mill' && ctx.exiled === 'milled') &&
+          (before === null || !EXILES_CARDS.includes(before)))
     ) {
       return failure(clause);
     }

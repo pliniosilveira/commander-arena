@@ -132,6 +132,8 @@ interface Entry {
   readonly types: readonly string[];
   /** Issue 144 (CR 609.4b): its mana of a color pays any colored symbol of the spell, as the spell may be paid with mana as though it were of any color. */
   readonly anyColor: boolean;
+  /** Grell Philosopher (CR 609.4b): only its blue mana pays any colored symbol of the cost. */
+  readonly blueAnyColor: boolean;
 }
 
 interface Item {
@@ -287,6 +289,11 @@ function spendsAnyColor(request: PaymentRequest): boolean {
   return 'anyColor' in request.spell && request.spell.anyColor === true;
 }
 
+/** Grell Philosopher (CR 609.4b): only blue mana is spent as though it were mana of any color. */
+function spendsBlueAsAnyColor(request: PaymentRequest): boolean {
+  return 'ability' in request.spell && request.spell.blueAsAnyColor === true;
+}
+
 function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]): Item[] {
   const reserve = new Set<ManaColor>(request.reserve ?? []);
   const items: Item[] = [];
@@ -315,6 +322,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           notGeneric: mana.restriction?.kind === 'notGeneric',
           types: mana.sourceTypes ?? [],
           anyColor: spendsAnyColor(request),
+          blueAnyColor: spendsBlueAsAnyColor(request),
         },
       ],
       maxYield: 1,
@@ -382,6 +390,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           notGeneric: source.restriction?.kind === 'notGeneric',
           types: source.types ?? [],
           anyColor: spendsAnyColor(request),
+          blueAnyColor: spendsBlueAsAnyColor(request),
         });
       });
     }
@@ -420,7 +429,11 @@ function assignUnits(
       // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
       const dims = entry.genericOnly ? [] : [colorDim(color)];
       // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
-      if (entry.anyColor && !entry.genericOnly && color !== 'C') {
+      if (
+        (entry.anyColor || (entry.blueAnyColor && color === 'U')) &&
+        !entry.genericOnly &&
+        color !== 'C'
+      ) {
         for (const other of COLOR_DIMS) {
           if (other !== 'C' && other !== color) dims.push(colorDim(other));
         }

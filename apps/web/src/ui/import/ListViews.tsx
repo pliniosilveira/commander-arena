@@ -30,7 +30,9 @@ export function SavedDecksView({
           {loading ? 'Loading your decks…' : 'My decks could not be loaded.'}
         </p>
       ) : decks.length === 0 ? (
-        <p>No saved decks yet. Paste a list on the Import tab and choose "Save deck".</p>
+        <p>
+          No saved decks yet. Paste a list on the Import tab and press Import: it saves the deck.
+        </p>
       ) : (
         <ul className="imp-list imp-saved">
           {[...decks]

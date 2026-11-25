@@ -640,11 +640,12 @@ describe('the sample handed to an agent (A31, D-161)', () => {
           if (realCards.length >= 8) {
             checked += 1;
             expect(sampleCards, at).not.toEqual(realCards);
-            // Neither zone alone is the real one in order (a zone of one or two cards can match by chance).
-            if (real.hand.length >= 4) {
+            // Neither zone alone is the real one in order. A zone of n cards matches by chance with probability 1/n!, so only zones of six or more (1 in 720 or less) are
+            // compared: a random shuffle of four cards repeats the real order one time in 24, which a seeded game of hundreds of decisions reaches by luck.
+            if (real.hand.length >= 6) {
               expect(cardIdsOf(sample, got.hand), at).not.toEqual(cardIdsOf(state, real.hand));
             }
-            if (real.library.length >= 4) {
+            if (real.library.length >= 6) {
               expect(cardIdsOf(sample, got.library), at).not.toEqual(
                 cardIdsOf(state, real.library),
               );

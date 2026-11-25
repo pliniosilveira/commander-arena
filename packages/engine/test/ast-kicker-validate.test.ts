@@ -332,7 +332,7 @@ describe('flashback', () => {
       'life paid must be at least 1',
     ]);
     expect(structure(spell([flashback({ kind: 'discard', count: 1 })], draw))).toEqual([
-      'a flashback cost may be mana, life or a sacrifice only',
+      'a flashback cost may be mana, life, a sacrifice or an exile of X graveyard cards only',
     ]);
     expect(structure(spell([flashback(mana('X'))], draw))).toEqual([
       'X in a flashback cost is not supported',
@@ -361,6 +361,20 @@ describe('flashback', () => {
     expect(structure(spell([flashback(sac(), sac())], draw))).toContain(
       'a flashback cost has one sacrifice',
     );
+  });
+
+  test('"Flashback—{3}{U}{R}, Exile X cards from your graveyard" is fine (CR 702.34a, 107.3a); a fixed number, a kind of card or two of them are not', () => {
+    const exileX = (extra: object = {}): Cost =>
+      ({ kind: 'exileFromGraveyard', filter: {}, count: 1, countX: true, ...extra }) as Cost;
+    expect(structure(spell([flashback(mana('3', 'U', 'R'), exileX())], draw))).toEqual([]);
+    const bad = 'a flashback exile of graveyard cards is X cards of any kind';
+    expect(structure(spell([flashback(exileX({ countX: undefined, count: 2 }))], draw))).toEqual([
+      bad,
+    ]);
+    expect(
+      structure(spell([flashback(exileX({ filter: { types: ['creature'] } }))], draw)),
+    ).toEqual([bad]);
+    expect(structure(spell([flashback(exileX(), exileX())], draw))).toContain(bad);
   });
 
   test('not on a permanent (CR 702.34a)', () => {

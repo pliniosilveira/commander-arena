@@ -9,6 +9,7 @@
  * objects or an amount of life or cards is needed).
  */
 import type { Amount, ObjectFilter, PlayerStat } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState } from '../state/types';
@@ -21,6 +22,7 @@ import { devotionOf } from './devotion';
 import { timesKickedOf } from './kicks';
 import { manaSpentOf } from './mana-spent';
 import { manaValueOfCost } from './mana-value';
+import { partySizeOf } from './party';
 import {
   countMatching,
   matchesFilter,
@@ -29,6 +31,7 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+import { objectOption, seatOption } from './vote-options';
 
 export { devotionCostOf, devotionOf, devotionSymbols } from './devotion';
 
@@ -53,6 +56,7 @@ type StateAmount = Extract<
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'experienceCounters'
+      | 'partySize'
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
       | 'cardsToGraveyardThisTurn'
@@ -62,9 +66,12 @@ type StateAmount = Extract<
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
       | 'differentNamesAmong'
+      | 'creatureTypesAmong'
       | 'colorsAmong';
   }
 >;
+
+const CREATURE_TYPE_SET: ReadonlySet<string> = new Set(CREATURE_TYPES);
 
 /** History uses the event's controller and types, never the object's current zone or characteristics. */
 export function historyCount(
@@ -109,6 +116,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'experienceCounters' ||
+    amount.kind === 'partySize' ||
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'cardsToGraveyardThisTurn' ||
@@ -118,6 +126,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
     amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'creatureTypesAmong' ||
     amount.kind === 'colorsAmong'
   );
 }
@@ -216,6 +225,23 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
 }
 
 /**
+ * CR 205.3m (Valiant Changeling): "the number of creature types among creatures you control": the creature types (not the other subtypes, CR 205.3d) of the battlefield permanents the
+ * filter matches, each once, as the permanents have them now (layers 1 and 4, through `derive`: a permanent with every creature type has them all).
+ */
+function creatureTypesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, filter.zone ?? 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const subtype of derive(state, obj).subtypes) {
+      if (CREATURE_TYPE_SET.has(subtype)) seen.add(subtype);
+    }
+  }
+  return seen.size;
+}
+
+/**
  * CR 105.2, 105.2c (Vivid): "the number of colors among permanents you control": the colors of the battlefield permanents the filter matches, each once, as the permanents
  * have them now (layers 1, 4 and 5, through `derive`); colorless is no color.
  */
@@ -305,6 +331,24 @@ export function amountOf(
   if (amount.kind === 'playerCount') {
     return resolvePlayers(state, amount.of, ctx, targets).length;
   }
+  if (amount.kind === 'greatestCountOfAnOpponent') {
+    // CR 109.4: each opponent still in the game in turn is "you" of the filter; the greatest of the counts.
+    let greatest = 0;
+    for (const seat of opponentsOf(state, ctx.controller)) {
+      const count = countMatching(
+        state,
+        { ...amount.filter, controller: 'you' },
+        { ...ctx, controller: seat },
+      );
+      if (count > greatest) greatest = count;
+    }
+    return greatest;
+  }
+  if (amount.kind === 'damageDealtToThisTurn') {
+    // CR 120.3: the damage every source has dealt to the player this turn (damage prevented was never dealt).
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : (state.turnLog.damageTaken[seat] ?? 0);
+  }
   if (amount.kind === 'lifeTotalOf') {
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;
@@ -360,6 +404,13 @@ export function amountOf(
   if (amount.kind === 'cardsInHandOfAffected') return 0;
   // D-194: "the number of profit votes": the players who voted for that option in the vote of this resolution (CR 701.38a).
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
+  // CR 701.38a, 701.38b (Círdan the Shipwright): the votes for the player who is "you" here (each player, in a `forEachPlayer` that runs as each).
+  if (amount.kind === 'votesReceived') return ctx.votes?.[seatOption(ctx.controller)] ?? 0;
+  // CR 701.38a, 701.38b (Trap the Trespassers): the votes for the permanent `of` names (as it is now).
+  if (amount.kind === 'votesForObject') {
+    const id = resolveObjects(state, amount.of, ctx, targets)[0];
+    return id === undefined ? 0 : (ctx.votes?.[objectOption(id)] ?? 0);
+  }
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
   if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
@@ -491,6 +542,10 @@ export function stateAmountOf(
       if (id === undefined) return 0;
       // CR 113.7a: an object that left the battlefield is read as it last existed.
       const obj = state.objects[id] ?? state.lki[id]?.object;
+      // CR 122.1: "for each kind of counter on it" counts the kinds the object has at least one counter of.
+      if (amount.kinds === true) {
+        return Object.values(obj?.counters ?? {}).filter((n) => n > 0).length;
+      }
       return countersOfKind(obj?.counters, amount.counter);
     }
     case 'aggregate': {
@@ -518,6 +573,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'creatureTypesAmong':
+      return creatureTypesAmongOf(state, amount.filter, ctx);
     case 'colorsAmong':
       return colorsAmongOf(state, amount.filter, ctx);
     case 'devotion':
@@ -525,7 +582,7 @@ export function stateAmountOf(
     case 'commanderColors':
       return commanderIdentity(state, ctx.controller).length;
     case 'commanderManaValue':
-      return commandersManaValue(state, ctx.controller);
+      return commandersManaValue(state, ctx.controller, amount.zones);
     case 'commanderCasts': {
       if (amount.player !== undefined) {
         // CR 903.8: the player the selector names ("target player ... they've cast").
@@ -572,6 +629,16 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'partySize':
+      // CR 700.8a, 700.8b: the creatures the controller of the effect controls, read as they are now.
+      return partySizeOf(
+        objectsInZone(state, 'battlefield').flatMap((id) => {
+          const obj = state.objects[id];
+          if (obj === undefined || controllerOf(state, obj) !== ctx.controller) return [];
+          const view = derive(state, obj);
+          return view.types.includes('creature') ? [view.subtypes] : [];
+        }),
+      );
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller of the effect has now (`SeatState.experience`).
       return getSeat(state, ctx.controller).experience ?? 0;
