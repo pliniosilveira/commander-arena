@@ -7734,6 +7734,11 @@ export type Condition =
    */
   | { readonly kind: 'maxSpeed'; readonly player: PlayerSelector }
   /**
+   * "Activate only if you've completed a dungeon" (Sarevok's Tome, CR 309.7, 701.49c): one of the players `player` names has completed a dungeon at some time in the game
+   * (`SeatState.dungeonsCompleted`). A condition has no targets and reads no trigger subject.
+   */
+  | { readonly kind: 'completedDungeon'; readonly player: PlayerSelector }
+  /**
    * "Activate only if this Class is level 1" (CR 716.2a, 716.2d, D-235): the source permanent is at level `level` now; a permanent with no level is at level 1.
    * Read for the permanent the ability belongs to (an activated ability's `activateOnlyIf`).
    */

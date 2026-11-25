@@ -1501,6 +1501,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerHasDesignation',
     // CR 702.179e, 702.178a: "Max speed -- [ability]", "if you have max speed".
     'maxSpeed',
+    // CR 309.7, 701.49c: "Activate only if you've completed a dungeon".
+    'completedDungeon',
     // D-235: "Activate only if this Class is level N".
     'classLevelIs',
     // D-133: "as long as you have 30 or more life", "as long as it's untapped" (also "if you control your commander").
@@ -2752,6 +2754,8 @@ export const CONDITION_KINDS = [
   'playerHasDesignation',
   /** "Max speed -- [ability]" (CR 702.178a, 702.179e): the engine's `maxSpeed`. */
   'maxSpeed',
+  /** "Activate only if you've completed a dungeon" (Sarevok's Tome, CR 309.7): the engine's `completedDungeon`. */
+  'completedDungeon',
   /** "Activate only if this Class is level N" (CR 716.2a, D-235): the engine's `classLevelIs`. */
   'classLevelIs',
   /** "As long as you have 30 or more life", "7 life more than your starting life total" (CR 119.1, D-133): the engine's `lifeTotal`. */

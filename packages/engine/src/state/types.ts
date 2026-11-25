@@ -801,6 +801,11 @@ export interface SeatState {
    */
   readonly speed?: number;
   /**
+   * How many dungeons this player has completed (CR 309.7, 701.49c): added to as a dungeon is removed from the game on its last room (`rules/dungeon.ts`). Absent until the first. What
+   * "if you've completed a dungeon" reads. Public.
+   */
+  readonly dungeonsCompleted?: number;
+  /**
    * The energy counters the player has (CR 107.14, 122.1, D-209), kept for the rest of the game; paid by removing them. Absent until the first time
    * (a player has none). Public.
    */

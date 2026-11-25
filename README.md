@@ -92,6 +92,7 @@ The ready-made decks work without any setup:
 | Draconic Dissent | A Commander precon led by Firkraag, Cunning Instigator. |
 | Desert Bloom | A Commander precon led by Yuma, Proud Protector. |
 | Planeswalker Party | A Commander precon led by Commodore Guff. |
+| Exit from Exile | A Commander precon led by Faldorn, Dread Wolf Herald. |
 
 ## Playing with your own deck
 

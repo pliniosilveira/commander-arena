@@ -1107,7 +1107,7 @@ const YOU_PUT_AND_LOSE_LIFE =
  * first sentence exiles and "this way" the cast of the second, so the two or three sentences are one instruction (`effect.player-exiles-until-cast`).
  */
 const PLAYER_EXILES_UNTIL_CAST =
-  /^target (?:opponent|player) exiles cards from the top of their library until they exile [^.]*\.$/i;
+  /^(?:target (?:opponent|player) exiles cards from the top of their library until they exile|exile cards from the top of your library until you exile) [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
 const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
 /** Chaos Wand (CR 401.4): "Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." closes the three sentences of the exile of a target player. */

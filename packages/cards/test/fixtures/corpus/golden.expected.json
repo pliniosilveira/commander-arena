@@ -6612,27 +6612,10 @@
     "6ec54d84-7026-45a3-a7d7-37cd5c9a8463": {
       "name": "Sarevok's Tome",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}: Add {C}. If you have the initiative, add {C}{C} instead.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{3}, {T}: Exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost. Activate only if you've completed a dungeon.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.exile-until-put-rest-bottom"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "54211bc4"
+      "ast": "12d9f5fb"
     },
     "6f16c3ac-a9b8-47e6-b18b-ae37c74d44a0": {
       "name": "Nether Traitor",
@@ -15101,7 +15084,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1580,
+      "supported": 1581,
       "total": 1598
     }
   }

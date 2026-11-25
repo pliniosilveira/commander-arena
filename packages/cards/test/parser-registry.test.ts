@@ -523,6 +523,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Exile the top four cards of your library. Draw a card ${e}.`,
   ),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.completed-dungeon': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
   'condition.opponent-cards-in-graveyard': permanent(

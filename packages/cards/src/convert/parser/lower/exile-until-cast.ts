@@ -26,7 +26,10 @@ const EXILE_UNTIL_CAST_FREE: Lowering<IrClause, Effects> = {
     const card = arg(clause, 'card');
     if (player?.kind !== 'noun' || card?.kind !== 'noun') return failure(clause);
     // One player, chosen as the ability is put on the stack.
-    if (player.det !== 'target' || player.anyNumber === true) return failure(clause);
+    // (Sarevok's Tome: the controller's own library, "you".)
+    if ((player.det !== 'target' && player.det !== 'you') || player.anyNumber === true) {
+      return failure(clause);
+    }
     const from = playerSelectorOf(player, ctx);
     if (!from.ok) return from;
     const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });

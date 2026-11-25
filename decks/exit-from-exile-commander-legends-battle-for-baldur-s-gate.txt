@@ -80,5 +80,3 @@ Mainboard
 1x Warstorm Surge
 1x Wild-Magic Sorcerer
 1x Xenagos, the Reveler
-
----

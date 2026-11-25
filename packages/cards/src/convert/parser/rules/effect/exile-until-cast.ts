@@ -9,6 +9,58 @@ import { readQuotedAbility } from '../static/quoted';
 import { type Clauses, single } from './operands';
 
 /**
+ * `effect.exile-until-cast-free`: "Exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost." (Sarevok's Tome, CR 701.13,
+ * 608.2g, 118.9): the cards before the one found stay exiled. The two sentences are one instruction that `splitSentences` keeps together. The engine's `exileUntilFound` of the controller's
+ * library, then the `castFree` of the card found. Not read: another player, another place, "if you don't", a rider.
+ */
+export const EFFECT_EXILE_UNTIL_CAST_FREE = defineRule<Clauses>({
+  id: 'effect.exile-until-cast-free',
+  family: 'effect',
+  leading: ['exile'],
+  cites: [
+    'CR 701.13 (Exile)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+  ],
+  examples: [
+    'exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost',
+    'exile cards from the top of your library until you exile an instant or sorcery card. You may cast that card without paying its mana cost',
+  ],
+  rejects: [
+    'exile cards from the top of your library until you exile a nonland card',
+    'exile cards from the top of your library until you exile a nonland card. You may cast that card',
+    'exile cards from the top of your library until you exile a nonland card. Cast that card without paying its mana cost',
+    "exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost. If you don't, put it into your hand",
+    "exile cards from the top of target player's library until you exile a nonland card. You may cast that card without paying its mana cost",
+    'exile cards from the top of your library until you exile a nonland card. You may cast it without paying its mana cost',
+  ],
+  parse: single(
+    'effect.exile-until-cast-free',
+    sequence(
+      pattern(/exile cards from the top of your library until you exile /iu),
+      family<IrNoun>('noun', { only: ['noun.library-card'] }),
+      pattern(/\. you may cast that card without paying its mana cost(?![\p{L}\p{N}])/iu),
+    ),
+    ([, card]) => ({
+      verb: 'exileUntilCastFree',
+      args: {
+        player: {
+          kind: 'noun',
+          det: 'you',
+          filter: { raw: 'you' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: { start: 0, end: 0 },
+          rule: 'effect.exile-until-cast-free',
+        } satisfies IrNoun,
+        card: { ...card, upTo: false, plural: false },
+      },
+    }),
+  ),
+});
+
+/**
  * `effect.player-exiles-until-cast`: "target opponent exiles cards from the top of their library until they exile an instant, sorcery, or creature card. You may cast that card without
  * paying its mana cost." with, optionally, "If you cast a creature spell this way, it gains haste and "<an ability>"" (CR 701.13, 608.2g, 118.9, 613.1f): the three sentences are one
  * instruction that `splitSentences` keeps together. The engine's `exileUntilFound` of the library of that player, then the `castFree` of the card found by the controller, with the
@@ -170,5 +222,6 @@ export const EFFECT_TARGET_PLAYER_EXILES_UNTIL_CAST_BOTTOM = defineRule<Clauses>
 export const EXILE_UNTIL_CAST_EFFECT_RULES = [
   EFFECT_TARGET_PLAYER_EXILES_UNTIL_CAST_BOTTOM,
   EFFECT_PLAYER_EXILES_UNTIL_CAST,
+  EFFECT_EXILE_UNTIL_CAST_FREE,
   EFFECT_THAT_PLAYER_EXILES_UNTIL_CAST,
 ];

@@ -1257,3 +1257,60 @@ describe('"−2: Look at the top three cards of your library. Exile one face dow
     g.expect.illegal(0, { cast: { name: 'Lightning Bolt', zone: 'exile' } });
   });
 });
+
+describe('"{T}: Add {C}. If you have the initiative, add {C}{C} instead." and "Activate only if you\'ve completed a dungeon" (CR 726.1, 605.3b, 309.7, 701.49c)', () => {
+  const tome = parsed(
+    'SYNTHETIC Initiative Tome',
+    'Artifact — Book',
+    "When this artifact enters, you take the initiative.\n{T}: Add {C}. If you have the initiative, add {C}{C} instead.\n{3}, {T}: Exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost. Activate only if you've completed a dungeon.",
+    { manaCost: '{4}' },
+  );
+  const build = (opts: { initiative?: 0 | 1; room?: 'throneOfTheDeadThree' }) => {
+    const b = scenario()
+      .define(tome)
+      .seat(0)
+      .life(20)
+      .battlefield(tome.name, 'Forest', 'Forest', 'Forest');
+    const withRoom = opts.room === undefined ? b : b.dungeon(opts.room);
+    return withRoom
+      .library('Island', 'Grizzly Bears', ...FILLER)
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', {
+        active: 0,
+        ...(opts.initiative === undefined ? {} : { initiative: opts.initiative }),
+      })
+      .build();
+  };
+
+  test('with the initiative it adds two mana', () => {
+    const g = build({ initiative: 0 });
+    g.act(0).tapForMana(tome.name);
+    g.expect.pool(0, 'CC');
+  });
+
+  test('without the initiative it adds one', () => {
+    const g = build({});
+    g.act(0).tapForMana(tome.name);
+    g.expect.pool(0, 'C');
+  });
+
+  test('the cast ability cannot be activated before a dungeon is completed', () => {
+    const g = build({});
+    g.expect.illegal(0, { activate: tome.name, ability: 2 });
+  });
+
+  test('once a dungeon is completed it exiles until a nonland card and casts it free', () => {
+    const g = build({ room: 'throneOfTheDeadThree' });
+    g.pass();
+    g.passAll();
+    g.expect.legal(0, { activate: tome.name, ability: 2 });
+    g.act(0).activate(tome.name, { ability: 2, pay: true });
+    g.passAll();
+    g.act(0).chooseCards({ name: 'Grizzly Bears', zone: 'exile' });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Island', 'exile', { seat: 0 });
+  });
+});

@@ -1042,8 +1042,10 @@ export interface IrCondition extends IrNode {
     | {
         readonly kind: 'designation';
         readonly who: IrNoun;
-        readonly designation: 'monarch' | 'citysBlessing';
+        readonly designation: 'monarch' | 'citysBlessing' | 'initiative';
       }
+    // Sarevok's Tome (CR 309.7, 701.49c): "you've completed a dungeon"
+    | { readonly kind: 'completedDungeon'; readonly who: IrNoun }
     // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value" (CR 603.4): one of
     // the permanents of the kind, whoever controls them, with the greatest value of the stat, a tie counting for each tied one
     | {

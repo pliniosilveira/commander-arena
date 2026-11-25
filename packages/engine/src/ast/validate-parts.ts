@@ -4578,6 +4578,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
       break;
+    case 'completedDungeon':
+      // CR 309.7: whether one of the players the selector names has completed a dungeon.
+      checkConditionPlayers(c.player, `${path}.player`, out);
+      break;
     case 'maxSpeed':
       // CR 702.179e: whether one of the players the selector names has speed 4. A condition has no targets and reads no trigger subject.
       checkConditionPlayers(c.player, `${path}.player`, out);

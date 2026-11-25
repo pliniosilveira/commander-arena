@@ -144,6 +144,7 @@ describe('the dimensions', () => {
       'amountIsPrime',
       'playerHasDesignation',
       'maxSpeed',
+      'completedDungeon',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',
       'lifeTotal',

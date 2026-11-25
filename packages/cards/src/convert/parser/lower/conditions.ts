@@ -568,6 +568,14 @@ export function lowerCondition(
         designation: test.designation,
       });
     }
+    case 'completedDungeon': {
+      // CR 309.7, 701.49c (Sarevok's Tome): the player has completed a dungeon at some time.
+      const blocked = missingFeatures(['condition:completedDungeon']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const player = playerSelectorOf(test.who, ctx ?? newContext('ability', []));
+      if (!player.ok) return player;
+      return ok({ kind: 'completedDungeon', player: player.value });
+    }
     case 'objectMatches': {
       // CR 608.2c, 113.7a (stage P30, D-135): "if it's a Zombie card" asks what a target of this text is, as it is or as it last
       // was; after an instruction that put the card onto the battlefield it is "the object that was moved" (`ctx.movedOnto`).

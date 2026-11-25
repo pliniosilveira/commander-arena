@@ -223,6 +223,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'chosenOption': // D-151: what the permanent chose as it entered
     case 'paired': // D-286: the pair, read from the object table and no characteristic (`rules/pairing.ts`)
       return;
+    case 'completedDungeon': // CR 309.7: the dungeons a player completed, which no layer changes
     case 'maxSpeed': // CR 702.179e: the speed of a player, which no layer changes
     case 'playerHasDesignation':
       if (

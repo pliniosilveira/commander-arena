@@ -10,7 +10,7 @@
  */
 import type { Condition, PlayerSelector } from '../ast/types';
 import type { SeatId } from '../ids';
-import { opponentsOf, seatsInOrder } from '../state/ops';
+import { getSeat, opponentsOf, seatsInOrder } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import {
   cardsInGraveyardHolds,
@@ -160,6 +160,10 @@ export function staticConditionHolds(
       const holders = designationHolders(state, condition.designation);
       return playersOf(state, condition.player, source).some((seat) => holders.includes(seat));
     }
+    case 'completedDungeon': // CR 309.7: a count of the player's own, which no layer changes
+      return playersOf(state, condition.player, source).some(
+        (seat) => (getSeat(state, seat).dungeonsCompleted ?? 0) > 0,
+      );
     case 'maxSpeed': // CR 702.179e (speed is 4): the speed of a player, which no layer changes
       return playersOf(state, condition.player, source).some((seat) => hasMaxSpeed(state, seat));
     case 'and':
