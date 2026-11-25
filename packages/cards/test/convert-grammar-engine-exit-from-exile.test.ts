@@ -977,3 +977,46 @@ describe('"{4}, {T}: Target opponent exiles cards from the top of their library 
     g.expect.noObject('Grizzly Bears', { zone: 'exile' });
   });
 });
+
+describe('"Exile the top three cards of your library. Until the end of your next turn, you may play those cards. If ~ was cast from a graveyard, you may play cards this way without paying their mana costs." (CR 118.9, 601.2a, 611.2a)', () => {
+  const ignite = parsed(
+    'SYNTHETIC Ignite Test',
+    'Sorcery',
+    'Exile the top three cards of your library. Until the end of your next turn, you may play those cards. If ~ was cast from a graveyard, you may play cards this way without paying their mana costs.\nFlashback {R}',
+    { manaCost: '{R}', colors: ['R'] },
+  );
+  const build = (zone: 'hand' | 'graveyard') =>
+    scenario()
+      .define(ignite)
+      .seat(0)
+      .battlefield('Mountain')
+      .library('Serra Angel', 'Grizzly Bears', 'Forest', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 });
+  const game = (zone: 'hand' | 'graveyard') => {
+    const b = build(zone);
+    const g = (
+      zone === 'hand' ? b.seat(0).hand(ignite.name) : b.seat(0).graveyard(ignite.name)
+    ).build();
+    return g;
+  };
+
+  test('cast from the hand: the exiled cards must be paid for', () => {
+    const g = game('hand');
+    g.act(0).cast(ignite.name, { pay: true });
+    g.passAll();
+    expect(() =>
+      g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { alternative: 'free' }),
+    ).toThrow();
+  });
+
+  test('cast from the graveyard: they can be played without paying their mana costs', () => {
+    const g = game('graveyard');
+    g.act(0).cast(ignite.name, { alternative: 'flashback', pay: true });
+    g.passAll();
+    g.act(0).cast({ name: 'Serra Angel', zone: 'exile' }, { alternative: 'free' });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+  });
+});

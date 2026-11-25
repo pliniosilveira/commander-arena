@@ -9,6 +9,7 @@ import type {
   ObjectRef,
   ObjectSelector,
   PlayerSelector,
+  PlayUntil,
   SpellMode,
   TargetSpec,
 } from '@commander-arena/engine';
@@ -288,6 +289,8 @@ export interface LowerContext {
   exiled: 'top' | 'cast' | 'milled' | 'cards' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
+  /** How long the last `mayPlay` of this text lasts (Ignite the Future: "you may play cards this way without paying their mana costs" lasts as the permission before it does), or null. */
+  mayPlayLasts: PlayUntil | null;
   /**
    * What "that many" counts (stage P34, D-152): the permanents the last instruction that sacrificed some sacrificed, or the cards the last
    * "discard any number of cards" discarded. The engine's `thisWay` names which.
@@ -487,6 +490,7 @@ export function newContext(
     xDefined: false,
     exiled: null,
     exiledFaceDown: false,
+    mayPlayLasts: null,
     thisWay: 'sacrificed',
     discardedCardValue: false,
     lifeGainTrigger: false,

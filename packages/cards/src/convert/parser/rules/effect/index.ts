@@ -179,6 +179,7 @@ import {
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
+import { MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES } from './may-play-this-way-free';
 import { MELD_EFFECT_RULES } from './meld';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -1407,6 +1408,7 @@ export const EFFECT_RULES = [
   ...PUT_FROM_AMONG_EXILED_EFFECT_RULES,
   ...PUT_ALL_LINKED_EXILED_EFFECT_RULES,
   ...ADD_MANA_COMBINATION_EFFECT_RULES,
+  ...MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

@@ -501,6 +501,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     () =>
       'Exile the top four cards of your library. You may put any number of land cards from among them onto the battlefield.',
   ),
+  'effect.may-play-this-way-free': spell(
+    (e) =>
+      `Exile the top three cards of your library. Until the end of your next turn, you may play those cards. If ~ was cast from a graveyard, ${e}.`,
+  ),
   'effect.add-mana-combination-of-two-colors': spell(
     () =>
       'Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control.',

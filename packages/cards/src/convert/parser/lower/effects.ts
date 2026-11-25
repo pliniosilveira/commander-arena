@@ -143,6 +143,7 @@ import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
+import { MAY_PLAY_THIS_WAY_FREE_LOWERINGS } from './may-play-this-way-free';
 import { MELD_LOWERINGS } from './meld';
 import { MONARCH_LOWERINGS } from './monarch';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
@@ -3116,6 +3117,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CHOOSE_ONE_OF_THEM_LOWERINGS,
   ...PUT_ALL_LINKED_EXILED_LOWERINGS,
   ...ADD_MANA_COMBINATION_LOWERINGS,
+  ...MAY_PLAY_THIS_WAY_FREE_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
