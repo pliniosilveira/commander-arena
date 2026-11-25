@@ -96,6 +96,7 @@ import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
 import { isLegalParty } from './rules/party';
 import { answerResolutionPile } from './rules/pile-answer';
+import { endOneOfPermissions } from './rules/play-permission-one';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
 import { matchesGroups } from './rules/sacrifice-groups';
@@ -300,6 +301,8 @@ function playLand(
   let next = patchSeat(moved.state, seat, {
     landsPlayedThisTurn: getSeat(moved.state, seat).landsPlayedThisTurn + 1,
   });
+  // Nashi (CR 305.1): "you may play one of those cards": playing one of them from exile ends the permissions for the others.
+  if (obj.zone === 'exile') next = endOneOfPermissions(next, seat, object);
   if (graveyardUse !== null) {
     // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
     if (graveyardUse.unlimited !== true) {

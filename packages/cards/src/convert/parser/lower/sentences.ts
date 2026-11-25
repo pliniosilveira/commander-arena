@@ -1365,7 +1365,9 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
     (clause?.verb === 'castFree' ||
       clause?.verb === 'castChosenGraveyardSpell' ||
       // Summon: Esper Valigarmanda (CR 608.2g): "You may cast an instant or sorcery card exiled with ~, and mana of any type can be spent to cast that spell."
-      clause?.verb === 'castExiledWithPaying') &&
+      clause?.verb === 'castExiledWithPaying' ||
+      // Mind's Dilation (CR 608.2g): "If it's a nonland card, you may cast it without paying its mana cost" after the exile of the top card: the engine's `castFree` of that card, under the test.
+      (clause?.verb === 'castMovedFree' && sentence.condition?.test.kind === 'objectMatches')) &&
     clause.optional &&
     more.length === 0
   ) {
@@ -1373,7 +1375,12 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
     // game the sentence starts with, which the engine's `conditional` runs the free cast under (the cast is the controller's to decline, as with no test). Any other test (what an
     // offer before it did, a kicker) is still refused here, never guessed.
     const test = sentence.condition?.test.kind;
-    const stateTest = test === 'cardsInGraveyard' || test === 'amountIs' || test === 'control';
+    const stateTest =
+      test === 'cardsInGraveyard' ||
+      test === 'amountIs' ||
+      test === 'control' ||
+      // The card the exile of the top card took ("it"): read when the instruction comes up.
+      (clause.verb === 'castMovedFree' && test === 'objectMatches');
     if (
       (sentence.condition !== undefined && !stateTest) ||
       sentence.instead === true ||
@@ -1400,7 +1407,11 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
               mayWritten: { kind: 'flag' as const, value: true, span: play.span, rule: play.rule },
             },
           };
-    const cast = lowerClauses([{ ...offered, optional: false }], ctx);
+    // The lowering of `castMovedFree` asks for the "you may", which is the engine's own question (`acceptsOptional`).
+    const cast = lowerClauses(
+      [clause.verb === 'castMovedFree' ? offered : { ...offered, optional: false }],
+      ctx,
+    );
     if (!cast.ok || guard === null) return cast;
     return {
       ok: true,

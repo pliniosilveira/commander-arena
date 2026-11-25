@@ -127,6 +127,7 @@ import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
+import { runHandCards, startHandCards } from './hand-cards';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { takeInitiative } from './initiative';
 import { costWithHandSizeX, lifeAmountFor, resolveMayPayCost } from './life-amounts';
@@ -421,6 +422,7 @@ export function runInstruction(
   if (instruction.kind === 'opponentChoosesCard') {
     return runOpponentChoosesCard(state, res, instruction);
   }
+  if (instruction.kind === 'handCards') return runHandCards(state, res, instruction);
   if (instruction.kind === 'behold') return runBehold(state, res, instruction);
   if (instruction.kind === 'putOnTop') return runPutOnTop(state, res, instruction);
   if (instruction.kind === 'confirmOptional') {
@@ -1534,6 +1536,18 @@ function runEffect(
                 : (() => {
                     const [owner] = resolvePlayers(state, sel.fromHandOf, ctx, targets);
                     return owner === undefined ? { among: [] } : { handOf: owner };
+                  })()),
+              // Oblivion Sower (CR 108.3, 608.2d): "land cards that player owns from exile": the cards in exile the player owns, whenever they were exiled.
+              ...(sel.fromExileOf === undefined
+                ? {}
+                : (() => {
+                    const [owner] = resolvePlayers(state, sel.fromExileOf, ctx, targets);
+                    return {
+                      among:
+                        owner === undefined
+                          ? []
+                          : state.exile.filter((id) => state.objects[id]?.owner === owner),
+                    };
                   })()),
               // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
               ...(sel.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
@@ -4149,6 +4163,7 @@ function runEffect(
             ...(effect.anyManaType === true ? { anyManaType: true as const } : {}),
             ...(fixed === undefined ? {} : { cards: fixed, cardsZone: 'exile' as const }),
             ...(effect.creatureGains === undefined ? {} : { creatureGains: effect.creatureGains }),
+            ...(effect.fromHand === true ? { fromHand: true as const } : {}),
             chosen: null,
           },
         ],
@@ -4212,6 +4227,10 @@ function runEffect(
     case 'exileUntilFound':
       // CR 701.13, 101.4 (D-660): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).
       return runExileUntilFound(state, res, effect, ctx, targets);
+
+    case 'handCards':
+      // CR 608.2d, 402.3 (Extract Brain, Silent-Blade Oni): a player chooses cards of their hand, or the whole hand is looked at; the cards are `moved` (rules/hand-cards.ts).
+      return startHandCards(state, effect, ctx, targets);
 
     case 'opponentChoosesCard':
       // CR 608.2d (D-660): an opponent chooses one of the cards moved; the others are `moved` afterwards (rules/choose-aside.ts).

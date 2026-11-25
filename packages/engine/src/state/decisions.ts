@@ -602,7 +602,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
  * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-660)
  * the question is asked again after each spell cast. `'opponentChoice'` (D-660, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
- * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
+ * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1). `'handChoice'` (Extract Brain, CR 608.2d, 402.3, "Target opponent chooses X cards from their hand"):
+ * `seat` is the player who chooses, `legal` the cards of their own hand (`zone` 'hand'), and exactly `min` = `max` of them are chosen; the cards stay hidden (`reveal` false).
  */
 export interface ChooseCardsDecision extends DecisionBase {
   readonly kind: 'chooseCards';
@@ -624,7 +625,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'copy'
     | 'pair'
     | 'separate'
-    | 'opponentChoice';
+    | 'opponentChoice'
+    | 'handChoice';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile' | 'command';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;

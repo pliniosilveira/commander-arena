@@ -1125,6 +1125,13 @@ const PLAYER_REVEALS_UNTIL =
 const YOU_PUT_AND_LOSE_LIFE =
   /^you put that card onto the battlefield under your control and lose life equal to that permanent['’]s mana value\.$/i;
 /**
+ * "Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost." (Nashi, Moon Sage's Scion, CR 118.9,
+ * 601.2): the second sentence says how a spell cast with the permission of the first is paid for, so the two are one instruction (`effect.may-play-one-pay-life`).
+ */
+const MAY_PLAY_ONE_OF_THOSE = /^until end of turn, you may play one of those cards\.$/i;
+const CAST_THIS_WAY_PAY_LIFE =
+  /^if you cast a spell this way, pay life equal to its mana value rather than paying its mana cost\.$/i;
+/**
  * "Target opponent exiles cards from the top of their library until they exile an instant, sorcery, or creature card. You may cast that card without paying its mana cost. If you cast a
  * creature spell this way, it gains haste and "At the beginning of the end step, sacrifice this creature."" (Strago and Relm, issue 97, CR 701.13, 608.2g): "that card" is the card the
  * first sentence exiles and "this way" the cast of the second, so the two or three sentences are one instruction (`effect.player-exiles-until-cast`).
@@ -1240,6 +1247,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+      continue;
+    }
+    // Nashi, Moon Sage's Scion: the permission to play one of the cards exiled and how a spell cast with it is paid for.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, MAY_PLAY_ONE_OF_THOSE) &&
+      said(b, CAST_THIS_WAY_PAY_LIFE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
       continue;
     }
     // Strago and Relm (issue 97): the exile until a card is found, the free cast of it and, when there is one, what a creature spell gains.

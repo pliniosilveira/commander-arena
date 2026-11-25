@@ -137,6 +137,7 @@ import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GOAD_DRACONIC_EFFECT_RULES } from './goad-draconic';
 import { GRAND_LARCENY_C_EFFECT_RULES } from './grand-larceny-c';
+import { GRAND_LARCENY_B_EFFECT_RULES } from './grand-larceny-b';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
@@ -1384,6 +1385,8 @@ export const EFFECT_RULES = [
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
   // Grand Larceny deck, group A: "look at the top card of that player's library, then exile it face down" and "you may play that card for as long as it remains exiled, and ..." start like the plain look, exile and may-play rules, and are tried first.
   ...IMPULSE_EXILE_EFFECT_RULES,
+  // Grand Larceny deck, group B: "that player exiles the top card of their library", "target opponent chooses X cards from their hand", "look at that player's hand" and the rest start like the plain player, look and may rules, and are tried first.
+  ...GRAND_LARCENY_B_EFFECT_RULES,
   // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.

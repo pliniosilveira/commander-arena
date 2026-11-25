@@ -172,6 +172,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
     'chooseFromDefendersHand',
+    // Grand Larceny deck, group B (Oblivion Sower): "put any number of land cards that player owns from exile onto the battlefield under your control" (`ChooseSelector.fromExileOf`).
+    'chooseFromExileOwnedBy',
     // Yedora, Grave Gardener (CR 708.2, 708.3): "return it to the battlefield face down ... It's a Forest land" (`moveToZone.faceDownAs`).
     'moveFaceDownLand',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
@@ -184,6 +186,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeFromGraveyard',
     // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
     'castFreeCreatureGains',
+    // Grand Larceny deck, group B (Nashi, Moon Sage's Scion): "you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (`mayPlay.oneOf`, `mayPlay.lifeForMana`).
+    'mayPlayOneLifeForMana',
+    // Grand Larceny deck, group B (Silent-Blade Oni, Extract Brain): "You may cast a spell from among those cards without paying its mana cost" after looking at a hand (`castFree.fromHand`).
+    'castFreeFromHand',
     // Nalfeshnee (CR 707.10f, 613.1f): "If it's a permanent spell, the copy gains haste and ..." (`copySpell.permanentGains`).
     'copySpellPermanentGains',
     // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
@@ -486,6 +492,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-660: "each player exiles cards from the top of their library until they exile a nonland card" and "an opponent chooses a nonland card exiled this way".
     'exileUntilFound',
     'opponentChoosesCard',
+    // Grand Larceny deck, group B (Extract Brain, Silent-Blade Oni): "target opponent chooses X cards from their hand" and "look at that player's hand".
+    'handCards',
     // D-663: "exile the top four cards in a face-down pile, then ... in a face-up pile. An opponent chooses one of those piles" (CR 700.3).
     'exilePiles',
     // D-661: "as many times as you choose, you may exile the top card of your library".
@@ -2213,6 +2221,8 @@ export const ABILITY_FEATURES = [
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
   'chooseFromDefendersHand',
+  /** "Put any number of land cards that player owns from exile onto the battlefield under your control" (Oblivion Sower, CR 608.2d, 108.3): the engine's `ChooseSelector.fromExileOf` of a `moveToZone` onto the battlefield. */
+  'chooseFromExileOwnedBy',
   /** "Return it to the battlefield face down ... It's a Forest land" (Yedora, CR 708.2, 708.3, 613.2b): the engine's `moveToZone.faceDownAs`, a face-down land with the Forest subtype. */
   'moveFaceDownLand',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
@@ -2225,6 +2235,10 @@ export const ABILITY_FEATURES = [
   'castFreeFromGraveyard',
   /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
   'castFreeCreatureGains',
+  /** "Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (Nashi, Moon Sage's Scion, CR 118.9, 601.2): the engine's `mayPlay.oneOf` and `mayPlay.lifeForMana`. */
+  'mayPlayOneLifeForMana',
+  /** "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain, CR 608.2g, 402.3): the engine's `castFree.fromHand`. */
+  'castFreeFromHand',
   /** "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 613.1f): the engine's `copySpell.permanentGains`. */
   'copySpellPermanentGains',
   /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
@@ -3413,12 +3427,15 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeFromPlayer: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
+  chooseFromExileOwnedBy: true,
   moveFaceDownLand: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
+  castFreeFromHand: true,
+  mayPlayOneLifeForMana: true,
   copySpellPermanentGains: true,
   castPayingFromLinkedExile: true,
   chosenByOpponent: true,
@@ -3606,6 +3623,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   copyCardAndCast: true,
   exileUntilFound: true,
   opponentChoosesCard: true,
+  handCards: true,
   exilePiles: true,
   exileTopAnyNumber: true,
   delayedCombatDamageTurn: true,
