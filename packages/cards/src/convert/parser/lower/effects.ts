@@ -117,8 +117,8 @@ import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
-import { GRAND_LARCENY_C_LOWERINGS } from './grand-larceny-c';
 import { GRAND_LARCENY_B_LOWERINGS } from './grand-larceny-b';
+import { GRAND_LARCENY_C_LOWERINGS } from './grand-larceny-c';
 import { GAIN_ACTIVATED_ABILITIES, GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
