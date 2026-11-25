@@ -32,6 +32,7 @@ import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
+import { ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES } from './attacks-you-or-walkers';
 import { BRAINSTEALER_G9_TRIGGER_RULES } from './brainstealer-g9';
 import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
@@ -1578,6 +1579,7 @@ export const TRIGGER_RULES = [
   // Mirkwood Trapper: "a player attacks you" and "a player attacks".
   ...PLAYER_ATTACKS_TRIGGER_RULES,
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
+  ...ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES,
   ...LOOT_DISPUTE_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".

@@ -101,6 +101,28 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
         );
       }
+      if (t.attackedYouOrPlaneswalkers !== undefined && t.attackedYouOrPlaneswalkers !== true) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is true when present',
+        );
+      }
+      if (
+        t.attackedYouOrPlaneswalkers === true &&
+        (t.attackedYou === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackedInitiativeHolder === true ||
+          t.eachAttackedPlayer === true ||
+          t.eachAttackedOpponent === true ||
+          t.who === 'you')
+      ) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is about the attackers of another player and does not go with attackedYou, attackedEnchantedPlayer, attackedInitiativeHolder, eachAttackedPlayer or eachAttackedOpponent',
+        );
+      }
       if (t.attackedInitiativeHolder !== undefined && t.attackedInitiativeHolder !== true) {
         issue(
           out,

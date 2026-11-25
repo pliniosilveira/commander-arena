@@ -366,9 +366,17 @@ const DISCARD_AND_SACRIFICE_SAME_WAY =
  * (`effect.look-exile-cast-any-type`).
  */
 const LOOK_EXILE_ONE_FACE_DOWN =
-  /(?:^|, )look at the top [^.]* cards of [^.]* library, exile one of them face down, then put the rest [^.]*\.$/i;
+  /(?:^|, )look at the top [^.]* cards of [^.]* library, exile one of them face down, then put the rest on the bottom of [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_ANY_TYPE =
   /^you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell\.$/i;
+/**
+ * "Look at the top two cards of target opponent's library. Exile one of them face down and put the other on the bottom of that library." (Siphon Insight, CR 401.2, 406.3): the second
+ * sentence says what is done with the cards the first one looks at, so the two are one instruction (`effect.look-exile-face-down-one`).
+ */
+const LOOK_TOP_TWO_TARGET_OPPONENT =
+  /^look at the top two cards of target opponent['’]s library\.$/i;
+const EXILE_ONE_FACE_DOWN_OTHER_BOTTOM =
+  /^exile one of them face down and put the other on the bottom of that library\.$/i;
 /**
  * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
  * CR 115.1, 608.2c): the second sentence says what is done with the cards the first one targets, so the two are one instruction (`effect.put-one-per-graveyard`).
@@ -1621,6 +1629,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, LOOK_EXILE_ONE_FACE_DOWN) &&
       said(b, MAY_CAST_THAT_CARD_ANY_TYPE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, LOOK_TOP_TWO_TARGET_OPPONENT) &&
+      said(b, EXILE_ONE_FACE_DOWN_OTHER_BOTTOM)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
