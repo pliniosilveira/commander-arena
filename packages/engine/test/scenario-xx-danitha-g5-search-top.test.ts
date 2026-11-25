@@ -36,7 +36,8 @@ describe('"then shuffle and put that card on top" (CR 701.24b)', () => {
     expect(validateCard(syntheticCard(GROVE))).toEqual([]);
     expect(validateCard(syntheticCard(TUTOR))).toEqual([]);
     expect(isFeatureSupported('searchDestination:library')).toBe(true);
-    expect(isFeatureSupported('searchDestination:exile')).toBe(false);
+    // Jace, Architect of Thought (`search.byController`): the controller exiles the card found.
+    expect(isFeatureSupported('searchDestination:exile')).toBe(true);
   });
 
   test('the search offers the enchantments, and the prompt says the card goes on top after the shuffle', () => {
