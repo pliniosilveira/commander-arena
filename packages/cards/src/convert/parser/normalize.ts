@@ -394,12 +394,12 @@ export function splitAbilities(normalized: string): string[] {
   for (const line of splitLinkedLeaves(normalized).split('\n')) {
     if (line === '') continue;
     const last = abilities.length - 1;
-    // CR 706.3a (Journey to the Lost City): a row of a results table, "1—9 | You may ...", is a sentence of the ability above it: "If the result is 1 to 9, you may ...".
+    // CR 706.3a (Journey to the Lost City): a row of a results table, "1—9 | You may ...", is a sentence of the ability above it: "If the result is 1 to 9, you may ...". A line of nothing but "Roll a d20." keeps its rows as they are (Hylda's table, `sentence.ts`).
     const row = RESULTS_ROW.exec(line);
     if (
       row !== null &&
       last >= 0 &&
-      (inTable || /roll(?:s)? an? d\d+\.?$/iu.test(abilities[last] ?? ''))
+      (inTable || /^(?!roll an? d\d+\.?$).+\broll(?:s)? an? d\d+\.?$/iu.test(abilities[last] ?? ''))
     ) {
       inTable = true;
       const effect = `${(row[3] ?? '').charAt(0).toLowerCase()}${(row[3] ?? '').slice(1)}`;

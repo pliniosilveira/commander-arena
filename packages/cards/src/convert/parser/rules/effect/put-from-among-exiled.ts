@@ -57,7 +57,9 @@ export const EFFECT_PUT_FROM_AMONG_THOSE_CARDS_ONTO_BATTLEFIELD = defineRule<Cla
     ID,
     sequence(
       // One pattern, so that a text that is not a put fails where it starts ("you may draw" is no near miss of this rule).
-      map(pattern(/(?:you may )?(?=put\b)/iu), (m) => (m[0] === '' ? null : m[0])),
+      map(pattern(/(?:you may )?(?=put [^.]*? from among (?:those cards|them))/iu), (m) =>
+        m[0] === '' ? null : m[0],
+      ),
       literal('put '),
       TAKEN_CARD,
       literal(' from among those cards onto the battlefield'),
@@ -106,7 +108,9 @@ export const EFFECT_PUT_ANY_NUMBER_FROM_AMONG_THEM_ONTO_BATTLEFIELD = defineRule
   parse: (ctx, pos) => {
     const r = sequence(
       // One pattern, so that a text that is not a put fails where it starts ("you may draw" is no near miss of this rule).
-      map(pattern(/(?:you may )?(?=put\b)/iu), (m) => (m[0] === '' ? null : m[0])),
+      map(pattern(/(?:you may )?(?=put [^.]*? from among (?:those cards|them))/iu), (m) =>
+        m[0] === '' ? null : m[0],
+      ),
       literal('put any number of '),
       TYPES_CARDS,
       literal(' from among them onto the battlefield'),
