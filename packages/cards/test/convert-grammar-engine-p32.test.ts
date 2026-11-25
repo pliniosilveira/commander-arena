@@ -308,10 +308,11 @@ describe('fights (CR 701.14)', () => {
     );
     g.act(0).cast(spell.name, { pay: true });
     g.passAll();
-    // Two Beasts were made; the controller is asked which creature the first fights, the second fights the other.
-    const asking = g.state.pending;
-    expect(asking?.kind).toBe('choosePermanent');
+    // Two identical Beasts were made and each fought a different creature: nothing is asked, since every creature is fought whoever is paired with it.
+    g.expect.pending('priority', 0);
     expect(g.find({ name: 'Phyrexian Beast', zone: 'battlefield' })).toHaveLength(2);
+    g.expect.zone(V22, 'graveyard', { seat: 1 });
+    g.expect.zone(V33, 'graveyard', { seat: 1 });
   });
 });
 
