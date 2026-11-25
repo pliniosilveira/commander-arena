@@ -20,6 +20,7 @@ import { GUFF_EFFECT_RULES } from './guff';
 import { type Clauses, makeClause } from './operands';
 import { impliedYou } from './player';
 import { EFFECT_LEAD_THEY_BECOME_COLORED_CREATURES_ABILITY } from './they-become-bird';
+import { VRONOS_EFFECT_RULES } from './vronos';
 
 const ID = 'effect.damage-exile-if-dies';
 
@@ -777,4 +778,5 @@ export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_LEAD_EACH_BECOMES_CREATURE),
   quietly(EFFECT_LEAD_THEY_BECOME_COLORED_CREATURES_ABILITY),
   ...GUFF_EFFECT_RULES.map(quietly),
+  ...VRONOS_EFFECT_RULES.map(quietly),
 ];

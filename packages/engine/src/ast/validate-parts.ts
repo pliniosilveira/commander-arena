@@ -6931,7 +6931,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         scope.thisWay?.includes('exiledCreatures') === true,
       );
       // Depthshaker Titan (CR 603.7c): the delayed sacrifice of the targets of the ability names a target slot the ability declares.
-      if (e.effect?.kind === 'sacrifice' && kindOf(e.effect.objects) === 'target') {
+      if (
+        (e.effect?.kind === 'sacrifice' || e.effect?.kind === 'phaseOut') &&
+        kindOf(e.effect.objects) === 'target'
+      ) {
         checkObjectSelector(
           e.effect.objects as Extract<ObjectSelector, { kind: 'target' }>,
           `${path}.effect.objects`,

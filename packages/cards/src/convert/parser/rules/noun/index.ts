@@ -196,6 +196,22 @@ function targetOf(
         otherTarget: true,
       }),
   );
+  // "up to two other target planeswalkers you control" (Vronos, Masked Inquisitor, CR 115.1, 109.1): none to that many targets, none of them the source of the ability.
+  const upToOther: Parser<Bare> = map(
+    sequence(
+      literal('up to '),
+      spanned(satisfy(quantity, (n) => n >= 2)),
+      literal(' other target '),
+      targetPhrase(true),
+    ),
+    ([, count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: count.value, span: count.span },
+        plural: true,
+        upTo: true,
+        other: true,
+      }),
+  );
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
@@ -227,6 +243,7 @@ function targetOf(
       oneOrTwo,
       oneToThree,
       upToOneOther,
+      upToOther,
       upTo,
       upToThatMany,
       counted,
@@ -804,6 +821,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target artifact or enchantment you control',
     'up to one target creature',
     'up to two target creatures',
+    // Vronos, Masked Inquisitor: none to that many targets, none of them the source.
+    'up to two other target planeswalkers you control',
     // D-295 (CR 115.1, 601.2c): at least one target and at most two.
     'one or two target creatures',
     'one or two target nonland permanents you control',
@@ -849,6 +868,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   ],
   rejects: [
     'up to one target creatures',
+    'up to one other target creatures',
+    'up to two other target creature',
     'another target creatures',
     'target creature you control other than',
     'each of target creature',

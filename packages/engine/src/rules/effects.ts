@@ -2144,7 +2144,12 @@ function runEffect(
       // CR 603.7c, 701.21a (Depthshaker Titan): "any number of target noncreature artifacts you control become 3/3 artifact creatures. Sacrifice them at the beginning of the next end
       // step.": one delayed ability about the permanents the targets of the effect named as it was created (`boundObjects`), found later only if each is still that object on the
       // battlefield. With no target chosen there is nothing to wait for.
-      if (effect.effect.kind === 'sacrifice' && effect.effect.objects.kind === 'target') {
+      // Vronos, Masked Inquisitor (CR 603.7c, 702.26a): "... phase out at the beginning of the next end step": the same, bound to the targets as they are now.
+      if (
+        (effect.effect.kind === 'sacrifice' || effect.effect.kind === 'phaseOut') &&
+        effect.effect.objects.kind === 'target'
+      ) {
+        const kind = effect.effect.kind;
         const ids = resolveObjects(state, effect.effect.objects, ctx, targets).filter(
           (id) => state.objects[id]?.zone === 'battlefield',
         );
@@ -2152,7 +2157,7 @@ function runEffect(
         const ability: TriggeredAbility = {
           kind: 'triggered',
           trigger,
-          effect: { kind: 'sacrifice', objects: { kind: 'boundObjects', ids } },
+          effect: { kind, objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
