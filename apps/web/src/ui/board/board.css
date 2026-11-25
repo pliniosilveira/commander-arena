@@ -1689,6 +1689,27 @@
   font-size: calc(11px * var(--text-scale));
 }
 
+.board-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.board-preview-flip {
+  font: inherit;
+  padding: 1px 8px;
+  border: 1px solid var(--border, #3a4256);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.board-preview-flip:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .board-preview-empty {
   display: flex;
   flex-direction: column;
