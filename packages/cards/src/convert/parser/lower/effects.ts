@@ -42,6 +42,7 @@ import { amountArg, arg, type Effects, eachObject, failure, operand } from './cl
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
+  BECOMES_CREATURE_GROUP,
   CANT_BE_BLOCKED_BY_CHOSEN_PLAYER,
   CHOOSE_OPPONENT,
   CHOOSE_PLAYER,
@@ -64,6 +65,7 @@ import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
 import { COPY_CAST_PAYING_LOWERINGS } from './copy-cast-paying';
 import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
+import { COPY_LOYALTY_LOWERINGS } from './copy-loyalty';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
@@ -120,6 +122,7 @@ import { GRAVECAST_LOWERINGS } from './gravecast';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
+import { GUFF_LOWERINGS } from './guff';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
@@ -196,6 +199,7 @@ import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
+import { VRONOS_LOWERINGS } from './vronos';
 import { WIN_GAME_LOWERINGS } from './win-game';
 import { revealTopBranchesLowering, WITHERBLOOM_A_LOWERINGS } from './witherbloom-a';
 import { WITHERBLOOM_C_LOWERINGS } from './witherbloom-c';
@@ -517,6 +521,17 @@ const DAMAGE: Lowering<IrClause, Effects> = {
         to: recipient.value,
         ...(from === undefined ? {} : { from }),
       });
+    }
+    // "If a permanent dealt damage this way would die this turn, exile it instead" (Chandra, Awakened Inferno; CR 614.1a, 614.6): a rider on the one damage to a target. The permanent is
+    // marked only when damage was dealt to it (prevented damage is not "dealt this way", CR 615.6), the engine's `exileIfDiesThisTurn` with `ifDamageDealt`.
+    if (arg(clause, 'exileIfDies') !== undefined) {
+      const [only] = effects;
+      if (effects.length !== 1 || only?.kind !== 'dealDamage' || only.to.kind !== 'target') {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['effect:exileIfDiesThisTurn']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      effects.push({ kind: 'exileIfDiesThisTurn', objects: only.to, ifDamageDealt: true });
     }
     return { ok: true, value: effects, rule: clause.rule };
   },
@@ -3006,6 +3021,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOSE_ALL_ABILITIES,
   LOSE_HEXPROOF_SHROUD,
   BECOMES,
+  BECOMES_CREATURE_GROUP,
   GAIN_ALL_CREATURE_TYPES,
   SET_PT,
   FLICKER,
@@ -3082,6 +3098,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...COPY_CAST_PAYING_LOWERINGS,
   // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
   ...PRISMARI_G3_LOWERINGS,
+  ...GUFF_LOWERINGS,
+  ...COPY_LOYALTY_LOWERINGS,
+  ...VRONOS_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
@@ -3274,7 +3293,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'unlessReturn' ||
         kind === 'diesThisWay' ||
         kind === 'thePlayerIs' ||
-        kind === 'cardsExiledWithSelf'
+        kind === 'cardsExiledWithSelf' ||
+        kind === 'loyaltyActivatedThisTurn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

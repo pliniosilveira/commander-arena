@@ -1785,8 +1785,11 @@ function lowerYouDont(
   // again, `rules/cast-free.ts`), and "you don't" is that no spell was cast: declined, or none could be.
   const afterFreeCast =
     previous?.effects.length === 1 && last?.kind === 'castFree' && last.max === undefined;
+  // Chandra, Torch of Defiance (CR 608.2c, 608.2g): "You may cast that card. If you don't, ...": the cast of the exiled card is the offer, and "you don't" is that no spell was cast (declined, or it
+  // could not be cast: a land, nothing to pay with).
+  const afterCastCard = previous?.effects.length === 1 && last?.kind === 'castCard';
   if (
-    !(afterChoice || afterFreeCast) ||
+    !(afterChoice || afterFreeCast || afterCastCard) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -1931,11 +1934,17 @@ function lowerAfterDiscard(
   }
   const discards = steps
     .flatMap((s) => s.effects)
-    .some((e) => e.kind === 'discard' && e.player.kind === 'you');
+    .some(
+      (e) =>
+        (e.kind === 'discard' && e.player.kind === 'you') ||
+        // Narset of the Ancient Way: "then you may discard a card": the discard is the controller's offer.
+        (e.kind === 'may' && e.effect.kind === 'discard' && e.effect.player.kind === 'you'),
+    );
   if (!discards) return refused();
   const blocked = missingFeatures(['effect:reflexive']);
   if (blocked.length > 0) return refused(blocked);
-  ctx.discardedCardValue = sentence.afterDiscard === 'any';
+  // "that card's mana value" is the card discarded, of either wording (a nonland card: Narset of the Ancient Way; CR 202.3, 608.2c).
+  ctx.discardedCardValue = true;
   const effect = lowerReflexive(sentence, ctx);
   ctx.discardedCardValue = false;
   if (!effect.ok) return { stopped: effect };
@@ -2564,7 +2573,11 @@ function countsWhatHappened(
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it. Eventide's Shadow: "the number of counters removed this way" after counters the
       // controller chose to remove.
-      return earlier.verb === 'removeAllCounters' || earlier.verb === 'removeChosenCounters';
+      return (
+        earlier.verb === 'removeAllCounters' ||
+        earlier.verb === 'removeChosenCounters' ||
+        earlier.verb === 'removeCounterFromEachChosen'
+      );
     case 'excessDamageDealt':
     // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':

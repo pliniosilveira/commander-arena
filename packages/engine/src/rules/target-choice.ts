@@ -172,7 +172,11 @@ export function targetChoiceSpecs(
     }
     return {
       specId: spec.id,
-      min: Math.min(bounds.min, opponents),
+      // CR 115.1, 601.2c (Guff Rewrites History): "for each player, choose target ... that player controls": one target for each player who controls a legal one.
+      min:
+        spec.everyController === true
+          ? new Set(legal.map((l) => (l.kind === 'object' ? l.group : undefined))).size
+          : Math.min(bounds.min, opponents),
       // D-234: "any number of target ...": every legal target at most.
       max: Math.min(
         total === null ? bounds.max : Math.min(bounds.max, total),

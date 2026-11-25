@@ -2,7 +2,7 @@
  * Helpers of the effect interpreter (`effects.ts`): amounts, drawing, life changes, the move
  * instructions a moving effect queues, and the token definition of a `createToken` effect.
  */
-import type { Effect, EnteringCounters, PtAmount, TokenDefinition } from '../ast/types';
+import type { Effect, EntryCounter, PtAmount, TokenDefinition } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
@@ -20,6 +20,7 @@ import { isFirstDrawOfDrawStep } from './draw-replace';
 import { drawSkippedBy } from './draw-skip';
 import { gainLife, type LifeGainResult } from './life-gain';
 import { lifeTotalIsLocked } from './player-lock';
+import { drawLimitReached } from './player-protection';
 import { prepareCardOf } from './prepare';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -34,6 +35,7 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'eachOtherOpponent',
   'eachPlayerExcept',
   'eachPlayerControlling',
+  'eachPlayerControllingMore',
   'all',
   'controllerOf',
   'ownerOf',
@@ -120,6 +122,8 @@ export function drawCard(
   if (skippedBy !== null) {
     return { kind: 'done', state, events: [{ kind: 'drawSkipped', seat, source: skippedBy }] };
   }
+  // CR 121.2b (Narset, Parter of Veils): a draw past "can't draw more than one card each turn" does not happen: nothing moves and nothing is drawn.
+  if (drawLimitReached(state, seat)) return { kind: 'done', state, events: [] };
   // CR 504.1 (D-379): a draw of the active player in their own draw step; "the first one you draw in each of your draw steps" reads that it was made.
   const firstInDrawStep = isFirstDrawOfDrawStep(state, seat);
   if (state.turn.step === 'draw' && state.turn.activeSeat === seat) {
@@ -188,7 +192,7 @@ export function moveInstructions(
   position: 'top' | 'bottom' | number = 'top',
   tapped = false,
   controller?: 'owner' | 'you',
-  withCounters?: EnteringCounters,
+  withCounters?: EntryCounter | readonly EntryCounter[],
 ): Instruction[] {
   return ids.map((object) => ({
     kind: 'move' as const,

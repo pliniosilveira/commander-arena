@@ -40,6 +40,7 @@ import {
   validateAttacks,
   validateBlocks,
 } from './combat-legality';
+import { blockersLeft, combatCreatureLimit } from './combat-limits';
 import { askingFlow } from './damage-order';
 import { attackerDefender } from './defending';
 import { applyExerts, canExert, type ExertAttack } from './exert';
@@ -100,6 +101,9 @@ export function declareAttackersDecision(
     seat,
     candidates,
     mustAttack: requiredAttackers(state, candidates),
+    ...(combatCreatureLimit(state, 'attack') === null
+      ? {}
+      : { maxAttackers: combatCreatureLimit(state, 'attack') as number }),
     ...(attackCosts.length === 0 ? {} : { attackCosts }),
   };
 }
@@ -253,6 +257,7 @@ function blockDecision(
     seat: defender,
     attackers,
     candidates,
+    ...(blockersLeft(state) === null ? {} : { maxBlockers: blockersLeft(state) as number }),
     ...(tax.source === null
       ? {}
       : {

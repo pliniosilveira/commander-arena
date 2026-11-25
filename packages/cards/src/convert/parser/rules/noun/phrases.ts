@@ -760,11 +760,15 @@ export function permanentPhrase(
       if (last === undefined) return fail(ctx, pos);
       // A modifier belongs to the one member it stands before: every member has one, or only the last does ("artifact, enchantment, or tapped creature"; "tapped creature or planeswalker" stays unread).
       const members = [first.value, ...items.map((i) => i.filter)];
-      const allModifiers = members.every((m) => m.hadModifiers === true);
-      const onlyLastModified =
-        members.slice(0, -1).every((m) => m.hadModifiers !== true) &&
-        members[members.length - 1]?.hadModifiers === true;
-      if (!allModifiers && !onlyLastModified) return fail(ctx, pos);
+      // Planeswalker Party deck (Nahiri, the Harbinger): "enchantment, tapped artifact, or tapped creature": plain members may come before the first member that has a modifier, and every
+      // member after it has one ("tapped creature or planeswalker" stays unread).
+      const firstModified = members.findIndex((m) => m.hadModifiers === true);
+      if (
+        firstModified < 0 ||
+        !members.slice(firstModified).every((m) => m.hadModifiers === true)
+      ) {
+        return fail(ctx, pos);
+      }
       const shaped =
         items.slice(0, -1).every((i) => i.separator === ', ') &&
         (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
@@ -870,11 +874,38 @@ export function permanentPhrase(
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
+  // Planeswalker Party deck (Mobilized District; CR 205.4, 205.2a): "legendary creature and planeswalker" is the legendary permanents that are creatures and/or planeswalkers (the ruling:
+  // a legendary planeswalker that is also a creature counts once), the supertype of both words.
+  const legendaryCreatureAndPlaneswalker: Parser<IrFilter> = (ctx, pos) => {
+    const r = sequence(
+      literal('legendary creature and planeswalker'),
+      optional(CONTROL_SUFFIX, undefined),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const base = toFilter(
+      'battlefield',
+      { ...NO_PARTS, controller: r.value[1] },
+      ctx.text.slice(pos, r.pos),
+    );
+    return {
+      ok: true,
+      value: {
+        ...base,
+        supertypes: ['legendary'],
+        anyOf: [
+          { types: ['creature'], raw: 'creature' },
+          { types: ['planeswalker'], raw: 'planeswalker' },
+        ],
+      },
+      pos: r.pos,
+    };
+  };
   // A choice of types is read for one object ("target artifact or enchantment"); plurals ("all
   // artifacts and enchantments") join with "and" and are not read.
   const phrase: Parser<IrFilter> = plural
     ? choice(quiet(pluralAndOr), single)
     : choice(
+        quiet(legendaryCreatureAndPlaneswalker),
         choose,
         quiet(modifiedChoice),
         quiet(mixedChoice),

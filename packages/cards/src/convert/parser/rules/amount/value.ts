@@ -1050,6 +1050,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of cards looked at while scrying this way',
     // CR 120.2a: the opponents a source dealt combat damage to this turn.
     'where X is the number of your opponents who were dealt combat damage by ~ or a Dragon this turn',
+    'where X is the number of players who control more lands than you',
   ],
   rejects: [
     'where X is the total mana value of creatures destroyed this way',

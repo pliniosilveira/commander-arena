@@ -1110,6 +1110,26 @@ export function resolvePlayers(
         ),
       );
     }
+    case 'eachPlayerControllingMore': {
+      // CR 102.1, 109.4, 101.4 (Oreskos Explorer): the other players who control more battlefield permanents matching the filter than the controller of the effect.
+      const filter = {
+        ...selector.filter,
+        zone: 'battlefield' as const,
+        controller: 'you' as const,
+      };
+      const battlefield = objectsInZone(state, 'battlefield');
+      const count = (seat: SeatId): number =>
+        battlefield.filter((id) =>
+          matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+        ).length;
+      const mine = count(ctx.controller);
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) => seat !== ctx.controller && count(seat) > mine,
+        ),
+      );
+    }
     case 'all':
       // D-131: "you and target opponent": the players the members name, each once, in APNAP order (CR 101.4).
       return apnapOrder(
@@ -1307,6 +1327,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'eachOtherOpponent' ||
     sel.kind === 'eachPlayerExcept' ||
     sel.kind === 'eachPlayerControlling' ||
+    sel.kind === 'eachPlayerControllingMore' ||
     sel.kind === 'all' ||
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||

@@ -405,6 +405,23 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         issue(out, `${path}.removeCounter`, 'removeCounter is a +1/+1 or a -1/-1 counter');
       }
       return true;
+    case 'preventDamageAround':
+      if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
+        issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
+      }
+      if (
+        !isOneOf(s.events, [
+          'dealtByThis',
+          'dealtToYouAndYourOtherPermanents',
+          'dealtToYouAndYourPlaneswalkers',
+        ])
+      ) {
+        issue(out, `${path}.events`, `unknown events ${JSON.stringify(s.events)}`);
+      }
+      if (s.keep !== undefined && (!isCount(s.keep) || s.keep < 1)) {
+        issue(out, `${path}.keep`, 'the damage left is a whole number of at least 1');
+      }
+      return true;
     case 'blockTax':
       checkBlockTax(s, path, out);
       return true;
@@ -421,6 +438,27 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
           `${path}.from`,
           `unknown protection quality ${String((s as { from: unknown }).from)}`,
         );
+      }
+      return true;
+    case 'combatCreatureLimit':
+      if (s.what !== 'attack' && s.what !== 'block') {
+        issue(out, `${path}.what`, 'combatCreatureLimit limits attackers or blockers');
+      }
+      if (!isCount(s.max) || s.max < 1) {
+        issue(out, `${path}.max`, 'the most creatures is a whole number of at least 1');
+      }
+      return true;
+    case 'drawLimit':
+      // CR 121.2b: the opponents of the controller, or every player, and a whole number of cards of at least 1.
+      if (s.who !== 'opponents' && s.who !== 'players') {
+        issue(
+          out,
+          `${path}.who`,
+          'drawLimit is said of the opponents of the controller or of the players',
+        );
+      }
+      if (!isCount(s.max) || s.max < 1) {
+        issue(out, `${path}.max`, 'the most cards drawn in a turn is a whole number of at least 1');
       }
       return true;
     case 'cantGainLife':

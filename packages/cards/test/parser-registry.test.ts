@@ -658,6 +658,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-attached': asIs,
   'static.prevent-damage-to-self': asIs,
+  'static.prevent-damage-around': asIs,
+  'static.draw-limit': asIs,
+  'static.combat-creature-limit': asIs,
+  'static.prevent-all-but': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
   'static.sacrifice-alt-cost': asIs,
@@ -791,6 +795,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
+  'replacement.enters-as-copy-extra-counters': asIs,
   'replacement.enters-as-copy-except-quoted': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
@@ -1102,6 +1107,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
+  'condition.didnt-activate-loyalty': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you lose 2 life.`,
+  ),
   // Twilight Diviner: the intervening "if" of a trigger about one or more creatures entering.
   'condition.entered-from-graveyard': permanent(
     (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
@@ -1313,6 +1321,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As long as ${e}, enchanted creature has hexproof.`,
   ),
   'noun.all-enchanted': spell((e) => `Destroy ${e}.`),
+  'noun.all-not-legendary': spell((e) => `Destroy ${e}.`),
   'static.equip-cost-reduction': asIs,
   // Stage P52 (D-210): the players an effect asks, and what the instructions before them did.
   // Issue 26 (the Danitha deck, D-403): the condition of the second sentence of an offer to put a card onto the battlefield.

@@ -206,7 +206,7 @@ describe('Lavalanche: "target player or planeswalker" is a real target now (D-20
 
 describe('what the real planeswalkers still stop at (no card is half read)', () => {
   const stops: readonly [string, RegExp][] = [
-    ['Chandra, Torch of Defiance', /You may cast that card/],
+    // Chandra, Torch of Defiance stopped at "You may cast that card" until the Planeswalker Party deck taught the engine `castCard` of `moved` (CR 608.2g); it is supported now.
     // Vraska, Golgari Queen stopped at "that player loses the game" until D-269 taught the engine that effect (CR 104.3e); it is supported now and
     // `convert-grammar-engine-p92-destiny.test.ts` plays its emblem.
     ['Ugin, the Spirit Dragon', /Exile each permanent/],
@@ -216,7 +216,7 @@ describe('what the real planeswalkers still stop at (no card is half read)', () 
     // Gideon Jura stopped at "attack ~ if able" until the First Flight decks taught the engine `requireAttackSource` (CR 508.1d).
     // Compleated is read now (CR 702.150a); the first line still unread is her +1.
     ['Tamiyo, Compleated Sage', /Tap up to one target artifact or creature/],
-    ['Narset, Parter of Veils', /can't draw more than one card/],
+    // Narset, Parter of Veils stopped at "can't draw more than one card" until the Planeswalker Party deck taught the engine `drawLimit`; it is supported now.
   ];
   test.each(stops)(
     '%s is unsupported at a line that needs more than a planeswalker',

@@ -19,7 +19,7 @@
  *   enters, whatever put it there (a resolving spell, an effect, a land played from the hand); the
  *   caller asks and calls again with `entersChosen` set, and the answer is stored on the new object.
  */
-import type { Ability, EnteringCounters, Zone } from '../ast/types';
+import type { Ability, EntryCounter, Zone } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type {
@@ -175,7 +175,7 @@ export interface MoveRequest {
    * The permanent enters with counters on it (CR 122.6, 614.1c): "return it to the battlefield with a -1/-1
    * counter on it" (Persist). Only for a move to the battlefield; the counters are on it as it enters.
    */
-  readonly withCounters?: EnteringCounters;
+  readonly withCounters?: EntryCounter | readonly EntryCounter[];
   /**
    * The face the new object has up, when it is not simply carried over: the face being cast when a
    * card moves to the stack (CR 709.3, 712.11b, 715.3), the face of a modal double-faced card played
@@ -497,6 +497,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     old.zone === 'battlefield' &&
     (old.alt === 'unearth' || old.exileIfLeaves === true) &&
     to !== 'exile'
+  ) {
+    to = 'exile';
+    toSeat = null;
+  }
+  // CR 614.1a, 614.6 (Chandra, Awakened Inferno): "If a permanent dealt damage this way would die this turn, exile it instead": the permanent the effect marked this turn.
+  if (
+    old.zone === 'battlefield' &&
+    to === 'graveyard' &&
+    old.exileIfDiesTurn !== undefined &&
+    old.exileIfDiesTurn === state.turn.number
   ) {
     to = 'exile';
     toSeat = null;
@@ -907,12 +917,20 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       request.entersChosen ?? null,
     );
     if (request.withCounters !== undefined) {
-      const { counter, count, also } = request.withCounters;
-      for (const entering of [{ counter, count }, ...(also ?? [])]) {
-        counters = {
-          ...counters,
-          [entering.counter]: (counters[entering.counter] ?? 0) + entering.count,
-        };
+      // Semester's End: an entry with `ifType` counts only when the permanent has the type as it enters (its card's types: a copy or an effect is not on it yet).
+      const entering = definitionOf(state, old.card ?? ('' as never)).faces[faceIndex];
+      const arrived = new Set(entering?.types ?? []);
+      for (const entry of Array.isArray(request.withCounters)
+        ? request.withCounters
+        : [request.withCounters as EntryCounter]) {
+        if (entry.ifType !== undefined && !arrived.has(entry.ifType)) continue;
+        // Gilraen (CR 122.6): `also` are more kinds of counter it enters with.
+        for (const each of [
+          { counter: entry.counter, count: entry.count },
+          ...(entry.also ?? []),
+        ]) {
+          counters = { ...counters, [each.counter]: (counters[each.counter] ?? 0) + each.count };
+        }
       }
     }
     // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
@@ -1187,6 +1205,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + castX },
         });
       }
+    }
+  }
+  // CR 707.9b, 614.12, 122.6 (Spark Double): "except it enters with an additional +1/+1 counter on it if it's a creature, ... an additional loyalty counter on it if it's a planeswalker".
+  if (to === 'battlefield' && copyRule?.extraCounters !== undefined && copiedObject !== undefined) {
+    const types = derive(next, getObject(next, newId)).types;
+    for (const extra of copyRule.extraCounters) {
+      if (!types.includes(extra.type)) continue;
+      counters = { ...counters, [extra.counter]: (counters[extra.counter] ?? 0) + 1 };
+      const copy = getObject(next, newId);
+      next = setObject(next, {
+        ...copy,
+        counters: { ...copy.counters, [extra.counter]: (copy.counters[extra.counter] ?? 0) + 1 },
+      });
     }
   }
   if (to === 'battlefield') {

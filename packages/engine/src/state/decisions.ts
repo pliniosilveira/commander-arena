@@ -344,6 +344,8 @@ export interface DeclareAttackersDecision extends DecisionBase {
    * that leaves one out is illegal. Always present, empty when nothing is required.
    */
   readonly mustAttack: readonly ObjectId[];
+  /** "No more than one creature can attack each combat" (CR 508.1c, Silent Arbiter): the most creatures that may be declared. Absent with no limit. */
+  readonly maxAttackers?: number;
   /**
    * What attacking costs (D-125, CR 508.1h), present only when some target is taxed ("Creatures can't attack you
    * unless their controller pays {2} for each creature they control that's attacking you"): for each taxed
@@ -377,6 +379,8 @@ export interface DeclareBlockersDecision extends DecisionBase {
     /** "Must be blocked if able" (D-206, CR 509.1c): a declaration that could block it and does not is refused. */
     readonly mustBeBlocked?: true;
   }[];
+  /** "No more than one creature can block each combat" (CR 509.1b, Silent Arbiter): the most creatures this declaration may block with (the limit less those already declared). Absent with no limit. */
+  readonly maxBlockers?: number;
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
@@ -1009,7 +1013,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly first: readonly ObjectId[];
     readonly second: readonly ObjectId[];
     readonly chosenTo: 'hand' | 'graveyard';
-    readonly otherTo: 'hand' | 'graveyard';
+    readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
     readonly separator: SeatId;
     readonly receiver: SeatId;
     /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */

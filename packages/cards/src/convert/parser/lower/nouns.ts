@@ -76,6 +76,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   combatDamagedThisTurn: 'selector:combatDamagedThisTurn',
   // CR 102.1: "each player who controls a creature with power 4 or greater".
   eachPlayerControlling: 'selector:eachPlayerControlling',
+  // CR 102.1: "the number of players who control more lands than you".
+  eachPlayerControllingMore: 'selector:eachPlayerControllingMore',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -115,6 +117,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyNumber',
   // Hylda group 3: "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
   'selector:differentControllers',
+  // Guff Rewrites History: "for each player, choose target ... that player controls" (`TargetSpec.everyController`).
+  'selector:everyController',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
@@ -1157,6 +1161,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           return failure(noun, []);
         }
       }
+      if (noun.everyController === true) {
+        const blocked = missingFeatures(['selector:everyController']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        if (!anyNumberTarget || noun.differentControllers !== true) return failure(noun, []);
+      }
       let upToAmount: Amount | undefined;
       if (upToEnteredX) {
         const blocked = missingFeatures(['selector:upToAmount', 'amount:enteredX']);
@@ -1199,6 +1208,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               ...(noun.differentControllers === true
                 ? { differentControllers: true as const }
                 : {}),
+              ...(noun.everyController === true ? { everyController: true as const } : {}),
             }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
@@ -1727,6 +1737,17 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
           ...(opponents ? { opponentsOnly: true as const } : {}),
         })
       );
+    }
+    case 'eachPlayerControllingMore': {
+      // CR 102.1, 109.4: the other players who control more battlefield permanents like the noun than the controller; the filter names no controller (each player is "you" in turn).
+      if (noun.of === undefined) return failure(noun, []);
+      const filter = lowerFilter(noun.of);
+      if (!filter.ok) return filter;
+      if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
+        return failure(noun, []);
+      }
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'eachPlayerControllingMore', filter: filter.value });
     }
     case 'lostLifeThisTurn': {
       // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.
