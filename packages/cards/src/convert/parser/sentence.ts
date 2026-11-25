@@ -38,12 +38,13 @@ const SENTENCE_END: Parser<string> = choice(literal('.'), QUOTE_ENDS_SENTENCE);
 /**
  * The bare comma between the instructions of a list of three or more ("Shuffle your graveyard into your library, draw X cards, untap up to five lands, and you
  * have no maximum hand size", CR 608.2c: followed in the order written): only when the sentence goes on to a closing ", and " (the last join of the list), so a
- * comma that ends an instruction before something else ("..., where X is ...") is not taken for one.
+ * comma that ends an instruction before something else ("..., where X is ...") is not taken for one. The list may close with ", then " as well
+ * ("Amass Orcs 5, mill five cards, then return a creature card from your graveyard to the battlefield", CR 608.2c).
  */
 const LIST_COMMA: Parser<string> = (ctx, pos) => {
   const comma = literal(', ')(ctx, pos);
   if (!comma.ok) return comma;
-  return /^[^.]*, and /u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
+  return /^[^.]*, (?:and |then )/u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
 };
 
 const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = listWithJoins(
@@ -58,6 +59,8 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
 const RECURSION_LEAD_CONDITIONS = [
   'condition.exiled-this-way',
   'condition.it-matches',
+  // Moria Scavenger (CR 602.2b, 701.9a): "If the discarded card was a creature card, amass Orcs 1." in the body of an activated ability whose cost discards.
+  'condition.discarded-card-matches',
   // D-298: "If its mana value was 3 or less, scry 1."
   'condition.its-mana-value',
   'condition.gift-promised',
@@ -130,6 +133,8 @@ const TURN_CONDITIONS = [
   'condition.first-combat-phase',
   // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
   'condition.entered-this-turn',
+  // Mind Flayarrrs deck (River of Tears): "{T}: Add {U}. If you played a land this turn, add {B} instead." (CR 305.1, 605.3b).
+  'condition.played-land-this-turn',
 ] as const;
 
 /**
@@ -189,6 +194,8 @@ const LEAD_CONDITIONS = [
   'condition.put-counters-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
+  // Elven Council deck: "If time gets more votes, ..." after a vote.
+  'condition.vote-result',
   // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.
   'condition.two-milled-cards-share-all-types',
   // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
@@ -201,6 +208,8 @@ const LEAD_CONDITIONS = [
   'condition.there-are-counters-on-self',
   // Kes, Evolving Telepath: "Then if she has nine or more time counters on her, sacrifice her." (CR 122.1, 608.2c).
   'condition.this-counter-count',
+  // Incubation Druid: "If ~ has a +1/+1 counter on it, add three mana of that type instead." (CR 122.1, 608.2c).
+  'condition.this-has-counter',
   // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
   'condition.the-player-is-opponent-with-cards',
   // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.
@@ -292,8 +301,12 @@ const TRAILING_CONDITIONS = [
   'condition.it-was-attacking',
   // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
   'condition.its-stat-greater-than-each-other',
+  // Shelinda, Yevon Acolyte: "put a +1/+1 counter on that creature if its power is less than ~'s power" (CR 608.2c).
+  'condition.its-power-less-than-self',
   // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
   'condition.this-power',
+  // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
+  'condition.exiled-mana-value-at-least',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -351,6 +364,10 @@ interface SentenceOptions {
    * of a triggered ability asks for it, where the lowering joins the two.
    */
   readonly afterExile?: boolean;
+  /**
+   * "When you reveal a creature card this way, ..." may start the sentence (Yuna's Whistle, CR 603.12): the reflexive ability the "reveal cards until" before it creates. The text of a spell asks for it.
+   */
+  readonly afterReveal?: boolean;
   /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
@@ -434,6 +451,16 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
       literal('whenever a creature you control deals combat damage to that player this turn, '),
       () => ({
         step: 'combatDamageToThatPlayer' as const,
+        whose: 'you' as const,
+      }),
+    ),
+    // Forth Eorlingas! (CR 603.7, 603.2c, 510.2): the creatures that deal combat damage in one event to players, this turn.
+    map(
+      literal(
+        'whenever one or more creatures you control deal combat damage to one or more players this turn, ',
+      ),
+      () => ({
+        step: 'combatDamageBatch' as const,
         whose: 'you' as const,
       }),
     ),
@@ -555,6 +582,15 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
     let afterExile = false;
+    let afterReveal: string | undefined;
+    if (options.afterReveal === true) {
+      const lead = pattern(/when you reveal an? ([a-z]+) card this way, /iu)(ctx, start);
+      if (lead.ok) {
+        reflexive = true;
+        afterReveal = (lead.value[1] ?? '').toLowerCase();
+        at = lead.pos;
+      }
+    }
     if (options.afterDiscard === true) {
       // "When you discard a card this way, ..." (Summon: Kujata) is made by any card, the nonland one by a card that is not a land.
       const lead = choice(
@@ -651,7 +687,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
                       options.may === 'afterTest'
                         ? pattern(
                             condition === undefined
-                              ? /(?=you may search )/iu
+                              ? /(?=you may (?:search |return that card to the battlefield ))/iu
                               : /(?=you may (?:add|search ))/iu,
                           )(c, p)
                         : undefined;
@@ -725,9 +761,10 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined && !afterExile
+        ...(reflexive && afterDiscard === undefined && !afterExile && afterReveal === undefined
           ? { reflexive: true as const }
           : {}),
+        ...(afterReveal === undefined ? {} : { afterReveal }),
         ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
@@ -757,6 +794,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   dieRows: true,
   // Tip the Scales (CR 603.12): "Sacrifice a creature. When you do, ...": the lowering reads a reflexive ability only after an instruction it can tell was done.
   reflexive: true,
+  // Yuna's Whistle: "When you reveal a creature card this way, put X +1/+1 counters on target creature you control, where X is the mana value of that card."
+  afterReveal: true,
 });
 
 /**

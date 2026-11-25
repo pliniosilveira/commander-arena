@@ -11,6 +11,7 @@
  * at the head of the queue and remembers that they were already replaced.
  */
 import type { ObjectId, SeatId } from '../ids';
+import { opponentsOf } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -53,4 +54,37 @@ export function drawReplacementOf(state: GameState, seat: SeatId): DrawReplaced 
     }
   }
   return sources.length === 0 ? none : { sources, count };
+}
+
+/** A draw that a `drawRedirect` replaces: the permanent whose effect applies, and the player who draws in its place (its controller). */
+export interface DrawRedirected {
+  readonly source: ObjectId;
+  readonly controller: SeatId;
+}
+
+/**
+ * CR 614.1a, 614.11, 504.1 (Notion Thief): the permanent whose `drawRedirect` replaces a draw of `seat` that is about to happen, or null when none does. It applies to the draws of
+ * every opponent of the controller of the permanent but the first one of their own draw step, and to a draw once (CR 614.5: `used` are the permanents whose effect already
+ * replaced the draw this one stands for). The oldest permanent goes first when several apply; the player is not asked which (CR 616.1, `docs/ROADMAP.md`). Nothing applies to a
+ * player who has lost or to the draw step's own first draw, which the turn-based action of the step makes without asking here.
+ */
+export function drawRedirectOf(
+  state: GameState,
+  seat: SeatId,
+  used: readonly ObjectId[],
+): DrawRedirected | null {
+  const first = isFirstDrawOfDrawStep(state, seat);
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || used.includes(id)) continue;
+    const controller = controllerOf(state, obj);
+    if (controller === seat || !opponentsOf(state, controller).includes(seat)) continue;
+    for (const ability of derive(state, obj).abilities) {
+      if (ability.kind !== 'replacement' || ability.replacement.kind !== 'drawRedirect') continue;
+      // CR 504.1: "except the first one they draw in each of their draw steps": that draw is not replaced.
+      if (ability.replacement.exceptFirstInDrawStep && first) continue;
+      return { source: id, controller };
+    }
+  }
+  return null;
 }

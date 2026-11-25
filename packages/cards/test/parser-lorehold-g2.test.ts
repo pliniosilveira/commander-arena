@@ -98,7 +98,7 @@ describe('the votes counted by "for each": "You mill a card for each past vote" 
   test.each([
     'You mill a card for each vote.',
     'You mill a card for each past votes.',
-    'You mill a card for each Past vote.',
+    'You mill a card for each PAST vote.',
     'You mill a card for each extra vote.',
     'You mill a card for each player vote.',
     'You mill a card for each past or present vote.',

@@ -31,11 +31,14 @@ function condition(
   return { kind: 'condition', test, span: { start, end }, rule };
 }
 
-/** "N or more", "N or greater", "N or less", "N or fewer": the comparison of a whole number (CR 107.1). */
-function numberCompare(): Parser<IrComparison> {
+/** "thirty": the one number word above twenty that a count of counters uses (Lux Artillery); `quantity` reads one to twenty and one hundred. */
+const THIRTY: Parser<number> = map(pattern(/thirty(?![\p{L}\p{N}])/iu), () => 30);
+
+/** "N or more", "N or greater", "N or less", "N or fewer": the comparison of a whole number (CR 107.1). With `wide`, "thirty" too. */
+function numberCompare(wide = false): Parser<IrComparison> {
   return map(
     sequence(
-      satisfy(quantity, (n) => n >= 1),
+      satisfy(wide ? choice(THIRTY, quantity) : quantity, (n) => n >= 1),
       pattern(/ or (more|greater|less|fewer)(?![\p{L}\p{N}])/iu),
     ),
     ([value, word]): IrComparison => ({
@@ -46,7 +49,7 @@ function numberCompare(): Parser<IrComparison> {
 }
 
 const DESIGNATION =
-  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing)(?![\p{L}\p{N}])/iu;
+  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing|(there is no) monarch)(?![\p{L}\p{N}])/iu;
 
 /**
  * `condition.designation`: "you're the monarch", "you are the monarch", "an opponent is the monarch", "a player is
@@ -60,7 +63,7 @@ const DESIGNATION =
 export const CONDITION_DESIGNATION = defineRule<IrCondition>({
   id: 'condition.designation',
   family: 'condition',
-  leading: ['you', 'you’re', "you're", 'an', 'a'],
+  leading: ['you', 'you’re', "you're", 'an', 'a', 'there'],
   cites: [
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
@@ -83,8 +86,13 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     'you don’t have the city’s blessing',
     "an opponent has the city's blessing",
     "a player has the city's blessing",
+    // Archivist of Gondor, Crown of Gondor (CR 725.1, 603.4): nobody is the monarch, the negation of "a player is the monarch".
+    'there is no monarch',
   ],
   rejects: [
+    'there is no monarch of the realm',
+    "there's no monarch",
+    'there is no city’s blessing',
     'you become the monarch',
     "you're the monarch.",
     "you're monarch",
@@ -106,7 +114,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     const r = spanned(pattern(DESIGNATION))(ctx, pos);
     if (!r.ok) return r;
     const blessing = r.value.value[2] !== undefined;
-    const words = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
+    const words = (r.value.value[1] ?? r.value.value[2] ?? r.value.value[3] ?? '').toLowerCase();
     const det = words.startsWith('you')
       ? 'you'
       : words.startsWith('an opponent')
@@ -128,7 +136,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
       who,
       designation: blessing ? 'citysBlessing' : 'monarch',
     });
-    const negative = /(?: not|aren['’]t|don['’]t have)$/.test(words);
+    const negative = /(?: not|aren['’]t|don['’]t have|there is no)$/.test(words);
     return {
       ok: true,
       value: negative
@@ -238,6 +246,53 @@ export const CONDITION_TOTAL_STAT = defineRule<IrCondition>({
     return {
       ok: true,
       value: condition('condition.total-stat', pos, r.pos, { kind: 'amountIs', amount, compare }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.counters-among`: "there are thirty or more counters among artifacts and creatures you control" (Lux Artillery, CR 122.1, 603.4): the counters of every kind on the objects a
+ * group names, added together, compared with a number. The engine's `amountIs` of an `aggregate` of the stat `counters`, read as the ability triggers and again as it resolves
+ * (CR 603.4). Not read: "a" counter, a kind of counter ("+1/+1 counters"), a number alone, a group that is not plural, more words after the group.
+ */
+export const CONDITION_COUNTERS_AMONG = defineRule<IrCondition>({
+  id: 'condition.counters-among',
+  family: 'condition',
+  leading: ['there'],
+  cites: ['CR 122.1 (Counters)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    'there are thirty or more counters among artifacts and creatures you control',
+    'there are 30 or more counters among creatures you control',
+    'there are five or fewer counters among permanents you control',
+  ],
+  rejects: [
+    'there are thirty or more counters',
+    'there are thirty counters among artifacts and creatures you control',
+    'there are thirty or more +1/+1 counters among creatures you control',
+    'there is one or more counter among creatures you control',
+    'there are thirty or more counters among artifacts and creatures you control.',
+    'there are zero or more counters among creatures you control',
+    'you have thirty or more counters among creatures you control',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('there are '),
+      numberCompare(true),
+      literal(' counters among '),
+      counted('condition.counters-among', true),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, compare, , of] = r.value;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = { kind: 'aggregate', how: 'total', stat: 'counters', of, span };
+    return {
+      ok: true,
+      value: condition('condition.counters-among', pos, r.pos, {
+        kind: 'amountIs',
+        amount,
+        compare,
+      }),
       pos: r.pos,
     };
   },
@@ -353,6 +408,7 @@ export const GAME_STATE_CONDITION_RULES = [
   CONDITION_AMOUNT_COUNT,
   CONDITION_OPPONENT_CARDS_IN_GRAVEYARD,
   CONDITION_TOTAL_STAT,
+  CONDITION_COUNTERS_AMONG,
   CONDITION_OPPONENT_HAS_MORE,
 ];
 

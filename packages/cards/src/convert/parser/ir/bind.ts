@@ -48,6 +48,11 @@ export interface BindScope {
    * says nothing of what it follows, and a line that starts with "it" is not read as the line before's.
    */
   lastTarget?: IrNoun;
+  /**
+   * The last group ("each", `det` each) noun of the spell lines read so far (CR 608.2c; Unbreakable Formation: "Creatures you control gain indestructible until end of turn.
+   * Addendum — If you cast this spell during your main phase, put a +1/+1 counter on each of those creatures"): the group "those creatures" on a line of its own is about.
+   */
+  lastGroup?: IrNoun;
 }
 
 export interface BindOptions {
@@ -77,6 +82,8 @@ interface Antecedent {
   readonly kind: 'object' | 'player';
   /** The target of the spell line before (stage P35, D-176): only a "that creature" of the next line may mean it. */
   readonly previousLine?: true;
+  /** The group of the spell line before (CR 608.2c): only "those creatures" of the next line may mean it. */
+  readonly groupLine?: true;
   /** The token one instruction made (stage P48, D-205): only "that token" may mean it, never "it" or "that creature". */
   readonly token?: true;
   /**
@@ -156,7 +163,7 @@ function classify(raw: string): Pronoun | null {
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'each of them') return { kind: 'plural', each: true };
-  if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
+  if (word === 'them' || /^(?:each of )?those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
@@ -265,6 +272,24 @@ class Binder {
     this.seed(test.amount.of, 'triggerSubject', true);
   }
 
+  /** The creatures of an attack batch trigger, the antecedent of "those creatures" of its body (Frontier Warmonger, CR 603.2c). */
+  seedAttackers(trigger: IrTrigger): void {
+    this.antecedents.push({
+      noun: {
+        kind: 'noun',
+        det: 'each',
+        filter: { raw: 'those creatures', types: ['creature'] },
+        upTo: false,
+        plural: true,
+        other: false,
+        span: trigger.span,
+        rule: trigger.rule,
+        ref: ATTACKERS_REF,
+      },
+      kind: 'object',
+    });
+  }
+
   /** The controller of the permanent a death trigger is about, as an antecedent of "that player" (CR 603.10a). */
   seedControllerOfSubject(subject: IrNoun): void {
     this.antecedents.push({
@@ -281,6 +306,28 @@ class Binder {
       },
       kind: 'player',
     });
+  }
+
+  /** The last group of "each" objects this binder met, which a later spell line may name as "those creatures" (CR 608.2c). */
+  lastGroupNoun(): IrNoun | undefined {
+    return [...this.antecedents]
+      .reverse()
+      .find(
+        (a) =>
+          a.kind === 'object' &&
+          a.previousLine !== true &&
+          a.tokens !== true &&
+          a.noun.det === 'each' &&
+          /^m\d+$/u.test(a.noun.ref ?? ''),
+      )?.noun;
+  }
+
+  /** The group the spell line before this one named, the antecedent of a "those creatures" of this line and of no other pronoun (CR 608.2c). */
+  seedGroupLine(noun: IrNoun): void {
+    this.antecedents.push({ noun, kind: 'object', previousLine: true, groupLine: true });
+    // The refs of this line's own mentions go on from the one carried, so no ref of this line is the same as the group's.
+    const n = /^m(\d+)$/u.exec(noun.ref ?? '');
+    if (n !== null) this.mentionCount = Math.max(this.mentionCount, Number(n[1]));
   }
 
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
@@ -302,6 +349,8 @@ class Binder {
   private playerAsked = false;
 
   private resolveAnaphor(noun: IrNoun): IrNoun {
+    // "for each card in their graveyard" (Guiltfeeder): "their" is the player of the instruction, which the lowering of that instruction names; the binding pass has nothing to say of it.
+    if (noun.rule === 'noun.their-zone') return noun;
     const pronoun = classify(noun.filter.raw);
     const recent = [...this.antecedents].reverse();
     let found: Antecedent | undefined;
@@ -309,7 +358,9 @@ class Binder {
       case 'player':
         // Oracle "they" may refer to the most recent plural object group instead of a player.
         if (/^they$/iu.test(noun.filter.raw.trim())) {
-          const pluralIndex = recent.findIndex((a) => a.kind === 'object' && a.noun.plural);
+          const pluralIndex = recent.findIndex(
+            (a) => a.kind === 'object' && a.noun.plural && a.groupLine !== true,
+          );
           const playerIndex = recent.findIndex((a) => a.kind === 'player');
           if (pluralIndex >= 0 && (playerIndex < 0 || pluralIndex < playerIndex)) {
             found = recent[pluralIndex];
@@ -324,8 +375,11 @@ class Binder {
           (a) =>
             a.kind === 'player' &&
             a.noun.filter.raw !== '' &&
+            // Cavern-Hoard Dragon (CR 603.2c): "Whenever ~ deals combat damage to a player, you create a Treasure token for each artifact that player controls": in a counting phrase of a trigger about a
+            // player, "that player" is that player and never the "you" of the sentence.
             !(
-              this.playerAsked &&
+              (this.playerAsked ||
+                (this.inAmount && this.antecedents.some((x) => x.noun.ref === 'trigActor'))) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
             ),
@@ -337,8 +391,10 @@ class Binder {
         found = recent.find(
           (a) =>
             a.kind === 'object' &&
+            (a.groupLine !== true || /^those /iu.test(noun.filter.raw.trim())) &&
             (a.tokens !== true || pronoun.each === true) &&
-            (a.noun.plural || (a.noun.det === 'each' && /^those /iu.test(noun.filter.raw.trim()))),
+            (a.noun.plural ||
+              (a.noun.det === 'each' && /^(?:each of )?those /iu.test(noun.filter.raw.trim()))),
         );
         break;
       case 'other':
@@ -362,6 +418,7 @@ class Binder {
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.thatCardOnly !== true || /^that card$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
+            a.groupLine !== true &&
             !a.noun.plural &&
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
@@ -385,6 +442,19 @@ class Binder {
       return noun;
     }
     const antecedent = found.noun;
+    // CR 608.2c (Unbreakable Formation): "those creatures" of a line after the one that named the group select the same objects again, so the pronoun becomes the group's
+    // own noun, and is the antecedent of what follows it in this line.
+    if (found.groupLine === true) {
+      this.mentionCount += 1;
+      const again: IrNoun = {
+        ...antecedent,
+        span: noun.span,
+        rule: noun.rule,
+        ref: `m${this.mentionCount}`,
+      };
+      this.antecedents.push({ noun: again, kind: 'object' });
+      return again;
+    }
     // "Tap enchanted creature and remove all counters from it" (stage P50, D-207): "it" is the permanent the Aura or Equipment is attached to, which the
     // engine names `attached`, so the pronoun takes the words of its antecedent.
     if (antecedent.det === 'enchanted' || antecedent.det === 'equipped') {
@@ -397,6 +467,30 @@ class Binder {
     if (antecedent.ref === 'trigActor') return { ...noun, det: 'triggerActor', ref: 'trigActor' };
     const ref = pronoun?.kind === 'other' ? `${antecedent.ref ?? ''}.2` : antecedent.ref;
     return ref === undefined ? { ...noun } : { ...noun, ref };
+  }
+
+  /**
+   * "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil, CR 603.4, 603.10a, 113.7a): the intervening "if" of a trigger that says "it" or "that creature"
+   * of an object (`objectMatches`) is about what the trigger is about. For a death or leaves-the-battlefield trigger of an Aura's or Equipment's host that is the permanent as it last
+   * was (`triggerSubject`, last-known information), not the host read from the attachment, which is gone once the permanent has left.
+   */
+  interveningObject(
+    trigger: IrTrigger,
+    condition: IrCondition | undefined,
+  ): IrCondition | undefined {
+    const test = condition?.test;
+    if (condition === undefined || test?.kind !== 'objectMatches') return condition;
+    // "When ~ dies, if it was a creature, ..." (Enduring Tenacity): "it" is the card itself, which the lowering reads as `thisMatches`, not a permanent the event is about.
+    if (trigger.subject?.det === 'self') return condition;
+    const who = this.noun(test.who);
+    const hostLeft =
+      (trigger.event === 'dies' || trigger.event === 'leavesBattlefield') &&
+      (trigger.subject?.det === 'enchanted' || trigger.subject?.det === 'equipped');
+    const bound: IrNoun =
+      hostLeft && (who.det === 'enchanted' || who.det === 'equipped')
+        ? { ...who, det: 'triggerSubject', ref: 'trig' }
+        : who;
+    return { ...condition, test: { ...test, who: bound } };
   }
 
   noun(noun: IrNoun): IrNoun {
@@ -468,6 +562,10 @@ class Binder {
     };
     if (noun.det === 'anaphor') {
       out = this.resolveAnaphor(out);
+    } else if (noun.det === 'pair' && this.clauseVerb === 'addCounters') {
+      // "Tap all creatures your opponents control, then put a stun counter on each of those creatures" (CR 608.2c): counters are put on no soulbond pair, so the words name the group of the
+      // instruction before, as "those creatures" does.
+      out = this.resolveAnaphor({ ...out, det: 'anaphor', plural: true });
     } else if (noun.det === 'target') {
       const ref = ownTargetRef ?? `t${++this.scope.targetCount}`;
       out = { ...out, ref };
@@ -493,7 +591,20 @@ class Binder {
   }
 
   /** An amount with the nouns it names bound: what it counts, the object whose power or toughness it reads. */
+  /** True while the nouns of an amount are bound ("for each artifact that player controls"). */
+  private inAmount = false;
+
   amount(amount: IrAmount): IrAmount {
+    const before = this.inAmount;
+    this.inAmount = true;
+    try {
+      return this.boundAmount(amount);
+    } finally {
+      this.inAmount = before;
+    }
+  }
+
+  private boundAmount(amount: IrAmount): IrAmount {
     switch (amount.kind) {
       case 'countOf':
       case 'powerOf':
@@ -506,6 +617,8 @@ class Binder {
       case 'cardTypesAmong':
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
+      case 'damageDealtToThisTurn':
+      case 'greatestCountOfAnOpponent':
         return { ...amount, of: this.noun(amount.of) };
       case 'commanderCasts':
         // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.
@@ -714,7 +827,8 @@ class Binder {
         test?.kind === 'diesThisWay' ||
         test?.kind === 'objectMatches' ||
         test?.kind === 'controlsThat' ||
-        test?.kind === 'manaValueAtMostAmount')
+        test?.kind === 'manaValueAtMostAmount' ||
+        test?.kind === 'manaValueAtLeastAmount')
         ? { ...clause.condition, test: { ...test, who: this.noun(test.who) } }
         : clause.condition;
     if (this.bindingVerbs.has(clause.verb)) {
@@ -735,6 +849,24 @@ class Binder {
           span: clause.span,
           rule: clause.rule,
           ref,
+        },
+      });
+    }
+    // CR 608.2d, 102.2 (Sylvan Offering): "Choose an opponent. You and that player each create ...": the player the controller chose is what "that player" of the sentences after the
+    // choice means, which the engine names `chosenPlayer`. Each new choice replaces the one before it.
+    if (clause.verb === 'chooseOpponent' || clause.verb === 'choosePlayer') {
+      this.antecedents.push({
+        kind: 'player',
+        noun: {
+          kind: 'noun',
+          det: 'anaphor',
+          filter: { raw: 'chosen player' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'chosen',
         },
       });
     }
@@ -850,7 +982,8 @@ class Binder {
           (test?.kind === 'objectMatches' ||
             test?.kind === 'diesThisWay' ||
             test?.kind === 'controlsThat' ||
-            test?.kind === 'manaValueAtMostAmount')
+            test?.kind === 'manaValueAtMostAmount' ||
+            test?.kind === 'manaValueAtLeastAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
             : // "Then if she has nine or more time counters on her, ..." (Kes, CR 122.1): the pronoun of the count is the permanent the sentences before it named.
               s.condition !== undefined &&
@@ -921,6 +1054,7 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',
+  'becomesUnblocked',
   // The source deals the damage on the battlefield (stage P18, D-111).
   'dealsCombatDamage',
   'dealsDamage',
@@ -960,8 +1094,14 @@ function selfNoun(cost: { readonly span: Span; readonly rule: string }): IrNoun 
   };
 }
 
+/** The reference of "those creatures" of an attack batch trigger that counts only the creatures attacking your opponents (Frontier Warmonger, CR 603.2c): the creatures that attacked them. */
+export const ATTACKERS_REF = 'trigAttackers';
+
 /** Seeds a trigger's subject, actor and recipient as the first antecedents of whatever follows. */
 function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
+  if (source.event === 'attackBatch' && source.attackingYourOpponents === true) {
+    binder.seedAttackers(source);
+  }
   const subject = binder.seed(source.subject, 'triggerSubject', aboutSelf(source));
   const actor = binder.seed(source.actor, 'triggerActor');
   // The player a creature dealt combat damage to is the antecedent of "that player" (stage P18).
@@ -977,6 +1117,11 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
     subject.det !== 'self' &&
     actor === undefined
   ) {
+    binder.seedControllerOfSubject(subject);
+  }
+  // CR 508.6 (Calculating Lich): "Whenever a creature attacks one of your opponents, that player loses 1 life": "that player" is the opponent attacked (the lowering reads it
+  // as the engine's `triggerAttackedPlayer`).
+  if (source.event === 'attacks' && source.at === 'opponent' && subject !== undefined) {
     binder.seedControllerOfSubject(subject);
   }
   return {
@@ -1023,9 +1168,12 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
   switch (ability.kind) {
     case 'spell': {
       if (scope.lastTarget !== undefined) binder.seedLine(scope.lastTarget);
+      if (scope.lastGroup !== undefined) binder.seedGroupLine(scope.lastGroup);
       const body = binder.body(ability.body);
       const last = binder.targets[binder.targets.length - 1];
       if (last !== undefined && !last.plural && !isPlayerNoun(last)) scope.lastTarget = last;
+      const group = binder.lastGroupNoun();
+      if (group !== undefined) scope.lastGroup = group;
       return done({ ...ability, body });
     }
     case 'activated': {
@@ -1052,6 +1200,7 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
       binder.seedSelfCondition(ability.trigger, ability.interveningIf);
+      const interveningIf = binder.interveningObject(ability.trigger, ability.interveningIf);
       // "At the beginning of your upkeep, if ~ has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it." (Quandrix Unlimited deck, group G): the
       // permanent the intervening "if" names is what "it" means in the body, when the trigger has no subject of its own.
       const tested = ability.interveningIf;
@@ -1088,7 +1237,12 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
           targets: [...binder.targets, ...modal.targets],
         };
       }
-      return done({ ...ability, trigger, body: binder.body(ability.body) });
+      return done({
+        ...ability,
+        trigger,
+        ...(interveningIf === undefined ? {} : { interveningIf }),
+        body: binder.body(ability.body),
+      });
     }
     case 'modal': {
       const modal = bindModes(ability, scope, verbs, () => undefined);

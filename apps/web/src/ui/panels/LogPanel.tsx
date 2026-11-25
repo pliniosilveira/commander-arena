@@ -4,6 +4,8 @@ import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState
 import type { LogEntry } from '../../game/protocol';
 import { type HoverHandlers, useHoverPreview } from '../board/hover';
 import { useApp } from '../store-context';
+import { DumbMoveForm } from './DumbMove';
+import { aiMoves, firstLinesOfAiMoves } from './dumb-move-model';
 import {
   DEFAULT_LOG_FILTER,
   filterLog,
@@ -21,14 +23,16 @@ import './panels.css';
 const BOTTOM_SLACK = 24;
 
 /** An entry that mentions an object still in view: hovering it previews that object. */
-function LinkedEntry({ entry, showRule, target }: EntryProps & { target: ObjectId }) {
+function LinkedEntry({ entry, showRule, onReport, target }: EntryProps & { target: ObjectId }) {
   const hover = useHoverPreview(target);
-  return <EntryRow entry={entry} showRule={showRule} hover={hover} />;
+  return <EntryRow entry={entry} showRule={showRule} onReport={onReport} hover={hover} />;
 }
 
 interface EntryProps {
   entry: LogEntry;
   showRule: boolean;
+  /** Set on the first line of an AI move: marks that move in the "That was a dumb move" form (issue 627). */
+  onReport?: (() => void) | undefined;
 }
 
 /** A card name inside a log line: hovering it shows that card in the preview panel (issue 34). */
@@ -51,10 +55,11 @@ function NameLink({ id, text }: { id: ObjectId; text: string }) {
 function NamedEntry({
   entry,
   showRule,
+  onReport,
   segments,
 }: EntryProps & { segments: readonly NameSegment[] }) {
   return (
-    <EntryRow entry={entry} showRule={showRule}>
+    <EntryRow entry={entry} showRule={showRule} onReport={onReport}>
       {segments.map((seg, i) =>
         seg.kind === 'name' ? (
           // The pieces of one line never reorder; the position is the identity.
@@ -72,6 +77,7 @@ function NamedEntry({
 function EntryRow({
   entry,
   showRule,
+  onReport,
   hover,
   children,
 }: EntryProps & { hover?: HoverHandlers; children?: ReactNode }) {
@@ -84,6 +90,17 @@ function EntryRow({
     >
       <span className="pnl-log-text">{children ?? entry.text}</span>
       {showRule && entry.rule !== null && <span className="pnl-log-rule">{entry.rule}</span>}
+      {onReport !== undefined && (
+        <button
+          type="button"
+          className="pnl-dumb-mark"
+          aria-label="Report this move as a dumb move"
+          title="That was a dumb move"
+          onClick={onReport}
+        >
+          Dumb?
+        </button>
+      )}
     </li>
   );
 }
@@ -94,7 +111,17 @@ export function LogPanel() {
   const [filter, setFilter] = useState(DEFAULT_LOG_FILTER);
   const [showRule, setShowRule] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
+  const [reporting, setReporting] = useState(false);
+  const [picked, setPicked] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const viewer = view?.viewer ?? 0;
+  const seatCount = view?.seats.length ?? 2;
+  const moves = useMemo(() => aiMoves(log, viewer, seatCount), [log, viewer, seatCount]);
+  const reportable = useMemo(() => firstLinesOfAiMoves(filterLog(log, filter)), [log, filter]);
+  const report = (index: number | null) => {
+    setPicked(index);
+    setReporting(true);
+  };
 
   const groups = useMemo(() => groupByTurn(filterLog(log, filter)), [log, filter]);
   const index = useMemo(() => (view === null ? new Map() : objectIndex(view)), [view]);
@@ -142,7 +169,26 @@ export function LogPanel() {
           />
           CR refs
         </label>
+        {moves.length > 0 && (
+          <button
+            type="button"
+            className="pnl-dumb-toggle"
+            aria-expanded={reporting}
+            data-testid="dumb-move"
+            onClick={() => (reporting ? setReporting(false) : report(null))}
+          >
+            That was a dumb move
+          </button>
+        )}
       </div>
+      {reporting && moves.length > 0 && (
+        <DumbMoveForm
+          moves={moves}
+          selected={picked}
+          onSelect={setPicked}
+          onClose={() => setReporting(false)}
+        />
+      )}
       <div className="pnl-log-wrap">
         <div
           className="pnl-log-scroll"
@@ -157,11 +203,14 @@ export function LogPanel() {
           {groups.length === 0 && <p className="pnl-empty">Nothing has happened yet</p>}
           {groups.map((group) => (
             <div className="pnl-log-group" key={group.turn}>
-              <h3 className="pnl-log-turn">
-                {groupHeading(group, view?.viewer ?? 0, view?.seats.length)}
-              </h3>
+              <h3 className="pnl-log-turn">{groupHeading(group, viewer, view?.seats.length)}</h3>
               <ul className="pnl-log-list">
                 {group.entries.map((entry) => {
+                  const at = entry.action;
+                  const onReport =
+                    at !== undefined && reportable.has(entry.id)
+                      ? () => report(at.index)
+                      : undefined;
                   const segments = link(entry.text, entry.objects);
                   if (segments.some((seg) => seg.kind === 'name')) {
                     return (
@@ -169,15 +218,27 @@ export function LogPanel() {
                         key={entry.id}
                         entry={entry}
                         showRule={showRule}
+                        onReport={onReport}
                         segments={segments}
                       />
                     );
                   }
                   const target = previewTarget(entry, known);
                   return target === null ? (
-                    <EntryRow key={entry.id} entry={entry} showRule={showRule} />
+                    <EntryRow
+                      key={entry.id}
+                      entry={entry}
+                      showRule={showRule}
+                      onReport={onReport}
+                    />
                   ) : (
-                    <LinkedEntry key={entry.id} entry={entry} showRule={showRule} target={target} />
+                    <LinkedEntry
+                      key={entry.id}
+                      entry={entry}
+                      showRule={showRule}
+                      onReport={onReport}
+                      target={target}
+                    />
                   );
                 })}
               </ul>

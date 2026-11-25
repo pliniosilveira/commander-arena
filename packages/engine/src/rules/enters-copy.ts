@@ -59,11 +59,13 @@ export function becomeCopyAsItEnters(
       ? withCopyExceptions(copiedValues, rule.ifEmbalmed)
       : copiedValues;
   // CR 707.9b (issue 103): "except it's a Dragon in addition to its other types": the creature types of the exception are part of the copiable values.
+  // CR 707.9b, 205.1b (Phyrexian Metamorph): "except it's an artifact in addition to its other types": the card types of the exception are part of the copiable values too.
   const excepted =
-    rule.addSubtypes === undefined && rule.notLegendary !== true
+    rule.addSubtypes === undefined && rule.addTypes === undefined && rule.notLegendary !== true
       ? withEmbalm
       : withCopyExceptions(withEmbalm, {
           ...(rule.addSubtypes === undefined ? {} : { addSubtypes: rule.addSubtypes }),
+          ...(rule.addTypes === undefined ? {} : { addTypes: rule.addTypes }),
           // CR 707.9b, 205.4a (Spark Double): "except it isn't legendary".
           ...(rule.notLegendary === true ? { notLegendary: true as const } : {}),
         });

@@ -9,12 +9,15 @@ import { CASTING_KEYWORD_RULES } from './casting';
 import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COMPANION_KEYWORD_RULES } from './companion';
 import { COPY_KEYWORD_RULES } from './copies';
+import { COUNTER_BLITZ_C_KEYWORD_RULES } from './counter-blitz-c';
+import { COUNTER_INTELLIGENCE_G2_KEYWORD_RULES } from './counter-intelligence-g2';
 import { DECK_LIMIT_KEYWORD_RULES } from './deck-limit';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
 import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
 import { GIFT_KEYWORD_RULES } from './gift';
 import { LATER_KEYWORD_RULES } from './later';
 import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
+import { MIND_FLAYARRRS_G8_KEYWORD_RULES } from './mind-flayarrrs-g8';
 import { NINJUTSU_KEYWORD_RULES } from './ninjutsu';
 import { numberedKeyword } from './numbered';
 import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
@@ -90,6 +93,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.51a (Convoke)',
     'CR 702.126a (Improvise)',
     'CR 702.66a (Delve)',
+    'CR 702.125a (Undaunted)',
     'CR 702.85a (Cascade)',
     'CR 702.82a (Devour)',
     'CR 702.136a (Riot)',
@@ -156,6 +160,9 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Retrace, flying',
     // CR 702.133a: Jump-start (the reminder text is stripped before the line is read).
     'Jump-start',
+    // CR 702.125a: Undaunted (the reminder text is stripped before the line is read).
+    'Undaunted',
+    'Undaunted, flying',
     // CR 702.127a: Aftermath on the second half of a split card (the reminder text is stripped before the line is read).
     'Aftermath',
     'aftermath',
@@ -170,6 +177,10 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // CR 702.82c: "Devour Food 3", the variant with a quality.
     'Devour Food 3',
     'Trample, riot',
+    // CR 702.44a: Sunburst, alone and in a list (its reminder text is stripped before the line is read).
+    'Sunburst',
+    'sunburst',
+    'Flying, sunburst',
     // D-264 (CR 702.131b): Ascend on a permanent.
     'Ascend',
     'ascend',
@@ -417,6 +428,8 @@ export const KEYWORD_RULES = [
   // Ahoy Mateys deck, group 10 (Arm-Mounted Anchor): "Equip {2}. This ability costs {2} less to activate if ..." starts like the plain equip, which reads a prefix of it: tried first.
   ...AHOY_G10_KEYWORD_RULES,
   ...ATTACHMENT_KEYWORD_RULES,
+  // Counter Intelligence deck, group 2: "Equip—Pay {3} or remove a counter from ~."
+  ...COUNTER_INTELLIGENCE_G2_KEYWORD_RULES,
   ...CASTING_KEYWORD_RULES,
   ...ALT_COST_KEYWORD_RULES,
   ...UPKEEP_KEYWORD_RULES,
@@ -426,11 +439,14 @@ export const KEYWORD_RULES = [
   ...LIVING_WEAPON_KEYWORD_RULES,
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
+  ...COUNTER_BLITZ_C_KEYWORD_RULES,
   ...WARD_CREW_RULES,
   // CR 702.184a (Station).
   ...STATION_KEYWORD_RULES,
   // Galadriel deck, group 3 (D-548): "Buyback {2}".
   ...GALADRIEL_G3_KEYWORD_RULES,
+  // Mind Flayarrrs deck, group 8: "Replicate—Tap an untapped Horror you control."
+  ...MIND_FLAYARRRS_G8_KEYWORD_RULES,
   // CR 702.170a (Plot): "Plot {3}{U}".
   ...PLOT_KEYWORD_RULES,
   // CR 702.49a (Ninjutsu, unverified): "Ninjutsu {1}{R}".

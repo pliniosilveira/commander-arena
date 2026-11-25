@@ -43,6 +43,8 @@ import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
+import { NUMBER_OF_OPPONENTS_WHO_CONTROL } from './opponents-who-control';
+import { PARTY_SIZE_VALUE } from './party';
 import { NUMBER_OF_PLAYERS_WHO } from './players-who';
 import { VOTES_AMOUNT } from './votes';
 
@@ -98,7 +100,10 @@ function countersOn(rule: string, head: Parser<unknown>, plural: boolean): Parse
 export const NUMBER_OF_ANY_COUNTERS = (rule: string): Parser<IrAmount> => {
   return (ctx, pos) => {
     const r = spanned(
-      pattern(/the number of counters on (that creature|that permanent|it|~)(?![\p{L}\p{N}'’])/iu),
+      // CR 603.10a, 122.1 (Felisa, Fang of Silverquill): "the number of counters it had on it" is the same count for the permanent that left the battlefield, read as it last existed.
+      pattern(
+        /the number of counters (?:(?:that creature|it) had )?on (that creature|that permanent|it|~)(?![\p{L}\p{N}'’])/iu,
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     const word = (r.value.value[1] ?? '').toLowerCase();
@@ -120,9 +125,42 @@ export const NUMBER_OF_ANY_COUNTERS = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * `amount.for-each-counter-kind`: "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter an object has, now. After a quantity ("draw a card
+ * for each ..."): the quantity is the count, as for `amount.for-each`.
+ */
+export const AMOUNT_FOR_EACH_COUNTER_KIND = defineRule<IrAmount>({
+  id: 'amount.for-each-counter-kind',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 122.1 (Counters)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['for each kind of counter on it', 'for each kind of counter on ~'],
+  rejects: [
+    'for each kind of counter',
+    'for each kind of counters on it',
+    'for each counter on it',
+    'for each kind of counter on target creature',
+    'for each type of counter on it',
+    'for each kind of counter on it you control',
+  ],
+  // Quiet: a "for each" this rule does not read stops where `amount.for-each` stops.
+  parse: quiet((ctx, pos) => {
+    const r = spanned(
+      sequence(literal('for each kind of counter on '), selfOrIt('amount.for-each-counter-kind')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, of] = r.value.value;
+    return {
+      ok: true,
+      value: { kind: 'countersOn', of, kinds: true, span: r.value.span },
+      pos: r.pos,
+    };
+  }),
+});
+
 /** "the number of Zombies you control": a count of the objects a filter matches (CR 608.2c). */
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
-  countAmount(rule, literal('the number of '), true);
+  countAmount(rule, choice(literal('the number of '), literal('the total number of ')), true);
 
 /** "the number of +1/+1 counters on ~". Exported for the rules of effects that read it as a limit (Galadriel deck, group 1: "mana value less than or equal to the number of loyalty counters on ~"). */
 export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
@@ -286,6 +324,17 @@ const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
 };
 
 /**
+ * "the number of times ~ was kicked" (Marshal's Anthem: "return up to X target creature cards ..., where X is the number of times ~ was kicked", CR 702.33c, 702.33d): the kicks of the
+ * spell the permanent came from, read as `timesKicked` is for "for each time it was kicked". The lowering decides which object "it" is.
+ */
+const NUMBER_OF_TIMES_KICKED: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the number of times (it|~) was kicked(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  if (!r.ok) return r;
+  const who = r.value.value[1] === '~' ? ('self' as const) : ('it' as const);
+  return { ok: true, value: { kind: 'timesKicked', who, span: r.value.span }, pos: r.pos };
+};
+
+/**
  * "the number of opponents who control more creatures than you", "the number of opponents who have more life than you" (CR 102.2, 608.2c; Limit Break deck, Heidegger, Shinra Executive): the same
  * count as `amount.for-each-opponent` ("for each opponent who controls more creatures than you"): the opponents still in the game whose total is greater (or, with "fewer", smaller) than the
  * controller's, now. The verb goes with its stat ("controls" creatures, "has" life or cards in hand).
@@ -322,6 +371,29 @@ const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
   );
   return r.ok
     ? { ok: true, value: { kind: 'commanderManaValue', span: r.value.span }, pos: r.pos }
+    : r;
+};
+
+/**
+ * "the greatest mana value of a commander you own on the battlefield or in the command zone" (Visions of Glory, CR 903.3, 108.3, 202.3): the commanders of the controller that are on the
+ * battlefield or in the command zone now; one anywhere else does not count. Read as the engine's `commanderManaValue` with `zones`.
+ */
+const COMMANDER_IN_PLAY_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(
+      /the greatest mana value of a commander you own on the battlefield or in the command zone(?![\p{L}\p{N}'’])/iu,
+    ),
+  )(ctx, pos);
+  return r.ok
+    ? {
+        ok: true,
+        value: {
+          kind: 'commanderManaValue',
+          zones: ['battlefield', 'command'],
+          span: r.value.span,
+        },
+        pos: r.pos,
+      }
     : r;
 };
 
@@ -431,6 +503,22 @@ const MANA_VALUE_OF =
         pos: lead.pos,
       };
     }
+    // "the mana value of that card" (Yuna's Whistle, CR 202.3, 608.2h): the possessive written the other way round.
+    const ofThat = pattern(
+      /the mana value of (that (?:creature|permanent|card))(?![\p{L}\p{N}'’])/iu,
+    )(ctx, pos);
+    if (ofThat.ok) {
+      const of = possessedNoun(
+        rule,
+        `${ofThat.value[1] ?? ''}'s`,
+        pos + 'the mana value of '.length,
+      );
+      return {
+        ok: true,
+        value: { kind: 'manaValueOf', of, span: { start: pos, end: ofThat.pos } },
+        pos: ofThat.pos,
+      };
+    }
     const m = pattern(MANA_VALUE_OF_HEAD)(ctx, pos);
     if (!m.ok) return m;
     const head = m.value[1] ?? '';
@@ -474,6 +562,28 @@ const LIFE_TOTAL =
   };
 
 /**
+ * "the number of creature cards exiled this way" (Grey Host Reinforcements, CR 608.2c, 404.1): the creature cards an `exile` before it exiled, from a graveyard or anywhere else, which the
+ * engine counts as `thisWay` `exiledCreatureCards` (a token is not a card). The lowering refuses it unless the same text exiled before.
+ */
+const CREATURE_CARDS_EXILED_THIS_WAY: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the number of creature cards exiled this way(?![\p{L}\p{N}])/iu))(
+    ctx,
+    pos,
+  );
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    value: {
+      kind: 'thisWay',
+      what: 'exiledCreatureCards',
+      words: ['creature'],
+      span: r.value.span,
+    },
+    pos: r.pos,
+  };
+};
+
+/**
  * "the number of counters removed this way" (Eventide's Shadow, CR 122.1, 608.2c): the counters the `removeChosenCounters` before it took off, which the engine counts as `thisWay`
  * `countersRemoved`. The lowering refuses it unless the same text removed counters before.
  */
@@ -511,6 +621,7 @@ const DIFFERENCE = (rule: string): Parser<IrAmount> => {
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
+    COMMANDER_IN_PLAY_MANA_VALUE,
     DIFFERENCE(rule),
     HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
@@ -518,6 +629,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
     CARD_TYPES_AMONG_THOSE_VALUE,
+    // CR 700.8: "the number of creatures in your party", before the count of objects, which reads no "in your party".
+    PARTY_SIZE_VALUE,
     // CR 105.2 (Vivid): "the number of colors among permanents you control", before the count of objects, which reads no "colors among".
     COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
@@ -525,15 +638,20 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // Scions & Spellcraft deck, group A: "the number of your opponents who were dealt combat damage by ~ this turn", before the count of objects.
     NUMBER_OF_PLAYERS_WHO,
     COUNTERS_REMOVED_THIS_WAY,
+    CREATURE_CARDS_EXILED_THIS_WAY,
     COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
+    GREATEST_COUNT_OF_AN_OPPONENT(rule),
     AGGREGATE(rule),
     ATTACKERS_GREATEST_POWER,
     DEVOTION,
     COMMANDER_COLORS,
     OPPONENT_COUNT,
+    NUMBER_OF_TIMES_KICKED,
     // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
     NUMBER_OF_OPPONENTS_WITH_MORE,
+    // Counter Blitz deck, group C (Summon: Yojimbo): "the number of opponents who control a creature with power 4 or greater".
+    NUMBER_OF_OPPONENTS_WHO_CONTROL,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),
@@ -684,6 +802,43 @@ const EXTREME = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * "the greatest number of artifacts an opponent controls" (Cavern-Hoard Dragon, CR 109.4, 608.2c): the most of a plural kind of permanent any one opponent controls, the engine's
+ * `greatestCountOfAnOpponent`. The kind is a plural type phrase with no controller of its own. Not read: "the greatest number of artifacts" alone, "your opponents control", "you control",
+ * a singular kind, "among".
+ */
+const GREATEST_COUNT_OF_AN_OPPONENT = (rule: string): Parser<IrAmount> => {
+  const phrase = sequence(literal('the greatest number of '), permanentPhrase(true, 'all'));
+  return (ctx, pos) => {
+    const r = spanned(phrase)(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter] = r.value.value;
+    // The phrase reads " an opponent controls" as the controller `opponent`; "your opponents control" is the same controller, so the words are checked.
+    if (
+      filter.controller !== 'opponent' ||
+      !/ an opponent controls$/iu.test(ctx.text.slice(pos, r.pos))
+    ) {
+      return fail(ctx, pos);
+    }
+    const { controller: _opponent, ...kind } = filter;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...kind, raw: ctx.text.slice(pos + 'the greatest number of '.length, r.pos) },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: r.value.span,
+      rule,
+    };
+    return {
+      ok: true,
+      value: { kind: 'greatestCountOfAnOpponent', of, span: r.value.span },
+      pos: r.pos,
+    };
+  };
+};
+
 /** Any value phrase: arithmetic first, then the atoms (and their sums, less a number). */
 export const VALUE = (rule: string): Parser<IrAmount> =>
   choice(HALF(rule), MULTIPLE(rule), EXTREME(rule), MINUS_OR_SUM(rule));
@@ -717,6 +872,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
   ],
   examples: [
     'equal to the amount of life you gained this turn',
+    'equal to the number of creatures in your party',
     'equal to the number of nontoken creatures you had enter the battlefield under your control this turn',
     'equal to the greatest power among creatures you control',
     'equal to the total power of creatures you control',
@@ -740,6 +896,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the mana value of the sacrificed creature',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
+    // CR 608.2c: the creature cards an exile before it exiled (Grey Host Reinforcements).
+    'equal to the number of creature cards exiled this way',
     // Stage P44 (D-195, CR 701.38a): the votes for one option of the vote earlier in the text.
     'equal to the number of profit votes',
     'equal to twice the number of security votes',
@@ -767,6 +925,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the mana value of the sacrificed land',
     'equal to the mana value of a sacrificed permanent',
     'equal to the total life lost this way',
+    'equal to the number of creature cards exiled',
+    'equal to the number of creature cards exiled this',
+    'equal to the number of creatures exiled this way',
     'equal to the greatest power among creatures',
     'equal to the greatest power of creatures you control',
     'equal to the total power',
@@ -825,8 +986,11 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies you control',
     // CR 102.2: the opponents still in the game.
     'where X is the number of opponents you have',
+    // CR 702.33c: the kicks of a permanent's spell (Marshal's Anthem).
+    'where X is the number of times ~ was kicked',
     'where X is the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
     'where X is the number of creatures on the battlefield',
+    'where X is the number of creatures in your party',
     'where X is the number of creatures attacking you',
     'where X is the greatest power among creatures you control',
     'where X is the total power of creatures you control',
@@ -838,12 +1002,15 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is half the number of Zombies you control, rounded down',
     // Issue 25 (D-321, CR 107.1b): a number taken away, a negative result counting as 0.
     'where X is the number of cards in your hand minus 4',
+    // Realm Seekers (CR 402.1): the cards in the hands of every player.
+    "where X is the total number of cards in all players' hands",
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     // A card the text names by a person's pronoun (Kes, Evolving Telepath).
     'where X is the number of time counters on her',
     'where X is the number of +1/+1 counters on him',
     'where X is that card’s mana value',
+    'where X is the mana value of that card',
     // Prismari deck, group 2 (D-646, CR 202.3): the spell that caused a cast trigger.
     "where X is that spell's mana value",
     'where X is the amount of mana spent to cast that spell',
@@ -857,6 +1024,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     "where X is the exiled card's power",
     // Stage P32 (D-147): the commanders' mana value, and a total read as the spell is cast.
     'where X is the greatest mana value among your commanders',
+    // CR 903.3, 108.3: the commanders you own that are on the battlefield or in the command zone (Visions of Glory).
+    'where X is the greatest mana value of a commander you own on the battlefield or in the command zone',
     'where X is the greatest power among creatures you control as you cast ~',
     // Galadriel deck group 3 (CR 706.2): the die rolled before.
     'where X is the result',
@@ -868,6 +1037,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
     'where X is the greatest power among creatures they control',
+    // Cavern-Hoard Dragon (CR 109.4): the most of a kind of permanent one opponent controls.
+    'where X is the greatest number of artifacts an opponent controls',
     // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
     'where X is the amount of life you gained',
     // Elminster (CR 701.22): the cards looked at by the scry that caused the trigger.
@@ -883,17 +1054,26 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the results',
     'where X is the number of colors among permanents',
     'where X is the number of colors among permanents your opponents control',
+    'where X is the greatest number of artifacts your opponents control',
+    'where X is the greatest number of artifacts you control',
+    'where X is the greatest number of artifact an opponent controls',
+    'where X is the greatest number of artifacts',
     'where X is the result of',
     'where X is',
     'where X is 3',
     'where X is the number of creatures',
     'where X is the number of opponents',
     'where X is the number of opponents you control',
+    'where X is the number of times ~ was',
+    'where X is the number of times you were kicked',
     'where Y is the number of Zombies you control',
     'where x is the number of Zombies you control',
     'where X is half the number of Zombies you control',
     'where X is the greatest power among creatures you control as you cast it',
     'where X is the greatest mana value among commanders',
+    'where X is the greatest mana value of a commander you own on the battlefield',
+    'where X is the greatest mana value of a commander you own in the command zone',
+    'where X is the greatest mana value of a commander an opponent owns on the battlefield or in the command zone',
     'where X is the number of Zombies you control.',
     'where X is the number of cards in your hand minus',
     'where X is the number of cards in your hand minus 0',
@@ -1163,6 +1343,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
 export const VALUE_AMOUNT_RULES = [AMOUNT_EQUAL_TO, AMOUNT_WHERE_X];
 export const FOR_EACH_VALUE_RULES = [
   AMOUNT_FOR_EACH_COUNTER,
+  AMOUNT_FOR_EACH_COUNTER_KIND,
   AMOUNT_FOR_EACH_OPPONENT,
   AMOUNT_FOR_EACH_THIS_WAY,
 ];

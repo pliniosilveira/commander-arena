@@ -261,6 +261,17 @@ function controlsLandWalked(state: GameState, defender: SeatId, landType: string
 }
 
 /**
+ * How many creatures must block `attacker` if any do: two for menace (CR 702.111b), three for "can't be blocked except by three or more creatures" (CR 509.1b), otherwise one;
+ * the larger when it has both.
+ */
+export function minBlockersOf(state: GameState, attacker: GameObject): number {
+  const menace = hasKeyword(state, attacker, 'menace') ? 2 : 1;
+  return hasRestriction(state, attacker, 'cantBeBlockedExceptByThreeOrMore')
+    ? Math.max(menace, 3)
+    : menace;
+}
+
+/**
  * The evasion and "can't be blocked" restrictions of CR 509.1b that look at the attacker: a creature
  * that can't be blocked, landwalk (CR 702.14c), fear (CR 702.36b), intimidate (CR 702.13b),
  * skulk (CR 702.118b) and shadow (CR 702.28b, both directions). Different evasion abilities are cumulative (CR 509.1b).
@@ -271,7 +282,8 @@ function evades(state: GameState, blocker: GameObject, attacker: GameObject): bo
   // CR 509.1b, 702.111b (D-133): menace needs two blockers and the restriction allows one, so nothing can block it.
   if (
     a.restrictions.includes('cantBeBlockedByMoreThanOne') &&
-    abilitiesHaveKeyword(a.abilities, 'menace')
+    (abilitiesHaveKeyword(a.abilities, 'menace') ||
+      a.restrictions.includes('cantBeBlockedExceptByThreeOrMore'))
   ) {
     return true;
   }
@@ -405,7 +417,7 @@ function unmetBlockRequirements(
     .filter((c) => hasRestriction(state, getObject(state, c.blocker), 'mustBlock'))
     .map((c) => c.blocker);
   if (required.length === 0 && requiredBlockers.length === 0) return false;
-  const need = (a: ObjectId) => (hasKeyword(state, getObject(state, a), 'menace') ? 2 : 1);
+  const need = (a: ObjectId) => minBlockersOf(state, getObject(state, a));
   const attackerRules = [...new Set(candidates.flatMap((c) => c.canBlock))].map((attacker) => ({
     attacker,
     min: need(attacker),
@@ -504,10 +516,13 @@ export function validateBlocks(
       return 'That attacker cannot be blocked by more than one creature';
     }
   }
-  // CR 509.1b, 702.111b: a creature with menace can't be blocked except by two or more creatures.
+  // CR 509.1b, 702.111b: a creature with menace can't be blocked except by two or more creatures, and one that "can't be blocked except by three or more creatures" needs three.
   for (const [attacker, count] of perAttacker) {
-    if (count === 1 && hasKeyword(state, getObject(state, attacker), 'menace')) {
-      return 'A creature with menace needs two or more blockers';
+    const need = minBlockersOf(state, getObject(state, attacker));
+    if (count < need) {
+      return need === 2
+        ? 'A creature with menace needs two or more blockers'
+        : `That attacker needs ${need} or more blockers`;
     }
   }
   // CR 509.1c (D-206): "must be blocked if able": the declaration obeys as many of these requirements as any legal declaration could.

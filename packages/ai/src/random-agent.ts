@@ -239,5 +239,7 @@ export function createRandomHandlers(draw: (n: number) => number): DecisionHandl
     chooseModes: (d) => ({ kind: 'chooseModes', modes: [...pick(d.sets, draw)] }),
     // CR 601.2f-h (D-120): any of the answers the engine lists, each of which leaves a cost it can pay.
     choosePayOptions: (d) => pick(preferredActions(d), draw),
+    // CR 700.8d: any of the parties the engine lists.
+    chooseParty: (d) => pick(preferredActions(d), draw),
   };
 }

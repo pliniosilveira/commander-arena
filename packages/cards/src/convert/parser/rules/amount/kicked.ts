@@ -61,6 +61,7 @@ export const AMOUNT_TIMES_KICKED = defineRule<IrAmount>({
 export const FOR_EACH_AMOUNTS = [
   'amount.for-each',
   'amount.for-each-counter',
+  'amount.for-each-counter-kind',
   'amount.for-each-opponent',
   'amount.for-each-this-way',
   'amount.times-kicked',
@@ -81,6 +82,8 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-opponent-dealt-damage',
   // Scions & Spellcraft deck, group A: the players who lost life, or were dealt combat damage by a source, this turn.
   'amount.for-each-player-who',
+  // Counter Blitz deck, group C: the opponents who control a permanent of a kind.
+  'amount.for-each-opponent-who-controls',
   // Lock and Load (issue 121): the other instants and sorceries the controller has cast this turn.
   'amount.for-each-other-spell-cast',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.
@@ -89,6 +92,8 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-vote',
   // CR 700.4: the creatures that died this turn (history, read from the turn log).
   'amount.for-each-died',
+  // Celeborn the Wise (CR 701.22): the cards looked at by the scry that caused the trigger.
+  'amount.for-each-scried',
   // Issue 81 (Occult Epiphany): the different card types among the cards an earlier discard discarded.
   'amount.for-each-card-type-discarded',
   // CR 205.2a: the card types among the cards of a graveyard.
@@ -97,6 +102,10 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-card-type-among-those-cards',
   // Eris, Roar of the Storm (issue 121, CR 202.3): the distinct mana values among the cards of a zone.
   'amount.for-each-different-mana-value',
+  // Valiant Changeling (CR 205.3m): the distinct creature types among the permanents of a group.
+  'amount.for-each-creature-type',
   // Issue 144 (Glimpse the Impossible): the cards the instruction before it put into the controller's graveyard.
   'amount.for-each-card-put-into-your-graveyard',
+  // CR 700.8: the creatures in the controller's party.
+  'amount.for-each-party-creature',
 ] as const;

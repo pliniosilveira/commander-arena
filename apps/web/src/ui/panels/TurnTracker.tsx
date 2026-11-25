@@ -119,6 +119,18 @@ export function TurnTracker() {
               : `${seatName(view.monarch, view.viewer, view.seats.length)} is the monarch`}
           </span>
         )}
+        {view.initiative !== undefined && view.initiative !== null && (
+          <span
+            className="pnl-chip pnl-chip-monarch"
+            title="A player who takes the initiative ventures into Undercity, and again at the beginning of each of their upkeeps while they have it. A player whose creatures deal combat damage to the player who has it takes it (CR 726.2)."
+            data-initiative-hud={view.initiative}
+          >
+            <span aria-hidden="true">{'⚔ '}</span>
+            {view.initiative === view.viewer
+              ? 'You have the initiative'
+              : `${seatName(view.initiative, view.viewer, view.seats.length)} has the initiative`}
+          </span>
+        )}
         {view.dayNight !== null && (
           <span
             className="pnl-chip pnl-chip-daynight"

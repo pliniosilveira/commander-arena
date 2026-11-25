@@ -39,6 +39,16 @@ function EmblemTile({ view, card }: { view: GameView; card: EmblemCard }) {
           className="board-emblem-art"
         />
       )}
+      {card.kind === 'ring' && (
+        // The Ring is an emblem named "The Ring" (CR 701.54c) and Scryfall has its card; an effect's emblem has no card to find.
+        <Art
+          name={card.object.name}
+          isToken
+          emblem
+          version="art_crop"
+          className="board-emblem-art"
+        />
+      )}
       <span className="board-emblem-name">{card.object.name}</span>
       <span className="board-emblem-text">{text}</span>
     </button>

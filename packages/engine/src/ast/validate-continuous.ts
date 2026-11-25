@@ -58,7 +58,12 @@ function isOneOf(value: unknown, allowed: readonly string[]): boolean {
 
 /** The static abilities an effect may give for good (D-275): the ones read from the abilities an object has after the layers. */
 // Issue 345 (Beorn's Hospitality): and a characteristic-defining ability of power and toughness, which layer 7a reads from the abilities the effect gave.
-const GRANTABLE_STATICS = ['cantLoseGame', 'opponentsCantWin', 'characteristicPt'];
+const GRANTABLE_STATICS = [
+  'cantLoseGame',
+  'opponentsCantWin',
+  'characteristicPt',
+  'cantAttackItsOwner',
+];
 
 /**
  * CR 613.1f: a resolving effect can grant activated, triggered, or mana abilities until end of turn (Backup is one source). D-275
@@ -321,6 +326,11 @@ export function checkContinuousEffect(
     // CR 506.1, 508.1d, 611.2a: the one duration of "attacks this combat if able".
     if (e.restriction !== 'attacksEachCombat') {
       issue(out, `${path}.duration`, '"this combat" is the duration of attacksEachCombat only');
+    }
+  } else if (e.kind === 'restrict' && e.duration === 'untilYourNextTurn') {
+    // CR 611.2a, 500.1 (Taunt from the Rampart): "until your next turn" is the duration of cantBlock only here (`runContinuous` ends it as the next turn of the controller begins).
+    if (e.restriction !== 'cantBlock') {
+      issue(out, `${path}.duration`, '"until your next turn" is the duration of cantBlock only');
     }
   } else if (e.kind === 'grantKeyword' && e.duration === 'untilYourNextTurn') {
     // CR 611.2a, 500.1: the duration of a temporary grant of a keyword (`runContinuous` ends it as the next turn of the controller begins); only without parameters (below).

@@ -11,9 +11,12 @@ import type { IrStatic } from '../../ir/types';
 import { defineRule } from '../registry';
 import { ABZAN_ARMOR_STATIC_RULES } from './abzan-armor';
 import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
+import { ALSO_TYPES_STATIC_RULES } from './also-types';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
+import { ARWEN_STATIC_RULES } from './arwen';
+import { ATTACHED_CONDITION_STATIC_RULES } from './attached-conditions';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
@@ -33,6 +36,7 @@ import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRANT_STATIC_RULES } from './grants';
+import { GROUP_LOSES_STATIC_RULES } from './group-loses';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
 import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
@@ -41,7 +45,9 @@ import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
 import { MELD_STATIC_RULES } from './meld';
+import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
+import { STATIC_BEGIN_GAME_ON_BATTLEFIELD } from './opening-hand';
 import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
@@ -103,14 +109,19 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  STATIC_BEGIN_GAME_ON_BATTLEFIELD,
   // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
   ...DEATH_TOLL_C_STATIC_RULES,
+  // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard."
+  ...ALSO_TYPES_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
   // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.
   ...EQUIPMENT_KIT_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
+  // Multiclass Baldric: "Equipped creature has lifelink if you control a Cleric, deathtouch if ...", "As long as you have a full party, prevent all damage that would be dealt to equipped creature."
+  ...ATTACHED_CONDITION_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
   // Call for Unity: "Creatures you control get +1/+1 for each unity counter on ~."
   ...PT_COUNTERS_ON_SOURCE_STATIC_RULES,
@@ -126,6 +137,8 @@ export const STATIC_RULES = [
   ...VRASKA_STATIC_RULES,
   // Stage P31 (D-140): flash for a kind of spell, what a linked exile gives, and "unless that player is the monarch".
   ...ARTIFACT_STATIC_RULES,
+  // Fealty to the Realm: "The monarch controls enchanted creature."
+  ...MONARCH_CONTROL_STATIC_RULES,
   // Issue 144 (Conspicuous Snoop): "As long as the top card of your library is a Goblin card, ~ has all activated abilities of that card."
   ...F144_STATIC_RULES,
   // Stage P32 (D-147): can't attack or block unless, an Aura that makes the creature something else, +X/+X for the commanders.
@@ -138,6 +151,7 @@ export const STATIC_RULES = [
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,
   ...ANGEL_PLAY_RULES,
+  ...ARWEN_STATIC_RULES,
   // Stage P34 (D-152): mana that stays through steps and phases, casting from the top of the library.
   ...DRAGON_STATIC_RULES,
   // Stage P37 (D-180): lands that enter untapped, opponents that can't cast spells during your turn.
@@ -157,6 +171,8 @@ export const STATIC_RULES = [
   ...HASHATON_G2_STATIC_RULES,
   // Everlasting Torment: "Players can't gain life.", "Damage can't be prevented.", "All damage is dealt as though its source had wither."
   ...WORLD_RULES_STATIC_RULES,
+  // Sludge Monster: "Non-Horror creatures with slime counters on them lose all abilities and have base power and toughness 2/2."
+  ...GROUP_LOSES_STATIC_RULES,
   // Hashaton deck, group 6 (D-377): "You and creatures you control have protection from the chosen card type."
   ...HASHATON_G6_STATIC_RULES,
   ...SHALAI_STATIC_RULES,

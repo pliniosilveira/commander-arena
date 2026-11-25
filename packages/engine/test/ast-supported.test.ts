@@ -78,6 +78,7 @@ const EXECUTABLE_KEYWORDS = [
   'flanking', // ast-abzan-armor-validate
   'extort', // scenario-xx-keywords2-extort
   'affinity', // scenario-xx-keywords2-affinity
+  'undaunted', // scenario-xx-undaunted, scenario-undaunted
   'convoke', // scenario-xx-pay-options
   'improvise', // scenario-xx-pay-options
   'delve', // scenario-xx-pay-options
@@ -85,6 +86,7 @@ const EXECUTABLE_KEYWORDS = [
   'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'jumpStart', // scenario-xx-jump-start
+  'exploit', // scenario-xx-exploit
   'plot', // scenario-xx-plot
   'compleated', // convert-grammar-engine-blight-curse-oneoffs-b
   'aftermath', // scenario-xx-aftermath
@@ -94,6 +96,7 @@ const EXECUTABLE_KEYWORDS = [
   'embalm', // scenario-xx-embalm
   'devour', // scenario-xx-devour-riot
   'riot', // scenario-xx-devour-riot
+  'sunburst', // convert-grammar-engine-sunburst (Counter Intelligence deck, group 1)
   'echo', // scenario-xx-echo
   'suspend', // scenario-xx-suspend
   'cumulativeUpkeep', // scenario-xx-cumulative-upkeep
@@ -206,6 +209,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   flanking: { kind: 'flanking' },
   extort: { kind: 'extort' },
   affinity: { kind: 'affinity', filter: { types: ['artifact'] } },
+  undaunted: { kind: 'undaunted' },
   convoke: { kind: 'convoke' },
   improvise: { kind: 'improvise' },
   delve: { kind: 'delve' },
@@ -213,6 +217,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   demonstrate: { kind: 'demonstrate' },
   retrace: { kind: 'retrace' },
   jumpStart: { kind: 'jumpStart' },
+  exploit: { kind: 'exploit' },
   plot: { kind: 'plot', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   compleated: { kind: 'compleated' },
   aftermath: { kind: 'aftermath' },
@@ -222,6 +227,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   embalm: { kind: 'embalm', cost: [{ kind: 'mana', symbols: ['5', 'W'] }] },
   devour: { kind: 'devour', count: 2 },
   riot: { kind: 'riot' },
+  sunburst: { kind: 'sunburst' },
   echo: { kind: 'echo', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
   suspend: { kind: 'suspend', count: 2, cost: [{ kind: 'mana', symbols: ['R'] }] },
   cumulativeUpkeep: { kind: 'cumulativeUpkeep', cost: [{ kind: 'mana', symbols: ['1'] }] },
@@ -360,6 +366,7 @@ describe('supported feature gate', () => {
         'becomesTapped',
         'becomesUntapped',
         'becomesTarget',
+        'becomesUnblocked',
         'blocks',
         'castSpell',
         'cycled',
@@ -382,16 +389,20 @@ describe('supported feature gate', () => {
         'endStep',
         'entersBatch',
         'entersBattlefield',
+        'entersCausesTrigger',
         // Glorybringer: "When you do" after exerting.
         'exerted',
         'exiledFromLibraryOrGraveyard',
+        'exploits',
         'landfall',
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
         'lifeLost',
+        'milled',
         'noncombatDamageDealt',
         'dealtDamageToPlayer',
+        'damageToPlayerPrevented',
         'permanentSacrificed',
         'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".
@@ -411,6 +422,7 @@ describe('supported feature gate', () => {
         'playsCard',
         'unblockedAttackBatch',
         'upkeep',
+        'votingFinished',
         'winsCoinFlip',
       ].sort(),
     );
@@ -471,6 +483,7 @@ describe('supported feature gate', () => {
       'countersAddedEach',
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
+      'stepMonarch',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

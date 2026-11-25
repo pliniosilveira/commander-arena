@@ -3,6 +3,7 @@
  * cast a card from the graveyard this turn.
  */
 import type { Effect, Trigger } from '../ast/types';
+import type { ObjectId } from '../ids';
 import { allocateTimestamp, setObject } from '../state/ops';
 import type {
   ChosenTarget,
@@ -16,7 +17,7 @@ import type {
 import { runContinuous } from './continuous';
 import { derive } from './derive';
 import { playEnd } from './impulse';
-import { resolveObjects, type SelectContext } from './select';
+import { matchesFilter, resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /**
@@ -43,6 +44,13 @@ export function runReflexive(
   } else if (effect.ifMoved === true) {
     // CR 603.12 (Cait Sith, Espers to Magicite): "When you exile a card this way", "When you do" after an exile: created when the instruction before it moved a card.
     if ((res.lastMoved ?? []).length === 0) return done(state);
+    // CR 603.12, 701.20 (Yuna's Whistle): "When you reveal a creature card this way": only the cards that moved and match the filter make it, and it carries them.
+    if (
+      effect.ifMovedMatches !== undefined &&
+      matchedMoved(state, res, effect.ifMovedMatches).length === 0
+    ) {
+      return done(state);
+    }
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
   // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, fixed now.
   const sacrificedCount = res.sacrificed?.length ?? 0;
@@ -78,9 +86,36 @@ export function runReflexive(
       ? {}
       : { sacrificedBefore: res.sacrificed }),
     // Issue 89 (CR 603.12, 400.7j): "When you do, return ... attached to that token": the objects this resolution made, fixed as the ability is created.
-    ...(effect.carriesMoved === true ? { movedBefore: res.lastMoved ?? [] } : {}),
+    ...(effect.carriesMoved === true
+      ? {
+          movedBefore:
+            effect.ifMovedMatches === undefined
+              ? (res.lastMoved ?? [])
+              : matchedMoved(state, res, effect.ifMovedMatches),
+        }
+      : {}),
   };
   return done({ ...state, pendingTriggers: [...state.pendingTriggers, pending] });
+}
+
+/** The objects this resolution moved that match `filter`, read where they are now (the filter names no zone). */
+function matchedMoved(
+  state: GameState,
+  res: ResolutionContext,
+  filter: NonNullable<Extract<Effect, { kind: 'reflexive' }>['ifMovedMatches']>,
+): readonly ObjectId[] {
+  return (res.lastMoved ?? []).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(
+        state,
+        card,
+        { ...filter, zone: card.zone },
+        { controller: res.controller, source: res.source },
+      )
+    );
+  });
 }
 
 /**
@@ -252,7 +287,21 @@ export function runGainActivatedAbilitiesOf(
   const object = state.objects[fromId];
   const abilities =
     object !== undefined ? derive(state, object).abilities : (state.lki[fromId]?.abilities ?? []);
-  const gained = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  const own = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  // Grell Philosopher (CR 609.4b, 602.2b): "You may spend blue mana as though it were mana of any color to activate those abilities": the copies given carry it on their mana costs.
+  const gained =
+    effect.blueAsAnyColor === true
+      ? own.map((a) =>
+          a.kind === 'activated'
+            ? {
+                ...a,
+                cost: a.cost.map((c) =>
+                  c.kind === 'mana' ? { ...c, blueAsAnyColor: true as const } : c,
+                ),
+              }
+            : a,
+        )
+      : own;
   if (gained.length === 0) return done(state);
   return runContinuous(
     state,

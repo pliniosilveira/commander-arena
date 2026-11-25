@@ -329,6 +329,10 @@ export function targetText(spec: TargetSpec | undefined): string {
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
     case 'objectOrSpell':
       // Issue 81 (Fatehold Charm, CR 115.1): "target spell or creature".
+      // Endless Detour (CR 115.1): "target spell, nonland permanent, or card in a graveyard".
+      if (spec.what.card !== undefined) {
+        return `target spell, ${nounOf(spec.what.filter)}, or card in a graveyard`;
+      }
       return `target spell or ${nounOf(spec.what.filter)}`;
     case 'objectOrGraveyardCard': {
       // D-270 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
@@ -394,7 +398,12 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
         return 'this spell';
       }
-      if (ability.trigger?.kind === 'activatesAbility') return 'that ability';
+      if (
+        ability.trigger?.kind === 'activatesAbility' ||
+        ability.trigger?.kind === 'entersCausesTrigger'
+      ) {
+        return 'that ability';
+      }
       return ability.trigger === undefined ||
         ability.trigger.kind === 'castSpell' ||
         ability.trigger.kind === 'becomesTarget'
@@ -427,6 +436,12 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'eachObject':
       // Canopy Gargantuan: the creature the counters are being put on right now.
       return 'that creature';
+    case 'votedObjects':
+      // CR 701.38a (Trap the Trespassers).
+      return 'each creature with one or more votes';
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen).
+      return 'your Ring-bearer';
   }
 }
 
@@ -571,6 +586,12 @@ function recipientText(
     }
     case 'couldntSacrificeThisWay':
       return "each player who can't";
+    case 'eachPlayerWithoutVotes':
+      return 'each player who received no votes';
+    case 'eachOpponentWhoVoted':
+      return to.choice === 'same'
+        ? 'each opponent who voted for a choice you voted for'
+        : "each opponent who voted for a choice you didn't vote for";
     case 'attackedPlayers':
       // D-269 (CR 508.6).
       return 'each player this creature attacked this turn';
@@ -597,6 +618,8 @@ function recipientText(
     case 'linkedExile':
     case 'putWithThis':
     case 'eachObject':
+    case 'votedObjects':
+    case 'ringBearer':
     case 'each':
       return objectText(to, ability, self);
   }
@@ -622,6 +645,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   // Issue 81 (CR 509.1b): the Gingerbrute token.
   cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
   cantAttackPlayersAlreadyAttacked: "can't attack a player it has already attacked this turn",
+  cantBeBlockedExceptByThreeOrMore: "can't be blocked except by three or more creatures",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
@@ -769,6 +793,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
+    case 'eachPlayerWithoutVotes':
+    case 'eachOpponentWhoVoted':
     case 'attackedPlayers':
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
@@ -1129,6 +1155,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const what =
         effect.optional === true && inner.startsWith('You ') ? `You may ${inner.slice(4)}` : inner;
       const payer = payerWords(effect.player);
+      // Champions of Minas Tirith (CR 107.3): {X} is the number of cards in the hand of the player asked.
+      if (effect.xIsHandSize === true) {
+        return `${what} unless ${payer.who} pays {X}, where X is the number of cards in their hand`;
+      }
       return `${what} unless ${payer.who} ${unlessCostPhrase(effect.cost, payer.third)}`;
     }
     case 'cumulativeUpkeep':
@@ -1143,6 +1173,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'becomeMonarch':
       // CR 725.1 (D-127): "you become the monarch", "its controller becomes the monarch".
       return `${playerVerb(effect.player, ability, 'become')} the monarch`;
+    case 'takeInitiative':
+      // CR 726.1: "you take the initiative", "target player takes the initiative".
+      return `${playerVerb(effect.player, ability, 'take')} the initiative`;
+    case 'venture':
+      // CR 701.49d: "you venture into Undercity".
+      return `${playerVerb(effect.player, ability, 'venture')} into Undercity`;
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
@@ -1176,7 +1212,19 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? 'player'
             : null;
       const inner = effectText(effect.effect, ability, self, defs);
+      if (effect.runsAs === 'each') {
+        // Sail into the West: "Each player returns up to two cards from their graveyard to their hand": each does it themselves.
+        return who !== 'player' || inner === '' ? UNSAID : `Each player does this: ${lower(inner)}`;
+      }
       return who === null || inner === '' ? UNSAID : `For each ${who}, ${lower(inner)}`;
+    }
+    case 'repeat': {
+      // Travel Through Caradhras: "For each Redhorn Pass vote, ...".
+      const inner = effectText(effect.effect, ability, self, defs);
+      const times = effect.times;
+      return typeof times === 'object' && times.kind === 'votesFor' && inner !== ''
+        ? `For each ${times.option} vote, ${lower(inner)}`
+        : UNSAID;
     }
     case 'prepare':
       return `${capital(object(effect.objects))} becomes prepared`;
@@ -1444,8 +1492,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? (tapChooseText(effect.objects) ?? UNSAID)
         : `Tap ${object(effect.objects)}`;
     case 'vote':
-      // D-194 (CR 701.38a): "Starting with you, each player votes for profit or security".
-      return `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
+      // D-194 (CR 701.38a): "Starting with you, each player votes for profit or security"; "each player secretly votes for fellowship or aid, then those votes are revealed".
+      return effect.secret === true
+        ? `Each player secretly votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}, then those votes are revealed`
+        : `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
+    case 'voteFor':
+      // CR 701.38a, 701.38b: a vote for a player or for a creature.
+      return `Each player ${effect.secret === true ? 'secretly ' : ''}votes for ${effect.choices.kind === 'players' ? 'a player' : "a creature you don't control"}${effect.secret === true ? ', then those votes are revealed' : ''}`;
     case 'pair':
       // D-286 (CR 702.95a): the effect of the two abilities soulbond stands for; the creature is chosen as it resolves.
       return effect.partner === 'choose'
@@ -1560,6 +1613,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'delayedCombatDamageTurn':
       // CR 603.7, 510.3a (D-663): a delayed ability for the turn.
       return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
+    case 'delayedCombatDamageBatchTurn': {
+      // CR 603.7, 603.2c: a delayed ability for the turn, for combat damage to players by one or more creatures.
+      const inner = effectText(effect.effect, ability, self, defs);
+      return inner === ''
+        ? UNSAID
+        : `Whenever one or more creatures you control deal combat damage to one or more players this turn, ${lower(inner)}`;
+    }
     case 'delayedCombatDamageToPlayer': {
       // CR 603.7c (issue 144): a delayed ability for the turn, for damage to the player the spell targeted.
       const inner = effectText(effect.effect, ability, self, defs);
@@ -1615,6 +1675,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return requireAttackText(effect) ?? UNSAID;
     case 'creaturesCantAttackYou':
       // Federation Fleet group F (CR 508.1a): "Until your next turn, creatures can't attack you".
+      // Champions of Minas Tirith (CR 508.1a, 511.3): "they can't attack you this combat", of the creatures of one player.
+      if (effect.duration === 'thisCombat') {
+        return effect.player === undefined
+          ? "Creatures can't attack you this combat"
+          : "That player can't attack you this combat";
+      }
       return "Until your next turn, creatures can't attack you";
     case 'restrictGroup': {
       // Abzan Armor group A (CR 609.4, 611.2c): "Creatures you control with defender can attack this turn as though they didn't have defender".
@@ -1754,6 +1820,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       if (count === UNSAID) return UNSAID;
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
+    }
+    case 'spellGainsKeyword': {
+      // CR 702.44a, 702.44d: "It gains sunburst" / "That spell gains sunburst", said of the spell of the cast trigger.
+      const spell = object(effect.spell);
+      return spell === UNSAID ? UNSAID : `${capital(spell)} gains sunburst`;
     }
     case 'doubleSpellX':
       // CR 107.3 (Unbound Flourishing): the X of the spell that was cast.

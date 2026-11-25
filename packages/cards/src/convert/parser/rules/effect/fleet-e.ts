@@ -79,7 +79,7 @@ export const EFFECT_OWNER_DRAWS_THEN_SHUFFLES = defineRule<Clauses>({
 });
 
 /**
- * `effect.exile-made-token-at-end-of-combat`: "Exile that token at end of combat." (CR 603.7, 603.7c, 511.1): one delayed triggered ability, about the one token the instruction
+ * `effect.exile-made-token-at-end-of-combat`: "Exile that token at end of combat." and "Exile the token at end of combat." (Flamerush Rider; CR 603.7, 603.7c, 511.1): one delayed triggered ability, about the one token the instruction
  * before made and no other object, that exiles it as the end of combat step begins; a token that has left by then is a new object and nothing happens to it. The engine's
  * `delayedTrigger` at the end of combat step of an `exile` of `moved`. Not read: "it", several tokens, another time ("at the beginning of the next end step" is
  * `effect.end-step-made-tokens`), another verb.
@@ -93,8 +93,15 @@ export const EFFECT_EXILE_MADE_TOKEN_AT_END_OF_COMBAT = defineRule<Clauses>({
     'CR 603.7c (Delayed Triggered Abilities)',
     'CR 511.1 (End of Combat Step)',
   ],
-  examples: ['exile that token at end of combat', 'Exile that token at end of combat'],
+  examples: [
+    'exile that token at end of combat',
+    'Exile that token at end of combat',
+    // Flamerush Rider: the same token said as "the token".
+    'exile the token at end of combat',
+  ],
   rejects: [
+    'exile the tokens at end of combat',
+    'exile the creature at end of combat',
     'exile it at end of combat',
     'exile those tokens at end of combat',
     'exile that creature at end of combat',
@@ -107,7 +114,7 @@ export const EFFECT_EXILE_MADE_TOKEN_AT_END_OF_COMBAT = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const id = 'effect.exile-made-token-at-end-of-combat';
     const r = map(
-      spanned(pattern(/exile that token at end of combat(?![\p{L}\p{N}])/iu)),
+      spanned(pattern(/exile (?:that|the) token at end of combat(?![\p{L}\p{N}])/iu)),
       ({ span }) => span,
     )(ctx, pos);
     if (!r.ok) return r;

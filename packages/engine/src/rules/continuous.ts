@@ -24,7 +24,9 @@ import type {
   ContinuousEffect,
   GameObject,
   GameState,
+  StackAbility,
 } from '../state/types';
+import { manaSymbolsOf } from './alt-costs';
 import { controllerOf } from './control';
 import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
@@ -123,9 +125,11 @@ export function runContinuous(
   targets: readonly ChosenTarget[],
 ): StepOutcome {
   // CR 611.2c: the set is fixed now. A target that is no longer a permanent is skipped (CR 608.2b).
-  const affected = resolveObjects(state, node.objects, ctx, targets).filter(
-    (id) => state.objects[id]?.zone === 'battlefield',
-  );
+  // CR 105.3, 613.1e: a color change also reaches a spell on the stack ("target spell or permanent becomes white"): the characteristic of a spell is the characteristic of the object on the stack.
+  const affected = resolveObjects(state, node.objects, ctx, targets).filter((id) => {
+    const zone = state.objects[id]?.zone;
+    return zone === 'battlefield' || (node.kind === 'setColors' && zone === 'stack');
+  });
   if (affected.length === 0) return done(state);
   // CR 611.2b (D-196): "for as long as you control this" does nothing when the duration is over before the effect would begin.
   const until =
@@ -240,6 +244,7 @@ export function runBecomeCopy(
   node: Extract<Effect, { kind: 'becomeCopy' }>,
   ctx: SelectContext,
   targets: readonly ChosenTarget[],
+  resolving?: StackAbility | null,
 ): StepOutcome {
   const sourceId = resolveObjects(state, node.of, ctx, targets)[0];
   const source =
@@ -248,6 +253,16 @@ export function runBecomeCopy(
     (id) => state.objects[id]?.zone === 'battlefield',
   );
   if (source === undefined || affected.length === 0) return done(state);
+  // CR 707.9b (Kimahri, Valiant Guardian): "... and this ability": the ability that is resolving is one of the copy's.
+  if (node.withThisAbility === true) {
+    if (resolving === undefined || resolving === null) return done(state);
+    return copyEffect(
+      state,
+      { ...node, abilities: [...(node.abilities ?? []), resolving] },
+      source,
+      affected,
+    );
+  }
   return copyEffect(state, node, source, affected);
 }
 
@@ -364,19 +379,41 @@ export function runCreaturesCantAttackYou(
   state: GameState,
   node: Extract<Effect, { kind: 'creaturesCantAttackYou' }>,
   ctx: SelectContext,
+  targets: readonly ChosenTarget[] = [],
 ): StepOutcome {
+  // CR 603.7c: the one player whose creatures are barred is found as the effect runs; with none (the player has left the game) nothing is barred.
+  let of: SeatId | undefined;
+  if (node.player !== undefined) {
+    [of] = resolvePlayers(state, node.player, ctx, targets);
+    if (of === undefined) return done(state);
+  }
   const [timestamp, stamped] = allocateTimestamp(state);
   const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
   const created: ContinuousEffect = {
     id: `ce${timestamp}`,
     timestamp,
     objects: [],
-    until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
-    change: {
-      kind: 'creaturesCantAttackPlayer',
-      filter: node.creatures,
-      controller: ctx.controller,
-    },
+    // CR 511.3 (End of Combat Step): "this combat" lasts until the end of combat step ends.
+    until:
+      node.duration === 'thisCombat'
+        ? 'endOfCombat'
+        : { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    change:
+      node.tax === undefined
+        ? {
+            kind: 'creaturesCantAttackPlayer',
+            filter: node.creatures,
+            controller: ctx.controller,
+            ...(of === undefined ? {} : { of }),
+          }
+        : {
+            // CR 508.1d, 508.1h (Summon: Yojimbo): a tax on attacking, not a ban.
+            kind: 'attackTaxPlayer',
+            filter: node.creatures,
+            controller: ctx.controller,
+            symbols: manaSymbolsOf(node.tax),
+            source: ctx.source,
+          },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
 }

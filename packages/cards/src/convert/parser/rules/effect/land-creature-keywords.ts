@@ -283,6 +283,79 @@ export const EFFECT_IT_BECOMES_LAND_CREATURE_KEYWORDS = defineRule<Clauses>({
   },
 });
 
+const ALL_TYPES_ID = 'effect.becomes-land-creature-all-types';
+
+/**
+ * `effect.becomes-land-creature-all-types`: "~ becomes a 2/2 creature with all creature types until end of turn. It's still a land." (CR 613.1d, 613.4b, 205.1b, 205.3m, 611.2a): a land that is
+ * also a creature of every creature type until the end of the turn, with the base power and toughness the text says and its colors unchanged. Only `~` itself, only "until end of turn".
+ * Not read: another duration, another subject, a color, a creature type of its own, a keyword, no base power and toughness, "that's still a land", the second sentence left out.
+ */
+export const EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES = defineRule<Clauses>({
+  id: ALL_TYPES_ID,
+  family: 'effect',
+  leading: ['~'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 205.1b (Type Line)',
+    'CR 205.3m (Subtypes)',
+  ],
+  examples: [
+    "~ becomes a 2/2 creature with all creature types until end of turn. It's still a land",
+    '~ becomes a 2/2 creature with all creature types until end of turn. It’s still a land',
+  ],
+  rejects: [
+    '~ becomes a 2/2 creature with all creature types until end of turn.',
+    "~ becomes a 2/2 creature with all creature types until your next turn. It's still a land",
+    "target land becomes a 2/2 creature with all creature types until end of turn. It's still a land",
+    "~ becomes a creature with all creature types until end of turn. It's still a land",
+    "~ becomes a 2/2 blue creature with all creature types until end of turn. It's still a land",
+    "~ becomes a 2/2 creature with all creature types and flying until end of turn. It's still a land",
+    "~ becomes a 2/2 creature until end of turn. It's still a land",
+    "~ becomes a 2/2 creature with all creature types until end of turn. It's still a creature",
+    "~ becomes a 2/2 creature with all creature types until end of turn. It's still a land and you draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.self'] }),
+      literal(' becomes a '),
+      spanned(pattern(/(\d+)\/(\d+) /)),
+      literal('creature with all creature types '),
+      family<IrDuration>('duration'),
+      pattern(/\. It['’]s still a land(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , pt, , duration] = r.value;
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: Number(pt.value[1]),
+      toughness: Number(pt.value[2]),
+      span: pt.span,
+      rule: ALL_TYPES_ID,
+    };
+    const typeList: IrTypeList = {
+      kind: 'typeList',
+      subtypes: [],
+      cardTypes: ['creature'],
+      additive: true,
+      allCreatureTypes: true,
+      span: pt.span,
+      rule: ALL_TYPES_ID,
+    };
+    const clause: IrClause = {
+      ...makeClause(
+        ALL_TYPES_ID,
+        'becomes',
+        { objects: subject, types: typeList, basePt },
+        pt.span,
+      ),
+      duration,
+    };
+    return { ok: true, value: [clause], pos: r.pos };
+  },
+});
+
 const SELF_KEYWORDS_ID = 'effect.becomes-land-creature-keywords-trailing';
 
 /**
@@ -384,6 +457,7 @@ export const EFFECT_BECOMES_LAND_CREATURE_KEYWORDS_TRAILING = defineRule<Clauses
 export const LAND_CREATURE_KEYWORDS_EFFECT_RULES = [
   EFFECT_LEAD_BECOMES_LAND_CREATURE_KEYWORDS,
   EFFECT_BECOMES_LAND_CREATURE_TRAILING,
+  EFFECT_BECOMES_LAND_CREATURE_ALL_TYPES,
   EFFECT_BECOMES_LAND_CREATURE_KEYWORDS_TRAILING,
   EFFECT_IT_BECOMES_LAND_CREATURE_KEYWORDS,
 ];

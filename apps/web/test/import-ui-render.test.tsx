@@ -354,7 +354,6 @@ describe('other views', () => {
         onName={() => {}}
         onImport={() => {}}
         onExample={() => {}}
-        onSave={() => {}}
       />,
     );
     expect(out).toContain('Scryfall');
@@ -362,6 +361,30 @@ describe('other views', () => {
     expect(out).toContain('Quick start');
     expect(out).toContain('Fill in an example');
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Import</);
+  });
+
+  test('the special-frame commander art option is a checkbox, off until turned on, and absent when not offered', () => {
+    const panel = (extra: object) =>
+      renderToStaticMarkup(
+        <InputPanel
+          text="x"
+          name=""
+          running={false}
+          progress={null}
+          saveMessage={null}
+          onText={() => {}}
+          onName={() => {}}
+          onImport={() => {}}
+          onExample={null}
+          {...extra}
+        />,
+      );
+    const off = panel({ niceArt: false, onNiceArt: () => {} });
+    expect(off).toContain('type="checkbox"');
+    expect(off).toContain('special-frame art for my commander');
+    expect(off).not.toContain('checked=""');
+    expect(panel({ niceArt: true, onNiceArt: () => {} })).toContain('checked=""');
+    expect(panel({})).not.toContain('type="checkbox"');
   });
 
   test('progress shows a labelled progress bar', () => {
@@ -376,7 +399,6 @@ describe('other views', () => {
         onName={() => {}}
         onImport={() => {}}
         onExample={() => {}}
-        onSave={() => {}}
       />,
     );
     expect(out).toContain('Resolving cards (30 of 99)');

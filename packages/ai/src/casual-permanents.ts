@@ -420,6 +420,9 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
   // agent when it is the one who would search, on its own spell or on an opponent's. A card found is
   // free, and so is the shuffle.
   if (d.purpose === 'search') return { kind: 'acceptOptional' };
+  // "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand" (CR 608.2d; `search.mayPut`): a permanent on
+  // the battlefield is worth more than a card in the hand, and the card costs nothing.
+  if (d.purpose === 'searchPut') return { kind: 'acceptOptional' };
   if (d.purpose === 'counterUnlessPays') return payToKeepSpell(d, view);
   if (d.purpose === 'ward' || d.purpose === 'unlessPays') {
     // D-111: "[do something] unless that player pays [cost]" (a draw trigger of an opponent's permanent,
@@ -448,6 +451,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     return { kind: 'acceptOptional' };
   }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
+  // CR 103.6: "begin the game with this card on the battlefield?" (a Leyline): a free permanent, so the agent always takes it.
+  if (d.purpose === 'openingHand') return { kind: 'acceptOptional' };
   // D-272: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
   if (d.purpose === 'pairReturn') return answerPairReturn(view, d);
   if (d.cost !== undefined) {

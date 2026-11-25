@@ -273,8 +273,111 @@ export const STATIC_GRAVEYARD_CARDS_HAVE_ENCORE = defineRule<IrStatic>({
   },
 });
 
+const GRAVEYARD_UNEARTH = 'static.graveyard-cards-have-unearth';
+
+/**
+ * `static.graveyard-cards-have-unearth`: "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}." (Solemn Doomguide, CR 702.84a: Unearth;
+ * CR 613.1f, 604.3). The creature cards of the graveyard of the controller of the permanent that have one of the creature types listed (a list of two to five, closed by "and/or" or "or") have an
+ * Unearth ability with the plain mana cost the text gives, for as long as the permanent is on the battlefield. The engine's `grantUnearthToGraveyardCards`. Not read: another graveyard, another
+ * keyword, a cost that is not mana, X or hybrid mana in the cost, one creature type alone, a list with no "and/or", no period.
+ */
+export const STATIC_GRAVEYARD_CARDS_HAVE_UNEARTH = defineRule<IrStatic>({
+  id: GRAVEYARD_UNEARTH,
+  family: 'static',
+  leading: ['each'],
+  cites: [
+    'CR 702.84a (Unearth)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 604.3 (Handling Static Abilities)',
+  ],
+  examples: [
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}.",
+    "Each creature card in your graveyard that's a Goblin or Zombie has unearth {2}.",
+  ],
+  rejects: [
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}",
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {X}.",
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {B/R}.",
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth.",
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has encore {1}{B}.",
+    "Each creature card in a graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B}.",
+    "Each creature card in your graveyard that's a Cleric has unearth {1}{B}.",
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, Wizard has unearth {1}{B}.",
+    "Each creature card in your graveyard that's a Cleric, Rogue, Warrior, and/or Wizard has unearth {1}{B} and flying.",
+    "Each creature card in your hand that's a Cleric or Rogue has unearth {1}{B}.",
+  ],
+  parse: (ctx, pos) => {
+    const lead = sequence(
+      quiet(literal('each creature card in your graveyard that')),
+      quiet(pattern(/['’]s an? /iu)),
+    )(ctx, pos);
+    if (!lead.ok) return lead;
+    const list = pattern(
+      new RegExp(
+        `((?:${SUBTYPE_WORD}, )+(?:and/or |or )${SUBTYPE_WORD}|${SUBTYPE_WORD} or ${SUBTYPE_WORD})(?= has unearth )`,
+        'u',
+      ),
+    )(ctx, lead.pos);
+    if (!list.ok) return list;
+    const types = (list.value[1] ?? '')
+      .split(/, (?:and\/or |or )?|(?:,? )?(?:and\/or|or) /u)
+      .filter((t) => t !== '');
+    if (types.length < 2 || new Set(types).size !== types.length) return fail(ctx, pos);
+    const tail = pattern(/ has unearth ((?:\{[1-9WUBRGC]\d*\}|\{[WUBRGC]\})+)\./u)(ctx, list.pos);
+    if (!tail.ok) return tail;
+    const symbols = [...(tail.value[1] ?? '').matchAll(/\{([^}]+)\}/gu)].map((m) => m[1] ?? '');
+    if (symbols.length === 0) return fail(ctx, pos);
+    const filter: IrFilter = {
+      types: ['creature'],
+      card: true,
+      anyOf: types.map((t) => ({ subtypes: [t], raw: t })),
+      raw: ctx.text.slice(pos + 5, list.pos),
+    };
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'You' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 4 },
+      rule: GRAVEYARD_UNEARTH,
+    };
+    return {
+      ok: true,
+      value: staticOf(
+        GRAVEYARD_UNEARTH,
+        subject,
+        {
+          kind: 'graveyardUnearth',
+          cards: {
+            kind: 'noun',
+            det: 'each',
+            filter,
+            upTo: false,
+            plural: true,
+            other: false,
+            span: { start: pos + 5, end: list.pos },
+            rule: GRAVEYARD_UNEARTH,
+          },
+          cost: {
+            kind: 'mana',
+            symbols,
+            span: { start: list.pos, end: tail.pos },
+            rule: GRAVEYARD_UNEARTH,
+          },
+        },
+        pos,
+        tail.pos,
+      ),
+      pos: tail.pos,
+    };
+  },
+});
+
 export const SLIVER_LORDS_STATIC_RULES = [
   STATIC_LEGEND_RULE_DOESNT_APPLY,
   STATIC_GROUPS_ARE_THE_CHOSEN_TYPE,
   STATIC_GRAVEYARD_CARDS_HAVE_ENCORE,
+  STATIC_GRAVEYARD_CARDS_HAVE_UNEARTH,
 ];

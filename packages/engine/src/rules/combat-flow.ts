@@ -35,6 +35,7 @@ import {
 import {
   attackCandidates,
   blockCandidates,
+  minBlockersOf,
   requiredAttackers,
   validateAttacks,
   validateBlocks,
@@ -43,7 +44,6 @@ import { blockersLeft, combatCreatureLimit } from './combat-limits';
 import { askingFlow } from './damage-order';
 import { attackerDefender } from './defending';
 import { applyExerts, canExert, type ExertAttack } from './exert';
-import { hasKeyword } from './keywords';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
 import { type ManualTap, payByTapping } from './pay-manual';
 import { grantPriority, type Outcome } from './priority';
@@ -240,7 +240,7 @@ function blockDecision(
     .map((a) => ({
       attacker: a.object,
       target: a.target,
-      minBlockers: hasKeyword(state, getObject(state, a.object), 'menace') ? 2 : 1,
+      minBlockers: minBlockersOf(state, getObject(state, a.object)),
       // CR 509.1b (D-133): "can't be blocked by more than one creature".
       ...(hasRestriction(state, getObject(state, a.object), 'cantBeBlockedByMoreThanOne')
         ? { maxBlockers: 1 }

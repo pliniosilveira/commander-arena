@@ -90,6 +90,18 @@ export function playerSubject(
     case 'couldntSacrificeThisWay':
       // CR 701.21a: "each player who can't discards a card" after a sacrifice.
       return { text: "each player who can't", base: false };
+    case 'eachPlayerWithoutVotes':
+      // CR 701.38a (Círdan the Shipwright).
+      return { text: 'each player who received no votes', base: false };
+    case 'eachOpponentWhoVoted':
+      // CR 701.38a (Erestor of the Council).
+      return {
+        text:
+          player.choice === 'same'
+            ? 'each opponent who voted for a choice you voted for'
+            : "each opponent who voted for a choice you didn't vote for",
+        base: false,
+      };
     case 'attackedPlayers':
       // D-269 (CR 508.6): "each player this creature attacked this turn loses the game".
       return { text: 'each player this creature attacked this turn', base: false };

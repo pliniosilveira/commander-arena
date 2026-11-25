@@ -18,6 +18,8 @@
  * - A requirement (CR 508.1d): a player is not required to pay a cost to attack, so a creature that must
  *   attack if able and has only taxed targets is not required (`untaxedTargets`).
  */
+
+import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget } from '../state/combat-types';
 import { getObject } from '../state/ops';
@@ -28,19 +30,31 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { planFor } from './mana-engine';
+import { matchesFilter } from './select';
 
 /** One permanent's tax: who controls it, what it costs for each attacker, and whether it covers planeswalkers. */
 interface Tax {
-  readonly source: ObjectId;
+  /** The permanent named as the source of the payment; null for a tax an effect made whose source is gone (the attacker stands for it). */
+  readonly source: ObjectId | null;
   readonly controller: SeatId;
   readonly symbols: readonly string[];
   readonly planeswalkers: boolean;
   readonly planeswalkersOnly: boolean;
   readonly perCounter: boolean;
+  /** CR 508.1d, 508.1h (`creaturesCantAttackYou` with `tax`): only the creatures this filter matches are taxed. */
+  readonly creatures?: ObjectFilter;
 }
 
 /** What `tax` costs `attacker` (CR 508.1h): its symbols, or for a per-counter tax once for each counter on it. */
 function symbolsFor(state: GameState, tax: Tax, attacker: ObjectId): readonly string[] {
+  if (tax.creatures !== undefined) {
+    const obj = state.objects[attacker];
+    const ctx = { controller: tax.controller, source: tax.source };
+    return obj !== undefined &&
+      matchesFilter(state, obj, { ...tax.creatures, zone: 'battlefield' }, ctx)
+      ? tax.symbols
+      : [];
+  }
   if (!tax.perCounter) return tax.symbols;
   const counters = Object.values(state.objects[attacker]?.counters ?? {}).reduce(
     (sum, n) => sum + n,
@@ -73,6 +87,19 @@ function taxesOnBoard(state: GameState): Tax[] {
         perCounter: a.static.perCounter === true,
       });
     }
+  }
+  // CR 508.1d, 508.1h, 611.2c (Summon: Yojimbo): "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures": the taxes spells and abilities made.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'attackTaxPlayer') continue;
+    out.push({
+      source: e.change.source,
+      controller: e.change.controller,
+      symbols: e.change.symbols,
+      planeswalkers: false,
+      planeswalkersOnly: false,
+      perCounter: false,
+      creatures: e.change.filter,
+    });
   }
   return out;
 }
@@ -107,8 +134,12 @@ export function attackTaxes(state: GameState): AttackTaxes {
         .filter((t) => covers(state, t, target))
         .flatMap((t) => [...symbolsFor(state, t, attacker)]),
     sourceOf: (target, attacker) =>
-      taxes.find((t) => covers(state, t, target) && symbolsFor(state, t, attacker).length > 0)
-        ?.source ?? null,
+      (() => {
+        const found = taxes.find(
+          (t) => covers(state, t, target) && symbolsFor(state, t, attacker).length > 0,
+        );
+        return found === undefined ? null : (found.source ?? attacker);
+      })(),
   };
 }
 

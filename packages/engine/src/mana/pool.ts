@@ -38,6 +38,11 @@ export type SpendTarget =
        * Read by the payment planner (`mana/payment.ts`), which leaves out the pool mana and the source outcomes of any other color.
        */
       readonly onlyColor?: ManaColor | null;
+      /**
+       * "You may spend blue mana as though it were mana of any color to activate those abilities" (Grell Philosopher, CR 609.4b): blue mana pays a colored symbol of any color of the
+       * cost (not generic-only mana, and no other color or colorless mana). Read by the payment planner.
+       */
+      readonly blueAsAnyColor?: true;
       readonly source?: { readonly types: readonly string[]; readonly subtypes: readonly string[] };
     };
 

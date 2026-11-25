@@ -186,7 +186,7 @@ function walkEffect(
         effect.object.kind === 'target'
           ? selectedFilter({ kind: 'target', id: effect.object.id }, targets)
           : null;
-      if (filter?.zone !== 'stack' || filter.singleTarget !== true) {
+      if (filter?.zone !== 'stack' || (effect.to === undefined && filter.singleTarget !== true)) {
         out.push({
           path: `${path}.object`,
           message:
@@ -301,12 +301,14 @@ function walkEffect(
       return;
     case 'unlessPays':
       // CR 118.12a: paid as Ward's cost is (rules/pay-unless.ts), and, D-209, with energy; what happens when it is not is any effect.
-      activationCostIssues(effect.cost, `${path}.cost`, out, [
-        'mana',
-        'payLife',
-        'discard',
-        'energy',
-      ]);
+      // CR 107.3 (Champions of Minas Tirith): with `xIsHandSize` the {X} of the mana cost is a number of cards, worked out as the player is asked.
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard', 'energy'],
+        effect.xIsHandSize === true,
+      );
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'becomeCopy':
@@ -570,7 +572,11 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
-  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  const removingAmong = costs.filter(
+    (c) =>
+      c.kind === 'removeCounters' &&
+      (c.among !== undefined || c.counter === undefined || c.countX === true || c.fromOne === true),
+  );
   if (
     removingAmong.length > 1 ||
     (removingAmong.length === 1 &&
@@ -665,6 +671,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
     case 'dealsCombatDamage':
     case 'dealsDamage':
@@ -908,6 +915,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
         // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.kind === 'equip' && a.keyword.orCost !== undefined) {
+          activationCostIssues(a.keyword.orCost, `${path}.keyword.orCost`, out, ['removeCounters']);
+        }
         if (a.keyword.kind === 'equip' && a.keyword.costReducedIf !== undefined) {
           conditionIssues(
             a.keyword.costReducedIf.condition,
@@ -931,11 +941,12 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana, life and the sacrifice of N permanents ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures"; rules/cast-cost.ts, rules/cast.ts).
+        // CR 702.34a: an alternative cost; mana, life, the sacrifice of N permanents and the exile of X cards of the graveyard ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures", "Flashback—{3}{U}{R}, Exile X cards from your graveyard"; rules/cast-cost.ts, rules/cast.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
           'mana',
           'payLife',
           'sacrifice',
+          'exileFromGraveyard',
         ]);
       } else if (a.keyword.kind === 'ninjutsu') {
         // CR 702.49a (unverified): paid like any activation cost; only mana is run (rules/derive-keywords.ts adds the return of an unblocked attacker).
@@ -951,11 +962,14 @@ function walkAbility(
           'payLife',
           'discard',
         ]);
-      } else if (a.keyword.kind === 'escalate') {
-        // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-145).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
-      } else if (a.keyword.kind === 'replicate' || a.keyword.kind === 'buyback') {
-        // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129). CR 702.27a: the same for the buyback cost (Galadriel group 3).
+      } else if (a.keyword.kind === 'escalate' || a.keyword.kind === 'replicate') {
+        // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana, no X (D-145), or tapped permanents (Collective Effort: `casting.extra.tap`, rules/cast-additional.ts). CR 702.56a: the same for the replicate cost (D-129; Psionic Ritual taps permanents).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
+          'mana',
+          'tapPermanents',
+        ]);
+      } else if (a.keyword.kind === 'buyback') {
+        // CR 702.27a: the buyback cost, an additional cost paid as the spell is cast; mana only, no X (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'suspend') {
         // CR 702.62a: paid as the special action is taken (rules/special-actions.ts); mana only, no X (D-128).
@@ -1063,7 +1077,8 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
   for (const [i, c] of (face.additionalCosts ?? []).entries()) {
     if (
       (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
-      c.kind === 'exileFromGraveyard'
+      c.kind === 'exileFromGraveyard' ||
+      c.kind === 'putLinkedExileInGraveyard'
     ) {
       out.push({
         path: `${base}.additionalCosts[${i}]`,
@@ -1082,6 +1097,7 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
       if (
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
         c.kind === 'exileFromGraveyard' ||
+        c.kind === 'putLinkedExileInGraveyard' ||
         c.kind === 'exileFromHand'
       ) {
         out.push({

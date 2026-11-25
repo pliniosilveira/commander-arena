@@ -3,7 +3,7 @@ import type { Cost } from '@commander-arena/engine';
 import { amountPhrase } from './amount-text';
 import { NUMBER_WORDS, nounsOf, plural, tappedWhat } from './cost-words';
 import { beholdQuality } from './dragons-text';
-import { amongWhat, countersTaken } from './remove-counters-cost-text';
+import { amongWhat, countersTaken, oneOfWhat } from './remove-counters-cost-text';
 import { untapWhat } from './untap-cost-text';
 
 /**
@@ -205,6 +205,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return cost.countX === true
         ? 'Exile X cards from your graveyard'
         : `Exile ${countText(cost.count, 'card', 'cards')} from your graveyard`;
+    case 'putLinkedExileInGraveyard':
+      // CR 607.2a (Shelob, Dread Weaver): a card the permanent exiled with its linked ability.
+      return 'Put a card exiled with this permanent into its owner’s graveyard';
     case 'exileFromHand': {
       const colorNames: Readonly<Record<string, string>> = {
         W: 'white',
@@ -220,8 +223,18 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     }
     case 'removeCounters':
       // CR 118.3, 122.1: "Remove two +1/+1 counters from among creatures you control".
+      // Gavel of the Righteous, Tekuthal, Moxite Refinery: no kind named, an X announced, all from one permanent.
       if (cost.among !== undefined) {
-        return `Remove ${countersTaken(cost.counter, cost.count, true)} from among ${amongWhat(cost.among)}`;
+        const taken =
+          cost.countX === true ? 'X counters' : countersTaken(cost.counter, cost.count, true);
+        return cost.fromOne === true
+          ? `Remove ${taken} from ${oneOfWhat(cost.among)}`
+          : `Remove ${taken} from among ${amongWhat(cost.among)}`;
+      }
+      if (cost.counter === undefined) {
+        const taken =
+          cost.countX === true ? 'X counters' : countersTaken(undefined, cost.count, true);
+        return `Remove ${taken} from this ${self}`;
       }
       return `Remove ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)}`;
     case 'putCounters':
@@ -280,15 +293,14 @@ export function additionalWayText(costs: readonly Cost[]): string {
 }
 
 /**
- * The two ways to pay an additional cost to cast a spell (CR 118.8, D-181) as the preview lists them: "Sacrifice an artifact or creature, or pay
+ * The two or three ways to pay an additional cost to cast a spell (CR 118.8, D-181) as the preview lists them: "Sacrifice an artifact or creature, or pay
  * {4}". Empty for none.
  */
-export function additionalCostChoiceText(
-  choice: readonly [readonly Cost[], readonly Cost[]] | undefined,
-): string {
+export function additionalCostChoiceText(choice: readonly (readonly Cost[])[] | undefined): string {
   if (choice === undefined) return '';
-  const first = additionalWayText(choice[0]);
-  return `${first.replace(/^./, (c) => c.toUpperCase())}, or ${additionalWayText(choice[1])}`;
+  const ways = choice.map(additionalWayText);
+  const text = `${ways.slice(0, -1).join(', ')}, or ${ways[ways.length - 1]}`;
+  return text.replace(/^./, (c) => c.toUpperCase());
 }
 
 export { tappedWhat };

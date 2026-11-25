@@ -37,6 +37,8 @@ import { settleDayNight } from './day-night';
 import { derive } from './derive';
 import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
+import { completeDungeons } from './dungeon';
+import { initiativeAfterLoss } from './initiative';
 import { leaveGame } from './leave-game';
 import { exemptFromLegendRule, type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
@@ -46,6 +48,7 @@ import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
 import { gainStartingSpeeds } from './speed';
+import { settleStaticControl } from './static-control-sync';
 import { moveObject, recordLastKnown } from './zones';
 
 export interface SbaResult {
@@ -113,6 +116,13 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     };
   }
 
+  // CR 613.1b, 506.4, 302.6: a static control effect ("The monarch controls enchanted creature.") began, changed hands or ended; the state it leaves is what everything
+  // below looks at, so the check is made again at once.
+  const settled = settleStaticControl(state);
+  if (settled !== null) {
+    return { state: settled.state, events: settled.events, performed: true, decision: null };
+  }
+
   // CR 701.54a (D-196): a creature stops being a player's Ring-bearer when another player gains control of it.
   const lostBearer = endLostRingBearers(state);
   if (lostBearer !== null) {
@@ -146,6 +156,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const started = gainStartingSpeeds(state);
   if (started !== null) {
     return { state: started.state, events: started.events, performed: true, decision: null };
+  }
+
+  // CR 704.5t, 309.6, 309.7: a venture marker on the bottommost room whose dungeon is the source of no room ability waiting or on the stack: the dungeon is completed.
+  const dungeons = completeDungeons(state);
+  if (dungeons !== null) {
+    return { state: dungeons.state, events: dungeons.events, performed: true, decision: null };
   }
 
   // 1. Find everything against the unchanged state (CR 704.3).
@@ -226,6 +242,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     const handed = monarchAfterLoss(state);
     state = handed.state;
     events.push(...handed.events);
+    // CR 726.4: the same for the initiative; the player who takes it ventures (CR 726.2).
+    const initiative = initiativeAfterLoss(state);
+    state = initiative.state;
+    events.push(...initiative.events);
   }
   const clearFlag = state.seats.filter((s) => s.drewFromEmptyLibrary);
   for (const s of clearFlag) state = patchSeat(state, s.id, { drewFromEmptyLibrary: false });

@@ -85,7 +85,14 @@ function partOf(amount: PtAmount | StaticPtAmount, ctx: AmountContext = {}): Par
   }
   if (amount.kind === 'countersOnSource') {
     // CR 122.1 (Call for Unity): "+1/+1 for each unity counter on this permanent".
-    return { sign: '+', mag: '1', each: `for each ${amount.counter} counter on this permanent` };
+    return {
+      sign: '+',
+      mag: '1',
+      each:
+        amount.counter === undefined
+          ? 'for each counter on this permanent'
+          : `for each ${amount.counter} counter on this permanent`,
+    };
   }
   if (amount.kind === 'unspentMana') {
     // Issue 81 (Omnath, CR 106.4): "+1/+1 for each unspent mana you have".

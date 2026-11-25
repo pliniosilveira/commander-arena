@@ -152,12 +152,18 @@ export interface FilterContext {
   readonly graveyarded?: readonly ObjectId[];
   /** The cards put into a graveyard this turn by being discarded or from a library (`discardedOrFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /** The cards put into a graveyard this turn from a library (`putFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
+  readonly fromLibrary?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
+  /** The permanents dealt damage this turn (`dealtDamageThisTurn`, CR 120.3): the turn log, read by the caller; absent fails the flag closed. */
+  readonly damagedObjects?: readonly ObjectId[];
   /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
   readonly linkedExile?: readonly ObjectId[];
   /** The cards the resolution that created the reflexive ability moved (`exiledThisWay`, Espers to Magicite, CR 603.12, 400.7j): read by the caller; absent fails the flag closed. */
   readonly exiledThisWay?: readonly ObjectId[];
+  /** The power of the first object the resolution that created the reflexive ability moved (`powerAtMostMoved`, Grishnákh, CR 603.12, 701.47a): read by the caller; absent fails the flag closed. */
+  readonly movedPower?: number;
   /**
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
@@ -256,6 +262,13 @@ export function matchesFilterWith(
   // CR 508.5 (D-151): "creature defending player controls": the player the source is attacking; nothing matches when it is not attacking.
   if (filter.controller === 'defendingPlayer' && controllerOf(state, obj) !== ctx.defendingPlayer)
     return false;
+  // CR 607.2d (Sewer Nemesis): "cards in the chosen player's graveyard": the controller (the owner of a card in a graveyard) is the player the source chose as it entered; nothing when none was chosen.
+  if (
+    filter.controller === 'chosenPlayer' &&
+    (ctx.sourceChosen?.player === undefined || controllerOf(state, obj) !== ctx.sourceChosen.player)
+  ) {
+    return false;
+  }
   // CR 725.1 (monarch): "creatures the monarch controls": the controller is the monarch now; with no monarch nothing matches.
   if (filter.controller === 'monarch' && controllerOf(state, obj) !== state.monarch) return false;
   // CR 108.3: the owner of a card is the player who started the game with it in their deck.
@@ -359,6 +372,9 @@ export function matchesFilterWith(
   // CR 903.3 (D-145): "commander" is a card designated as a player's commander.
   if (filter.commander !== undefined && (d.commander ?? isCommanderObject(state, obj)) !== true)
     return false;
+  // CR 903.3 (Subjugate the Hobbits): "noncommander" is any object that is not a card designated as a player's commander.
+  if (filter.notCommander === true && (d.commander ?? isCommanderObject(state, obj)) === true)
+    return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 108.3 ("you don't own"): the owner of the object is not the player reading the filter.
@@ -428,6 +444,10 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 404.1, 701.17 (Captain N'ghathrod): "that was put there from their library this turn".
+  if (filter.putFromLibraryThisTurn === true && !(ctx.fromLibrary ?? []).includes(obj.id)) {
+    return false;
+  }
   // CR 601.2a (D-235): "Spells you cast from anywhere other than your hand": a spell on the stack that was cast from another zone.
   if (filter.notCastFromHand === true) {
     const from =
@@ -483,9 +503,17 @@ export function matchesFilterWith(
   }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
+  if (filter.dealtDamageThisTurn === true && !(ctx.damagedObjects ?? []).includes(obj.id)) {
+    return false;
+  }
   // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
   if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
   if (filter.exiledThisWay === true && !(ctx.exiledThisWay ?? []).includes(obj.id)) return false;
+  // CR 208.1, 603.12 (Grishnákh): "power less than or equal to the amassed Army's power".
+  if (filter.powerAtMostMoved === true) {
+    if (ctx.movedPower === undefined || d.power === null || d.power === undefined) return false;
+    if (d.power > ctx.movedPower) return false;
+  }
   // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura": the object remembers the source, as the same object.
   if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
     return false;
@@ -558,6 +586,11 @@ export function matchesFilterWith(
   if (filter.chosenPlaneswalkerType === true) {
     const type = ctx.sourceChosen?.planeswalkerType;
     if (type === undefined || !d.subtypes.includes(type)) return false;
+  }
+  // CR 205.2a, 607.2d (Cloud Key): "spells ... of the chosen type" is the card type the source chose as it entered.
+  if (filter.chosenCardType === true) {
+    const type = ctx.sourceChosen?.cardType;
+    if (type === undefined || !d.types.includes(type)) return false;
   }
   // D-261, CR 205.3m: "shares a creature type with it": a creature type (CR 205.3m: the subtypes of creatures and kindreds) that both have.
   if (filter.sharesCreatureTypeWith !== undefined) {

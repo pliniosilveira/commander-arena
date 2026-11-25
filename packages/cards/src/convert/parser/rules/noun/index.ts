@@ -31,6 +31,7 @@ import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
+import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
@@ -50,6 +51,7 @@ import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
 import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
+import { HOSTS_CONTROL_NOUN_RULES } from './hosts-control';
 import {
   HYLDA_G2_EARLY_NOUN_RULES,
   HYLDA_G2_NOUN_RULES,
@@ -322,9 +324,16 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target legendary spell',
     'target Aura spell',
     'target spell with mana value 1',
+    "target spell you don't control",
+    "target creature spell you don't control",
     'target creature spell with mana value 3 or less',
+    // Frontline Medic (CR 107.3, 202.1): a spell whose mana cost has an {X}.
+    'target spell with {X} in its mana cost',
+    'target creature spell with {X} in its mana cost',
   ],
   rejects: [
+    'target spell with {X} in its mana cost and',
+    'target spell with {X} in its',
     'target spells',
     'target spell or ability',
     'target tapped spell',
@@ -336,13 +345,35 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target instant or sorcery',
     'two target spells',
     'target nonland spell you control',
+    "target spell you don't control with mana value 1",
     'target',
   ],
   parse: node<IrFilter, IrNoun>(
     ID.targetSpell,
     (ctx, pos) => {
-      const head = sequence(literal('target '), spellPhrase())(ctx, pos);
-      if (!head.ok) return head;
+      const head0 = sequence(literal('target '), spellPhrase())(ctx, pos);
+      if (!head0.ok) return head0;
+      // "target spell you don't control" (CR 109.4, 405.1: the controller of a spell is the player who cast it).
+      const notMine = literal(" you don't control")(ctx, head0.pos);
+      const head = notMine.ok
+        ? {
+            ...head0,
+            value: [
+              head0.value[0],
+              { ...head0.value[1], controller: 'opponent' as const },
+            ] as const,
+            pos: notMine.pos,
+          }
+        : head0;
+      // Frontline Medic (CR 107.3): "with {X} in its mana cost", the engine's `xInManaCost` of the spell on the stack.
+      const xCost = pattern(/ with \{X\} in its mana cost(?![\p{L}\p{N}])/iu)(ctx, head.pos);
+      if (xCost.ok) {
+        return {
+          ok: true,
+          value: { ...head.value[1], xInManaCost: true as const },
+          pos: xCost.pos,
+        };
+      }
       const suffix = sequence(
         literal(' with mana value less than or equal to '),
         family<IrAmount>('amount'),
@@ -439,6 +470,22 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   parse: targetOf(ID.targetGraveyard, (plural) =>
     // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
     graveyardPhrase(plural, 'from', graveyardLimit),
+  ),
+});
+
+/**
+ * `noun.target-graveyard-card-shared-zone` (Thwart the Grave, CR 404.1, 115.1): "target creature card" with no zone words, said before "and target ..." (or "and up to one target ...") whose "from your
+ * graveyard" says where both cards lie. The effect rule that reads the pair gives this card the graveyard owner of the last one; nothing else asks for this noun by its id.
+ */
+export const NOUN_TARGET_GRAVEYARD_CARD_SHARED_ZONE = defineRule<IrNoun>({
+  id: 'noun.target-graveyard-card-shared-zone',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: ['target creature card', 'target Cleric creature card', 'two target creature cards'],
+  rejects: ['target creature', 'creature card', 'target land', 'two target creature'],
+  parse: targetOf('noun.target-graveyard-card-shared-zone', (plural) =>
+    graveyardPhrase(plural, 'sharedZone'),
   ),
 });
 
@@ -544,6 +591,46 @@ export const NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN = defineRule<IrNoun>({
     return r.value.plural ||
       (r.value.count !== undefined && !r.value.upTo) ||
       r.value.filter.discardedOrFromLibraryThisTurn !== true
+      ? fail(ctx, pos)
+      : r;
+  },
+});
+
+/**
+ * `noun.target-card-in-opponent-graveyard-from-library` (Captain N'ghathrod; CR 404.1, 115.1, 701.17): "target artifact or creature card in an opponent's graveyard that was put there from
+ * their library this turn": a card of the graveyard of any opponent that went there this turn from a library (the engine's `putFromLibraryThisTurn`, with the owner an opponent). One card;
+ * the phrase is read only where a rule asks for this noun by its id, and only with the words about this turn.
+ */
+export const NOUN_TARGET_CARD_IN_OPPONENT_GRAVEYARD_FROM_LIBRARY = defineRule<IrNoun>({
+  id: 'noun.target-card-in-opponent-graveyard-from-library',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)', 'CR 701.17 (Mill)'],
+  examples: [
+    "target artifact or creature card in an opponent's graveyard that was put there from their library this turn",
+    "target creature card in an opponent's graveyard that was put there from their library this turn",
+    "target card in an opponent's graveyard that was put there from their library this turn",
+  ],
+  rejects: [
+    "target creature card in an opponent's graveyard",
+    "target creature card in an opponent's graveyard that was discarded or put there from a library this turn",
+    'target creature card in your graveyard that was put there from their library this turn',
+    'target creature card in a graveyard that was put there from their library this turn',
+    "target creature card from an opponent's graveyard that was put there from their library this turn",
+    "two target creature cards in an opponent's graveyard that was put there from their library this turn",
+    "up to one target creature card in an opponent's graveyard that was put there from their library this turn",
+    "creature card in an opponent's graveyard that was put there from their library this turn",
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-opponent-graveyard-from-library', (plural) =>
+      graveyardPhrase(plural, 'inOpponents'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card, and only the words about this turn.
+    return r.value.plural ||
+      r.value.upTo ||
+      r.value.count !== undefined ||
+      r.value.filter.putFromLibraryThisTurn !== true
       ? fail(ctx, pos)
       : r;
   },
@@ -731,6 +818,11 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'each of up to two target creatures',
     'each of two target creatures',
     'target Dragon',
+    // Hosts of Mordor deck (Corsairs of Umbar): one permanent of one of three creature types.
+    'target Goblin, Orc, or Pirate',
+    // Seasoned Dungeoneer: an attacking creature of one of four creature types.
+    'target attacking Cleric, Rogue, Warrior, or Wizard',
+    'target attacking Goblin or Orc',
     'target Forest',
     'target Equipment you control',
     'target Elf creature',
@@ -789,6 +881,9 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target creature with power 3 or less and flying',
     'target creature with power 3 or less or greater',
     'target Banana',
+    'target attacking Cleric, Rogue, Warrior, and Wizard',
+    'target attacking Cleric, Rogue Warrior, or Wizard',
+    'target attacking Cleric, or Wizard',
     'target card from a graveyard',
     "target creature that's green",
     "target creature that's green or green",
@@ -1001,6 +1096,8 @@ export const NOUN_RULES = [
   ...STACK_ABILITY_EARLY_NOUN_RULES,
   NOUN_TARGET_SPELL,
   ...SPELL_OR_CREATURE_NOUN_RULES,
+  // Counter Blitz deck, group C (Endless Detour): "target spell, nonland permanent, or card in a graveyard".
+  ...COUNTER_BLITZ_C_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".
   ...GALADRIEL_G3_NOUN_RULES,
   // Issue 100 (Sublime Epiphany): "target activated or triggered ability".
@@ -1023,9 +1120,11 @@ export const NOUN_RULES = [
   NOUN_TARGET_GRAVEYARD_CARD,
   NOUN_UP_TO_GRAVEYARD_CARDS,
   NOUN_UP_TO_ONE_PERMANENT,
+  NOUN_TARGET_GRAVEYARD_CARD_SHARED_ZONE,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD_THIS_TURN,
+  NOUN_TARGET_CARD_IN_OPPONENT_GRAVEYARD_FROM_LIBRARY,
   // Issue 89 (Animate Dead): "creature card in a graveyard" and "creature put onto the battlefield with ~", read by the enchant ability of an Aura only.
   ...AURA_GRAVEYARD_NOUN_RULES,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
@@ -1054,6 +1153,8 @@ export const NOUN_RULES = [
   ...ABZAN_ARMOR_NOUN_RULES,
   // Legions to Ashes: "target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent", which `noun.target-permanent` would stop in the middle of.
   ...SAME_NAME_TOKENS_NOUN_RULES,
+  // Hosts of Mordor deck, control group (Grishnákh): "target creature ... with power less than or equal to the amassed Army's power", which `noun.target-permanent` would stop in the middle of.
+  ...HOSTS_CONTROL_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

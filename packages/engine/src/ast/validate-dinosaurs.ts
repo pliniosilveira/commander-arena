@@ -60,12 +60,15 @@ export function checkDinosaursStatic(s: StaticEffect, path: string, out: AstIssu
       }
       return true;
     case 'loseAllAbilities': {
-      // The subject is what an Aura or Equipment is attached to: no filter (CR 613.8) and no host type to read.
-      if (kindOf(s.subject) !== 'attached') {
+      // CR 613.8: the subject is what an Aura or Equipment is attached to, with no host type to read, or a group (a filter: no keyword or ability is named, `checkStaticSubject`),
+      // matched by types, colors and counters, which no layer 6 effect changes.
+      if (kindOf(s.subject) === 'filter') {
+        checkStaticSubject(s.subject, `${path}.subject`, out);
+      } else if (kindOf(s.subject) !== 'attached') {
         issue(
           out,
           `${path}.subject`,
-          'a static loseAllAbilities is about the permanent this Aura or Equipment is attached to',
+          'a static loseAllAbilities is about the permanent this Aura or Equipment is attached to, or a group',
         );
       } else if (
         (s.subject as { types?: unknown }).types !== undefined ||
@@ -79,6 +82,9 @@ export function checkDinosaursStatic(s: StaticEffect, path: string, out: AstIssu
       }
       return true;
     }
+    case 'cantActivateChosenName':
+      // CR 607.2d: reads the name this permanent chose as it entered (`asEntersChoose` of `cardName`, which `chosenIssues` requires); nothing else to say.
+      return true;
     default:
       return false;
   }

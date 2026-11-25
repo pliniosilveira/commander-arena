@@ -464,12 +464,24 @@ describe('library positions and sacrifice choices', () => {
   test('they belong to a sacrifice, not to a move', () => {
     const moved: Effect = {
       kind: 'moveToZone',
-      objects: { kind: 'choose', filter: { controller: 'you' }, anyNumber: true },
+      objects: {
+        kind: 'choose',
+        filter: { controller: 'you', zone: 'graveyard' },
+        anyNumber: true,
+        optional: true,
+      },
       to: 'hand',
     };
     expect(structural(sorcery(moved))).toEqual([
       expect.stringContaining('anyNumber and greatest belong to a sacrifice choice'),
     ]);
+    // The one other place: permanents exiled until the source leaves (Glorious Protector); a plain move of permanents is still refused.
+    const plain: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'choose', filter: { controller: 'you' }, anyNumber: true },
+      to: 'hand',
+    };
+    expect(structural(sorcery(plain))).not.toEqual([]);
   });
 });
 

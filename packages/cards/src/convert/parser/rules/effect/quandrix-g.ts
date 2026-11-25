@@ -68,7 +68,7 @@ export const EFFECT_DISTRIBUTE_COUNTERS = defineRule<Clauses>({
 /**
  * `effect.remove-counters-self`: "remove a +1/+1 counter from ~" (CR 122.1, 122.2: a counter comes off the permanent; with "you may" and "If you do" it is the offer the next
  * sentence reads, CR 608.2c). The permanent is the one with the ability: `~` or "it". The engine's `removeCounters`, which does something only when a counter of the kind was there.
- * Not read: "all counters" (`effect.remove-all-counters`), "any number of", a target, another kind of object, "X", or a missing kind.
+ * "This card" is the same card, wherever it is (a suspended card in exile). Not read: "all counters" (`effect.remove-all-counters`), "any number of", a target, another kind of object, "X", or a missing kind.
  */
 export const EFFECT_REMOVE_COUNTERS_SELF = defineRule<Clauses>({
   id: 'effect.remove-counters-self',
@@ -84,6 +84,8 @@ export const EFFECT_REMOVE_COUNTERS_SELF = defineRule<Clauses>({
     'remove a +1/+1 counter from it',
     'remove two charge counters from ~',
     'remove a time counter from ~',
+    // Nihilith (CR 702.62b): the suspended card in exile, whose time counter it is.
+    'remove a time counter from this card',
   ],
   rejects: [
     'remove all +1/+1 counters from ~',
@@ -111,7 +113,7 @@ export const EFFECT_REMOVE_COUNTERS_SELF = defineRule<Clauses>({
         }),
       ),
       pattern(/ counters? from /i),
-      operands(['noun.self', 'noun.it'], 'effect.remove-counters-self'),
+      operands(['noun.self', 'noun.it', 'noun.this-card'], 'effect.remove-counters-self'),
     ),
     ([, count, , counter, , from]) => ({
       verb: 'removeCountersSelf',

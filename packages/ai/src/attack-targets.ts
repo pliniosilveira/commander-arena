@@ -1,7 +1,7 @@
 /**
  * Whom to attack when there are several opponents (more opponents, issue 479). One ranking shared by
  * the casual, greedy and heuristic agents: the opponent the attackers can kill comes first (the same
- * blocker-aware lethal check as `heuristic-danger.ts`), then the one with the least life, the most
+ * blocker-aware lethal check as `heuristic-danger.ts`), then the one who has the initiative (combat damage to them takes it, CR 726.2, and it ventures every turn), then the one with the least life, the most
  * poison, the most commander damage taken, the fewest untapped creatures, and finally the lowest seat.
  * With one living opponent the ranking has one entry, so two-seat play is unchanged.
  */
@@ -17,6 +17,7 @@ export function rankOpponents(view: GameView, attackers: readonly ObjectView[]):
     .map((s) => ({
       seat: s.id,
       lethal: attackIsLethal(view, s.id, attackers),
+      initiative: view.initiative === s.id,
       life: s.life,
       poison: poisonOf(view, s.id),
       commander: commanderClock(view.commanderDamage, s.id),
@@ -25,6 +26,7 @@ export function rankOpponents(view: GameView, attackers: readonly ObjectView[]):
   rows.sort(
     (a, b) =>
       Number(b.lethal) - Number(a.lethal) ||
+      Number(b.initiative) - Number(a.initiative) ||
       a.life - b.life ||
       b.poison - a.poison ||
       b.commander - a.commander ||

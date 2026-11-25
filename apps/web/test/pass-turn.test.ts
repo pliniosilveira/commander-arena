@@ -169,6 +169,7 @@ function scripted(script: Script = {}): { client: GameClient; played: Played[]; 
       return snapshot();
     },
     undo: async () => snapshot(),
+    gameRecord: async () => null,
   };
   return { client, played, sim };
 }

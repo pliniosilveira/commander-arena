@@ -47,6 +47,16 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'spending only mana of the chosen color is a restriction on the cost of an activated ability, not of a mana ability',
       );
     }
+    if (
+      c?.kind === 'removeCounters' &&
+      (c.counter === undefined || c.countX !== undefined || c.fromOne !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.cost[${i}]`,
+        'a mana ability takes a named kind of counter off its own permanent: no X, no choice of kind, no single permanent',
+      );
+    }
     if (c?.kind === 'removeCounters' && c.among !== undefined) {
       issue(
         out,
@@ -178,6 +188,26 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   }
   if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
     issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
+  }
+  // CR 605.3b, 122.6 (Empowered Autogenerator): the counters the ability puts on its own permanent before its mana is added.
+  if (a.putCounter !== undefined) {
+    if (typeof a.putCounter.counter !== 'string' || a.putCounter.counter === '') {
+      issue(out, `${path}.putCounter.counter`, 'the kind of counter is a name');
+    }
+    if (!Number.isSafeInteger(a.putCounter.count) || a.putCounter.count < 1) {
+      issue(out, `${path}.putCounter.count`, 'count must be a positive integer');
+    }
+    if (
+      a.production?.kind !== 'anyColorAmount' &&
+      a.production?.kind !== 'anyCombinationAmount' &&
+      !(a.production?.kind === 'fixed' && a.production.times !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.putCounter`,
+        'the counters are put before the mana is added so that an amount counts after them: the production has an amount',
+      );
+    }
   }
   if (a.production?.kind === 'anyColorAmong') {
     // CR 106.1b: the cards whose colors are looked at; the filter reads a zone and what the objects are, nothing of the combat, a target or X.
@@ -498,15 +528,33 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           'producedType is only the effect of a triggered mana ability',
         );
       }
-      if (
-        a.instead.production?.kind === 'couldProduce' ||
-        a.instead.production?.kind === 'anyColorAmong'
-      ) {
+      if (a.instead.production?.kind === 'anyColorAmong') {
         issue(
           out,
           `${path}.instead.production`,
           'the replacing production does not look at other permanents',
         );
+      }
+      // Incubation Druid (CR 106.7): a "could produce" production may replace another "could produce" production (three mana of the type instead of one), never a fixed or other one.
+      if (a.instead.production?.kind === 'couldProduce' && a.production?.kind !== 'couldProduce') {
+        issue(
+          out,
+          `${path}.instead.production`,
+          'the replacing production does not look at other permanents unless the ability does too',
+        );
+      }
+      // The replacing production names lands of its own, on the battlefield.
+      if (a.instead.production?.kind === 'couldProduce') {
+        const lands = a.instead.production.lands;
+        if (lands === undefined || lands === null) {
+          issue(
+            out,
+            `${path}.instead.production.lands`,
+            'couldProduce needs a filter for the permanents',
+          );
+        } else {
+          checkBattlefieldFilter(lands, `${path}.instead.production.lands`, out);
+        }
       }
     }
   }

@@ -76,6 +76,16 @@ function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
  * nothing is attached to anything, so the statement is not lowered (the engine's `validateCard`
  * would refuse it too).
  */
+/** "For each unity counter on ~" / "for each counter on ~" (CR 122.1): the counters of the kind on the permanent with the ability, every kind when the text names none. */
+function countersOnSource(counter: string | undefined): {
+  readonly kind: 'countersOnSource';
+  readonly counter?: string;
+} {
+  return counter === undefined
+    ? { kind: 'countersOnSource' }
+    : { kind: 'countersOnSource', counter };
+}
+
 function attachedSubject(noun: IrNoun, ctx: LowerContext): LowerResult<StaticSubject> {
   const needed = noun.det === 'enchanted' ? 'Aura' : 'Equipment';
   if (!ctx.faceSubtypes.includes(needed)) return failure(noun);
@@ -433,7 +443,10 @@ function effectOf(
     case 'addTypes':
       // "... are Juggernauts in addition to their other creature types" (stage P31, D-140, CR 205.1b, 613.1d): layer 4; and, stage P33
       // (D-150), "Enchanted creature ... is an Angel in addition to its other types".
-      return subject.kind === 'filter' || subject.kind === 'attached'
+      // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard", the permanent itself, creature types only.
+      return subject.kind === 'filter' ||
+        subject.kind === 'attached' ||
+        (subject.kind === 'this' && effect.types === undefined)
         ? ok({
             kind: 'setTypes',
             subject,
@@ -468,8 +481,8 @@ function effectOf(
       return ok({
         kind: 'modifyPt',
         subject,
-        power: effect.power ? { kind: 'countersOnSource', counter: effect.counter } : 0,
-        toughness: effect.toughness ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+        power: effect.power ? countersOnSource(effect.counter) : 0,
+        toughness: effect.toughness ? countersOnSource(effect.counter) : 0,
       });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.
@@ -491,7 +504,9 @@ function effectOf(
       });
     }
     case 'loseAllAbilities':
-      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says.
+      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says; or (Sludge Monster, CR 613.7) a group the
+      // permanent names, whose filter the engine checks (`validateCard`: no keyword or ability in it).
+      if (subject.kind === 'filter') return ok({ kind: 'loseAllAbilities', subject });
       return subject.kind === 'attached'
         ? ok({ kind: 'loseAllAbilities', subject: { kind: 'attached' } })
         : failure(at);
@@ -549,12 +564,24 @@ function effectOf(
         return ok({
           kind: 'cantAttackYou',
           creatures: { hostOfSource: true },
-          planeswalkers: true,
+          // Riders of Rohan, group E (Fealty to the Realm): "can't attack you" bars the player only.
+          ...(effect.playersOnly === true ? {} : { planeswalkers: true as const }),
         });
       }
+      if (effect.playersOnly === true) return failure(at);
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
+    case 'controlByMonarch': {
+      // CR 613.1b, 725.1 (Fealty to the Realm): "The monarch controls enchanted creature.": only the creature an Aura is attached to, with no other modifier.
+      const plain =
+        subject.kind === 'attached' &&
+        subject.types?.length === 1 &&
+        subject.types[0] === 'creature' &&
+        Object.keys(subject).length === 2;
+      if (!plain) return failure(at);
+      return ok({ kind: 'controlAttached', by: 'monarch' });
+    }
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
@@ -582,7 +609,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'definesPt':
       return [
         'static:characteristicPt',
-        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+        effect.count.kind === 'lifeTotalOf'
+          ? 'amount:lifeTotalOf'
+          : effect.count.kind === 'partySize'
+            ? 'amount:partySize'
+            : 'amount:countOf',
       ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
@@ -615,10 +646,14 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
+    case 'controlByMonarch':
+      return ['static:controlAttached'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'beginGameOnBattlefield':
+      return ['static:beginGameOnBattlefield'];
     case 'creatureOffBattlefield':
       return ['static:creatureOffBattlefield'];
     case 'chosenType':
@@ -688,6 +723,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'legendRuleDoesntApply':
     case 'chosenTypeGroups':
     case 'graveyardEncore':
+    case 'graveyardUnearth':
       return [...sliverLordNeeds(effect)];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
@@ -726,6 +762,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:damageCantBePrevented'];
     case 'damageAsThoughWither':
       return ['static:damageAsThoughWither'];
+    case 'cantActivateChosenName':
+      return ['static:cantActivateChosenName'];
+    case 'opponentSearchTopOnly':
+      return ['static:opponentSearchTopOnly'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':
@@ -809,9 +849,12 @@ function lowerCostReduction(
   amount: Extract<IrStaticEffect, { kind: 'costReduction' }>['amount'],
   ctx: LowerContext,
   inCommandZone?: true,
+  thisWay?: 'flashback',
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', 'static:costReduction']);
+  // Visions of Glory (CR 702.34a): "this way" is the spell's own reduction, for its flashback cost.
+  if (thisWay !== undefined && subject.det !== 'self') return failure(subject);
   if (missing.length > 0) return failure(ability, missing);
   const lowered = lowerAmount(amount, ctx, ability.rule);
   if (!lowered.ok) return lowered;
@@ -840,6 +883,7 @@ function lowerCostReduction(
           amount: lowered.value,
           // Eminence (issue 81, CR 113.6): the reduction works in the command zone too.
           ...(inCommandZone === true ? { inCommandZone: true as const } : {}),
+          ...(thisWay === undefined ? {} : { forAlternative: thisWay }),
         },
       },
     ],
@@ -1156,6 +1200,45 @@ export function lowerStatic(ability: Static, ctx: LowerContext): LowerResult<rea
 }
 
 /**
+ * "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ..." (CR 611.3a, 613.1f): one static ability for each keyword, with that keyword's
+ * own condition (the same lowering as a statement with one condition, once for each effect). The conditions name no keyword and no power or toughness (CR 613.8).
+ */
+function lowerEffectConditions(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const { effectConditions = [] } = statement;
+  if (
+    effectConditions.length !== statement.effects.length ||
+    statement.condition !== undefined ||
+    statement.also !== undefined
+  ) {
+    return failure(ability);
+  }
+  const abilities: Ability[] = [];
+  for (const [i, effect] of statement.effects.entries()) {
+    const written = effectConditions[i];
+    if (written === undefined) return failure(ability);
+    ctx.staticCondition = true;
+    ctx.staticSubjectIsSelf = false;
+    const lowered = lowerCondition(written, true, ctx);
+    ctx.staticCondition = false;
+    if (!lowered.ok) return lowered;
+    if (conditionNamesLayerValue(lowered.value)) return failure(ability);
+    const done = lowerPart(
+      { subject: statement.subject, effects: [effect] },
+      ability,
+      lowered.value,
+      ctx,
+    );
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * "• Temur — Creatures you control get +1/+0 and have trample and haste." (CR 607.2d, 614.12; Frostcliff Siege): the changes work only while the permanent has the option
  * it chose as it entered, which the engine reads as the static condition `chosenOption` (what no layer changes).
  */
@@ -1180,6 +1263,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   const { statement } = ability;
   const [first, ...more] = statement.effects;
   if (first === undefined) return failure(ability);
+  // CR 611.3a, 613.1f (Multiclass Baldric): "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ...": each keyword with its own condition.
+  if (statement.effectConditions !== undefined) return lowerEffectConditions(ability, ctx);
   if (statement.option !== undefined && first.kind !== 'doubleTriggers') {
     return lowerOptionStatic(ability, ctx);
   }
@@ -1352,7 +1437,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with
   // a condition the engine reads as the total cost is determined (not by `derive`, so it may compare a power).
   if (first.kind === 'costReduction' && statement.condition !== undefined) {
-    if (more.length > 0 || statement.subject.det !== 'self') return failure(ability);
+    if (more.length > 0 || statement.subject.det !== 'self' || first.thisWay !== undefined) {
+      return failure(ability);
+    }
     const lowered = lowerCondition(statement.condition, false, ctx);
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
@@ -1442,7 +1529,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
-    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone);
+    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone, first.thisWay);
   }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
@@ -1565,6 +1652,19 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           },
         },
       ],
+      rule: ability.rule,
+    };
+  }
+  // "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the card's own pregame option.
+  if (first.kind === 'beginGameOnBattlefield') {
+    if (more.length > 0 || statement.subject.det !== 'self' || statement.condition !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures(['ability:static', ...needsOf(first)]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'beginGameOnBattlefield' } }],
       rule: ability.rule,
     };
   }
@@ -1696,6 +1796,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
   'static:creatureOffBattlefield',
+  'static:beginGameOnBattlefield',
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',

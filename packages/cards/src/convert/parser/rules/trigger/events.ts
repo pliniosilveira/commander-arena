@@ -336,7 +336,7 @@ function damagedWords(damaged: IrTrigger['damaged'], to: string): Parser<Damaged
 export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
   id: 'trigger.combat-damage',
   family: 'trigger',
-  leading: ['~', 'another', 'a', 'an', 'equipped', 'enchanted'],
+  leading: ['~', 'another', 'a', 'an', 'equipped', 'enchanted', 'your'],
   cites: [
     'CR 120.2a (Damage)',
     'CR 510.2 (Combat Damage Step)',
@@ -357,8 +357,12 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     'equipped creature deals combat damage to a player',
     'enchanted creature deals combat damage to a player',
     'a creature deals combat damage to a creature',
+    // Archivist of Gondor (CR 903.3, 120.2a): the commander its owner designated, which the controller owns.
+    'your commander deals combat damage to a player',
   ],
   rejects: [
+    'your commanders deal combat damage to a player',
+    'your creature deals combat damage to a player',
     '~ deals damage to a player',
     '~ deals combat damage to a player or a planeswalker',
     '~ deals combat damage to a player or planeswalkers',

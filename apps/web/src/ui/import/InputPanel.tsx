@@ -40,8 +40,9 @@ export function InputPanel({
   onName,
   onImport,
   onExample,
-  onSave,
   precon = null,
+  niceArt,
+  onNiceArt,
 }: {
   text: string;
   name: string;
@@ -53,9 +54,11 @@ export function InputPanel({
   onImport: () => void;
   /** Fills in the list of an installed precon; null when none is installed (no button then). */
   onExample: (() => void) | null;
-  onSave: () => void;
-  /** Set while a precon is being edited: the name is fixed and Save keeps your version of it. */
+  /** Set while a precon is being edited: the name is fixed and Import keeps your version of it. */
   precon?: EditingPrecon | null;
+  /** The option "special-frame commander art" (`nice-art.ts`); no checkbox when `onNiceArt` is not given. */
+  niceArt?: boolean;
+  onNiceArt?: (on: boolean) => void;
 }) {
   const empty = text.trim() === '';
   return (
@@ -73,8 +76,8 @@ export function InputPanel({
             {precon.edited
               ? 'You saved a version of it; that is the one the menu uses.'
               : 'It is still the list that came with the app.'}{' '}
-            Change the list, press Import to check it, then save: your version is kept in this
-            browser only, and the built-in deck is never changed.
+            Change the list and press Import: it is checked and your version is kept in this browser
+            only. The built-in deck is never changed.
           </p>
           <div className="imp-buttons">
             <button type="button" className="scr-btn" disabled={running} onClick={precon.onReset}>
@@ -108,6 +111,24 @@ export function InputPanel({
           onChange={(e) => onText(e.target.value)}
         />
       </label>
+      {onNiceArt !== undefined && (
+        <label className="imp-check">
+          <input
+            type="checkbox"
+            checked={niceArt === true}
+            disabled={precon !== null}
+            onChange={(e) => onNiceArt(e.target.checked)}
+          />
+          <span>
+            Use a special-frame art for my commander
+            <span className="scr-help">
+              {' '}
+              (borderless, showcase or extended art) when the list names no printing for it. The
+              printing is written on the commander's line, so you can change it on the deck screen.
+            </span>
+          </span>
+        </label>
+      )}
       <div className="imp-buttons">
         <button
           type="button"
@@ -122,14 +143,6 @@ export function InputPanel({
             Fill in an example
           </button>
         )}
-        <button
-          type="button"
-          className="scr-btn"
-          disabled={running || empty || name.trim() === ''}
-          onClick={onSave}
-        >
-          {precon === null ? 'Save deck' : 'Save my version'}
-        </button>
         <span role="status" aria-live="polite" className="scr-help">
           {saveMessage}
         </span>
