@@ -248,7 +248,10 @@ describe('"{T}, Sacrifice ~ and a legendary artifact: ..." (CR 602.2b, 118.3, 70
       .library(...LIBRARY)
       .at('precombatMain', { active: 0, turn: 3 })
       .build();
-    expect(g.act(0).try.activate(artifactLand.name).ok).toBe(false);
+    expect(g.act(0).try.activate(artifactLand.name)).toEqual({
+      ok: false,
+      error: expect.stringContaining('permanents to sacrifice for every part'),
+    });
   });
 
   test('with several legendary artifacts the player chooses which one is sacrificed with the land', () => {
