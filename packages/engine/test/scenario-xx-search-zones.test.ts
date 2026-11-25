@@ -31,7 +31,7 @@ describe('the card is valid', () => {
     expect(validateCard(syntheticCard(SEEKER))).toEqual([]);
   });
 
-  test('zones are two or more different ones, with no reveal or shuffle in the search', () => {
+  test('zones are two or more different ones, with no shuffle in the search', () => {
     const base = syntheticCard(SEEKER);
     const face = base.faces[0];
     const ability = face?.abilities[0];
@@ -57,7 +57,8 @@ describe('the card is valid', () => {
     expect(validateCard(with_({ zones: ['hand', 'hand'] }) as never).length).toBeGreaterThan(0);
     expect(validateCard(with_({ zones: ['hand', 'exile'] }) as never).length).toBeGreaterThan(0);
     expect(validateCard(with_({ shuffle: true }) as never).length).toBeGreaterThan(0);
-    expect(validateCard(with_({ reveal: true }) as never).length).toBeGreaterThan(0);
+    // Tower Winder (CR 701.20a): the card found may be revealed; the shuffle is still another sentence.
+    expect(validateCard(with_({ reveal: true }) as never)).toEqual([]);
   });
 });
 

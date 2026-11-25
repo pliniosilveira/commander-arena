@@ -173,7 +173,13 @@ function tailFor(cards: IrNoun, yours = true, newSentence = false): Parser<Tail>
         pos: onTop.pos,
       };
     }
-    const placed = spanned(sequence(literal(', put '), put))(ctx, afterReveal);
+    // Tower Winder: "..., reveal it, and put it into your hand": the put after a reveal may be joined with "and".
+    const placed = spanned(
+      sequence(
+        reveal.ok ? choice(literal(', and put '), literal(', put ')) : literal(', put '),
+        put,
+      ),
+    )(ctx, afterReveal);
     if (!placed.ok) {
       // Lorehold group 1 (CR 701.23): "search your library for a Plains card and put it onto the battlefield tapped": one card put at once, with no reveal and no shuffle in the same
       // sentence (a shuffle after it is a sentence of its own: "If you search your library this way, shuffle.").
@@ -258,6 +264,10 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your graveyard, hand, and/or library for a creature card and put it into your hand',
     // Finale of Devastation (CR 107.3a, 202.3): the mana value is at most the X of the spell.
     'search your library and/or graveyard for a creature card with mana value X or less and put it onto the battlefield',
+    // Tower Winder (CR 701.23a, 701.20a): several zones, the card revealed; the shuffle is another sentence.
+    'search your library and/or graveyard for a card named Command Tower, reveal it, and put it into your hand',
+    'search your library and/or graveyard for a creature card, reveal it, put it into your hand',
+    'search your library for a creature card, reveal it, and put it into your hand',
   ],
   rejects: [
     'search your library for a basic land card, put them onto the battlefield tapped, then shuffle',
@@ -282,9 +292,10 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for any number of creature cards with total mana value 6 or less, put it onto the battlefield, then shuffle',
     'search your library for any number of creature cards with total mana value 6 or less, put one onto the battlefield and the other into your hand, then shuffle',
     'search your graveyard, hand, and/or library for any number of creature cards with total mana value 6 or less and put them onto the battlefield',
-    // Issue 104: with several zones the shuffle is another sentence ("If you search your library this way, shuffle."), and nothing is revealed.
+    // Issue 104: with several zones the shuffle is another sentence ("If you search your library this way, shuffle.").
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, put it onto the battlefield, then shuffle",
-    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield",
+    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield, then shuffle",
+    'search your library for a creature card, reveal it, and, put it into your hand',
     "search your graveyard, hand, and library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     "search your graveyard and/or hand and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     "search your hand, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
@@ -321,11 +332,8 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
       }
       const tail = tailFor(cards, true, amount !== null)(ctx, after);
       if (!tail.ok) return tail;
-      // Issue 104: with several zones the card is put at once, one card, with nothing revealed and no shuffle in the sentence.
-      if (
-        zones !== null &&
-        (tail.value.reveal.value || tail.value.shuffle.value || cards.plural || amount !== null)
-      ) {
+      // Issue 104: with several zones the card is put at once, one card, with no shuffle in the sentence. Tower Winder (CR 701.20a): it may be revealed.
+      if (zones !== null && (tail.value.shuffle.value || cards.plural || amount !== null)) {
         return fail(ctx, pos);
       }
       return { ok: true, value: { cards, amount, zones, ...tail.value }, pos: tail.pos };

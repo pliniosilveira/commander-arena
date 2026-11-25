@@ -51,6 +51,45 @@ export const SYNTHETIC_D1_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "When this creature enters, search your library and/or graveyard for a card named Grizzly Bears, reveal it, and put it into your hand. If you search your library this way, shuffle."
+  singleFace({
+    name: 'SYNTHETIC Bear Finder',
+    manaCost: ['2', 'G'],
+    types: ['creature'],
+    subtypes: ['Snake'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    power: 1,
+    toughness: 1,
+    oracleText:
+      'When this creature enters, search your library and/or graveyard for a card named Grizzly Bears, reveal it, and put it into your hand. If you search your library this way, shuffle.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'search',
+              player: { kind: 'you' },
+              filter: { named: 'Grizzly Bears' },
+              max: 1,
+              zones: ['library', 'graveyard'],
+              destinations: [{ zone: 'hand', count: 1 }],
+              reveal: true,
+              shuffle: false,
+            },
+            {
+              kind: 'conditional',
+              condition: { kind: 'thisWayAtLeast', what: 'searched', count: 1 },
+              effect: { kind: 'shuffle', player: { kind: 'you' } },
+            },
+          ],
+        },
+      },
+    ],
+  }),
   // "Reach"
   singleFace({
     name: 'SYNTHETIC Reach Spider',

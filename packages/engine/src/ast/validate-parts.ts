@@ -5630,11 +5630,11 @@ function checkSearch(
         'zones are two or more different ones of graveyard, hand and library',
       );
     }
-    if (e.reveal === true || e.shuffle === true || e.sharedLandType !== undefined) {
+    if (e.shuffle === true || e.sharedLandType !== undefined) {
       issue(
         out,
         `${path}.zones`,
-        'a search of several zones has no reveal, shuffle or shared land type: shuffle with a "searched this way" condition',
+        'a search of several zones has no shuffle or shared land type: shuffle with a "searched this way" condition',
       );
     }
     if (e.maxAmount !== undefined) {
