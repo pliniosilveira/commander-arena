@@ -1493,6 +1493,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-opponent-exile-graveyard': permanent((e) => `{1}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
@@ -1801,6 +1802,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
   ),
   'static.self-also-types': asIs,
+  'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

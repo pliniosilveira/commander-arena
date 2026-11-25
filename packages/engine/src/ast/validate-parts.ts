@@ -3858,6 +3858,23 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         );
       }
       break;
+    case 'putOpponentExileInGraveyard':
+      // CR 108.3, 118.3 (Void Attendant): a card in exile an opponent owns, so the filter describes a card in exile with no zone, controller or owner of its own.
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (
+        cost.filter?.zone !== undefined ||
+        cost.filter?.controller !== undefined ||
+        cost.filter?.owner !== undefined ||
+        cost.filter?.ownedByYou !== undefined ||
+        cost.filter?.notOwnedByYou !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the card is one an opponent owns in exile: no zone, controller or owner',
+        );
+      }
+      break;
     case 'loyalty':
       // CR 606.4, 606.5 (D-200): [+N], [-N], [0] or [-X].
       if (cost.change !== 'x' && !Number.isSafeInteger(cost.change)) {
@@ -6269,11 +6286,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 106.1b (Xenagos): two different colors of the five, and an amount read as the effect runs.
       if (
         !Array.isArray(e.colors) ||
-        e.colors.length !== 2 ||
-        e.colors[0] === e.colors[1] ||
+        e.colors.length < 2 ||
+        e.colors.length > 5 ||
+        new Set(e.colors).size !== e.colors.length ||
         e.colors.some((c) => !['W', 'U', 'B', 'R', 'G'].includes(c))
       ) {
-        issue(out, `${path}.colors`, 'addManaCombination names two different colors of the five');
+        issue(
+          out,
+          `${path}.colors`,
+          'addManaCombination names two to five different colors of the five',
+        );
       }
       checkAmount(e.amount, `${path}.amount`, scope, out);
       break;

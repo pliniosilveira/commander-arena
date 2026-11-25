@@ -1259,6 +1259,8 @@ export interface ChooseXDecision extends DecisionBase {
     | 'chooseNumber';
   readonly min: number;
   readonly max: number;
+  /** `chooseNumber` of `addManaCombination` (CR 106.1b): the color of the mana being counted, "how many {W}". Absent for any other number. */
+  readonly manaColor?: ManaColor;
   /**
    * The values from `min` to `max` that leave the spell a legal target, for a spell whose target is "with mana value X" (CR 601.2b, 601.2c: X is announced before the
    * targets, and a spell with no legal target cannot be cast). Absent: every value is legal.

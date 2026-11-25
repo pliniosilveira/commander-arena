@@ -267,7 +267,176 @@ describe('Baleful Mastery: pay {1}{B} rather than its mana cost; if that cost wa
   }
 });
 
-describe("Thieving Varmint:{T}, Pay 1 life: Add two mana of any one color. Spend this mana only to cast spells you don't own", () => {
+describe("Plasm Capture: counter target spell; at the beginning of your next first main phase add X mana in any combination of colors, where X is that spell's mana value", () => {
+  const capture = parsed(
+    'SYNTHETIC Plasm Capture',
+    'Instant',
+    "Counter target spell. At the beginning of your next first main phase, add X mana in any combination of colors, where X is that spell's mana value.",
+    { manaCost: '{G}{U}{U}', colors: ['G', 'U'] },
+  );
+  test('is a valid card', () => expect(validateCard(capture)).toEqual([]));
+
+  const board = (seats: 2 | 3 | 4, caster: 1 | 2 | 3) => {
+    let b = scenario({ seats })
+      .define(capture)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(capture.name)
+      .battlefield('Island', 'Island', 'Forest');
+    for (let seat = 1; seat < seats; seat++) {
+      b = b.seat(seat as 1 | 2 | 3).library(...LIBRARY);
+      if (seat === caster) b = b.hand(BEARS).battlefield('Forest', 'Forest');
+    }
+    return b.at('precombatMain', { active: caster }).build();
+  };
+
+  for (const [seats, caster] of [
+    [2, 1],
+    [3, 2],
+    [4, 3],
+  ] as const) {
+    test(`with ${seats} seats: counters the spell of seat ${caster}, and seat 0 chooses the colors of 2 mana in its own next first main phase`, () => {
+      const g = board(seats, caster);
+      g.act(caster).cast(BEARS, { pay: true });
+      g.act(caster).pass();
+      g.act(0).cast(capture.name, { targets: [BEARS], pay: true });
+      g.passAll();
+      g.expect.zone(BEARS, 'graveyard', { seat: caster });
+      // Nothing yet: the mana comes at the beginning of seat 0's first main phase, not this turn's.
+      g.expect.pool(0, '');
+      g.advanceTo('precombatMain', { turn: 'next' });
+      while (g.state.turn.activeSeat !== 0) g.advanceTo('precombatMain', { turn: 'next' });
+      g.expect.pool(0, '');
+      g.passAll();
+      // The mana value of the Bears is 2: white, blue, black, red are asked in turn (the last color takes the rest).
+      g.expect.pending('chooseX', 0);
+      g.act(0).chooseX(0); // white
+      g.act(0).chooseX(0); // blue
+      g.act(0).chooseX(0); // black
+      g.act(0).chooseX(1); // red: one; the other mana is green
+      g.expect.pool(0, 'RG');
+      g.expect.invariants();
+    });
+  }
+
+  test('an {X} in the mana cost of the countered spell counts as the value chosen for it (Scryfall ruling of 2013-04-15)', () => {
+    const g = scenario()
+      .define(capture)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(capture.name)
+      .battlefield('Island', 'Island', 'Forest')
+      .seat(1)
+      .library(...LIBRARY)
+      .hand('SYNTHETIC X Burn')
+      .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain')
+      .at('precombatMain', { active: 1 })
+      .build();
+    g.act(1).cast('SYNTHETIC X Burn', { x: 3, targets: [{ player: 0 }], pay: true });
+    g.act(1).pass();
+    g.act(0).cast(capture.name, { targets: ['SYNTHETIC X Burn'], pay: true });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.passAll();
+    // {X}{R} with X = 3 has mana value 4.
+    g.act(0).chooseX(4);
+    g.expect.pool(0, 'WWWW');
+  });
+
+  test('the mana is all taken by the first color it is given to: nothing more is asked', () => {
+    const g = board(2, 1);
+    g.act(1).cast(BEARS, { pay: true });
+    g.act(1).pass();
+    g.act(0).cast(capture.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.passAll();
+    g.act(0).chooseX(2);
+    g.expect.pool(0, 'WW');
+    expect(g.state.pending).not.toMatchObject({ kind: 'chooseX' });
+  });
+});
+
+describe("Void Attendant: {1}{G}, put a card an opponent owns from exile into that player's graveyard: create a 1/1 Eldrazi Scion", () => {
+  const attendant = parsed(
+    'SYNTHETIC Void Attendant',
+    'Creature — Eldrazi Processor',
+    'Devoid\n{1}{G}, Put a card an opponent owns from exile into that player\'s graveyard: Create a 1/1 colorless Eldrazi Scion creature token. It has "Sacrifice this token: Add {C}."',
+    { manaCost: '{2}{G}', power: '2', toughness: '2', colors: ['G'] },
+  );
+  test('is a valid card', () => expect(validateCard(attendant)).toEqual([]));
+
+  const board = (seats: 2 | 3 | 4, exiled: readonly (readonly [number, string])[]) => {
+    let b = scenario({ seats })
+      .define(attendant)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(attendant.name)
+      .battlefield('Forest', 'Forest');
+    for (let seat = 1; seat < seats; seat++) {
+      b = b.seat(seat as 1 | 2 | 3).library(...LIBRARY);
+      for (const [owner, name] of exiled) if (owner === seat) b = b.exile(name);
+    }
+    return b.at('precombatMain', { active: 0 }).build();
+  };
+  const scions = (g: ReturnType<typeof board>) =>
+    g.state.battlefield.filter((id) => g.state.objects[id]?.token !== null).length;
+
+  for (const seats of [2, 3, 4] as const) {
+    test(`with ${seats} seats the card goes to the graveyard of its owner, and a Scion is made`, () => {
+      const owner = seats - 1;
+      const g = board(seats, [[owner, BEARS]]);
+      g.act(0).activate(attendant.name, { pay: true });
+      g.expect.zone(BEARS, 'graveyard', { seat: owner });
+      g.passAll();
+      expect(scions(g)).toBe(1);
+      g.expect.invariants();
+    });
+  }
+
+  test('with two opponents the player chooses which card, and the other stays in exile', () => {
+    const g = board(3, [
+      [1, BEARS],
+      [2, 'Raging Goblin'],
+    ]);
+    g.act(0).activate(attendant.name, { pay: true });
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards({ name: 'Raging Goblin', zone: 'exile', seat: 2 });
+    g.expect.zone('Raging Goblin', 'graveyard', { seat: 2 });
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+    g.passAll();
+    expect(scions(g)).toBe(1);
+  });
+
+  test('a card of your own in exile is not one an opponent owns: the ability cannot be activated', () => {
+    const g = scenario({ seats: 3 })
+      .define(attendant)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(attendant.name)
+      .battlefield('Forest', 'Forest')
+      .exile(BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .seat(2)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.expect.illegal(0, { activate: attendant.name });
+  });
+
+  test('the Scion can be sacrificed for {C}', () => {
+    const g = board(2, [[1, BEARS]]);
+    g.act(0).activate(attendant.name, { pay: true });
+    g.passAll();
+    const token = g.state.battlefield.find((id) => g.state.objects[id]?.token !== null);
+    if (token === undefined) throw new Error('no Scion');
+    g.act(0).tapForMana(token);
+    g.expect.pool(0, 'C');
+  });
+});
+
+describe("Thieving Varmint: {T}, Pay 1 life: Add two mana of any one color. Spend this mana only to cast spells you don't own", () => {
   const varmint = parsed(
     'SYNTHETIC Thieving Varmint',
     'Creature — Varmint',

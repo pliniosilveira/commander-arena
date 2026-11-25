@@ -1119,6 +1119,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileFromGraveyard',
     // CR 607.2a, 118.3 (Shelob, Dread Weaver): "Put a creature card exiled with ~ into its owner's graveyard" as the cost of an activated ability.
     'putLinkedExileInGraveyard',
+    // CR 108.3, 118.3 (Void Attendant): "Put a card an opponent owns from exile into that player's graveyard" as the cost of an activated ability.
+    'putOpponentExileInGraveyard',
     // D-200: the loyalty symbol of a loyalty ability (CR 606).
     'loyalty',
     // D-209: "{E}{E}", paid by the player an `unlessPays` asks; issue 105: and the cost of an activated or a mana ability (`activationCostIssues` refuses it in a spell).
@@ -3934,6 +3936,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   blight: true,
   exileFromGraveyard: true,
   putLinkedExileInGraveyard: true,
+  putOpponentExileInGraveyard: true,
   removeCounters: true,
   loyalty: true,
   putCounters: true,

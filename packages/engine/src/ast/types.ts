@@ -2022,6 +2022,14 @@ export type Cost =
    * `forCost` (the engine takes the card when only one can be chosen), and with no such card the ability cannot be activated (CR 118.3). Only the cost of an ordinary activated ability.
    */
   | { readonly kind: 'putLinkedExileInGraveyard'; readonly filter: ObjectFilter }
+  /**
+   * "Put a card an opponent owns from exile into that player's graveyard" (Void Attendant; CR 108.3, 118.3, 602.2b, 400.7, 404.1): as the cost of an activated ability, the player chooses
+   * a face-up card in exile that an opponent of theirs owns and that `filter` matches (a filter of cards in exile: card types, subtypes, colors, mana value; no zone, controller or
+   * owner) and puts it into its owner's graveyard. The player chooses with a `chooseCards` decision of purpose `exile` and `forCost` (the engine takes the card when only one can be
+   * chosen), and with no such card the ability cannot be activated (CR 118.3). A card exiled face down cannot be chosen (`docs/ROADMAP.md`). Only the cost of an ordinary activated
+   * ability of a permanent.
+   */
+  | { readonly kind: 'putOpponentExileInGraveyard'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'removeCounters';
       /**
@@ -2670,10 +2678,12 @@ export type Effect =
    * "Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control." (Xenagos, the Reveler, CR 106.1b, 608.2d, 107.3c): an effect (not a mana ability: it
    * uses the stack) that adds `amount` mana, read as the effect runs, each of the first or the second color: the controller chooses how many of the first (a whole number from 0 to the amount,
    * a `chooseX` decision of purpose `chooseNumber`), the rest are the second. The two colors are different. Nothing is asked, and nothing added, for an amount of 0 or less.
+   * With more colors (Plasm Capture, "Add X mana in any combination of colors": all five, CR 106.1b, 105.1) the controller chooses how many of each in turn, in the order listed, and the last
+   * color takes what is left (nothing is asked for it); a number of mana that is all taken by the colors before it asks no more.
    */
   | {
       readonly kind: 'addManaCombination';
-      readonly colors: readonly [ManaColor, ManaColor];
+      readonly colors: readonly ManaColor[];
       readonly amount: Amount;
     }
   /**

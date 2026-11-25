@@ -1118,7 +1118,8 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
     if (
       (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
       c.kind === 'exileFromGraveyard' ||
-      c.kind === 'putLinkedExileInGraveyard'
+      c.kind === 'putLinkedExileInGraveyard' ||
+      c.kind === 'putOpponentExileInGraveyard'
     ) {
       out.push({
         path: `${base}.additionalCosts[${i}]`,
@@ -1138,6 +1139,7 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
         c.kind === 'exileFromGraveyard' ||
         c.kind === 'putLinkedExileInGraveyard' ||
+        c.kind === 'putOpponentExileInGraveyard' ||
         c.kind === 'exileFromHand'
       ) {
         out.push({
