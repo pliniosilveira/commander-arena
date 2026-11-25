@@ -33,7 +33,7 @@ import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
-import { lowerMayInstead, lowerSentences } from './sentences';
+import { lowerMayInstead, lowerSentences, withoutAnyNumberOffer } from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -1869,7 +1869,7 @@ function lowerTriggeredAbility(
   // (the question comes after the payment, CR 118.12a), so the sentence keeps it and the ability's
   // `optional` is for the other sentences.
   type Sentence = Triggered['body']['sentences'][number];
-  const sentences = ability.body.sentences;
+  const sentences = withoutAnyNumberOffer(ability.body.sentences);
   // "You may return ... If that land is a Plains, you may return that card to the battlefield instead." (stage P33, D-150): the two offers.
   const instead = lowerMayInstead(sentences, ctx);
   if (instead !== null) {

@@ -3701,11 +3701,25 @@ function splitBeforeOffer(sentences: readonly IrSentence[]): readonly IrSentence
   return out;
 }
 
+/**
+ * CR 701.9 (Nantuko Cultivator): "you may discard any number of cards" says what "discard any number of cards" says: the player may choose none, so the offer is not
+ * asked on its own. The clause loses its `optional`.
+ */
+export function withoutAnyNumberOffer(sentences: readonly IrSentence[]): readonly IrSentence[] {
+  const offer = (c: IrClause) =>
+    c.optional && c.verb === 'discard' && c.args.anyNumber !== undefined;
+  return sentences.map((s) =>
+    s.clauses.some(offer)
+      ? { ...s, clauses: s.clauses.map((c) => (offer(c) ? { ...c, optional: false } : c)) }
+      : s,
+  );
+}
+
 export function lowerSentences(
   input: readonly IrSentence[],
   ctx: LowerContext,
 ): LowerResult<Effects> {
-  const sentences = splitBeforeOffer(input);
+  const sentences = splitBeforeOffer(withoutAnyNumberOffer(input));
   // D-525 (CR 706.3): the rows of a results table make the whole text of the roll one ability.
   const firstRow = sentences.findIndex((s) => s.dieRow !== undefined);
   if (firstRow >= 0) return lowerDieTable(sentences, firstRow, ctx);

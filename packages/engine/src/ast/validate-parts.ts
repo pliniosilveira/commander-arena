@@ -8649,6 +8649,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 701.9 (Nantuko Cultivator): "Discard any number of land cards": a filter of the cards in the hand, only for a discard of any number.
+      if (e.kind === 'discard' && e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.anyNumber !== true) {
+          issue(out, `${path}.cards`, 'the kind of card goes with anyNumber only');
+        }
+        if (
+          filterSome(
+            e.cards,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.cards`,
+            'the card described is one in the hand: no zone, controller, owner or stackKind',
+          );
+        }
+      }
       // CR 701.9, 107.1c: "Discard up to N cards": the player chooses how many, up to `count`, so no other way of choosing goes with it.
       if (e.kind === 'discard' && e.upTo !== undefined) {
         if (

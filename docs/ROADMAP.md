@@ -144,6 +144,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.
 - "Whenever one or more creatures you control deal combat damage to one or more players this turn" (`delayedCombatDamageBatchTurn`) triggers once for each player damaged, not once for the event; harmless for "you become the monarch".
 - Notion Thief's draw replacement goes before dredge and "draw two instead"; with thieves of different controllers on one draw the oldest applies first. The player who would draw is not asked the order (CR 616.1).
+- An additional cost "discard a land card" on a card cast with jump-start or blitz would apply its kind of card to the discard of that alternative cost too.
+- Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
 - A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
 - Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).

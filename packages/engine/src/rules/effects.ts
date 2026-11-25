@@ -3439,6 +3439,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(effect.cards === undefined ? {} : { cards: effect.cards }),
           ...(effect.upTo === true ? { upTo: true as const } : {}),
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),

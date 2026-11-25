@@ -13,6 +13,7 @@ import type {
   Effect,
   ManaColor,
   ManaProduction,
+  ObjectFilter,
   ObjectRef,
   PlayerSelector,
   TokenDefinition,
@@ -1517,10 +1518,27 @@ function playerVerb(
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
+        // CR 701.9 (Nantuko Cultivator): "discard any number of land cards": only the cards of that kind may be chosen.
+        const kind = arg(clause, 'cards');
+        let cards: ObjectFilter | undefined;
+        if (kind !== undefined) {
+          if (kind.kind !== 'noun') return failure(clause);
+          const narrowed = lowerFilter(kind);
+          if (!narrowed.ok) return narrowed;
+          cards = narrowed.value;
+        }
         ctx.thisWay = 'discarded';
         return {
           ok: true,
-          value: [{ kind: 'discard', player: player.value, count: 0, anyNumber: true }],
+          value: [
+            {
+              kind: 'discard',
+              player: player.value,
+              count: 0,
+              anyNumber: true,
+              ...(cards === undefined ? {} : { cards }),
+            },
+          ],
           rule: clause.rule,
         };
       }
@@ -1821,6 +1839,10 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
         filter: filter.value,
         max: anyNumber && typeof count.value === 'number' ? count.value : 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
+        // CR 110.2a ("onto the battlefield tapped", Elvish Rejuvenator): the card taken enters tapped.
+        ...(toBattlefield && arg(clause, 'tapped')?.kind === 'flag'
+          ? { tapped: true as const }
+          : {}),
         ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
       },

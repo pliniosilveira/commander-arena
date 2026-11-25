@@ -498,6 +498,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let sacrificeAny: ObjectFilter | null = null;
   let sacrificeCount = 1;
   let discard = 0;
+  // CR 118.8, 701.9: "discard a land card" as an additional cost: the cards that may be discarded are those the filter matches.
+  let additionalDiscardFilter: ObjectFilter | undefined;
   let behold: ObjectFilter | null = null;
   let exileFromHand: ObjectFilter | null = null;
   let blight = 0;
@@ -509,8 +511,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         sacrificeCount = c.countX === true ? x : 1;
         if (sacrificeCount > 0) sacrifice = c.what;
       }
-    } else if (c.kind === 'discard') discard += c.count;
-    else if (c.kind === 'behold') behold = c.filter;
+    } else if (c.kind === 'discard') {
+      discard += c.count;
+      if (c.filter !== undefined) additionalDiscardFilter = c.filter;
+    } else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
     // CR 118.8, 701.68a: "you may blight 1" is no requirement for casting the spell: it is asked as the cost is paid.
     else if (c.kind === 'blight') blight = c.count;
@@ -633,7 +637,11 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
-    ...(alternative === 'retrace' ? { discardFilter: RETRACE_DISCARD } : {}),
+    ...(alternative === 'retrace'
+      ? { discardFilter: RETRACE_DISCARD }
+      : additionalDiscardFilter === undefined
+        ? {}
+        : { discardFilter: additionalDiscardFilter }),
     behold,
     exile,
     exileFromHand,

@@ -393,7 +393,8 @@ const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying
  * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
  * instruction, kept together for `effect.look-put-attach`.
  */
-const PUT_FROM_AMONG_ONTO = /^you may put [^.]* from among them onto the battlefield\.$/i;
+const PUT_FROM_AMONG_ONTO =
+  /^you may put [^.]* from among them onto the battlefield(?: tapped)?\.$/i;
 const IF_EQUIPMENT_ATTACH =
   /^if an equipment is put onto the battlefield this way, you may attach it to a creature you control\.$/i;
 const PUT_REST_OF_THOSE = /^put the rest of those cards [^.]*\.$/i;
@@ -898,6 +899,20 @@ const OTHERWISE_YOU_DRAW = /^otherwise, you draw a card\.$/i;
 const PUT_FROM_AMONG_REVEALED =
   /^you may put [^.]* from among them (?:into your hand|onto the battlefield tapped)\.$/i;
 /**
+ * "When you cast this spell, reveal the top X cards of your library. You may put a nonland permanent card with mana value X or less from among them onto the battlefield. Then shuffle
+ * the rest into your library." (Genesis Hydra, CR 701.20, 701.24): three sentences that are one instruction (what is revealed, the card that may be put onto the battlefield and
+ * where the rest go), kept together for `effect.reveal-put-shuffle`. The first may follow the comma of a trigger.
+ */
+const REVEAL_TOP_LEAD = /(?:^|, )reveal the top [^.]* cards of your library\.$/i;
+const THEN_SHUFFLE_THE_REST = /^then shuffle the rest into your library\.$/i;
+/**
+ * "Choose creature or land. Reveal the top four cards of your library. Put all cards of the chosen type revealed this way into your hand and the rest into your graveyard." (Winding Way,
+ * CR 608.2d, 701.20a): three sentences that are one instruction, kept together for `effect.choose-reveal-put-all-hand`.
+ */
+const CHOOSE_CREATURE_OR_LAND = /^choose creature or land\.$/i;
+const PUT_ALL_CHOSEN_TYPE_HAND =
+  /^put all cards of the chosen type revealed this way into your hand and the rest into your graveyard\.$/i;
+/**
  * "You and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you
  * revealed into your hand." (CR 701.20a, 119.3): three sentences that are one instruction, kept together for `effect.reveal-top-duel`.
  */
@@ -1226,6 +1241,24 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, REVEAL_TOP_CARD) &&
       said(b, IF_REVEALED_CARD) &&
       said(c, OTHERWISE_PUT_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_LEAD) &&
+      said(b, MAY_PUT_FROM_AMONG_ONTO) &&
+      said(c, THEN_SHUFFLE_THE_REST)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, CHOOSE_CREATURE_OR_LAND) &&
+      said(b, REVEAL_THE_TOP) &&
+      said(c, PUT_ALL_CHOSEN_TYPE_HAND)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
