@@ -434,7 +434,11 @@ class Binder {
           found =
             recent.find(
               (a) =>
-                a.kind === 'object' && a.token !== true && a.noun.ref === 'trig' && !a.noun.plural,
+                a.kind === 'object' &&
+                a.token !== true &&
+                a.noun.ref === 'trig' &&
+                !a.noun.plural &&
+                compatible(a.noun.filter, pronoun.type),
             ) ?? found;
         }
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
