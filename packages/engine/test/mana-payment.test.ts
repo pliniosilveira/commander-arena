@@ -824,3 +824,35 @@ describe('planPayment: the snow mana spent on the cost (spentSnow)', () => {
     expect(planPayment(request(['G'], { sources: [source(1, [['G']])] }))?.spentSnow).toBe(0);
   });
 });
+
+describe('planPayment: an outcome of more than 31 mana (issue 634)', () => {
+  // One source whose single outcome makes 40 colorless mana (Selvala, Heart of the Wilds with a big X does the same).
+  const forty = (): ManaColor[][] => [new Array<ManaColor>(40).fill('C')];
+
+  test('the units that pay and the units left over are counted exactly', () => {
+    const plan = planPayment(request(['5'], { sources: [source(1, forty())] }));
+    expect(plan?.taps).toEqual([{ object: 'o1', abilityIndex: 0, outcome: 0 }]);
+    expect(plan?.spentColors).toHaveLength(5);
+    expect(plan?.spentTypes).toHaveLength(5);
+    expect(plan?.leftover).toHaveLength(35);
+  });
+
+  test('a cost that uses all but one unit leaves exactly one', () => {
+    const plan = planPayment(request(['39'], { sources: [source(1, forty())] }));
+    expect(plan?.spentColors).toHaveLength(39);
+    expect(plan?.leftover).toHaveLength(1);
+  });
+
+  test('a snow source of 40 mana counts only the snow mana the cost spent', () => {
+    const plan = planPayment(request(['6'], { sources: [source(1, forty(), { snow: true })] }));
+    expect(plan?.spentSnow).toBe(6);
+    expect(plan?.leftover).toHaveLength(34);
+  });
+
+  test('past 31 units a colored cost still takes the right units from a mixed outcome', () => {
+    const colors: ManaColor[] = [...new Array<ManaColor>(33).fill('C'), 'G', 'G'];
+    const plan = planPayment(request(['G', 'G', '1'], { sources: [source(1, [colors])] }));
+    expect(plan?.spentColors.slice().sort()).toEqual(['C', 'G', 'G']);
+    expect(plan?.leftover).toHaveLength(32);
+  });
+});

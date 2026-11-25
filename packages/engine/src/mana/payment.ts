@@ -151,19 +151,31 @@ interface Profile {
   readonly life: number;
 }
 
+/**
+ * A set of unit indexes of one outcome, as a linked list: adding a unit costs one node and the set has no size limit (an outcome
+ * can make more than 31 mana, which a 32-bit mask cannot hold; issue 634).
+ */
+type UnitSet = { readonly unit: number; readonly rest: UnitSet } | null;
+
+const unitsOf = (set: UnitSet): ReadonlySet<number> => {
+  const units = new Set<number>();
+  for (let n = set; n !== null; n = n.rest) units.add(n.unit);
+  return units;
+};
+
 interface Node {
   readonly cost: readonly number[];
   /** Entry index tapped, -1 to skip the item, -2 when nothing more is needed. */
   readonly choice: number;
   readonly next: number;
-  /** Bit j set when unit j of the tapped outcome pays a demand (clear bits are leftover). */
-  readonly usedMask: number;
-  /** Bit j set when unit j pays the activation cost of a costed mana ability and not the cost of the spell (D-183). */
-  readonly actMask: number;
+  /** The units of the tapped outcome that pay a demand (the others are leftover). */
+  readonly used: UnitSet;
+  /** The units that pay the activation cost of a costed mana ability and not the cost of the spell (D-183). */
+  readonly act: UnitSet;
 }
 
 const ZERO: readonly number[] = new Array<number>(COMPONENTS).fill(0);
-const DONE: Node = { cost: ZERO, choice: -2, next: 0, usedMask: 0, actMask: 0 };
+const DONE: Node = { cost: ZERO, choice: -2, next: 0, used: null, act: null };
 
 function less(a: readonly number[], b: readonly number[]): boolean {
   for (let i = 0; i < a.length; i++) {
@@ -409,23 +421,23 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
 /**
  * Ways to spend the units of one outcome on the remaining demand: each unit pays its own color,
  * a snow demand (when the source is snow), a generic demand, or is left over. Returns one entry
- * per distinct resulting state with a mask of the units that paid something.
+ * per distinct resulting state with the set of the units that paid something.
  */
 function assignUnits(
   state: readonly number[],
   entry: Entry,
   flex: readonly (readonly ManaColor[])[],
-): Map<string, { state: number[]; usedMask: number; actMask: number }> {
-  type Level = Map<string, { state: number[]; usedMask: number; actMask: number }>;
+): Map<string, { state: number[]; used: UnitSet; act: UnitSet }> {
+  type Level = Map<string, { state: number[]; used: UnitSet; act: UnitSet }>;
   let level: Level = new Map();
-  level.set(state.join(','), { state: state.slice(), usedMask: 0, actMask: 0 });
+  level.set(state.join(','), { state: state.slice(), used: null, act: null });
   entry.colors.forEach((color, j) => {
     const nextLevel: Level = new Map();
-    const put = (s: number[], used: number, act: number) => {
+    const put = (s: number[], used: UnitSet, act: UnitSet) => {
       const key = s.join(',');
-      if (!nextLevel.has(key)) nextLevel.set(key, { state: s, usedMask: used, actMask: act });
+      if (!nextLevel.has(key)) nextLevel.set(key, { state: s, used, act });
     };
-    for (const { state: s, usedMask, actMask } of level.values()) {
+    for (const { state: s, used, act } of level.values()) {
       // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
       const dims = entry.genericOnly ? [] : [colorDim(color)];
       // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
@@ -454,10 +466,10 @@ function assignUnits(
           const t = s.slice();
           t[d] = (t[d] ?? 0) - 1;
           // D-183: a dimension from ACT_BASE on is the activation cost of a costed ability, not the cost of the spell.
-          put(t, usedMask | (1 << j), d >= ACT_BASE ? actMask | (1 << j) : actMask);
+          put(t, { unit: j, rest: used }, d >= ACT_BASE ? { unit: j, rest: act } : act);
         }
       }
-      put(s, usedMask, actMask); // unit not used by the cost (leftover)
+      put(s, used, act); // unit not used by the cost (leftover)
     }
     level = nextLevel;
   });
@@ -466,7 +478,7 @@ function assignUnits(
 
 interface Solution {
   readonly cost: readonly number[];
-  readonly picks: { item: Item; entry: Entry; usedMask: number; actMask: number }[];
+  readonly picks: { item: Item; entry: Entry; used: UnitSet; act: UnitSet }[];
 }
 
 function solveProfile(
@@ -504,11 +516,7 @@ function solveProfile(
     let best: Node | null = null;
     if (total <= (suffixCap[i] ?? 0)) {
       item.entries.forEach((entry, entryIndex) => {
-        for (const { state: after, usedMask, actMask } of assignUnits(
-          state,
-          entry,
-          flex,
-        ).values()) {
+        for (const { state: after, used, act } of assignUnits(state, entry, flex).values()) {
           const afterCode = encode(after);
           if (afterCode === code) continue; // tapping without paying anything is never useful
           const sub = solve(i + 1, afterCode);
@@ -518,7 +526,7 @@ function solveProfile(
           own[C_WASTE] = entry.colors.length - assigned;
           const cost = add(sub.cost, own);
           if (best === null || less(cost, best.cost)) {
-            best = { cost, choice: entryIndex, next: afterCode, usedMask, actMask };
+            best = { cost, choice: entryIndex, next: afterCode, used, act };
           }
         }
       });
@@ -526,7 +534,7 @@ function solveProfile(
       // Taps are tried first and only strictly better plans replace them, so ties prefer
       // tapping earlier items (lower object id), then lower ability index and outcome.
       if (skipped !== null && (best === null || less(skipped.cost, (best as Node).cost))) {
-        best = { cost: skipped.cost, choice: -1, next: code, usedMask: 0, actMask: 0 };
+        best = { cost: skipped.cost, choice: -1, next: code, used: null, act: null };
       }
     }
     table.set(code, best);
@@ -545,8 +553,8 @@ function solveProfile(
       picks.push({
         item,
         entry: item.entries[node.choice] as Entry,
-        usedMask: node.usedMask,
-        actMask: node.actMask,
+        used: node.used,
+        act: node.act,
       });
     }
     code = node.next;
@@ -647,10 +655,12 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
   const spentTypes: (readonly string[])[] = [];
   const spentColors: ManaColor[] = [];
   let spentSnow = 0;
-  for (const { item, entry, usedMask, actMask } of best.solution.picks) {
+  for (const { item, entry, used, act } of best.solution.picks) {
+    const usedUnits = unitsOf(used);
+    const actUnits = unitsOf(act);
     // D-183: a unit that is used and does not pay the activation cost of a costed ability is spent on the cost of the spell.
     entry.colors.forEach((color, j) => {
-      if ((usedMask & (1 << j)) === 0 || (actMask & (1 << j)) !== 0) return;
+      if (!usedUnits.has(j) || actUnits.has(j)) return;
       spentTypes.push(entry.types);
       spentColors.push(color);
       if (entry.snow) spentSnow += 1;
@@ -661,7 +671,7 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
     }
     taps.push({ object: item.object, abilityIndex: entry.abilityIndex, outcome: entry.outcome });
     entry.colors.forEach((color, j) => {
-      if ((usedMask & (1 << j)) === 0) {
+      if (!usedUnits.has(j)) {
         leftover.push({
           color,
           snow: entry.snow,
