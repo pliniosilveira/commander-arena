@@ -606,6 +606,12 @@ describe('the card choices: discard unless, look and take, put onto the battlefi
       ),
     } as unknown as GameState;
     expect(lookedCards(state, 0).map((c) => c.name)).toEqual(['Island', 'Grizzly Bears']);
+    // A split into piles: the card already chosen for the hand is a card looked at that is no longer to place.
+    const split = { ...lookTake, purpose: 'lookSplit', seat: 0, to: 'bottom' };
+    expect(lookedCards({ ...state, pending: split } as GameState, 0).map((c) => c.name)).toEqual([
+      'Island',
+      'Grizzly Bears',
+    ]);
     // Not the opponent's question, and not another question.
     expect(lookedCards(state, 1)).toEqual([]);
     expect(lookedCards({ ...state, pending: discard } as GameState, 0)).toEqual([]);

@@ -112,6 +112,8 @@ export interface ZoneContents {
   readonly objects: ObjectView[];
   /** Cards looked at that cannot be taken (shown beside the ones that can). */
   readonly others?: readonly LookedCard[];
+  /** What the cards of `others` are marked with (default: "Cannot be taken"). */
+  readonly othersMark?: string;
 }
 
 export function zoneContents(
@@ -124,6 +126,15 @@ export function zoneContents(
     const pending = view.pending;
     if (pending?.kind !== 'chooseCards') return { title: 'Cards', objects: [] };
     const objects = [...pickerCards(view, pending)];
+    // D-216: the second pile of a split: the card already chosen for the hand is shown, marked, with the ones still to place.
+    if (pending.purpose === 'lookSplit') {
+      return {
+        title: 'Cards looked at',
+        objects,
+        others: looked,
+        othersMark: 'Already put into your hand',
+      };
+    }
     if (pending.purpose !== 'lookTake') return { title: questionTitle(pending), objects };
     return {
       title: lookTakeRevealed(pending) ? 'Cards revealed' : 'Cards looked at',
@@ -232,6 +243,7 @@ export function Board() {
             title={open.title}
             objects={open.objects}
             {...(open.others === undefined ? {} : { others: open.others })}
+            {...(open.othersMark === undefined ? {} : { othersMark: open.othersMark })}
             onClose={() => setZone(null)}
           />
         )}
