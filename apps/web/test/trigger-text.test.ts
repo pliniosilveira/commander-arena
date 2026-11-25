@@ -137,6 +137,10 @@ describe('the other new kinds', () => {
     [{ kind: 'blocks', what: { kind: 'this' } }, 'Whenever Pyre Hound blocks'],
     [{ kind: 'becomesBlocked', what: { kind: 'this' } }, 'Whenever Pyre Hound becomes blocked'],
     [
+      { kind: 'becomesUnblocked', what: { kind: 'this' } },
+      "Whenever Pyre Hound attacks and isn't blocked",
+    ],
+    [
       {
         kind: 'becomesBlockedBy',
         what: { kind: 'this' },
@@ -201,6 +205,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   attacks: { kind: 'attacks', what: { kind: 'this' } },
   blocks: { kind: 'blocks', what: { kind: 'this' } },
   becomesBlocked: { kind: 'becomesBlocked', what: { kind: 'this' } },
+  becomesUnblocked: { kind: 'becomesUnblocked', what: { kind: 'this' } },
   becomesBlockedBy: {
     kind: 'becomesBlockedBy',
     what: { kind: 'this' },
@@ -215,12 +220,19 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   putIntoGraveyard: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
   ringTempted: { kind: 'ringTempted' },
   doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
+  exploits: { kind: 'exploits' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
   playsCard: { kind: 'playsCard', minCardTypes: 2 },
   activatesAbility: { kind: 'activatesAbility', who: 'you' },
+  entersCausesTrigger: {
+    kind: 'entersCausesTrigger',
+    who: 'opponent',
+    what: { types: ['creature'] },
+  },
   scries: { kind: 'scries', who: 'you' },
   surveils: { kind: 'surveils', who: 'you' },
+  milled: { kind: 'milled', who: 'any', filter: { types: ['creature'] } },
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
   winsCoinFlip: { kind: 'winsCoinFlip', who: 'you' },
   votingFinished: { kind: 'votingFinished' },

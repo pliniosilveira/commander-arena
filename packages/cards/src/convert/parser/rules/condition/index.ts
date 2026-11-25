@@ -67,9 +67,11 @@ import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MANA_VALUE_AT_LEAST_CONDITION_RULES } from './mana-value-at-least';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
+import { MIND_FLAYARRRS_G8_CONDITION_RULES } from './mind-flayarrrs-g8';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
 import { PARTY_CONDITION_RULES } from './party';
+import { PLAYED_LAND_CONDITION_RULES } from './played-land';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
@@ -565,6 +567,8 @@ export const CONDITION_RULES = [
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "this card is suspended".
+  ...MIND_FLAYARRRS_G8_CONDITION_RULES,
   // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
   ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Valakut Exploration: "there are cards exiled with ~", before the plain count whose phrase ("there are") is a prefix of it.
@@ -605,6 +609,7 @@ export const CONDITION_RULES = [
   ...KORVOLD_CONDITION_RULES,
   // Stage P49 (D-206): "at least four mana was spent to cast it", "a card left your graveyard this turn", "~ was cast from a graveyard".
   ...VRASKA_CONDITION_RULES,
+  ...PLAYED_LAND_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".

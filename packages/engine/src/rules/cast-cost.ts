@@ -316,7 +316,7 @@ export interface CostRequest {
    * Which way the caster pays the face's additional cost choice (`CardFace.additionalCostChoice`, D-181): left out, the one the spell on the stack
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
-  readonly costOption?: 0 | 1;
+  readonly costOption?: number;
   /**
    * The creature a harmonize cost taps (CR 702.180a), or null for none: left out, what the spell on the stack says (`StackData.harmonizeTap`) and, while nothing is
    * chosen yet, the most any creature could take off when `optimistic`.
@@ -353,9 +353,11 @@ export function replicateCostFor(
   return null;
 }
 
-/** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
-function costOptionsOf(face: CardFace | null): readonly (0 | 1 | undefined)[] {
-  return face?.additionalCostChoice === undefined ? [undefined] : [0, 1];
+/** The ways the caster could pay the additional cost choice of the face: all of them, or `undefined` once for a face with no choice (D-181). */
+function costOptionsOf(face: CardFace | null): readonly (number | undefined)[] {
+  return face?.additionalCostChoice === undefined
+    ? [undefined]
+    : face.additionalCostChoice.map((_, way) => way);
 }
 
 /**
@@ -574,12 +576,17 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps that many permanents once for each mode chosen beyond the first.
   const escalateTap = escalate?.find((c) => c.kind === 'tapPermanents');
   const escalatedModes = escalateTap === undefined ? 0 : Math.max(0, modes - 1);
+  // CR 702.56a (Psionic Ritual, "Replicate—Tap an untapped Horror you control"): a replicate cost that taps permanents is paid once for each time the caster chose, so that many are tapped;
+  // `validateCard` refuses a face that also has a `tapPermanents` alternative cost.
+  const replicaTap = replicate?.find((c) => c.kind === 'tapPermanents');
   const tap =
     tapAlt !== null
       ? { filter: tapAlt.filter, count: tapAlt.count }
       : escalateTap?.kind === 'tapPermanents' && escalatedModes > 0
         ? { filter: escalateTap.filter, count: escalateTap.count * escalatedModes }
-        : null;
+        : replicaTap?.kind === 'tapPermanents'
+          ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
+          : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
     alternative === 'sacrificeFromGraveyard'

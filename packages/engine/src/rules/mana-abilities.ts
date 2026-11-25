@@ -23,6 +23,7 @@ import { putOwnCounters } from './mana-put-counter';
 import { additionalManaOptions } from './mana-triggers';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
+import { activationLockedByName } from './name-locks';
 import { lifeTotalIsLocked } from './player-lock';
 import { hasRestriction } from './restrictions';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
@@ -340,6 +341,10 @@ export function physicalRefusal(
     return `${name} is not yours`;
   // CR 602.5, 605.1a (Galadriel group 3): "Its activated abilities can't be activated this turn" includes the mana abilities.
   if (hasRestriction(state, obj, 'cantActivateAbilities')) {
+    return `${name}'s activated abilities cannot be activated`;
+  }
+  // CR 602.5, 605.1a, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated" includes the mana abilities.
+  if (activationLockedByName(state, obj)) {
     return `${name}'s activated abilities cannot be activated`;
   }
   if (hasCost(ability, 'tap') && !canTapForMana(state, obj, seat)) {

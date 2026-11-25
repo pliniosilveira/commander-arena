@@ -1165,7 +1165,17 @@ export function describeEvent(
           'CR 310.9a',
         );
       }
-      // CR 701.38a (D-194): "You vote for profit (Emissary Green)." / "Opponent votes for security (Emissary Green)." A vote is public.
+      // CR 701.49b, 309.5a: "You choose Forge for your venture marker." The room is public.
+      if (event.purpose === 'dungeonRoom') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${optionText(event.purpose, event.option)} for ${verb(event.seat, 'your', 'their')} venture marker.`,
+          event.seat,
+          [],
+          'CR 701.49b',
+        );
+      }
+      // CR 701.38a (D-194): "You vote for profit (Emissary Green)."/ "Opponent votes for security (Emissary Green)." A vote is public.
       if (event.purpose === 'vote') {
         return line(
           'major',
@@ -1782,6 +1792,15 @@ export function describeEvent(
         null,
         [event.permanent],
         'CR 701.42a',
+      );
+    case 'exploited':
+      // CR 702.110b (Exploit): the creature exploited what its controller sacrificed; the sacrifice itself has its own line.
+      return line(
+        'major',
+        `${name(event.creature)} exploits ${name(event.sacrificed)}.`,
+        event.seat,
+        [event.creature, event.sacrificed],
+        'CR 702.110b',
       );
     case 'doorUnlocked': {
       // CR 709.5h (Room): a half was given its unlocked designation, entering the battlefield with the half that was cast included.

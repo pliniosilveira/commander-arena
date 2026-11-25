@@ -41,7 +41,7 @@ export interface FaceParse {
   /** "You may cast this spell without paying its mana cost" lines (CR 118.9): `alternativeCosts`. */
   readonly alternativeCosts: readonly AlternativeCost[];
   /** "..., sacrifice an artifact or creature or pay {4}" (stage P38, D-182, CR 118.8): the face's `additionalCostChoice`, or null. */
-  readonly additionalCostChoice: readonly [readonly Cost[], readonly Cost[]] | null;
+  readonly additionalCostChoice: readonly (readonly Cost[])[] | null;
   /** Life substituted for each previous command-zone cast tax instance, if printed. */
   readonly commanderTaxLife: number | null;
   /** The abilities that did not; they are dropped from the definition, never half-executed. */
@@ -115,7 +115,7 @@ export function parseFaceText(
   const unparsed: UnparsedAbility[] = [];
   const additionalCosts: Cost[] = [];
   const alternativeCosts: AlternativeCost[] = [];
-  let additionalCostChoice: readonly [readonly Cost[], readonly Cost[]] | null = null;
+  let additionalCostChoice: readonly (readonly Cost[])[] | null = null;
   let commanderTaxLife: number | null = null;
   let xAtMost: Amount | null = null;
   let xAtMostLine: { index: number; text: string } | null = null;

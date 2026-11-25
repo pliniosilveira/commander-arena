@@ -1,5 +1,5 @@
 {
-  "parserVersion": 207,
+  "parserVersion": 208,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -206,6 +206,14 @@
       "reasons": [],
       "ast": "c1485097"
     },
+    "0285bd20-f49e-48f7-8c8c-960f9fbe4d34": {
+      "name": "Guiltfeeder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7a469374"
+    },
     "028dcef2-3de9-4dde-ba17-f9e077b3190d": {
       "name": "Mindblade Render",
       "group": "acceptance",
@@ -317,6 +325,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "08cc836d"
+    },
+    "05157e8e-4c8c-455e-a5a1-de8271951c51": {
+      "name": "Endless Evil",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d820ce2f"
     },
     "053a69d8-2b5e-4f14-8b02-ca405891dc4a": {
       "name": "Fell the Profane // Fell Mire",
@@ -1154,6 +1170,14 @@
       "reasons": [],
       "ast": "d64a73f0"
     },
+    "13cb958f-1e66-4219-901a-ff58275c8475": {
+      "name": "Brainstealer Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93e2c117"
+    },
     "14493624-fdc7-4630-9b1e-f35668651108": {
       "name": "Baldin, Century Herdmaster",
       "group": "acceptance",
@@ -1619,6 +1643,14 @@
       "reasons": [],
       "ast": "b555bed0"
     },
+    "1c3e6980-97fe-4e15-93a0-368280da8608": {
+      "name": "Psionic Ritual",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f47eba23"
+    },
     "1c6a0d19-c7dd-4353-95ad-dfdef2d5d2d9": {
       "name": "Laboratory Drudge",
       "group": "acceptance",
@@ -2027,6 +2059,14 @@
       "reasons": [],
       "ast": "611aac1e"
     },
+    "250cb58b-2924-4dff-92fe-ac0ebbbeb218": {
+      "name": "Creeping Tar Pit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "98d62fb3"
+    },
     "2536750c-3c4f-4e00-b517-680ad4fd2ecc": {
       "name": "Skeleton Crew",
       "group": "acceptance",
@@ -2170,6 +2210,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f6de4426"
+    },
+    "2802fc92-49a0-43c8-bc10-24882eeee3f1": {
+      "name": "Sludge Monster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b8610b7f"
     },
     "2837be10-23ad-49d2-943e-b1e00edbbbd9": {
       "name": "Sam, Loyal Attendant",
@@ -2902,6 +2950,14 @@
       "reasons": [],
       "ast": "c5bb3894"
     },
+    "3469463e-ed4d-44bb-81f3-42bbe09d34ad": {
+      "name": "Hunted Horror",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f97704d3"
+    },
     "348c67ef-9ccc-4651-9038-efdf1ad1b36a": {
       "name": "Rootha, Mastering the Moment",
       "group": "acceptance",
@@ -3088,6 +3144,14 @@
       "reasons": [],
       "ast": "b28124cd"
     },
+    "36633b43-855b-4620-8afb-70c39fc07280": {
+      "name": "Dark Hatchling",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "45716088"
+    },
     "367ac7e2-5056-48f3-a296-87d6cb1f7b54": {
       "name": "Nykthos Paragon",
       "group": "acceptance",
@@ -3127,6 +3191,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4ffa3096"
+    },
+    "36b67014-0507-4976-ad52-a2a36676197d": {
+      "name": "Memory Plunder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c54536d1"
     },
     "36c800cb-b1ca-4432-ad3c-4d8b90337f4c": {
       "name": "Phyrexian Processor",
@@ -4347,6 +4419,14 @@
       "reasons": [],
       "ast": "a8016453"
     },
+    "4dde484a-8d5b-4eb6-ab4a-e30cc370431c": {
+      "name": "Zellix, Sanity Flayer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fc237968"
+    },
     "4df179b4-7c6b-4e63-9d7d-62f4df377989": {
       "name": "Admiral Brass, Unsinkable",
       "group": "acceptance",
@@ -4827,6 +4907,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "110187e4"
+    },
+    "57b3f7fc-1812-4134-a645-6cef48a8aa71": {
+      "name": "Nighthowler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1142fb89"
     },
     "57e4a1c0-4218-4a07-88e7-d6083884c2b6": {
       "name": "Champions from Beyond",
@@ -5818,6 +5906,14 @@
       "reasons": [],
       "ast": "5eb8360e"
     },
+    "689cd6a8-8be0-49a6-9758-a81cc9f55cc8": {
+      "name": "Haunted One",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0bc5625e"
+    },
     "68e45c07-96c5-4f87-a816-d9fa4f119740": {
       "name": "Gemcutter Buccaneer",
       "group": "acceptance",
@@ -6475,6 +6571,14 @@
       "reasons": [],
       "ast": "eb0220d1"
     },
+    "74de3356-9779-40f9-9881-fe795a1d5bbd": {
+      "name": "Dusk Mangler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c64c72bc"
+    },
     "751f22bc-bcea-4213-a37b-b5f72448a4c4": {
       "name": "The Reality Chip",
       "group": "acceptance",
@@ -6554,6 +6658,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "09f0f12e"
+    },
+    "7685ff3f-6d61-4b1d-a381-49bc6274aa01": {
+      "name": "Dimir Keyrune",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7b9cedee"
     },
     "76bc6518-dea4-4a5c-a8a7-352cd297197b": {
       "name": "Ominous Harvest",
@@ -6658,6 +6770,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "76b6d4e6"
+    },
+    "786b3657-b595-4b38-83f2-d40915e51e2b": {
+      "name": "Phyrexian Revoker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "19da55b4"
     },
     "786baa29-afd4-40f0-95c8-920a972b9175": {
       "name": "Kari Zev, Skyship Raider",
@@ -7610,6 +7730,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fc58e95b"
+    },
+    "8a83d284-75a0-4901-b7d9-c4b7586ee327": {
+      "name": "River of Tears",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d57d4a92"
     },
     "8ad0d89b-beef-40f7-8ce8-65589e3970be": {
       "name": "Walking Bulwark",
@@ -8635,6 +8763,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "204365f9"
+    },
+    "9dc65ffe-17fc-4280-b4bd-78073ac7e12b": {
+      "name": "Leyline of Anticipation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7a1b5788"
     },
     "9df2e909-ed13-456a-9636-7398732009a9": {
       "name": "Professor Onyx",
@@ -10562,6 +10698,14 @@
       "reasons": [],
       "ast": "d9b16b00"
     },
+    "c235fda2-1a8d-4ac7-9a23-784529a520f0": {
+      "name": "Nihilith",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "179ce35d"
+    },
     "c23e5b80-08d2-4e24-9908-fe2aa4f30f6f": {
       "name": "Reliquary Tower",
       "group": "holdout",
@@ -10834,6 +10978,14 @@
       "reasons": [],
       "ast": "44844338"
     },
+    "c73c1d91-0163-49c6-832a-b9327e7a2c9b": {
+      "name": "Mindcrank",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "44ff9b73"
+    },
     "c744b5f4-fbcf-48b8-9d60-5e9c6ac297e0": {
       "name": "Trygon Predator",
       "group": "acceptance",
@@ -10897,6 +11049,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5bbfa373"
+    },
+    "c7f1a49a-cc22-432f-bf3e-50ba61982b87": {
+      "name": "Sewer Nemesis",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a8ada12e"
     },
     "c82cc78b-ffd6-4f72-881d-85913830feb2": {
       "name": "Immoral Bargain",
@@ -11164,6 +11324,14 @@
       "reasons": [],
       "ast": "aced302c"
     },
+    "cc21b29f-2d1a-4769-9b65-f92bd2ca1cc8": {
+      "name": "From the Catacombs",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4dbed2f8"
+    },
     "cc2b6e58-2d6f-495e-95f3-9496105c4cba": {
       "name": "Jace Beleren",
       "group": "acceptance",
@@ -11332,6 +11500,22 @@
       "reasons": [],
       "ast": "27096dc5"
     },
+    "cfb1b64b-bf78-4015-ac29-cdcdf2adaa02": {
+      "name": "Curtains' Call",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4f54134c"
+    },
+    "cfb23c6b-6e4a-4fc9-b3bb-a3ddc2ba06b8": {
+      "name": "Captain N'ghathrod",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15755038"
+    },
     "cfc9a2f9-92fa-4608-b98d-f9763c89fc40": {
       "name": "Ob Nixilis of the Black Oath",
       "group": "acceptance",
@@ -11452,6 +11636,14 @@
       "reasons": [],
       "ast": "3b4c201c"
     },
+    "d22ff377-d282-4a28-9dce-96f25913dc96": {
+      "name": "Grazilaxx, Illithid Scholar",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "045507b3"
+    },
     "d2664f28-49e1-46f8-a863-b217e961a57c": {
       "name": "Black Market Connections",
       "group": "acceptance",
@@ -11556,6 +11748,22 @@
       "reasons": [],
       "ast": "4aea75f9"
     },
+    "d4838305-5392-42b2-81d1-9b9da71b20b1": {
+      "name": "Overcharged Amalgam",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6d6d2558"
+    },
+    "d4a84e78-d9b9-4c67-8a4b-4329e65f0f15": {
+      "name": "Hullbreaker Horror",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5bffd0d7"
+    },
     "d4e0749a-e179-4c19-8536-bf8f1a198549": {
       "name": "Dedicated Commons",
       "group": "acceptance",
@@ -11636,6 +11844,14 @@
       "reasons": [],
       "ast": "fff007f3"
     },
+    "d5dc00cb-1510-4ce9-8dd9-0722f65d34b4": {
+      "name": "Grell Philosopher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "79a18505"
+    },
     "d65728cf-e9ce-46d8-a890-e1295b18cfbe": {
       "name": "Endless Detour",
       "group": "acceptance",
@@ -11659,6 +11875,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4e17a1d7"
+    },
+    "d6ae77b3-59e7-475c-800c-930a5cb2e0ca": {
+      "name": "Aboleth Spawn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "46bf9ea4"
     },
     "d6c7d7a6-2d38-4c06-ab83-bee9cc18de52": {
       "name": "Guardian Scalelord",
@@ -12236,6 +12460,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7c48d8f0"
+    },
+    "e0aa6ce0-ca31-433b-ac6c-32b8675cdb71": {
+      "name": "Spellskite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "77a9876c"
     },
     "e0c00a74-bdf8-4fee-8042-42c5878e9e3c": {
       "name": "Broadside Bombardiers",
@@ -13933,8 +14165,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1431,
-      "total": 1450
+      "supported": 1460,
+      "total": 1479
     }
   }
 }

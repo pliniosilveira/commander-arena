@@ -113,6 +113,15 @@ export interface MainWeights {
   readonly counterMinValue: number;
 }
 
+export interface PlanWeights {
+  /** Another line of the turn planner must beat today's line by this much to replace it. */
+  readonly margin: number;
+  /** A threat category (`heuristic-threats.ts`) gets a scenario of its own from this chance that the opponent holds one. */
+  readonly minThreatChance: number;
+  /** How much of the gap between a line's weighted mean and its worst scenario is taken off its value. */
+  readonly riskAversion: number;
+}
+
 export interface RemovalWeights {
   /** The opposing commander is taken first when its value is at least this share of the best target's. */
   readonly nearEqual: number;
@@ -146,6 +155,7 @@ export interface AgentWeights {
   readonly blocks: BlockWeights;
   readonly danger: DangerWeights;
   readonly main: MainWeights;
+  readonly plan: PlanWeights;
   readonly removal: RemovalWeights;
   readonly protection: ProtectionWeights;
   readonly mulligan: MulliganWeights;
@@ -233,6 +243,7 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     spellPerMana: 0.8,
     counterMinValue: 2,
   },
+  plan: { margin: 0.5, minThreatChance: 0.1, riskAversion: 0.25 },
   removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6 },
   protection: { margin: 0.5, commanderBonus: 4, permanentValue: 3, saveValue: 6 },
   mulligan: { minLands: 2, maxLands: 5 },

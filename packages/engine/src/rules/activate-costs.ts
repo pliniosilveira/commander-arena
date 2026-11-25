@@ -76,6 +76,8 @@ export interface CostBreakdown {
   readonly hasX: boolean;
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the mana of the cost is of the color the source chose as it entered. */
   readonly onlyChosenColor: boolean;
+  /** "You may spend blue mana as though it were mana of any color to activate those abilities" (Grell Philosopher, CR 609.4b): blue mana pays a symbol of any color of the cost. */
+  readonly blueAsAnyColor: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -151,6 +153,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let removeAmong: CostBreakdown['removeAmong'] = null;
   let removeAmongCosts = 0;
   let onlyChosenColor = false;
+  let blueAsAnyColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
   const mana: string[] = [];
@@ -235,6 +238,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'mana':
         mana.push(...withX(cost.symbols, x));
         if (cost.onlyChosenColor === true) onlyChosenColor = true;
+        if (cost.blueAsAnyColor === true) blueAsAnyColor = true;
         break;
       case 'sacrifice':
         sacrifices += 1;
@@ -315,6 +319,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     energy,
     hasX: hasX(abilityXCost(costs)),
     onlyChosenColor,
+    blueAsAnyColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -549,13 +554,15 @@ export function planActivationMana(
   const x = costs.hasX ? ({ hasX: true } as const) : {};
   // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability": the color the source chose as it entered, or none.
   const only = costs.onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
+  // Grell Philosopher (CR 609.4b): blue mana may pay any color of the cost.
+  const blue = costs.blueAsAnyColor ? ({ blueAsAnyColor: true } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true, ...x, ...only }
-      : { ability: true, ...x, ...only, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x, ...only, ...blue }
+      : { ability: true, ...x, ...only, ...blue, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 

@@ -111,6 +111,10 @@ export function targetsPrompt(
   // CR 115.7a (D-181): the new target of a spell or ability a resolving effect changes the target of; there is nothing to cancel.
   if (decision.forChange === true) {
     const subject = decision.subject === undefined ? 'it' : stackName(index, decision.subject);
+    // CR 115.7b: "change a target ... to this": the list holds the targets of the spell or ability that can be changed.
+    if (decision.specs.some((s) => s.specId === 'changeFrom')) {
+      return `Choose which target of ${subject} to change to ${source}.`;
+    }
     return `Choose a new target for ${subject}.`;
   }
   if (slot === null) {

@@ -8,7 +8,15 @@ import type { CardId, ObjectId, SeatId } from '../ids';
 import { cardId, objectId } from '../ids';
 import { createRng, nextInt, shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
-import { addToZone, getObject, getSeat, patchSeat, removeFromZone, zoneList } from '../state/ops';
+import {
+  addToZone,
+  definitionOf,
+  getObject,
+  getSeat,
+  patchSeat,
+  removeFromZone,
+  zoneList,
+} from '../state/ops';
 import {
   type CardInstance,
   DEFAULT_SETTINGS,
@@ -23,6 +31,7 @@ import { createEmblem } from './emblem';
 import { startTurn } from './flow';
 import type { Outcome } from './priority';
 import { setPending } from './set-pending';
+import { moveObject } from './zones';
 
 export interface DeckConfig {
   /** All 100 cards, including the commander(s). */
@@ -314,6 +323,79 @@ export function bottomCards(state: GameState, seat: SeatId, objects: readonly Ob
 function afterKeep(state: GameState, seat: SeatId): Outcome {
   const next = nextMulliganSeat(state, seat);
   if (next !== null) return { state: askMulligan(state, next), events: [] };
-  // Everyone kept: the starting player takes the first turn (CR 103.8).
-  return startTurn({ ...state, turn: { ...state.turn, number: 0 } }, state.turn.activeSeat);
+  // Everyone kept: the opening-hand options are offered (CR 103.6), then the starting player takes the first turn (CR 103.8).
+  return askOpeningHand(state, null);
+}
+
+/** CR 103.6: whether the card in a hand may begin the game on the battlefield (its face has `beginGameOnBattlefield`). */
+function mayBeginOnBattlefield(state: GameState, id: ObjectId): boolean {
+  const obj = getObject(state, id);
+  if (obj.card === null) return false;
+  const face = definitionOf(state, obj.card).faces[0];
+  return (
+    face?.abilities.some(
+      (a) => a.kind === 'static' && a.static.kind === 'beginGameOnBattlefield',
+    ) === true
+  );
+}
+
+/**
+ * CR 103.6: the next opening-hand question after `after` (the card just asked about, or null for the first): starting with the starting player and going in turn order, each
+ * player is asked about each card in their hand that may begin on the battlefield, one card at a time. A declined card stays in the hand, so the place is found by the order
+ * (seat from the starting player, then object id), not by what is left. When nothing is left the first turn begins.
+ */
+function askOpeningHand(state: GameState, after: { seat: SeatId; id: ObjectId } | null): Outcome {
+  const start = state.turn.activeSeat;
+  const count = state.seats.length;
+  const rank = (seat: SeatId): number => (seat - start + count) % count;
+  for (let k = 0; k < count; k += 1) {
+    const seat = (start + k) % count;
+    const ids = [...getSeat(state, seat).hand]
+      .filter((id) => mayBeginOnBattlefield(state, id))
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    for (const id of ids) {
+      if (
+        after !== null &&
+        (rank(seat) < rank(after.seat) || (seat === after.seat && id <= after.id))
+      ) {
+        continue;
+      }
+      const obj = getObject(state, id);
+      const card = obj.card === null ? null : definitionOf(state, obj.card);
+      return {
+        state: setPending(state, {
+          kind: 'confirmOptional',
+          seat,
+          source: id,
+          sourceName: card?.name ?? '',
+          sourceOracleText: card?.faces[0]?.oracleText ?? '',
+          purpose: 'openingHand',
+        }),
+        events: [],
+      };
+    }
+  }
+  return startTurn({ ...state, pending: null, turn: { ...state.turn, number: 0 } }, start);
+}
+
+/** The answer to "begin the game with this card on the battlefield?" (CR 103.6): accepting puts it onto the battlefield, then the next question or the first turn. */
+export function answerOpeningHand(state: GameState, accept: boolean): Outcome | null {
+  const d = state.pending;
+  if (d?.kind !== 'confirmOptional' || d.purpose !== 'openingHand') return null;
+  let next: GameState = { ...state, pending: null };
+  const events: GameEvent[] = [];
+  if (accept) {
+    const moved = moveObject(next, {
+      object: d.source,
+      to: 'battlefield',
+      tapped: false,
+      commanderChoice: null,
+      toSeat: d.seat,
+    });
+    if (moved.kind !== 'done') return null;
+    next = moved.state;
+    events.push(...moved.events);
+  }
+  const after = askOpeningHand(next, { seat: d.seat, id: d.source });
+  return { state: after.state, events: [...events, ...after.events] };
 }

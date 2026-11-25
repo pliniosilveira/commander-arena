@@ -454,6 +454,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes blocked`;
     }
+    case 'becomesUnblocked': {
+      // CR 509.1h: each attacking creature that no creature blocks.
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} attacks and isn't blocked`;
+    }
     case 'becomesBlockedBy': {
       // CR 509.3d, 702.25a (Flanking): once for each creature that blocks it; only the creature without flanking has words.
       const what = subjectPhrase(trigger.what, ctx);
@@ -510,6 +515,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes monstrous`;
     }
+    case 'milled': {
+      // CR 701.17a, 603.2c: "Whenever a player mills one or more creature cards"; a filter the words do not cover leaves the trigger unsaid.
+      const who =
+        trigger.who === 'you' ? 'you' : trigger.who === 'opponent' ? 'an opponent' : 'a player';
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const said = base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards');
+      return `Whenever ${who} mill${trigger.who === 'you' ? '' : 's'} ${said}`;
+    }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =
@@ -536,6 +550,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'doorUnlocked':
       // CR 709.5h (Room): the half whose text has the ability.
       return 'When you unlock this door';
+    case 'exploits':
+      // CR 702.110b (Exploit): the creature with the ability.
+      return 'When this creature exploits a creature';
     case 'leftGraveyard': {
       // D-229 (CR 400.7, 603.2c): "one or more cards leave your graveyard", "a creature card leaves your graveyard".
       const base = trigger.filter === undefined ? 'a card' : discardedCardWords(trigger.filter);
@@ -642,6 +659,8 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
+      // CR 607.2d (Sewer Nemesis): "the chosen player" is a choice the card made as it entered; the card's own text says it.
+      if (trigger.by === 'chosenPlayer') return null;
       // Quandrix Unlimited group E (CR 601.2i): "your first spell with {X} in its mana cost each turn" says nothing else about the spell; with more words it cannot be said here.
       if (trigger.filter.firstXSpellThisTurn === true) {
         const { firstXSpellThisTurn: _first, ...rest } = trigger.filter;
@@ -685,6 +704,18 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
       return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
+    case 'entersCausesTrigger': {
+      // CR 603.2, 603.6a (Aboleth Spawn): the creature's own enters ability, as it triggers.
+      const what = filterPhrase(trigger.what);
+      if (what === null) return null;
+      const whose =
+        trigger.who === 'you'
+          ? 'your'
+          : trigger.who === 'opponent'
+            ? "an opponent's"
+            : "a player's";
+      return `Whenever ${what} entering under ${whose} control causes a triggered ability of that creature to trigger`;
+    }
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;

@@ -363,7 +363,7 @@ export interface ObjectView {
    * "Sacrifice an artifact or creature or pay {4}" (CR 118.8, D-181): the two ways the caster may pay an additional cost, as the card says them
    * (`CardFace.additionalCostChoice`); the caster is asked as the card is cast. Public, like `additionalCosts`. Absent when there is no such choice.
    */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /**
    * For a card in its owner's graveyard with a printed flashback (CR 702.34a): the flashback cost, as the card says it ("Flashback—Sacrifice three creatures": a sacrifice and no mana),
    * so a player or an agent can tell what the cast would give up. Public, like `oracleText`. Absent for any other card.
@@ -674,7 +674,7 @@ function castCostFields(
   castCost?: readonly string[];
   castCostLife?: number;
   additionalCosts?: readonly Cost[];
-  additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  additionalCostChoice?: readonly (readonly Cost[])[];
   alternativeCosts?: readonly AlternativeCostView[];
   flashbackCost?: readonly Cost[];
 } {

@@ -369,11 +369,34 @@ function cards(plural: boolean): Parser<IrFilter> {
     };
     return { ok: true, value: { zone: 'graveyard', controller: { noun: controller } }, pos: r.pos };
   };
+  // Guiltfeeder (CR 108.3, 404.1): "for each card in their graveyard": the cards the player of the instruction owns ("defending player loses 1 life for each card in their graveyard"); the
+  // lowering names that player, and refuses the words where the instruction has no one player.
+  const theirZone: Parser<{
+    zone: 'hand' | 'graveyard';
+    controller: { readonly noun: IrNoun };
+  }> = (ctx, pos) => {
+    const r = pattern(/ in their (hand|graveyard)(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const start = pos + ' in '.length;
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'their' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start, end: start + 'their'.length },
+      rule: 'noun.their-zone',
+    };
+    const zone = (r.value[1] ?? '').toLowerCase() === 'hand' ? 'hand' : 'graveyard';
+    return { ok: true, value: { zone, controller: { noun } }, pos: r.pos };
+  };
   const where = choice<{
     zone: 'hand' | 'graveyard' | 'library';
     controller?:
       | 'you'
       | 'opponent'
+      | 'chosenPlayer'
       | { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
   }>(
     map(literal(' in your hand'), () => ({ zone: 'hand' as const, controller: 'you' as const })),
@@ -387,6 +410,11 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'you' as const,
     })),
     map(literal(' in all graveyards'), () => ({ zone: 'graveyard' as const })),
+    // Sewer Nemesis (CR 607.2d, 108.3): "the number of cards in the chosen player's graveyard": the cards the player this permanent chose as it entered owns.
+    map(pattern(/ in the chosen player['’]s graveyard(?![\p{L}\p{N}])/iu), () => ({
+      zone: 'graveyard' as const,
+      controller: 'chosenPlayer' as const,
+    })),
     // Realm Seekers (CR 108.3, 402.1): "the total number of cards in all players' hands", the hands of every player, each card its owner's.
     map(pattern(/ in all players['’] hands/), () => ({ zone: 'hand' as const })),
     // "for each creature card in your opponents' graveyards": a singular card, the graveyards of all the opponents.
@@ -395,6 +423,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'opponent' as const,
     })),
     itsControllerGraveyard,
+    theirZone,
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersZone,
     inThatPlayersGraveyard,
@@ -435,14 +464,18 @@ function cards(plural: boolean): Parser<IrFilter> {
     if (!r.ok) return r;
     const [kinds, , , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
-    const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
+    const simpleController =
+      typeof place.controller === 'object' || place.controller === 'chosenPlayer'
+        ? undefined
+        : place.controller;
     const base = toFilter(place.zone, { ...NO_PARTS, controller: simpleController }, raw);
     const anyOf = kinds.map((t): IrFilter => ({ types: [t], raw: t }));
     return {
       ok: true,
       value: {
         ...base,
-        ...(place.controller === undefined || typeof place.controller !== 'object'
+        ...(place.controller === undefined ||
+        (typeof place.controller !== 'object' && place.controller !== 'chosenPlayer')
           ? {}
           : { controller: place.controller }),
         anyOf,
@@ -471,7 +504,10 @@ function cards(plural: boolean): Parser<IrFilter> {
     if (!r.ok) return r;
     const [colorWords, supertypeWords, { subtypes, types }, , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
-    const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
+    const simpleController =
+      typeof place.controller === 'object' || place.controller === 'chosenPlayer'
+        ? undefined
+        : place.controller;
     const base = toFilter(
       place.zone,
       {
@@ -487,7 +523,8 @@ function cards(plural: boolean): Parser<IrFilter> {
       ok: true,
       value: {
         ...base,
-        ...(place.controller === undefined || typeof place.controller !== 'object'
+        ...(place.controller === undefined ||
+        (typeof place.controller !== 'object' && place.controller !== 'chosenPlayer')
           ? {}
           : { controller: place.controller }),
         ...(subtypes.length > 0 ? { subtypes } : {}),

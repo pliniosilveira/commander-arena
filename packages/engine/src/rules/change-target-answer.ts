@@ -4,7 +4,7 @@
  */
 import type { ChosenTarget } from '../state/chosen';
 import type { GameState } from '../state/types';
-import { withChangedTarget } from './change-target';
+import { pickedChange, withChangedTarget } from './change-target';
 import { continueResolution, type ResolveOutcome } from './stack';
 import { targetAnswerError } from './target-choice';
 
@@ -26,7 +26,16 @@ export function answerChangedTarget(
   const subject = state.objects[head.object];
   const to = chosen[0];
   if (subject === undefined || to === undefined) return null;
-  const changed = withChangedTarget({ ...state, pending: null }, res.controller, subject, to);
+  const cleared = { ...state, pending: null };
+  let changed: ReturnType<typeof withChangedTarget>;
+  if (head.to === undefined) {
+    changed = withChangedTarget(cleared, res.controller, subject, to);
+  } else {
+    // "Change a target of ..." (CR 115.7b): the answer names the target to change, the source becomes the target.
+    const change = pickedChange(state, subject, head.to, to);
+    if (change === null) return { error: 'That target cannot be changed' };
+    changed = withChangedTarget(cleared, res.controller, subject, change.next, change.current);
+  }
   return continueResolution(
     { ...changed.state, resolution: { ...res, queue: res.queue.slice(1) } },
     changed.events,

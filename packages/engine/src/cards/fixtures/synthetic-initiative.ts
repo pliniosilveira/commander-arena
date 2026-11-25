@@ -66,4 +66,23 @@ export const SYNTHETIC_INITIATIVE_LIST: readonly CardDefinition[] = [
     oracleText: 'Each player ventures into Undercity.',
     spell: { effect: { kind: 'venture', player: { kind: 'eachPlayer' }, dungeon: 'undercity' } },
   }),
+  // Mind Flayarrrs deck (group 10): the plain initiative and venture sorceries of the web, AI and parser tests.
+  singleFace({
+    name: 'SYNTHETIC Initiative Claim',
+    manaCost: ['2', 'U'],
+    types: ['sorcery'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'You take the initiative.',
+    spell: { effect: { kind: 'takeInitiative', player: { kind: 'you' } } },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Undercity Dive',
+    manaCost: ['1', 'U'],
+    types: ['sorcery'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'Venture into Undercity.',
+    spell: { effect: { kind: 'venture', player: { kind: 'you' }, dungeon: 'undercity' } },
+  }),
 ];

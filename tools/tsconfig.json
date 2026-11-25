@@ -7,6 +7,6 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "../apps/web/src/build-globals.d.ts"],
   "exclude": ["node_modules", "**/node_modules", "ai/.baseline"]
 }

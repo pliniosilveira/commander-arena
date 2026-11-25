@@ -93,6 +93,18 @@
 .imp-section .scr-input {
   width: 100%;
 }
+.imp-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 600;
+}
+.imp-check input {
+  margin-top: 3px;
+}
+.imp-check .scr-help {
+  font-weight: 400;
+}
 .imp-textarea {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;

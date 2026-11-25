@@ -119,7 +119,15 @@ const ACTIVATED_CAST_EXILED_RIDER =
  * effect of the permanent its first sentence put onto the battlefield; read before the replacement test below, which "would ... instead" would take.
  */
 const LEAVE_EXILE_RIDER =
-  /\. if it would leave the battlefield, exile it instead of putting it anywhere else\./i;
+  /\. if (?:it|that creature) would leave the battlefield, exile it instead of putting it anywhere else\./i;
+
+/**
+ * "Put target creature card from a graveyard onto the battlefield under your control with a corpse counter on it. You take the initiative. If that creature would leave the
+ * battlefield, exile it instead of putting it anywhere else." (From the Catacombs, CR 614.1a): a spell whose first sentence puts a card onto the battlefield and whose last says a
+ * replacement effect of the permanent it put there, read before the replacement test below, which "would ... instead" would take.
+ */
+const SPELL_LEAVE_EXILE_RIDER =
+  /^put [^.:]+ onto the battlefield[^.:]*\. (?:[^.:]+\. )*if (?:it|that creature) would leave the battlefield, exile it instead of putting it anywhere else\.$/i;
 
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
@@ -801,6 +809,16 @@ const WHEN_CAST_IT_GAINS_ABILITIES =
   /^when you cast it this turn, ~ gains all activated abilities of that card until end of turn\.$/i;
 
 /**
+ * "Each Horror you control gains all activated abilities of target artifact an opponent controls until end of turn. You may spend blue mana as though it were mana of any color to
+ * activate those abilities." (Grell Philosopher, CR 609.4b, 602.2b): the second sentence says how the abilities the first gives are paid for, so the two are one instruction
+ * (`effect.gain-abilities-of-target`).
+ */
+const GAINS_ABILITIES_OF_TARGET =
+  /(?:^|, )each [^.,]* gains all activated abilities of target [^.,]* until end of turn\.$/i;
+const SPEND_BLUE_AS_ANY_COLOR =
+  /^you may spend blue mana as though it were mana of any color to activate those abilities\.$/i;
+
+/**
  * "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of its owner's library
  * instead." (Lorehold group 2, issue 86, CR 607.2a, 601.2, 118.9, 614.1a): "that card" is the target of the first sentence and "that spell" the one cast with the permission of the second, so
  * the three sentences (or the first two, with no rider) are one instruction (`effect.cast-exiled-with-self`).
@@ -947,6 +965,8 @@ const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
 /** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
 const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [^.]*\.$/i;
 const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
+/** "... It's still a land. It can't be blocked this turn." (Creeping Tar Pit, CR 509.1b): a third sentence, the restriction of the same land creature for the turn. */
+const IT_CANT_BE_BLOCKED_THIS_TURN = /^it can['’]t be blocked this turn\.$/i;
 /** "It becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land." (Silvanus's Invoker, issue 345): the land the sentence before named keeps its types. */
 const IT_BECOMES_LAND_CREATURE = /^it becomes an? \d+\/\d+ [^.]*\.$/i;
 /** "{2}{G}{W}: ~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land." (issue 145, Restless Prairie, CR 205.1b): the same, with the duration at the end. */
@@ -1311,6 +1331,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, BECOMES_LAND_CREATURE) &&
+      said(b, ITS_STILL_A_LAND) &&
+      said(c, IT_CANT_BE_BLOCKED_THIS_TURN)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
       said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
       said(c, CANT_CHOOSE_TAP_IT)
@@ -1386,6 +1415,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)) ||
+        (said(a, GAINS_ABILITIES_OF_TARGET) && said(b, SPEND_BLUE_AS_ANY_COLOR)) ||
         (said(a, GAINS_FLASHBACK) && said(b, FLASHBACK_COST_IS_MANA_COST)))
     ) {
       out.push({ start: a.start, end: b.end });
@@ -1902,6 +1932,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
   if (ACTIVATED_CAST_EXILED_RIDER.test(text)) {
     const colon = costColon(text);
     if (colon > 0) return activatedSkeleton(text, colon, base);
+  }
+
+  if (SPELL_LEAVE_EXILE_RIDER.test(text)) {
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 
   if (LEAVE_EXILE_RIDER.test(text)) {

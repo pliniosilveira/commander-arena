@@ -5,7 +5,7 @@
  */
 import { literal, type Parser, pattern, sequence } from '../../combinators';
 import type { IrAmount, IrNoun, IrStatic } from '../../ir/types';
-import { defineRule } from '../registry';
+import { defineRule, family } from '../registry';
 import { FOR_EACH, PERIOD, STEP } from './pt-count';
 
 const SUBJECT = pattern(/~ and enchanted creature each get /i);
@@ -96,4 +96,56 @@ export const STATIC_SELF_AND_ENCHANTED_PT_COUNT = defineRule<IrStatic>({
   },
 });
 
-export const BESTOW_PT_STATIC_RULES = [STATIC_SELF_AND_ENCHANTED_PT_COUNT];
+/**
+ * `static.self-and-enchanted-pt-amount`: "~ and enchanted creature each get +X/+X, where X is the number of creature cards in all graveyards." (CR 702.103 (Bestow), 613.4c,
+ * 107.3c): the same two permanents as the count rule, with an X the text defines (`amount.where-x`). Not read: a step that is not +X/+X (one stat is read by the engine, but a
+ * lone "+X/+0" on a bestow card is another statement), "gets", a missing period and a duration.
+ */
+export const STATIC_SELF_AND_ENCHANTED_PT_AMOUNT = defineRule<IrStatic>({
+  id: 'static.self-and-enchanted-pt-amount',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 702.103 (Bestow)',
+    'CR 613.4c (Interaction of Continuous Effects)',
+    'CR 107.3c (Numbers and Symbols)',
+  ],
+  examples: [
+    '~ and enchanted creature each get +X/+X, where X is the number of creature cards in all graveyards.',
+    '~ and enchanted creature each get +X/+X, where X is the number of creatures you control.',
+  ],
+  rejects: [
+    '~ and enchanted creature each get +X/+X, where X is the number of creature cards in all graveyards',
+    '~ and enchanted creature each get +X/+X where X is the number of creature cards in all graveyards.',
+    '~ and enchanted creature each gets +X/+X, where X is the number of creature cards in all graveyards.',
+    '~ and enchanted creature get +X/+X, where X is the number of creature cards in all graveyards.',
+    '~ and enchanted creature each get +X/+X.',
+    '~ and enchanted creature each get +1/+1, where X is the number of creature cards in all graveyards.',
+    '~ and enchanted creature each get +X/-X, where X is the number of creature cards in all graveyards.',
+    '~ and equipped creature each get +X/+X, where X is the number of creature cards in all graveyards.',
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(/~ and enchanted creature each get \+X\/\+X, (?=where X is )/i)(ctx, pos);
+    if (!head.ok) return head;
+    const amount = family<IrAmount>('amount', { only: ['amount.where-x'] })(ctx, head.pos);
+    if (!amount.ok) return amount;
+    const end = PERIOD(ctx, amount.pos);
+    if (!end.ok) return end;
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject: subjectNoun('static.self-and-enchanted-pt-amount', pos, head.pos),
+        effects: [{ kind: 'ptAmount', power: true, toughness: true, amount: amount.value }],
+        span: { start: pos, end: end.pos },
+        rule: 'static.self-and-enchanted-pt-amount',
+      },
+      pos: end.pos,
+    };
+  },
+});
+
+export const BESTOW_PT_STATIC_RULES = [
+  STATIC_SELF_AND_ENCHANTED_PT_COUNT,
+  STATIC_SELF_AND_ENCHANTED_PT_AMOUNT,
+];

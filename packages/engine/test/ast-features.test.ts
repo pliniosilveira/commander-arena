@@ -120,6 +120,7 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
+      'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',
       'counterPutOnThisThisTurn',
@@ -168,6 +169,7 @@ describe('the dimensions', () => {
       'yourTurn',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
+      'playedLandThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
@@ -213,6 +215,7 @@ describe('the dimensions', () => {
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
+      'thisSuspended',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
@@ -282,11 +285,14 @@ describe('the dimensions', () => {
       // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
       'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
+      'beginGameOnBattlefield',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
+      // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated."
+      'cantActivateChosenName',
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',

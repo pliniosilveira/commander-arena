@@ -810,6 +810,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'exileMore'
     | 'exert'
     | 'clash'
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield": `source` is the card in `seat`'s hand; accepting puts it onto the battlefield.
+    | 'openingHand'
     | 'searchPut';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
@@ -849,6 +851,12 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    */
   readonly otherCost?: readonly Cost[];
   /**
+   * For purpose `'costChoice'` with three ways ("sacrifice a creature, discard a card, or pay 4 life", D-181): `cost` is the first, `otherCost` the second and `moreCost` the third; declining the
+   * first asks again between the second and the third. `costWays` are the indexes of the ways in the face's `additionalCostChoice` that the question is about (two or three).
+   */
+  readonly moreCost?: readonly Cost[];
+  readonly costWays?: readonly number[];
+  /**
    * For purpose `'unlessPays'` when the question is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a) or
    * `'cumulativeUpkeep'` (CR 702.24a; `cost` is the whole payment, the cost of the keyword for each age counter
    * the source now has). Declining sacrifices the source. Absent for every other question.
@@ -887,6 +895,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    // CR 614.12a, 607.2d: "As this enters, choose a player": the options are `seat:<n>`. `cardName`: "choose a nonland card name": `options` are suggestions (names the game shows), any non-empty name is an answer.
+    | 'player'
+    | 'cardName'
     | 'option'
     | 'attackTarget'
     | 'assignOpponent'
