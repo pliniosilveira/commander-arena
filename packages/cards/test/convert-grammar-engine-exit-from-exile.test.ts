@@ -985,7 +985,7 @@ describe('"Exile the top three cards of your library. Until the end of your next
     'Exile the top three cards of your library. Until the end of your next turn, you may play those cards. If ~ was cast from a graveyard, you may play cards this way without paying their mana costs.\nFlashback {R}',
     { manaCost: '{R}', colors: ['R'] },
   );
-  const build = (zone: 'hand' | 'graveyard') =>
+  const build = () =>
     scenario()
       .define(ignite)
       .seat(0)
@@ -995,7 +995,7 @@ describe('"Exile the top three cards of your library. Until the end of your next
       .library(...FILLER)
       .at('precombatMain', { active: 0 });
   const game = (zone: 'hand' | 'graveyard') => {
-    const b = build(zone);
+    const b = build();
     const g = (
       zone === 'hand' ? b.seat(0).hand(ignite.name) : b.seat(0).graveyard(ignite.name)
     ).build();
