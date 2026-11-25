@@ -975,8 +975,14 @@ function walkAbility(
         ]);
         unlessSacrificeIssues(a.keyword.cost, `${path}.keyword.cost`, out);
       } else if (a.keyword.kind === 'kicker' || a.keyword.kind === 'multikicker') {
-        // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts). "Kicker {X}. X can't be 0.": the X is announced as the spell is kicked (CR 107.3a).
+        activationCostIssues(
+          a.keyword.cost,
+          `${path}.keyword.cost`,
+          out,
+          ['mana', 'payLife'],
+          a.keyword.kind === 'kicker' && a.keyword.xNotZero === true,
+        );
       } else if (a.keyword.kind === 'typecycling') {
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);

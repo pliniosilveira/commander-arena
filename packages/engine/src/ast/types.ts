@@ -6895,7 +6895,12 @@ export type Keyword =
    * card: two kicker costs (CR 702.33b) are not supported; Multikicker (CR 702.33c) is its own keyword. Only `mana` and `payLife` costs.
    * What a kicked spell does is written with the `kicked` condition.
    */
-  | { readonly kind: 'kicker'; readonly cost: readonly Cost[] }
+  /**
+   * An {X} in the mana kicker cost ("Kicker {X}. X can't be 0.", Thieving Skydiver, CR 702.33a, 107.3a, 601.2b): the X is announced when the spell is kicked (not at all when it is not, X is
+   * then 0), after the kicker question and before the targets, and the kicker costs that much generic mana (every {X} of the mana cost and of the kicker is the same X). It is the X the
+   * permanent remembers (`enteredX`, CR 107.3m). `xNotZero` ("X can't be 0"): a kicked spell announces an X of at least 1, so the kicker is offered only when it can be paid with X 1.
+   */
+  | { readonly kind: 'kicker'; readonly cost: readonly Cost[]; readonly xNotZero?: true }
   /**
    * CR 702.27a (Buyback): "Buyback [cost]" means "You may pay an additional [cost] as you cast this spell" and "If the buyback cost was paid, put this spell into its owner's hand
    * instead of into that player's graveyard as it resolves." An instant or a sorcery; the caster is asked while casting (CR 601.2b, after the kicker questions and before X and the

@@ -346,6 +346,9 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target spell with mana value 1',
     "target spell you don't control",
     "target creature spell you don't control",
+    // Smirking Spelljacker (CR 109.4, 405.1): "an opponent controls" says the same of a spell as "you don't control".
+    'target spell an opponent controls',
+    'target creature spell an opponent controls',
     'target creature spell with mana value 3 or less',
     // Frontline Medic (CR 107.3, 202.1): a spell whose mana cost has an {X}.
     'target spell with {X} in its mana cost',
@@ -366,6 +369,9 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'two target spells',
     'target nonland spell you control',
     "target spell you don't control with mana value 1",
+    'target spell an opponent control',
+    'target spell an opponents controls',
+    'target spell an opponent controls with mana value 1',
     'target',
   ],
   parse: node<IrFilter, IrNoun>(
@@ -374,7 +380,10 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
       const head0 = sequence(literal('target '), spellPhrase())(ctx, pos);
       if (!head0.ok) return head0;
       // "target spell you don't control" (CR 109.4, 405.1: the controller of a spell is the player who cast it).
-      const notMine = literal(" you don't control")(ctx, head0.pos);
+      const notMine = choice(literal(" you don't control"), literal(' an opponent controls'))(
+        ctx,
+        head0.pos,
+      );
       const head = notMine.ok
         ? {
             ...head0,

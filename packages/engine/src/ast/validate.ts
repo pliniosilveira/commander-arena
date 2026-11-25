@@ -241,7 +241,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       break;
     case 'kicker':
       // CR 702.33a: an additional cost, paid as the spell is cast.
-      checkKickerCost(k.cost, `${path}.cost`, out);
+      checkKickerCost(k.cost, `${path}.cost`, out, { xNotZero: k.xNotZero });
       break;
     case 'flashback':
       // CR 702.34a: an alternative cost, paid instead of the mana cost from the graveyard.
@@ -3307,7 +3307,14 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         JSON.stringify(a.targets ?? null).includes('"enteredX"') ||
         (a.trigger?.kind === 'entersBattlefield' &&
           JSON.stringify(a.effect ?? null).includes('"xAtLeast"'))) &&
-      !(face.manaCost ?? []).includes('X')
+      !(face.manaCost ?? []).includes('X') &&
+      // Thieving Skydiver (CR 702.33a, 107.3m): the X of the kicker cost is the X the permanent remembers too.
+      !face.abilities.some(
+        (k) =>
+          k?.kind === 'keyword' &&
+          k.keyword?.kind === 'kicker' &&
+          k.keyword.cost?.some((c) => c?.kind === 'mana' && c.symbols?.includes('X')),
+      )
     ) {
       issue(
         out,

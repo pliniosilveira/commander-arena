@@ -712,6 +712,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.attached-permanent',
             // Soul Snare (CR 508.1b, 506.3): "Exile target creature that's attacking you or a planeswalker you control."
             'noun.target-creature-attacking-you',
+            // Smirking Spelljacker (CR 405.1, 406.1, 115.1): "exile target spell an opponent controls", a spell on the stack.
+            'noun.target-spell',
           ],
           'effect.exile',
         ),

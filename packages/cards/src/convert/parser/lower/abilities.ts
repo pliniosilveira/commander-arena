@@ -268,10 +268,12 @@ function lowerCostedKeyword(
           ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
           : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
+  // "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): only the kicker keyword, and only with that sentence.
+  if (ability.xNotZero === true && name !== 'kicker') return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
     only,
-    name === 'cycling'
+    name === 'cycling' || (name === 'kicker' && ability.xNotZero === true)
       ? { x: true }
       : name === 'ward'
         ? { ward: true }
@@ -287,6 +289,7 @@ function lowerCostedKeyword(
     ...(name === 'escalate' && cost.value.kind === 'tapPermanents'
       ? (['ability:escalateTapCost'] as const)
       : []),
+    ...(ability.xNotZero === true ? (['ability:kickerX'] as const) : []),
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
@@ -329,6 +332,7 @@ function lowerCostedKeyword(
           ...(ability.legendaryOnly === true
             ? { restriction: { types: ['creature'], supertypes: ['legendary'] } }
             : {}),
+          ...(ability.xNotZero === true ? { xNotZero: true } : {}),
         } as Keyword,
       },
     ],

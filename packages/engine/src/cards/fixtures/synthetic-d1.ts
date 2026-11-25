@@ -120,6 +120,130 @@ export const SYNTHETIC_D1_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Kicker {X}. X can't be 0. Flying. When this creature enters, if it was kicked, gain control of target artifact with mana value X or less. If that artifact is an Equipment, attach it to this creature."
+  singleFace({
+    name: 'SYNTHETIC Kicked Magpie',
+    manaCost: ['1', 'U'],
+    types: ['creature'],
+    subtypes: ['Bird'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 2,
+    toughness: 1,
+    oracleText:
+      "Kicker {X}. X can't be 0. Flying. When this creature enters, if it was kicked, gain control of target artifact with mana value X or less. If that artifact is an Equipment, attach it to this creature.",
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: { kind: 'kicker', cost: [{ kind: 'mana', symbols: ['X'] }], xNotZero: true },
+      },
+      { kind: 'keyword', keyword: { kind: 'flying' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        interveningIf: { kind: 'kicked' },
+        targets: [
+          {
+            id: 't1',
+            what: {
+              kind: 'object',
+              filter: {
+                zone: 'battlefield',
+                types: ['artifact'],
+                manaValueAtMost: { kind: 'enteredX' },
+              },
+            },
+          },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'gainControl',
+              objects: { kind: 'target', id: 't1' },
+              duration: 'permanent',
+            },
+            {
+              kind: 'conditional',
+              condition: {
+                kind: 'objectMatches',
+                of: { kind: 'target', id: 't1' },
+                filter: { subtypes: ['Equipment'] },
+              },
+              effect: {
+                kind: 'attach',
+                object: { kind: 'target', id: 't1' },
+                to: { kind: 'this' },
+              },
+            },
+          ],
+        },
+      },
+    ],
+  }),
+  // "Flash. Flying. When this creature enters, exile target spell an opponent controls. Whenever this creature attacks, if a card is exiled with it, you may cast the exiled card without paying its mana cost."
+  singleFace({
+    name: 'SYNTHETIC Spell Hijacker',
+    manaCost: ['2', 'U'],
+    types: ['creature'],
+    subtypes: ['Djinn'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      'Flash\nFlying\nWhen this creature enters, exile target spell an opponent controls.\nWhenever this creature attacks, if a card is exiled with it, you may cast the exiled card without paying its mana cost.',
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'flash' } },
+      { kind: 'keyword', keyword: { kind: 'flying' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        targets: [
+          {
+            id: 't1',
+            what: {
+              kind: 'object',
+              filter: { zone: 'stack', controller: 'opponent', stackKind: 'spell' },
+            },
+          },
+        ],
+        effect: { kind: 'exile', objects: { kind: 'target', id: 't1' }, linked: true },
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        interveningIf: {
+          kind: 'amountIs',
+          amount: { kind: 'countOf', filter: { zone: 'exile', exiledWithSource: true } },
+          compare: { cmp: 'atLeast', value: 1 },
+        },
+        effect: { kind: 'castFree', objects: { kind: 'linkedExile' } },
+      },
+    ],
+  }),
+  // An Equipment of mana value 2: "Equip {1}".
+  singleFace({
+    name: 'SYNTHETIC Plain Blade',
+    manaCost: ['2'],
+    types: ['artifact'],
+    subtypes: ['Equipment'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'Equip {1}',
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] } },
+    ],
+  }),
+  // An artifact of mana value 4, out of reach of a small X.
+  singleFace({
+    name: 'SYNTHETIC Heavy Idol',
+    manaCost: ['4'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: '',
+  }),
   // "Reach"
   singleFace({
     name: 'SYNTHETIC Reach Spider',

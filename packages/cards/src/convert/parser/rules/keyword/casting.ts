@@ -16,6 +16,7 @@ import {
   map,
   optional,
   type Parser,
+  pattern,
   separatedBy1,
   sequence,
 } from '../../combinators';
@@ -194,7 +195,43 @@ export const KEYWORD_FLASHBACK = defineRule<readonly IrKeyword[]>({
   parse: keyword('keyword.flashback', 'flashback', costed('flashback')),
 });
 
+/**
+ * `keyword.kicker-x`: "Kicker {X}. X can't be 0." (Thieving Skydiver; CR 702.33a, 107.3a: the kicker cost is {X}, the X announced as the spell is cast, at least 1). The two sentences are one
+ * keyword line, the engine's `kicker` with an {X} cost and `xNotZero`. Not read: a kicker {X} that may be 0 (`keyword.kicker` does not read an {X}), another number, another cost with it.
+ */
+export const KEYWORD_KICKER_X = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.kicker-x',
+  family: 'keyword',
+  leading: ['kicker'],
+  cites: ['CR 702.33a (Kicker)', 'CR 107.3a (Numbers and Symbols)', 'CR 601.2b (Casting Spells)'],
+  examples: ["Kicker {X}. X can't be 0.", 'Kicker {X}. X can’t be 0.'],
+  rejects: [
+    'Kicker {X}',
+    "Kicker {X}. X can't be 0",
+    "Kicker {X}. X can't be 1.",
+    "Kicker {1}{X}. X can't be 0.",
+    "Kicker {X}. X can't be 0. Flying",
+    "Multikicker {X}. X can't be 0.",
+    "Kicker {X} and/or {B}. X can't be 0.",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/kicker \{X\}\. X can['’]t be 0\.(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const rule = 'keyword.kicker-x';
+    const cost: IrCost = { kind: 'mana', symbols: ['X'], span, rule };
+    return {
+      ok: true,
+      value: [
+        { kind: 'keyword', name: 'kicker', params: [], cost: [cost], xNotZero: true, span, rule },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 export const CASTING_KEYWORD_RULES = [
+  KEYWORD_KICKER_X,
   KEYWORD_KICKER,
   KEYWORD_KICKER_AND_OR,
   KEYWORD_MULTIKICKER,

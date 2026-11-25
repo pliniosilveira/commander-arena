@@ -60,6 +60,7 @@ import {
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
+  kickerXNotZero,
   manaSymbolsOf,
   multikickerCostOf,
   namedAlternativeCostOf,
@@ -559,8 +560,11 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
     modeSet: stack.chosenModes,
   } as const;
   const kickerCost = kickerCostOf(faceOf(before, spell));
+  // CR 702.33a, 107.3a ("Kicker {X}. X can't be 0."): the kicker is offered only when it can be paid with X at 1, the least a kicked spell announces.
+  const kickedX = kickerXNotZero(faceOf(before, spell)) ? ({ x: 1 } as const) : {};
   let asksKicker =
-    kickerCost !== null && canPayRequest(before, seat, spell, { ...request, kicked: true });
+    kickerCost !== null &&
+    canPayRequest(before, seat, spell, { ...request, kicked: true, ...kickedX });
   // CR 702.33g, 601.2c (D-181): a spell with targets that depend on the kicker is cast the way it has what it needs: the kicked way needs its
   // targets and its total cost, the unkicked way its own targets. With both possible the caster is asked; with one the cast goes that way.
   if (kickerCost !== null && hasKickedTargets(faceOf(before, spell))) {
@@ -983,7 +987,12 @@ function toX(state: GameState, events: GameEvent[]): Result {
     (spec) =>
       spec.what.kind === 'object' && JSON.stringify(spec.what.filter).includes('"manaValueX"'),
   );
-  const least = Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max);
+  // CR 702.33a, 107.3a: "Kicker {X}. X can't be 0." a kicked spell announces at least 1.
+  const leastKicked =
+    stack.kicked === true && kickerXNotZero(faceOf(state, spell))
+      ? Math.max(1, leastAllowedX(state, casting.seat, spell, true) ?? 1)
+      : (leastAllowedX(state, casting.seat, spell, true) ?? 0);
+  const least = Math.min(leastKicked, max);
   const targetable = (x: number): boolean => {
     const aimed = patchObject(state, casting.object, { stack: { ...stack, x } });
     return specs.every((spec) =>
