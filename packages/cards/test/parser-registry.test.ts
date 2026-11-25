@@ -1212,6 +1212,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
   ),
   'trigger.opponent-attacks-you': whenever,
+  'trigger.you-attack-initiative-holder': whenever,
+  'trigger.you-complete-dungeon': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),

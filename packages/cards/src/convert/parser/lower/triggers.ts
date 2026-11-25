@@ -555,6 +555,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:ringTempted']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'ringTempted' });
     }
+    case 'dungeonCompleted': {
+      // "Whenever you complete a dungeon" (CR 309.7, 701.49c): the controller of the ability is the player whose dungeon was completed.
+      const blocked = missingFeatures(['trigger:dungeonCompleted']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'dungeonCompleted' });
+    }
     case 'ringBearerChosen': {
       // CR 701.54a: unlike `ringTempted`, this trigger needs a creature to have been chosen.
       const blocked = missingFeatures(['trigger:ringTempted']);
@@ -745,6 +750,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
+        ...(t.attackedInitiativeHolder === true ? { attackedInitiativeHolder: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
         ...(t.eachAttackedOpponent === true ? { eachAttackedOpponent: true as const } : {}),
         ...(t.includesSource === true ? { includesSource: true as const } : {}),

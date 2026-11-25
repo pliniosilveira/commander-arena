@@ -1804,6 +1804,8 @@ export interface IrTrigger extends IrNode {
   readonly attackedEnchantedPlayer?: true;
   /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
   readonly attackedYou?: true;
+  /** 'attackBatch' "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b): the player who has the initiative was declared as attacked as a player. */
+  readonly attackedInitiativeHolder?: true;
   /** 'exerted' "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant, CR 701.43b): the exert is offered only to a creature not yet exerted this turn. */
   readonly unlessExertedThisTurn?: true;
   /** 'attackBatch' "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1): the permanent with the ability is one of the attackers counted. */
