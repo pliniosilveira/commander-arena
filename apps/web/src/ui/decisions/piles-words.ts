@@ -8,8 +8,14 @@ import type { ChooseOptionDecision, ObjectId } from '@commander-arena/engine';
 type Piles = NonNullable<ChooseOptionDecision['piles']>;
 
 /** "your hand", "their graveyard". */
-function place(piles: Pick<Piles, 'receiver'>, seat: number, where: 'hand' | 'graveyard'): string {
-  return `${piles.receiver === seat ? 'your' : 'their'} ${where}`;
+function place(
+  piles: Pick<Piles, 'receiver'>,
+  seat: number,
+  where: 'hand' | 'graveyard' | 'libraryBottom',
+): string {
+  const whose = piles.receiver === seat ? 'your' : 'their';
+  // CR 401.4 (Jace, Architect of Thought): the pile goes to the bottom of the library in the order the player chooses.
+  return where === 'libraryBottom' ? `the bottom of ${whose} library` : `${whose} ${where}`;
 }
 
 /** "Pick a pile to put into your hand", "Pick a pile to put into their graveyard". */
