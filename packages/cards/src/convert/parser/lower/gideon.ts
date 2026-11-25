@@ -15,8 +15,14 @@ export const REQUIRE_ATTACK_SOURCE: Lowering<IrClause, Effects> = {
   needs: ['effect:requireAttackSource'],
   lower(clause, ctx) {
     const named = arg(clause, 'player');
-    // Only the ability of a permanent has a permanent to attack ("~"), and the player is one chosen as the ability goes on the stack.
-    if (named?.kind !== 'noun' || named.det !== 'target' || ctx.owner !== 'ability') {
+    // "attacks if able" (Rowan Kenrith) has no permanent to attack. Otherwise only the ability of a permanent has one ("~").
+    const anything = arg(clause, 'anything')?.kind === 'flag';
+    // The player is one chosen as the ability goes on the stack.
+    if (
+      named?.kind !== 'noun' ||
+      named.det !== 'target' ||
+      (!anything && ctx.owner !== 'ability')
+    ) {
       return failure(clause);
     }
     const player = playerSelectorOf(named, ctx);
@@ -25,6 +31,7 @@ export const REQUIRE_ATTACK_SOURCE: Lowering<IrClause, Effects> = {
       kind: 'requireAttackSource',
       player: player.value,
       duration: 'untilEndOfTheirNextTurn',
+      ...(anything ? { anything: true as const } : {}),
     };
     return { ok: true, value: [effect], rule: clause.rule };
   },

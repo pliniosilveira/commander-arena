@@ -155,11 +155,32 @@ export function keywordsAfterLayer6(state: GameState, obj: GameObject): readonly
   return hit;
 }
 
+const powerBeforeGoad = new WeakMap<GameState, WeakMap<GameObject, number | null>>();
+
+/**
+ * The power of `obj` after layer 7 without the goad of a group that compares power with its source (CR 701.15a, 613.4): what such a source reads of itself and of other
+ * sources, so that two of them cannot depend on each other. Kept for the pair (state, object) like `derive`.
+ */
+export function powerBeforeGoadOf(state: GameState, obj: GameObject): number | null {
+  let perState = powerBeforeGoad.get(state);
+  if (perState === undefined) {
+    perState = new WeakMap();
+    powerBeforeGoad.set(state, perState);
+  }
+  let hit = perState.get(obj);
+  if (hit === undefined) {
+    hit = deriveFresh(state, obj, false, true, true).power;
+    perState.set(obj, hit);
+  }
+  return hit;
+}
+
 function deriveFresh(
   state: GameState,
   obj: GameObject,
   layer6Only = false,
   secondPass = true,
+  skipPowerGoad = false,
 ): Derived {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) {
     // Abilities on the stack are not cards; they carry no characteristics here. A copy of a spell is a spell
@@ -181,6 +202,7 @@ function deriveFresh(
       },
       layer6Only,
       secondPass,
+      skipPowerGoad,
     );
   }
   // Layer 1 (CR 613.2a): the copiable values, which a copy effect replaces (rules/copiable.ts).
@@ -202,6 +224,7 @@ function deriveFresh(
     },
     layer6Only,
     secondPass,
+    skipPowerGoad,
   );
 }
 
@@ -244,6 +267,7 @@ function finish(
   base: DerivedBase,
   layer6Only = false,
   secondPass = true,
+  skipPowerGoad = false,
 ): Derived {
   // CR 701.54c (D-196): "Your Ring-bearer is legendary", an ability of the Ring (an emblem): a supertype added in layer 4, which no
   // creature's loss of abilities removes.
@@ -311,6 +335,8 @@ function finish(
     // D-149: what a count of layer 7c reads of the other objects it counts (`keywordsAfterLayer6`).
     keywordsOf: (other) => keywordsAfterLayer6(state, other),
     layer6Only,
+    skipPowerGoad,
+    powerBeforeGoadOf: (other) => powerBeforeGoadOf(state, other),
     ptWith,
   };
   const fx = staticEffectsOn(state, obj, staticBase);

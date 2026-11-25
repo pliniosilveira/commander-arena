@@ -88,7 +88,7 @@ function isSubtypeList(n: IrNoun): boolean {
   );
 }
 
-const targetCreatures = refuseAt(
+export const targetCreatures = refuseAt(
   family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.target-creature-token'] }),
   (n) =>
     isSubtypeList(n) ||

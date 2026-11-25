@@ -3,6 +3,7 @@
  * any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead". Read from the AST of the ability on the stack
  * (`StackAbility.effect`), never from a card's name or Oracle text. Pure functions, tested in `test/cast-card-text.test.ts`.
  */
+
 import type {
   Effect,
   GameEvent,
@@ -11,6 +12,7 @@ import type {
   SeatId,
   StackAbility,
 } from '@commander-arena/engine';
+import { seatNameOf } from './seat-name';
 
 export type CastCardEffect = Extract<Effect, { kind: 'castCard' }>;
 
@@ -66,7 +68,8 @@ export function castCardOfAbility(ability: StackAbility | undefined): CastCardEf
   return ability === undefined ? null : castCardOf(ability.effect);
 }
 
-const who = (seat: SeatId, viewer: SeatId): string => (seat === viewer ? 'You' : 'Opponent');
+const who = (seat: SeatId, viewer: SeatId, seatCount = 2): string =>
+  seatNameOf(seat, viewer, seatCount);
 
 /** The log line for the answer to the question of `castCard`; null for any other answer. The card is in a public graveyard. */
 export function castCardAnswerLine(
@@ -87,7 +90,7 @@ export function castCardAnswerLine(
   const name =
     (card === undefined ? undefined : before.definitions[card.definition]?.name) ?? 'a card';
   const you = event.seat === viewer;
-  const subject = who(event.seat, viewer);
+  const subject = who(event.seat, viewer, before.seats?.length ?? 2);
   return {
     text: event.accepted
       ? `${subject} choose${you ? '' : 's'} to cast ${name} from a graveyard.`

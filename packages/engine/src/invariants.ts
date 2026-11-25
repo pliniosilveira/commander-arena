@@ -412,6 +412,13 @@ export function checkInvariants(state: GameState): string[] {
       ) {
         problems.push(`${id} chose planeswalker type ${planeswalkerType}, which it cannot have`);
       }
+      // CR 614.12a: a chosen player is a seat of the game, and only a card that asks to choose a player has one.
+      if (
+        player !== undefined &&
+        (!state.seats.some((s) => s.id === player) || !kinds.has('player'))
+      ) {
+        problems.push(`${id} chose player ${player}, which it cannot have`);
+      }
       // CR 119.4: the life paid as it entered is a whole number, and only a card that asks to pay life has one.
       if (
         lifePaid !== undefined &&

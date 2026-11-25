@@ -62,6 +62,7 @@ import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { LIMIT_BREAK_G4_TRIGGER_RULES } from './limit-break-g4';
+import { LOOT_DISPUTE_TRIGGER_RULES } from './loot-dispute';
 import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { MILL_TRIGGER_RULES } from './mill';
 import { MIND_FLAYARRRS_G8_TRIGGER_RULES } from './mind-flayarrrs-g8';
@@ -1548,6 +1549,7 @@ export const TRIGGER_RULES = [
   // Mirkwood Trapper: "a player attacks you" and "a player attacks".
   ...PLAYER_ATTACKS_TRIGGER_RULES,
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
+  ...LOOT_DISPUTE_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,

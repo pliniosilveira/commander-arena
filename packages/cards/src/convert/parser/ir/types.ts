@@ -145,6 +145,7 @@ export interface IrNoun extends IrNode {
     | 'players' // "you and target opponent each": several player nouns acting at once (`members`)
     | 'defendingPlayer' // "defending player" (CR 508.5) body
     | 'playerToRight' // "the player to your right" (Hithlain Rope)
+    | 'enteredChosenPlayer' // "the chosen player" of "As ~ enters, choose a player" (Stuffy Doll)
     | 'sacrificed' // "the sacrificed creature": what the cost of the ability sacrificed (stage P29, D-133)
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
@@ -361,6 +362,8 @@ export interface IrFilter {
   readonly modified?: true;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds (the engine's `goaded`). */
   readonly goaded?: true;
+  /** "with the same name as ~" (Mocking Doppelganger, CR 201.2): the creature has the name of the permanent with the static ability (the engine's `sameNameAsSource`), read in the subject of a static ability only. */
+  readonly sameNameAsSource?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
@@ -459,6 +462,8 @@ export interface IrFilter {
   readonly firstXSpellThisTurn?: true;
   /** "the second spell you cast each turn" (Alisaie Leveilleur, CR 601.2i): the spell is the nth (2 or more) its caster cast this turn (the engine's `nthSpellThisTurn`). */
   readonly nthSpellThisTurn?: number;
+  /** "the first artifact spell you cast each turn" (Artifact Class, CR 601.2i): the spell is the first of its caster's this turn that has one of `types` (the engine's `firstOfTypeThisTurn`). */
+  readonly firstOfTypeThisTurn?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
   /** "that was dealt damage this turn" (Bitter Downfall, CR 120.3): the permanent has been dealt damage this turn (the engine's `dealtDamageThisTurn`). */
@@ -1052,9 +1057,13 @@ export interface IrCondition extends IrNode {
     // Stage P33 (D-150): "none of those creatures attacked you" is `not` of this (CR 508.1b): at least one creature of the attackers that
     // triggered the ability was declared as attacking its controller as a player
     | { readonly kind: 'attackersAttackedYou' }
+    // Firkraag (CR 508.1d, 701.15b): "that creature had to attack this combat", the intervening "if" of a trigger about a creature
+    | { readonly kind: 'subjectHadToAttack' }
     // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control": at least that many of the attackers that triggered the ability were
     // declared attacking its controller or a planeswalker its controller controlled
     | { readonly kind: 'attackersAtYou'; readonly atLeast: number }
+    /** "you're the defending player" (Kazuul, CR 508.5): the intervening "if" of an `attacks` trigger, which the lowering folds into the event (`at: 'defendingYou'`). */
+    | { readonly kind: 'youAreDefendingPlayer' }
     /** "that opponent has more life than another of your opponents" (D-653, CR 603.4): the player a `playerAttacksOpponent` trigger is about. */
     | { readonly kind: 'attackedHasMoreLife' }
     // Stage P33 (D-150): "you control three or more lands with the same name": some name is shared by at least that many of the permanents
@@ -1763,9 +1772,9 @@ export interface IrTrigger extends IrNode {
   readonly recipient?: IrNoun;
   /**
    * 'attacks' at someone (stage P29, D-133, CR 508.1b): "attacks you" (`you`) or "attacks you or a planeswalker you control"
-   * (`youOrPlaneswalkers`); left out, an attack at anyone.
+   * (`youOrPlaneswalkers`); left out, an attack at anyone. `defendingYou`: "..., if you're the defending player" (CR 508.5). `yourOpponents`: "attacks one of your opponents" (CR 508.5).
    */
-  readonly at?: 'you' | 'youOrPlaneswalkers' | 'opponent';
+  readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'opponent';
   /** 'dealtDamage': "is dealt combat damage" rather than "is dealt damage" (stage P29, D-133). */
   readonly combat?: true;
   /** 'enters': "enters untapped" (`false`) or "enters tapped" (`true`), how the permanent entered (stage P30, CR 603.6a). */
@@ -1805,6 +1814,8 @@ export interface IrTrigger extends IrNode {
   readonly attackedEnchantedPlayer?: true;
   /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
   readonly attackedYou?: true;
+  /** 'attackBatch' "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b): the player who has the initiative was declared as attacked as a player. */
+  readonly attackedInitiativeHolder?: true;
   /** 'exerted' "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant, CR 701.43b): the exert is offered only to a creature not yet exerted this turn. */
   readonly unlessExertedThisTurn?: true;
   /** 'attackBatch' "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1): the permanent with the ability is one of the attackers counted. */
@@ -1851,6 +1862,8 @@ export interface IrTrigger extends IrNode {
   readonly each?: true;
   /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */
   readonly eachAttackedPlayer?: true;
+  /** 'attackBatch' "Whenever one or more Dragons you control attack an opponent" (Firkraag, CR 508.1b, 508.6): once for each opponent attacked, "that player" being that opponent. */
+  readonly eachAttackedOpponent?: true;
 }
 
 export interface IrRestriction extends IrNode {

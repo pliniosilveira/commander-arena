@@ -204,6 +204,62 @@ export const TOKEN_COPY_EXCEPT_ADDITIVE = defineRule<IrToken>({
 });
 
 /**
+ * `token.copies-except-additive`: "two tokens that are copies of target noncreature permanent, except they're 3/3 Dragon creatures in addition to their other types, and they have flying"
+ * (Astral Dragon; CR 707.9b: the final set of values of each characteristic is part of the copiable values of the copies; CR 111.4: the tokens). The plural of
+ * `token.copy-except-additive`: the same engine reading (`createToken` of a `copyOf` with `setPt`, `addSubtypes`, `addTypes` and `abilities`), for two or more tokens, the keywords after
+ * the types as their own clause. Not read: one token, no keywords, keywords before the types, another number word than a count of two or more.
+ */
+export const TOKEN_COPIES_EXCEPT_ADDITIVE = defineRule<IrToken>({
+  id: 'token.copies-except-additive',
+  family: 'token',
+  leading: [],
+  cites: ['CR 707.9b (Copying Objects)', 'CR 707.9d (Copying Objects)', 'CR 111.4 (Tokens)'],
+  examples: [
+    'two tokens that are copies of target permanent, except they’re 3/3 Dragon creatures in addition to their other types, and they have flying',
+    'two tokens that are copies of ~, except they’re 2/2 Elf Wizard creatures in addition to their other types, and they have flying and haste',
+  ],
+  rejects: [
+    'a token that are copies of target permanent, except they’re 3/3 Dragon creatures in addition to their other types, and they have flying',
+    'two tokens that are copies of target permanent, except they’re 3/3 Dragon creatures in addition to their other types',
+    'two tokens that are copies of target permanent, except they’re 3/3 Dragon creatures, and they have flying',
+    'two tokens that are copies of target permanent, except they’re 3/3 Dragon creatures in addition to their other types, and they have flash',
+    'two tokens that are copies of target permanent, except they’re 3/3 dragon creatures in addition to their other types, and they have flying',
+    'two tokens that are copies of those cards, except they’re 3/3 Dragon creatures in addition to their other types, and they have flying',
+    'two tokens that are copies of target permanent, except they’re 3/3 Dragon creatures in addition to their other types, and they have flying and',
+  ],
+  parse: node<Bare, IrToken>(
+    'token.copies-except-additive',
+    map(
+      sequence(
+        map(
+          spanned(satisfy(quantity, (n) => n >= 2)),
+          ({ value, span }): IrAmount => ({ kind: 'number', value, span }),
+        ),
+        pattern(/ tokens that are copies of /i),
+        COPY_SOURCE,
+        pattern(/, except they['’]re (\d+)\/(\d+) /i),
+        SUBTYPES,
+        literal(' creatures in addition to their other types, and they have '),
+        keywordWordsOf(KEYWORD_WORD),
+      ),
+      ([count, , copyOf, pt, subtypes, , keywords]): Bare => ({
+        kind: 'token',
+        copyOf,
+        count,
+        copyExceptAdditive: {
+          power: Number(pt[1]),
+          toughness: Number(pt[2]),
+          subtypes,
+          cardTypes: ['creature'],
+          keywords,
+        },
+      }),
+    ),
+    (b) => b,
+  ),
+});
+
+/**
  * `token.copies-half-pt`: "two tokens that are copies of that creature, except their power is half that creature's power and their toughness is half that creature's toughness. Round up each
  * time" (Saw in Half; CR 707.9b: an exception of a copy; CR 107.1a: rounded up; CR 608.2h: the numbers the creature had as it last was). The tokens copy the creature an earlier instruction of
  * the text named ("that creature", resolved by the binding pass). The engine's `copyOf` with `halfPt`. Not read: one token, another creature than "that creature", only the power or only

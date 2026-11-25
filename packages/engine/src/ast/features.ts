@@ -194,6 +194,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copyEntersAddsTypes',
     // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
     'copyEntersFromGraveyard',
+    // "..., except it has \"Other creatures with the same name as this creature are goaded.\"" (`entersAsCopy.addStatics`, CR 707.9b).
+    'copyEntersAddsStatics',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
     // "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (`lookAtTop` with `take.any`, CR 701.20, 202.3).
@@ -338,6 +340,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'doubleCounters',
     'modifyPt',
     'setPt',
+    // CR 613.4d: "Switch this creature's power and toughness until end of turn" (`switchPt`).
+    'switchPt',
     'loseAllAbilities',
     // D-649: "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a).
     'loseHexproofShroud',
@@ -382,11 +386,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
     'exchangeControl',
+    // "You and that opponent each gain control of all creatures the other controls until end of turn" (CR 701.12a, 613.1b).
+    'exchangeControlOfAll',
     // D-628: "each player gains control of all creatures they own" (CR 613.1b).
     'returnControlToOwners',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    'eachPlayerRollsBarHighest',
     // CR 705.2: "flip a coin" (`coinFlip`, one for each call under a `chooseOne`) and "whenever you win a coin flip" (`winsCoinFlip`).
     'coinFlip',
     // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
@@ -589,6 +596,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'nextSpellModifier',
     // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b).
     'nextSpellPayLife',
+    // "Until your next turn, instant, sorcery, and planeswalker spells that player casts cost {2} less to cast" (CR 601.2f, 611.2a).
+    'playerSpellsCostLess',
     // Yuna, Grand Summoner: "that creature enters with two additional +1/+1 counters on it" (CR 614.1c, 122.6), the body of a delayed cast trigger.
     'spellEntersWithCounters',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
@@ -684,6 +693,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exerted',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
+    // CR 309.7, 701.49c: "Whenever you complete a dungeon".
+    'dungeonCompleted',
     // D-598: "When this Class becomes level N" (CR 716.2).
     'classLevel',
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
@@ -1149,6 +1160,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'firstXSpellThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
+    // Draconic Dissent (Artifact Class): "the first artifact spell you cast each turn" (`ObjectFilter.firstOfTypeThisTurn`).
+    'firstOfTypeThisTurn',
     // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (`ObjectFilter.controllerDealtCombatDamageByAtLeast`).
     'controllerDealtCombatDamageByAtLeast',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
@@ -1228,6 +1241,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 615.5, 122.6: "prevent that damage and put that many +1/+1 counters on it" (`preventDamage.countersPrevented`).
     'countersPerPrevented',
     'moved',
+    // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
+    'putCountersOn',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
@@ -1246,6 +1261,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerToYourRight',
     // The Black Gate: `PlayerSelector` `chosenPlayer`, "that player" after "Choose a player ...".
     'chosenPlayer',
+    // Stuffy Doll: `PlayerSelector` `enteredChosenPlayer`, "the chosen player" of "As this enters, choose a player".
+    'enteredChosenPlayer',
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
@@ -1292,6 +1309,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerAtLeastChosenNumber',
     // CR 201.2 (Echoing Return): `ObjectFilter.sameNameAs`.
     'sameNameAs',
+    // CR 201.2 (Mocking Doppelganger): `ObjectFilter.sameNameAsSource`, in the subject of a static ability.
+    'sameNameAsSource',
     // CR 608.2c (Legions to Ashes): `each.plus`, the target besides the tokens with its name.
     'eachPlus',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
@@ -1405,6 +1424,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectControllerHasMore',
     // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
     'subjectControlledByYou',
+    // Firkraag: "if that creature had to attack this combat".
+    'subjectHadToAttack',
     // Endless Evil: "if that creature was a Horror".
     'subjectMatches',
     'subjectStat',
@@ -1850,6 +1871,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedAsCostPower',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // CR 701.37c (Death Kiss): "goad up to X target creatures" when the permanent becomes monstrous: the X of its monstrosity.
+    'monstrousX',
     // CR 119.4, 614.12: "where X is the life paid as this artifact entered".
     'lifePaidAsEntered',
     // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
@@ -2142,6 +2165,8 @@ export const ABILITY_FEATURES = [
   'copyEntersAddsTypes',
   /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
   'copyEntersFromGraveyard',
+  /** "..., except it has \"<static ability>\"" (CR 707.9b): the engine's `entersAsCopy.addStatics`. */
+  'copyEntersAddsStatics',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
   /** "You may put any number of permanent cards with mana value X or less from among them onto the battlefield" (CR 701.20, 202.3): the engine's `lookAtTop` with `take.any`. */
@@ -2292,6 +2317,8 @@ export const SELECTOR_KINDS = [
   'anyOf',
   /** "It" for what an earlier instruction of the same resolution moved (CR 400.7j): the engine's `moved`. */
   'moved',
+  /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
+  'putCountersOn',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
   'colorChoice',
   /**
@@ -2408,6 +2435,8 @@ export const SELECTOR_KINDS = [
   'firstXSpellThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
   'nthSpellThisTurn',
+  /** "The first artifact spell you cast each turn" (CR 601.2i, Artifact Class): the engine's `ObjectFilter.firstOfTypeThisTurn`. */
+  'firstOfTypeThisTurn',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -2428,6 +2457,8 @@ export const SELECTOR_KINDS = [
   'playerToYourRight',
   /** "That player" after "Choose a player with the most life" (The Black Gate): the engine's `PlayerSelector` `chosenPlayer`. */
   'chosenPlayer',
+  /** "The chosen player" of "As this creature enters, choose a player" (Stuffy Doll, CR 614.12a, 607.2d): the engine's `PlayerSelector` `enteredChosenPlayer`. */
+  'enteredChosenPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
@@ -2482,6 +2513,8 @@ export const SELECTOR_KINDS = [
   'powerAtLeastChosenNumber',
   /** "All other cards with the same name as that card" (CR 201.2, 608.2c): the engine's `ObjectFilter.sameNameAs`. */
   'sameNameAs',
+  /** "Other creatures with the same name as this creature" (CR 201.2): the engine's `ObjectFilter.sameNameAsSource`, in the subject of a static ability. */
+  'sameNameAsSource',
   /** "Target permanent and all tokens ... with the same name as that permanent" (CR 608.2c): the engine's `each.plus`. */
   'eachPlus',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
@@ -2613,6 +2646,8 @@ export const CONDITION_KINDS = [
   'subjectControllerHasMore',
   /** "Draw a card if you control that creature" (CR 603.10a, 608.2h): the engine's `subjectControlledByYou`. */
   'subjectControlledByYou',
+  /** "If that creature had to attack this combat" (CR 508.1d, 701.15b, Firkraag): the engine's `subjectHadToAttack`. */
+  'subjectHadToAttack',
   /** "If that creature was a Horror" (CR 603.4, 603.10a, 113.7a): the engine's `subjectMatches`. */
   'subjectMatches',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
@@ -3132,6 +3167,8 @@ export const AMOUNT_KINDS = [
   'tappedAsCostPower',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "When this creature becomes monstrous, goad up to X target creatures" (CR 701.37c, Death Kiss): the engine's `monstrousX`, the X of the monstrosity that made the permanent monstrous. */
+  'monstrousX',
   /** "Where X is the life paid as this artifact entered" (CR 119.4, 614.12): the engine's `lifePaidAsEntered`, the amount a permanent paid for "pay any amount of life". */
   'lifePaidAsEntered',
   /** "For each Aura you controlled that was attached to it" (D-654, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
@@ -3270,6 +3307,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   copyEntersWithX: true,
   copyEntersAddsTypes: true,
   copyEntersFromGraveyard: true,
+  copyEntersAddsStatics: true,
   lookTakeAll: true,
   lookTakeAny: true,
   movedSharesTypeWithSpell: true,
@@ -3373,6 +3411,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   doubleCounters: true,
   modifyPt: true,
   setPt: true,
+  switchPt: true,
   loseAllAbilities: true,
   loseHexproofShroud: true,
   setTypes: true,
@@ -3391,9 +3430,11 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   doubleTokens: true,
   gainControl: true,
   exchangeControl: true,
+  exchangeControlOfAll: true,
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  eachPlayerRollsBarHighest: true,
   coinFlip: true,
   clash: true,
   scry: true,
@@ -3509,6 +3550,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCastEachType: true,
   nextSpellModifier: true,
   nextSpellPayLife: true,
+  playerSpellsCostLess: true,
   spellEntersWithCounters: true,
   revealTop: true,
   revealTopDuel: true,
@@ -3567,6 +3609,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   cycled: true,
   exerted: true,
   ringTempted: true,
+  dungeonCompleted: true,
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,

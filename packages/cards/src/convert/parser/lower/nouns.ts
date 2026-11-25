@@ -57,6 +57,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   defendingPlayer: 'selector:defendingPlayer',
   // "the player to your right" (Hithlain Rope).
   playerToRight: 'selector:playerToYourRight',
+  // "the chosen player" of "As ~ enters, choose a player" (Stuffy Doll).
+  enteredChosenPlayer: 'selector:enteredChosenPlayer',
   // Stage P33 (D-150): "this card".
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
@@ -138,6 +140,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:modified',
   // CR 701.15b: "a goaded creature".
   'selector:goaded',
+  // CR 201.2 (Mocking Doppelganger): "with the same name as ~", in the subject of a static ability.
+  'selector:sameNameAsSource',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
@@ -377,6 +381,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:firstXSpellThisTurn');
   }
+  // Artifact Class: "the first artifact spell you cast each turn" (CR 601.2i), a spell on the stack.
+  if (filter.firstOfTypeThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstOfTypeThisTurn');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
@@ -422,6 +431,11 @@ function lowerFilterAt(
   if (filter.goaded === true) {
     if (inner) return bad([]);
     parts.push('selector:goaded');
+  }
+  // CR 201.2: "with the same name as ~" is read where the subject of a static ability is matched (`subjectAffects`); never a member of a choice.
+  if (filter.sameNameAsSource === true) {
+    if (inner) return bad([]);
+    parts.push('selector:sameNameAsSource');
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
@@ -653,6 +667,7 @@ function lowerFilterAt(
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
+    ...(filter.firstOfTypeThisTurn === true ? { firstOfTypeThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.dealtDamageThisTurn === true ? { dealtDamageThisTurn: true as const } : {}),
     ...(filter.controllerDealtCombatDamageBy === undefined
@@ -669,6 +684,7 @@ function lowerFilterAt(
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
+    ...(filter.sameNameAsSource === true ? { sameNameAsSource: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
     ...(filter.powerAtLeastChosenNumber === true
@@ -811,6 +827,17 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.entersX &&
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
+  // CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures your opponents control"): in the becomes monstrous trigger of the permanent itself, up to
+  // as many targets as the X of its monstrosity.
+  const upToMonstrousX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    ctx.monstrousX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody &&
+    ctx.xIs === null &&
+    noun.rule !== 'noun.up-to-x-target-graveyard-cards';
   // "When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 107.3, 603.3d): X is the X announced for the cycling cost, which the cycled
   // event carries as its number, so the slot is the engine's `upToTriggerAmount`; only the body of a cycling trigger reads it.
   const upToCycleX =
@@ -827,6 +854,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     noun.count?.kind === 'x' &&
     !upToDefinedX &&
     !upToEnteredX &&
+    !upToMonstrousX &&
     !upToCycleX;
   // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
   // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
@@ -849,7 +877,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       return failure(noun, []);
     }
   }
-  if (upToDefinedX || upToEnteredX || upToCycleX) {
+  if (upToDefinedX || upToEnteredX || upToCycleX || upToMonstrousX) {
     if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
@@ -1134,6 +1162,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:upToAmount', 'amount:enteredX']);
         if (blocked.length > 0) return failure(noun, blocked);
         upToAmount = { kind: 'enteredX' };
+      }
+      if (upToMonstrousX) {
+        const blocked = missingFeatures(['selector:upToAmount', 'amount:monstrousX']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        upToAmount = { kind: 'monstrousX' };
       }
       if (upToDefinedX) {
         const blocked = missingFeatures(['selector:upToAmount']);
@@ -1640,6 +1673,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'playerToYourRight' });
     }
+    case 'enteredChosenPlayer': {
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'enteredChosenPlayer' });
+    }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return (
@@ -1837,6 +1874,8 @@ export function recipientOf(
     (noun.det === 'discardedThisWay' && noun.discardedHand === true) ||
     // Barret Wallace (CR 508.5): "it deals damage equal to ... to defending player".
     noun.det === 'defendingPlayer' ||
+    // Stuffy Doll (CR 614.12a): "it deals that much damage to the chosen player".
+    noun.det === 'enteredChosenPlayer' ||
     (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);

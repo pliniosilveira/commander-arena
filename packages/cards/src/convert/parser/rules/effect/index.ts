@@ -125,6 +125,7 @@ import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
+import { GOAD_DRACONIC_EFFECT_RULES } from './goad-draconic';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
@@ -150,6 +151,7 @@ import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
+import { KENRITH_EFFECT_RULES } from './kenrith';
 import { KIMAHRI_EFFECT_RULES } from './kimahri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
@@ -314,6 +316,8 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     // Stage P35 (D-176, CR 109.4): the controller of an object an earlier instruction named.
     '~ deals 2 damage to that permanent’s controller',
     '~ deals 2 damage to its controller',
+    // Rowan Kenrith: the creatures of a player the ability targets.
+    '~ deals 3 damage to each tapped creature target player controls',
   ],
   rejects: [
     '~ deals 2 damage to target creature and planeswalker',
@@ -342,6 +346,54 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     ([, amount, , to, each]) => ({
       verb: 'dealDamage',
       args: { amount: each === null ? amount : (scaled(amount, each) ?? amount), to },
+    }),
+  ),
+});
+
+/**
+ * `effect.damage-itself`: "~ deals 1 damage to itself" (CR 120.2, 120.3; Stuffy Doll): the permanent with the ability is the source and the recipient of the damage, the engine's
+ * `dealDamage` to `this`. Not read: an amount that is not a number or X ("equal to its power" is `dealDamageToSelf`'s), another recipient with it ("to itself and you"), "it deals".
+ */
+export const EFFECT_DAMAGE_ITSELF = defineRule<Clauses>({
+  id: 'effect.damage-itself',
+  family: 'effect',
+  leading: ['~'],
+  cites: ['CR 120.2 (Damage)', 'CR 120.3 (Damage)'],
+  examples: [
+    '~ deals 1 damage to itself',
+    '~ deals 2 damage to itself',
+    '~ deals X damage to itself',
+  ],
+  rejects: [
+    '~ deals 1 damage to itself and you',
+    '~ deals damage to itself',
+    '~ deals a damage to itself',
+    '~ deals 1 damage to himself',
+    '~ deals 1 damage to itselfs',
+  ],
+  parse: single(
+    'effect.damage-itself',
+    sequence(
+      literal('~ deals '),
+      DAMAGE_AMOUNT,
+      literal(' to '),
+      spanned(pattern(/itself(?![\p{L}\p{N}])/iu)),
+    ),
+    ([, amount, , itself]): { verb: string; args: Record<string, IrArg> } => ({
+      verb: 'dealDamage',
+      args: {
+        amount,
+        to: {
+          kind: 'noun',
+          det: 'self',
+          filter: { raw: 'itself' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: itself.span,
+          rule: 'effect.damage-itself',
+        },
+      },
     }),
   ),
 });
@@ -1414,6 +1466,8 @@ export const EFFECT_RULES = [
   ...COUNTER_GROUP_A_EFFECT_RULES,
   // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
   ...NEXT_SPELL_EFFECT_RULES,
+  // Will Kenrith (issue 167): "Until your next turn, up to two target creatures each have base power and toughness 0/3 and lose all abilities" and "... spells that player casts cost {2} less to cast".
+  ...KENRITH_EFFECT_RULES,
   // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
   ...PUT_MILLED_EFFECT_RULES,
   // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
@@ -1441,12 +1495,15 @@ export const EFFECT_RULES = [
   ...SONG_FREYALISE_EFFECT_RULES,
   // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
   ...GAIN_NEXT_TURN_EFFECT_RULES,
+  // Draconic Dissent deck (issue 167): "Until your next turn, target creature can't be blocked".
+  ...GOAD_DRACONIC_EFFECT_RULES,
   ...RETURNED_LAND_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
   EFFECT_DAMAGE,
+  EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.

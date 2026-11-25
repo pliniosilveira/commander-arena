@@ -29,7 +29,7 @@ import type {
 import { FOR_EACH_AMOUNTS } from '../amount/kicked';
 import { scaled } from '../amount/scaled';
 import { spellPhrase } from '../noun/phrases';
-import { defineRule, family, spanned } from '../registry';
+import { defineRule, family, node, spanned } from '../registry';
 import { type Clauses, makeClause, single } from './operands';
 import { tokenWithEach } from './token';
 
@@ -89,8 +89,16 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
     // Bulk Up (CR 701.10): the possessive of a single target.
     "double target creature's power until end of turn",
     "double target creature you control's toughness until end of turn",
+    // Death Kiss (CR 701.10): the possessive of "it", the creature an earlier part of the ability is about.
+    'double its power until end of turn',
+    'double its power and toughness until end of turn',
   ],
   rejects: [
+    'double its power',
+    'double its mana value until end of turn',
+    'double it power until end of turn',
+    'double its power until your next turn',
+    'double its powers until end of turn',
     "double target creatures's power until end of turn",
     "double target creature's power",
     "double target creature's mana value until end of turn",
@@ -124,6 +132,36 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
             (noun) => !noun.plural && !noun.upTo && noun.count === undefined,
           ),
           literal("'s "),
+          spanned(STATS),
+          literal(' '),
+          family<IrDuration>('duration'),
+        ),
+        ([, objects, , stats, , duration]): DoubleParts => [
+          'double the ',
+          stats,
+          ' of ',
+          objects,
+          ' ',
+          duration,
+        ],
+      ),
+      // Death Kiss: "double its power until end of turn", the possessive of "it" (the creature the trigger is about).
+      map(
+        sequence(
+          literal('double '),
+          node<RegExpExecArray, IrNoun>(
+            'effect.double-pt',
+            pattern(/its(?![\p{L}\p{N}])/iu),
+            () => ({
+              kind: 'noun',
+              det: 'anaphor',
+              filter: { raw: 'it' },
+              upTo: false,
+              plural: false,
+              other: false,
+            }),
+          ),
+          literal(' '),
           spanned(STATS),
           literal(' '),
           family<IrDuration>('duration'),

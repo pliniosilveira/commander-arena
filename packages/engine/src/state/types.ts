@@ -182,6 +182,11 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
+   * The X of the monstrosity action that made this permanent monstrous (CR 701.37c: "other abilities of that permanent may also refer to X", with the value of X as the permanent became
+   * monstrous), `monstrousX` of an amount. Set with `monstrous`; a new object after any zone change (CR 400.7) has none.
+   */
+  readonly monstrousX?: number;
+  /**
    * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-459), set by the effect `exileIfLeaves` on the permanent an earlier
    * effect put onto the battlefield (Whip of Erebos): it is exiled instead of going to any other zone, whatever its abilities. Not a copiable value; a new object after any
    * zone change (CR 400.7) has none.
@@ -1200,6 +1205,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */
+      readonly asChooser?: true;
       readonly anyNumber?: true;
       readonly fromMoved?: true;
       readonly chosen: readonly ObjectId[] | null;
@@ -2478,6 +2485,8 @@ export interface ThisWayCounts {
   readonly discardedValue?: number;
   /** The counters `addCounters` effects put on objects (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way", CR 122.6); left out until some are put. */
   readonly countersPut?: number;
+  /** The objects `addCounters` effects really put counters on, by kind of counter, each once (Spectacular Showdown: "each creature that had a double strike counter put on it this way", CR 608.2c); left out until some are. */
+  readonly countersPutOn?: Readonly<Record<string, readonly ObjectId[]>>;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
   /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */
@@ -2517,6 +2526,11 @@ export interface AttackerState {
    * deals no combat damage) once the permanent leaves, changes controller or protector, or stops being a planeswalker or battle (CR 506.4).
    */
   readonly defender?: SeatId;
+  /**
+   * The creature was required to attack as the attackers were declared (CR 508.1d, 701.15b): an effect or a requirement ("attacks each combat if able", goad) applied to it
+   * and it was able to attack. Read by "if that creature had to attack this combat".
+   */
+  readonly hadToAttack?: true;
   /** The attacked planeswalker or battle was removed from combat (CR 506.4): the creature attacks no player, planeswalker or battle any more (CR 506.4c). */
   readonly targetGone?: true;
 }
@@ -2657,6 +2671,16 @@ export type ContinuousChange =
       readonly grants?: 'storm' | 'cascade';
     }
   /**
+   * "Until your next turn, instant, sorcery, and planeswalker spells that player casts cost {2} less to cast" (`playerSpellsCostLess`, CR 601.2f, 118.7a): every spell `seat` casts that
+   * `spells` describes costs `lessGeneric` less (generic mana only) while the effect lasts. No layer: read where the cost is determined (`rules/spell-discount.ts`).
+   */
+  | {
+      readonly kind: 'spellsCostLess';
+      readonly seat: SeatId;
+      readonly spells: ObjectFilter;
+      readonly lessGeneric: number;
+    }
+  /**
    * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, CR 118.9, 601.2b): `seat` may cast their next
    * spell by the alternative cost `lifeForMana`. The next spell `seat` casts uses it up, whether or not they pay that way (`rules/next-spell-life.ts`). No layer: read where casting is decided.
    */
@@ -2664,6 +2688,8 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   /** `null` leaves that characteristic as the other effects before it set it (CR 701.12g: an exchange sets only a power or only a toughness). */
   | { readonly kind: 'setPt'; readonly power: number | null; readonly toughness: number | null }
+  /** "Switch its power and toughness" (`switchPt`, CR 613.4d): layer 7d, after every other power and toughness effect. */
+  | { readonly kind: 'switchPt' }
   | { readonly kind: 'loseAllAbilities' }
   /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp
