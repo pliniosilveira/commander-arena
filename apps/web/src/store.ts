@@ -158,6 +158,8 @@ export interface AppActions {
   hover(id: ObjectId | null): void;
   /** Closes the preview of the object on top of the stack until another one is on top. */
   dismissStackPreview(id: ObjectId): void;
+  /** Closes the cards a reveal showed (a tap on the preview); a player action, a new turn or a new game clears them too. */
+  dismissReveal(): void;
   clearError(): void;
   /** Shows a message from the page itself (not from the engine), like a refused action's error. */
   fail(message: string): void;
@@ -574,6 +576,10 @@ export function createAppStore(options: StoreOptions): AppStore {
 
       dismissStackPreview(id) {
         set((s) => ({ preview: { ...s.preview, dismissedStack: id } }));
+      },
+
+      dismissReveal() {
+        set((s) => ({ preview: { ...s.preview, revealed: [] } }));
       },
 
       clearError() {

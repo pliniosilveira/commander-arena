@@ -235,11 +235,3 @@ export function playBlockers(report: ImportReport): readonly string[] {
   if (report.entries.length === 0 && out.length === 0) out.push('There are no cards yet.');
   return out;
 }
-
-/** The sample list of the import screen: the real list of the first installed precon, or null. */
-export function sampleOf(
-  precons: readonly { readonly name: string; readonly decklist: string }[],
-): { readonly name: string; readonly text: string } | null {
-  const first = precons[0];
-  return first === undefined ? null : { name: first.name, text: first.decklist };
-}
