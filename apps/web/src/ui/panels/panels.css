@@ -373,6 +373,51 @@ button.pnl-step:hover {
   font-size: calc(12px * var(--text-scale));
   color: var(--text-dim);
 }
+/* "That was a dumb move" (issue 627): the toggle in the log bar, the mark on an AI move and the form above the log. */
+.pnl-log-bar {
+  flex-wrap: wrap;
+}
+.pnl-dumb-toggle,
+.pnl-dumb-mark {
+  font-size: calc(11px * var(--text-scale));
+}
+.pnl-dumb-mark {
+  margin-left: auto;
+  padding: 0 4px;
+}
+.pnl-dumb {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 60%;
+  overflow-y: auto;
+  margin-bottom: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  font-size: calc(12px * var(--text-scale));
+}
+.pnl-dumb-label {
+  font-weight: 600;
+}
+.pnl-dumb-field {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.pnl-dumb-hint {
+  margin: 0;
+  color: var(--text-dim);
+}
+.pnl-dumb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
 .pnl-log-wrap {
   position: relative;
   flex: 1;

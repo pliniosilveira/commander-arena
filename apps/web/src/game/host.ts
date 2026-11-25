@@ -9,6 +9,7 @@ import {
   firstAcceptedAction,
   firstSafeAction,
 } from '@commander-arena/ai';
+import type { GameRecord } from '@commander-arena/cards';
 import {
   type Action,
   applyAction,
@@ -26,6 +27,7 @@ import { createAgent } from './agents';
 import { definedPtNotes } from './defined-pt';
 import { describeEvents } from './describe';
 import { isUnlessPurpose } from './describe-ward';
+import { gameRecordOf } from './game-record';
 import { lookedCards } from './looked-cards';
 import {
   type AiKind,
@@ -255,6 +257,7 @@ export class GameHost implements GameClient {
   private aiFallbacks = new Map<number, number>();
   private logAll: LogEntry[] = [];
   private undoStack: UndoPoint[] = [];
+  private started: { options: NewGameOptions; opponents: readonly OpponentOptions[] } | null = null;
 
   constructor(options: HostOptions) {
     this.clock = options.clock;
@@ -266,6 +269,7 @@ export class GameHost implements GameClient {
 
   async newGame(options: NewGameOptions): Promise<GameStarted> {
     const opponents = opponentsOf(options);
+    this.started = { options, opponents };
     const decks: DeckConfig[] = [options.humanCards ?? (await hiddenDeck(options.humanDeck))];
     for (const opponent of opponents) {
       decks.push(opponent.cards ?? (await hiddenDeck(opponent.deck)));
@@ -317,11 +321,19 @@ export class GameHost implements GameClient {
     };
     this.state = applied.state;
     this.actions.push({ seat: HUMAN, action });
-    const humanLog = this.logFor(state, applied.state, applied.events, action);
+    const humanLog = this.logFor(state, applied.state, applied.events, action, {
+      index: this.actions.length - 1,
+      seat: HUMAN,
+    });
     const humanStep: AppliedStep = { seat: HUMAN, action, events: applied.events };
     const ai = await this.runAi();
     this.recordUndo(action, applied.events, ai.steps.length, point, state.pending);
     return this.snapshot([humanStep, ...ai.steps], [...humanLog, ...ai.log], null);
+  }
+
+  async gameRecord(): Promise<GameRecord | null> {
+    if (this.started === null || this.state === null) return null;
+    return gameRecordOf(this.started.options, this.started.opponents, this.actions);
   }
 
   async undo(): Promise<Snapshot> {
@@ -449,7 +461,8 @@ export class GameHost implements GameClient {
       this.state = applied.state;
       this.actions.push({ seat, action });
       steps.push({ seat, action, events: applied.events });
-      log.push(...this.logFor(before, applied.state, applied.events, action));
+      const at = { index: this.actions.length - 1, seat };
+      log.push(...this.logFor(before, applied.state, applied.events, action, at));
     }
     return { steps, log };
   }
@@ -463,6 +476,7 @@ export class GameHost implements GameClient {
     after: GameState,
     events: readonly GameEvent[],
     action?: Action,
+    actionAt?: LogEntry['action'],
   ): LogEntry[] {
     const out: LogEntry[] = [];
     for (const described of describeEvents(events, before, after, HUMAN, action)) {
@@ -472,6 +486,7 @@ export class GameHost implements GameClient {
         activeSeat: after.turn.activeSeat,
         round: roundOf(after.turn.number, after.seats.length, after.extraTurnsTaken),
         ...described,
+        ...(actionAt === undefined ? {} : { action: actionAt }),
       });
     }
     this.logAll.push(...out);

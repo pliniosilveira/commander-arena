@@ -166,6 +166,13 @@ describe('a saved deck as the opponent or as the player (issue 108)', () => {
     expect(result).toEqual({ started: true });
     expect(seen[0]?.aiDeck).toBe(`saved:${mine.id}`);
     expect(seen[0]?.aiCards?.cards).toHaveLength(100);
+    // Issue 627: the replay of a saved deck carries its list and the card data of every card it names, without images.
+    const replay = seen[0]?.replayDecks?.[1];
+    expect(replay?.precon).toBeUndefined();
+    expect(replay?.decklist).toBe(supportedHundredText());
+    expect(replay?.cards?.length).toBeGreaterThan(0);
+    expect(replay?.cards?.flatMap((c) => c.faces).every((f) => f.imageUris === null)).toBe(true);
+    expect(seen[0]?.replayDecks?.[0]).toMatchObject({ precon: 'p' });
   });
 
   test("a saved deck can be the player's own deck from the menu too", async () => {
@@ -217,6 +224,10 @@ describe('a saved deck as the opponent or as the player (issue 108)', () => {
     const ready = await precons.prepare(savedDeckChoiceId(good.id));
     expect(ready.ok).toBe(true);
     if (ready.ok) expect(ready.deck.companion?.name).toBe('Synthetic Companion');
+    // Issue 627: the companion's card data travels with the replay too.
+    if (ready.ok) {
+      expect(ready.replay.cards?.map((c) => c.name)).toContain('Synthetic Companion');
+    }
     const refused = await precons.prepare(savedDeckChoiceId(bad.id));
     expect(refused.ok).toBe(false);
     if (!refused.ok) expect(refused.reason).toMatch(/color identity/);
@@ -251,6 +262,9 @@ describe('a precon the player edited (issue 93)', () => {
       expect(edited.deck.cards).toHaveLength(100);
       expect(edited.deck.cards.map((card) => card.name)).toContain('Synthetic Vanilla 48');
       expect(edited.deck.cards.map((card) => card.name)).not.toContain('Synthetic Vanilla 47');
+      // Issue 627: the replay names the precon and carries only the card its snapshot lacks.
+      expect(edited.replay.precon).toBe('p');
+      expect(edited.replay.cards?.map((c) => c.name)).toEqual(['Synthetic Vanilla 48']);
     }
 
     await decks.removeOverride('p');
