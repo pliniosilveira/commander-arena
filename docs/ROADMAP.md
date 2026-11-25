@@ -159,6 +159,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.
 - `anyCombinationAmount` lists every combination, C(X+4,4) of them, as actions and payment sources: a large X slows the mana choice. The planner tries only combinations that differ for the cost, and "could produce" lists none (issue 632).
+- The payment planner marks the mana of one outcome in 32-bit masks (`assignUnits`): past 31 mana in one outcome, the mana it reports spent and left over can be wrong.
 - "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
