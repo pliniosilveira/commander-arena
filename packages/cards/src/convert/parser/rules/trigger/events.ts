@@ -511,7 +511,8 @@ export const TRIGGER_LEAVES = defineRule<IrTrigger>({
  * `trigger.dealt-damage`: "~ is dealt damage", "a creature you control is dealt damage", "~ is dealt combat damage"
  * (stage P29, D-133, CR 120.3, 603.2, 603.2g: it triggers once for each source that damages the permanent, in the moment
  * the damage is dealt, so it triggers for the damage that kills it, and not for damage that is entirely prevented).
- * "Is dealt damage by a creature" and "is dealt noncombat damage" say more, and are not read.
+ * "Is dealt noncombat damage" (CR 120.2b) and "is dealt excess damage" (CR 120.10: damage dealt that was more than lethal damage; the amount of the event is the excess, Fall of
+ * Cair Andros) are read as well, with or without the other ("excess noncombat damage"). "Is dealt damage by a creature" says more, and is not read.
  */
 export const TRIGGER_DEALT_DAMAGE = defineRule<IrTrigger>({
   id: 'trigger.dealt-damage',
@@ -529,10 +530,17 @@ export const TRIGGER_DEALT_DAMAGE = defineRule<IrTrigger>({
     'another creature you control is dealt damage',
     'equipped creature is dealt damage',
     'a Zombie you control is dealt combat damage',
+    '~ is dealt noncombat damage',
+    'a creature is dealt excess damage',
+    'a creature an opponent controls is dealt excess noncombat damage',
+    'a creature you control is dealt excess combat damage',
   ],
   rejects: [
     '~ is dealt damage by a creature',
-    '~ is dealt noncombat damage',
+    '~ is dealt excess noncombat damage by a creature',
+    '~ is dealt noncombat excess damage',
+    '~ is dealt excess excess damage',
+    '~ is dealt excess',
     '~ are dealt damage',
     '~ is dealt damage or dies',
     '~ is dealt',
@@ -544,10 +552,13 @@ export const TRIGGER_DEALT_DAMAGE = defineRule<IrTrigger>({
   parse: (ctx, pos) => {
     const r = sequence(
       permanentOrAttachedSubject('trigger.dealt-damage'),
-      pattern(/ is dealt (combat )?damage(?![\p{L}\p{N}]| by )/iu),
+      pattern(/ is dealt (excess )?(combat |noncombat )?damage(?![\p{L}\p{N}]| by )/iu),
     )(ctx, pos);
     if (!r.ok) return r;
-    const combat = r.value[1][1] !== undefined;
+    const excess = r.value[1][1] !== undefined;
+    const kind = (r.value[1][2] ?? '').trim().toLowerCase();
+    const combat = kind === 'combat';
+    const noncombat = kind === 'noncombat';
     return {
       ok: true,
       value: {
@@ -555,6 +566,8 @@ export const TRIGGER_DEALT_DAMAGE = defineRule<IrTrigger>({
         event: 'dealtDamage',
         subject: r.value[0],
         ...(combat ? { combat: true as const } : {}),
+        ...(noncombat ? { noncombat: true as const } : {}),
+        ...(excess ? { excess: true as const } : {}),
         args: {},
         span: { start: pos, end: r.pos },
         rule: 'trigger.dealt-damage',
