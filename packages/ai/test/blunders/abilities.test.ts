@@ -13,7 +13,7 @@ import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { HeuristicAgent } from '../../src/index';
 import { CURSED_IDOL, LIBRARY_LAMP, PINGER } from './cards';
-import { isActivation, nameOf, playUntilPass } from './drive';
+import { isActivation, playUntilPass } from './drive';
 
 const V1 = 'SYNTHETIC Vanilla 1/1';
 const V3 = 'SYNTHETIC Vanilla 3/3';
@@ -65,8 +65,7 @@ const activationsOf = async (g: ReturnType<typeof ownMain>) =>
   (await playUntilPass(g, 0)).actions.filter(isActivation);
 
 describe('spare mana at the end of the opposing turn is used', () => {
-  // Today: it passes; no rule spends leftover mana on a mana sink in the opponent's end step.
-  test.fails('three untapped lands and "{3}: Draw a card": it draws', async () => {
+  test('three untapped lands and "{3}: Draw a card": it draws', async () => {
     // Wrong to pass here: the hand is empty, the lands untap next, and the 10-card library is in no danger.
     const g = endStep([LIBRARY_LAMP.name, 'Island', 'Island', 'Island'], [], {
       defs: [LIBRARY_LAMP],
@@ -74,23 +73,23 @@ describe('spare mana at the end of the opposing turn is used', () => {
     expect(await activationsOf(g)).toHaveLength(1);
   });
 
-  // Today: it passes; tap abilities that deal damage are not among its end-step plays.
-  test.fails('an untapped pinger kills the opposing 1/1 at the end of the turn', async () => {
+  test('an untapped pinger kills the opposing 1/1 at the end of the turn', async () => {
     // Wrong to pass here: the pinger untaps next turn anyway, and the 1/1 is the opponent's only creature.
     const g = endStep([PINGER.name], [V1], { defs: [PINGER] });
     const agent = new HeuristicAgent({ seed: 1 });
+    // The names are read before the play: the 1/1 the pinger kills leaves the battlefield.
+    const names = new Map([[g.id(V1), V1]]);
     const { actions } = await playUntilPass(g, 0, agent);
     const targets = actions.flatMap((a) => (a.kind === 'chooseTargets' ? a.targets : []));
     expect(actions.some(isActivation)).toBe(true);
     expect(
-      targets.map((t) => (t.kind === 'object' ? nameOf(g, t.id) : `player ${t.seat}`)),
+      targets.map((t) => (t.kind === 'object' ? (names.get(t.id) ?? '?') : `player ${t.seat}`)),
     ).toEqual([V1]);
   });
 });
 
 describe('pumps that change the result are used', () => {
-  // Today: it pumps once (a 3/3 that trades with the blocker) and then passes.
-  test.fails('a Pump Bear blocked by a 3/3 pumps twice with two lands: it kills the blocker and lives', async () => {
+  test('a Pump Bear blocked by a 3/3 pumps twice with two lands: it kills the blocker and lives', async () => {
     // Wrong to stop at one pump here: the hand is empty, so the second {1} has no other use and saves the Bear.
     const g = scenario()
       .seat(0)
@@ -110,8 +109,7 @@ describe('pumps that change the result are used', () => {
     expect(actions.filter(isActivation)).toHaveLength(2);
   });
 
-  // Today: it passes; a pump of an unblocked attacker is not judged by the damage to the player.
-  test.fails('an unblocked Firebreather pumps for exactly lethal on an opponent at 3', async () => {
+  test('an unblocked Firebreather pumps for exactly lethal on an opponent at 3', async () => {
     // Wrong to pass here: two pumps make 3 damage against 3 life, and the hand is empty.
     const g = scenario()
       .seat(0)
