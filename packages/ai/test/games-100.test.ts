@@ -55,7 +55,9 @@ const COVERAGE_GAMES = 30;
 // decision kinds below.
 const OPTION_GAMES = 6;
 const t = process.env.TEST_TIER === 'pr' ? test.skip : test;
-vi.setConfig({ testTimeout: 180_000 });
+// The test takes about 25 s on a laptop and 122 to 185 s on the shared runner: the limit only catches a hang (MAX_TURNS and MAX_ACTIONS end a game that never ends), so it
+// leaves the runner's variation well inside it.
+vi.setConfig({ testTimeout: 420_000 });
 
 /** Delegates to `inner` and notes which decision kinds it was handed. */
 function recording(inner: RandomLegalAgent, kinds: Set<DecisionKind>, tally: CombatTally): Agent {

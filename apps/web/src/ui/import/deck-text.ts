@@ -94,3 +94,29 @@ export function withPrinting(
   });
   return changed ? lines.join('\n') : null;
 }
+
+/**
+ * The text with the printing the player chose for all decks written on each card's line (`preferred` is by lower-case front face).
+ * A card the player already chose a printing for in this very list keeps it. Returns the text unchanged when nothing applies.
+ */
+export function withPreferredPrintings(
+  text: string,
+  preferred: ReadonlyMap<string, { readonly set: string; readonly collector: string }>,
+): string {
+  if (preferred.size === 0) return text;
+  const { sections } = parseDecklist(text);
+  const listed = printingsInText(text);
+  let out = text;
+  const done = new Set<string>();
+  for (const entry of [...sections.commander, ...sections.main]) {
+    const key = frontFaceName(entry.name).toLowerCase();
+    const want = preferred.get(key);
+    if (want === undefined || done.has(key) || listed.get(key)?.chosen === true) continue;
+    done.add(key);
+    if (listed.get(key)?.set === want.set && listed.get(key)?.collector === want.collector) {
+      continue;
+    }
+    out = withPrinting(out, entry.name, want.set, want.collector) ?? out;
+  }
+  return out;
+}

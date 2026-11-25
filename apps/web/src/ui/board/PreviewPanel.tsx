@@ -477,6 +477,7 @@ function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
 export function PreviewPanel() {
   const hover = useApp((s) => s.hover);
   const dismissStackPreview = useApp((s) => s.dismissStackPreview);
+  const dismissReveal = useApp((s) => s.dismissReveal);
   const dismissedStack = useApp((s) => s.preview.dismissedStack ?? null);
   const view = useApp((s) => s.snapshot?.view ?? null);
   const hoveredId = useApp((s) => s.preview.hovered);
@@ -491,6 +492,7 @@ export function PreviewPanel() {
   // A tap on the preview closes it: it drops the hover, a reveal and the stack's card.
   const dismiss = () => {
     hover(null);
+    dismissReveal();
     // The card on top of the stack is shown by itself: the tap closes it until another is on top.
     if (source === 'stack' && id !== null) dismissStackPreview(id);
   };

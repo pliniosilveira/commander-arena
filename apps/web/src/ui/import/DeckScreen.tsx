@@ -16,6 +16,7 @@ export function DeckScreen({
   service,
   onBack,
   onSave,
+  onSaveAll,
 }: {
   name: string;
   text: string;
@@ -23,6 +24,8 @@ export function DeckScreen({
   onBack: () => void;
   /** Stores the deck's new text (a printing was chosen); absent when this deck cannot be changed. */
   onSave?: (text: string) => Promise<void>;
+  /** Applies a printing to every saved deck of the player and remembers it for decks imported later; absent when not offered. */
+  onSaveAll?: (cardName: string, print: CardPrint) => Promise<void>;
 }) {
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +65,15 @@ export function DeckScreen({
     return (
       picked.get(card.oracleId)?.normal ?? (own ? image.normal : null) ?? imageOf(card, 'normal')
     );
+  };
+
+  const writePrint = async (card: StoredCard, print: CardPrint) => {
+    if (onSave === undefined) return;
+    const next = withPrinting(current, card.name, print.setCode.toLowerCase(), print.collector);
+    if (next === null) throw new Error('This card’s line in the list cannot hold a printing.');
+    await onSave(next);
+    setCurrent(next);
+    setPicked((now) => new Map(now).set(card.oracleId, print));
   };
 
   const tokens = useMemo(() => (report === null ? [] : deckTokens(report.entries)), [report]);
@@ -121,19 +133,15 @@ export function DeckScreen({
           {...(onSave === undefined
             ? {}
             : {
-                onUse: async (print: CardPrint) => {
-                  const next = withPrinting(
-                    current,
-                    shown.name,
-                    print.setCode.toLowerCase(),
-                    print.collector,
-                  );
-                  if (next === null)
-                    throw new Error('This card’s line in the list cannot hold a printing.');
-                  await onSave(next);
-                  setCurrent(next);
-                  setPicked((now) => new Map(now).set(shown.oracleId, print));
-                },
+                onUse: (print: CardPrint) => writePrint(shown, print),
+                ...(onSaveAll === undefined
+                  ? {}
+                  : {
+                      onUseForAll: async (print: CardPrint) => {
+                        await writePrint(shown, print);
+                        await onSaveAll(shown.name, print);
+                      },
+                    }),
               })}
         />
       )}

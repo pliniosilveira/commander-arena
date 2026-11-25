@@ -37,6 +37,9 @@ export async function toggleSetting(
 /** Opens the log dialog, shows every line (detail lines too) and closes the dialog again. */
 export async function showAllLogLines(page: Page): Promise<void> {
   const toggle = page.locator('.log-toggle:not(.settings-toggle):not(.report-toggle)');
+  // A reveal stays in the preview panel, drawn above the log dialog, until a tap closes it (#594): tap it away before the log's buttons.
+  const reveal = page.locator('.board-preview[data-dismissable="true"]');
+  if ((await reveal.count()) > 0) await reveal.click();
   await toggle.click();
   await page
     .getByRole('group', { name: 'Log detail' })

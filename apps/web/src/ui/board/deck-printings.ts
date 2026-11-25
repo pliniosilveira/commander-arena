@@ -3,6 +3,7 @@
  * draws a card in the printing its deck lists (`useListedArt`, `commander-art.ts`); a card whose list names none is drawn by name.
  * The printings are kept by seat and card name for the one game on the table (`setGamePrintings`): a card is drawn in the printing
  * its owner's deck lists, so two decks that list the same card in different printings (basic lands, above all) each keep their own.
+ * The names of every card the decks list are kept too (`isGameCard`): a token with one of those names is a copy of that card.
  */
 import { frontFaceName, parseDecklist } from '@commander-arena/cards';
 
@@ -17,6 +18,8 @@ export const CHOSEN_TAG = 'Chosen printing';
 
 /** Seat id, then card name. */
 const known = new Map<number, Map<string, CardPrinting>>();
+/** The names of the cards the game's decks list, commanders included. */
+const names = new Set<string>();
 const keyOf = (name: string): string => frontFaceName(name).toLowerCase();
 
 /** The printing of the first commander line of `text` that names one, with the card's name; null when no line does. */
@@ -51,10 +54,16 @@ function deckPrintings(text: string): Map<string, CardPrinting> {
  */
 export function setGamePrintings(texts: readonly string[]): void {
   known.clear();
+  names.clear();
   texts.forEach((text, seat) => {
     known.set(seat, deckPrintings(text));
+    const { sections } = parseDecklist(text);
+    for (const entry of [...sections.commander, ...sections.main]) names.add(keyOf(entry.name));
   });
 }
+
+/** Whether a deck of the game on the table lists a card named `name` (any printing, any seat). */
+export const isGameCard = (name: string): boolean => names.has(keyOf(name));
 
 /** The printing the deck of seat `owner` lists for the card `name`, or null (the card is then drawn by name). */
 export const printingOf = (name: string, owner: number): CardPrinting | null =>
