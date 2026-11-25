@@ -380,7 +380,8 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${id} is on an Adventure but is not a card in exile`);
     }
     // CR 614.12a, 400.7 (D-100): a choice made as a permanent entered belongs to a permanent whose card
-    // or token asks that question, and is one of its options; it is gone when the permanent leaves.
+    // or token asks that question, and is one of its options; it is gone when the permanent leaves (phasing out is
+    // no change of zone: a phased-out permanent keeps it, CR 702.26b).
     if (obj.chosen !== undefined) {
       const { creatureType, color, cardType, planeswalkerType, lifePaid, player, cardName } =
         obj.chosen;
@@ -389,7 +390,7 @@ export function checkInvariants(state: GameState): string[] {
           entersChoice,
         ),
       );
-      if (obj.zone !== 'battlefield') {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
         problems.push(`${id} has a choice but is not on the battlefield`);
       }
       if (

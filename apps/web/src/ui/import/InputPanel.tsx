@@ -39,7 +39,6 @@ export function InputPanel({
   onText,
   onName,
   onImport,
-  onExample,
   precon = null,
   niceArt,
   onNiceArt,
@@ -52,8 +51,6 @@ export function InputPanel({
   onText: (text: string) => void;
   onName: (name: string) => void;
   onImport: () => void;
-  /** Fills in the list of an installed precon; null when none is installed (no button then). */
-  onExample: (() => void) | null;
   /** Set while a precon is being edited: the name is fixed and Import keeps your version of it. */
   precon?: EditingPrecon | null;
   /** The option "special-frame commander art" (`nice-art.ts`); no checkbox when `onNiceArt` is not given. */
@@ -138,11 +135,6 @@ export function InputPanel({
         >
           {running ? 'Importing…' : 'Import'}
         </button>
-        {onExample !== null && (
-          <button type="button" className="scr-btn" disabled={running} onClick={onExample}>
-            Fill in an example
-          </button>
-        )}
         <span role="status" aria-live="polite" className="scr-help">
           {saveMessage}
         </span>

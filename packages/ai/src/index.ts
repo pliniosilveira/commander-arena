@@ -47,6 +47,7 @@ export {
   summarizeAction,
 } from './reasons';
 export type {
+  ActionStep,
   EndReason,
   GameRun,
   LoggedAction,
@@ -62,6 +63,23 @@ export {
   type TableOptions,
   type TableResult,
 } from './table';
+export {
+  type AttackGroup,
+  type EliminationCause,
+  type TableEvent,
+  TableObserver,
+} from './table-events';
+export {
+  type AgentReport,
+  type AttackStats,
+  type BlockStats,
+  type PositionStats,
+  type RemovalStats,
+  type SurvivalStats,
+  type TableReport,
+  tableReport,
+  VALUE_BANDS,
+} from './table-report';
 export {
   type AgentWeights,
   DEFAULT_WEIGHTS,

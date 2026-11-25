@@ -231,14 +231,6 @@ test('a commander chosen after the import is still the commander after Save and 
   await expect(page.getByLabel(/^Decklist/)).toHaveValue(/SYNTHETIC Commander \*CMDR\*/);
 });
 
-test('the example button fills in the real list of the installed precon', async ({ page }) => {
-  await openImport(page);
-  const example = page.getByRole('button', { name: 'Fill in an example' });
-  await example.click();
-  await expect(page.getByLabel('Deck name')).not.toHaveValue('');
-  await expect(page.getByLabel(/^Decklist/)).toHaveValue(/Commander/);
-});
-
 test('parse errors and unknown names', async ({ page }) => {
   await fakeScryfall(page);
   await openImport(page);

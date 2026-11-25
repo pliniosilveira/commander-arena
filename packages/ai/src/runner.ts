@@ -50,6 +50,21 @@ export interface RunOptions {
    * the AI package may not read real time.
    */
   readonly now?: () => number;
+  /**
+   * Called after every applied action with the state before and after it (a measuring hook: the table
+   * report reads eliminations, attacks, blocks and removal from it). It must not change either state.
+   */
+  readonly onAction?: (step: ActionStep) => void;
+}
+
+/** One applied action, with the game before and after it. */
+export interface ActionStep {
+  /** Index of the action in the log. */
+  readonly index: number;
+  readonly seat: SeatId;
+  readonly action: Action;
+  readonly before: GameState;
+  readonly after: GameState;
 }
 
 export interface RunCounters {
@@ -162,6 +177,13 @@ export async function runGame(
       applied = fallback.value;
     }
     log.push({ seat, action });
+    options.onAction?.({
+      index: log.length - 1,
+      seat,
+      action,
+      before: state,
+      after: applied.state,
+    });
     state = applied.state;
   }
 

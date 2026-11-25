@@ -342,7 +342,7 @@ describe('WhyDialog', () => {
 });
 
 describe('other views', () => {
-  test('the input panel explains Scryfall, offline use and has an example, import and save', () => {
+  test('the input panel explains Scryfall, offline use and has import and no example button', () => {
     const out = renderToStaticMarkup(
       <InputPanel
         text=""
@@ -353,13 +353,12 @@ describe('other views', () => {
         onText={() => {}}
         onName={() => {}}
         onImport={() => {}}
-        onExample={() => {}}
       />,
     );
     expect(out).toContain('Scryfall');
     expect(out).toContain('internet connection');
     expect(out).toContain('Quick start');
-    expect(out).toContain('Fill in an example');
+    expect(out).not.toContain('Fill in an example');
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Import</);
   });
 
@@ -375,7 +374,6 @@ describe('other views', () => {
           onText={() => {}}
           onName={() => {}}
           onImport={() => {}}
-          onExample={null}
           {...extra}
         />,
       );
@@ -398,7 +396,6 @@ describe('other views', () => {
         onText={() => {}}
         onName={() => {}}
         onImport={() => {}}
-        onExample={() => {}}
       />,
     );
     expect(out).toContain('Resolving cards (30 of 99)');
