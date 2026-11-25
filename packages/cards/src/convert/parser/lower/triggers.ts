@@ -241,13 +241,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dealtDamage': {
       // CR 120.3, 603.2g (D-133): once for each source that damages the permanent.
       const what = whatOf(t, ctx);
-      return what.ok
-        ? ok({
-            kind: 'dealtDamage',
-            what: what.value,
-            ...(t.combat === true ? { combat: true } : {}),
-          })
-        : what;
+      if (!what.ok) return what;
+      // CR 120.2b, 120.10: "noncombat damage" and "excess damage" are features of the engine's `dealtDamage` (`excess` makes its amount the excess).
+      const blocked = missingFeatures([
+        ...(t.noncombat === true ? (['trigger:dealtDamageNoncombat'] as const) : []),
+        ...(t.excess === true ? (['trigger:dealtDamageExcess'] as const) : []),
+      ]);
+      if (blocked.length > 0) return failure(t, blocked);
+      return ok({
+        kind: 'dealtDamage',
+        what: what.value,
+        ...(t.combat === true ? { combat: true } : {}),
+        ...(t.noncombat === true ? { noncombat: true } : {}),
+        ...(t.excess === true ? { excess: true } : {}),
+      });
     }
     case 'becomesTapped': {
       const what = whatOf(t, ctx);
@@ -1660,6 +1667,8 @@ function lowerTriggeredAbility(
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.excessDamageTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'dealtDamage' && t.excess === true);
   ctx.triggeredBody = true;
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
@@ -2314,6 +2323,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:alone',
   'trigger:attacksAt',
   'trigger:dealtDamage',
+  'trigger:dealtDamageNoncombat',
+  'trigger:dealtDamageExcess',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
   'trigger:becomesMonstrous',

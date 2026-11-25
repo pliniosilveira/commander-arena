@@ -6217,11 +6217,16 @@ export type Trigger =
    * triggers for damage that kills it, and not for damage that is entirely prevented (CR 603.2g). `combat: true` is
    * "is dealt combat damage". `triggerSubject` is the permanent that was damaged, `triggerDamage` the amount of that
    * source's damage and `triggerPlayer` the controller of the source that dealt it.
+   * `noncombat: true` is "is dealt noncombat damage" (CR 120.2b: not combat damage); it does not go with `combat`.
+   * `excess: true` is "is dealt excess damage" (CR 120.10, Fall of Cair Andros): it triggers only for damage that was more than lethal damage to the permanent as it was before that
+   * damage (`damageDealt.excess`), and `triggerDamage` is then the excess amount ("that excess damage"), not the whole damage.
    */
   | {
       readonly kind: 'dealtDamage';
       readonly what: TriggerSubject;
       readonly combat?: true;
+      readonly noncombat?: true;
+      readonly excess?: true;
     }
   /**
    * "Whenever [this | a permanent] leaves the battlefield" (CR 603.6c, 603.10a, D-111): looks back in time,

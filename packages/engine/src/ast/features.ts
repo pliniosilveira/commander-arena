@@ -773,6 +773,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostBatch',
     // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
     'stepMonarch',
+    // "Whenever a creature is dealt noncombat damage" (`dealtDamage` with `noncombat`).
+    'dealtDamageNoncombat',
+    // Fall of Cair Andros: "Whenever a creature an opponent controls is dealt excess noncombat damage" (`dealtDamage` with `excess`).
+    'dealtDamageExcess',
   ],
   keywordKinds: [
     'flying',
@@ -2295,6 +2299,10 @@ export const TRIGGER_FEATURES = [
   'lifeLostBatch',
   /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
   'stepMonarch',
+  /** "Whenever a creature is dealt noncombat damage" (CR 120.2b, 603.2): the engine's `dealtDamage` with `noncombat`. */
+  'dealtDamageNoncombat',
+  /** "Whenever a creature is dealt excess damage" (CR 120.10, 603.2): the engine's `dealtDamage` with `excess`; `triggerDamage` is then the excess. */
+  'dealtDamageExcess',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -3689,6 +3697,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeLostBatch: true,
   votingFinished: true,
   stepMonarch: true,
+  dealtDamageNoncombat: true,
+  dealtDamageExcess: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,
