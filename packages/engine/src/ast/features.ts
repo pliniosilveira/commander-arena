@@ -182,6 +182,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeFromGraveyard',
     // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
     'castFreeCreatureGains',
+    // Nalfeshnee (CR 707.10f, 613.1f): "If it's a permanent spell, the copy gains haste and ..." (`copySpell.permanentGains`).
+    'copySpellPermanentGains',
     // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
     'castPayingFromLinkedExile',
     // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
@@ -2142,6 +2144,8 @@ export const ABILITY_FEATURES = [
   'castFreeFromGraveyard',
   /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
   'castFreeCreatureGains',
+  /** "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 613.1f): the engine's `copySpell.permanentGains`. */
+  'copySpellPermanentGains',
   /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
   'castPayingFromLinkedExile',
   /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
@@ -3282,6 +3286,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
+  copySpellPermanentGains: true,
   castPayingFromLinkedExile: true,
   chosenByOpponent: true,
   spellXAtMost: true,

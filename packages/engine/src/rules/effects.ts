@@ -1801,7 +1801,9 @@ function runEffect(
         ...done(
           state,
           [],
-          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets, opponent)),
+          spells.flatMap((id) =>
+            copyInstructions(id, copies, effect.newTargets, opponent, effect.permanentGains),
+          ),
         ),
         performed: copies > 0 ? spells.length : 0,
       };

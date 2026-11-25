@@ -1131,3 +1131,41 @@ describe('"Sacrifice an artifact, creature, or land: Remove a time counter from 
     expect(g.object(gargadon.name).counters?.time).toBe(9);
   });
 });
+
+describe('"Whenever you cast a spell from exile, copy it. ... If it\'s a permanent spell, the copy gains haste and \\"At the beginning of the end step, sacrifice this permanent.\\"" (CR 707.10f, 613.1f, 603.7)', () => {
+  const copier = parsed(
+    'SYNTHETIC Exile Copier',
+    'Creature — Beast Demon',
+    'Whenever you cast a spell from exile, copy it. You may choose new targets for the copy. If it\'s a permanent spell, the copy gains haste and "At the beginning of the end step, sacrifice this permanent."\nDraw Arcanum — {T}: Look at the top card of your library. You may exile it face down.\nPlay Arcanum — {T}: Until end of turn, you may play cards exiled with ~. Spells you cast this way cost {2} less to cast.',
+    { manaCost: '{5}{R}', power: '4', toughness: '6', colors: ['R'] },
+  );
+  const build = () =>
+    scenario()
+      .define(copier)
+      .seat(0)
+      .life(20)
+      .battlefield(copier.name, 'Forest', 'Forest')
+      .library('Grizzly Bears', ...FILLER)
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the copy of a permanent spell is a hasty token that is sacrificed at the end step', () => {
+    const g = build();
+    g.act(0).activate(copier.name, { ability: 1 });
+    g.passAll();
+    g.act(0).chooseCards('Grizzly Bears');
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.act(0).activate(copier.name, { ability: 2 });
+    g.passAll();
+    g.act(0).cast({ name: 'Grizzly Bears', zone: 'exile' }, { pay: true });
+    g.passAll();
+    expect(g.find({ name: 'Grizzly Bears', zone: 'battlefield', seat: 0 })).toHaveLength(2);
+    g.advanceTo('end');
+    g.passAll();
+    expect(g.find({ name: 'Grizzly Bears', zone: 'battlefield', seat: 0 })).toHaveLength(1);
+  });
+});

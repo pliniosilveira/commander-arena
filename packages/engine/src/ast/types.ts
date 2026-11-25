@@ -3666,6 +3666,12 @@ export type Effect =
        * CR 707.10e gives the controller is not asked, see docs/ROADMAP.md).
        */
       readonly newTarget?: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 608.3f, 613.1f): the abilities the
+       * permanent a copy of a permanent spell becomes (a token) has for as long as it stays on the battlefield. A copy of an instant or a sorcery spell never becomes a permanent and gives
+       * nothing. Only with one copy made by the effect of a trigger about a cast spell (no `count`, `forEach`, `copier` or `newTarget`).
+       */
+      readonly permanentGains?: readonly Ability[];
     }
   /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,

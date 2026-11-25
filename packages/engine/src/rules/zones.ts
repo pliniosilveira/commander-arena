@@ -1247,6 +1247,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   ) {
     next = applyCreatureGains(next, newId, old.stack.creatureGains);
   }
+  // Nalfeshnee (CR 707.10f, 613.1f): the token a copy of a permanent spell becomes has the abilities the copy carried.
+  if (to === 'battlefield' && old.zone === 'stack' && old.stack?.permanentGains !== undefined) {
+    next = applyCreatureGains(next, newId, old.stack.permanentGains);
+  }
   // D-232: "If you cast a spell this way, that artifact enters tapped" / "If you do, it gains ...": what the permission of a permanent gives the permanent.
   if (to === 'battlefield' && old.zone === 'stack' && old.stack?.graveyardPlay !== undefined) {
     next = applyGraveyardRider(next, newId, old.stack.graveyardPlay);

@@ -593,6 +593,8 @@ export interface StackData {
    * ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
    */
   readonly creatureGains?: readonly Ability[];
+  /** Nalfeshnee (CR 707.10f, 613.1f): a copy of a spell that carries abilities its permanent has (`copySpell.permanentGains`), whatever the permanent's types. */
+  readonly permanentGains?: readonly Ability[];
   /**
    * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
    * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
@@ -2074,6 +2076,8 @@ export type Instruction =
       readonly among?: readonly ObjectId[];
       readonly controller?: SeatId;
       readonly retarget?: ObjectId;
+      /** Nalfeshnee (CR 707.10f, 613.1f): what the permanent the copy becomes has (`copySpell.permanentGains`). */
+      readonly gains?: readonly Ability[];
     }
   /**
    * CR 115.7a, 115.7b (D-181): "Change the target of target spell or ability with a single target." The target of `object`, a spell or ability on

@@ -7244,6 +7244,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // Nalfeshnee (CR 707.10f, 613.1f): what the token a copy of a permanent spell becomes has; one copy of the spell of the trigger.
+      if (e.permanentGains !== undefined) {
+        if (
+          !Array.isArray(e.permanentGains) ||
+          e.permanentGains.length === 0 ||
+          e.count !== undefined ||
+          e.forEach !== undefined ||
+          e.copier !== undefined ||
+          e.newTarget !== undefined ||
+          kindOf(e.spell) !== 'triggerSubject'
+        ) {
+          issue(
+            out,
+            `${path}.permanentGains`,
+            'permanentGains is a list of abilities of the one copy of the spell of the trigger (triggerSubject), with no count, forEach, copier or newTarget',
+          );
+        } else {
+          e.permanentGains.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.permanentGains[${i}]`, out);
+          });
+        }
+      }
       if (e.copier !== undefined && e.copier !== 'triggerPlayer' && e.copier !== 'opponent') {
         issue(out, `${path}.copier`, 'copier is "triggerPlayer" or "opponent"');
       } else if (e.copier === 'opponent') {

@@ -301,6 +301,13 @@ const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
 /** "Round up each time." (Saw in Half, CR 107.1a): the rounding of the halves the copy exception before it says, so it stays with that sentence. */
 const ROUND_UP_SENTENCE = /^round up each time\.$/i;
 const HALF_COPY_END = /their toughness is half that creature['’]s toughness\.$/i;
+/**
+ * "Whenever you cast a spell from exile, copy it. You may choose new targets for the copy. If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this
+ * permanent.\"" (Nalfeshnee, CR 707.10f): the third sentence says what the token a copy of a permanent spell becomes has, so it is read with the copy (`effect.copy-spell`).
+ */
+const COPY_GAINS_SENTENCE = /^if it['’]s a permanent spell, the copy gains haste and ["“].*["”]$/i;
+const COPY_WITH_NEW_TARGETS_END =
+  /(?:^|, )copy (?:that spell|it)\.(?: you may choose new targets for the copy\.)?$/i;
 const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
 
 /**
@@ -321,6 +328,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
   if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
+  if (COPY_GAINS_SENTENCE.test(said)) return COPY_WITH_NEW_TARGETS_END.test(beforeText);
   if (ROUND_UP_SENTENCE.test(said)) return HALF_COPY_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
