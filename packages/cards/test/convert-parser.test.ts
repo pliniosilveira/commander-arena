@@ -821,7 +821,6 @@ describe('unmatched abilities', () => {
       'effect.add-mana-combination-of-two-colors',
       'effect.may-play-this-way-free',
       'effect.exile-until-put-rest-bottom',
-      'effect.exile-that-many-from-top',
       'effect.cast-among-exiled-any-color',
       'effect.lead-gain-next-turn',
       'effect.choose-an-opponent',

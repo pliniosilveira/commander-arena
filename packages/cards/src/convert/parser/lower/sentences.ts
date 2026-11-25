@@ -2506,6 +2506,8 @@ function countsWhatHappened(
       earlier.verb === 'sacrifice' ||
       // Issue 121 (Bloodthirsty Adversary): "pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters": the number of times paid.
       earlier.verb === 'payAnyNumberOfTimes' ||
+      // Chandra, Legacy of Fire: "Remove a loyalty counter from each of any number of permanents you control. Exile that many cards": the counters removed.
+      earlier.verb === 'removeCounterFromEachChosen' ||
       (earlier.verb === 'discard' &&
         (earlier.args.anyNumber !== undefined ||
           earlier.args.upTo !== undefined ||

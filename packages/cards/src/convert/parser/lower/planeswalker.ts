@@ -298,9 +298,19 @@ const EXILE_TOP_THAT_MANY: Lowering<IrClause, Effects> = {
     // The cards exiled face up are what "play them" names next (the engine's `moved`).
     ctx.exiled = 'top';
     ctx.exiledFaceDown = false;
+    // "that many" after the event of a trigger (Dream Pillager: combat damage dealt) is the amount the binding pass made of it; after the removal of counters (Chandra) it is the counters removed.
+    const said = amountArg(clause, 'count', ctx);
     return {
       ok: true,
-      value: [{ kind: 'exileTop', count: { kind: 'thisWay', what: 'countersRemoved' } }],
+      value: [
+        {
+          kind: 'exileTop',
+          count:
+            said.ok && said.value.kind !== 'thisWay'
+              ? said.value
+              : { kind: 'thisWay', what: 'countersRemoved' },
+        },
+      ],
       rule: clause.rule,
     };
   },

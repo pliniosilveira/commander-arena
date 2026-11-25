@@ -103,7 +103,6 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
-import { EXILE_THAT_MANY_EFFECT_RULES } from './exile-that-many';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
@@ -1466,7 +1465,6 @@ export const EFFECT_RULES = [
   ...ADD_MANA_COMBINATION_EFFECT_RULES,
   ...MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES,
   ...EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES,
-  ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,

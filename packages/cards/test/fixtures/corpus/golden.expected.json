@@ -1,5 +1,5 @@
 {
-  "parserVersion": 211,
+  "parserVersion": 212,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -759,6 +759,14 @@
       "reasons": [],
       "ast": "51cae8cc"
     },
+    "0b95c115-6745-4ce1-896b-9021e93c161e": {
+      "name": "Chaos Wand",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ec3eb0da"
+    },
     "0ba134d8-ee7d-48ec-8dc6-57942b8e9261": {
       "name": "Liliana of the Veil",
       "group": "acceptance",
@@ -953,6 +961,22 @@
       "reasons": [],
       "ast": "c6593ee5"
     },
+    "0e5e46e3-f9af-47cc-a740-bf808d5cb4b1": {
+      "name": "Tectonic Giant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a9c07550"
+    },
+    "0ec5a688-a884-410c-adee-ab784789d6e8": {
+      "name": "Green Slime",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3b98be66"
+    },
     "0ee41ef9-0b39-4d00-a68e-7914839a7175": {
       "name": "Bone Devourer",
       "group": "acceptance",
@@ -1011,7 +1035,7 @@
     },
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
-      "group": "holdout",
+      "group": "acceptance",
       "status": "supported",
       "unparsed": [],
       "reasons": [],
@@ -1225,6 +1249,14 @@
       "reasons": [],
       "ast": "13bb89f4"
     },
+    "146eb8c8-93d5-4dd5-af7a-46d5acd4a89d": {
+      "name": "Vivien, Champion of the Wilds",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f153b7b1"
+    },
     "14878a5f-7983-4133-a1a7-9d539531e092": {
       "name": "Angel of the Ruins",
       "group": "training",
@@ -1425,6 +1457,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "63bacb23"
+    },
+    "17a34f8d-a80f-4331-8be5-06cbb9d10d7b": {
+      "name": "Terramorph",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0f1038c6"
     },
     "17b4778b-82b1-4845-ad08-00f3ff66877b": {
       "name": "Perpetual Timepiece",
@@ -1954,6 +1994,14 @@
       "reasons": [],
       "ast": "a5c99eda"
     },
+    "21d3858f-441d-4bb2-888e-8b147ecad7e9": {
+      "name": "Durnan of the Yawning Portal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0ac7da2d"
+    },
     "2207fb3f-45a1-401b-99e9-f75723495c3f": {
       "name": "Rendmaw, Creaking Nest",
       "group": "acceptance",
@@ -2209,6 +2257,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "09ed541b"
+    },
+    "261f371f-bcda-4761-810f-3216608b31d8": {
+      "name": "Venture Forth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea638849"
     },
     "2631130e-63e2-43a3-914a-648e76722203": {
       "name": "Fire Lord Azula",
@@ -3777,6 +3833,14 @@
       "reasons": [],
       "ast": "8f22a3d1"
     },
+    "406b4b1d-756b-4062-897d-3693832086a0": {
+      "name": "Greater Gargadon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "490588c3"
+    },
     "4080f7e3-06d3-4d3d-9929-4e826cb66713": {
       "name": "Herald of Eternal Dawn",
       "group": "training",
@@ -4690,6 +4754,14 @@
       "reasons": [],
       "ast": "866efba4"
     },
+    "504cc26d-3fd5-4391-9d30-f0614e5c8bbc": {
+      "name": "Dream Pillager",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d208c5bc"
+    },
     "506667b1-7922-4959-a5b3-0f8abe8c3615": {
       "name": "Deadbridge Chant",
       "group": "acceptance",
@@ -5319,6 +5391,14 @@
       "reasons": [],
       "ast": "a843fb9d"
     },
+    "5b2ffb53-86b7-4665-a5c7-b85b035b6c81": {
+      "name": "Urabrask the Hidden",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2312e04b"
+    },
     "5b7bbc76-22cc-482e-8d65-34cff34c93c8": {
       "name": "Unstable Experiment",
       "group": "acceptance",
@@ -5695,6 +5775,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4a6a75ba"
+    },
+    "6299d18e-a6a7-414c-85c0-d57a8e7d2627": {
+      "name": "Passionate Archaeologist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f8794f9"
     },
     "63193ad4-bbd2-4cc3-98e2-9f6b985e8ae7": {
       "name": "Oft-Nabbed Goat",
@@ -6081,6 +6169,14 @@
       "reasons": [],
       "ast": "64a9cf50"
     },
+    "6807167a-e290-4259-940e-3cbbfa75d0a1": {
+      "name": "Stolen Strategy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f1cbfbaf"
+    },
     "6812e4d3-0034-4fc8-9ee9-520f76a0ea94": {
       "name": "Innovative Commons",
       "group": "acceptance",
@@ -6160,6 +6256,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e867fc3e"
+    },
+    "69b52907-8aff-4f2a-a391-7d1ab2669b5c": {
+      "name": "End-Raze Forerunners",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d0d38043"
     },
     "69c674c7-48a5-49c8-b0be-3f2b5c6a548c": {
       "name": "Sauron, Lord of the Rings",
@@ -6472,6 +6576,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d65fa836"
+    },
+    "6ec54d84-7026-45a3-a7d7-37cd5c9a8463": {
+      "name": "Sarevok's Tome",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{T}: Add {C}. If you have the initiative, add {C}{C} instead.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{3}, {T}: Exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost. Activate only if you've completed a dungeon.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.exile-until-put-rest-bottom"
+        }
+      ],
+      "reasons": [],
+      "ast": "54211bc4"
     },
     "6f16c3ac-a9b8-47e6-b18b-ae37c74d44a0": {
       "name": "Nether Traitor",
@@ -7114,6 +7243,14 @@
       "reasons": [],
       "ast": "7cc77327"
     },
+    "79b69b38-c01d-499a-a865-8c1cecf9fae0": {
+      "name": "Tlincalli Hunter // Retrieve Prey",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c878dd53"
+    },
     "79ba18fd-f184-43c1-86df-56ee18ce806c": {
       "name": "Secluded Courtyard",
       "group": "acceptance",
@@ -7437,6 +7574,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5c6a268e"
+    },
+    "7e84aff5-2cb6-4214-befd-3d2de31229e5": {
+      "name": "Lovestruck Beast // Heart's Desire",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "90d7f92b"
     },
     "7e8c2a18-e404-40ff-a9e0-ec3eeb6d576e": {
       "name": "Command Beacon",
@@ -8347,6 +8492,14 @@
       "reasons": [],
       "ast": "db0042ec"
     },
+    "8ea10a5a-b698-4f7d-a9c8-520f8d835f34": {
+      "name": "Sweet-Gum Recluse",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2b55fd9d"
+    },
     "8ea414c1-88cf-46d4-9a54-6dee9847c537": {
       "name": "Surge to Victory",
       "group": "acceptance",
@@ -8442,6 +8595,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "18de27a4"
+    },
+    "915aa871-4c5e-4799-9a07-d7b855df4e7a": {
+      "name": "Ignite the Future",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "17b78702"
     },
     "918991a6-7321-419d-8f3d-150fe32d02d2": {
       "name": "Eris, Roar of the Storm",
@@ -8602,6 +8763,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca25ff73"
+    },
+    "942a318e-90eb-4f10-bb30-2e10f5cc922a": {
+      "name": "Xenagos, the Reveler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a4b3ef5a"
     },
     "943fc88d-c281-46bb-9dc7-1052f789362b": {
       "name": "Furygale Flocking",
@@ -8771,6 +8940,14 @@
       "reasons": [],
       "ast": "49281bcc"
     },
+    "97a85a3e-258e-49b7-8ebe-7efee808da7a": {
+      "name": "Nalfeshnee",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8dc25e0a"
+    },
     "97b2fb8b-0c69-4ed2-b2d0-8a780f9b5b97": {
       "name": "Dauntless Veteran",
       "group": "acceptance",
@@ -8858,6 +9035,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c682818f"
+    },
+    "99915b5a-5092-4900-8824-6de2aab1b2c1": {
+      "name": "Delayed Blast Fireball",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "84caf11d"
     },
     "99c2d3ef-e5b4-48cd-b3f5-de9b02c7c36a": {
       "name": "Ureni of the Unwritten",
@@ -9579,6 +9764,14 @@
       "reasons": [],
       "ast": "32e7cccb"
     },
+    "a450ef56-8511-43e0-bdca-0c25f54ba338": {
+      "name": "Wild-Magic Sorcerer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d783ad7b"
+    },
     "a46f9136-b904-403e-b263-e99c9a2fe2ec": {
       "name": "Ferrafor, Young Yew",
       "group": "acceptance",
@@ -9699,6 +9892,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "50dba8fd"
+    },
+    "a5f5e662-b32c-44f1-848d-0228f0fe1eb6": {
+      "name": "Journey to the Lost City",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93101be9"
     },
     "a620a765-97ba-4687-acfd-4dec7da75d9f": {
       "name": "Departed Deckhand",
@@ -9891,6 +10092,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a3998b29"
+    },
+    "a98cc4d0-a322-4142-aee0-83f39b137616": {
+      "name": "Aurora Phoenix",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "763009b9"
     },
     "a9a6c2ba-30ba-4e45-9ea0-ea9833342069": {
       "name": "Dragon Broodmother",
@@ -12435,6 +12644,14 @@
       "reasons": [],
       "ast": "416ba3c5"
     },
+    "d6d72f5f-8f5d-4180-b514-f22ff5482902": {
+      "name": "Bonecrusher Giant // Stomp",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bc7296aa"
+    },
     "d6fafb50-9531-4fbf-bb1e-ebb4dd39281c": {
       "name": "Finale of Promise",
       "group": "acceptance",
@@ -12546,6 +12763,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "85d1603d"
+    },
+    "d8e6294d-51cc-44ff-8bc6-b0a168e4f423": {
+      "name": "Faldorn, Dread Wolf Herald",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fef52c9f"
     },
     "d9068051-b51c-4700-b492-30b148e3a72c": {
       "name": "Yavimaya Bloomsage // Channel",
@@ -13203,6 +13428,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9ba57160"
+    },
+    "e4a3d6f3-36ba-4e6d-a254-351bc8886f20": {
+      "name": "Izzet Chemister",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8046f045"
     },
     "e4ed7935-0263-4cde-8118-ac18fffce3ef": {
       "name": "Determined Iteration",
@@ -14776,12 +15009,12 @@
       "total": 175
     },
     "holdout": {
-      "supported": 54,
-      "total": 57
+      "supported": 53,
+      "total": 56
     },
     "acceptance": {
-      "supported": 1542,
-      "total": 1559
+      "supported": 1569,
+      "total": 1587
     }
   }
 }
