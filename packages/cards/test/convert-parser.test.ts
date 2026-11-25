@@ -1012,6 +1012,7 @@ describe('unmatched abilities', () => {
       'effect.gain-control-for-player',
       'effect.control-while-remains',
       'effect.vote',
+      'effect.that-player-returns',
       'effect.add-counters-ring-bearer',
       'effect.for-each-vote',
       'effect.each-player-returns',

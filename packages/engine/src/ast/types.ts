@@ -114,7 +114,7 @@ export type Amount =
   /**
    * "The amount of mana spent to cast it", "for each mana from an artifact source spent to cast it" (CR 601.2h, D-183): how much mana was spent on
    * the cost of the spell in all, or, with `fromType`, how much of it was made by a source with that card type ("artifact": a Treasure, a Sol Ring, an
-   * artifact creature). The spell is the source of a "When you cast this spell" ability (`castSpell` with `self`: read from its stack data, or from
+   * artifact creature) or subtype ("Desert": Cataclysmic Prospecting, "for each mana from a Desert spent to cast this spell"). The spell is the source of a "When you cast this spell" ability (`castSpell` with `self`: read from its stack data, or from
    * last-known information if it has left the stack, CR 113.7a), and the permanent that enters, for the `count` of `othersEnterWithCounters`
    * (a permanent that did not come from a spell cast for mana has 0). Mana that paid the activation cost of a mana ability, life paid for
    * Phyrexian mana and what Convoke, Improvise or Delve paid are not counted; a copy of a spell was not cast and has 0 (CR 707.10).

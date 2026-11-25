@@ -307,6 +307,8 @@ describe('the record on the spell (CR 601.2h)', () => {
     expect(g.object({ name: DRAGON, zone: 'stack' }).stack?.manaSpent).toEqual({
       total: 6,
       fromTypes: { land: 6 },
+      // Cataclysmic Prospecting (CR 205.3i): the subtypes of the sources, kept apart from their card types.
+      fromSubtypes: { Swamp: 1, Mountain: 1, Forest: 1, Plains: 3 },
       // Issue 310 (Converge): the colors of the mana spent, of the five, in the order W, U, B, R, G.
       colors: ['W', 'B', 'R', 'G'],
     });
@@ -337,6 +339,7 @@ describe('the record on the spell (CR 601.2h)', () => {
     expect(g.object({ name: DRAGON, zone: 'stack' }).stack?.manaSpent).toEqual({
       total: 6,
       fromTypes: { artifact: 1, land: 6 },
+      fromSubtypes: { Swamp: 1, Mountain: 1, Forest: 1, Plains: 2 },
       colors: ['W', 'B', 'R', 'G'],
     });
   });
