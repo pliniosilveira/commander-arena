@@ -5891,6 +5891,8 @@ export type Trigger =
    * subject of the trigger. `bearerChosen` narrows the event to times a creature was actually chosen, as in CR 701.54a.
    */
   | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
+  /** "Whenever you complete a dungeon" (CR 309.7, 701.49c; the `dungeonCompleted` event): once each time the dungeon of the controller of the ability is completed. */
+  | { readonly kind: 'dungeonCompleted' }
   /** "When this Class becomes level N" (CR 716.2, D-235): once as its level changes to `level`. */
   | { readonly kind: 'classLevel'; readonly level: number }
   /**
@@ -6404,6 +6406,12 @@ export type Trigger =
        * attacking player.
        */
       readonly attackedYou?: true;
+      /**
+       * "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b, 603.2c): only when at least one creature of the declaration was declared as attacking
+       * the player who has the initiative as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many
+       * creatures attack. Not with `attackedYou`, `attackedEnchantedPlayer` or `eachAttackedPlayer`.
+       */
+      readonly attackedInitiativeHolder?: true;
       /**
        * "Whenever one or more Demons you control attack a player" (CR 508.1b, 508.6, 603.2c, Demonic Covenant): one occurrence for each player the declaration attacks (as a player: an
        * attack on a planeswalker or a battle is not an attack on its controller or protector), counting only the creatures declared as attacking that player: the ability triggers once for

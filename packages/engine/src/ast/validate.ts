@@ -1286,6 +1286,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.fromExile`, 'fromExile must be true when present');
       }
       break;
+    case 'dungeonCompleted':
+      break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
         issue(out, `${path}.bearerChosen`, 'must be true when present');

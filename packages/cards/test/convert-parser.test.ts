@@ -465,6 +465,8 @@ describe('unmatched abilities', () => {
       'trigger.player-attacks-you',
       'trigger.player-attacks-bare',
       'trigger.opponent-attacks-you',
+      'trigger.you-attack-initiative-holder',
+      'trigger.you-complete-dungeon',
       'trigger.cards-leave-graveyard',
       'trigger.cards-exiled-library-graveyard',
       'trigger.cast-nth',

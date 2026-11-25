@@ -829,6 +829,11 @@ function occurrences(
             },
           ]
         : [];
+    case 'dungeonCompleted':
+      // CR 309.7, 701.49c: once each time a player's dungeon is completed.
+      return event.kind === 'dungeonCompleted'
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'chapter':
       // CR 714.2b, 714.2c: once for each chapter number the lore counters newly reached.
       if (event.kind !== 'counterAdded' || lore === null) return [];
@@ -1210,6 +1215,13 @@ function matches(
       if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
         return false;
       }
+      // CR 726.1, 508.1b (Loot Dispute): "you attack the player who has the initiative": that player was declared as attacked, as a player.
+      if (
+        trigger.attackedInitiativeHolder === true &&
+        (state.initiative === undefined || !(occ.attacked ?? []).includes(state.initiative))
+      ) {
+        return false;
+      }
       // CR 508.1, 603.2c (Frontline Medic): "Whenever ~ and at least two other creatures attack": the permanent itself is one of the creatures counted.
       return (
         attackBatchMembers(state, trigger, occ, candidate.controller, candidate.id, ctx).length >=
@@ -1230,6 +1242,9 @@ function matches(
       return subject !== null && subject.id === candidate.id;
     case 'ringTempted':
       // CR 701.54d: "Whenever the Ring tempts you": the player the Ring tempted controls the ability.
+      return occ.seat === candidate.controller;
+    case 'dungeonCompleted':
+      // CR 309.7: "Whenever you complete a dungeon": the player whose dungeon was completed controls the ability.
       return occ.seat === candidate.controller;
     case 'landfall':
       // "Whenever a land enters under your control": the land's controller is the ability's.
@@ -1444,6 +1459,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'doorUnlocked': // CR 709.5h
     case 'exploited': // CR 702.110b
     case 'ringTempted':
+    case 'dungeonCompleted': // CR 309.7, 701.49c
     case 'classLevelReached':
     case 'votesRevealed': // CR 701.38a: "whenever players finish voting"
       return true;

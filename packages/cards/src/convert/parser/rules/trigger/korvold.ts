@@ -150,12 +150,13 @@ export const TRIGGER_YOU_ATTACK = defineRule<IrTrigger>({
     'an opponent attacks',
     'you attack you',
     'you attack or',
+    'you attack the player who has the initiative',
   ],
   parse: (ctx, pos) => {
     // What follows ("with two or more creatures", "alone", "you", "or ...") belongs to another trigger rule: a rule that reads a prefix would hide it.
     const r = sequence(
       youNoun('trigger.you-attack'),
-      pattern(/ attack(?![\p{L}\p{N}])(?!\s+(?:with|alone|you|or|and)(?![\p{L}\p{N}]))/iu),
+      pattern(/ attack(?![\p{L}\p{N}])(?!\s+(?:with|alone|you|or|and|the)(?![\p{L}\p{N}]))/iu),
     )(ctx, pos);
     if (!r.ok) return r;
     const [actor] = r.value;
