@@ -25,6 +25,8 @@ describe('the trigger "putIntoGraveyard"', () => {
   test.each([
     { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
     { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', filter: land },
+    // Yuma, Proud Protector: a land type of the card in the graveyard (CR 205.3i).
+    { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', filter: { subtypes: ['Desert'] } },
     { kind: 'putIntoGraveyard', who: 'you', from: 'library', batch: true },
     // Nihilith: a card put into an opponent's graveyard, one trigger for each card.
     { kind: 'putIntoGraveyard', who: 'opponent', from: 'anywhere' },

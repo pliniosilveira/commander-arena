@@ -2456,6 +2456,8 @@ export interface ThisWayCounts {
   readonly milledValue?: number;
   /** The creature cards milled by `mill` effects, for "for each creature card put into a graveyard this way" (Dread Summons). */
   readonly milledCreature?: number;
+  /** The land cards milled by `mill` effects, for "for each land card milled this way" (Dune Chanter). */
+  readonly milledLand?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
   /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */
