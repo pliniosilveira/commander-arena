@@ -11,6 +11,7 @@ import {
   replayCard,
   type ScryfallClient,
   type SnapshotCard,
+  type StoredCard,
   toSnapshotCard,
 } from '@commander-arena/cards';
 import type { DeckConfig } from '@commander-arena/engine';
@@ -28,8 +29,19 @@ export type PreconDeck =
       readonly deck: DeckConfig;
       /** How the deck was built, for the replay of an AI report (issue 627). */
       readonly replay: ReplayDeck;
+      /** The stored cards of the deck, whose pictures the board draws from their own links (`deck-images.ts`). */
+      readonly images: readonly StoredCard[];
     }
   | { readonly ok: false; readonly info: PreconInfo | null; readonly reason: string };
+
+/** The stored cards a resolved list holds: the cards of its sections, its commanders and its companion. */
+function storedCardsOf(report: ImportReport): readonly StoredCard[] {
+  return [
+    ...report.entries.map((entry) => entry.card.stored),
+    ...report.commanders.map((card) => card.stored),
+    ...(report.companion?.card == null ? [] : [report.companion.card.stored]),
+  ];
+}
 
 /** Makes the import service of the app, resolving names through the given client. */
 export type ServiceFor = (client: ScryfallClient) => ImportService;
@@ -53,7 +65,7 @@ export async function buildPreconDeck(
       };
     }
     const replay = { name: snapshot.name, precon: snapshot.id, decklist: snapshot.decklist };
-    return { ok: true, info, deck: check.deck, replay };
+    return { ok: true, info, deck: check.deck, replay, images: storedCardsOf(report) };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, info, reason: `"${snapshot.name}" could not be prepared: ${message}` };
@@ -125,7 +137,13 @@ async function buildFromText(
     if (!check.ok) {
       return { ok: false, info, reason: `"${info.name}" cannot be played: ${check.reason}.` };
     }
-    return { ok: true, info, deck: check.deck, replay: replayOf(info.name, text, report, base) };
+    return {
+      ok: true,
+      info,
+      deck: check.deck,
+      replay: replayOf(info.name, text, report, base),
+      images: storedCardsOf(report),
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, info, reason: `"${info.name}" could not be prepared: ${message}` };

@@ -3,15 +3,17 @@
  * documented image redirect
  * (`/cards/named?exact=<name>&format=image&version=<v>`). The browser caches the redirect target,
  * and a failed load (offline, blocked, unknown name, SYNTHETIC card) leaves the drawn frame as is.
- * Tokens use a cached exact search of their original definition instead (`token-art.ts`).
+ * A card of a deck on the table is drawn from the picture links stored with it first (`deck-images.ts`); the name lookup is for the
+ * others. Tokens use a cached exact search of their original definition instead (`token-art.ts`).
  */
 import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
 import { useListedArt } from './commander-art';
+import { storedImage } from './deck-images';
 import { isGameCard } from './deck-printings';
 import type { ArtVersion } from './image-uris';
-import { createFailureMemory, RETRY_AFTER_MS } from './lookup-cache';
+import { createFailureMemory, retryDelayMs } from './lookup-cache';
 import { useEmblemArt, useTokenArt } from './token-art';
 
 export type { ArtVersion } from './image-uris';
@@ -21,7 +23,7 @@ export type { ArtVersion } from './image-uris';
  * stayed blank for the session: it is asked for again after a wait, up to `RETRIES` times.
  */
 const failed = createFailureMemory();
-const RETRIES = 3;
+const RETRIES = 6;
 
 /** The image URL for a card name, or null for cards that have no Scryfall image. */
 export function imageUrl(
@@ -105,7 +107,11 @@ export function Art({
     : copiesACard
       ? imageUrl(name, false, version, back)
       : tokenDefinition === undefined
-        ? (listed.url ?? imageUrl(name, isToken, version, back))
+        ? (listed.url ??
+          // The picture stored with the card in its owner's deck: no request to Scryfall's API, which limits them. A card the decks
+          // do not store, or that has no owner, is asked for by name.
+          (!isToken && owner !== undefined ? storedImage(name, owner, back, version) : null) ??
+          imageUrl(name, isToken, version, back))
         : tokenUrl;
   if (url === null) return null;
   return <LoadedArt key={url} url={url} className={className} style={style} eager={eager} />;
@@ -132,7 +138,7 @@ function LoadedArt({
       failed.clear(url);
       setAttempt((n) => n + 1);
       setState('loading');
-    }, RETRY_AFTER_MS);
+    }, retryDelayMs(attempt));
     return () => clearTimeout(timer);
   }, [state, attempt, url]);
   if (state === 'failed') return null;

@@ -8,6 +8,11 @@ import type { QueueOutcome } from '@commander-arena/cards';
 /** How long a failed lookup is believed before it is asked again. */
 export const RETRY_AFTER_MS = 30_000;
 
+/** How long a picture that failed again is believed before the next try: 30 s, 1 min, 2 min, then 4 min, so a longer rate limit is waited out. */
+export function retryDelayMs(attempt: number): number {
+  return RETRY_AFTER_MS * 2 ** Math.min(attempt, 3);
+}
+
 export interface LookupOutcome<T> {
   readonly value: T | null;
   /** The answer says nothing about the card: ask again later. */
