@@ -11,9 +11,8 @@
 import type { CardDefinition } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { HeuristicAgent } from '../../src/index';
 import { CURSED_IDOL, LIBRARY_LAMP, PINGER } from './cards';
-import { isActivation, playUntilPass } from './drive';
+import { blunderAgent, isActivation, playUntilPass } from './drive';
 
 const V1 = 'SYNTHETIC Vanilla 1/1';
 const V3 = 'SYNTHETIC Vanilla 3/3';
@@ -76,7 +75,7 @@ describe('spare mana at the end of the opposing turn is used', () => {
   test('an untapped pinger kills the opposing 1/1 at the end of the turn', async () => {
     // Wrong to pass here: the pinger untaps next turn anyway, and the 1/1 is the opponent's only creature.
     const g = endStep([PINGER.name], [V1], { defs: [PINGER] });
-    const agent = new HeuristicAgent({ seed: 1 });
+    const agent = blunderAgent();
     // The names are read before the play: the 1/1 the pinger kills leaves the battlefield.
     const names = new Map([[g.id(V1), V1]]);
     const { actions } = await playUntilPass(g, 0, agent);
