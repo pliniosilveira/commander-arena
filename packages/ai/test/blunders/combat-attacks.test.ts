@@ -10,9 +10,8 @@
 // rule: a move a strong player could defend there does not belong here. Its comment says in one line why.
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { HeuristicAgent } from '../../src/index';
 import { askHeuristic, creature } from '../heuristic-helpers';
-import { nameOf } from './drive';
+import { blunderAgent, nameOf } from './drive';
 
 const V1 = 'SYNTHETIC Vanilla 1/1';
 const V3 = 'SYNTHETIC Vanilla 3/3';
@@ -48,7 +47,7 @@ function attackSetup(
 
 /** The names of the attackers the agent declares. */
 async function attackers(g: ReturnType<typeof attackSetup>): Promise<string[]> {
-  const action = await askHeuristic(g, new HeuristicAgent({ seed: 1 }));
+  const action = await askHeuristic(g, blunderAgent());
   if (action.kind !== 'declareAttackers')
     throw new Error(`declareAttackers expected: ${action.kind}`);
   return action.attacks.map((a) => nameOf(g, a.attacker));

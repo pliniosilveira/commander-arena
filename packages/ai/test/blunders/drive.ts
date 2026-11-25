@@ -1,10 +1,29 @@
 // Shared drivers of the blunder suite: let the HeuristicAgent answer every decision of its seat until
 // it passes priority, and read what it did.
+import { readFileSync } from 'node:fs';
 import type { Action } from '@commander-arena/engine';
 import type { ScenarioGame } from '@commander-arena/engine/testing';
 import { findObject } from '../../src/casual-view';
-import { HeuristicAgent } from '../../src/index';
+import {
+  type AgentWeights,
+  HeuristicAgent,
+  type PartialWeights,
+  withWeights,
+} from '../../src/index';
 import { askHeuristic } from '../heuristic-helpers';
+
+/**
+ * The weights the suite plays with: the defaults, or a partial AgentWeights read from the JSON file that the
+ * environment variable AI_WEIGHTS names (`AI_WEIGHTS=tuned.json pnpm test:focus -- packages/ai/test/blunders`),
+ * so a tuned file (tools/ai/tune.ts) can be checked against the suite. Only the tests read it, never src.
+ */
+const WEIGHTS: AgentWeights | undefined = process.env.AI_WEIGHTS
+  ? withWeights(JSON.parse(readFileSync(process.env.AI_WEIGHTS, 'utf8')) as PartialWeights)
+  : undefined;
+
+/** The agent of the blunder suite, with the suite's weights. */
+export const blunderAgent = (seed = 1): HeuristicAgent =>
+  new HeuristicAgent(WEIGHTS === undefined ? { seed } : { seed, weights: WEIGHTS });
 
 /** What the agent did with one stretch of priority: its answers, and the names of the spells it cast. */
 export interface Played {
@@ -20,7 +39,7 @@ export interface Played {
 export async function playUntilPass(
   g: ScenarioGame,
   seat: 0 | 1,
-  agent: HeuristicAgent = new HeuristicAgent({ seed: 1 }),
+  agent: HeuristicAgent = blunderAgent(),
   limit = 20,
 ): Promise<Played> {
   const actions: Action[] = [];
