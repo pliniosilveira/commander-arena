@@ -21,6 +21,7 @@ export function readsTriggerSubject(ability: Ability): boolean {
   if (
     effects.includes('"subjectControlledByYou"') ||
     effects.includes('"subjectHadToAttack"') ||
+    effects.includes('"subjectMatches"') ||
     effects.includes('"subjectStat"') ||
     // Selvala: "if its power is greater than each other creature's power" reads the creature that entered as the ability resolves.
     effects.includes('"subjectGreaterThanEach"') ||
@@ -50,6 +51,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
     condition.includes('"subjectStat"') ||
     condition.includes('"subjectControlledByYou"') ||
     condition.includes('"subjectHadToAttack"') ||
+    // Endless Evil: the type the creature that died had, read again as the ability resolves.
+    condition.includes('"subjectMatches"') ||
     // Galadriel group 1: the creature the Ring tempted its controller to choose, read again as the ability resolves.
     condition.includes('"ringBearerChosen"') ||
     condition.includes('"manaSpentAtLeast"') ||

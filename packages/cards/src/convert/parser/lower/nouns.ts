@@ -313,6 +313,8 @@ function lowerFilterAt(
   if (filter.powerGreaterThanSource === true) parts.push('selector:powerGreaterThanSource');
   // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
   if (filter.controller === 'monarch') parts.push('selector:monarchController');
+  // CR 607.2d (Sewer Nemesis): "cards in the chosen player's graveyard", read from what the permanent chose as it entered.
+  if (filter.controller === 'chosenPlayer') parts.push('selector:chosenPlayerController');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -340,6 +342,10 @@ function lowerFilterAt(
   if (filter.discardedOrFromLibraryThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:discardedOrFromLibraryThisTurn');
+  }
+  if (filter.putFromLibraryThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:putFromLibraryThisTurn');
   }
   // D-235: "spells you cast from anywhere other than your hand" (CR 601.2a), a spell on the stack.
   if (filter.notCastFromHand === true) {
@@ -653,6 +659,7 @@ function lowerFilterAt(
     ...(filter.discardedOrFromLibraryThisTurn === true
       ? { discardedOrFromLibraryThisTurn: true as const }
       : {}),
+    ...(filter.putFromLibraryThisTurn === true ? { putFromLibraryThisTurn: true as const } : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),

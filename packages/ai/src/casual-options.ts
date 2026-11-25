@@ -7,8 +7,10 @@
  * first, so the answer is deterministic and uses no randomness. The view shows an agent its hand, never a
  * library, so (unlike the library) only what the view shows is counted; that is a deliberate limit.
  */
+
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { chooseCardType } from './casual-card-type';
+import { chooseCardNameOption, choosePlayerOption } from './casual-chosen-subject';
 import { chooseCounterPick } from './casual-counter-pick';
 import { chooseNamedOption } from './casual-dragons';
 import { chooseDungeonRoom } from './casual-dungeon';
@@ -139,8 +141,7 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   // CR 608.2d (The Black Gate): "choose a player with the most life or tied for most life": an opponent if one is among them (the effect is a bar on their creatures), else the first.
   // CR 102.2 (Slithermuse): "choose an opponent" when it has more cards in hand than you means the opponent with the largest hand, so the opponent with the most cards in hand
   // (ties go to the first listed, so the answer is deterministic); that is also a sound pick for the bar of The Black Gate.
-  // CR 614.12a (Stuffy Doll): "As this creature enters, choose a player": the same pick as the Black Gate's, an opponent, the one with the largest hand.
-  if (d.purpose === 'playerChoice' || d.purpose === 'player') {
+  if (d.purpose === 'playerChoice') {
     const handOf = (option: string): number =>
       view.seats.find((s) => `seat:${s.id}` === option)?.handCount ?? 0;
     let best: string | undefined;
@@ -166,6 +167,9 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'cardType') return chooseCardType(view, d);
   // CR 614.12a, 205.3j: "choose a planeswalker type", the type of the planeswalkers it controls (casual-walker-type.ts).
   if (d.purpose === 'planeswalkerType') return chooseWalkerType(view, d);
+  // CR 614.12a, 607.2d: "choose a player" and "choose a nonland card name" as it enters (casual-chosen-subject.ts).
+  if (d.purpose === 'player') return choosePlayerOption(view, d);
+  if (d.purpose === 'cardName') return chooseCardNameOption(view, d);
   // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice", the color that threatens the protected permanents (casual-protection.ts).
   if (d.purpose === 'protectionColor') return chooseProtectionColor(view, d);
   // D-514 (CR 702.16a, 608.2d): "gains protection from the card type of your choice", the card type that threatens the protected permanents (casual-protection.ts).

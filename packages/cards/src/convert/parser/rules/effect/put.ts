@@ -146,20 +146,30 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
 
 const BATTLEFIELD_RULE = 'effect.put-battlefield';
 
-/** " onto the battlefield", then "tapped" and the control when the text says them, in that order. */
+/**
+ * " onto the battlefield", then "tapped", the control and "with a corpse counter on it" when the text says them, in that order. The counter is one counter of a kind the words name
+ * (CR 122.6, 614.1c: the permanent enters with it), as "put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it" reads it.
+ */
 const ONTO_THE_BATTLEFIELD: Parser<IrZoneSpec> = map(
   spanned(
     sequence(
       literal(' onto the battlefield'),
       optional(literal(' tapped'), null),
       optional(UNDER_CONTROL, null),
+      optional(
+        pattern(/ with an? ([+\-\p{L}/0-9]+(?: \p{L}+)?) counter on it(?![\p{L}\p{N}])/iu),
+        null,
+      ),
     ),
   ),
-  ({ value: [, tapped, whose], span }): IrZoneSpec => ({
+  ({ value: [, tapped, whose, counter], span }): IrZoneSpec => ({
     kind: 'zoneSpec',
     zone: 'battlefield',
     ...(tapped === null ? {} : { tapped: true }),
     ...(whose === null ? {} : { whose }),
+    ...(counter === null
+      ? {}
+      : { counters: { counter: (counter[1] ?? '').toLowerCase(), count: 1 } }),
     span,
     rule: BATTLEFIELD_RULE,
   }),
@@ -187,6 +197,9 @@ export const EFFECT_PUT_BATTLEFIELD = defineRule<Clauses>({
     'put one, two, or three target creature cards from graveyards onto the battlefield under your control',
     "put target creature card from a graveyard onto the battlefield under its owner's control",
     'put all creature cards from your graveyard onto the battlefield',
+    // From the Catacombs (CR 122.6): the card enters with a counter on it.
+    'put target creature card from a graveyard onto the battlefield under your control with a corpse counter on it',
+    'put target creature card from a graveyard onto the battlefield with a +1/+1 counter on it',
   ],
   rejects: [
     'put target creature card from a graveyard onto the battlefield under his control',
@@ -196,7 +209,9 @@ export const EFFECT_PUT_BATTLEFIELD = defineRule<Clauses>({
     'put target creature onto the battlefield',
     'put a creature card from your hand onto the battlefield',
     'put it onto the battlefield under your control',
-    'put target creature card from a graveyard onto the battlefield with a +1/+1 counter on it',
+    'put target creature card from a graveyard onto the battlefield with two +1/+1 counters on it',
+    'put target creature card from a graveyard onto the battlefield with a corpse counter on it and draw a card',
+    'put target creature card from a graveyard onto the battlefield with a corpse counter',
   ],
   parse: single(
     BATTLEFIELD_RULE,

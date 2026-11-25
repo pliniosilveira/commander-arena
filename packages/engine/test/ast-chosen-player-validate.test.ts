@@ -59,12 +59,12 @@ describe('"Whenever a permanent deals damage to you, return it to its owner\'s h
     expect(issues(card(BOUNCE_SOURCE))).toEqual([]);
   });
 
-  test('the triggering permanent goes to the hand only', () => {
-    const toGraveyard: Ability = {
+  test('the triggering permanent is not put onto the battlefield', () => {
+    const toBattlefield: Ability = {
       ...BOUNCE_SOURCE,
-      effect: { kind: 'moveToZone', objects: { kind: 'triggerSubject' }, to: 'graveyard' },
+      effect: { kind: 'moveToZone', objects: { kind: 'triggerSubject' }, to: 'battlefield' },
     } as Ability;
-    expect(issues(card(toGraveyard)).join('\n')).toContain('hand');
+    expect(issues(card(toBattlefield)).join('\n')).toContain('battlefield');
   });
 
   test('an unknown recipient of the damage is refused', () => {

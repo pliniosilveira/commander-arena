@@ -2,6 +2,7 @@
  * What crosses the Worker boundary (SPEC 10, D-016): plain, structured-cloneable data only.
  * The Worker owns the real `GameState`; the page only ever sees a `GameView` for the human seat.
  */
+import type { GameRecord, ReplayDeck } from '@commander-arena/cards';
 import type {
   Ability,
   Action,
@@ -81,6 +82,12 @@ export interface NewGameOptions {
    * `aiPreconName` and `aiEmblems` describe the one opponent of a two-player game.
    */
   readonly opponents?: readonly OpponentOptions[];
+  /**
+   * How each seat's deck was built, in seat order (the human first), for the replay of an AI report (issue 627): a shipped
+   * precon's id, or the decklist and the card data the repository does not hold. Absent, a seat without cards is a hidden
+   * test deck and a seat with cards cannot be replayed.
+   */
+  readonly replayDecks?: readonly ReplayDeck[];
 }
 
 export type LogLevel = 'major' | 'detail';
@@ -107,6 +114,8 @@ export interface LogEntry {
    * panel can call it an activated ability (the view does not tell triggered from activated).
    */
   readonly activation?: ObjectId;
+  /** The action that wrote the line: its index in the game's action log and the seat that took it. Absent for a line of the game itself. */
+  readonly action?: { readonly index: number; readonly seat: SeatId };
 }
 
 /** One action the engine accepted, with the events it produced (SPEC 12: replays are exact). */
@@ -190,4 +199,9 @@ export interface GameClient {
   act(action: Action): Promise<Snapshot>;
   /** Takes back the human's last small action, if the rules of D-050 allow it. */
   undo(): Promise<Snapshot>;
+  /**
+   * The game as a replay (issue 627): the seed, the settings, how each deck was built and every action applied so far. Null
+   * before a game, or when a deck's origin is not known (then the game cannot be replayed elsewhere).
+   */
+  gameRecord(): Promise<GameRecord | null>;
 }

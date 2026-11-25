@@ -892,6 +892,26 @@ const JOB_SELECT_ABILITY: Ability = {
   },
 };
 
+/**
+ * CR 702.110a (Exploit; the rules text was not available to check the number): "When this creature enters, you may sacrifice a creature." The creature may sacrifice itself; what is
+ * sacrificed is exploited by this creature (CR 702.110b), which its "When this creature exploits a creature" abilities read.
+ */
+const EXPLOIT_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+  effect: {
+    kind: 'may',
+    effect: {
+      kind: 'sacrifice',
+      objects: {
+        kind: 'choose',
+        filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+      },
+      exploit: true,
+    },
+  },
+};
+
 export function expansionOf(ability: Ability): Ability[] {
   if (ability.kind !== 'keyword') return [];
   switch (ability.keyword.kind) {
@@ -999,6 +1019,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [LIVING_WEAPON_ABILITY];
     case 'jobSelect':
       return [JOB_SELECT_ABILITY];
+    case 'exploit':
+      return [EXPLOIT_ABILITY];
     case 'hideaway':
       return [hideawayAbility(ability.keyword.count)];
     case 'dethrone':

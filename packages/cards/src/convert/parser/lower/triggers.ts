@@ -65,6 +65,7 @@ const TRIGGER_KIND = {
   becomesMonstrous: 'becomesMonstrous',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
+  becomesUnblocked: 'becomesUnblocked',
   landfall: 'landfall',
   upkeep: 'upkeep',
   endStep: 'endStep',
@@ -279,6 +280,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:surveils']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
     }
+    case 'milled': {
+      // "Whenever a player mills one or more creature cards" (Zellix, CR 701.17a, 603.2c): the player is relative to the controller; a kind of card filters the cards milled.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:milled']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const kind = t.subject?.filter;
+      if (t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)) {
+        return ok({ kind: 'milled', who });
+      }
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      return ok({ kind: 'milled', who, filter: filter.value });
+    }
     case 'rollsHighest': {
       // "Whenever you roll a die's highest natural result" (Galadriel deck, group 3, CR 706.1a, 706.2): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
@@ -301,6 +316,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesUntapped':
     case 'becomesMonstrous': {
       const what = whatOf(t, ctx);
@@ -465,6 +481,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
             ...(t.fromExile === true ? { fromExile: true as const } : {}),
           });
     }
+    case 'exploits': {
+      // "When ~ exploits a creature" (CR 702.110b): the creature with the ability, which the engine's Exploit ability makes exploit what its controller sacrifices.
+      const blocked = missingFeatures(['trigger:exploits']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exploits' });
+    }
     case 'doorUnlocked': {
       // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
       if (t.actor?.det !== 'you') return failure(t);
@@ -516,6 +537,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(anySource ? { anySource: true as const } : {}),
         ...(ofSource === undefined ? {} : { ofSource: ofSource.value }),
       });
+    }
+    case 'entersCausesTrigger': {
+      // "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (Aboleth Spawn, CR 603.2, 603.6a): whose creature, and
+      // what kind.
+      const who = whoOf(t.actor);
+      const entered = t.args.entered;
+      if (who === null || entered?.kind !== 'noun') return failure(t);
+      const blocked = missingFeatures(['trigger:entersCausesTrigger']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const what = lowerFilter(entered);
+      if (!what.ok) return what;
+      return ok({ kind: 'entersCausesTrigger', who, what: what.value });
     }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
@@ -746,10 +779,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'cast': {
       // CR 601.2i: "you cast" is the controller of this ability, "an opponent casts" a player it does not
       // control (D-111), "a player casts" any player.
-      const by = whoOf(t.actor);
+      const chosen = t.actor?.filter.chosenPlayer === true;
+      const by = chosen ? 'chosenPlayer' : whoOf(t.actor);
       if (by === null || t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
+      // CR 603.2, 607.2d (Sewer Nemesis): "the chosen player casts a spell" is the plain cast trigger of the player the permanent chose as it entered.
+      if (by === 'chosenPlayer') {
+        if (t.nth !== undefined || t.firstOfKind === true || t.duringTurn !== undefined) {
+          return failure(t);
+        }
+        const missing = missingFeatures(['selector:castByChosenPlayer']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({ kind: 'castSpell', filter: filter.value, by });
+      }
       // "an opponent casts their second spell each turn" (stage P68, D-229, CR 601.2i): the caster's nth spell of the turn.
       if (t.nth !== undefined) {
         const missing = missingFeatures(
@@ -827,7 +870,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return ok({
         kind: 'putIntoGraveyard',
         // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
-        who: t.fromNotBattlefield === true ? 'any' : 'you',
+        who:
+          t.fromNotBattlefield === true ? 'any' : t.opponentGraveyard === true ? 'opponent' : 'you',
         from:
           t.fromNotBattlefield === true
             ? 'notBattlefield'
@@ -885,6 +929,18 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
   }
+  // Brainstealer Dragon (CR 108.3, 110.2): "a nonland permanent an opponent owns enters under your control, they lose life ...": "they" is the opponent who owns it, since the permanent
+  // is under your control.
+  if (
+    only.event === 'enters' &&
+    only.rule === 'trigger.enters-under-your-control-opponent-owned' &&
+    only.actor === undefined
+  ) {
+    return {
+      selector: { kind: 'ownerOf', of: { kind: 'triggerSubject' } },
+      needs: ['selector:ownerOf', 'selector:triggerSubject'],
+    };
+  }
   // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information. The player of "whenever a creature an
   // opponent controls enters" is the controller of the permanent that entered (CR 110.2a): "that player".
   if (
@@ -933,6 +989,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'tokenCreated',
       'scries',
       'surveils',
+      'milled',
       'rollsHighest',
       'winsCoinFlip',
     ].includes(only.event) &&
@@ -1175,6 +1232,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   const eventDamage = events.every(
     (e) =>
       e.event === 'lifeGained' ||
+      (e.event === 'lifeLost' && e.batch !== true) ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
       e.event === 'damageToPlayerPrevented' ||
@@ -1739,6 +1797,10 @@ function lowerTriggeredAbility(
       t.what.kind === 'this',
   );
   ctx.itIsDamageSource = triggers.length > 0 && triggers.every((t) => t.kind === 'dealsDamage');
+  // CR 509.1h, 509.3c: after a creature becomes blocked (or unblocked) it is still the same permanent in combat, which "it" names.
+  ctx.itStaysInCombat =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'becomesBlocked' || t.kind === 'becomesUnblocked');
   // Troyan 2 deck (CR 603.6c): "When ~ is put into a graveyard from anywhere": "it" is the card of the ability itself.
   ctx.selfGraveyardEntry =
     triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.self === true);
@@ -1769,11 +1831,12 @@ function lowerTriggeredAbility(
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
+  // Haunted One (CR 603.2e): a creature that "becomes tapped" is an ability about the creature itself as well; "it" is the creature that has the ability.
   ctx.selfEntersOrAttacksTrigger =
     triggers.length > 0 &&
     triggers.every(
       (t) =>
-        (t.kind === 'attacks' || t.kind === 'entersBattlefield') &&
+        (t.kind === 'attacks' || t.kind === 'entersBattlefield' || t.kind === 'becomesTapped') &&
         'kind' in t.what &&
         t.what.kind === 'this',
     );
@@ -2033,6 +2096,15 @@ function lowerTriggeredAbility(
   ) {
     return failure(ability);
   }
+  // CR 702.62b, 113.6b (Nihilith): "if this card is suspended" belongs to an ability that works from exile; the trigger is about other cards (a card put into a graveyard).
+  const fromExile = JSON.stringify(interveningIf ?? null).includes('"thisSuspended"');
+  if (fromExile) {
+    const blockedExile = missingFeatures(['ability:functionsInExile']);
+    if (blockedExile.length > 0) return failure(ability, blockedExile);
+    if (ctx.usedGraveyardSource || !triggers.every((t) => t.kind === 'putIntoGraveyard')) {
+      return failure(ability);
+    }
+  }
   if (ctx.usedGraveyardSource) {
     const blockedGraveyard = missingFeatures(['ability:functionsInGraveyard']);
     if (blockedGraveyard.length > 0) return failure(ability, blockedGraveyard);
@@ -2082,6 +2154,7 @@ function lowerTriggeredAbility(
       ...(once ? { oncePerTurn: true as const } : {}),
       ...(doOnce ? { doOnlyOnceEachTurn: true as const } : {}),
       ...(ctx.usedGraveyardSource ? { functionsIn: 'graveyard' as const } : {}),
+      ...(fromExile ? { functionsIn: 'exile' as const } : {}),
     })),
     rule: ability.trigger.rule,
   };
@@ -2167,6 +2240,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:interveningIf',
   'trigger:triggerCondition',
   'trigger:entersBattlefield',
+  'trigger:entersCausesTrigger',
   'trigger:dies',
   'trigger:attacks',
   'trigger:alone',
@@ -2177,6 +2251,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:becomesMonstrous',
   'trigger:blocks',
   'trigger:becomesBlocked',
+  'trigger:becomesUnblocked',
   'trigger:landfall',
   'trigger:upkeep',
   'trigger:endStep',
@@ -2199,6 +2274,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:exerted',
   'trigger:playsCard',
   'trigger:doorUnlocked',
+  'trigger:exploits',
   'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',

@@ -133,6 +133,8 @@ const TURN_CONDITIONS = [
   'condition.first-combat-phase',
   // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
   'condition.entered-this-turn',
+  // Mind Flayarrrs deck (River of Tears): "{T}: Add {U}. If you played a land this turn, add {B} instead." (CR 305.1, 605.3b).
+  'condition.played-land-this-turn',
 ] as const;
 
 /**

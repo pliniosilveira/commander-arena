@@ -504,7 +504,9 @@ function effectOf(
       });
     }
     case 'loseAllAbilities':
-      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says.
+      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says; or (Sludge Monster, CR 613.7) a group the
+      // permanent names, whose filter the engine checks (`validateCard`: no keyword or ability in it).
+      if (subject.kind === 'filter') return ok({ kind: 'loseAllAbilities', subject });
       return subject.kind === 'attached'
         ? ok({ kind: 'loseAllAbilities', subject: { kind: 'attached' } })
         : failure(at);
@@ -650,6 +652,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'beginGameOnBattlefield':
+      return ['static:beginGameOnBattlefield'];
     case 'creatureOffBattlefield':
       return ['static:creatureOffBattlefield'];
     case 'chosenType':
@@ -758,6 +762,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:damageCantBePrevented'];
     case 'damageAsThoughWither':
       return ['static:damageAsThoughWither'];
+    case 'cantActivateChosenName':
+      return ['static:cantActivateChosenName'];
     case 'opponentSearchTopOnly':
       return ['static:opponentSearchTopOnly'];
     case 'cantHaveCounters':
@@ -1655,6 +1661,19 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the card's own pregame option.
+  if (first.kind === 'beginGameOnBattlefield') {
+    if (more.length > 0 || statement.subject.det !== 'self' || statement.condition !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures(['ability:static', ...needsOf(first)]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'beginGameOnBattlefield' } }],
+      rule: ability.rule,
+    };
+  }
   if (first.kind === 'noMaxHandSize') {
     if (more.length > 0 || statement.subject.det !== 'you') return failure(ability);
     return lowerNoMaximum(ability);
@@ -1783,6 +1802,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
   'static:creatureOffBattlefield',
+  'static:beginGameOnBattlefield',
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',

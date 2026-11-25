@@ -45,6 +45,7 @@ async function startedStore(summary?: HonestySummary): Promise<Store> {
         newGame: async (o): Promise<GameStarted> => ({ ...(await host.newGame(o)), summary }),
         act: (a) => host.act(a),
         undo: () => host.undo(),
+        gameRecord: () => host.gameRecord(),
       }
     : host;
   const store = createAppStore({ client });

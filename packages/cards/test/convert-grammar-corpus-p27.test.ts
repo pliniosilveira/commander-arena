@@ -7,7 +7,7 @@
 // through the golden corpus. Each line says whether it must import as supported, or where and why it stops, so a
 // change that makes the grammar read less OR more than it should fails here. The kinds of expectation are those of
 // convert-grammar-corpus.test.ts.
-import { type Line, NONE, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
+import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
 
 const SUPPORTED: readonly Line[] = [
   {
@@ -139,8 +139,8 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Replicate—Pay 2 life.',
-    expect: no('Replicate—Pay 2 life.', NONE),
-    note: 'SYNTHETIC: a cost that is not mana',
+    expect: no('Pay 2 life.', 'keyword.replicate-tap'),
+    note: 'SYNTHETIC: a cost that is not mana; the report stops at the cost, after "Replicate—", since `keyword.replicate-tap` reads the dash (the line stays unsupported)',
   },
   {
     kind: 'instant',

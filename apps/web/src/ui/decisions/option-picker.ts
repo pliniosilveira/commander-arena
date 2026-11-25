@@ -32,9 +32,10 @@ export function optionPrompt(
   // CR 310.9a: "its controller chooses a player to be its protector".
   if (d.purpose === 'protector') return `Choose a protector for ${d.sourceName}.`;
   // The Black Gate (CR 608.2d): "Choose a player with the most life or tied for most life"; Slithermuse (CR 102.2): "choose an opponent". The options say which players are on offer.
-  // CR 614.12a (Stuffy Doll): "As this creature enters, choose a player".
-  if (d.purpose === 'playerChoice' || d.purpose === 'player')
-    return `Choose a player (${d.sourceName}).`;
+  if (d.purpose === 'playerChoice') return `Choose a player (${d.sourceName}).`;
+  // CR 614.12a, 607.2d: "As ~ enters, choose a player" / "choose a nonland card name".
+  if (d.purpose === 'player') return `As ${d.sourceName} enters, choose a player.`;
+  if (d.purpose === 'cardName') return `As ${d.sourceName} enters, choose a nonland card name.`;
   // D-151: a choice among names the card gives, or the chapter a Saga with read ahead starts with.
   if (
     (d.purpose === 'option' ||

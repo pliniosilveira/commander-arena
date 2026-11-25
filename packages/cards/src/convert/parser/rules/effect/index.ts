@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ABOLETH_EFFECT_RULES } from './aboleth';
 import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
@@ -42,10 +43,12 @@ import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
+import { BRAINSTEALER_G9_EFFECT_RULES } from './brainstealer-g9';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
+import { CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES } from './choose-opponent-library-card';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
@@ -127,6 +130,7 @@ import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
+import { GRELL_EFFECT_RULES } from './grell';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
 import { HALDIR_EFFECT_RULES } from './haldir';
@@ -151,6 +155,7 @@ import { KIMAHRI_EFFECT_RULES } from './kimahri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
+import { LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES } from './land-creature-unblockable';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
@@ -187,6 +192,7 @@ import {
   single,
   UNDER_CONTROL,
 } from './operands';
+import { OPPONENT_GRAVEYARD_CAST_EFFECT_RULES } from './opponent-graveyard-cast';
 import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
@@ -262,6 +268,7 @@ import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
+import { TYPE_SHARERS_EFFECT_RULES } from './type-sharers';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VALIGARMANDA_EFFECT_RULES } from './valigarmanda';
@@ -781,7 +788,12 @@ const RETURN_TO_HAND = map(
     literal('return '),
     // "return target creature that player controls to its owner's hand" (Sigil of Sleep, CR 115.1, 109.4, 400.3): the permanents of the player of the trigger.
     operands(
-      [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+      [
+        ...SELF_OR_PERMANENT_OPERANDS,
+        'noun.target-permanent-of-that-player',
+        // "return target spell you don't control to its owner's hand" (Hullbreaker Horror, CR 405.1, 108.3): a spell on the stack goes to its owner's hand.
+        'noun.target-spell',
+      ],
       'effect.return',
     ),
     spanned(OWNERS_HAND),
@@ -1080,6 +1092,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return target creature card from an opponent's graveyard to the battlefield tapped",
     "return ~ to its owner's hand",
     "return target creature that player controls to its owner's hand",
+    "return target spell you don't control to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
@@ -1353,6 +1366,8 @@ export const EFFECT_RULES = [
   ...VALIGARMANDA_EFFECT_RULES,
   // Ahoy Mateys deck, group 1b (Breeches, Ramirez DePietro): "exile the top card of each of those opponents' libraries", "you may play those cards this turn, and you may spend mana ..." and "you may cast that card for as long as it remains exiled" start like the plain exile, may-play and may-cast rules, and are tried first.
   ...AHOY_G1B_EFFECT_RULES,
+  // Brainstealer Dragon: "exile the top card of each opponent's library" and the any-color rider sentence start like the plain exile and "if" rules, and are tried first.
+  ...BRAINSTEALER_G9_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
   ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
@@ -1474,6 +1489,7 @@ export const EFFECT_RULES = [
   ...EXILE_UNTIL_CAST_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   ...LAND_CREATURE_ABILITY_EFFECT_RULES,
+  ...LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,
   // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
@@ -1558,6 +1574,8 @@ export const EFFECT_RULES = [
   ...F144_EFFECT_RULES,
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
   ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
+  ...CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES,
+  ...OPPONENT_GRAVEYARD_CAST_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
@@ -1592,6 +1610,7 @@ export const EFFECT_RULES = [
   ...SECRET_VOTES_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
+  // CR 726 (From the Catacombs): "You take the initiative."
   ...PLANESWALKER_EFFECT_RULES,
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
@@ -1632,6 +1651,8 @@ export const EFFECT_RULES = [
   ...HASHATON_G5_EFFECT_RULES,
   // Stage P50 (D-207): "remove all counters from it".
   ...VRASKA_EFFECT_RULES,
+  // Haunted One: "it and other creatures you control that share a creature type with it each get +2/+0 and gain undying until end of turn".
+  ...TYPE_SHARERS_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
   // D-270: "return the exiled cards to their owners' hands" (Angel of Serenity).
@@ -1744,6 +1765,8 @@ export const EFFECT_RULES = [
   ...PUT_RULES,
   ...PUT_ANY_GRAVEYARD_RULES,
   ...RECURSION_EFFECT_RULES,
+  ...GRELL_EFFECT_RULES,
+  ...ABOLETH_EFFECT_RULES,
   ...REGENERATE_RULES,
   EFFECT_PAY,
   // Aetherdrift energy deck (issue 105): "pay one or more {E}".

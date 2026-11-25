@@ -350,6 +350,8 @@ class Binder {
   private playerAsked = false;
 
   private resolveAnaphor(noun: IrNoun): IrNoun {
+    // "for each card in their graveyard" (Guiltfeeder): "their" is the player of the instruction, which the lowering of that instruction names; the binding pass has nothing to say of it.
+    if (noun.rule === 'noun.their-zone') return noun;
     const pronoun = classify(noun.filter.raw);
     const recent = [...this.antecedents].reverse();
     let found: Antecedent | undefined;
@@ -466,6 +468,30 @@ class Binder {
     if (antecedent.ref === 'trigActor') return { ...noun, det: 'triggerActor', ref: 'trigActor' };
     const ref = pronoun?.kind === 'other' ? `${antecedent.ref ?? ''}.2` : antecedent.ref;
     return ref === undefined ? { ...noun } : { ...noun, ref };
+  }
+
+  /**
+   * "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil, CR 603.4, 603.10a, 113.7a): the intervening "if" of a trigger that says "it" or "that creature"
+   * of an object (`objectMatches`) is about what the trigger is about. For a death or leaves-the-battlefield trigger of an Aura's or Equipment's host that is the permanent as it last
+   * was (`triggerSubject`, last-known information), not the host read from the attachment, which is gone once the permanent has left.
+   */
+  interveningObject(
+    trigger: IrTrigger,
+    condition: IrCondition | undefined,
+  ): IrCondition | undefined {
+    const test = condition?.test;
+    if (condition === undefined || test?.kind !== 'objectMatches') return condition;
+    // "When ~ dies, if it was a creature, ..." (Enduring Tenacity): "it" is the card itself, which the lowering reads as `thisMatches`, not a permanent the event is about.
+    if (trigger.subject?.det === 'self') return condition;
+    const who = this.noun(test.who);
+    const hostLeft =
+      (trigger.event === 'dies' || trigger.event === 'leavesBattlefield') &&
+      (trigger.subject?.det === 'enchanted' || trigger.subject?.det === 'equipped');
+    const bound: IrNoun =
+      hostLeft && (who.det === 'enchanted' || who.det === 'equipped')
+        ? { ...who, det: 'triggerSubject', ref: 'trig' }
+        : who;
+    return { ...condition, test: { ...test, who: bound } };
   }
 
   noun(noun: IrNoun): IrNoun {
@@ -1010,6 +1036,7 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',
+  'becomesUnblocked',
   // The source deals the damage on the battlefield (stage P18, D-111).
   'dealsCombatDamage',
   'dealsDamage',
@@ -1168,6 +1195,7 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
       binder.seedSelfCondition(ability.trigger, ability.interveningIf);
+      const interveningIf = binder.interveningObject(ability.trigger, ability.interveningIf);
       // "At the beginning of your upkeep, if ~ has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it." (Quandrix Unlimited deck, group G): the
       // permanent the intervening "if" names is what "it" means in the body, when the trigger has no subject of its own.
       const tested = ability.interveningIf;
@@ -1204,7 +1232,12 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
           targets: [...binder.targets, ...modal.targets],
         };
       }
-      return done({ ...ability, trigger, body: binder.body(ability.body) });
+      return done({
+        ...ability,
+        trigger,
+        ...(interveningIf === undefined ? {} : { interveningIf }),
+        body: binder.body(ability.body),
+      });
     }
     case 'modal': {
       const modal = bindModes(ability, scope, verbs, () => undefined);

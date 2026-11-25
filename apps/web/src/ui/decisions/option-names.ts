@@ -63,6 +63,11 @@ export function isChapterChoice(d: Asked): boolean {
   return d.purpose === 'option' && d.options.length > 0 && d.options.every((o) => /^\d+$/.test(o));
 }
 
+/** True for "As this creature enters, choose a player" (CR 614.12a, 607.2d): the options are `seat:<n>`, the players still in the game. */
+export function isPlayerChoice(d: Asked): boolean {
+  return d.purpose === 'player';
+}
+
 /** True for "As this creature enters, choose a card type" (CR 614.12a, 205.2a, D-376): the options are the card types of the engine. */
 export function isCardTypeChoice(d: Asked): boolean {
   return d.purpose === 'cardType';
@@ -131,8 +136,8 @@ export function namedOptionPrompt(
       ? `Choose a color for ${d.sourceName}.`
       : `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
   }
-  if (d.purpose === 'player') return `As ${d.sourceName} enters, choose a player.`;
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
+  if (isPlayerChoice(d)) return `As ${d.sourceName} enters, choose a player.`;
   // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
   if (isProtectionColorChoice(d)) {
     return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
@@ -315,14 +320,6 @@ export function namedOptionRows(
       return { option, label: choice?.text ?? option, detail };
     });
   }
-  // CR 614.12a (Stuffy Doll): "seat:1" is the player in that seat.
-  if (d.purpose === 'player') {
-    return d.options.map((option) => ({
-      option,
-      label: optionText('player', option),
-      detail: null,
-    }));
-  }
   if (
     isEffectChoice(d) ||
     isVoteChoice(d) ||
@@ -333,6 +330,13 @@ export function namedOptionRows(
   }
   if (isCounterPickChoice(d)) {
     return d.options.map((option) => ({ option, label: option, detail: null }));
+  }
+  if (isPlayerChoice(d)) {
+    return d.options.map((option) => ({
+      option,
+      label: optionText('player', option).replace(/^p/, 'P'),
+      detail: null,
+    }));
   }
   if (isProtectionColorChoice(d)) {
     return d.options.map((option) => ({ option, label: colorName(option), detail: null }));

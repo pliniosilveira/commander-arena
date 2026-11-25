@@ -134,6 +134,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCountersX',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
+    // CR 113.6b, 702.62b (Nihilith): "Whenever ..., if this card is suspended, ..." (`functionsIn: 'exile'`).
+    'functionsInExile',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
     'doOnlyOnceEachTurn',
     // CR 305.1, 603.2c (Deep Gnome Terramancer): "Whenever one or more lands enter under an opponent's control without being played" (`entersBatch.notPlayed`).
@@ -638,6 +640,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putIntoGraveyard',
     // CR 709.5h: "When you unlock this door" (Room).
     'doorUnlocked',
+    // CR 702.110b: "When this creature exploits a creature" (Exploit).
+    'exploits',
     'becomesTarget',
     'chapter',
     // D-111: steps and phases, draws, combat damage dealt, leaving the battlefield.
@@ -658,6 +662,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
     'blocks',
     'becomesBlocked',
+    // CR 509.1h: "whenever this creature attacks and isn't blocked".
+    'becomesUnblocked',
     // CR 509.3d, 702.25a: "becomes blocked by a creature without flanking" (Flanking).
     'becomesBlockedBy',
     // D-139: a state trigger, "when there are four or more page counters on this artifact" (CR 603.8), and the triggered mana ability
@@ -694,10 +700,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokenCreated',
     // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
     'activatesAbility',
+    // Aboleth Spawn: "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (CR 603.2, 603.6a).
+    'entersCausesTrigger',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
     'surveils',
+    // CR 701.17a: "Whenever a player mills one or more creature cards".
+    'milled',
     // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
     'rollsHighest',
     // CR 705.2 (Setzer): "Whenever you win a coin flip".
@@ -885,6 +895,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gift',
     // D-139: Living weapon (CR 702.92).
     'livingWeapon',
+    // CR 702.110: Exploit.
+    'exploit',
     // D-206: Job select (CR 702.182).
     'jobSelect',
     // D-145: Escalate (CR 702.120) and Hideaway (CR 702.75).
@@ -1131,6 +1143,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromBattlefieldThisTurn',
     // Ahoy Mateys deck: "that was discarded or put there from a library this turn" (`ObjectFilter.discardedOrFromLibraryThisTurn`).
     'discardedOrFromLibraryThisTurn',
+    // Captain N'ghathrod: "that was put there from their library this turn" (`ObjectFilter.putFromLibraryThisTurn`).
+    'putFromLibraryThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
@@ -1279,6 +1293,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerGreaterThanSource',
     // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
     'monarchController',
+    // CR 607.2d (Sewer Nemesis): `ObjectFilter.controller` 'chosenPlayer', "cards in the chosen player's graveyard", and the cast trigger's `by: 'chosenPlayer'`.
+    'chosenPlayerController',
+    'castByChosenPlayer',
     'restrictBlockers',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
@@ -1407,6 +1424,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectControlledByYou',
     // Firkraag: "if that creature had to attack this combat".
     'subjectHadToAttack',
+    // Endless Evil: "if that creature was a Horror".
+    'subjectMatches',
     'subjectStat',
     // Selvala: "if its power is greater than each other creature's power".
     'subjectGreaterThanEach',
@@ -1479,6 +1498,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'yourTurn',
     'cardLeftYourGraveyard',
     'descendedThisTurn',
+    'playedLandThisTurn',
     'manaSpentAtLeast',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
@@ -1529,6 +1549,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
     'thisOnBattlefield',
+    // CR 702.62b, 603.4 (Nihilith): "if this card is suspended".
+    'thisSuspended',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -1633,12 +1655,16 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 102 (Steward of the Harvest): "Creatures you control have all activated abilities of all land cards exiled with ~".
     'grantActivatedAbilitiesOfLinkedExile',
     'castAsThoughFlash',
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield." (`beginGameOnBattlefield`).
+    'beginGameOnBattlefield',
     // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
     'creatureOffBattlefield',
     // D-145: "can't attack or block unless you control another creature with power 4 or greater"; "Enchanted creature loses all
     // abilities and is a green Elk creature" (`loseAllAbilities`, `setColors`, `setTypes` without `additive`).
     'restrictionUnless',
     'loseAllAbilities',
+    // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated" (`cantActivateChosenName`).
+    'cantActivateChosenName',
     'setColors',
     // D-149: "Prevent all combat damage that would be dealt to this creature", "You have hexproof", "You can't lose the game and your
     // opponents can't win the game" (`cantLoseGame`, `opponentsCantWin`), "You can't cast ~ during your first, second, or third turns".
@@ -1944,6 +1970,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'melee',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
+  // CR 702.93a (Undying): "it and other creatures you control ... gain undying until end of turn"; `derive` gives the creature the triggered ability the keyword stands for (once, like decayed's).
+  'undying',
   // CR 702.101a, 702.101b (Extort): "Other creatures you control have extort"; each instance granted is a triggered ability of its own, like afflict's.
   'extort',
 ];
@@ -2073,6 +2101,8 @@ export const ABILITY_FEATURES = [
   'removeCountersX',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
+  /** A triggered ability that works while its card is in exile (CR 113.6b, 702.62b, Nihilith): `functionsIn: 'exile'`. */
+  'functionsInExile',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
   'doOnlyOnceEachTurn',
   /** "Whenever one or more lands enter under an opponent's control without being played" (Deep Gnome Terramancer, CR 305.1, 603.2c): the engine's `entersBatch` with `notPlayed`. */
@@ -2303,6 +2333,8 @@ export const SELECTOR_KINDS = [
   'controllerDealtCombatDamageByAtLeast',
   /** "That was discarded or put there from a library this turn" (CR 701.9, 701.17, Ahoy Mateys deck): the engine's `ObjectFilter.discardedOrFromLibraryThisTurn`. */
   'discardedOrFromLibraryThisTurn',
+  /** "That was put there from their library this turn" (CR 404.1, 701.17, Captain N'ghathrod): the engine's `ObjectFilter.putFromLibraryThisTurn`. */
+  'putFromLibraryThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
   /** "A creature that was dealt damage this turn" (CR 120.3, Bitter Downfall): the engine's `ObjectFilter.dealtDamageThisTurn`. */
@@ -2461,6 +2493,10 @@ export const SELECTOR_KINDS = [
   'powerGreaterThanSource',
   /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
   'monarchController',
+  /** "Cards in the chosen player's graveyard" (CR 607.2d, Sewer Nemesis): the engine's `ObjectFilter.controller` 'chosenPlayer'. */
+  'chosenPlayerController',
+  /** "Whenever the chosen player casts a spell" (CR 607.2d, 603.2): the engine's `castSpell` trigger with `by: 'chosenPlayer'`. */
+  'castByChosenPlayer',
   /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
   'restrictBlockers',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
@@ -2608,6 +2644,8 @@ export const CONDITION_KINDS = [
   'subjectControlledByYou',
   /** "If that creature had to attack this combat" (CR 508.1d, 701.15b, Firkraag): the engine's `subjectHadToAttack`. */
   'subjectHadToAttack',
+  /** "If that creature was a Horror" (CR 603.4, 603.10a, 113.7a): the engine's `subjectMatches`. */
+  'subjectMatches',
   /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
   'subjectStat',
   /** "If its power is greater than each other creature's power" (CR 603.10a, 208.1, Selvala): the engine's `subjectGreaterThanEach`. */
@@ -2678,6 +2716,8 @@ export const CONDITION_KINDS = [
   'cardLeftYourGraveyard',
   /** "If you descended this turn": the engine's `descendedThisTurn`. */
   'descendedThisTurn',
+  /** "If you played a land this turn" (CR 305.1): the engine's `playedLandThisTurn`. */
+  'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
@@ -2738,6 +2778,8 @@ export const CONDITION_KINDS = [
   'thisInYourGraveyard',
   /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
   'thisOnBattlefield',
+  /** "If this card is suspended" (CR 702.62b, 603.4, Nihilith): the engine's `thisSuspended`. */
+  'thisSuspended',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -2865,12 +2907,16 @@ export const STATIC_KINDS = [
   'grantActivatedAbilitiesOfLinkedExile',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
+  /** "If this card is in your opening hand, you may begin the game with it on the battlefield" (CR 103.6): the engine's `beginGameOnBattlefield`. */
+  'beginGameOnBattlefield',
   /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */
   'creatureOffBattlefield',
   /** "Can't attack or block unless you control another creature with power 4 or greater" (CR 508.1a, D-145): the engine's `restrictionUnless`. */
   'restrictionUnless',
   /** "Enchanted creature loses all abilities" (CR 613.1f, D-145): the engine's static `loseAllAbilities`. */
   'loseAllAbilities',
+  /** "Activated abilities of sources with the chosen name can't be activated" (CR 602.5, 607.2d): the engine's static `cantActivateChosenName`. */
+  'cantActivateChosenName',
   /** "Enchanted creature is a green Elk creature" (CR 613.1e, D-145): the engine's static `setColors`. */
   'setColors',
   /** "Prevent all combat damage that would be dealt to this creature" (CR 615.1, D-149): the engine's `preventDamageToThis`. */
@@ -3225,6 +3271,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaPutCounter: true,
   removeCountersX: true,
   functionsInGraveyard: true,
+  functionsInExile: true,
   doOnlyOnceEachTurn: true,
   entersNotPlayed: true,
   manaSpentRider: true,
@@ -3526,6 +3573,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   exiledFromLibraryOrGraveyard: true,
   putIntoGraveyard: true,
   doorUnlocked: true,
+  exploits: true,
   becomesTarget: true,
   chapter: true,
   step: true,
@@ -3539,6 +3587,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leavesBattlefield: true,
   blocks: true,
   becomesBlocked: true,
+  becomesUnblocked: true,
   becomesBlockedBy: true,
   state: true,
   tappedForMana: true,
@@ -3559,8 +3608,10 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tokenCreated: true,
   playsCard: true,
   activatesAbility: true,
+  entersCausesTrigger: true,
   scries: true,
   surveils: true,
+  milled: true,
   rollsHighest: true,
   winsCoinFlip: true,
   interveningIf: true,
@@ -3686,6 +3737,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   replicate: true,
   gift: true,
   livingWeapon: true,
+  exploit: true,
   jobSelect: true,
   escalate: true,
   hideaway: true,

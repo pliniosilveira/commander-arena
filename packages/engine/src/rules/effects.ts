@@ -335,11 +335,24 @@ export function runInstruction(
       instruction.seat ?? res.controller,
       instruction.lkiRecorded === true,
     );
+    // CR 702.110b (Exploit): the creature exploits a creature as its controller sacrifices one; the event comes before the move, so a creature that sacrificed itself is still on the
+    // battlefield when the triggers of these events are read.
+    const exploited: GameEvent[] =
+      r === null || instruction.exploiter === undefined
+        ? []
+        : [
+            {
+              kind: 'exploited',
+              seat: instruction.seat ?? res.controller,
+              creature: instruction.exploiter,
+              sacrificed: instruction.object,
+            },
+          ];
     // D-131: "for each creature sacrificed this way" counts the permanents that were sacrificed.
     return r === null
       ? done(state)
       : {
-          ...done(r.state, r.events),
+          ...done(r.state, [...exploited, ...r.events]),
           thisWay: {
             sacrificed: 1,
             sacrificedOwn: (instruction.seat ?? res.controller) === res.controller ? 1 : 0,
@@ -1252,6 +1265,8 @@ function runEffect(
               filter: what.filter,
               count,
               chosen: null,
+              // CR 702.110b (Exploit): the creature whose ability this is exploits what is sacrificed.
+              ...(effect.exploit === true ? { exploiter: res.source } : {}),
               ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
               ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
               ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
@@ -1808,7 +1823,11 @@ function runEffect(
       return done(
         state,
         [],
-        changeTargetInstructions(state, resolveObjects(state, effect.object, ctx, targets)),
+        changeTargetInstructions(
+          state,
+          resolveObjects(state, effect.object, ctx, targets),
+          effect.to === undefined ? undefined : resolveObjects(state, effect.to, ctx, targets)[0],
+        ),
       );
     }
 
@@ -3776,7 +3795,6 @@ function runEffect(
             max: effect.take.any === true ? count : effect.take.max,
             ...(effect.take.min === undefined ? {} : { min: effect.take.min }),
             ...(effect.take.tapped === true ? { tapped: true as const } : {}),
-            // CR 122.6, 614.1c: "onto the battlefield with three +1/+1 counters on it".
             ...(effect.take.withCounters === undefined
               ? {}
               : { withCounters: effect.take.withCounters }),
@@ -4498,7 +4516,8 @@ function runEffect(
       let anyRemoved = false;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
-        if (obj?.zone !== 'battlefield') continue;
+        // CR 122.1: counters stay on a permanent and on a card in exile (a suspended card's time counters, CR 702.62b).
+        if (obj?.zone !== 'battlefield' && obj?.zone !== 'exile') continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;

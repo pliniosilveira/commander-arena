@@ -348,12 +348,14 @@ export interface ChosenValues {
   readonly cardType?: CardType;
   /** A planeswalker type of CR 205.3j, spelled as `PLANESWALKER_TYPES` lists it: "choose a planeswalker type" (Deification). */
   readonly planeswalkerType?: Subtype;
+  /** The player "As this enters, choose a player" chose (CR 614.12a, 607.2d), a seat of the game. */
+  readonly player?: SeatId;
+  /** The card name "As this enters, choose a nonland card name" chose (CR 201.2): any non-empty text, as the engine has no list of every card. */
+  readonly cardName?: string;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
   /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */
   readonly lifePaid?: number;
-  /** The player chosen as it entered (CR 614.12a: "As this creature enters, choose a player", Stuffy Doll), read by the player selector `enteredChosenPlayer`. */
-  readonly player?: SeatId;
 }
 
 export interface TokenData {
@@ -463,7 +465,7 @@ export interface StackData {
    * The option of the face's additional cost choice the caster picked as the spell was cast (`CardFace.additionalCostChoice`, CR 118.8, 601.2b, D-181):
    * 0 the first ("sacrifice an artifact or creature"), 1 the second ("pay {4}"). Absent when the face has no such choice.
    */
-  readonly costOption?: 0 | 1;
+  readonly costOption?: number;
   /**
    * The creature the caster tapped to reduce a harmonize cost (CR 702.180a, 702.180b), or null when they chose none: its power in generic mana is taken off the
    * total cost. Absent until the choice is made, and for a spell not cast for its harmonize cost.
@@ -1279,6 +1281,8 @@ export type Instruction =
       readonly kind: 'sacrifice';
       readonly object: ObjectId;
       readonly seat?: SeatId;
+      /** Exploit (CR 702.110b): the creature whose exploit ability this sacrifice is part of; an `exploited` event is emitted just before the permanent moves. */
+      readonly exploiter?: ObjectId;
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
       readonly lkiRecorded?: true;
     }
@@ -1302,6 +1306,8 @@ export type Instruction =
       readonly kind: 'chooseSacrifice';
       readonly filter: ObjectFilter;
       readonly count: number;
+      /** Exploit (CR 702.110b): the creature whose exploit ability asks for the sacrifice (`SacrificeEffect.exploit`); passed on to the sacrifice instructions. */
+      readonly exploiter?: ObjectId;
       /** "Any number of other permanents" (`ChooseSelector.anyNumber`, D-135): none to all of the candidates; `count` is 0. */
       readonly anyNumber?: true;
       /** "One or more" (`ChooseSelector.atLeastOne`, D-187): with `anyNumber`, at least one of the candidates. */
@@ -2071,7 +2077,7 @@ export type Instruction =
    * the stack with one target, is changed to another legal target for its slot, chosen by the controller of the resolving spell or ability. With
    * no other legal target nothing changes; with one it is taken; with several a `targets` decision (`forChange`) asks. See rules/change-target.ts.
    */
-  | { readonly kind: 'changeTarget'; readonly object: ObjectId }
+  | { readonly kind: 'changeTarget'; readonly object: ObjectId; readonly to?: ObjectId }
   /**
    * CR 702.62a, 702.35a, 702.94a (Suspend, Madness and Miracle, D-128, D-274): the resolution of `castExiled`. `start` looks at the card the
    * ability belongs to (it must still be that card, in exile, or in its owner's hand for Miracle) and goes on to `ask` when it could be
@@ -3104,6 +3110,11 @@ export interface TurnLog {
    * graveyard (Ahoy Mateys deck, Ghost of Ramirez DePietro). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
    */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /**
+   * Each card put into a graveyard this turn from a library (milled, CR 701.17; or any other move from a library), by the id it has in the graveyard, a discard not among them
+   * (Captain N'ghathrod, `putFromLibraryThisTurn`). A token is not a card. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly graveyardedFromLibrary?: readonly ObjectId[];
   /**
    * Each card put into a graveyard this turn from a zone other than the battlefield (a hand, a library, the stack, exile, the command zone), by the id it has in the graveyard (CR 404.1,
    * 400.7; Banon, the Returners' Leader: "put there from anywhere other than the battlefield this turn"). A token is not a card. Absent until one was recorded.

@@ -31,6 +31,7 @@ import {
 } from './heuristic-mana';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
+import type { AgentWeights } from './weights';
 
 const TAPPED = /enters (?:the battlefield )?tapped/i;
 const CONDITIONAL = /\b(?:unless|if)\b/i;
@@ -41,11 +42,11 @@ export const entersTapped = (o: ObjectView): boolean =>
   TAPPED.test(o.oracleText) && !CONDITIONAL.test(o.oracleText);
 
 /** The spells of the hand and command zone that the agent could cast at sorcery timing and would want to. */
-export function plannedSpells(view: GameView): ObjectView[] {
+export function plannedSpells(view: GameView, weights: AgentWeights): ObjectView[] {
   return [...ownHand(view), ...ownCommandZone(view)].filter((o) => {
     if (isLand(o) || o.castCost === undefined) return false;
     if (o.types.includes('instant') || hasKeyword(o, 'flash')) {
-      return isRemovalSpell(o) && bestRemovalTarget(view, o) !== null;
+      return isRemovalSpell(o) && bestRemovalTarget(view, o, weights) !== null;
     }
     return worthCasting(view, o);
   });
@@ -89,10 +90,14 @@ export interface LandPlan {
 }
 
 /** The land to play now (or to hold), or null when no land can be played. */
-export function planLand(view: GameView, d: PriorityDecision): LandPlan | null {
+export function planLand(
+  view: GameView,
+  d: PriorityDecision,
+  weights: AgentWeights,
+): LandPlan | null {
   const lands = landPlays(view, d);
   if (lands.length === 0) return null;
-  const hand = plannedSpells(view);
+  const hand = plannedSpells(view, weights);
   const units = ownUnits(view);
   const without = bestSpend(hand, units);
   const ranked = lands

@@ -63,9 +63,7 @@ export function NamedOptionDialog({
                       ? 'Choose a card type'
                       : isCounterPickChoice(d)
                         ? 'Choose a counter'
-                        : d.purpose === 'player'
-                          ? 'Choose a player'
-                          : 'Choose an option'
+                        : 'Choose an option'
       }
       className="dec-option dec-named"
     >

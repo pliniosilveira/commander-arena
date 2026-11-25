@@ -1099,7 +1099,7 @@ export function spellTypesAndPhrase(): Parser<IrFilter> {
  * " that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4): a card in a graveyard that went there from the battlefield
  * during this turn (a creature that died, an artifact that was destroyed).
  */
-const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice(
+const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary' | 'library'> = choice(
   map(
     pattern(new RegExp(` that was put there from the battlefield this turn${BOUNDARY}`, 'iu')),
     () => 'battlefield' as const,
@@ -1110,6 +1110,11 @@ const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice
       new RegExp(` that was discarded or put there from a library this turn${BOUNDARY}`, 'iu'),
     ),
     () => 'discardedOrLibrary' as const,
+  ),
+  // Captain N'ghathrod (CR 404.1, 701.17): "that was put there from their library this turn", read only of an opponent's graveyard.
+  map(
+    pattern(new RegExp(` that was put there from their library this turn${BOUNDARY}`, 'iu')),
+    () => 'library' as const,
   ),
 );
 
@@ -1163,6 +1168,7 @@ export function graveyardPhrase(
     | 'from'
     | 'in'
     | 'inAny'
+    | 'inOpponents'
     | 'fromThatPlayer'
     | 'fromTheirs'
     | 'fromPlayers'
@@ -1198,22 +1204,25 @@ export function graveyardPhrase(
             : preposition === 'inAny'
               ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
                 map(literal(' in a graveyard'), () => undefined)
-              : preposition === 'in'
-                ? map(literal(' in your graveyard'), () => 'you' as const)
-                : choice(
-                    map(literal(' from your graveyard'), () => 'you' as const),
-                    map(literal(' from a graveyard'), () => undefined),
-                    map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-                    // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
-                    map(
-                      pattern(/ from defending player['’]s graveyard/i),
-                      () => 'defendingPlayer' as const,
-                    ),
-                    // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-                    ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-                    // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
-                    ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
-                  );
+              : preposition === 'inOpponents'
+                ? // Captain N'ghathrod: "target artifact or creature card in an opponent's graveyard": the graveyard of any opponent.
+                  map(pattern(/ in an opponent['’]s graveyard/i), () => 'opponent' as const)
+                : preposition === 'in'
+                  ? map(literal(' in your graveyard'), () => 'you' as const)
+                  : choice(
+                      map(literal(' from your graveyard'), () => 'you' as const),
+                      map(literal(' from a graveyard'), () => undefined),
+                      map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                      // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
+                      map(
+                        pattern(/ from defending player['’]s graveyard/i),
+                        () => 'defendingPlayer' as const,
+                      ),
+                      // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+                      ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+                      // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
+                      ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
+                    );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(
       choice(
@@ -1520,6 +1529,7 @@ export function graveyardPhrase(
     ] = r.value;
     // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
     if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
+    if (putThere === 'library' && preposition !== 'inOpponents') return fail(ctx, pos);
     const filter = toFilter(
       'graveyard',
       { ...NO_PARTS, types, controller, ...(notTypes === undefined ? {} : { notTypes }) },
@@ -1546,6 +1556,7 @@ export function graveyardPhrase(
           ...(putThere === 'discardedOrLibrary'
             ? { discardedOrFromLibraryThisTurn: true as const }
             : {}),
+          ...(putThere === 'library' ? { putFromLibraryThisTurn: true as const } : {}),
           ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),

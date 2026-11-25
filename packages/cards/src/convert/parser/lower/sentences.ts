@@ -531,6 +531,27 @@ function lowerCantBeRegenerated(
 }
 
 /**
+ * "You may play those cards for as long as they remain exiled. If you cast a spell this way, you may spend mana as though it were mana of any color to cast it." (Brainstealer Dragon,
+ * CR 609.4b): the sentence is the rider of the permission right before it: it sets the engine's `anyManaColor` on that `mayPlay`. Anywhere else it has nothing to attach to and is refused.
+ */
+function lowerAnyColorRider(
+  sentence: IrSentence,
+  previous: Step | undefined,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'anyColorRider') return null;
+  if (more.length > 0 || clause.optional || sentence.condition !== undefined) {
+    return refuse(sentence);
+  }
+  if (clause.condition !== undefined || clause.duration !== undefined) return refuse(sentence);
+  const [effect, ...rest] = previous?.effects ?? [];
+  if (effect?.kind !== 'mayPlay' || rest.length > 0 || effect.anyManaColor !== undefined) {
+    return refuse(sentence);
+  }
+  return { ok: true, value: [{ ...effect, anyManaColor: true }], rule: clause.rule };
+}
+
+/**
  * "Each of them enters with an additional -1/-1 counter on it." (Aberrant Return, CR 614.1c, 122.6): the permanents the sentence before it put onto the battlefield enter with the
  * counters, a replacement effect of the entering, so the engine's `withCounters` of that `moveToZone`. Only right after a sentence whose one effect is such a move of several
  * objects (a target slot of more than one, or every one of a kind), which has no counters of its own yet.
@@ -3066,6 +3087,13 @@ function lowerStep(
     if (!additional.ok) return stop(additional);
     steps.pop();
     steps.push({ effects: additional.value, replaceable: false });
+    return { last: i };
+  }
+  const anyColor = lowerAnyColorRider(sentence, steps[steps.length - 1]);
+  if (anyColor !== null) {
+    if (!anyColor.ok) return stop(anyColor);
+    steps.pop();
+    steps.push({ effects: anyColor.value, replaceable: false });
     return { last: i };
   }
   const regenerated = lowerCantBeRegenerated(sentence, sentences[i - 1], steps[steps.length - 1]);

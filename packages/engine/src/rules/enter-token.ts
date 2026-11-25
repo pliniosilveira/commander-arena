@@ -13,7 +13,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { attachEntered } from './attach';
-import { optionsFor, playerOptions } from './chosen';
+import { optionsFor } from './chosen';
 import { type OrderFlow, quietFlow } from './damage-order';
 import { bindEncoreToken } from './encore';
 import {
@@ -211,9 +211,10 @@ export function runEnterToken(
       purpose: what,
       options: optionsFor(
         what,
-        what === 'player' ? playerOptions(state) : entersOptions(definition.abilities),
+        entersOptions(definition.abilities),
         entersColorExcept(definition.abilities),
         lifeTotalIsLocked(state, seat) ? 0 : getSeat(state, seat).life,
+        { state, seat },
       ),
       // Nothing exists yet: the question is about the token that the resolving spell or ability makes.
       source: res.object,

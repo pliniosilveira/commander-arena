@@ -75,6 +75,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // CR 702.25a (Flanking).
   flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
+  // Exploit (CR 702.110a).
+  exploit: ['Exp', 'Exploit (When this creature enters, you may sacrifice a creature.)'],
   affinity: ['Aff', 'Affinity'],
   undaunted: ['Und', 'Undaunted'],
   convoke: ['Cvk', 'Convoke'],
