@@ -196,6 +196,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copyEntersAddsTypes',
     // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
     'copyEntersFromGraveyard',
+    // "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1 counters on it equal to the power of the other card" (`entersAsCopy.exileTwoFromGraveyards`, CR 614.12, 707.9b, 122.6).
+    'copyEntersExilesTwo',
     // "..., except it has \"Other creatures with the same name as this creature are goaded.\"" (`entersAsCopy.addStatics`, CR 707.9b).
     'copyEntersAddsStatics',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
@@ -916,6 +918,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gravestorm',
     // CR 702.88a: Rebound.
     'rebound',
+    // CR 702.99: Cipher.
+    'cipher',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
     // D-139: Living weapon (CR 702.92).
@@ -2217,6 +2221,8 @@ export const ABILITY_FEATURES = [
   'copyEntersAddsTypes',
   /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
   'copyEntersFromGraveyard',
+  /** "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1 counters on it equal to the power of the other card" (CR 614.12, 707.9b, 122.6): the engine's `entersAsCopy.exileTwoFromGraveyards`. */
+  'copyEntersExilesTwo',
   /** "..., except it has \"<static ability>\"" (CR 707.9b): the engine's `entersAsCopy.addStatics`. */
   'copyEntersAddsStatics',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
@@ -3390,6 +3396,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   copyEntersWithX: true,
   copyEntersAddsTypes: true,
   copyEntersFromGraveyard: true,
+  copyEntersExilesTwo: true,
   copyEntersAddsStatics: true,
   lookTakeAll: true,
   lookTakeAny: true,
@@ -3836,6 +3843,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   storm: true,
   gravestorm: true,
   rebound: true,
+  cipher: true,
   replicate: true,
   gift: true,
   livingWeapon: true,

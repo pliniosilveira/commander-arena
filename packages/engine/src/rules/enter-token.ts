@@ -120,7 +120,10 @@ function tokenCopyCandidates(
   source: ObjectId | null,
 ): readonly ObjectId[] {
   const rule = entersCopyOf(definition.abilities);
-  return rule === null ? [] : copyCandidates(state, seat, rule, source);
+  // The Mimeoplasm's two cards exiled from graveyards are asked of a card as it enters, not of a token (`docs/ROADMAP.md`): a token that is a copy of it enters as itself.
+  return rule === null || rule.exileTwoFromGraveyards !== undefined
+    ? []
+    : copyCandidates(state, seat, rule, source);
 }
 
 /** The instructions that create `count` tokens for `seat`, when the definition asks a question. */

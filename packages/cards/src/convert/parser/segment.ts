@@ -105,6 +105,12 @@ const LOYALTY_PREFIX = /^\[?(?:[+]\d+|[\u2212\u2013-](?:\d+|X)|0)\]?\s*:/;
  */
 const ACTIVATED_MAY_CAST_RIDER =
   /^(?:[^:.]+: )?you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\. if that spell would be put into your graveyard, exile it instead\./i;
+/**
+ * "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost. If that spell would be put into their graveyard, exile it instead." (Arcane Heist,
+ * CR 614.1a): a spell whose permission carries the rider, read before the replacement test below, which "would ... instead" would take.
+ */
+const OPPONENT_GRAVEYARD_CAST_RIDER =
+  /^you may cast target [^.,]* cards? from an opponent['’]s graveyard without paying its mana cost\. if that spell would be put into their graveyard, exile it instead\.$/i;
 
 /**
  * "{1}{R}{W}, {T}, Sacrifice a Spirit: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on
@@ -835,6 +841,15 @@ const EXILE_THAT_SPELL_INSTEAD =
   /^if that spell would be put into a graveyard, exile it instead\.$/i;
 
 /**
+ * "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost. If that spell would be put into their graveyard, exile it instead." (Arcane Heist, CR 614.1a):
+ * the second sentence is a rider of the cast the first one allows (`effect.cast-opponent-graveyard-card-free`), so the two are read as one instruction.
+ */
+const CAST_FROM_OPPONENT_GRAVEYARD_FREE =
+  /(?:^|, )you may cast target [^.,]* cards? from an opponent['’]s graveyard without paying its mana cost\.$/i;
+const EXILE_THAT_SPELL_INSTEAD_THEIR =
+  /^if that spell would be put into their graveyard, exile it instead\.$/i;
+
+/**
  * "For each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost. If a spell cast this way would be put into a
  * graveyard, exile it instead." (First Flight deck, CR 614.1a): "a spell cast this way" is each spell the first sentence cast, so the second sentence is a rider of the first and the
  * two are read as one instruction (`effect.cast-per-opponent-graveyard-free`; the first may follow the comma of a trigger).
@@ -1552,6 +1567,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
+        (said(a, CAST_FROM_OPPONENT_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_THEIR)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_PAID) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
@@ -2139,6 +2155,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     const colon = costColon(text);
     if (colon > 0) return activatedSkeleton(text, colon, base);
     // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  if (OPPONENT_GRAVEYARD_CAST_RIDER.test(text)) {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 

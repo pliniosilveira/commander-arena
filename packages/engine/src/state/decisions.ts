@@ -459,6 +459,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'proliferate'
     | 'auraHost'
     | 'entersCopy'
+    | 'entersCopyOther'
+    | 'cipher'
     | 'devour'
     | 'entersRemoveCounters'
     | 'ringBearer'
@@ -482,6 +484,11 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'entersCopy'` (D-151, CR 707.9, 614.12: "As this artifact enters, you may have it become a copy of any creature on the battlefield"): `seat`, the
    * player the permanent `subject` enters under, chooses which permanent of `legal` it becomes a copy of; `min` is 0 when that is optional, `max` 1. The
    * permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'entersCopyOther'` (The Mimeoplasm, CR 614.12, 707.9b: "you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1
+   * counters on it equal to the power of the other card"): asked after `'entersCopy'` chose the card to copy, `seat` chooses which of the other cards in `legal` (those of every graveyard that match) is the second one
+   * exiled, whose power is the number of counters; exactly one. The permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'cipher'` (CR 702.99: "Then you may exile this spell card encoded on a creature you control"): `seat`, the controller of the resolving spell `subject` (= `source`), chooses which creature of
+   * `legal` (all they control) the card is encoded on; `min` is 0 (the "may") and `max` 1. Asked as the spell has done everything else, before the card is put into exile or the graveyard.
    * For `'entersRemoveCounters'` (Sin, Unending Cataclysm, CR 614.12, 122.1: "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments"): `seat`, the player the
    * permanent `subject` enters under, chooses which of the permanents in `legal` (those of every player that have a counter and match the filter) lose every counter; `min` is 0 and `max` is
    * `legal.length`, and the permanent enters with counters for the number removed. The permanent has not entered yet: `source` and `subject` are the object it is now, or, for a token, the spell or
