@@ -30,16 +30,15 @@
  * Without a sample the safe attackers go, less the creatures needed at home against the crack-back
  * (`guardHome`).
  */
-import {
-  type Action,
-  type AttackTarget,
-  type DeclareAttackersDecision,
-  type GameState,
-  type GameView,
-  getView,
-  type ObjectId,
-  type ObjectView,
-  type SeatId,
+import type {
+  Action,
+  AttackTarget,
+  DeclareAttackersDecision,
+  GameState,
+  GameView,
+  ObjectId,
+  ObjectView,
+  SeatId,
 } from '@commander-arena/engine';
 import { rankOpponents, targetFor } from './attack-targets';
 import { isUnblockable } from './casual-evasion';
@@ -56,7 +55,7 @@ import {
   untappedCreatures,
   verdict,
 } from './heuristic-danger';
-import { applyOrNull, playOut } from './heuristic-sim';
+import { applyOrNull, playOut, within } from './heuristic-sim';
 import { withinAttackBudget, withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
 import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
@@ -328,8 +327,9 @@ export function chooseHeuristicAttack(
   // (`defaultPlan`) with probability 1 - `passive` and to block only in danger (`dangerOnlyPlan`) with
   // probability `passive`, which the agent learns from what it has seen (`heuristic-model.ts`); a
   // candidate's numbers are the average of the two plays.
+  const engine = ctx.budget.engine;
   const policyOf = (plan: typeof defaultPlan) => ({
-    abort: ctx.budget.over,
+    ...within(ctx.budget),
     blocks: (v: GameView, bd: Parameters<typeof defaultPlan>[1]): Action => ({
       kind: 'declareBlockers',
       blocks: withinBlockBudget(bd, plan(v, bd, w).blocks),
@@ -353,11 +353,11 @@ export function chooseHeuristicAttack(
   const playCandidate = (o: (typeof options)[number], policy: typeof sensible) => {
     let end: GameState | null = sample;
     if (o.cs.length > 0) {
-      const declared = applyOrNull(sample, me, toAction(o));
+      const declared = applyOrNull(sample, me, toAction(o), engine);
       end = declared === null ? null : playOut(declared, me, policy);
     }
     if (end === null) return null;
-    const v = getView(end, me);
+    const v = engine.view(end, me);
     return {
       raw: evaluate(untappedFor(v, me), me, w).score,
       crack: crackBackPenalty(v, me, w),
@@ -365,10 +365,11 @@ export function chooseHeuristicAttack(
     };
   };
   const weight = ctx.passiveWeightFor?.(opp) ?? ctx.passiveWeight;
-  // The stay-home candidate and the safe one are always scored; the others while time is left.
+  // The stay-home candidate and the safe one are always scored; the others while the budget lasts.
   const order = [...options].sort((x, y) => x.cs.length - y.cs.length);
+  const search = ctx.budget.search();
   for (const [i, o] of order.entries()) {
-    if (i >= 2 && ctx.budget.expired(i)) break;
+    if (i >= 2 && search.expired(i) !== null) break;
     const careful = weight < 1 || o.cs.length === 0 ? playCandidate(o, sensible) : null;
     const loose = weight > 0 && o.cs.length > 0 ? playCandidate(o, passive) : careful;
     if (careful === null && weight < 1) continue;
@@ -383,8 +384,8 @@ export function chooseHeuristicAttack(
     };
     scored.push({ o, ...c, score: scoreOf(c, hurry) });
   }
-  // Nothing scored, or a play-out ran out of time before two were: the rules-based attack answers.
-  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over())) return fallback();
+  // Nothing scored, or a play-out was dropped before two were: the rules-based attack answers.
+  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over() !== null)) return fallback();
   const home = scored.find((s) => s.o.cs.length === 0);
   const rank = (a: (typeof scored)[number], b: (typeof scored)[number], u: number): number =>
     scoreOf(b, u) - scoreOf(a, u) || a.o.cs.length - b.o.cs.length;

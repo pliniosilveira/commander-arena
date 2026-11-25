@@ -70,9 +70,9 @@ export interface PlayContext {
   readonly budget: Budget;
   readonly weights: AgentWeights;
   /**
-   * The work of the planning (`heuristic-plan-work.ts`): every view and action of a play-out goes through it.
-   * Its engine steps, over every play-out of the planning, are bounded by its limit whatever the clock says
-   * (a logical clock never runs out); a play-out that would pass it is dropped.
+   * The work of the planning (`heuristic-plan-work.ts`): every view and action of a play-out goes through it,
+   * and what it has not kept is counted in the decision's budget; a play-out that runs past the budget's
+   * limit (`Budget.over`) is dropped.
    */
   readonly work: PlanCounter;
 }
@@ -178,12 +178,9 @@ export function playLine(
     if (current.result !== null) return { end: current, steps };
     if (current.turn.activeSeat === me && current.turn.number > start)
       return { end: current, steps };
-    if (ctx.budget.over()) {
-      ctx.work.stop('clock');
-      return null;
-    }
-    if (ctx.work.steps >= ctx.work.limit) {
-      ctx.work.stop('work');
+    const why = ctx.budget.over();
+    if (why !== null) {
+      ctx.work.stop(why);
       return null;
     }
     ctx.work.steps += 1;

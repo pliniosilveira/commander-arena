@@ -14,8 +14,10 @@
  * - It considers every candidate its generators produce (the Easy level of D-163 was removed, D-168).
  * - It owns a seeded PRNG (`seed`): tie-breaks of the casual handlers and the seeds of the samples. The
  *   game's PRNG is never read.
- * - It never reads a clock: `ctx.now` and `ctx.budgetMs` bound a search, which stops at 60% of the budget
- *   and takes the best candidate so far (`heuristic-budget.ts`).
+ * - Its searches are bounded by work, not time: every search of a decision draws from one budget of engine
+ *   work and takes the best candidate so far when it runs out, so a decision is the same on any device
+ *   (`heuristic-budget.ts`). It never reads a clock: `ctx.now` and `ctx.budgetMs` are only a safety cutoff
+ *   (a search starts nothing past 60% of the time budget).
  * - Its tunable numbers (evaluator constants, margins, thresholds) come from `weights` (`weights.ts`),
  *   `DEFAULT_WEIGHTS` when none are given, and are handed down to every heuristic through `Think` or the
  *   combat contexts; nothing is read from module state.
@@ -43,7 +45,13 @@ import { chooseRingBearerWithEvasion } from './casual-ring';
 import { findObject } from './casual-view';
 import { chooseHeuristicAttack } from './heuristic-attacks';
 import { chooseHeuristicBlocks } from './heuristic-blocks';
-import { NO_BUDGET, startBudget, type Think } from './heuristic-budget';
+import {
+  type Budget,
+  NO_BUDGET,
+  type SearchWork,
+  startBudget,
+  type Think,
+} from './heuristic-budget';
 import { choosePriorityHeuristic, type PriorityChoice } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
@@ -95,6 +103,9 @@ export class HeuristicAgent implements ExplainingAgent {
   private plan: TurnPlan | null = null;
   private readonly planList: PlanRecord[] = [];
   private readonly workList: PlanWork[] = [];
+  private readonly searchList: SearchWork[] = [];
+  /** The budget of the decision being answered (`decide`), read once it is answered. */
+  private budget: Budget = NO_BUDGET;
   /** The plannings tried this turn (see `priorityChoice`). */
   private tries: { turn: number; count: number; failed: Set<Window> } = {
     turn: -1,
@@ -126,6 +137,11 @@ export class HeuristicAgent implements ExplainingAgent {
   /** What every planning cost, oldest first: the ones that ended in a plan and the ones that did not. */
   get plannings(): readonly PlanWork[] {
     return this.workList;
+  }
+
+  /** What every decision that searched cost (engine calls, work units, what cut it), oldest first. */
+  get searches(): readonly SearchWork[] {
+    return this.searchList;
   }
 
   /** Inner agents for the planner's play-outs: the same rules and weights, no sample, so no planning. */
@@ -215,8 +231,10 @@ export class HeuristicAgent implements ExplainingAgent {
   private think(ctx: DecideContext | undefined): Think {
     let sample: GameState | undefined;
     let built = false;
+    const budget = ctx === undefined ? NO_BUDGET : startBudget(ctx);
+    if (ctx !== undefined) this.budget = budget;
     return {
-      budget: ctx === undefined ? NO_BUDGET : startBudget(ctx),
+      budget,
       weights: this.weights,
       draw: (n) => this.draw(n),
       sample: () => {
@@ -340,6 +358,17 @@ export class HeuristicAgent implements ExplainingAgent {
           ctx,
         ),
       );
+      const budget = this.budget;
+      this.budget = NO_BUDGET;
+      if (budget.calls() > 0) {
+        this.searchList.push({
+          kind: decision.kind,
+          calls: budget.calls(),
+          units: budget.used(),
+          cut: budget.cut(),
+          ms: budget.elapsed(),
+        });
+      }
       this.reasonList.push({
         decisionKind: decision.kind,
         action: summarizeAction(view, action),
@@ -347,6 +376,7 @@ export class HeuristicAgent implements ExplainingAgent {
       });
       return Promise.resolve(action);
     } catch (error) {
+      this.budget = NO_BUDGET;
       this.fallbackList.push({
         decisionKind: decision.kind,
         message: error instanceof Error ? error.message : String(error),

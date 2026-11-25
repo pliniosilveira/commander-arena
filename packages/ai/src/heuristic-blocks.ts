@@ -9,18 +9,17 @@
  * chump fill), which needs the view alone. The block tax of CR 509.1d is applied before a candidate is
  * simulated (`withinBlockBudget`), so a declaration that cannot be paid for is never asked.
  */
-import {
-  type Action,
-  type DeclareBlockersDecision,
-  type GameState,
-  getView,
-  type ObjectId,
-  type SeatId,
+import type {
+  Action,
+  DeclareBlockersDecision,
+  GameState,
+  ObjectId,
+  SeatId,
 } from '@commander-arena/engine';
 import { evaluate } from './evaluate';
 import { type BlockPlan, blockPlans, defaultPlan } from './heuristic-blockplan';
-import type { Budget } from './heuristic-budget';
-import { applyOrNull, playOut, type SimPolicy } from './heuristic-sim';
+import { type Budget, DIRECT } from './heuristic-budget';
+import { applyOrNull, playOut, type SimPolicy, within } from './heuristic-sim';
 import { withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
 import type { AgentWeights } from './weights';
@@ -60,7 +59,7 @@ export function simulateBlocks(
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
   policy: SimPolicy = {},
 ): GameState | null {
-  const declared = applyOrNull(sample, seat, { kind: 'declareBlockers', blocks });
+  const declared = applyOrNull(sample, seat, { kind: 'declareBlockers', blocks }, policy.engine);
   return declared === null ? null : playOut(declared, seat, policy);
 }
 
@@ -73,7 +72,9 @@ export function scoreBlocks(
   policy: SimPolicy = {},
 ): number | null {
   const end = simulateBlocks(sample, seat, blocks, policy);
-  return end === null ? null : evaluate(getView(end, seat), seat, weights).score;
+  return end === null
+    ? null
+    : evaluate((policy.engine ?? DIRECT).view(end, seat), seat, weights).score;
 }
 
 export function chooseHeuristicBlocks(
@@ -104,15 +105,16 @@ export function chooseHeuristicBlocks(
     ...trimmed.filter((p) => p.kind !== 'no-block' && p !== dflt),
   ];
   const scored: { plan: BlockPlan; score: number }[] = [];
+  const search = ctx.budget.search();
   for (const plan of ordered) {
-    // Always look at the first two (no block and the default); the rest only while time is left.
-    if (scored.length >= 2 && ctx.budget.expired(scored.length)) break;
-    const score = scoreBlocks(sample, seat, plan.blocks, ctx.weights, { abort: ctx.budget.over });
+    // Always look at the first two (no block and the default); the rest only while the budget lasts.
+    if (scored.length >= 2 && search.expired(scored.length) !== null) break;
+    const score = scoreBlocks(sample, seat, plan.blocks, ctx.weights, within(ctx.budget));
     if (score !== null) scored.push({ plan, score });
   }
-  // No candidate, or fewer than the two that are always compared because a play-out ran out of time:
+  // No candidate, or fewer than the two that are always compared because a play-out was dropped:
   // the rules-based plan answers (it handles danger and lethal on its own).
-  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over())) {
+  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over() !== null)) {
     return asChoice(d, fallback);
   }
   const baseline = scored.find((s) => s.plan.kind === 'no-block');

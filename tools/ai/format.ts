@@ -1,6 +1,12 @@
 // The report of `pnpm ai:arena`: one match result as plain text. Pure, so a test can pin it.
 
-import type { MatchResult, PlanWork, TableReport, TableResult } from '@commander-arena/ai';
+import type {
+  MatchResult,
+  PlanWork,
+  SearchWork,
+  TableReport,
+  TableResult,
+} from '@commander-arena/ai';
 
 const pct = (n: number, of: number): string => (of === 0 ? '-' : `${((100 * n) / of).toFixed(1)}%`);
 
@@ -98,6 +104,24 @@ export function formatPlanning(label: string, works: readonly PlanWork[]): strin
       n,
     )}`,
     `per planning: ${mean((w) => w.views)} views, ${mean((w) => w.applies)} engine actions, ${mean((w) => w.playOuts)} play-outs, ${mean((w) => w.steps)} steps, ${mean((w) => w.ms, 2)} ms`,
+  ].join('; ');
+}
+
+/**
+ * The searches of one agent's decisions (issue 653): how many decisions searched, the share whose searches the
+ * safety clock cut (where play depends on the device: the benchmark's logical clock never cuts) or the work
+ * budget cut, and the mean work of one. Null when the agent never searched.
+ */
+export function formatSearches(label: string, searches: readonly SearchWork[]): string | null {
+  const n = searches.length;
+  if (n === 0) return null;
+  const count = (cut: SearchWork['cut']): number => searches.filter((s) => s.cut === cut).length;
+  const mean = (of: (s: SearchWork) => number, digits = 1): string =>
+    (searches.reduce((sum, s) => sum + of(s), 0) / n).toFixed(digits);
+  return [
+    `searches ${label}: ${n} decisions searched`,
+    `cut by the clock ${pct(count('clock'), n)}, by the work budget ${pct(count('work'), n)}`,
+    `per decision: ${mean((s) => s.calls)} engine calls, ${mean((s) => s.units, 0)} work units, ${mean((s) => s.ms, 2)} ms`,
   ].join('; ');
 }
 

@@ -35,12 +35,20 @@
 import '../corpus/register.ts';
 import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import type { Agent, AgentFactory, MatchDeck, PlanWork, TableDeck } from '@commander-arena/ai';
+import type {
+  Agent,
+  AgentFactory,
+  MatchDeck,
+  PlanWork,
+  SearchWork,
+  TableDeck,
+} from '@commander-arena/ai';
 import {
   type DecisionTimes,
   formatMatch,
   formatPlanning,
   formatRound,
+  formatSearches,
   formatTable,
   formatTableReport,
   formatTimes,
@@ -126,19 +134,28 @@ const {
   tableReport,
 } = await import('@commander-arena/ai');
 
-/** The agents that plan their turns (the HeuristicAgent), per label: their plannings are read at the end. */
-const planners = new Map<string, { readonly plannings: readonly PlanWork[] }[]>();
-const plansTurns = (a: Agent): a is Agent & { readonly plannings: readonly PlanWork[] } =>
-  'plannings' in a;
-/** The planning lines of the report (issue 653): one for each label whose agents plan. */
+/** An agent that plans its turns and searches within a work budget (the HeuristicAgent). */
+type Planner = {
+  readonly plannings: readonly PlanWork[];
+  readonly searches: readonly SearchWork[];
+};
+/** The agents that plan their turns, per label: their plannings and searches are read at the end. */
+const planners = new Map<string, Planner[]>();
+const plansTurns = (a: Agent): a is Agent & Planner => 'plannings' in a && 'searches' in a;
+/** The planning and search lines of the report (issue 653): two for each label whose agents plan. */
 const planningLines = (): string[] =>
-  [...planners].flatMap(([label, agents]) => {
-    const line = formatPlanning(
-      label,
-      agents.flatMap((a) => a.plannings),
-    );
-    return line === null ? [] : [line];
-  });
+  [...planners].flatMap(([label, agents]) =>
+    [
+      formatPlanning(
+        label,
+        agents.flatMap((a) => a.plannings),
+      ),
+      formatSearches(
+        label,
+        agents.flatMap((a) => a.searches),
+      ),
+    ].filter((line): line is string => line !== null),
+  );
 
 /** Measures the time of every `decide` of the agents it makes, per label. */
 const stats = new Map<

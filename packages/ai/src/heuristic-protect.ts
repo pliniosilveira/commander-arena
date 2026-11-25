@@ -87,11 +87,12 @@ export function protectionPlay(
   if (candidates.length === 0) return null;
   const sample = think.sample();
   if (sample === undefined || sample.pending?.kind !== 'priority') return null;
+  const search = think.budget.search();
   const base = scoreCast(sample, view.viewer, null, answer, think);
   if (base === null) return null;
   let best: { play: Play; score: number } | undefined;
   for (const [i, play] of candidates.entries()) {
-    if (think.budget.expired(i + 1)) break;
+    if (search.expired(i + 1) !== null) break;
     const score = scoreCast(sample, view.viewer, castAction(play), answer, think);
     if (
       score !== null &&
