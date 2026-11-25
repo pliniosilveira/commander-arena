@@ -268,11 +268,12 @@ describe('the runner hook', () => {
 
 describe('a traced table run', () => {
   const deck = ARENA_DECKS.map((d) => (Array.isArray(d) ? d[0] : d));
+  // Cheap agents: the test checks the bookkeeping, and the HeuristicAgent's turn planner makes a four-seat game slow.
   const agents = [
-    AGENT_FACTORIES.heuristic,
     AGENT_FACTORIES.greedy,
     AGENT_FACTORIES.casual,
     AGENT_FACTORIES.random,
+    AGENT_FACTORIES.greedy,
   ];
   const run = (trace: boolean) =>
     playTable({
