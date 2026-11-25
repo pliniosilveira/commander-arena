@@ -12,6 +12,9 @@
  *   game's PRNG is never read.
  * - It never reads a clock: `ctx.now` and `ctx.budgetMs` bound a search, which stops at 60% of the budget
  *   and takes the best candidate so far (`heuristic-budget.ts`).
+ * - Its tunable numbers (evaluator constants, margins, thresholds) come from `weights` (`weights.ts`),
+ *   `DEFAULT_WEIGHTS` when none are given, and are handed down to every heuristic through `Think` or the
+ *   combat contexts; nothing is read from module state.
  * - A throwing handler falls back to the first safe legal action and is recorded, as on the
  *   CasualAgent; every decision is recorded with its reason (`reasons.ts`).
  */
@@ -45,18 +48,22 @@ import { chooseVoteByOutcome } from './heuristic-vote';
 import { firstSafeAction } from './legal';
 import { MIN_KEEP_SIZE } from './random-agent';
 import { type ExplainingAgent, type Reason, type ReasonRecord, summarizeAction } from './reasons';
+import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
 
 export interface HeuristicAgentOptions {
   readonly seed: number;
   readonly name?: string;
   /** Test seam, as on the CasualAgent: handlers that replace the defaults for the listed kinds. */
   readonly handlerOverrides?: Partial<DecisionHandlers<Action>>;
+  /** The tunable numbers of the agent (`weights.ts`); `DEFAULT_WEIGHTS` when left out. */
+  readonly weights?: AgentWeights;
 }
 
 export class HeuristicAgent implements ExplainingAgent {
   readonly name: string;
   private rng: RngState;
   private readonly overrides: Partial<DecisionHandlers<Action>>;
+  readonly weights: AgentWeights;
   private readonly fallbackList: FallbackRecord[] = [];
   private readonly reasonList: ReasonRecord[] = [];
   /** Prevention spells cast in the window they were cast in (casual-prevention.ts). */
@@ -64,12 +71,14 @@ export class HeuristicAgent implements ExplainingAgent {
   /** The mana the payment of the cast just chosen keeps open for a protection spell (`heuristic-protect.ts`). */
   private reserve: readonly string[] | null = null;
   /** How the opponent has blocked (heuristic-model.ts). */
-  readonly opponent = new OpponentModel();
+  readonly opponent: OpponentModel;
 
   constructor(options: HeuristicAgentOptions) {
     this.name = options.name ?? `heuristic#${options.seed}`;
     this.rng = createRng(options.seed);
     this.overrides = options.handlerOverrides ?? {};
+    this.weights = options.weights ?? DEFAULT_WEIGHTS;
+    this.opponent = new OpponentModel(this.weights);
   }
 
   get fallbacks(): readonly FallbackRecord[] {
@@ -92,6 +101,7 @@ export class HeuristicAgent implements ExplainingAgent {
     let built = false;
     return {
       budget: ctx === undefined ? NO_BUDGET : startBudget(ctx),
+      weights: this.weights,
       draw: (n) => this.draw(n),
       sample: () => {
         if (!built) {
@@ -132,7 +142,7 @@ export class HeuristicAgent implements ExplainingAgent {
         return (hold === null ? null : payHolding(view, d, hold)) ?? casual.payMana(d);
       },
       mulligan: (d) => {
-        const choice = chooseHeuristicMulligan(view, d, MIN_KEEP_SIZE);
+        const choice = chooseHeuristicMulligan(view, d, MIN_KEEP_SIZE, this.weights);
         note(choice.reason);
         return choice.action;
       },
@@ -141,7 +151,7 @@ export class HeuristicAgent implements ExplainingAgent {
         const plain = d.forTrigger !== true && d.forCopy !== true && d.forChange !== true;
         const simple = d.specs.every((s) => s.mode === undefined && s.divide === undefined);
         if (source !== undefined && plain && simple) {
-          const pick = chooseRemovalTargets(view, source, d.specs);
+          const pick = chooseRemovalTargets(view, source, d.specs, this.weights);
           if (pick !== null) {
             note(pick.reason);
             return { kind: 'chooseTargets', targets: pick.targets };
@@ -154,8 +164,9 @@ export class HeuristicAgent implements ExplainingAgent {
             spec.max === 1
           ) {
             const target =
-              (isProtectionSpell(source) ? protectedTarget(view, spec.legal) : null) ??
-              creatureToHelp(view, spec.legal);
+              (isProtectionSpell(source)
+                ? protectedTarget(view, spec.legal, this.weights)
+                : null) ?? creatureToHelp(view, spec.legal, this.weights);
             if (target !== null) return { kind: 'chooseTargets', targets: [target] };
           }
         }
@@ -165,6 +176,7 @@ export class HeuristicAgent implements ExplainingAgent {
         const choice = chooseHeuristicAttack(view, d, {
           sample: think.sample(),
           budget: think.budget,
+          weights: this.weights,
           passiveWeight: this.opponent.passiveWeight,
           passiveWeightFor: (seat) => this.opponent.passiveWeightFor(seat),
         });
@@ -175,6 +187,7 @@ export class HeuristicAgent implements ExplainingAgent {
         const choice = chooseHeuristicBlocks(view, d, {
           sample: think.sample(),
           budget: think.budget,
+          weights: this.weights,
         });
         note(choice.reason);
         return choice.action;
@@ -190,7 +203,7 @@ export class HeuristicAgent implements ExplainingAgent {
         d.purpose === 'replacement'
           ? chooseReplacementByOutcome(d)
           : d.purpose === 'vote'
-            ? chooseVoteByOutcome(d, think.sample(), casual.chooseOption(d))
+            ? chooseVoteByOutcome(d, think.sample(), casual.chooseOption(d), this.weights)
             : casual.chooseOption(d),
       ...this.overrides,
     };

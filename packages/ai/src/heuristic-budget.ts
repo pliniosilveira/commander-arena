@@ -6,10 +6,13 @@
  */
 import type { GameState } from '@commander-arena/engine';
 import type { DecideContext } from './agent';
+import type { AgentWeights } from './weights';
 
-/** What one decision may use: the clock, the sample (built once, on demand) and the PRNG. */
+/** What one decision may use: the clock, the sample (built once, on demand), the PRNG and the weights. */
 export interface Think {
   readonly budget: Budget;
+  /** The agent's tunable numbers (`weights.ts`). */
+  readonly weights: AgentWeights;
   /** A number in [0, n) from the agent's own PRNG. */
   readonly draw: (n: number) => number;
   /** The determinized sample of this decision, or undefined when the host gives none. */

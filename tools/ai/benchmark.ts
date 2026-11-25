@@ -8,6 +8,8 @@
 //
 // --baseline   the folder of the baseline's agent code (default tools/ai/.baseline)
 // --candidate  a folder of agent code to play instead of the working tree's (default: the working tree)
+// --candidate-weights, --baseline-weights  a JSON file of a partial AgentWeights (packages/ai/src/weights.ts)
+//              merged over that side's defaults with its own withWeights; refused for agent code without weights
 // --games      total games, an even number: each seed is played twice, the seats swapped (default 400)
 // --seed       the first game seed (default 1); pair i plays seed + i on precon i mod the number of precons
 // --shard      i/n: play only the pairs whose index is i - 1 modulo n, so n machines split one run
@@ -18,11 +20,11 @@
 // run replays exactly. The manual workflow `AI benchmark` runs it in shards on GitHub's runners.
 
 import '../corpus/register.ts';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import type { Agent, AgentFactory } from '@commander-arena/ai';
+import type { Agent, AgentFactory, AgentWeights, PartialWeights } from '@commander-arena/ai';
 import { DEFAULT_BASELINE_FOLDER } from './baseline-folder.ts';
 import type { GameOutcome, PairRecord } from './benchmark-stats.ts';
 import { formatSummary } from './benchmark-stats.ts';
@@ -31,6 +33,8 @@ const { values } = parseArgs({
   options: {
     baseline: { type: 'string' },
     candidate: { type: 'string' },
+    'candidate-weights': { type: 'string' },
+    'baseline-weights': { type: 'string' },
     games: { type: 'string', default: '400' },
     seed: { type: 'string', default: '1' },
     shard: { type: 'string', default: '1/1' },
@@ -64,28 +68,79 @@ const positive = (text: string | undefined, name: string): number | undefined =>
 const maxTurns = positive(values['max-turns'], 'max-turns');
 const maxActions = positive(values['max-actions'], 'max-actions');
 
-const { HeuristicAgent, MATCH_LIMITS, playMatch } = await import('@commander-arena/ai');
+const { HeuristicAgent, MATCH_LIMITS, playMatch, withWeights } = await import(
+  '@commander-arena/ai'
+);
 const { loadPreconDecks, mirrorPairs } = await import('./precons.ts');
 
-/** The HeuristicAgent of a folder of agent code (a copy of `packages/ai/src`). */
-async function heuristicFrom(folder: string, label: string): Promise<AgentFactory> {
-  const url = pathToFileURL(join(resolve(folder), 'index.ts')).href;
-  let mod: { HeuristicAgent?: new (options: { seed: number }) => Agent };
+/** The partial weights of a JSON file, or undefined when no file is named. */
+function readWeights(file: string | undefined, flag: string): PartialWeights | undefined {
+  if (file === undefined) return undefined;
   try {
-    mod = await import(url);
+    return JSON.parse(readFileSync(file, 'utf8')) as PartialWeights;
+  } catch (error) {
+    return fail(`--${flag}: cannot read ${file}: ${String(error)}`);
+  }
+}
+
+/** The agent code a side plays: the HeuristicAgent and, when it has them, its weights helper. */
+interface AgentModule {
+  HeuristicAgent?: new (options: { seed: number; weights?: AgentWeights }) => Agent;
+  withWeights?: (partial: PartialWeights) => AgentWeights;
+}
+
+/** The HeuristicAgent of agent code, with `partial` merged over its default weights when given. */
+function heuristicOf(
+  mod: AgentModule,
+  where: string,
+  label: string,
+  partial: PartialWeights | undefined,
+  flag: string,
+): AgentFactory {
+  const Heuristic = mod.HeuristicAgent;
+  if (Heuristic === undefined) return fail(`${where} has no HeuristicAgent`);
+  if (partial === undefined) return { label, create: (s) => new Heuristic({ seed: s }) };
+  if (mod.withWeights === undefined) {
+    return fail(
+      `--${flag}: the agent code of ${where} has no weights (it predates issue 624 phase 2)`,
+    );
+  }
+  let weights: AgentWeights;
+  try {
+    weights = mod.withWeights(partial);
+  } catch (error) {
+    return fail(`--${flag}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  return { label, create: (s) => new Heuristic({ seed: s, weights }) };
+}
+
+/** The agent code of a folder (a copy of `packages/ai/src`). */
+async function moduleFrom(folder: string): Promise<AgentModule> {
+  const url = pathToFileURL(join(resolve(folder), 'index.ts')).href;
+  try {
+    return await import(url);
   } catch (error) {
     return fail(`cannot load the agent code of ${folder}: ${String(error)}`);
   }
-  const Heuristic = mod.HeuristicAgent;
-  if (Heuristic === undefined) return fail(`${folder} has no HeuristicAgent`);
-  return { label, create: (s) => new Heuristic({ seed: s }) };
 }
 
-const baseline = await heuristicFrom(values.baseline ?? DEFAULT_BASELINE_FOLDER, 'baseline');
-const candidate: AgentFactory =
+const baselineFolder = values.baseline ?? DEFAULT_BASELINE_FOLDER;
+const baseline = heuristicOf(
+  await moduleFrom(baselineFolder),
+  baselineFolder,
+  'baseline',
+  readWeights(values['baseline-weights'], 'baseline-weights'),
+  'baseline-weights',
+);
+const candidate = heuristicOf(
   values.candidate === undefined
-    ? { label: 'candidate', create: (s) => new HeuristicAgent({ seed: s }) }
-    : await heuristicFrom(values.candidate, 'candidate');
+    ? { HeuristicAgent, withWeights }
+    : await moduleFrom(values.candidate),
+  values.candidate ?? 'the working tree',
+  'candidate',
+  readWeights(values['candidate-weights'], 'candidate-weights'),
+  'candidate-weights',
+);
 
 const loaded = await loadPreconDecks();
 for (const problem of loaded.problems) process.stderr.write(`precon left out: ${problem}\n`);
