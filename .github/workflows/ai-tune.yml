@@ -1,0 +1,63 @@
+name: AI tune
+
+# Self-play tuning of the HeuristicAgent's weights (issue 624, phase 4): `tools/ai/tune.ts` runs SPSA over
+# the chosen weights on the real precons, on one runner, and uploads the weights file and its state as an
+# artifact. A tuned file is accepted only after the `AI benchmark` against the default weights on other
+# seeds gives "better" and the blunder suite passes with it (the header of tune.ts says how).
+# Manual only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      fields:
+        description: Dotted paths or prefixes of AgentWeights, comma-separated (empty for the default list)
+        default: ''
+      iterations:
+        description: SPSA iterations
+        default: '100'
+      pairs:
+        description: Pairs per iteration (each pair is one seed played twice, seats swapped)
+        default: '8'
+      seed:
+        description: The run seed (the game seeds used are logged; validate on others)
+        default: '1'
+
+concurrency:
+  group: ai-tune-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  tune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      FIELDS: ${{ github.event.inputs.fields }}
+      ITERATIONS: ${{ github.event.inputs.iterations }}
+      PAIRS: ${{ github.event.inputs.pairs }}
+      SEED: ${{ github.event.inputs.seed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Tune
+        shell: bash
+        run: |
+          args=(--iterations "$ITERATIONS" --pairs "$PAIRS" --seed "$SEED" --out tuned.json)
+          if [ -n "$FIELDS" ]; then args+=(--fields "$FIELDS"); fi
+          node tools/ai/tune.ts "${args[@]}" 2>&1 | tee tune.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: ai-tune-weights
+          path: |
+            tuned.json
+            tuned.json.state.json
+            tune.log
+          if-no-files-found: warn

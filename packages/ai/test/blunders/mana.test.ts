@@ -11,9 +11,8 @@
 // rule: a move a strong player could defend there does not belong here. Its comment says in one line why.
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { HeuristicAgent } from '../../src/index';
 import { askHeuristic } from '../heuristic-helpers';
-import { playUntilPass } from './drive';
+import { blunderAgent, playUntilPass } from './drive';
 
 const V2 = 'SYNTHETIC Vanilla 2/2';
 const V5 = 'SYNTHETIC Vanilla 5/5';
@@ -125,7 +124,7 @@ describe('hold up the counterspell', () => {
       .build();
     g.act(1).cast('Murder').targets(['Isamaru, Hound of Konda']).pay();
     g.act(1).pass();
-    const agent = new HeuristicAgent({ seed: 1 });
+    const agent = blunderAgent();
     expect(await askHeuristic(g, agent)).toMatchObject({
       kind: 'castSpell',
       object: g.id('Counterspell'),
