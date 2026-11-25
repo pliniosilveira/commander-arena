@@ -116,6 +116,8 @@ const TIER_COMPONENT: Record<PaymentSource['tier'], number> = {
 
 interface Entry {
   readonly abilityIndex: number;
+  /** The source the entry is an outcome of, numbered within the items: the entries of one source share their cost vector and flags (`distinctEntries`). */
+  readonly source: number;
   readonly outcome: number;
   readonly colors: readonly ManaColor[];
   readonly snow: boolean;
@@ -291,6 +293,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
   const reserve = new Set<ManaColor>(request.reserve ?? []);
   const items: Item[] = [];
   const only = onlyColorOf(request);
+  let sourceCount = 0;
 
   // Pool mana first: free in every tier component (SPEC 10 "spend pool mana first").
   request.pool.forEach((mana, poolIndex) => {
@@ -304,6 +307,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
       entries: [
         {
           abilityIndex: 0,
+          source: -1,
           outcome: 0,
           colors: [mana.color],
           snow: mana.snow,
@@ -353,6 +357,8 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
     }
     const entries: Entry[] = [];
     for (const source of sources) {
+      const sourceNumber = sourceCount;
+      sourceCount += 1;
       source.produces.forEach((colors, outcome) => {
         if (colors.length === 0) return;
         if (!restrictionAllows(source.restriction, request.spell)) return;
@@ -372,6 +378,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
               : 0;
         entries.push({
           abilityIndex: source.abilityIndex,
+          source: sourceNumber,
           outcome,
           colors,
           snow: source.snow,
@@ -397,6 +404,81 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
   return items;
 }
 
+/** The demands one unit of mana of `color` from `entry` may pay (`assignUnits`), before leaving it over. */
+function unitDims(
+  entry: Entry,
+  color: ManaColor,
+  flex: readonly (readonly ManaColor[])[],
+): number[] {
+  // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
+  const dims = entry.genericOnly ? [] : [colorDim(color)];
+  // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
+  if (entry.anyColor && !entry.genericOnly && color !== 'C') {
+    for (const other of COLOR_DIMS) {
+      if (other !== 'C' && other !== color) dims.push(colorDim(other));
+    }
+  }
+  if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
+  if (!entry.notGeneric) dims.push(GENERIC_DIM);
+  // Mana of a source with no mana cost may instead pay an activation cost (one level only).
+  if (entry.payAct) {
+    dims.push(ACT_BASE + colorDim(color));
+    if (!entry.notGeneric) dims.push(ACT_GENERIC);
+    // A hybrid symbol of a costed ability that this color is one half of (CR 107.4e).
+    flex.forEach((colors, k) => {
+      if (colors.includes(color)) dims.push(TOTAL_DIMS + k);
+    });
+  }
+  return dims;
+}
+
+/**
+ * The entries of an item worth trying against the remaining demand `state` (issue 632). `assignUnits` gives each unit one of the open
+ * demands it may pay or leaves it over, so what an entry can reach depends only on how many units it has of each kind (the open demands a
+ * unit may pay), and no more units of a kind are ever used than those demands add up to: the rest are left over whatever happens. Two
+ * entries of the same source (so the same cost vector and flags), with as many units, that have the same count of each kind once capped
+ * that way reach the same remaining demands with the same mana left over, so they offer the same plans at the same cost: the later one can
+ * never be strictly better (`solve` keeps the first of equal plans) and is left out, which changes no plan. "Add X mana in any combination
+ * of colors" has C(X + 4, 4) outcomes, but against a demand of a few mana only a few of them differ.
+ */
+function distinctEntries(
+  item: Item,
+  among: readonly number[],
+  state: readonly number[],
+  flex: readonly (readonly ManaColor[])[],
+): number[] {
+  // By source and color: the open demands a unit may pay, and how many units of that kind could be used at most.
+  const kinds = new Map<string, { key: string; cap: number }>();
+  const kindOf = (entry: Entry, color: ManaColor): { key: string; cap: number } => {
+    const at = `${entry.source}|${color}`;
+    let kind = kinds.get(at);
+    if (kind === undefined) {
+      const dims = unitDims(entry, color, flex)
+        .filter((d) => (state[d] ?? 0) > 0)
+        .sort((a, b) => a - b);
+      kind = { key: dims.join('.'), cap: dims.reduce((n, d) => n + (state[d] ?? 0), 0) };
+      kinds.set(at, kind);
+    }
+    return kind;
+  };
+  const seen = new Set<string>();
+  const kept: number[] = [];
+  for (const index of among) {
+    const entry = item.entries[index] as Entry;
+    const counts = new Map<string, number>();
+    for (const color of entry.colors) {
+      const { key, cap } = kindOf(entry, color);
+      counts.set(key, Math.min(cap, (counts.get(key) ?? 0) + 1));
+    }
+    const units = [...counts].map(([key, n]) => `${key}x${n}`).sort();
+    const key = `${entry.source}#${entry.colors.length}#${units.join(',')}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kept.push(index);
+  }
+  return kept;
+}
+
 /**
  * Ways to spend the units of one outcome on the remaining demand: each unit pays its own color,
  * a snow demand (when the source is snow), a generic demand, or is left over. Returns one entry
@@ -406,36 +488,20 @@ function assignUnits(
   state: readonly number[],
   entry: Entry,
   flex: readonly (readonly ManaColor[])[],
-): Map<string, { state: number[]; usedMask: number; actMask: number }> {
-  type Level = Map<string, { state: number[]; usedMask: number; actMask: number }>;
+  encode: (s: readonly number[]) => number,
+): Map<number, { state: number[]; usedMask: number; actMask: number }> {
+  // A state is keyed by `solveProfile`'s number for the remaining demand.
+  type Level = Map<number, { state: number[]; usedMask: number; actMask: number }>;
   let level: Level = new Map();
-  level.set(state.join(','), { state: state.slice(), usedMask: 0, actMask: 0 });
+  level.set(encode(state), { state: state.slice(), usedMask: 0, actMask: 0 });
   entry.colors.forEach((color, j) => {
     const nextLevel: Level = new Map();
     const put = (s: number[], used: number, act: number) => {
-      const key = s.join(',');
+      const key = encode(s);
       if (!nextLevel.has(key)) nextLevel.set(key, { state: s, usedMask: used, actMask: act });
     };
+    const dims = unitDims(entry, color, flex);
     for (const { state: s, usedMask, actMask } of level.values()) {
-      // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
-      const dims = entry.genericOnly ? [] : [colorDim(color)];
-      // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
-      if (entry.anyColor && !entry.genericOnly && color !== 'C') {
-        for (const other of COLOR_DIMS) {
-          if (other !== 'C' && other !== color) dims.push(colorDim(other));
-        }
-      }
-      if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
-      if (!entry.notGeneric) dims.push(GENERIC_DIM);
-      // Mana of a source with no mana cost may instead pay an activation cost (one level only).
-      if (entry.payAct) {
-        dims.push(ACT_BASE + colorDim(color));
-        if (!entry.notGeneric) dims.push(ACT_GENERIC);
-        // A hybrid symbol of a costed ability that this color is one half of (CR 107.4e).
-        flex.forEach((colors, k) => {
-          if (colors.includes(color)) dims.push(TOTAL_DIMS + k);
-        });
-      }
       for (const d of dims) {
         if ((s[d] ?? 0) > 0) {
           const t = s.slice();
@@ -478,6 +544,37 @@ function solveProfile(
     mandatoryFrom[i] = (mandatoryFrom[i + 1] ?? false) || items[i]?.mandatory === true;
   }
   const memo: Map<number, Node | null>[] = items.map(() => new Map());
+  // `distinctEntries` of each item, by the demand capped at the most mana one of its entries makes (a demand past that caps no count further).
+  // Two steps, each kept by its key: first by which demands are open (with no cap: a demand of `maxYield` caps nothing), then the
+  // survivors by the demand capped at `maxYield`. An entry the first step leaves out has the same capped key as an earlier one, so the
+  // second step keeps the same entries as it would from all of them, and it starts from far fewer.
+  const byOpen: Map<string, readonly number[]>[] = items.map(() => new Map());
+  const byCapped: Map<string, readonly number[]>[] = items.map(() => new Map());
+  const entriesToTry = (i: number, item: Item, state: readonly number[]): readonly number[] => {
+    if (item.entries.length === 1) return [0];
+    const open = state.map((v) => (v > 0 ? item.maxYield : 0));
+    const openKey = open.join(',');
+    const openTable = byOpen[i] as Map<string, readonly number[]>;
+    let first = openTable.get(openKey);
+    if (first === undefined) {
+      first = distinctEntries(
+        item,
+        item.entries.map((_, index) => index),
+        open,
+        flex,
+      );
+      openTable.set(openKey, first);
+    }
+    const capped = state.map((v) => Math.min(v, item.maxYield));
+    const cappedKey = capped.join(',');
+    const cappedTable = byCapped[i] as Map<string, readonly number[]>;
+    let kept = cappedTable.get(cappedKey);
+    if (kept === undefined) {
+      kept = distinctEntries(item, first, capped, flex);
+      cappedTable.set(cappedKey, kept);
+    }
+    return kept;
+  };
 
   const solve = (i: number, code: number): Node | null => {
     // Nothing left to pay is only a plan if every costed source chosen for it has been used.
@@ -490,11 +587,13 @@ function solveProfile(
     const total = state.reduce((a, b) => a + b, 0);
     let best: Node | null = null;
     if (total <= (suffixCap[i] ?? 0)) {
-      item.entries.forEach((entry, entryIndex) => {
+      for (const entryIndex of entriesToTry(i, item, state)) {
+        const entry = item.entries[entryIndex] as Entry;
         for (const { state: after, usedMask, actMask } of assignUnits(
           state,
           entry,
           flex,
+          encode,
         ).values()) {
           const afterCode = encode(after);
           if (afterCode === code) continue; // tapping without paying anything is never useful
@@ -508,7 +607,7 @@ function solveProfile(
             best = { cost, choice: entryIndex, next: afterCode, usedMask, actMask };
           }
         }
-      });
+      }
       const skipped = item.mandatory ? null : solve(i + 1, code);
       // Taps are tried first and only strictly better plans replace them, so ties prefer
       // tapping earlier items (lower object id), then lower ability index and outcome.
