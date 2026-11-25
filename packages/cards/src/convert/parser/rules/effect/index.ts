@@ -236,7 +236,9 @@ import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
+import { PUT_ALL_LINKED_EXILED_EFFECT_RULES } from './put-all-linked-exiled';
 import { PUT_ANY_GRAVEYARD_RULES } from './put-any-graveyard';
+import { PUT_FROM_AMONG_EXILED_EFFECT_RULES } from './put-from-among-exiled';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -1401,6 +1403,8 @@ export const EFFECT_RULES = [
   ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
   ...DESTROY_COUNTERED_SOURCE_EFFECT_RULES,
   ...CHOOSE_ONE_OF_THEM_EFFECT_RULES,
+  ...PUT_FROM_AMONG_EXILED_EFFECT_RULES,
+  ...PUT_ALL_LINKED_EXILED_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

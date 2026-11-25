@@ -172,6 +172,7 @@ import { PRIMORDIAL_LOWERINGS } from './primordial';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
+import { PUT_ALL_LINKED_EXILED_LOWERINGS } from './put-all-linked-exiled';
 import { PUT_MILLED_LOWERINGS } from './put-milled';
 import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
@@ -3112,6 +3113,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DAMAGE_UNPREVENTABLE_LOWERINGS,
   ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
   ...CHOOSE_ONE_OF_THEM_LOWERINGS,
+  ...PUT_ALL_LINKED_EXILED_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

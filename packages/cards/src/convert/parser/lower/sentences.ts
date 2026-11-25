@@ -2539,7 +2539,8 @@ function countsWhatHappened(
       );
     case 'exiledCreatureCards':
       // Grey Host Reinforcements (CR 608.2c): "the number of creature cards exiled this way": an `exile` before it in the same text.
-      return earlier.verb === 'exile';
+      // Journey to the Lost City: or "exile the top four cards of your library" (`exileTop`), whose cards are the ones "those cards" names.
+      return earlier.verb === 'exile' || earlier.verb === 'exileTop';
     case 'exiledCreatures':
       // Issue 81 (Sunfall): "where X is the number of creatures exiled this way": an `exile` before it in the same text.
       return earlier.verb === 'exile';
@@ -2597,10 +2598,16 @@ function thisWaysAreSupported(
     // "You may discard all the cards in your hand. If you do, draw that many cards." (CR 608.2c): the sentence of "if you do" runs only when the offer before it was done,
     // and then counts what that offer did (a declined offer leaves the counts at 0).
     const afterOffer = sentence.condition?.test.kind === 'didPrevious';
+    // Journey to the Lost City (CR 706.3, 608.2c): a row of a die results table, "If the result is 10 to 19, ..., for each creature card among those cards", counts what an instruction
+    // before the roll did; the result only chooses which row runs, so the earlier instruction (not under a condition) is still the one counted.
+    const test = sentence.condition?.test;
+    const dieRow =
+      test?.kind === 'dieResult' ||
+      (test?.kind === 'and' && test.terms.every((t) => t.test.kind === 'dieResult'));
     for (const clause of sentence.clauses) {
       for (const amount of thisWaysOf(clause)) {
         if (
-          (sentence.condition !== undefined && !otherwise && !afterOffer) ||
+          (sentence.condition !== undefined && !otherwise && !afterOffer && !dieRow) ||
           clause.condition !== undefined
         ) {
           return sentence;

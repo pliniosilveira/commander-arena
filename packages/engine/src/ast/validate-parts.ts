@@ -2188,6 +2188,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   }
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures', 'exiledCreatureCards'];
+  // Journey to the Lost City (CR 608.2c): the creature cards `exileTop` exiled from a library are "creature cards among those cards".
+  if (e?.kind === 'exileTop') return ['exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).

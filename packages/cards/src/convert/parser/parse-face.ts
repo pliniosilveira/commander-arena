@@ -426,7 +426,8 @@ function exilesIn(effect: Effect): number {
       return 1;
     // CR 607.2a (Valakut Exploration): "exile the top card of your library" whose card another ability reads as "exiled with ~" (one card, a face-up exile of the controller's own library).
     case 'exileTop':
-      return effect.count === 1 && effect.faceDown !== true && effect.from === undefined ? 1 : 0;
+      // Journey to the Lost City: or several cards ("exile the top four cards of your library"): every card is remembered as it is exiled.
+      return effect.faceDown !== true && effect.from === undefined ? 1 : 0;
     // "you may exile that card from your graveyard" (stage P50, D-207).
     case 'may':
       return exilesIn(effect.effect);
@@ -488,7 +489,11 @@ function groupLevels(input: { abilities: Ability[]; refused: number[] }): {
 function movesLinkedExile(effect: Effect): boolean {
   switch (effect.kind) {
     case 'moveToZone':
-      return effect.objects.kind === 'linkedExile';
+      // Journey to the Lost City: or every permanent card the permanent exiled (`each` with `exiledWithSource`).
+      return (
+        effect.objects.kind === 'linkedExile' ||
+        (effect.objects.kind === 'each' && effect.objects.filter.exiledWithSource === true)
+      );
     case 'createToken':
       // D-231 (CR 607.2a): "the exiled card's owner creates an X/X token, where X is its mana value" reads the card.
       return (

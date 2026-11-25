@@ -148,7 +148,7 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  * "If the result is 1, ..." (D-271, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
  * instruction; the lowering reads it only after a roll of the same text.
  */
-const DIE_CONDITIONS = ['condition.die-result'] as const;
+const DIE_CONDITIONS = ['condition.die-result', 'condition.die-result-range'] as const;
 
 /**
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a

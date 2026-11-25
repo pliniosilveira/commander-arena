@@ -85,6 +85,8 @@ function readsLinkedExile(e: unknown): boolean {
     choosesFromExile(e) ||
     // D-230: "return the exiled card": the `linkedExile` reference (Fiend Hunter, Skyclave Apparition, the token Hofri makes).
     text.includes('"kind":"linkedExile"') ||
+    // Journey to the Lost City (CR 607.2a): "Put all permanent cards exiled with this enchantment onto the battlefield": an `each` selector of the cards the permanent exiled.
+    text.includes('"exiledWithSource":true') ||
     // Furious Rise (CR 607.2a): "You may play that card until you exile another card with this enchantment": the permission is read from the card the linked exile made.
     text.includes('"lasts":"untilSourceExilesAnother"')
   );

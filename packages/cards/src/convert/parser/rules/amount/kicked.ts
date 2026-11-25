@@ -60,6 +60,8 @@ export const AMOUNT_TIMES_KICKED = defineRule<IrAmount>({
  */
 export const FOR_EACH_AMOUNTS = [
   'amount.for-each',
+  // Exit from Exile deck (Journey to the Lost City): the creature cards the exile before it exiled.
+  'amount.for-each-creature-card-among-those-cards',
   'amount.for-each-counter',
   'amount.for-each-counter-kind',
   'amount.for-each-opponent',

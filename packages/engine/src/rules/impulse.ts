@@ -17,6 +17,7 @@ import type {
   GameState,
   ResolutionContext,
 } from '../state/types';
+import { derive } from './derive';
 import { amountOf, moveInstructions, moving } from './effect-support';
 import { resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -64,7 +65,13 @@ export function runExileTop(
     effect.from === undefined ? [res.controller] : resolvePlayers(state, effect.from, ctx, targets);
   if (owners.length === 0) return moving(state, []);
   const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
-  const moves = moveInstructions(top, 'exile');
+  // CR 608.2c (Journey to the Lost City): a creature card that really goes to exile counts, "for each creature card among those cards" (a card in a library is never a token).
+  const moves = moveInstructions(top, 'exile').map((m) => {
+    const card = m.kind === 'move' ? state.objects[m.object] : undefined;
+    return card !== undefined && derive(state, card).types.includes('creature')
+      ? { ...m, countsCreatureCard: true as const }
+      : m;
+  });
   // CR 607.2a, 611.2a (Furious Rise): "until you exile another card with this enchantment": exiling another card with the permanent's linked ability ends the permission to play the one before.
   const exiling =
     effect.linked === true && res.source !== null && top.length > 0 ? res.source : null;

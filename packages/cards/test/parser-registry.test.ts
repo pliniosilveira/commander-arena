@@ -493,6 +493,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-opponent': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
+  'effect.put-from-among-those-cards-onto-battlefield': spell(
+    () =>
+      'Exile the top four cards of your library. You may put a land card from among those cards onto the battlefield.',
+  ),
+  'effect.put-all-permanent-cards-exiled-with-then-sacrifice': permanent(
+    () =>
+      'At the beginning of your upkeep, exile the top four cards of your library. Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',
+  ),
+  'amount.for-each-creature-card-among-those-cards': spell(
+    (e) => `Exile the top four cards of your library. Draw a card ${e}.`,
+  ),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
@@ -831,6 +842,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `You lose 1 life, then clash with an opponent. If ${e}, you gain 1 life.`,
   ),
   'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
+  'condition.die-result-range': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
   'condition.this-in-your-graveyard': permanent(
     (e) =>
       `At the beginning of your upkeep, if ${e}, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.`,

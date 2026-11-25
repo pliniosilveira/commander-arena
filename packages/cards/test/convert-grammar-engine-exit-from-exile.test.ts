@@ -800,3 +800,61 @@ describe('"Once each turn, you may pay {0} rather than pay the mana cost for a c
     ).toThrow();
   });
 });
+
+describe('Journey to the Lost City: exile four, roll a d20 and read the results table (CR 706.3, 607.2a, 608.2c)', () => {
+  const journey = parsed(
+    'SYNTHETIC Lost Journey',
+    'Enchantment',
+    'At the beginning of your upkeep, exile the top four cards of your library, then roll a d20.\n1—9 | You may put a land card from among those cards onto the battlefield.\n10—19 | Create a 2/2 green Wolf creature token, then put a +1/+1 counter on it for each creature card among those cards.\n20 | Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',
+    { manaCost: '{3}{G}', colors: ['G'] },
+  );
+  type Rolled = { kind: 'dieRolled'; result: number };
+  const play = (seed: number) => {
+    const g = scenario()
+      .seed(seed)
+      .define(journey)
+      .seat(0)
+      .battlefield(journey.name)
+      .library('Forest', 'Grizzly Bears', 'Serra Angel', 'Lightning Bolt', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('end', { active: 1 })
+      .build();
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.passAll();
+    const result = (g.events as { kind: string; result?: number }[])
+      .filter((e): e is Rolled => e.kind === 'dieRolled')
+      .map((e) => e.result)[0];
+    return { g, result };
+  };
+
+  test('every row of the table does what it says, for the seeds that roll it', () => {
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 200 && seen.size < 3; seed += 1) {
+      const { g, result } = play(seed);
+      if (result === undefined) throw new Error('no die was rolled');
+      if (result <= 9 && !seen.has('land')) {
+        seen.add('land');
+        // The land card is put onto the battlefield by choice; the rest stay exiled.
+        g.act(0).chooseCards('Forest');
+        g.expect.zone('Forest', 'battlefield', { seat: 0 });
+        g.expect.zone('Serra Angel', 'exile', { seat: 0 });
+      } else if (result >= 10 && result <= 19 && !seen.has('wolf')) {
+        seen.add('wolf');
+        // Two creature cards among the four: the Wolf has two +1/+1 counters.
+        const wolf = Object.values(g.state.objects).find(
+          (o) => o.zone === 'battlefield' && o.token !== null,
+        );
+        expect(wolf?.counters?.['+1/+1']).toBe(2);
+      } else if (result === 20 && !seen.has('all')) {
+        seen.add('all');
+        g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+        g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+        g.expect.zone('Forest', 'battlefield', { seat: 0 });
+        g.expect.zone('Lightning Bolt', 'exile', { seat: 0 });
+        g.expect.zone(journey.name, 'graveyard', { seat: 0 });
+      }
+    }
+    expect([...seen].sort()).toEqual(['all', 'land', 'wolf']);
+  });
+});
