@@ -12,6 +12,7 @@
 import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { controllerOf } from './control';
 import { dealDamageAsking } from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { derive } from './derive';
@@ -53,6 +54,32 @@ export function fightOnce(
   return { state: second.state, events, fought: true };
 }
 
+/**
+ * Whether the creatures are the same to the game, so that which of them fights which creature changes nothing: tokens of one definition, one
+ * controller, no counters, damage or attachments, and the same characteristics and abilities. (Ezuri's Predation: its Beasts are identical.)
+ */
+function interchangeable(state: GameState, ids: readonly ObjectId[]): boolean {
+  const signatures = ids.map((id) => {
+    const obj = state.objects[id];
+    if (obj === undefined || obj.token === null) return null;
+    const d = derive(state, obj);
+    if (d.attachments.length > 0 || obj.damage > 0) return null;
+    return JSON.stringify([
+      obj.token,
+      obj.counters,
+      obj.tapped,
+      controllerOf(state, obj),
+      d.types,
+      d.subtypes,
+      d.colors,
+      d.power,
+      d.toughness,
+      d.abilities,
+    ]);
+  });
+  return signatures.every((sig) => sig !== null && sig === signatures[0]);
+}
+
 /** One stage of the pairing: choose a partner for the first fighter, or, with every fighter placed, make the fights. */
 export function runFightPairs(
   state: GameState,
@@ -68,7 +95,11 @@ export function runFightPairs(
   if (!isFightingCreature(state, fighter) || left.length === 0) {
     return done(state, [], [{ ...ins, fighters: rest, chosen: null }]);
   }
-  const partner = ins.chosen?.[0] ?? (left.length === 1 ? left[0] : undefined);
+  // CR 701.14a: when the fighters still to be placed are identical and no fewer than the creatures left, each of those creatures is fought
+  // whoever is paired with it, so there is nothing for the controller to choose (the Beasts of Ezuri's Predation).
+  const nothingToChoose =
+    left.length <= ins.fighters.length && interchangeable(state, ins.fighters);
+  const partner = ins.chosen?.[0] ?? (left.length === 1 || nothingToChoose ? left[0] : undefined);
   if (partner !== undefined) {
     const events: GameEvent[] =
       ins.chosen === null
