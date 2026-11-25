@@ -89,7 +89,7 @@ The ready-made decks work without any setup:
 | Elven Council | A Commander precon led by Galadriel, Elven-Queen. |
 | Party Time | A Commander precon led by Nalia de'Arnise. |
 | Mind Flayarrrs | A Commander precon led by Captain N'ghathrod. |
-| Planeswalker Party - Commander Masters | A Commander precon led by Commodore Guff. |
+| Planeswalker Party | A Commander precon led by Commodore Guff. |
 
 ## Playing with your own deck
 
