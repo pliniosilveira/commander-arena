@@ -4660,6 +4660,12 @@ function checkSacrificeSelector(
   scope: Scope,
   out: Out,
 ): void {
+  // CR 701.21a, 603.2c (Gorbag of Minas Morgul): "you may sacrifice it" in a trigger about a permanent: the engine sacrifices the permanent the event is about if its controller
+  // (the controller of the ability) still controls it.
+  if (kindOf(sel) === 'triggerSubject') {
+    checkSubjectRef(sel as ObjectRef, 'permanent', path, scope, out);
+    return;
+  }
   if (kindOf(sel) !== 'choose') {
     checkObjectSelector(sel as ObjectSelector, path, scope, out);
     return;

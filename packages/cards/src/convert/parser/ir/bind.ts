@@ -425,6 +425,18 @@ class Binder {
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
         );
+        // Uglúk of the White Hand (CR 608.2c, 603.10a): "Whenever another creature you control dies, put a +1/+1 counter on ~. If that creature was a Goblin or Orc, ...": the
+        // source is named by "~", never by "that creature", which is the object the trigger is about (the creature that died), even when "~" was mentioned after it.
+        if (
+          found?.noun.ref === 'self' &&
+          /^that (?:creature|permanent)$/iu.test(noun.filter.raw.trim())
+        ) {
+          found =
+            recent.find(
+              (a) =>
+                a.kind === 'object' && a.token !== true && a.noun.ref === 'trig' && !a.noun.plural,
+            ) ?? found;
+        }
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
         if (found === undefined && noun.itWord === true) {
           found = recent.find(

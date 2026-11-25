@@ -33,7 +33,12 @@ import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
-import { lowerMayInstead, lowerSentences, withoutAnyNumberOffer } from './sentences';
+import {
+  lowerMayInstead,
+  lowerOfferSentence,
+  lowerSentences,
+  withoutAnyNumberOffer,
+} from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -1071,6 +1076,15 @@ function lowerPaidModalTriggered(
   const [sentence, ...rest] = ability.body.sentences;
   const [clause, ...more] = sentence?.clauses ?? [];
   const offer = clause?.args.cost;
+  // "..., you may sacrifice it. When you do, choose one —" (Gorbag of Minas Morgul, CR 603.12, 701.21): the offer is a sacrifice, not a payment.
+  if (
+    sentence !== undefined &&
+    rest.length === 0 &&
+    clause !== undefined &&
+    clause.verb === 'sacrifice'
+  ) {
+    return lowerSacrificeModalTriggered(ability, sentence, modal, triggers, own, ctx);
+  }
   if (
     sentence === undefined ||
     rest.length > 0 ||
@@ -1115,6 +1129,52 @@ function lowerPaidModalTriggered(
       modes: [...modes],
       chooseModes,
     },
+  };
+  return {
+    ok: true,
+    value: triggers.map((trigger) => ({
+      kind: 'triggered',
+      trigger,
+      effect,
+      ...(own.interveningIf === undefined ? {} : { interveningIf: own.interveningIf }),
+      ...(own.triggerCondition === undefined ? {} : { triggerCondition: own.triggerCondition }),
+      ...(own.once ? { oncePerTurn: true as const } : {}),
+    })),
+    rule: ability.trigger.rule,
+  };
+}
+
+/**
+ * "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it. When you do, choose one —" and its bullets (Gorbag of Minas Morgul; CR 603.12,
+ * 603.3c, 700.2b, 701.21): the engine's `may` of the sacrifice and, as the last effect of the same sequence, the modal `reflexive` ability, which is created only if the permanent was
+ * sacrificed and whose modes are chosen as it goes on the stack, not as the first ability triggers.
+ */
+function lowerSacrificeModalTriggered(
+  ability: Triggered,
+  sentence: Triggered['body']['sentences'][number],
+  modal: IrModes,
+  triggers: readonly Trigger[],
+  own: {
+    readonly interveningIf: Condition | undefined;
+    readonly triggerCondition: Condition | undefined;
+    readonly once: boolean;
+  },
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const blocked = missingFeatures(['effect:reflexive', 'ability:reflexiveModal']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const offer = lowerOfferSentence(sentence, ctx);
+  if (!offer.ok) return offer;
+  const lowered = lowerModes(modal, ctx);
+  if (!lowered.ok) return lowered;
+  if (lowered.value.usesX) return failure(ability);
+  const { modes, chooseModes } = lowered.value;
+  const effect: Effect = {
+    kind: 'sequence',
+    effects: [
+      offer.value,
+      { kind: 'reflexive', effect: NO_EFFECT, modes: [...modes], chooseModes },
+    ],
   };
   return {
     ok: true,
