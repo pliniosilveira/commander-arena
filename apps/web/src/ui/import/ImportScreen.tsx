@@ -10,11 +10,13 @@ import type { ImportTab } from '../../store';
 import { usePrecons } from '../precons-context';
 import { useActions, useApp } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
+import { findPrints } from './card-prints';
 import { DeckScreen } from './DeckScreen';
 import { type EditingPrecon, InputPanel } from './InputPanel';
 import { useImportEnv } from './import-context';
 import { SavedDecksView } from './ListViews';
 import { sampleOf } from './model';
+import { loadNiceArt, saveNiceArt, withNiceCommanderArt } from './nice-art';
 import { PreconDecksView } from './PreconDecksView';
 import { OfflineNotice, ResultsView } from './ResultsView';
 import { useImportFlow } from './use-import-flow';
@@ -60,6 +62,7 @@ export function ImportScreen() {
   }, [env, refreshChoices]);
 
   const flow = useImportFlow(env);
+  const [niceArt, setNiceArt] = useState(loadNiceArt);
 
   useEffect(() => {
     refreshDecks();
@@ -205,10 +208,25 @@ export function ImportScreen() {
             saveMessage={saveMessage}
             onText={flow.setText}
             onName={flow.setName}
+            niceArt={niceArt}
+            onNiceArt={(on) => {
+              setNiceArt(on);
+              saveNiceArt(on);
+            }}
             onImport={() => {
               keepSaved.current = true;
               setSaveMessage(null);
-              void flow.start();
+              void (async () => {
+                // The option writes a special printing on the commander's line before the list is imported.
+                if (niceArt && editingPrecon === null) {
+                  const next = await withNiceCommanderArt(flow.text, findPrints);
+                  if (next !== flow.text) {
+                    await flow.start({ text: next, name: flow.name });
+                    return;
+                  }
+                }
+                await flow.start();
+              })();
             }}
             onExample={
               sample === null
