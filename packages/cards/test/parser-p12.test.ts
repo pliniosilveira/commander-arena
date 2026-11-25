@@ -324,10 +324,10 @@ describe('what stays unread, and where it stops', () => {
   test.each([
     // [text, type, subtypes, where it stops, the rule that was being read]
     [
-      "~ can't be blocked except by creatures with flying.",
+      "~ can't be blocked except by two or more creatures.",
       'creature',
       [],
-      'except by creatures with flying.',
+      'except by two or more creatures.',
       'static.self',
     ],
     [
@@ -346,10 +346,10 @@ describe('what stays unread, and where it stops', () => {
     ],
     ["~ can't attack.", 'creature', [], "can't attack.", 'static.self'],
     [
-      "Equipped creature can't be blocked except by creatures with flying.",
+      "Equipped creature can't be blocked except by two or more creatures.",
       'artifact',
       ['Equipment'],
-      'except by creatures with flying.',
+      'except by two or more creatures.',
       'static.attached',
     ],
     [
