@@ -298,3 +298,79 @@ describe('the X of the monstrosity is forgotten when the permanent leaves the ba
     expect(dead[0]?.monstrousX).toBeUndefined();
   });
 });
+
+// The Scryfall rulings of Death Kiss (2022-06-10, fetched by the triage workflow of issue 167).
+describe('the rulings of Death Kiss', () => {
+  test("doubling a creature's power is +X/+0, with X its power as the ability resolves (a pump in response is doubled too)", () => {
+    const g = scenario({ seats: 3 })
+      .define(kiss)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(DK)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(BEARS, { label: 'bears' })
+      .battlefield('Forest')
+      .hand('SYNTHETIC Growth Spurt')
+      .seat(2)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(1).attack('bears', { player: 2 });
+    // The trigger is on the stack: the Growth Spurt of the attacker resolves first (a 5/5), then the doubling adds its power as it is then.
+    g.act(1).cast('SYNTHETIC Growth Spurt', { targets: ['bears'], pay: true });
+    g.passAll();
+    g.expect.pt('bears', 10, 5);
+    g.expect.invariants();
+  });
+
+  test('a creature that loses all its abilities is still monstrous, and keeps its counters', () => {
+    const g = scenario()
+      .define(kiss)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(DK, { label: 'kiss' })
+      .battlefield(...MOUNTAINS)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Island', BEARS)
+      .hand('SYNTHETIC Mind Wipe')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(DK, { x: 1, pay: true });
+    g.passAll();
+    g.act(0).chooseTargets(BEARS);
+    g.passAll();
+    g.act(0).pass();
+    g.act(1).cast('SYNTHETIC Mind Wipe', { targets: ['kiss'], pay: true });
+    g.passAll();
+    expect(g.object('kiss').monstrous).toBe(true);
+    g.expect.counters('kiss', { '+1/+1': 1 });
+    g.expect.invariants();
+  });
+
+  test('a creature that has left the battlefield when the monstrosity resolves does not become monstrous, and its trigger does not happen', () => {
+    const g = scenario()
+      .define(kiss)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(DK, { label: 'kiss' })
+      .battlefield(...MOUNTAINS)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Swamp', 'Swamp', 'Swamp', BEARS)
+      .hand('Murder')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(DK, { x: 1, pay: true });
+    g.act(0).pass();
+    g.act(1).cast('Murder', { targets: ['kiss'], pay: true });
+    g.passAll();
+    g.expect.zone(DK, 'graveyard', { seat: 0 });
+    expect(g.state.pending?.kind).not.toBe('targets');
+    expect(g.state.stack.length).toBe(0);
+    expect(g.state.continuousEffects.some((e) => e.change.kind === 'goaded')).toBe(false);
+    g.expect.invariants();
+  });
+});

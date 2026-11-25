@@ -111,7 +111,12 @@ test('the card preview floats at the left, above the log, and leaving the card c
   await start(page, 1366, 768);
   await expect(page.locator('.board-preview')).toHaveCount(0);
   await page.locator('.board-hand .is-clickable').first().hover();
-  const preview = await box(page, '.board-preview');
+  // The preview opens after the hover delay (hover.ts), and the lifted card moving under the pointer restarts that delay, so
+  // read its box until it is shown.
+  let preview = { x: 0, y: 0, width: 0, height: 0 };
+  await expect(async () => {
+    preview = await box(page, '.board-preview');
+  }).toPass();
   expect(preview.x).toBeLessThanOrEqual(16);
   expect(Math.abs(preview.y + preview.height / 2 - 768 / 2)).toBeLessThanOrEqual(40);
   // The pointer passes through it, and leaving the card closes it.

@@ -1270,6 +1270,15 @@ export const CHOSEN_SPELLS = [
 export const X_FIXTURE_ONLY_NAMES = ['SYNTHETIC Hydra Zero'] as const;
 
 /**
+ * SYNTHETIC creatures whose X is not in their mana cost, so the {X} filter of the pool does not see it: cycling {X}{2}{R} (Artifact Mammoth), and a replicate given to every
+ * Sliver spell (Hive Replicator: a Sliver cast under it asks `chooseX` for the number of copies). A random game that drew one asked `chooseX` in a mix that must not (games-100).
+ */
+export const X_BEYOND_COST_NAMES = [
+  'SYNTHETIC Artifact Mammoth',
+  'SYNTHETIC Hive Replicator',
+] as const;
+
+/**
  * SYNTHETIC X cards (D-103): "deals X damage", "draw X cards", "put X +1/+1 counters", "enters with X
  * +1/+1 counters", two {X}, "pay X life" as an additional cost, kicker with X, a spell with a free
  * alternative cost (X is 0), activated abilities with {X} and with "pay X life", and a cost reducer.
@@ -4586,6 +4595,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(CHOSEN_SPELL_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(X_SPELL_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(X_FIXTURE_ONLY_NAMES as readonly string[]).includes(card.name))
+  .filter((card) => !(X_BEYOND_COST_NAMES as readonly string[]).includes(card.name))
   // A card with {X} in its mana cost asks `chooseX`, a kind that only the 'x' style plays (games-100). Read from the cost, so a later X creature is kept out too.
   .filter((card) => !(card.faces[0]?.manaCost ?? []).includes('X'))
   .filter((card) => !(MODAL_CARD_NAMES as readonly string[]).includes(card.name))
