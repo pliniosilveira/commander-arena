@@ -97,6 +97,7 @@ import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
+import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
@@ -3118,6 +3119,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...PUT_ALL_LINKED_EXILED_LOWERINGS,
   ...ADD_MANA_COMBINATION_LOWERINGS,
   ...MAY_PLAY_THIS_WAY_FREE_LOWERINGS,
+  ...EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

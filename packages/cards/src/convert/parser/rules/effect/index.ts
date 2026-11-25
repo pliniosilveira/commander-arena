@@ -106,6 +106,7 @@ import { EXILE_THAT_MANY_EFFECT_RULES } from './exile-that-many';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
+import { EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -1409,6 +1410,7 @@ export const EFFECT_RULES = [
   ...PUT_ALL_LINKED_EXILED_EFFECT_RULES,
   ...ADD_MANA_COMBINATION_EFFECT_RULES,
   ...MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES,
+  ...EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES,
   ...EXILE_THAT_MANY_EFFECT_RULES,
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,

@@ -596,6 +596,14 @@ const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
  */
 const EXILE_UNTIL_NONLAND =
   /^exile cards from the top of your library until you exile a nonland card\.$/i;
+/**
+ * "Exile cards from the top of your library until you exile a land card. Put that card onto the battlefield and the rest on the bottom of your library in a random order." (Venture Forth,
+ * CR 701.13, 401.4): "that card" and "the rest" are the cards the first sentence exiles, so the two are one instruction (`effect.exile-until-put-rest-bottom`).
+ */
+const EXILE_UNTIL_A_CARD =
+  /^exile cards from the top of your library until you exile an? [^.,]*\.$/i;
+const PUT_FOUND_REST_BOTTOM =
+  /^put that card onto the battlefield and the rest on the bottom of your library in a random order\.$/i;
 const MAY_CAST_FREE_IF =
   /^you may cast it without paying its mana cost if that spell['’]s mana value is \d+ or less\.$/i;
 const ELSE_INTO_HAND = /^if you don['’]t, put that card into your hand\.$/i;
@@ -1281,6 +1289,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EXILE_UNTIL_A_CARD) &&
+      said(b, PUT_FOUND_REST_BOTTOM)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
     } else if (
       a !== undefined &&
       c !== undefined &&

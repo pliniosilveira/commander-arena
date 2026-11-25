@@ -1057,3 +1057,37 @@ describe('"{1}{R}, {T}, Sacrifice ~: Cast any number of cards exiled with ~ with
     g.expect.zone(chemist.name, 'graveyard', { seat: 0 });
   });
 });
+
+describe('"Exile cards from the top of your library until you exile a land card. Put that card onto the battlefield and the rest on the bottom of your library in a random order. Exile ~ with three time counters on it." (CR 701.13, 401.4, 702.62)', () => {
+  const forth = parsed(
+    'SYNTHETIC Forth Test',
+    'Sorcery',
+    'Exile cards from the top of your library until you exile a land card. Put that card onto the battlefield and the rest on the bottom of your library in a random order. Exile ~ with three time counters on it.\nSuspend 3—{1}{G}',
+    { manaCost: '{3}{G}', colors: ['G'] },
+  );
+  const build = () =>
+    scenario()
+      .define(forth)
+      .seat(0)
+      .hand(forth.name)
+      .battlefield('Forest', 'Forest', 'Forest', 'Forest')
+      .library('Grizzly Bears', 'Serra Angel', 'Forest', 'Island', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the first land found enters; the cards before it go to the bottom of the library; the spell is suspended', () => {
+    const g = build();
+    g.act(0).cast(forth.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Forest', 'battlefield', { seat: 0 });
+    // The first land in the library is the one found; the cards before it are on the bottom of the library again.
+    g.expect.noObject('Grizzly Bears', { zone: 'exile' });
+    g.expect.noObject('Serra Angel', { zone: 'exile' });
+    g.expect.zone(forth.name, 'exile', { seat: 0 });
+    expect(g.object(forth.name).counters?.time).toBe(3);
+    expect(g.find({ name: 'Grizzly Bears', zone: 'library', seat: 0 })).toHaveLength(1);
+    expect(g.find({ name: 'Serra Angel', zone: 'library', seat: 0 })).toHaveLength(1);
+  });
+});

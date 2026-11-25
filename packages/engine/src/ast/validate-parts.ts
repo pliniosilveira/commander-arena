@@ -6961,6 +6961,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-660 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      // Venture Forth (CR 701.13, 401.4): the card found goes onto the battlefield, the rest to the bottom of the library; the library is the controller's own.
+      if (e.then !== undefined) {
+        if (e.then.found !== 'battlefield' || e.then.rest !== 'bottomRandom') {
+          issue(
+            out,
+            `${path}.then`,
+            'then puts the card found onto the battlefield and the rest on the bottom in a random order',
+          );
+        }
+        if (kindOf(e.players) !== 'you') {
+          issue(out, `${path}.then`, 'then is for the controller of the effect: players is you');
+        }
+      }
       break;
     case 'opponentChoosesCard':
       // D-660 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
