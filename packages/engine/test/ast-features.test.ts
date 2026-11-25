@@ -334,6 +334,7 @@ describe('the dimensions', () => {
       // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
+      'giveTypesToCardsOffBattlefield',
       'grantEncoreToGraveyardCards',
       'grantUnearthToGraveyardCards',
     ]);

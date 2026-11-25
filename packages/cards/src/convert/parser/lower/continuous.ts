@@ -409,11 +409,24 @@ export const BECOMES: Lowering<IrClause, Effects> = {
       if (letter === undefined) return failure(clause);
       letters.push(letter);
     }
+    // "becomes an X/X ... creature, where X is ..." (Cactus Preserve, CR 107.3a, 613.4b): the X the sentence defines, worked out as the effect resolves.
+    let pt: { power: PtAmount; toughness: PtAmount } | undefined;
+    if (base?.amount !== undefined) {
+      const x = lowerAmount(base.amount, ctx, clause.rule);
+      if (!x.ok) return x;
+      pt = { power: x.value, toughness: x.value };
+    } else if (base?.x === true) {
+      const x = lowerAmount({ kind: 'x', span: base.span }, ctx, clause.rule);
+      if (!x.ok) return x;
+      pt = { power: x.value, toughness: x.value };
+    } else if (base !== undefined) {
+      pt = { power: base.power, toughness: base.toughness };
+    }
     const effects: Effect[] = [];
     for (const item of itemsOf(subject)) {
       const objects = objectSelectorOf(item, ctx, TRIGGER_SUBJECT);
       if (!objects.ok) return objects;
-      effects.push(...becoming(objects.value, types, colors && letters, base));
+      effects.push(...becoming(objects.value, types, colors && letters, pt));
     }
     return { ok: true, value: effects, rule: clause.rule };
   },
@@ -423,7 +436,7 @@ function becoming(
   objects: ObjectSelector,
   types: IrTypeList | undefined,
   colors: readonly Color[] | undefined,
-  base: { power: number; toughness: number } | undefined,
+  base: { power: PtAmount; toughness: PtAmount } | undefined,
 ): Effect[] {
   const out: Effect[] = [];
   // "Each noncreature artifact you control becomes a 4/4 artifact creature" (stage P64, D-217, CR 611.2c, 613.4b): a group is fixed once, as the effect begins, so its
@@ -432,7 +445,9 @@ function becoming(
     types?.cardTypes?.includes('creature') === true &&
     base !== undefined &&
     objects.kind === 'each' &&
-    colors === undefined
+    colors === undefined &&
+    typeof base.power === 'number' &&
+    typeof base.toughness === 'number'
   ) {
     return [
       {

@@ -12,7 +12,7 @@ import { SUBTYPE_WORD_NUMBERED } from './subtypes';
 /**
  * `noun.other-subtype-pair`: "other Wolves and Werewolves you control": `noun.subtype-pair` with "other": two creature types said in the plural, joined by "and", one "you control"
  * for both, and every such permanent but the source (CR 611.3a). The engine's `anyOf` of the two types with the controller on the group and the noun's `other`. Not read: no "other", a
- * controller other than "you", no controller, one type, a third type, a type said in the singular, a word that is no creature type, the same type twice.
+ * controller other than "you", no controller, one type, a third type, a type said in the singular (a type that is its own plural, "Treefolk", is both), a word that is no creature type, the same type twice.
  */
 export const NOUN_OTHER_SUBTYPE_PAIR = defineRule<IrNoun>({
   id: 'noun.other-subtype-pair',
@@ -23,6 +23,8 @@ export const NOUN_OTHER_SUBTYPE_PAIR = defineRule<IrNoun>({
     'other Wolves and Werewolves you control',
     'other Skeletons and Zombies you control',
     'other Elves and Wolves you control',
+    // A type that is its own plural (Treefolk, Merfolk) reads in the plural slot.
+    'other Plants and Treefolk you control',
   ],
   rejects: [
     'Wolves and Werewolves you control',
@@ -52,7 +54,7 @@ export const NOUN_OTHER_SUBTYPE_PAIR = defineRule<IrNoun>({
       const kinds = [first, second];
       if (
         first.subtype === second.subtype ||
-        kinds.some((w) => w.plural !== true || !CREATURE_TYPES.has(w.subtype))
+        kinds.some((w) => w.plural === false || !CREATURE_TYPES.has(w.subtype))
       ) {
         return fail(ctx, pos);
       }
