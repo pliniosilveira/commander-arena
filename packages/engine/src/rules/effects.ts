@@ -293,7 +293,7 @@ export function runInstruction(
     if (instruction.chosen !== null) return done(state);
     // CR 701.38a (`perVote`): the filter is read for the voter, who is "you" in it.
     const readFor =
-      instruction.asVoter === undefined
+      instruction.asVoter === undefined && instruction.asChooser !== true
         ? contextOf(state, res)
         : { ...contextOf(state, res), controller: instruction.seat ?? res.controller };
     // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
@@ -827,7 +827,14 @@ export function runInstruction(
                   ? {}
                   : { declinedBy: instruction.declinedBy }),
               }
-            : next,
+            : as !== undefined &&
+                next.kind === 'chooseObjects' &&
+                next.seat === undefined &&
+                next.asVoter === undefined
+              ? // CR 608.2d, 101.4 (Agitator Ant: "each player may put two +1/+1 counters on a creature they control"): the objects a player asked chooses are chosen by them,
+                // among the permanents the filter calls theirs ("you" is the player asked).
+                { ...next, seat: as, asChooser: true as const }
+              : next,
       ),
     };
   }

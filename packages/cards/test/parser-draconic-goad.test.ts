@@ -141,3 +141,59 @@ describe('Firkraag: "attack an opponent" and "had to attack this combat" (CR 508
     ).toMatchObject([{ kind: 'triggered', interveningIf: { kind: 'subjectHadToAttack' } }]);
   });
 });
+
+describe('Agitator Ant: "each player may put two +1/+1 counters on a creature they control." (CR 101.4, 608.2d, 608.2c, 701.15a)', () => {
+  const TEXT =
+    'At the beginning of your end step, each player may put two +1/+1 counters on a creature they control. Goad each creature that had counters put on it this way.';
+
+  test('the real line is each player asked, choosing as themselves, then a goad of the creatures that got counters', () => {
+    const [ability] = readAll(TEXT, 'creature').abilities;
+    expect(ability).toMatchObject({
+      kind: 'triggered',
+      trigger: { kind: 'endStep', whose: 'you' },
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'playersMay',
+            players: { kind: 'eachPlayer' },
+            runsAs: 'chooser',
+            effect: {
+              kind: 'sequence',
+              effects: [
+                {
+                  kind: 'chooseObjects',
+                  filter: { types: ['creature'], controller: 'you' },
+                  count: 1,
+                  exactly: true,
+                },
+                { kind: 'addCounters', counter: '+1/+1', count: 2 },
+              ],
+            },
+          },
+          { kind: 'goad', objects: { kind: 'putCountersOn' } },
+        ],
+      },
+    });
+  });
+
+  test.each([
+    [
+      'At the beginning of your end step, you may put two +1/+1 counters on a creature they control.',
+    ],
+    [
+      'At the beginning of your end step, target opponent puts two +1/+1 counters on a creature they control.',
+    ],
+    [
+      'At the beginning of your end step, each player may put two +1/+1 counters on a creature you control.',
+    ],
+    [
+      'At the beginning of your end step, each player may put two +1/+1 counters on two creatures they control.',
+    ],
+  ])(
+    '"they" outside a sentence that asks the players, or another group, is dropped (SYNTHETIC): %s',
+    (text) => {
+      expect(dropped(text, 'creature').stoppedAt).not.toBe('');
+    },
+  );
+});

@@ -907,6 +907,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of combat on your turn, ${e}\n• Target player draws a card and loses 1 life.\n• Target player creates a 2/1 white and black Inkling creature token with flying.`,
   ),
   'noun.each-permanent-they-control': spell((e) => `Target player puts a +1/+1 counter on ${e}.`),
+  'noun.a-permanent-they-control': permanent(
+    (e) => `At the beginning of your end step, each player may put two +1/+1 counters on ${e}.`,
+  ),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
