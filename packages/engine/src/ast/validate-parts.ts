@@ -3640,8 +3640,8 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         if (!Array.isArray(cost.alongside) || cost.alongside.length < 1) {
           issue(out, `${path}.alongside`, 'alongside lists at least one more filter');
         } else {
+          // "Sacrifice ~ and a legendary artifact" (Mount Doom, CR 701.21a, 118.3): `this` is the first part and `alongside` names the others.
           if (
-            kindOf(cost.what) === 'this' ||
             cost.count !== undefined ||
             cost.countX !== undefined ||
             cost.anyNumber !== undefined
@@ -3649,7 +3649,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
             issue(
               out,
               `${path}.alongside`,
-              'a sacrifice of several different permanents names each by a filter: no this, count, X or any number',
+              'a sacrifice of several different permanents names each part by a filter (or the first by this): no count, X or any number',
             );
           }
           cost.alongside.forEach((filter, j) => {

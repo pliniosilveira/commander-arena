@@ -55,12 +55,15 @@ describe('a sacrifice of several different permanents', () => {
     expect(validateCard(spell).length).toBeGreaterThan(0);
   });
 
-  test('has at least one more part, and names permanents, not the source, a count or an X', () => {
+  test('has at least one more part, and names permanents (or the source first), not a count or an X', () => {
     const bad = (cost: Cost) => validateCard(creature([activated([cost])])).length;
     expect(bad({ kind: 'sacrifice', what: SWAMP, alongside: [] })).toBeGreaterThan(0);
-    expect(bad({ kind: 'sacrifice', what: { kind: 'this' }, alongside: [FOREST] })).toBeGreaterThan(
-      0,
-    );
+    // "Sacrifice ~ and a legendary artifact" (Mount Doom): the source is the first part, so it is valid; it still has no count, X or any number.
+    expect(bad({ kind: 'sacrifice', what: { kind: 'this' }, alongside: [FOREST] })).toBe(0);
+    expect(bad({ kind: 'sacrifice', what: { kind: 'this' }, alongside: [] })).toBeGreaterThan(0);
+    expect(
+      bad({ kind: 'sacrifice', what: { kind: 'this' }, alongside: [FOREST], count: 2 }),
+    ).toBeGreaterThan(0);
     expect(bad({ kind: 'sacrifice', what: SWAMP, alongside: [FOREST], count: 2 })).toBeGreaterThan(
       0,
     );

@@ -47,6 +47,7 @@ import {
   discardUnless,
   payUnlessMana,
   runCounterUnlessPays,
+  sacrificeUnless,
   type UnlessAnswer,
 } from './pay-unless';
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
@@ -745,6 +746,16 @@ export function answerResolutionChoice(
     const d = state.pending;
     if (d?.kind !== 'choosePermanent') return null;
     const answer = blightUnless(state, res, head, d.seat, chosen);
+    return answer === null ? null : continueUnless(answer, res);
+  }
+  // Ward—Sacrifice a legendary creature (CR 701.21a): the payer chose the permanents they sacrifice for the cost they accepted (rules/pay-unless.ts).
+  if (
+    (head.kind === 'counterUnlessPays' || head.kind === 'unlessPays') &&
+    head.stage === 'sacrifice'
+  ) {
+    const d = state.pending;
+    if (d?.kind !== 'choosePermanent') return null;
+    const answer = sacrificeUnless(state, res, head, d.seat, chosen);
     return answer === null ? null : continueUnless(answer, res);
   }
   // D-668 (CR 303.4f): the permanent a token that is an Aura enters enchanting.
