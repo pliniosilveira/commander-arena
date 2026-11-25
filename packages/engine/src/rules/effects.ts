@@ -71,7 +71,12 @@ import {
   runRestrictGroup,
 } from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
+import {
+  runExchangeControl,
+  runExchangeControlOfAll,
+  runGainControl,
+  runReturnControl,
+} from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -183,6 +188,7 @@ import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
+import { runEachPlayerRollsBarHighest } from './roll-off';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
@@ -198,6 +204,7 @@ import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { increaseSpeed } from './speed';
+import { runPlayerSpellsCostLess } from './spell-discount';
 import { runSpellEntersWithCounters } from './spell-enters-counters';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
@@ -297,7 +304,7 @@ export function runInstruction(
     if (instruction.chosen !== null) return done(state);
     // CR 701.38a (`perVote`): the filter is read for the voter, who is "you" in it.
     const readFor =
-      instruction.asVoter === undefined
+      instruction.asVoter === undefined && instruction.asChooser !== true
         ? contextOf(state, res)
         : { ...contextOf(state, res), controller: instruction.seat ?? res.controller };
     // CR 608.2c (Ripples of Potential): "permanents you control that had a counter put on them this way": only the permanents the effect before it produced (`moved`).
@@ -831,7 +838,14 @@ export function runInstruction(
                   ? {}
                   : { declinedBy: instruction.declinedBy }),
               }
-            : next,
+            : as !== undefined &&
+                next.kind === 'chooseObjects' &&
+                next.seat === undefined &&
+                next.asVoter === undefined
+              ? // CR 608.2d, 101.4 (Agitator Ant: "each player may put two +1/+1 counters on a creature they control"): the objects a player asked chooses are chosen by them,
+                // among the permanents the filter calls theirs ("you" is the player asked).
+                { ...next, seat: as, asChooser: true as const }
+              : next,
       ),
     };
   }
@@ -2809,6 +2823,9 @@ function runEffect(
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);
+    case 'playerSpellsCostLess':
+      // CR 601.2f, 118.7a, 611.2a: "Until your next turn, ... spells that player casts cost {2} less to cast" (rules/spell-discount.ts).
+      return runPlayerSpellsCostLess(state, effect, ctx, targets);
     case 'spellEntersWithCounters':
       // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
       return runSpellEntersWithCounters(state, effect, ctx);
@@ -3217,9 +3234,22 @@ function runEffect(
         0,
       );
       // CR 603.12 (Auron, Venerated Guardian): "put a +1/+1 counter on it. When you do, ...": a counter really put is something done (`performed`).
+      // Spectacular Showdown (CR 608.2c): "each creature that had a double strike counter put on it this way" is the objects that really got a counter, each once.
+      const putOn = [
+        ...new Set(
+          events.flatMap((e) =>
+            e.kind === 'counterAdded' && e.counter === effect.counter ? [e.object] : [],
+          ),
+        ),
+      ];
       return {
         ...done(next, events),
-        ...(putCount > 0 ? { thisWay: { countersPut: putCount }, performed: 1 } : {}),
+        ...(putCount > 0
+          ? {
+              thisWay: { countersPut: putCount, countersPutOn: { [effect.counter]: putOn } },
+              performed: 1,
+            }
+          : {}),
       };
     }
 
@@ -3442,6 +3472,10 @@ function runEffect(
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
     }
 
+    case 'eachPlayerRollsBarHighest':
+      // CR 706.1, 706.2, 508.1a (`rules/roll-off.ts`): everyone rolls; the creature can't attack the opponents with the highest result this combat.
+      return runEachPlayerRollsBarHighest(next, effect, ctx.source, res.controller);
+
     case 'repeatWhile': {
       // CR 608.2c (Grist, the Hunger Tide): the effects, then the test as an instruction of its own (read after them, so `moved` is what the last of them moved); when it holds
       // `then` is done and this effect comes up again. The test is a `conditional`, so it ends the repeat when nothing was milled (the library ran out) or no card matches.
@@ -3651,7 +3685,10 @@ function runEffect(
       }
       monstrousEvents.push({ kind: 'becameMonstrous', object: source.id });
       return {
-        ...done(patchObject(afterCounters, source.id, { monstrous: true }), monstrousEvents),
+        ...done(
+          patchObject(afterCounters, source.id, { monstrous: true, monstrousX: count }),
+          monstrousEvents,
+        ),
         performed: 1,
       };
     }
@@ -4656,6 +4693,10 @@ function runEffect(
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).
       return runExchangeControl(state, effect, ctx, targets);
 
+    case 'exchangeControlOfAll':
+      // CR 701.12a, 613.1b: the two groups change hands together (`rules/control-effects.ts`).
+      return runExchangeControlOfAll(state, effect, ctx, targets);
+
     case 'removeCounters': {
       // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
       const wanted = amountOf(state, effect.count, ctx, targets);
@@ -4694,6 +4735,7 @@ function runEffect(
 
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
     case 'setTypes':

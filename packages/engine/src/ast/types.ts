@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "When this creature becomes monstrous, goad up to X target creatures" (CR 701.37c, 107.3c): the X of the monstrosity that made the permanent monstrous ("Monstrosity X" of one of its
+   * activated abilities), which the permanent remembers (`GameObject.monstrousX`), read as the trigger is put on the stack and as it resolves (last-known information when the permanent
+   * has left). Valid only in a triggered ability whose trigger is `becomesMonstrous` of `this`, on a face with a `monstrosity` effect.
+   */
+  | { readonly kind: 'monstrousX' }
+  /**
    * "Create an X/X token, where X is the life paid as this artifact entered" (CR 119.4, 614.12, 400.7): the life the permanent paid as it entered (`asEntersChoose` of
    * `lifePaid` on the same face), which the permanent remembers (`GameObject.chosen.lifePaid`), read from last-known information once it has left (CR 113.7a). Needs
    * that choice on the face; nothing was paid (0) for a permanent that made no choice.
@@ -872,6 +878,13 @@ export interface ObjectFilter {
    */
   readonly nthSpellThisTurn?: number;
   /**
+   * "The first artifact spell you cast each turn" (Artifact Class, CR 601.2f, 601.2i, 604.2): the spell is the first spell of a type in `types` its caster casts this turn, that is, none
+   * of the other spells that caster cast before it (`TurnLog.castSpells`, with the card types each had as it was cast; a copy is not cast, CR 707.10, and the spell itself is left out
+   * of the count whether or not it is logged yet) has one of those types. Needs `types`. Read from the turn log, so it is read as the cost is determined (a cost reduction, where the
+   * spell is not yet logged); refused in a static ability that nothing refreshes (a layer effect).
+   */
+  readonly firstOfTypeThisTurn?: true;
+  /**
    * "That entered this turn" (group 4 of the Vraska deck, CR 400.7, 110.1): the permanent entered the battlefield during this turn and is still the same
    * object (one that left and came back is a new object). Read from the turn log where the filter is matched against the game (a target slot, an `each`
    * selector); refused in a static ability, as `attacking` is, and for a zone other than the battlefield.
@@ -1139,6 +1152,12 @@ export interface ObjectFilter {
    */
   readonly sameNameAs?: ObjectRef;
   /**
+   * "Other creatures with the same name as this creature are goaded" (Mocking Doppelganger, CR 201.2, 701.15): the object has the same name as the permanent whose static ability
+   * this filter is the subject of, as each is now (a copy has the name it copies). Read only in the subject of a static ability (`rules/static-subject.ts`); anywhere else the
+   * source's name is not known and the filter matches nothing.
+   */
+  readonly sameNameAsSource?: true;
+  /**
    * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.
@@ -1288,6 +1307,12 @@ export type ObjectRef =
    * the same sequence.
    */
   | { readonly kind: 'moved' }
+  /**
+   * "Each creature that had a double strike counter put on it this way" (Spectacular Showdown, CR 608.2c, 122.6): the objects an `addCounters` effect earlier in the same resolution really
+   * put counters on (a replacement or a prevention may stop them), each once. `counter` names the kind ("a double strike counter"): only the objects that got a counter of that kind; left out
+   * ("counters put on it this way"), any kind. Empty when no counters were put.
+   */
+  | { readonly kind: 'putCountersOn'; readonly counter?: string }
   /**
    * "It" in the body of a triggered ability, for the object whose event caused the trigger: the
    * spell or ability that targeted this permanent (Ward, CR 702.21a), the spell that was cast, the
@@ -1491,6 +1516,12 @@ export type PlayerSelector =
    * chose. Nobody when no such effect ran, or the chosen player has left the game.
    */
   | { readonly kind: 'chosenPlayer' }
+  /**
+   * "The chosen player" of "As this creature enters, choose a player" (Stuffy Doll, CR 614.12a, 607.2d): the player the permanent with the ability chose as it entered
+   * (`GameObject.chosen.player`), read from it or from its last-known information once it has left (CR 113.7a). Nobody when it chose none or the player has left the game.
+   * Valid only on a face with an `asEntersChoose` of `player`.
+   */
+  | { readonly kind: 'enteredChosenPlayer' }
   /**
    * "That player", "that creature's controller", "its controller" in a triggered ability (D-133): the player the
    * event that caused the trigger is about. For `drawn` the player who drew; for `dealsCombatDamage` to a player the
@@ -3525,6 +3556,18 @@ export type Effect =
       readonly grants?: 'storm' | 'cascade';
     }
   /**
+   * "Until your next turn, instant, sorcery, and planeswalker spells that player casts cost {2} less to cast." (CR 601.2f, 118.7a, 611.2a, 500.1; Will Kenrith): each player `player` names
+   * (fixed as the effect resolves, CR 611.2c) casts the spells `spells` describes (a spell being cast, as `costReduction`'s filter does: no zone) for `amount` generic mana less, never below
+   * zero, until the next turn of the controller of the effect begins (the turn it resolves in not counted). It applies to every spell that matches, not once. `duration` is `untilYourNextTurn`.
+   */
+  | {
+      readonly kind: 'playerSpellsCostLess';
+      readonly player: PlayerSelector;
+      readonly spells: ObjectFilter;
+      readonly amount: number;
+      readonly duration: 'untilYourNextTurn';
+    }
+  /**
    * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, Marshland Bloodcaster, CR 118.9, 601.2b,
    * 601.2f, 202.3e, 119.4, 611.2a): until end of turn, the controller may cast the next spell they cast by the alternative cost `lifeForMana`: no mana cost, and life equal to the spell's
    * mana value (an {X} counts as the X announced). The effect is used up by the next spell the controller casts, used or not, and ends with the turn (`rules/next-spell-life.ts`).
@@ -4433,6 +4476,16 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly power: PtAmount;
       readonly toughness: PtAmount;
+      /** `untilYourNextTurn` (CR 611.2a, 500.1; Will Kenrith): the objects named as the effect resolves (CR 611.2c) have it until the next turn of the controller begins, the turn it resolves in not counted. */
+      readonly duration: Duration | 'untilYourNextTurn';
+    }
+  /**
+   * "Switch this creature's power and toughness until end of turn" (CR 613.4d, layer 7d): each object `objects` names, fixed as the effect resolves (CR 611.2c), has its power
+   * and toughness switched after every other power and toughness effect and counter has applied, whatever the timestamps. Several switches each switch again.
+   */
+  | {
+      readonly kind: 'switchPt';
+      readonly objects: ObjectSelector;
       readonly duration: Duration;
     }
   /**
@@ -4443,8 +4496,11 @@ export type Effect =
   | {
       readonly kind: 'loseAllAbilities';
       readonly objects: ObjectSelector;
-      /** `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. */
-      readonly duration: Duration | 'forAsLongAsThisRemains';
+      /**
+       * `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. `untilYourNextTurn` (CR 611.2a, 500.1;
+       * Will Kenrith): the objects named as the effect resolves (CR 611.2c) lose their abilities until the next turn of the controller begins, the turn it resolves in not counted.
+       */
+      readonly duration: Duration | 'forAsLongAsThisRemains' | 'untilYourNextTurn';
     }
   /**
    * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-649):
@@ -4587,7 +4643,7 @@ export type Effect =
         | 'untilNextUntapStep'
         | 'thisCombat'
         /**
-         * "Until your next turn, those creatures can't block" (CR 611.2a, 500.1; Taunt from the Rampart): only with `cantBlock`; the objects named as the effect resolves (CR 611.2c) can't block until the next turn
+         * "Until your next turn, those creatures can't block" (CR 611.2a, 500.1; Taunt from the Rampart) and "Until your next turn, target creature can't be blocked" (Sly Instigator): only with `cantBlock` or `cantBeBlocked`; the objects named as the effect resolves (CR 611.2c) can't block until the next turn
          * of the controller of the effect begins, the turn it resolves in not counted (as `grantKeyword` does).
          */
         | 'untilYourNextTurn';
@@ -4863,11 +4919,14 @@ export type Effect =
    * creatures the player `player` controls, read whenever that player declares attackers, for the creatures they control then (a creature that arrives later is required too,
    * CR 611.2c is about characteristics). Each such creature that is able to attack the permanent with the ability attacks it. It lasts through the end of that player's next turn
    * (the turn it resolves in not counted). Only in the ability of a permanent; the player is fixed as the effect resolves (a target player).
+   * `anything` ("During target player's next turn, each creature that player controls attacks if able", CR 508.1d): the requirement is only to attack, a player or a permanent, not
+   * the permanent with the ability; it is the group requirement of `requireAttack` for the creatures that player controls, so it needs no permanent and holds when the source has left.
    */
   | {
       readonly kind: 'requireAttackSource';
       readonly player: PlayerSelector;
       readonly duration: 'untilEndOfTheirNextTurn';
+      readonly anything?: true;
     }
   /**
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
@@ -4947,6 +5006,19 @@ export type Effect =
       readonly kind: 'exchangeControl';
       readonly first: ObjectSelector;
       readonly second: ObjectSelector;
+    }
+  /**
+   * "You and that opponent each gain control of all creatures the other controls until end of turn." (CR 701.12a, 613.1b, 611.2a, 611.2c): `objects` is an `each` selector naming a
+   * kind of permanent; `player` names one other player (a target, or the player an earlier instruction named). The permanents it names that the controller of the effect controls
+   * go to that player and the ones that player controls go to the controller, both groups fixed as the effect begins and exchanged at the same moment (a layer 2 effect for each
+   * permanent, with `duration`: the turn, or no duration). Permanents of any other player are left alone. Afterwards `moved` names every permanent exchanged ("those creatures").
+   * A permanent that changed controller leaves combat (CR 506.4). The same player twice does nothing.
+   */
+  | {
+      readonly kind: 'exchangeControlOfAll';
+      readonly objects: ObjectSelector;
+      readonly player: PlayerSelector;
+      readonly duration: Duration;
     }
   /**
    * "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1, 122.2; Galadriel group 3): each permanent `objects` names loses `count` counters of the
@@ -5033,6 +5105,17 @@ export type Effect =
    * rerolls and triggers on a roll are not built (`docs/ROADMAP.md`).
    */
   | { readonly kind: 'rollDie'; readonly sides: number }
+  /**
+   * "Each player rolls a d20. If one or more opponents had the highest result, this creature can't attack those players or planeswalkers they control this combat." (CR 706.1, 706.2,
+   * 508.1a, 506.1): every player still in the game rolls one die of `sides` sides in turn order from the active player (`dieRolled` for each); the opponents of the controller whose
+   * result is the highest of all (a tie counts) can't be attacked, nor the planeswalkers they control, by the creature of the ability until the end of combat step ends. Only `this`, in the
+   * ability of a permanent. It sets no `dieResult`.
+   */
+  | {
+      readonly kind: 'eachPlayerRollsBarHighest';
+      readonly sides: number;
+      readonly creature: { readonly kind: 'this' };
+    }
   /**
    * One coin flip with a call made (CR 705.2: "flip a coin" for an effect that does not only care about heads or tails): the controller's coin is flipped with a draw of the seeded
    * generator of the game (SPEC 4.2), the event `coinFlipped` says the call, the result and whether they match, and the controller wins the flip when they do (CR 705.2), which "whenever you win a
@@ -5844,8 +5927,11 @@ export type Trigger =
        * Whom it attacks (D-133, CR 508.1b): "attacks you" (`you`: declared as attacking the controller of this
        * ability as a player) or "attacks you or a planeswalker you control" (`youOrPlaneswalkers`: also an attack on a
        * planeswalker that controller controls). Left out, an attack on anyone triggers it.
+       * `defendingYou` ("..., if you're the defending player", CR 508.5): the controller of this ability is the defending player of the creature as it was declared:
+       * the player it attacks, the controller of the planeswalker or the protector of the battle it attacks.
+       * `yourOpponents` ("attacks one of your opponents", CR 508.5): the defending player of the creature as it was declared (read as for `defendingYou`) is an opponent of the controller of this ability.
        */
-      readonly at?: 'you' | 'youOrPlaneswalkers' | 'opponent';
+      readonly at?: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'opponent';
     }
   /**
    * "Whenever you cast a spell", "whenever an opponent casts a spell" (CR 601.2i, 603.2): `by` is the
@@ -5950,6 +6036,8 @@ export type Trigger =
    * subject of the trigger. `bearerChosen` narrows the event to times a creature was actually chosen, as in CR 701.54a.
    */
   | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
+  /** "Whenever you complete a dungeon" (CR 309.7, 701.49c; the `dungeonCompleted` event): once each time the dungeon of the controller of the ability is completed. */
+  | { readonly kind: 'dungeonCompleted' }
   /** "When this Class becomes level N" (CR 716.2, D-235): once as its level changes to `level`. */
   | { readonly kind: 'classLevel'; readonly level: number }
   /**
@@ -6078,7 +6166,8 @@ export type Trigger =
   | {
       readonly kind: 'dealsDamage';
       readonly what: TriggerSubject;
-      readonly to: 'opponent' | 'player';
+      /** `you` ("Whenever a permanent deals damage to you", Dissipation Field): the controller of this ability. */
+      readonly to: 'opponent' | 'player' | 'you';
     }
   /**
    * "Whenever a source you control deals noncombat damage to an opponent" (CR 120.2b, 603.2, 603.2c, D-333): once for each source and each player it
@@ -6467,11 +6556,23 @@ export type Trigger =
        */
       readonly attackedYou?: true;
       /**
+       * "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b, 603.2c): only when at least one creature of the declaration was declared as attacking
+       * the player who has the initiative as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many
+       * creatures attack. Not with `attackedYou`, `attackedEnchantedPlayer` or `eachAttackedPlayer`.
+       */
+      readonly attackedInitiativeHolder?: true;
+      /**
        * "Whenever one or more Demons you control attack a player" (CR 508.1b, 508.6, 603.2c, Demonic Covenant): one occurrence for each player the declaration attacks (as a player: an
        * attack on a planeswalker or a battle is not an attack on its controller or protector), counting only the creatures declared as attacking that player: the ability triggers once for
        * each player attacked with `atLeast` or more creatures `what` names, whoever declares them. `triggerAttacked` is that player alone. Not with `attackedEnchantedPlayer`.
        */
       readonly eachAttackedPlayer?: true;
+      /**
+       * "Whenever one or more Dragons you control attack an opponent" (Firkraag, CR 508.1b, 508.6, 603.2c): as `eachAttackedPlayer`, but only for the players who are opponents of the
+       * controller of this ability, and `triggerPlayer` ("that player") is the opponent attacked, not the attacking player (`triggerAttackedPlayer` is the same player). Only with `who` `you`;
+       * not with `eachAttackedPlayer`, `attackedEnchantedPlayer` or `attackingYourOpponents`.
+       */
+      readonly eachAttackedOpponent?: true;
       /**
        * "Whenever ~ and at least two other creatures attack" (Frontline Medic, CR 508.1, 603.2c): the permanent with the ability must itself be one of the creatures the declaration
        * holds that match `what`, and `atLeast` counts it (so "and at least two other creatures" is `atLeast` 3). Only with `who` `you`: the creature is the controller's own attacker.
@@ -7382,6 +7483,12 @@ export type Condition =
    */
   | { readonly kind: 'subjectControlledByYou' }
   /**
+   * "If that creature had to attack this combat" (Firkraag, Cunning Instigator; CR 508.1d, 701.15b): the creature the trigger is about was required to attack as the attackers of the
+   * combat in progress were declared (a goad, "attacks each combat if able") and was able to. False when it was not in that combat, and outside combat. Valid as the intervening "if" of
+   * a trigger about a permanent, or in a conditional effect of one.
+   */
+  | { readonly kind: 'subjectHadToAttack' }
+  /**
    * "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil; CR 603.4, 603.10a, 113.7a): the permanent whose event caused the trigger matches `filter`, as it
    * is now or as it last was once it has left (a creature that died is read with the types it had on the battlefield). The filter describes the object: it names no zone, controller or
    * owner. Read as the ability triggers and again as it resolves, in the intervening "if" or a conditional effect of a trigger about a permanent; false where there is none.
@@ -8054,6 +8161,8 @@ export type Replacement =
        * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
        * `planeswalkerType` (CR 205.3j, "As this enchantment enters, choose a planeswalker type"): one of `PLANESWALKER_TYPES`; read by the `chosenPlaneswalkerType` quality of a filter.
        * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
+       * `player` (CR 614.12a, Stuffy Doll: "As this creature enters, choose a player"): the controller chooses one of the players in the game (any, themselves included); the answer is
+       * kept on the permanent (`GameObject.chosen.player`) and read by the player selector `enteredChosenPlayer`.
        * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
        * `player` ("As this creature enters, choose a player", CR 614.12a, 607.2d): any player still in the game, the controller included; kept as `GameObject.chosen.player` and read by the
        * controller filter `chosenPlayer` and the cast trigger's `by: 'chosenPlayer'`. `cardName` ("choose a nonland card name"): the name is free text (the question lists the names the
@@ -8174,6 +8283,11 @@ export type Replacement =
        * when the copy is made. Only on a card whose mana cost has an {X}.
        */
       readonly withX?: { readonly counter: string };
+      /**
+       * "..., except it has \"Other creatures with the same name as this creature are goaded.\"" (Mocking Doppelganger, CR 707.9b, 707.9a): static abilities the permanent has besides the
+       * ones it copies, part of its copiable values. Never empty; each is a static ability.
+       */
+      readonly addStatics?: readonly Ability[];
       /**
        * "..., except it's a Dragon in addition to its other types and it has flying" (issue 103, CR 707.9b): the creature types the permanent has besides the ones it copies,
        * part of its copiable values. Never empty.

@@ -207,6 +207,42 @@ export function checkDragonsEffect(
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       return true;
+    case 'playerSpellsCostLess': {
+      // CR 601.2f, 118.7a, 611.2a (Will Kenrith): the players named, the spells being cast (no zone, nothing the spell targets), a whole number of generic mana, until the controller's next turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      const { targetsObject, ...spell } = (e.spells ?? {}) as ObjectFilter;
+      if (e.spells === undefined || e.spells === null) {
+        issue(out, `${path}.spells`, 'playerSpellsCostLess names the spells it applies to');
+      } else {
+        checkFilter(spell, `${path}.spells`, out);
+        if (targetsObject !== undefined) {
+          issue(out, `${path}.spells`, 'playerSpellsCostLess cannot read what the spell targets');
+        }
+        if (
+          filterSome(
+            spell,
+            (f) =>
+              f.zone !== undefined ||
+              f.stackKind !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.spells`,
+            'the filter describes a spell being cast: no zone, stackKind, controller or owner (the player is `player`)',
+          );
+        }
+      }
+      if (!Number.isInteger(e.amount) || e.amount < 1) {
+        issue(out, `${path}.amount`, 'a whole number of generic mana, at least 1');
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'this lasts until the next turn of the controller');
+      }
+      return true;
+    }
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: no fields: the controller's next spell this turn may be cast by paying life equal to its mana value.
       return true;

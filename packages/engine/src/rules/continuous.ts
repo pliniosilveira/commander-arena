@@ -42,6 +42,7 @@ export type ContinuousNode = Extract<
     kind:
       | 'modifyPt'
       | 'setPt'
+      | 'switchPt'
       | 'loseAllAbilities'
       | 'loseHexproofShroud'
       | 'setTypes'
@@ -73,6 +74,8 @@ function changeOf(
         toughness: ptAmountOf(state, node.toughness, ctx, targets, now),
       };
     }
+    case 'switchPt':
+      return { kind: 'switchPt' };
     case 'loseAllAbilities':
       return { kind: 'loseAllAbilities' };
     case 'loseHexproofShroud':
@@ -536,7 +539,10 @@ export function runRequireAttackSource(
   targets: readonly ChosenTarget[],
 ): StepOutcome {
   const source = ctx.source;
-  if (source === null || state.objects[source]?.zone !== 'battlefield') return done(state);
+  // CR 508.1d: "attacks if able" names no permanent, so it holds whether or not the source is still there; "attack this planeswalker" needs the planeswalker.
+  const permanent =
+    source !== null && state.objects[source]?.zone === 'battlefield' ? source : null;
+  if (node.anything !== true && permanent === null) return done(state);
   let next = state;
   const made: ContinuousEffect[] = [];
   for (const seat of resolvePlayers(state, node.player, ctx, targets)) {
@@ -551,7 +557,15 @@ export function runRequireAttackSource(
         seat,
         turnsTaken: (next.seats[seat]?.turnsTaken ?? 0) + 1,
       },
-      change: { kind: 'mustAttackPermanent', seat, permanent: source },
+      // "Each creature that player controls" is the group requirement read for that player as "you" (a creature that arrives later is required too, CR 611.2c).
+      change:
+        node.anything !== true && permanent !== null
+          ? { kind: 'mustAttackPermanent', seat, permanent }
+          : {
+              kind: 'requireAttack',
+              filter: { types: ['creature'], controller: 'you' },
+              controller: seat,
+            },
     });
   }
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });

@@ -156,14 +156,23 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     const whileRemains = scope === 'whileSelfRemains';
     // "attacks this combat if able" (issue 144, CR 506.1, 508.1d): the requirement of one combat, the engine's `thisCombat`.
     const thisCombat = scope === 'thisCombat';
+    // "Until your next turn, target creature can't be blocked" (Sly Instigator, CR 611.2a, 500.1): the engine's `untilYourNextTurn`, with `cantBeBlocked` only.
+    const nextTurn = scope === 'untilYourNextTurn';
     if (
       scope !== 'thisTurn' &&
       scope !== 'untilEndOfTurn' &&
       !whileControlling &&
       !whileRemains &&
-      !thisCombat
+      !thisCombat &&
+      !nextTurn
     ) {
       return failure(clause);
+    }
+    if (nextTurn) {
+      if (given.restriction !== 'cantBeBlocked') return failure(clause);
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     if (thisCombat) {
       if (given.restriction !== 'attacksEachCombat') return failure(clause);
@@ -260,7 +269,9 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
             ? 'forAsLongAsThisRemains'
             : thisCombat
               ? 'thisCombat'
-              : END,
+              : nextTurn
+                ? 'untilYourNextTurn'
+                : END,
       }),
       'objects',
       // "That token attacks this combat if able": the token the sentence before made (the noun is bound by the earlier instruction).
@@ -278,9 +289,13 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     // "... for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): the duration of an ability of a permanent.
     const whileRemains = clause.duration?.scope === 'whileSelfRemains';
-    if (!endsWithTurn(clause) && !whileRemains) return failure(clause);
-    if (whileRemains) {
-      const blocked = missingFeatures(['duration:forAsLongAsThisRemains']);
+    // "Until your next turn, up to two target creatures each have base power and toughness 0/3 and lose all abilities" (Will Kenrith, CR 611.2a, 500.1).
+    const nextTurn = endsWithYourNextTurn(clause);
+    if (!endsWithTurn(clause) && !whileRemains && !nextTurn) return failure(clause);
+    if (whileRemains || nextTurn) {
+      const blocked = missingFeatures([
+        whileRemains ? 'duration:forAsLongAsThisRemains' : 'duration:untilYourNextTurn',
+      ]);
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
@@ -290,7 +305,11 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
       (objects) => ({
         kind: 'loseAllAbilities',
         objects,
-        duration: whileRemains ? ('forAsLongAsThisRemains' as const) : END,
+        duration: whileRemains
+          ? ('forAsLongAsThisRemains' as const)
+          : nextTurn
+            ? ('untilYourNextTurn' as const)
+            : END,
       }),
       'objects',
       TRIGGER_SUBJECT,
@@ -328,7 +347,16 @@ export const SET_PT: Lowering<IrClause, Effects> = {
     const noun = arg(clause, 'objects');
     const lasting =
       clause.duration === undefined && noun?.kind === 'noun' && noun.det === 'anaphor';
-    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting)) return failure(clause);
+    // Will Kenrith (CR 611.2a, 500.1): "until your next turn" ends as the next turn of the controller begins.
+    const nextTurn = endsWithYourNextTurn(clause);
+    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting && !nextTurn)) {
+      return failure(clause);
+    }
+    if (nextTurn) {
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
     let power: PtAmount = base.power;
     let toughness: PtAmount = base.toughness;
@@ -355,7 +383,7 @@ export const SET_PT: Lowering<IrClause, Effects> = {
         objects,
         power,
         toughness,
-        duration: lasting ? 'permanent' : END,
+        duration: lasting ? 'permanent' : nextTurn ? 'untilYourNextTurn' : END,
       }),
       'objects',
       // Ahoy Mateys deck, Admiral Brass (CR 400.7): "it" after "return target ... to the battlefield" is the permanent that came back, a new object, which the engine's `moved` names.

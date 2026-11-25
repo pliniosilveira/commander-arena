@@ -32,6 +32,11 @@ export interface LowerContext {
    */
   entersX: boolean;
   /**
+   * True in the body of "When ~ becomes monstrous, ..." (every event of the trigger is the permanent itself becoming monstrous, Death Kiss, CR 701.37c): an X there is the X of the
+   * monstrosity that made it monstrous (the engine's `monstrousX`), which `validateCard` checks against a "Monstrosity X" of the face; it does not make the ability read an announced X.
+   */
+  monstrousX: boolean;
+  /**
    * True when the permanent the ability is on is gone by the time the effect runs: a "dies"
    * trigger of `~` itself, or an ability whose cost sacrifices `~` (CR 400.7: it is a new object
    * in the graveyard). An effect that acts on `~` as a permanent (tap, untap, exile, return it to
@@ -110,6 +115,8 @@ export interface LowerContext {
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
   /** The sentence of "If they don't" after a "may" sentence the asked player does themselves is being lowered: "they" and "that player" are the player who declined (`declinedPlayer`). */
   declinedPlayer: boolean;
+  /** The clauses of a sentence "each player may ..." that the player asked does as "you" (`runsAs: 'chooser'`) are being lowered: "a creature they control" is then the asked player's own (CR 101.4, 608.2d). */
+  askedActs: boolean;
   /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
   attackedPlayer: {
     readonly selector: PlayerSelector;
@@ -218,6 +225,11 @@ export interface LowerContext {
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
   itIsCard: boolean;
+  /**
+   * True in the body of "Whenever a permanent deals damage to you, return it to its owner's hand" (Dissipation Field, CR 120.3, 400.7): every event of the trigger is a
+   * permanent dealing damage, so "it" is that permanent (the engine's `triggerSubject`, read from last-known information once it has left, where nothing is moved).
+   */
+  itIsDamageSource: boolean;
   /**
    * True when every event of the trigger is a creature becoming blocked or unblocked (CR 509.1h, 509.3c): the permanent the trigger is about is still on the battlefield, in combat, when the
    * ability resolves, so "it" in "return it to its owner's hand" names it (the engine's `triggerSubject`; a permanent that left meanwhile is a new object, CR 400.7, and nothing moves).
@@ -356,6 +368,11 @@ export interface LowerContext {
    */
   createdToken: Extract<Effect, { kind: 'createToken' }> | null;
   /**
+   * The plain `draw` the clause before it lowered to, when it was the only effect and drew for the controller (Curse of Verbosity): "Each opponent attacking that player does the
+   * same" makes the other players draw. Null after any other clause.
+   */
+  drewCards: Extract<Effect, { kind: 'draw' }> | null;
+  /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
    */
@@ -461,6 +478,7 @@ export function newContext(
     targets: [],
     usesX: false,
     entersX: false,
+    monstrousX: false,
     selfGone: false,
     costSacrifice: null,
     staticSubjectIsSelf: false,
@@ -479,6 +497,7 @@ export function newContext(
     lowered: 0,
     thatPlayer: null,
     declinedPlayer: false,
+    askedActs: false,
     attackedPlayer: null,
     attackBatchPlayer: null,
     enchantedPlayerTrigger: false,
@@ -509,6 +528,7 @@ export function newContext(
     milledBefore: false,
     destroyed: false,
     createdToken: null,
+    drewCards: null,
     movedToHand: false,
     exiledAnyCardTypes: false,
     exiledOwnGraveyards: false,
@@ -542,6 +562,7 @@ export function newContext(
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,
+    itIsDamageSource: false,
     itStaysInCombat: false,
     theirPlayer: null,
     selfGraveyardEntry: false,

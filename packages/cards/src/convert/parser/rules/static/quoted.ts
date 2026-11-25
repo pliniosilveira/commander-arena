@@ -111,25 +111,31 @@ export const TOKEN_QUOTED_ABILITY: Parser<IrQuotedAbility> = (ctx, pos) =>
   readQuotedAbility(ctx, pos, { mana: true });
 
 /**
- * The ability of a token in quotes for a token with no name of its own, or a supported static token ability: the crew bonus, or "~ can't block".
+ * The ability of a token in quotes for a token with no name of its own, or a supported static token ability: the crew bonus, "~ can't block", or "Creatures you control attack each combat if able." (CR 508.1d).
  */
 export const TOKEN_QUOTED_ABILITY_OR_CREW_BONUS: Parser<IrQuotedAbility> = (ctx, pos) => {
   const plain = TOKEN_QUOTED_ABILITY(ctx, pos);
   if (plain.ok) return plain;
   const withStatics = readQuotedAbility(ctx, pos, { mana: true, statics: true });
-  if (!withStatics.ok) return withStatics;
-  const { ability } = withStatics.value;
+  const read = withStatics.ok
+    ? withStatics
+    : // Pursued Whale: the first of two quoted abilities has no period ("~ can't block" and "Creatures ... if able."); only a restriction is read that way.
+      readQuotedAbility(ctx, pos, { mana: true, statics: true, unpunctuated: true });
+  if (!read.ok) return read;
+  const { ability } = read.value;
   if (
     ability.kind !== 'static' ||
     ability.statement.effects.length === 0 ||
     !ability.statement.effects.every(
       (e) =>
-        e.kind === 'crewSaddleBonus' || (e.kind === 'restriction' && e.restriction === 'cantBlock'),
+        e.kind === 'crewSaddleBonus' ||
+        (e.kind === 'restriction' &&
+          (e.restriction === 'cantBlock' || e.restriction === 'attacksEachCombat')),
     )
   ) {
     return fail(ctx, pos);
   }
-  return withStatics;
+  return read;
 };
 
 /** The same for a token with a name of its own: the name inside the quotes is the token (stage P45, D-197). */

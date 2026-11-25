@@ -435,7 +435,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
             : '';
       // D-151 (CR 500.8): "attacks for the first time each turn", not again in an additional combat phase.
       const first = trigger.firstTimeEachTurn === true ? ' for the first time each turn' : '';
-      return `Whenever ${what} attacks${aim}${trigger.alone ? ' alone' : ''}${first}`;
+      // CR 508.5: "..., if you're the defending player".
+      const defending = trigger.at === 'defendingYou' ? ", if you're the defending player" : '';
+      return `Whenever ${what} attacks${aim}${trigger.alone ? ' alone' : ''}${first}${defending}`;
     }
     case 'dealtDamage': {
       // D-133 (CR 120.3): once for each source that damages the permanent.
@@ -695,6 +697,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'exerted':
       // CR 701.43d, 607.2h: "You may exert ~ as it attacks. When you do, ...": the creature was exerted.
       return 'When you exert this creature as it attacks';
+    case 'dungeonCompleted':
+      // CR 309.7, 701.49c: each time your dungeon is completed.
+      return 'Whenever you complete a dungeon';
     case 'ringTempted':
       // D-196 (CR 701.54d): each time the Ring tempts you, whatever you could choose.
       return 'Whenever the Ring tempts you';
@@ -775,6 +780,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           if (trigger.who === 'any') return 'Whenever a player attacks you';
         }
         return null;
+      }
+      // Loot Dispute (CR 726.1, 508.1b): "Whenever you attack the player who has the initiative".
+      if (trigger.attackedInitiativeHolder === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever you attack the player who has the initiative'
+          : null;
       }
       // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
       if (trigger.includesSource === true) {

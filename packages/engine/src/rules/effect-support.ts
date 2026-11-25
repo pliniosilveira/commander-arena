@@ -42,6 +42,7 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
   'triggerDamagedPlayers',
   'discardedThisWay',

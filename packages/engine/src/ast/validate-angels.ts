@@ -101,6 +101,26 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
         );
       }
+      if (t.attackedInitiativeHolder !== undefined && t.attackedInitiativeHolder !== true) {
+        issue(
+          out,
+          `${path}.attackedInitiativeHolder`,
+          'attackedInitiativeHolder is true when present',
+        );
+      }
+      if (
+        t.attackedInitiativeHolder === true &&
+        (t.attackedYou === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.eachAttackedPlayer === true ||
+          t.eachAttackedOpponent === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedInitiativeHolder`,
+          'attackedInitiativeHolder does not go with attackedYou, attackedEnchantedPlayer, eachAttackedPlayer or eachAttackedOpponent',
+        );
+      }
       if (t.eachAttackedPlayer !== undefined && t.eachAttackedPlayer !== true) {
         issue(out, `${path}.eachAttackedPlayer`, 'eachAttackedPlayer is true when present');
       }
@@ -122,6 +142,22 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           out,
           `${path}.eachAttackedPlayer`,
           'eachAttackedPlayer does not go with attackedEnchantedPlayer',
+        );
+      }
+      if (t.eachAttackedOpponent !== undefined && t.eachAttackedOpponent !== true) {
+        issue(out, `${path}.eachAttackedOpponent`, 'eachAttackedOpponent is true when present');
+      }
+      if (
+        t.eachAttackedOpponent === true &&
+        (t.eachAttackedPlayer === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackingYourOpponents === true ||
+          t.who !== 'you')
+      ) {
+        issue(
+          out,
+          `${path}.eachAttackedOpponent`,
+          "eachAttackedOpponent is about the creatures of 'you' and does not go with eachAttackedPlayer, attackedEnchantedPlayer or attackingYourOpponents",
         );
       }
       if (t.includesSource !== undefined && t.includesSource !== true) {

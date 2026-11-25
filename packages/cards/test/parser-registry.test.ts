@@ -196,6 +196,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),
+  'token.copies-except-additive': permanent(
+    (e) => `Whenever you discard a creature card, create ${e}.`,
+  ),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
@@ -212,6 +215,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
   'static.nth-spell-cost-reduction': asIs,
+  'static.first-typed-spell-cost-reduction': asIs,
   'static.pay-life-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
@@ -517,6 +521,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
   ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
+  'noun.entered-chosen-player': spell((e) => `~ deals 2 damage to ${e}.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
   // Stage P19: the header line of a modal spell, followed by two bullets.
@@ -714,6 +719,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, exile the top two cards of your library. ${cap(e)}.`,
   ),
   'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
+  // Draconic Dissent deck, group control (Reins of Power): "that opponent" is the player a sentence before it chose as a target.
+  'effect.exchange-control-of-all': spell((e) => `Target opponent loses 1 life. ${cap(e)}.`),
   'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
   'trigger.opponents-dealt-combat-damage': whenever,
   'condition.damage-dealt-by-type': permanent(
@@ -726,6 +733,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorwyn Eclipsed (Blight Curse deck): the conditions and the noun of the counter group.
   'condition.control-that-creature': permanent(
     (e) => `Whenever one or more -1/-1 counters are put on a creature, draw a card if ${e}.`,
+  ),
+  'condition.that-creature-had-to-attack': permanent(
+    (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
   ),
   'condition.its-stat-was': permanent(
     (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
@@ -755,6 +765,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
   ),
   'trigger.opponent-attacks-bare': whenever,
+  'condition.youre-defending-player': permanent(
+    (e) => `Whenever a creature an opponent controls attacks, if ${e}, draw a card.`,
+  ),
   'condition.they-attacked-you': permanent(
     (e) => `Whenever an opponent attacks, if ${e}, draw a card.`,
   ),
@@ -782,6 +795,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.enters-as-copy-extra-counters': asIs,
+  'replacement.enters-as-copy-except-quoted': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
@@ -826,6 +840,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // Stage P69 (D-271): the die roll and the card in the graveyard (Arden Angel).
   'effect.roll-die': spell((e) => `${cap(e)}.`),
+  'effect.each-player-rolls-bar-highest': permanent(
+    (e) => `At the beginning of combat on your turn, ${e}.`,
+  ),
   'condition.you-win-clash': spell(
     (e) => `You lose 1 life, then clash with an opponent. If ${e}, you gain 1 life.`,
   ),
@@ -895,6 +912,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of combat on your turn, ${e}\n• Target player draws a card and loses 1 life.\n• Target player creates a 2/1 white and black Inkling creature token with flying.`,
   ),
   'noun.each-permanent-they-control': spell((e) => `Target player puts a +1/+1 counter on ${e}.`),
+  'noun.a-permanent-they-control': permanent(
+    (e) => `At the beginning of your end step, each player may put two +1/+1 counters on ${e}.`,
+  ),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
@@ -1008,6 +1028,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
   'trigger.activate-ability-of-kinds': whenever,
+  'trigger.activate-any-ability': whenever,
   'trigger.targets-activated-batch': whenever,
   'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
   'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
@@ -1187,6 +1208,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
+  'static.same-name-goaded': asIs,
+  'static.power-less-goaded': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,
@@ -1200,6 +1223,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
   ),
   'trigger.opponent-attacks-you': whenever,
+  'trigger.you-attack-initiative-holder': whenever,
+  'trigger.you-complete-dungeon': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),

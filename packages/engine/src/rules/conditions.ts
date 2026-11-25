@@ -751,6 +751,13 @@ export function evaluateCondition(
         playerStatOf(state, ctx.controller, condition.stat)
       );
     }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): the creature the event is about was required to attack as this combat's attackers were declared.
+      if (ctx.triggerSubject === undefined) return false;
+      return (state.combat?.attackers ?? []).some(
+        (a) => a.object === ctx.triggerSubject && a.hadToAttack === true,
+      );
+    }
     case 'subjectControlledByYou': {
       // CR 603.10a, 608.2h, 109.4: "if you control that creature": the permanent the event is about, under the control it has now or had as it left.
       if (ctx.triggerSubject === undefined) return false;

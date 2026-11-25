@@ -46,7 +46,7 @@ import { amountOf } from './amounts';
 import { chosenOf } from './chosen';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
-import { attackerDefender } from './defending';
+import { attackerDefender, defenderOf } from './defending';
 import { derive } from './derive';
 import { findDungeonTriggers } from './dungeon';
 import { emblemsOf } from './emblem';
@@ -765,7 +765,11 @@ function occurrences(
     }
     case 'attackBatch':
       // CR 508.1b, 508.6, 603.2c (Demonic Covenant): "attack a player": one occurrence for each player attacked as a player, with the creatures that attack that player.
-      if (event.kind === 'attackersDeclared' && trigger.eachAttackedPlayer === true) {
+      // "attack an opponent" (Firkraag): the same, and "that player" is the player attacked.
+      if (
+        event.kind === 'attackersDeclared' &&
+        (trigger.eachAttackedPlayer === true || trigger.eachAttackedOpponent === true)
+      ) {
         const players = [
           ...new Set(
             event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
@@ -774,7 +778,7 @@ function occurrences(
         return players.map((player) => ({
           subject: null,
           seat: event.seat,
-          player: event.seat,
+          player: trigger.eachAttackedOpponent === true ? player : event.seat,
           attackers: event.attackers
             .filter((a) => a.target.kind === 'player' && a.target.seat === player)
             .map((a) => a.object),
@@ -825,6 +829,11 @@ function occurrences(
               player: event.seat,
             },
           ]
+        : [];
+    case 'dungeonCompleted':
+      // CR 309.7, 701.49c: once each time a player's dungeon is completed.
+      return event.kind === 'dungeonCompleted'
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'chapter':
       // CR 714.2b, 714.2c: once for each chapter number the lore counters newly reached.
@@ -972,7 +981,7 @@ function matchesWhat(
  */
 function attacksAt(
   state: GameState,
-  at: 'you' | 'youOrPlaneswalkers' | 'opponent' | undefined,
+  at: 'you' | 'youOrPlaneswalkers' | 'defendingYou' | 'opponent' | undefined,
   target: AttackTarget | undefined,
   you: SeatId,
 ): boolean {
@@ -982,6 +991,8 @@ function attacksAt(
   if (at === 'opponent') return target.kind === 'player' && target.seat !== you;
   if (target.kind === 'player') return target.seat === you;
   if (at === 'you') return false;
+  // CR 508.5: the defending player of a creature attacking a planeswalker or a battle is the controller or the protector.
+  if (at === 'defendingYou') return defenderOf(state, target) === you;
   const permanent = objectOrLki(state, target.object);
   return (
     permanent !== null &&
@@ -1200,6 +1211,10 @@ function matches(
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 508.6 (Firkraag): "attack an opponent": the player attacked is an opponent of the controller of this ability.
+      if (trigger.eachAttackedOpponent === true && occ.attacked?.[0] === candidate.controller) {
+        return false;
+      }
       // D-629 (CR 303.4m, 508.1b): "Whenever enchanted player is attacked": the Aura's player was declared as attacked, as a player and not through a planeswalker.
       if (
         trigger.attackedEnchantedPlayer === true &&
@@ -1210,6 +1225,13 @@ function matches(
       }
       // CR 508.1b: "Whenever an opponent attacks you": the controller of the ability was declared as attacked, as a player.
       if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
+        return false;
+      }
+      // CR 726.1, 508.1b (Loot Dispute): "you attack the player who has the initiative": that player was declared as attacked, as a player.
+      if (
+        trigger.attackedInitiativeHolder === true &&
+        (state.initiative === undefined || !(occ.attacked ?? []).includes(state.initiative))
+      ) {
         return false;
       }
       // CR 508.1, 603.2c (Frontline Medic): "Whenever ~ and at least two other creatures attack": the permanent itself is one of the creatures counted.
@@ -1232,6 +1254,9 @@ function matches(
       return subject !== null && subject.id === candidate.id;
     case 'ringTempted':
       // CR 701.54d: "Whenever the Ring tempts you": the player the Ring tempted controls the ability.
+      return occ.seat === candidate.controller;
+    case 'dungeonCompleted':
+      // CR 309.7: "Whenever you complete a dungeon": the player whose dungeon was completed controls the ability.
       return occ.seat === candidate.controller;
     case 'landfall':
       // "Whenever a land enters under your control": the land's controller is the ability's.
@@ -1328,10 +1353,13 @@ function matches(
       );
     }
     case 'dealsDamage': {
+      // CR 110.1, 120.3: "a permanent deals damage" is about a permanent (as it is, or as it last was on the battlefield), never a spell or an ability on the stack.
+      if (subject?.zone !== 'battlefield') return false;
       if (!matchesWhat(state, trigger.what, subject, candidate)) return false;
       const damaged = occ.damaged;
       if (damaged?.kind !== 'player') return false;
-      // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants).
+      // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants); "you" is that controller.
+      if (trigger.to === 'you') return damaged.seat === candidate.controller;
       return trigger.to === 'player' || damaged.seat !== candidate.controller;
     }
     case 'damageToPlayerPrevented':
@@ -1443,6 +1471,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'doorUnlocked': // CR 709.5h
     case 'exploited': // CR 702.110b
     case 'ringTempted':
+    case 'dungeonCompleted': // CR 309.7, 701.49c
     case 'classLevelReached':
     case 'votesRevealed': // CR 701.38a: "whenever players finish voting"
       return true;

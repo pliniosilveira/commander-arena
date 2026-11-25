@@ -251,7 +251,8 @@ export function validatePlacement(p: Placement, def: CardDefinition, seatCount =
         );
       }
       // A `lifePaid` answer is any whole number of life; the scenario places a permanent that already paid it.
-      const named = kind === 'lifePaid' ? [given] : entersOptions(face.abilities);
+      const named =
+        kind === 'lifePaid' || kind === 'player' ? [given] : entersOptions(face.abilities);
       if (chosenFromOption(kind, given, named) === null) {
         throw new ScenarioError(`${where}: ${given} is not a ${kind}`);
       }

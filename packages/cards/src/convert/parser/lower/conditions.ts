@@ -319,6 +319,13 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): "that creature had to attack this combat" is the intervening "if" of a trigger about a creature, read from the creature the trigger is about.
+      const blocked = missingFeatures(['condition:subjectHadToAttack']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectHadToAttack' });
+    }
     case 'subjectGreaterThanEach': {
       // CR 603.10a, 208.1, 608.2c (Selvala, Heart of the Wilds): "its power is greater than each other creature's power" is read as the instruction comes up (a conditional effect, not the
       // intervening "if"), of the permanent the trigger is about.
@@ -987,6 +994,9 @@ export function lowerCondition(
         ...(test.other === true ? { other: true as const } : {}),
       });
     }
+    case 'youAreDefendingPlayer':
+      // Only the intervening "if" of an `attacks` trigger, which the trigger's lowering folds into the event (`at`).
+      return failure(c, []);
     case 'hadCounters':
       // Only the intervening "if" of a trigger about a permanent that left, which the trigger's lowering folds into its filter.
       return failure(c, []);
@@ -1067,6 +1077,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:subjectControlledByYou',
   'condition:subjectMatches',
   'condition:subjectStat',
+  'condition:subjectHadToAttack',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
   'condition:counterPutOnThisThisTurn',

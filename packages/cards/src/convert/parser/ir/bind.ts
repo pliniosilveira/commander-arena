@@ -128,6 +128,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'defendingPlayer',
   // "the player to your right": one player the text names, so a later "that player" is bound to it.
   'playerToRight',
+  // "the chosen player": one player the permanent chose as it entered.
+  'enteredChosenPlayer',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
   // "each of those opponents" of a damage batch trigger: several players, as above.
@@ -1101,6 +1103,19 @@ export const ATTACKERS_REF = 'trigAttackers';
 function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   if (source.event === 'attackBatch' && source.attackingYourOpponents === true) {
     binder.seedAttackers(source);
+  }
+  // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked.
+  if (source.event === 'attackBatch' && source.eachAttackedOpponent === true) {
+    binder.seedControllerOfSubject({
+      kind: 'noun',
+      det: 'a',
+      filter: { raw: '' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: source.span,
+      rule: source.rule,
+    });
   }
   const subject = binder.seed(source.subject, 'triggerSubject', aboutSelf(source));
   const actor = binder.seed(source.actor, 'triggerActor');
