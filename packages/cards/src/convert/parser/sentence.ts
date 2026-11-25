@@ -294,6 +294,8 @@ const TRAILING_CONDITIONS = [
   'condition.its-stat-greater-than-each-other',
   // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
   'condition.this-power',
+  // Descend upon the Sinful, Unholy Heat (CR 207.2c, 205.2a): "Create a 4/4 ... token if there are four or more card types among cards in your graveyard." (Delirium).
+  'condition.card-types-among',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(

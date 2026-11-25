@@ -41,6 +41,7 @@ import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
+import { TIMES_KICKED_VALUE } from './kicked';
 import { COLORS_AMONG_VALUE } from './korvold';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
 import { NUMBER_OF_PLAYERS_WHO } from './players-who';
@@ -518,6 +519,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
     CARD_TYPES_AMONG_THOSE_VALUE,
+    // CR 702.33c (Marshal's Anthem): "the number of times ~ was kicked".
+    TIMES_KICKED_VALUE,
     // CR 105.2 (Vivid): "the number of colors among permanents you control", before the count of objects, which reads no "colors among".
     COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
@@ -862,6 +865,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the result',
     // CR 205.2a: the card types of the cards of a graveyard.
     'where X is the number of card types among cards in your graveyard',
+    // CR 702.33c (Marshal's Anthem): the kicks of the spell the permanent came from.
+    'where X is the number of times ~ was kicked',
     // CR 105.2 (Vivid): the colors the permanents you control have between them, each once.
     'where X is the number of colors among permanents you control',
     // Death Toll deck, group D (CR 202.3, 608.2h): what a destroy before it in the text destroyed.
@@ -886,6 +891,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is',
     'where X is 3',
     'where X is the number of creatures',
+    'where X is the number of times that creature was kicked',
+    'where X is the number of times it was cast',
     'where X is the number of opponents',
     'where X is the number of opponents you control',
     'where Y is the number of Zombies you control',
