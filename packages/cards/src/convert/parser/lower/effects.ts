@@ -92,6 +92,7 @@ import { DESTINY_LOWERINGS } from './destiny';
 import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
+import { DURNAN_LOWERINGS } from './durnan';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
@@ -168,7 +169,6 @@ import {
 } from './nouns';
 import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
-import { DURNAN_LOWERINGS } from './durnan';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
