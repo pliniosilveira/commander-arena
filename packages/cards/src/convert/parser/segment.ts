@@ -73,7 +73,8 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
 const EXERT_LEAD =
   /^(?:if (?:~|this creature) hasn['’]t been exerted this turn, )?you may exert (?:~|this creature|it) as it attacks\. when you do, /i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336) and "When you cast your next instant or sorcery spell this turn, " (Twinferno): the lead of a sentence that creates a delayed triggered ability. */
-const DELAYED_CAST_LEAD = /^when you (?:next cast an? |cast your next )[^,.]+ spell this turn, /i;
+const DELAYED_CAST_LEAD =
+  /^when you (?:next cast an? [^,.]+ spell|cast your next [^,.]+ spell|next cast an instant spell, cast a sorcery spell, or activate a loyalty ability) this turn, /i;
 /** "Whenever one or more creatures you control deal combat damage to one or more players this turn, " (Forth Eorlingas!, CR 603.7): the lead of a spell's sentence that creates a delayed triggered ability for the turn. */
 const DELAYED_COMBAT_BATCH_LEAD =
   /^whenever one or more creatures you control deal combat damage to one or more players this turn, /i;
@@ -268,6 +269,9 @@ const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\
 const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
 /** "Copy target instant or sorcery spell an opponent controls twice." (issue 81, Venser, Fervent Forger): its permission to choose new targets for the copies is the next sentence. */
 const COPY_TWICE = /(?:^|, )copy target [^.]* an opponent controls twice\.$/i;
+/** Jaya's Phoenix's sibling cards (issue 132): "... copy that ability." and "... copy that spell or ability twice." take the sentence about the new targets of the copies. */
+const COPY_ABILITY_COPIES =
+  /(?:^|, )(?:until end of turn, whenever you activate an ability of a planeswalker of that type, copy that ability|when you next cast an instant spell, cast a sorcery spell, or activate a loyalty ability this turn, copy that spell or ability twice)\.$/i;
 
 /**
  * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (Feather group 3, D-438, CR 707.10e): the
@@ -326,7 +330,8 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
     (COPY_FOR_EACH.test(text.slice(before.start, before.end)) ||
-      COPY_TWICE.test(text.slice(before.start, before.end)))
+      COPY_TWICE.test(text.slice(before.start, before.end)) ||
+      COPY_ABILITY_COPIES.test(text.slice(before.start, before.end)))
   );
 }
 

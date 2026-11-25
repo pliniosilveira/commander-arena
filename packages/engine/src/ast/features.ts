@@ -487,6 +487,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'repeat',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
+    // Jaya's Phoenix, Leori, Repeated Reverberation: "copy the next loyalty ability you activate this turn" (`delayedCopy`, CR 603.7, 707.10).
+    'delayedCopy',
     // CR 702.44a, 702.44d: "it gains sunburst" (a spell on the stack gains the keyword whose counters its permanent enters with).
     'spellGainsKeyword',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
@@ -3481,6 +3483,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   forEachPlayer: true,
   repeat: true,
   delayedCast: true,
+  delayedCopy: true,
   spellGainsKeyword: true,
   removeTimeCounter: true,
   castExiled: true,

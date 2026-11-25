@@ -52,6 +52,7 @@ import { findDungeonTriggers } from './dungeon';
 import { emblemsOf } from './emblem';
 import { findInitiativeTriggers } from './initiative';
 import { findLaterTriggers } from './later-triggers';
+import { isLoyaltyAbility } from './loyalty';
 import { findMonarchTriggers } from './monarch';
 import { findRingTriggers } from './ring';
 import { chaptersReached, loreChange, readAheadBlocks } from './saga';
@@ -1140,6 +1141,17 @@ function matches(
       ) {
         return false;
       }
+      // CR 606.2, 602.2 (Jaya's Phoenix): "the next loyalty ability you activate": an activated ability with a loyalty symbol in its cost.
+      if (
+        trigger.kind === 'activatesAbility' &&
+        trigger.loyalty === true &&
+        !(
+          subject?.stack?.ability?.kind === 'activated' &&
+          isLoyaltyAbility(subject.stack.ability.cost)
+        )
+      ) {
+        return false;
+      }
       // CR 700.13, 111.2, 602.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -2138,19 +2150,28 @@ function findDelayedTriggers(
       remaining.push(delayed);
       continue;
     }
-    const matched = events
-      .flatMap((event) => occurrences(state, trigger, event, null))
-      .filter(
-        (occ) =>
-          (delayed.watched === undefined || occ.subject === delayed.watched) &&
-          // Issue 144: "deals combat damage to that player this turn": only damage dealt to the player the ability was made for.
-          (delayed.damagedPlayer === undefined ||
-            (occ.damaged?.kind === 'player' && occ.damaged.seat === delayed.damagedPlayer)) &&
-          // Issue 159: "When you cast it this turn": only a spell cast from that card.
-          (delayed.watchedCard === undefined ||
-            (occ.subject !== null && state.objects[occ.subject]?.card === delayed.watchedCard)) &&
-          matches(state, trigger, occ, candidate),
-      );
+    // `delayedCopy`: the ability may wait for any of several events; the first one that happens is the one.
+    const matched = [trigger, ...(delayed.also ?? [])]
+      .flatMap((each) =>
+        events.flatMap((event) =>
+          occurrences(state, each, event, null)
+            .filter(
+              (occ) =>
+                (delayed.watched === undefined || occ.subject === delayed.watched) &&
+                // Issue 144: "deals combat damage to that player this turn": only damage dealt to the player the ability was made for.
+                (delayed.damagedPlayer === undefined ||
+                  (occ.damaged?.kind === 'player' && occ.damaged.seat === delayed.damagedPlayer)) &&
+                // Issue 159: "When you cast it this turn": only a spell cast from that card.
+                (delayed.watchedCard === undefined ||
+                  (occ.subject !== null &&
+                    state.objects[occ.subject]?.card === delayed.watchedCard)) &&
+                matches(state, each, occ, candidate),
+            )
+            .map((occ) => ({ occ, index: events.indexOf(event) })),
+        ),
+      )
+      .sort((a, b) => a.index - b.index)
+      .map(({ occ }) => occ);
     if (matched.length === 0) {
       remaining.push(delayed);
       continue;

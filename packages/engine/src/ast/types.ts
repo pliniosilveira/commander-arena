@@ -2578,7 +2578,15 @@ export type Effect =
    * selector names chooses one, one after the other in turn order (the active player first), and the creature types chosen are what `notChosenType` and `chosenType` read afterwards (an
    * object matches `chosenType` with any of them; `notChosenType` with none of them).
    */
-  | { readonly kind: 'chooseCreatureType'; readonly players?: PlayerSelector }
+  | {
+      readonly kind: 'chooseCreatureType';
+      readonly players?: PlayerSelector;
+      /**
+       * "Choose a planeswalker type" (CR 205.3j, 608.2d, Leori, Sparktouched Hunter): the options are the planeswalker types, not the creature types. The type chosen is read by the
+       * `delayedCopy` after it (`activation.ofChosenType`). Not with `players`.
+       */
+      readonly planeswalker?: true;
+    }
   /**
    * "Choose a number between 0 and 10" as the effect resolves (Expel the Interlopers, CR 608.2d, 107.1): the controller chooses a whole number from `min` to `max`, both
    * included (a `chooseX` decision of purpose `chooseNumber`, asked even when only one number could be chosen: the choice is the player's). The number is what
@@ -3794,6 +3802,23 @@ export type Effect =
        * "Whenever you cast a noncreature spell this turn, create a token that's a copy of a non-Saga token you control" (Summon: Good King Mog XII, CR 603.7, 603.7c, 514.2): the delayed
        * ability triggers at every such cast until the end of the turn, not only the next one. Its effect may also choose a permanent (`chooseObjects`) and copy the one chosen.
        */
+      readonly repeat?: true;
+    }
+  /**
+   * "Copy the next loyalty ability you activate this turn when you activate it", "Until end of turn, whenever you activate an ability of a planeswalker of that type, copy that ability", "When
+   * you next cast an instant spell, cast a sorcery spell, or activate a loyalty ability this turn, copy that spell or ability twice" (CR 603.7, 603.7a, 603.7b, 707.10, 707.10c, 514.2; Jaya's
+   * Phoenix, Leori, Repeated Reverberation): a delayed triggered ability of the controller, made as this resolves, that waits for the first of the events it names after it was made
+   * (`casts`: a spell the filter names is cast by the controller; `activation`: the controller activates an ability that uses the stack) and then copies the spell or the ability on the
+   * stack (the `copySpell` of the `triggerSubject`), `count` times (one when left out), each copy with new targets as its controller chooses (CR 707.10c). Once, and it ends with the turn;
+   * with `repeat` at every such event until the end of the turn. The copy is not cast or activated, so it triggers nothing that watches that.
+   * `activation.loyalty`: only a loyalty ability (CR 606.2). `activation.ofChosenType` (the planeswalker type the effect before it chose, `chooseCreatureType` with `planeswalker`): only an
+   * ability of a planeswalker that has that type (read as it was as the ability was activated, CR 113.7a).
+   */
+  | {
+      readonly kind: 'delayedCopy';
+      readonly casts?: readonly ObjectFilter[];
+      readonly activation?: { readonly loyalty?: true; readonly ofChosenType?: true };
+      readonly count?: number;
       readonly repeat?: true;
     }
   /**
@@ -5957,6 +5982,10 @@ export type Trigger =
        * `triggerPlayer` is the player who activated the ability ("they control"), `you` the controller of this ability. It names no zone.
        */
       readonly ofSource?: ObjectFilter;
+      /**
+       * "Copy the next loyalty ability you activate this turn" (CR 606.2, 602.2, Jaya's Phoenix): only a loyalty ability, an activated ability with a loyalty symbol in its cost.
+       */
+      readonly loyalty?: true;
     }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }

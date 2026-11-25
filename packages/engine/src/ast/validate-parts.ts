@@ -6113,6 +6113,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
       if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.planeswalker !== undefined && (e.planeswalker !== true || e.players !== undefined)) {
+        issue(out, `${path}.planeswalker`, 'planeswalker is true, and has no players');
+      }
       break;
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): "Choose a number between 0 and 10": whole numbers, the least first.
@@ -7059,6 +7062,41 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
       break;
+    case 'delayedCopy': {
+      // CR 603.7, 707.10 (Jaya's Phoenix, Leori, Repeated Reverberation): the spells it waits for are cast spells; an activation, a loyalty one or one of a planeswalker of the chosen type.
+      const casts = e.casts ?? [];
+      if (casts.length === 0 && e.activation === undefined) {
+        issue(out, path, 'a delayed copy waits for a cast or an activation');
+      }
+      casts.forEach((filter, i) => {
+        checkFilter(filter, `${path}.casts[${i}]`, out);
+        if (filter?.stackKind !== 'spell') {
+          issue(out, `${path}.casts[${i}]`, 'a delayed copy waits for spells (stackKind "spell")');
+        }
+      });
+      if (e.activation !== undefined) {
+        if (
+          (e.activation.loyalty !== undefined && e.activation.loyalty !== true) ||
+          (e.activation.ofChosenType !== undefined && e.activation.ofChosenType !== true)
+        ) {
+          issue(out, `${path}.activation`, 'loyalty and ofChosenType are true when present');
+        }
+        if (e.activation.loyalty === true && e.activation.ofChosenType === true) {
+          issue(
+            out,
+            `${path}.activation`,
+            'a delayed copy names a loyalty ability or a type, not both',
+          );
+        }
+      }
+      if (e.count !== undefined && (!Number.isInteger(e.count) || e.count < 1)) {
+        issue(out, `${path}.count`, 'count is a whole number of 1 or more');
+      }
+      if (e.repeat !== undefined && e.repeat !== true) {
+        issue(out, `${path}.repeat`, 'repeat must be true when present');
+      }
+      break;
+    }
     case 'spellGainsKeyword':
       // CR 702.44a, 702.44d: the spell whose casting caused the trigger (a `castSpell` trigger or a `delayedCast`) gains Sunburst, and nothing else.
       if (kindOf(e.spell) === 'triggerSubject') {

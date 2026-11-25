@@ -16,6 +16,7 @@ import { KEYWORD_WORDS } from '../keyword/list';
 import { spellPhrase } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { CREATURE_TYPE_LIST } from './becomes';
+import { COPY_LOYALTY_EFFECT_RULES } from './copy-loyalty';
 import { GUFF_EFFECT_RULES } from './guff';
 import { type Clauses, makeClause } from './operands';
 import { impliedYou } from './player';
@@ -779,4 +780,5 @@ export const PLANESWALKER_PARTY_EFFECT_RULES = [
   quietly(EFFECT_LEAD_THEY_BECOME_COLORED_CREATURES_ABILITY),
   ...GUFF_EFFECT_RULES.map(quietly),
   ...VRONOS_EFFECT_RULES.map(quietly),
+  ...COPY_LOYALTY_EFFECT_RULES.map(quietly),
 ];

@@ -5,8 +5,16 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ManaAbility, ObjectFilter, ObjectRef, ObjectSelector } from '../ast/types';
+import type {
+  Effect,
+  ManaAbility,
+  ObjectFilter,
+  ObjectRef,
+  ObjectSelector,
+  Trigger,
+} from '../ast/types';
 import { CREATURE_TYPES } from '../data/creature-types';
+import { PLANESWALKER_TYPES } from '../data/planeswalker-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
@@ -278,7 +286,7 @@ export function runInstruction(
         kind: 'chooseOption',
         seat: instruction.seat ?? res.controller,
         purpose: 'creatureType',
-        options: CREATURE_TYPES,
+        options: instruction.planeswalker === true ? PLANESWALKER_TYPES : CREATURE_TYPES,
         source: res.object,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
@@ -1025,6 +1033,9 @@ function runEffect(
       );
     }
     case 'chooseCreatureType':
+      if (effect.planeswalker === true) {
+        return done(state, [], [{ kind: 'chooseCreatureType', chosen: null, planeswalker: true }]);
+      }
       // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
       return done(
         state,
@@ -2329,6 +2340,55 @@ function runEffect(
             ability,
             untilEndOfTurn: true,
             // CR 603.7: "Whenever you cast ... this turn" triggers at each cast, "when you next cast" at the next one only.
+            ...(effect.repeat === true ? { repeat: true as const } : {}),
+          },
+        ],
+      });
+    }
+
+    case 'delayedCopy': {
+      // CR 603.7, 603.7a, 603.7b, 707.10 (Jaya's Phoenix, Leori, Repeated Reverberation): a delayed ability of the controller that waits for the first cast or activation it names
+      // after this, then copies that spell or ability. It is found after the events that happen after this, triggers once and ends with the turn (`repeat`: at each one).
+      const triggers: Trigger[] = (effect.casts ?? []).map((filter) => ({
+        kind: 'castSpell',
+        filter,
+        by: 'you',
+      }));
+      if (effect.activation !== undefined) {
+        // Leori: the planeswalker type the controller chose, as it was as the ability was activated.
+        let ofSource: ObjectFilter | undefined;
+        if (effect.activation.ofChosenType === true) {
+          const chosen = res.chosenCreatureType;
+          if (chosen === undefined) return done(state);
+          ofSource = { types: ['planeswalker'], subtypes: [chosen] };
+        }
+        triggers.push({
+          kind: 'activatesAbility',
+          who: 'you',
+          anySource: true,
+          ...(effect.activation.loyalty === true ? { loyalty: true as const } : {}),
+          ...(ofSource === undefined ? {} : { ofSource }),
+        });
+      }
+      const [first, ...rest] = triggers;
+      if (first === undefined) return done(state);
+      const copy: Effect = {
+        kind: 'copySpell',
+        spell: { kind: 'triggerSubject' },
+        newTargets: 'may',
+        ...(effect.count === undefined ? {} : { count: effect.count }),
+      };
+      const ability: TriggeredAbility = { kind: 'triggered', trigger: first, effect: copy };
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            ability,
+            untilEndOfTurn: true,
+            ...(rest.length === 0 ? {} : { also: rest }),
             ...(effect.repeat === true ? { repeat: true as const } : {}),
           },
         ],

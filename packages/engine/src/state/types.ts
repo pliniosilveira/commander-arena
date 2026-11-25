@@ -19,6 +19,7 @@ import type {
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  Trigger,
   UndercityRoom,
   Zone,
 } from '../ast/types';
@@ -1023,6 +1024,8 @@ export interface DelayedTrigger {
   readonly untilEndOfTurn?: true;
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
+  /** More events the ability waits for besides `ability.trigger` (`delayedCopy`: "cast an instant, cast a sorcery or activate a loyalty ability"): the first of any of them is the one. */
+  readonly also?: readonly Trigger[];
   readonly watched?: ObjectId;
   /** "Whenever a creature you control deals combat damage to that player this turn" (issue 144, CR 603.7c): the ability triggers only for damage dealt to this player, fixed as it was created. */
   readonly damagedPlayer?: SeatId;
@@ -1229,6 +1232,8 @@ export type Instruction =
   | {
       readonly kind: 'chooseCreatureType';
       readonly chosen: string | null;
+      /** `chooseCreatureType.planeswalker`: the options are the planeswalker types. */
+      readonly planeswalker?: true;
       /** The player who chooses (`chooseCreatureType.players`): the controller when absent. Every chooser's answer is added to `ResolutionContext.chosenCreatureTypes`. */
       readonly seat?: SeatId;
     }
