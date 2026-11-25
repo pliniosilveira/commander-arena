@@ -115,6 +115,8 @@ export interface LowerContext {
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
   /** The sentence of "If they don't" after a "may" sentence the asked player does themselves is being lowered: "they" and "that player" are the player who declined (`declinedPlayer`). */
   declinedPlayer: boolean;
+  /** The clauses of a sentence "each player may ..." that the player asked does as "you" (`runsAs: 'chooser'`) are being lowered: "a creature they control" is then the asked player's own (CR 101.4, 608.2d). */
+  askedActs: boolean;
   /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
   attackedPlayer: {
     readonly selector: PlayerSelector;
@@ -495,6 +497,7 @@ export function newContext(
     lowered: 0,
     thatPlayer: null,
     declinedPlayer: false,
+    askedActs: false,
     attackedPlayer: null,
     attackBatchPlayer: null,
     enchantedPlayerTrigger: false,

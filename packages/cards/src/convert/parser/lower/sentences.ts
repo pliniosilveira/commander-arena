@@ -3433,7 +3433,10 @@ function lowerPlayersMay(
       return refused(refuse(sentence));
     }
   }
+  const wasAsked = ctx.askedActs;
+  ctx.askedActs = askedActs;
   const body = lowerClauses(sentence.clauses, ctx);
+  ctx.askedActs = wasAsked;
   if (!body.ok) return refused(body);
   const next = sentences[i + 1];
   const declines = next?.condition?.test.kind === 'declined';

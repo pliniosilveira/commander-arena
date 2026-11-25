@@ -1450,6 +1450,7 @@ describe('unmatched abilities', () => {
       'noun.a-greatest-permanent',
       'noun.a-permanent-sharing-type',
       'noun.a-creature-that-dealt-damage-to-you',
+      'noun.a-permanent-they-control',
       'noun.a-permanent',
       'noun.each-of-up-to-permanents',
       'noun.a-token',

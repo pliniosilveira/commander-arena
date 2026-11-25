@@ -2179,12 +2179,18 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
       const who = playerSelectorOf(putter, ctx);
       if (!who.ok) return who;
     }
+    // Agitator Ant (CR 101.4, 608.2d): "each player may put two +1/+1 counters on a creature they control": "they" is the player asked, who acts as "you" in the effect, so the creature
+    // is one of the controller's own as the effect runs for that player. Anywhere else "they" names a player the engine does not run this as: refused.
+    const theyControl =
+      objectsArg?.kind === 'noun' && objectsArg.rule === 'noun.a-permanent-they-control';
+    if (theyControl && (!ctx.askedActs || clause.optional)) return failure(clause);
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&
       objectsArg.ref !== undefined &&
       // D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control" is one the controller must choose, as "up to one" is one they may.
       (objectsArg.upTo === true ||
+        theyControl ||
         (objectsArg.filter.controller === 'you' &&
           !objectsArg.plural &&
           objectsArg.count === undefined) ||
@@ -2194,7 +2200,11 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
           !objectsArg.plural &&
           objectsArg.count === undefined))
     ) {
-      const filter = lowerFilter(objectsArg);
+      const filter = lowerFilter(
+        theyControl
+          ? { ...objectsArg, filter: { ...objectsArg.filter, controller: 'you' as const } }
+          : objectsArg,
+      );
       if (!filter.ok) return filter;
       const count = amountArg(clause, 'count', ctx);
       if (!count.ok) return count;
