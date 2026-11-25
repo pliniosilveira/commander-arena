@@ -746,6 +746,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'optionalSacrificeCopies':
     case 'freeCast':
     case 'lifeAlternative':
+    case 'manaAlternative':
     case 'tapAlternative':
     case 'graveyardSacrificeAlternative':
     case 'sacrificeAlternative':
@@ -1656,7 +1657,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (
     first.kind === 'additionalCost' ||
     first.kind === 'freeCast' ||
-    first.kind === 'lifeAlternative'
+    first.kind === 'lifeAlternative' ||
+    first.kind === 'manaAlternative'
   ) {
     return failure(ability);
   }

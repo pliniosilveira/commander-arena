@@ -139,6 +139,7 @@ describe('the dimensions', () => {
       'escaped',
       // CR 702.143a: "if this spell was foretold".
       'foretold',
+      'castForAlternative',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',

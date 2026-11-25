@@ -890,6 +890,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "~ was foretold" (CR 702.143a): the spell was cast for its foretell cost
     | { readonly kind: 'foretold' }
+    // "the {1}{B} cost was paid" (Baleful Mastery, CR 118.9): the spell was cast for its alternative cost of mana `cost`
+    | { readonly kind: 'altCostPaid'; readonly cost: readonly string[] }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
     | { readonly kind: 'additionalCostPaid' }
@@ -2099,6 +2101,11 @@ export type IrStaticEffect =
    * when the `condition` (read for the caster as the spell is cast) holds. The subject is `~`.
    */
   | { readonly kind: 'lifeAlternative'; readonly life: number; readonly condition?: IrCondition }
+  /**
+   * "You may pay {1}{B} rather than pay ~'s mana cost." (Baleful Mastery, CR 118.9, 601.2b): an alternative cost of the face that pays the mana `cost` (symbols without braces) instead of the
+   * mana cost. The subject is `~`.
+   */
+  | { readonly kind: 'manaAlternative'; readonly cost: readonly string[] }
   /**
    * "You may play an additional land on each of your turns." and the forms with a number ("two additional lands")
    * and with "Each player ... on each of their turns" (stage P24, D-125, CR 305.2). The statement's subject is the

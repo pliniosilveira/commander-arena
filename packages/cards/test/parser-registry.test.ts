@@ -217,6 +217,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.nth-spell-cost-reduction': asIs,
   'static.first-typed-spell-cost-reduction': asIs,
   'static.pay-life-alt-cost': asIs,
+  'static.pay-mana-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -1357,6 +1358,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Burning Curiosity (CR 118.8, 701.68a): the optional blight of the additional cost is what the condition reads.
   // CR 702.143a: "If this spell was foretold, ... instead."
   'condition.foretold': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
+  'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.

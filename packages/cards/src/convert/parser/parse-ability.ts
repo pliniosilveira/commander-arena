@@ -68,6 +68,8 @@ const SPELL_STATICS = [
   'static.sacrifice-alt-cost',
   // Snuff Out (CR 118.9, 118.4): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost."
   'static.pay-life-alt-cost',
+  // Baleful Mastery (CR 118.9): "You may pay {1}{B} rather than pay this spell's mana cost."
+  'static.pay-mana-alt-cost',
 ] as const;
 
 const FAMILIES: ReadonlySet<string> = new Set([

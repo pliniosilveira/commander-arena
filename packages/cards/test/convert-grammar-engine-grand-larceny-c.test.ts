@@ -203,7 +203,71 @@ describe('Doc Aurlock: Plotting cards from your hand costs {2} less', () => {
   });
 });
 
-describe("Thieving Varmint: {T}, Pay 1 life: Add two mana of any one color. Spend this mana only to cast spells you don't own", () => {
+describe('Baleful Mastery: pay {1}{B} rather than its mana cost; if that cost was paid, an opponent draws a card', () => {
+  const mastery = parsed(
+    'SYNTHETIC Baleful Mastery',
+    'Instant',
+    "You may pay {1}{B} rather than pay ~'s mana cost.\nIf the {1}{B} cost was paid, an opponent draws a card.\nExile target creature or planeswalker.",
+    { manaCost: '{3}{B}', colors: ['B'] },
+  );
+  test('is a valid card', () => expect(validateCard(mastery)).toEqual([]));
+
+  const board = (seats: 2 | 3 | 4, lands: number) => {
+    let b = scenario({ seats })
+      .define(mastery)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(mastery.name)
+      .battlefield('Swamp', { count: lands });
+    for (let seat = 1; seat < seats; seat++) {
+      b = b
+        .seat(seat as 1 | 2 | 3)
+        .library(...LIBRARY)
+        .hand('Plains');
+      if (seat === 1) b = b.battlefield(BEARS);
+    }
+    return b.at('precombatMain', { active: 0 }).build();
+  };
+  const handSize = (g: ReturnType<typeof board>, seat: 0 | 1 | 2 | 3) =>
+    g.state.seats[seat]?.hand.length;
+
+  test('with two Swamps only the alternative cost can be paid: the creature is exiled and the opponent draws', () => {
+    const g = board(2, 2);
+    g.expect.illegal(0, { cast: mastery.name });
+    g.act(0).cast(mastery.name, { alternative: 'payMana', targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+    g.expect.zone(mastery.name, 'graveyard', { seat: 0 });
+    expect(handSize(g, 1)).toBe(2);
+    g.expect.invariants();
+  });
+
+  test('cast for its mana cost the opponent draws nothing', () => {
+    const g = board(2, 4);
+    g.act(0).cast(mastery.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+    expect(handSize(g, 1)).toBe(1);
+    g.expect.invariants();
+  });
+
+  for (const seats of [3, 4] as const) {
+    test(`with ${seats} seats the caster chooses which opponent draws, and only that one does`, () => {
+      const g = board(seats, 2);
+      g.act(0).cast(mastery.name, { alternative: 'payMana', targets: [BEARS], pay: true });
+      g.passAll();
+      g.expect.pending('chooseOption', 0);
+      g.act(0).chooseOption('seat:2');
+      g.expect.zone(BEARS, 'exile', { seat: 1 });
+      expect(handSize(g, 1)).toBe(1);
+      expect(handSize(g, 2)).toBe(2);
+      if (seats === 4) expect(handSize(g, 3)).toBe(1);
+      g.expect.invariants();
+    });
+  }
+});
+
+describe("Thieving Varmint:{T}, Pay 1 life: Add two mana of any one color. Spend this mana only to cast spells you don't own", () => {
   const varmint = parsed(
     'SYNTHETIC Thieving Varmint',
     'Creature — Varmint',

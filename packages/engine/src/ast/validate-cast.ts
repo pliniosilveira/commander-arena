@@ -104,6 +104,15 @@ function mentionsEscaped(node: unknown): boolean {
   return Object.values(record).some(mentionsEscaped);
 }
 
+/** True when `node` (any JSON) holds a condition node of kind `castForAlternative`. */
+function mentionsCastForAlternative(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsCastForAlternative);
+  if (node === null || typeof node !== 'object') return false;
+  const record = node as Record<string, unknown>;
+  if (record.kind === 'castForAlternative') return true;
+  return Object.values(record).some(mentionsCastForAlternative);
+}
+
 /** True when `node` (any JSON) holds a condition node of kind `foretold`. */
 function mentionsForetold(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(mentionsForetold);
@@ -214,6 +223,17 @@ export function checkCastFace(
   } else if (mentionsEscaped(abilities) || mentionsEscaped(spell)) {
     // CR 702.138b: without an escape cost nothing can have escaped; the condition would never hold.
     issue(out, path, 'the escaped condition and "escapes with" need an escape cost (CR 702.138b)');
+  }
+  // CR 118.9: without the alternative cost no spell can have been cast for it; the condition would never hold.
+  if (
+    !alternatives.some((a) => a?.kind === 'payMana') &&
+    (mentionsCastForAlternative(abilities) || mentionsCastForAlternative(spell))
+  ) {
+    issue(
+      out,
+      path,
+      'the castForAlternative condition needs a payMana alternative cost (CR 118.9)',
+    );
   }
   // CR 702.143a: without a foretell cost no spell can have been foretold; the condition would never hold.
   if (

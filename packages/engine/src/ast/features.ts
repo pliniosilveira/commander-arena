@@ -1494,6 +1494,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escaped',
     // CR 702.143a: "if this spell was foretold".
     'foretold',
+    // CR 118.9 (Baleful Mastery): "If the {1}{B} cost was paid".
+    'castForAlternative',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
     'cameUnderControlSinceLastUpkeep',
     // D-131: any state-reading amount compared with a number ("total power 8 or greater", "seven or more
@@ -1973,6 +1975,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificePermanents',
     // CR 118.9, 118.4 (Snuff Out): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost".
     'payLife',
+    // CR 118.9 (Baleful Mastery): "You may pay {1}{B} rather than pay this spell's mana cost".
+    'payMana',
   ],
 };
 
@@ -2754,6 +2758,8 @@ export const CONDITION_KINDS = [
   'escaped',
   /** "If this spell was foretold" (CR 702.143a): the engine's `foretold`. */
   'foretold',
+  /** "If the {1}{B} cost was paid" (CR 118.9, Baleful Mastery): the engine's `castForAlternative`. */
+  'castForAlternative',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */
   'cameUnderControlSinceLastUpkeep',
   /** "If creatures you control have total power 8 or greater", "if you have seven or more creature cards in your graveyard" (D-131): the engine's `amountIs`. */
@@ -3304,6 +3310,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'sacrificeFromGraveyard',
   'sacrificePermanents',
   'payLife',
+  'payMana',
   'impending',
   'blitz',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.

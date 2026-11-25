@@ -3306,7 +3306,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                                 ? 'subjectControlledByYou'
                                 : test === 'thatPlayersTurn'
                                   ? 'triggerPlayerTurn'
-                                  : test;
+                                  : test === 'altCostPaid'
+                                    ? 'castForAlternative'
+                                    : test;
     return failure(
       clause,
       kind === 'raw' ||

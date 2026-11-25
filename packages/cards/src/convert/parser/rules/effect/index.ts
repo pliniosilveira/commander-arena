@@ -135,6 +135,7 @@ import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GOAD_DRACONIC_EFFECT_RULES } from './goad-draconic';
+import { GRAND_LARCENY_C_EFFECT_RULES } from './grand-larceny-c';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
@@ -1470,6 +1471,7 @@ export const EFFECT_RULES = [
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
+  ...GRAND_LARCENY_C_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
   ...KEEPS_UP_TO_EFFECT_RULES,

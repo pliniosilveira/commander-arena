@@ -4539,6 +4539,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
     case 'foretold': // CR 702.143a: the face must list a foretell cost (`checkCastFace`)
       break;
+    case 'castForAlternative': // CR 118.9 (Baleful Mastery): the face must list the alternative cost (`checkCastFace`)
+      if (c.alternative !== 'payMana') {
+        issue(out, `${path}.alternative`, 'castForAlternative names the payMana alternative cost');
+      }
+      break;
     case 'counterPutOnThisThisTurn': // Wakka (CR 122.6): the permanent with the ability; an optional kind of counter
       if (c.counter !== undefined && (typeof c.counter !== 'string' || c.counter === '')) {
         issue(out, `${path}.counter`, 'counter must be a non-empty string when present');

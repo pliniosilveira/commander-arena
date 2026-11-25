@@ -153,6 +153,7 @@ export function isNamedAlternative(
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
     alternative === 'payLife' ||
+    alternative === 'payMana' ||
     alternative === 'impending' ||
     alternative === 'blitz'
   );

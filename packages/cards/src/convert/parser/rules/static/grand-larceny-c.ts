@@ -1,5 +1,6 @@
 /**
- * Static statements of group C of the Grand Larceny deck (issue 119): "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius; CR 702.170a, 118.7a).
+ * Static statements of group C of the Grand Larceny deck (issue 119): "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius; CR 702.170a, 118.7a) and "You may pay
+ * {1}{B} rather than pay this spell's mana cost." (Baleful Mastery; CR 118.9).
  */
 import { literal, pattern, sequence } from '../../combinators';
 import type { IrNoun, IrStatic } from '../../ir/types';
@@ -65,4 +66,68 @@ export const STATIC_PLOT_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
-export const GRAND_LARCENY_C_STATIC_RULES = [STATIC_PLOT_COST_REDUCTION];
+/**
+ * `static.pay-mana-alt-cost`: "You may pay {1}{B} rather than pay ~'s mana cost." (Baleful Mastery; CR 118.9: an alternative cost, chosen as the spell is cast, CR 601.2b, and
+ * paid with the other costs, CR 601.2f). The engine's alternative cost `payMana`. Plain mana only: generic numbers and the five colors and {C}. Not read: {X}, hybrid or Phyrexian
+ * mana, a cost with life or another part ("pay {B} and 4 life"), "instead of paying", a condition before or after it, "its mana cost", a number the text does not give.
+ */
+export const STATIC_PAY_MANA_ALT_COST = defineRule<IrStatic>({
+  id: 'static.pay-mana-alt-cost',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 118.9 (Costs)', 'CR 601.2b (Casting Spells)', 'CR 601.2f (Casting Spells)'],
+  examples: [
+    "You may pay {1}{B} rather than pay ~'s mana cost.",
+    "You may pay {U} rather than pay ~'s mana cost.",
+    "You may pay {2}{W}{W} rather than pay ~'s mana cost.",
+  ],
+  rejects: [
+    "You may pay {1}{B} rather than pay ~'s mana cost",
+    "You may pay {X}{B} rather than pay ~'s mana cost.",
+    "You may pay {B/G} rather than pay ~'s mana cost.",
+    "You may pay {0} rather than pay ~'s mana cost.",
+    "You may pay {B} and 4 life rather than pay ~'s mana cost.",
+    "You may pay {1}{B} instead of paying ~'s mana cost.",
+    'You may pay {1}{B} rather than pay its mana cost.',
+    "You may pay 4 life rather than pay ~'s mana cost.",
+    "If you control a Swamp, you may pay {1}{B} rather than pay ~'s mana cost.",
+    "You may pay {1}{B} rather than pay ~'s mana cost and draw a card.",
+    "You may pay {1}{B}rather than pay ~'s mana cost.",
+    "You may pay 1B rather than pay ~'s mana cost.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.pay-mana-alt-cost';
+    const r = sequence(
+      literal('you may pay '),
+      pattern(/(?:\{(?:[1-9]\d*|[WUBRGC])\})+(?= rather than pay )/u),
+      literal(" rather than pay ~'s mana cost"),
+      literal('.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const symbols = [...r.value[1][0].matchAll(/\{([^}]+)\}/gu)].map((m) => m[1] ?? '');
+    const selfAt = ctx.text.indexOf('~', pos);
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'self',
+      filter: { raw: '~' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: selfAt, end: selfAt + 1 },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [{ kind: 'manaAlternative', cost: symbols }],
+        span: { start: pos, end: r.pos },
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const GRAND_LARCENY_C_STATIC_RULES = [STATIC_PLOT_COST_REDUCTION, STATIC_PAY_MANA_ALT_COST];

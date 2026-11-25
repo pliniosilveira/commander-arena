@@ -2130,6 +2130,7 @@ export type NamedAlternativeKind =
   | 'sacrificeFromGraveyard'
   | 'sacrificePermanents'
   | 'payLife'
+  | 'payMana'
   | 'impending'
   | 'blitz';
 
@@ -2241,6 +2242,10 @@ export type AlternativeCost =
         | 'impending'
         | 'blitz'
       >;
+      /**
+       * `payMana` is "You may pay {1}{B} rather than pay this spell's mana cost" (Baleful Mastery, CR 118.9, 601.2b, 601.2f): the mana `cost` is paid in place of the mana cost, with no
+       * other effect on the spell; a condition on the alternative cost paid is `castForAlternative`.
+       */
       readonly cost: readonly Cost[];
       /**
        * `evoke` only (CR 702.74a, 118.9, 601.2b, 601.2h: "Evoke—Exile a red card from your hand"): besides the `cost` (mana, {0} when it has none) the caster exiles one other card
@@ -7497,6 +7502,12 @@ export type Condition =
    * Needs a replicate ability on the card.
    */
   | { readonly kind: 'replicated' }
+  /**
+   * "If the {1}{B} cost was paid" (Baleful Mastery, CR 118.9, 601.2b, 608.2c): the spell that is resolving was cast for the alternative cost `alternative` names (`payMana`: the face's
+   * "You may pay {1}{B} rather than pay this spell's mana cost"). Read from the spell, or from its last-known information once it has left (CR 113.7a); a copy of the spell was cast the
+   * same way (CR 707.10c). Only on a face that lists that alternative cost.
+   */
+  | { readonly kind: 'castForAlternative'; readonly alternative: 'payMana' }
   /**
    * "If this spell was foretold" (CR 702.143a, 702.143c: a spell is foretold when it is cast from exile for its foretell cost): the spell that is resolving was cast for its
    * foretell cost. Read from the spell, or from its last-known information once it has left (CR 113.7a). Only on a face that lists a foretell cost.
