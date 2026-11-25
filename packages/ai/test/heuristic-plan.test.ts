@@ -219,11 +219,26 @@ describe('the work of a planning (issue 653)', () => {
     expect(agent.plans[0]).toBe(work);
     expect(work?.planned).toBe(true);
     expect(work?.playOuts).toBeGreaterThan(1);
-    // Every engine step applies one action; every play-out's end is viewed to score it.
-    expect(work?.applies).toBe(work?.steps);
+    // An engine step applies at most one action (none when a line took it before); every play-out's end is
+    // viewed to score it.
+    expect(work?.applies).toBeGreaterThan(0);
+    expect(work?.applies).toBeLessThanOrEqual(work?.steps ?? 0);
     expect(work?.views).toBeGreaterThan(work?.playOuts ?? Number.POSITIVE_INFINITY);
     expect(work?.cut).toBeNull();
     expect(work?.ms).toBe(0);
+  });
+
+  test("lines that play the same turn up to the opponent's end step take those steps once", async () => {
+    // Today's line and the ability line both pass through the agent's turn and the opponent's, and differ
+    // only at the end step, where the ability line draws with the Lamp.
+    const g = position([], [LIBRARY_LAMP.name, 'Island', 'Island', 'Island'], quietOpponent, (b) =>
+      b.define(LIBRARY_LAMP),
+    );
+    const agent = new HeuristicAgent({ seed: 1 });
+    await drive(g, agent, (_, l) => l.length >= 1);
+    const [work] = agent.plannings;
+    expect(work?.planned).toBe(true);
+    expect(work?.applies).toBeLessThan(work?.steps ?? 0);
   });
 
   test('a planning that starts with the search share used up is cut by the clock and ends in no plan', async () => {

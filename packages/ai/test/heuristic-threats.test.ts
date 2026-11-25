@@ -47,6 +47,9 @@ describe('threats by category', () => {
     const { view, sample } = blue({ tapped: false, counters: 8 });
     expect(poolOf(sample, 1)).toHaveLength(43);
     const threats = threatsOf(view, sample, DEFAULT_WEIGHTS);
+    // The pools a caller read already (`scenariosOf`) give the same threats as reading them again.
+    const pools = new Map([[1, poolOf(sample, 1)]]);
+    expect(threatsOf(view, sample, DEFAULT_WEIGHTS, pools)).toEqual(threats);
     const counter = threats.find((t) => t.kind === 'counter');
     expect(counter?.chance).toBeCloseTo(atLeastOne(43, 8, 5), 12);
     const scenarios = scenariosOf(view, sample, DEFAULT_WEIGHTS);
