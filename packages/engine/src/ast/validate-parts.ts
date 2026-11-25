@@ -4,7 +4,13 @@
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
 import { TOKEN_PRESETS } from '../cards/tokens';
-import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import {
+  CARD_TYPES,
+  COLORS,
+  isNonCreatureSubtype,
+  LAND_TYPES,
+  SUPERTYPES,
+} from '../characteristics';
 import { FILTERABLE_KEYWORDS } from './features';
 import type {
   Ability,
@@ -2321,8 +2327,9 @@ export function checkManaSpentType(
   out: Out,
   snow?: unknown,
 ): void {
-  if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
-    issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
+  // Cataclysmic Prospecting (CR 205.3i): "for each mana from a Desert": or a land type, the source being that land.
+  if (type !== undefined && !isOneOf(type, CARD_TYPES) && !isOneOf(type, LAND_TYPES)) {
+    issue(out, path, `fromType is a card type or a land type, not ${JSON.stringify(type)}`);
   }
   // D-260: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
   if (snow !== undefined && (snow !== true || type !== undefined)) {

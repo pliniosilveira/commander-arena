@@ -757,6 +757,8 @@ export type IrAmount =
       readonly kind: 'triggerDamage';
       readonly life?: true;
       readonly scry?: true;
+      /** "create that many ... tokens": after an instruction that moved cards, the cards it moved (CR 608.2c); in a damage trigger, the event's amount. */
+      readonly thatMany?: true;
       readonly span: Span;
     }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text

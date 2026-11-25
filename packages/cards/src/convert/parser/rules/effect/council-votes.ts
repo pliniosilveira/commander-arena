@@ -227,7 +227,45 @@ const RING_BEARER_COUNTERS = single(
   }),
 );
 
+/**
+ * `effect.that-player-returns`: "that player returns a card from their graveyard to their hand" (Skullwinder; CR 608.2d, 400.3: the player the `choosePlayer` before it chose picks one card of
+ * their own graveyard, which goes to their hand). The engine's `forEachPlayer` over `chosenPlayer` that runs as that player. With no choice before it in the ability the lowering refuses
+ * ("that player" would be nobody the engine can name). Not read: another number, "up to", a kind of card, another zone, "target player returns", more words after it.
+ */
+export const EFFECT_THAT_PLAYER_RETURNS = defineRule<Clauses>({
+  id: 'effect.that-player-returns',
+  family: 'effect',
+  leading: ['that'],
+  cites: ['CR 608.2d (Resolving Spells and Abilities)', 'CR 400.3 (General)'],
+  examples: ['that player returns a card from their graveyard to their hand'],
+  rejects: [
+    'that player returns up to one card from their graveyard to their hand',
+    'that player returns two cards from their graveyard to their hand',
+    'that player returns a creature card from their graveyard to their hand',
+    'that player returns a card from their graveyard to the battlefield',
+    'that player returns a card from their hand to their graveyard',
+    'that player returns a card from a graveyard to their hand',
+    'that player returns a card from their graveyard to their hand and draws a card',
+    'target player returns a card from their graveyard to their hand',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/that player returns a card from their graveyard to their hand(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (/^ and (?!then )/iu.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: [
+        makeClause('effect.that-player-returns', 'chosenPlayerReturnsCard', {}, r.value.span),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 export const COUNCIL_VOTES_EFFECT_RULES = [
+  EFFECT_THAT_PLAYER_RETURNS,
   EFFECT_ADD_COUNTERS_RING_BEARER,
   EFFECT_FOR_EACH_VOTE,
   EFFECT_EACH_PLAYER_RETURNS,
