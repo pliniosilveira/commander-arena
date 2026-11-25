@@ -11,8 +11,9 @@
  *  - it has ward (CR 702.21) with a cost the agent cannot pay with the mana left after the spell.
  * Exile and bounce ignore the "will come back" and indestructible filters (they do not destroy).
  *
- * The survivors are ranked by what removing them is worth, `creatureValue` for a creature (a planeswalker
- * by its loyalty, other permanents are not aimed at). The OPPOSING COMMANDER goes first among near-equals:
+ * The survivors are ranked by what removing them is worth: for a creature `creatureValue`, plus
+ * `threat.lethal` for an opposing commander whose next hit is lethal commander damage (CR 903.10a), a
+ * planeswalker by its loyalty; other permanents are not aimed at. The OPPOSING COMMANDER goes first among near-equals:
  * when its value is at least `removal.nearEqual` (`weights.ts`) of the best one it is taken. Ties are broken by object id with a
  * plain code-unit compare (the lint bans locale compare, and the choice must be the same in every sample).
  * A damage spell that can aim at a player goes at the player when its damage is lethal to them, or when no
@@ -23,6 +24,7 @@ import type { ChosenTarget, GameView, ObjectView, SeatId } from '@commander-aren
 import { isHelpfulSpell } from './casual-helpful';
 import { findObject, hasKeyword, isCreature, toughnessOf } from './casual-view';
 import { creatureValue } from './evaluate';
+import { commanderLethalNext } from './heuristic-danger';
 import { duel } from './heuristic-duel';
 import { ownUnits } from './heuristic-mana';
 import type { AgentWeights } from './weights';
@@ -54,10 +56,17 @@ export function isRemovalSpell(o: ObjectView): boolean {
 /** The damage a damage spell deals (0 when its text does not say). */
 export const damageOf = (text: string): number => Number(DAMAGE.exec(text)?.[1] ?? 0);
 
-/** The value of removing a permanent: a creature by its evaluator value, a planeswalker by loyalty. */
-export function threatValue(o: ObjectView, weights: AgentWeights): number {
+/**
+ * The value of removing a permanent: a creature by its evaluator value, plus `threat.lethal` for an
+ * opposing commander whose next hit is lethal commander damage (`commanderLethalNext`); a planeswalker
+ * by loyalty.
+ */
+export function threatValue(view: GameView, o: ObjectView, weights: AgentWeights): number {
   const w = weights.removal;
-  if (isCreature(o)) return creatureValue(o, weights);
+  if (isCreature(o)) {
+    const lethal = commanderLethalNext(view, o) ? weights.threat.lethal : 0;
+    return creatureValue(o, weights) + lethal;
+  }
   if (o.types.includes('planeswalker'))
     return w.walkerBase + w.walkerLoyalty * (o.counters.loyalty ?? 0);
   return 0;
@@ -94,7 +103,7 @@ export interface RemovalContext {
 
 /** Whether a removal spell of this context is worth casting at `o`: see the module comment. */
 export function isWorthTarget(view: GameView, o: ObjectView, ctx: RemovalContext): boolean {
-  if (o.controller === view.viewer || threatValue(o, ctx.weights) <= 0) return false;
+  if (o.controller === view.viewer || threatValue(view, o, ctx.weights) <= 0) return false;
   if (isCreature(o) && o.damage >= toughnessOf(o) && toughnessOf(o) > 0) return false;
   if (dyingOnStack(view, o, ctx.spellId)) return false;
   const ward = wardCost(o);
@@ -140,7 +149,7 @@ export function rankTargets(
 ): Ranked[] {
   const worth = candidates
     .filter((o) => isWorthTarget(view, o, ctx))
-    .map((object) => ({ object, value: threatValue(object, ctx.weights) }))
+    .map((object) => ({ object, value: threatValue(view, object, ctx.weights) }))
     .sort((a, b) => b.value - a.value || byId(a.object.id, b.object.id));
   const top = worth[0];
   if (top === undefined) return worth;

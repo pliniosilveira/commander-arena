@@ -102,10 +102,27 @@ describe('never take lethal with a blocker at home', () => {
 
 describe('take the good trades', () => {
   // Wrong not to block here: a vanilla 2-drop for the commander, which comes back only at +2 tax; nothing else is at stake.
-  // Today: no block; at 20 life the even trade is not scored above taking 2, even for a commander.
-  test.fails('a 2/2 trades with the opposing 2/2 commander', async () => {
+  test('a 2/2 trades with the opposing 2/2 commander', async () => {
     const boss = creature('SYNTHETIC Boss 2/2', 2, 2, [], { cost: ['3'] });
     const g = blockSetup([boss.name], [BEARS], 20, { defs: [boss], theirCommander: boss.name });
     expect(await blocks(g)).toEqual([[BEARS, boss.name]]);
+  });
+
+  test('a 5/2 flier does not trade with the opposing 2/2 commander at 20 life', async () => {
+    // Wrong to block here: the flier is worth far more than the commander, and 2 damage out of 20 is cheap.
+    const boss = creature('SYNTHETIC Boss 2/2', 2, 2, [], { cost: ['3'] });
+    const ace = creature('SYNTHETIC Ace 5/2', 5, 2, ['flying'], { cost: ['4'] });
+    const g = blockSetup([boss.name], [ace.name], 20, {
+      defs: [boss, ace],
+      theirCommander: boss.name,
+    });
+    expect(await blocks(g)).toEqual([]);
+  });
+
+  test('at 3 life against the 2/2 commander and a 3/3, the lone 2/2 blocks the 3/3', async () => {
+    // Wrong to trade with the commander here: the unblocked 3/3 deals 3, lethal at 3 life.
+    const boss = creature('SYNTHETIC Boss 2/2', 2, 2, [], { cost: ['3'] });
+    const g = blockSetup([boss.name, V3], [BEARS], 3, { defs: [boss], theirCommander: boss.name });
+    expect(await blocks(g)).toEqual([[BEARS, V3]]);
   });
 });

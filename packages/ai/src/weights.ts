@@ -131,6 +131,13 @@ export interface RemovalWeights {
   readonly walkerLoyalty: number;
 }
 
+export interface ThreatWeights {
+  /** A trade with an opposing commander is worth this much more than its body: it comes back (CR 903.9a). */
+  readonly commander: number;
+  /** An opposing commander whose next hit brings the agent to 21 commander damage (CR 903.10a) is worth this much more. */
+  readonly lethal: number;
+}
+
 export interface ProtectionWeights {
   /** A protection play must beat passing by this much. */
   readonly margin: number;
@@ -157,6 +164,7 @@ export interface AgentWeights {
   readonly main: MainWeights;
   readonly plan: PlanWeights;
   readonly removal: RemovalWeights;
+  readonly threat: ThreatWeights;
   readonly protection: ProtectionWeights;
   readonly mulligan: MulliganWeights;
 }
@@ -245,6 +253,7 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
   },
   plan: { margin: 0.5, minThreatChance: 0.1, riskAversion: 0.25 },
   removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6 },
+  threat: { commander: 2, lethal: 20 },
   protection: { margin: 0.5, commanderBonus: 4, permanentValue: 3, saveValue: 6 },
   mulligan: { minLands: 2, maxLands: 5 },
 });
