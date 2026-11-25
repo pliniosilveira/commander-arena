@@ -686,6 +686,35 @@
   cursor: pointer;
 }
 
+.board-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+/* How many cards lie past that edge. */
+.board-scroll-count {
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* In the hand the arrows sit over the fan's own edges, right of the Log and Settings buttons and
+   clear of the lifted cards' strip above the cards. */
+.board-hand-scroll {
+  z-index: 10;
+}
+
+.board-hand-scroll.board-scroll-left {
+  left: 96px;
+}
+
+.board-hand-scroll.board-scroll-right {
+  right: 12px;
+}
+
 .board-scroll-left {
   left: 0;
   background: linear-gradient(90deg, var(--bg) 40%, transparent);

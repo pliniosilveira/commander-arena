@@ -332,3 +332,25 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
   // The window is short enough for at least one lifted card to reach the badge; if not, the test says nothing.
   expect(overlapped).toBeGreaterThan(0);
 });
+
+test('the hand and the battlefield show a scroll arrow with a count only when a card is out of view', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1366, height: 700 });
+  await page.goto('/?autostart=swamp-forest,synthetic-dinosaurs&seed=4');
+  await expect(page.getByRole('button', { name: 'Keep', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Keep', exact: true }).click();
+  await settled(page);
+  // A fresh hand fits the window: the half view of empty room at its ends is not a hidden card.
+  await expect(page.locator('.board-hand-scroll')).toHaveCount(0);
+  await expect(page.locator('.board-field-rows-wrap .board-scroll')).toHaveCount(0);
+
+  // A window too narrow for the hand: the arrow of the side that holds cards shows, with their number.
+  await page.setViewportSize({ width: 520, height: 700 });
+  const right = page.locator('.board-hand-scroll.board-scroll-right');
+  await expect(right).toBeVisible();
+  await expect(right.locator('.board-scroll-count')).not.toHaveText('0');
+  await right.click();
+  await expect(page.locator('.board-hand-scroll.board-scroll-left')).toBeVisible();
+});

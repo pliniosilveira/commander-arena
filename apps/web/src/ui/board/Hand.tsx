@@ -8,6 +8,7 @@ import { CardFace } from './CardFace';
 import { useHoverPreview } from './hover';
 import { handStep } from './layout';
 import { useMeasure } from './measure';
+import { useHiddenCards } from './useHiddenCards';
 
 // D-240 (issue 137) made the card 135 by 188; it is now 10 percent smaller. A card in the hand is the
 // whole printed card (488:680): it is big enough to read, so it is not cut to its top as a tile is.
@@ -128,6 +129,7 @@ export function Hand({
     Math.round(cardW * MIN_STEP_SHARE),
   );
   const fanRef = useRef<HTMLDivElement>(null);
+  const { hidden, refresh } = useHiddenCards(fanRef, '.board-hand-card');
   // A mouse wheel scrolls the hand sideways (the scrollbar is hidden and the strip above the cards
   // does not take the pointer).
   useEffect(() => {
@@ -148,7 +150,8 @@ export function Hand({
   useLayoutEffect(() => {
     const el = fanRef.current;
     if (el !== null) el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
-  }, [cards.length, width, step]);
+    refresh();
+  }, [cards.length, width, step, refresh]);
   const shown = size === null ? MIN_SHOWN : size.height;
   return (
     <section
@@ -171,6 +174,26 @@ export function Hand({
           />
         ))}
       </div>
+      {hidden.left > 0 && (
+        <button
+          type="button"
+          className="board-scroll board-scroll-left board-hand-scroll"
+          aria-label={`Scroll hand left, ${hidden.left} hidden`}
+          onClick={() => fanRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
+        >
+          ‹<span className="board-scroll-count">{hidden.left}</span>
+        </button>
+      )}
+      {hidden.right > 0 && (
+        <button
+          type="button"
+          className="board-scroll board-scroll-right board-hand-scroll"
+          aria-label={`Scroll hand right, ${hidden.right} hidden`}
+          onClick={() => fanRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
+        >
+          ›<span className="board-scroll-count">{hidden.right}</span>
+        </button>
+      )}
     </section>
   );
 }
