@@ -47,6 +47,7 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
     if (lookAt !== undefined && lookAt.kind !== 'flag') return failure(clause);
     ctx.exiled = 'top';
     ctx.exiledFaceDown = faceDown?.value === true;
+    ctx.exiledLookedAt = false;
     return {
       ok: true,
       value: [
@@ -143,8 +144,13 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
     // "You may look at and play those cards for as long as they remain exiled" (stage P41, D-188, CR 406.3): the cards must have been exiled face down.
     const look = arg(clause, 'lookAt');
     if (look !== undefined && (look.kind !== 'flag' || !ctx.exiledFaceDown)) return failure(clause);
+    // Thief of Sanity, Gonti (CR 406.3): the card the controller looked at as a `lookAtTop` exiled it face down is one they may go on looking at, so "you may play that card for as long as it
+    // remains exiled" needs no "look at".
+    const lookedAtOnExile = look === undefined && ctx.exiledFaceDown && ctx.exiledLookedAt;
     // "You may play that card for as long as it remains exiled" (CR 406.3): cards exiled face down stay hidden without "look at", so the permission to play them alone is not read.
-    if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown) return failure(clause);
+    if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown && !lookedAtOnExile) {
+      return failure(clause);
+    }
     ctx.mayPlayLasts = lasts;
     return {
       ok: true,
@@ -153,7 +159,7 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           kind: 'mayPlay',
           objects: { kind: 'moved' },
           lasts,
-          ...(look === undefined ? {} : { lookAt: true as const }),
+          ...(look === undefined && !lookedAtOnExile ? {} : { lookAt: true as const }),
           // "You may cast it this turn" (Lorehold group 1): the permission is to cast, a land card is not played.
           ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),
           // Issue 144 (Grenzo): "you may spend mana as though it were mana of any color to cast that spell".

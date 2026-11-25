@@ -5240,7 +5240,7 @@ export type Effect =
        * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, Lord of Luxury,
        * CR 401.2, 406.3, 608.2d): whose library is looked at, a selector that names exactly one player (a target or an opponent); left out, the controller's own. The controller looks at
        * the cards and chooses; the cards belong to the owner of the library, which is where the rest go (the bottom). Only with `take.to` `exileFaceDownUnlinked`, `hand`... (see
-       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom`.
+       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom` (Thief of Sanity: `graveyard`, "then put the rest into their graveyard").
        */
       readonly from?: PlayerSelector;
       /**
@@ -6649,6 +6649,12 @@ export type Trigger =
        * attacking player.
        */
       readonly attackedYou?: true;
+      /**
+       * "Whenever an opponent attacks you and/or one or more planeswalkers you control" (Cunning Rhetoric, CR 508.1b, 508.6, 603.2c): only when at least one creature of the declaration was
+       * declared as attacking the controller of this ability as a player or a planeswalker they control (an attack on a battle is neither); it triggers once for the declaration, however
+       * many creatures attack. `triggerPlayer` is the attacking player. Not with `attackedYou`, `attackedEnchantedPlayer`, `attackedInitiativeHolder` or `eachAttackedPlayer`.
+       */
+      readonly attackedYouOrPlaneswalkers?: true;
       /**
        * "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b, 603.2c): only when at least one creature of the declaration was declared as attacking
        * the player who has the initiative as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many

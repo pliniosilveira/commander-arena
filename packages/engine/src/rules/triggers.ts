@@ -1241,6 +1241,14 @@ function matches(
       if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
         return false;
       }
+      // CR 508.1b, 508.6 (Cunning Rhetoric): "attacks you and/or one or more planeswalkers you control": a creature was declared as attacking the controller of the ability or a
+      // planeswalker they control (`attackersAt`: the player, or the controller of the planeswalker; null for a battle).
+      if (
+        trigger.attackedYouOrPlaneswalkers === true &&
+        !(occ.attackersAt ?? []).includes(candidate.controller)
+      ) {
+        return false;
+      }
       // CR 726.1, 508.1b (Loot Dispute): "you attack the player who has the initiative": that player was declared as attacked, as a player.
       if (
         trigger.attackedInitiativeHolder === true &&

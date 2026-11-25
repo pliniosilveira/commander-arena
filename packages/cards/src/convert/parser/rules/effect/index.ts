@@ -155,6 +155,7 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { IMPULSE_EXILE_EFFECT_RULES } from './impulse-exile';
 import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
@@ -1374,6 +1375,8 @@ export const EFFECT_UNTAP = tapRule('untap');
 export const EFFECT_RULES = [
   // Finale of Promise (issue 121): the four sentences of its one instruction start like a plain "you may cast", and are tried first.
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
+  // Grand Larceny deck, group A: "look at the top card of that player's library, then exile it face down" and "you may play that card for as long as it remains exiled, and ..." start like the plain look, exile and may-play rules, and are tried first.
+  ...IMPULSE_EXILE_EFFECT_RULES,
   // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.

@@ -301,6 +301,8 @@ export interface LowerContext {
   exiled: 'top' | 'cast' | 'milled' | 'cards' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
+  /** True when the controller looked at the face-down card as it was exiled (Thief of Sanity, Gonti, Siphon Insight: `lookAtTop` then "exile it face down"): they may go on looking at it, CR 406.3. */
+  exiledLookedAt: boolean;
   /** How long the last `mayPlay` of this text lasts (Ignite the Future: "you may play cards this way without paying their mana costs" lasts as the permission before it does), or null. */
   mayPlayLasts: PlayUntil | null;
   /**
@@ -511,6 +513,7 @@ export function newContext(
     xDefined: false,
     exiled: null,
     exiledFaceDown: false,
+    exiledLookedAt: false,
     mayPlayLasts: null,
     thisWay: 'sacrificed',
     discardedCardValue: false,

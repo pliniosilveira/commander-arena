@@ -8190,12 +8190,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           e.take.manaValueAtMost !== undefined ||
           e.take.elseAnyToHand !== undefined ||
           e.revealAll !== undefined ||
-          (e.rest !== 'bottomRandom' && (e.from !== undefined || e.rest !== 'bottomChosen')))
+          (e.rest !== 'bottomRandom' &&
+            // Thief of Sanity (CR 701.20, 404.1): "then put the rest into their graveyard": the cards looked at and not taken go to their owner's graveyard.
+            (e.rest !== 'graveyard' || e.from === undefined) &&
+            (e.from !== undefined || e.rest !== 'bottomChosen')))
       ) {
         issue(
           out,
           `${path}.take`,
-          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order",
+          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order (or into the graveyard)",
         );
       }
       // Harper Recruiter: one card for each of several kinds, put into the hand.

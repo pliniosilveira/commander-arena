@@ -1269,6 +1269,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
   ),
   'trigger.opponent-attacks-you': whenever,
+  'trigger.opponent-attacks-you-or-planeswalkers': whenever,
   'trigger.you-attack-initiative-holder': whenever,
   'trigger.you-complete-dungeon': whenever,
   'effect.opponents-attacking-do-same': spell(
