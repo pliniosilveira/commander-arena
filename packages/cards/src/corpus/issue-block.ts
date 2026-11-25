@@ -34,13 +34,16 @@ export function cardDataText(records: readonly GoldenCard[]): string {
   return records.map(goldenLine).join('\n');
 }
 
-/** The block around an encoded payload: a collapsed section, the payload in lines of 76 characters inside a fenced block. */
-export function cardDataBlock(payload: string, count: number): string {
+/**
+ * A payload in a collapsed section: the summary line, then the payload in lines of 76 characters inside a fenced block. The card
+ * data block and the replay block of an AI report (`replay/ai-report.ts`) are both written this way.
+ */
+export function fencedPayloadBlock(summary: string, payload: string): string {
   const lines: string[] = [];
   for (let i = 0; i < payload.length; i += 76) lines.push(payload.slice(i, i + 76));
   return [
     '<details>',
-    `<summary>${CARD_DATA_SUMMARY} (${count} card(s), ${CARD_DATA_ENCODING})</summary>`,
+    `<summary>${summary}</summary>`,
     '',
     '```text',
     ...lines,
@@ -51,25 +54,41 @@ export function cardDataBlock(payload: string, count: number): string {
 }
 
 /**
- * The payload of the block in an issue's description, its line breaks removed, or null when the description has no block. Throws when
- * the block is open, or holds a character that base64url does not use, so nothing half-read reaches the corpus.
+ * The payload of the first fenced block after the line that holds `summary`, its line breaks removed, or null when the text has no
+ * such block. Throws, naming `what`, when the block is open or holds a character that base64url does not use.
  */
-export function cardDataPayload(description: string): string | null {
-  const lines = description.split(/\r?\n/);
-  const summary = lines.findIndex((line) => line.includes(CARD_DATA_SUMMARY));
-  if (summary < 0) return null;
-  const open = lines.findIndex((line, i) => i > summary && line.trim() === '```text');
+export function fencedPayload(text: string, summary: string, what: string): string | null {
+  const lines = text.split(/\r?\n/);
+  const at = lines.findIndex((line) => line.includes(summary));
+  if (at < 0) return null;
+  const open = lines.findIndex((line, i) => i > at && line.trim() === '```text');
   if (open < 0) return null;
   const close = lines.findIndex((line, i) => i > open && line.trim() === '```');
-  if (close < 0) throw new Error('the card data block is not closed');
+  if (close < 0) throw new Error(`the ${what} block is not closed`);
   const payload = lines
     .slice(open + 1, close)
     .map((line) => line.trim())
     .join('');
   if (!/^[A-Za-z0-9_-]*={0,2}$/.test(payload)) {
-    throw new Error('the card data block holds characters that base64url does not use');
+    throw new Error(`the ${what} block holds characters that base64url does not use`);
   }
   return payload;
+}
+
+/** The block around an encoded payload: a collapsed section, the payload in lines of 76 characters inside a fenced block. */
+export function cardDataBlock(payload: string, count: number): string {
+  return fencedPayloadBlock(
+    `${CARD_DATA_SUMMARY} (${count} card(s), ${CARD_DATA_ENCODING})`,
+    payload,
+  );
+}
+
+/**
+ * The payload of the block in an issue's description, its line breaks removed, or null when the description has no block. Throws when
+ * the block is open, or holds a character that base64url does not use, so nothing half-read reaches the corpus.
+ */
+export function cardDataPayload(description: string): string | null {
+  return fencedPayload(description, CARD_DATA_SUMMARY, 'card data');
 }
 
 const FACE_STRINGS = ['name', 'manaCost', 'typeLine', 'oracleText'] as const;
