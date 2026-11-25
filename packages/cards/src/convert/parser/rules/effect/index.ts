@@ -104,6 +104,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
+import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
@@ -603,7 +604,12 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       literal('destroy '),
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
-        [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+        [
+          ...SELF_OR_PERMANENT_OPERANDS,
+          'noun.target-permanent-of-that-player',
+          // "destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d).
+          'noun.target-permanent-of-that-players-choice',
+        ],
         'effect.destroy',
       ),
     ),
@@ -1662,6 +1668,8 @@ export const EFFECT_RULES = [
   ...FLICKER_RULES,
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
+  // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
+  ...EXILE_SPELL_RULES,
   EFFECT_EXILE,
   // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
   ...WITHERBLOOM_C_EARLY_EFFECT_RULES,

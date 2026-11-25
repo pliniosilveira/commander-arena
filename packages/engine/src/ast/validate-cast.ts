@@ -9,12 +9,25 @@ import type { Ability, AlternativeCost, Cost, SpellText } from './types';
 import { type AstIssue, checkCosts, issue } from './validate-parts';
 
 /** CR 702.33a: the kicker cost is mana, life, or both; X is not a cost the engine can ask for. */
-export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
+export function checkKickerCost(
+  cost: readonly Cost[],
+  path: string,
+  out: AstIssue[],
+  /**
+   * "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): only the kicker keyword (`kicker: true`) may have an {X} in its cost, and then its `xNotZero` says so (an X announced as 0 is not
+   * built); a multikicker never has one.
+   */
+  kicker?: { readonly xNotZero: unknown },
+): void {
   checkCosts(cost, path, out);
   if (!Array.isArray(cost)) return;
+  const hasX = cost.some((c) => c?.kind === 'mana' && c.symbols?.includes('X'));
+  if (kicker?.xNotZero !== undefined && (kicker.xNotZero !== true || !hasX)) {
+    issue(out, path, 'xNotZero is true, for a kicker cost with an {X}');
+  }
   cost.forEach((c, i) => {
     if (c?.kind === 'mana') {
-      if (c.symbols?.includes('X'))
+      if (c.symbols?.includes('X') && kicker?.xNotZero !== true)
         issue(out, `${path}[${i}]`, 'X in a kicker cost is not supported');
     } else if (c?.kind === 'payLife') {
       if (c.amount < 1) issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');

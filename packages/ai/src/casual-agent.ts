@@ -20,6 +20,7 @@ import {
 import type { Agent, DecideContext, FallbackRecord } from './agent';
 import { chooseAmassArmy } from './casual-amass';
 import { chooseCardsToLose, chooseMulligan, chooseTargets } from './casual-choices';
+import { chooseForController } from './casual-chooser';
 import { chooseAttackers, chooseBlockers } from './casual-combat';
 import { upkeepAnswer, wardDiscardAnswer } from './casual-costs';
 import { chooseAuraHost, chooseProliferate } from './casual-counters';
@@ -95,6 +96,8 @@ export function createCasualHandlers(
     targets: (d) => {
       // No legal target for a slot that needs one: the cast is cancelled (it is not chosen again, `casual-no-target.ts`).
       if (hasNoTargetToChoose(d)) return { kind: 'cancel' };
+      // The target of another player's triggered ability that this agent chooses (CR 603.3d, "of that player's choice"): what costs it least.
+      if (d.forController !== undefined) return chooseForController(view, d);
       // The new target of a spell or ability whose target a resolving effect changes (D-181, CR 115.7a).
       const redirected = chooseNewTarget(view, d);
       if (redirected !== null) return redirected;

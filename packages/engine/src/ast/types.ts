@@ -1777,6 +1777,13 @@ export interface TargetSpec {
    */
   readonly sameControllerAs?: string;
   /**
+   * "Destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 115.1, 603.3d, 109.4, ruling 2020-11-10): the player the event of the
+   * trigger is about (`triggerPlayer`: the player dealt the combat damage) chooses the target of this slot as the ability is put on the stack, among the legal targets (the filter is read for the
+   * controller of the ability, "your opponents"); the controller of the ability stays its controller (hexproof, ward, and who "you" is). If that player has left the game, the first opponent of the
+   * controller in turn order who is still in the game chooses. Only a triggered ability with no modes whose event is about a player, and it is the only target slot.
+   */
+  readonly chosenBy?: 'triggerPlayer';
+  /**
    * "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature" (CR 115.3): also none of the
    * targets of these earlier slots of the same ability (`differentFrom` names the nearest one; a third target differs from both). Only with `differentFrom`.
    */
@@ -6894,7 +6901,12 @@ export type Keyword =
    * card: two kicker costs (CR 702.33b) are not supported; Multikicker (CR 702.33c) is its own keyword. Only `mana` and `payLife` costs.
    * What a kicked spell does is written with the `kicked` condition.
    */
-  | { readonly kind: 'kicker'; readonly cost: readonly Cost[] }
+  /**
+   * An {X} in the mana kicker cost ("Kicker {X}. X can't be 0.", Thieving Skydiver, CR 702.33a, 107.3a, 601.2b): the X is announced when the spell is kicked (not at all when it is not, X is
+   * then 0), after the kicker question and before the targets, and the kicker costs that much generic mana (every {X} of the mana cost and of the kicker is the same X). It is the X the
+   * permanent remembers (`enteredX`, CR 107.3m). `xNotZero` ("X can't be 0"): a kicked spell announces an X of at least 1, so the kicker is offered only when it can be paid with X 1.
+   */
+  | { readonly kind: 'kicker'; readonly cost: readonly Cost[]; readonly xNotZero?: true }
   /**
    * CR 702.27a (Buyback): "Buyback [cost]" means "You may pay an additional [cost] as you cast this spell" and "If the buyback cost was paid, put this spell into its owner's hand
    * instead of into that player's graveyard as it resolves." An instant or a sorcery; the caster is asked while casting (CR 601.2b, after the kicker questions and before X and the
@@ -9385,6 +9397,8 @@ export type StaticEffect =
         | { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter }
         // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
         | { readonly kind: 'creatureAttacks' }
+        // Felix Five-Boots (CR 603.2d, 510.2): "If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature the doubler's controller controls dealing combat damage to a player (`dealsCombatDamage` to a player, or a `combatDamageBatch` of creatures you control) counts.
+        | { readonly kind: 'creatureDealsCombatDamageToPlayer' }
         // Yarok, the Desecrated (CR 603.2d, 603.6a): "If a permanent entering causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a permanent entering the battlefield, under any player's control (`entersBattlefield`, `entersBatch`, `landfall`) counts.
         | {
             readonly kind: 'permanentEnters';

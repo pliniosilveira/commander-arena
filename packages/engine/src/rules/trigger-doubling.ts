@@ -107,6 +107,28 @@ function causedBy(
       (trigger.ability.trigger.kind === 'attacks' || trigger.ability.trigger.kind === 'attackBatch')
     );
   }
+  if (cause.kind === 'creatureDealsCombatDamageToPlayer') {
+    // CR 603.2d, 510.2 (Felix Five-Boots): the event is combat damage a creature the doubler's controller controls deals to a player.
+    if (trigger.ability.kind !== 'triggered') return false;
+    const kind = trigger.ability.trigger;
+    if (kind.kind === 'dealsCombatDamage') {
+      // `player` is set exactly when the damaged object is a player (a creature, a planeswalker or a battle has none).
+      if (trigger.player === undefined || trigger.subject === null) return false;
+      const dealer = objectOrLki(state, trigger.subject);
+      return (
+        dealer !== null &&
+        derive(state, dealer).types.includes('creature') &&
+        controllerOf(state, dealer) === doubler.controller
+      );
+    }
+    // A batch names its sources by a filter, not one object: it counts when every source it can name is a creature of the doubler's controller.
+    return (
+      kind.kind === 'combatDamageBatch' &&
+      kind.what.controller === 'you' &&
+      (kind.what.types?.includes('creature') ?? false) &&
+      trigger.controller === doubler.controller
+    );
+  }
   if (cause.kind === 'permanentEnters') {
     // CR 603.2d, 603.6a: the event is a permanent entering, whoever controls it (a token too).
     const kind = trigger.ability.kind === 'triggered' ? trigger.ability.trigger.kind : null;

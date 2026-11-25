@@ -139,6 +139,8 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
+- Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
 - Vronos, Masked Inquisitor: "can't be blocked" given for good is a rules-modifying effect, not a granted ability, so "loses all abilities" does not remove it.
 - Jace, Architect of Thought: the +1 "until your next turn" ability does not end early when its controller leaves the game (CR 800.4m).
 - Sarkhan the Masterless and Sparkshaper Visionary: a planeswalker that becomes a creature keeps its planeswalker subtypes besides the creature types given.

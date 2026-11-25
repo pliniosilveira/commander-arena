@@ -13,7 +13,7 @@
 import type { CastAlternativeKind } from '../ast/features';
 import type { Cost } from '../ast/types';
 import type { CardFace } from '../cards/definition';
-import { flashbackCostOf, manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
+import { flashbackCostOf, kickerCostOf, manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
 
 /** How much each point of X costs: generic mana (one per {X} symbol) and life ("pay X life"). */
 export interface XCost {
@@ -89,6 +89,17 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
  * times as the cost has it) is the X announced (D-274, CR 107.3a: any X in an alternative cost is announced as the spell is cast).
  */
 export function spellXCost(
+  face: CardFace | null,
+  alternative: CastAlternativeKind | undefined,
+  /** "Kicker {X}" (CR 702.33a, 107.3a): the spell was kicked, so the {X} of its kicker cost is announced too, whatever way it is cast. */
+  kicked = false,
+): XCost {
+  const base = spellXCostOfMana(face, alternative);
+  const kickerX = kicked ? xSymbolCount(manaSymbolsOf(kickerCostOf(face) ?? [])) : 0;
+  return kickerX === 0 ? base : { ...base, mana: base.mana + kickerX };
+}
+
+function spellXCostOfMana(
   face: CardFace | null,
   alternative: CastAlternativeKind | undefined,
 ): XCost {

@@ -137,6 +137,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
+  // Grand Larceny deck, group D1 (Thieving Skydiver).
+  'keyword.kicker-x': asIs,
   'keyword.multikicker': asIs,
   'keyword.flashback': asIs,
   // Stage P22: the named alternative costs are lines of their own.
@@ -315,6 +317,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cast-from-hand': whenever,
   'trigger.cast-from-graveyard': whenever,
   'trigger.cast-from-exile': whenever,
+  // Grand Larceny deck, group D1 (Ghostly Pilferer).
+  'trigger.cast-not-from-hand': whenever,
   'trigger.cast-with-keyword': whenever,
   'trigger.cast-or-land-enters-from-exile': whenever,
   'trigger.token-combat-damage-batch': whenever,
@@ -1229,6 +1233,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (D-339): the line of its own, with the card's wording.
   'static.triggers-additional-time-cause': asIs,
   'static.triggers-additional-time-attacking': asIs,
+  // Grand Larceny deck, group D1 (Felix Five-Boots).
+  'static.triggers-additional-time-combat-damage': asIs,
   'static.triggers-additional-time-entering': asIs,
   'static.pt-unspent-mana': asIs,
   'static.unspent-mana-colorless': asIs,
@@ -1691,6 +1697,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
   ),
   'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Grand Larceny deck, group D1 (Smirking Spelljacker).
+  'condition.a-card-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  // Grand Larceny deck, group D1 (Bladegriff Prototype).
+  'noun.target-permanent-of-that-players-choice': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, destroy ${e}.`,
+  ),
   'condition.cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),

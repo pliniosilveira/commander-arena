@@ -1420,6 +1420,23 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         rule: ability.rule,
       };
     }
+    if (first.causeCombatDamage === true) {
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'doubleTriggers',
+              subject: subject.value,
+              cause: { kind: 'creatureDealsCombatDamageToPlayer' },
+            },
+            ...linked,
+          },
+        ],
+        rule: ability.rule,
+      };
+    }
     if (first.causeAttacks === true) {
       return {
         ok: true,

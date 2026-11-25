@@ -216,6 +216,7 @@ export function checkInvariants(state: GameState): string[] {
           ? spellXCost(
               face,
               obj.stack.flashback ? 'flashback' : obj.stack.free ? 'free' : undefined,
+              obj.stack.kicked === true,
             )
           : obj.stack.ability?.kind === 'activated'
             ? abilityXCost(obj.stack.ability.cost)

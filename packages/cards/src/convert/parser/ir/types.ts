@@ -184,6 +184,11 @@ export interface IrNoun extends IrNode {
    */
   readonly sameControllerAsPrevious?: true;
   /**
+   * "target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d): the player the event of the trigger is about chooses the target
+   * (the engine's `TargetSpec.chosenBy` 'triggerPlayer').
+   */
+  readonly chosenByTriggerPlayer?: true;
+  /**
    * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
    * this one, not only the slot just before it.
    */
@@ -2283,6 +2288,8 @@ export type IrStaticEffect =
       readonly cause?: IrNoun;
       /** Issue 81 (Windcrag Siege): "If a creature attacking causes a triggered ability ... to trigger". */
       readonly causeAttacks?: true;
+      /** Felix Five-Boots: "If a creature you control dealing combat damage to a player causes a triggered ability ... to trigger". */
+      readonly causeCombatDamage?: true;
       /** Yarok, the Desecrated: "If a permanent entering causes a triggered ability ... to trigger". */
       readonly causeEnters?: true;
       /** Issue 105 (Panharmonicon): with `causeEnters`, only a permanent that is one of these card types as it enters. */
@@ -2533,6 +2540,8 @@ export interface IrKeyword extends IrNode {
   readonly gift?: 'card' | 'tappedFish';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
+  /** "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): the kicker cost is {X}, announced as at least 1. */
+  readonly xNotZero?: true;
   /** "Equip—Pay {3} or remove a counter from ~" (Gavel of the Righteous, CR 702.6a, 118.3): the other way to pay the equip ability, which `cost` is the first of. */
   readonly orCost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */

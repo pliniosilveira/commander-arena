@@ -1081,11 +1081,27 @@ export function declareTargets(
   upToEntersX = false,
   /** CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures"): the becomes monstrous trigger of the permanent itself can take up to as many targets as the X of its monstrosity. */
   upToMonstrousX = false,
+  /** Bladegriff Prototype (CR 603.3d): only the one target slot of a triggered ability with no modes whose event is about a player can be chosen by that player. */
+  chosenByAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
   specs.forEach((spec, i) => {
     const p = `${path}[${i}]`;
+    if (spec.chosenBy !== undefined) {
+      if (
+        spec.chosenBy !== 'triggerPlayer' ||
+        !chosenByAllowed ||
+        specs.length !== 1 ||
+        spec.what?.kind !== 'object'
+      ) {
+        issue(
+          out,
+          `${p}.chosenBy`,
+          'chosenBy is "triggerPlayer", for the one object target of a triggered ability with no modes whose event is about a player',
+        );
+      }
+    }
     if (typeof spec.id !== 'string' || spec.id === '') {
       issue(out, `${p}.id`, 'target id must be a non-empty string');
     } else if (declared.has(spec.id)) {
@@ -5630,11 +5646,11 @@ function checkSearch(
         'zones are two or more different ones of graveyard, hand and library',
       );
     }
-    if (e.reveal === true || e.shuffle === true || e.sharedLandType !== undefined) {
+    if (e.shuffle === true || e.sharedLandType !== undefined) {
       issue(
         out,
         `${path}.zones`,
-        'a search of several zones has no reveal, shuffle or shared land type: shuffle with a "searched this way" condition',
+        'a search of several zones has no shuffle or shared land type: shuffle with a "searched this way" condition',
       );
     }
     if (e.maxAmount !== undefined) {
