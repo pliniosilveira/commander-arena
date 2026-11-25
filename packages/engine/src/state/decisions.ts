@@ -8,7 +8,7 @@
  */
 import type { CastAlternativeKind } from '../ast/features';
 import type { Cost, TargetSpec, Trigger } from '../ast/types';
-import type { CardType, Color } from '../characteristics';
+import type { CardType, Color, PartyType } from '../characteristics';
 import type { CardId, DecisionId, ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { ChosenTarget } from './chosen';
@@ -810,6 +810,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'exileMore'
     | 'exert'
     | 'clash'
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield": `source` is the card in `seat`'s hand; accepting puts it onto the battlefield.
+    | 'openingHand'
     | 'searchPut';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
@@ -849,6 +851,12 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    */
   readonly otherCost?: readonly Cost[];
   /**
+   * For purpose `'costChoice'` with three ways ("sacrifice a creature, discard a card, or pay 4 life", D-181): `cost` is the first, `otherCost` the second and `moreCost` the third; declining the
+   * first asks again between the second and the third. `costWays` are the indexes of the ways in the face's `additionalCostChoice` that the question is about (two or three).
+   */
+  readonly moreCost?: readonly Cost[];
+  readonly costWays?: readonly number[];
+  /**
    * For purpose `'unlessPays'` when the question is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a) or
    * `'cumulativeUpkeep'` (CR 702.24a; `cost` is the whole payment, the cost of the keyword for each age counter
    * the source now has). Declining sacrifices the source. Absent for every other question.
@@ -887,6 +895,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    // CR 614.12a, 607.2d: "As this enters, choose a player": the options are `seat:<n>`. `cardName`: "choose a nonland card name": `options` are suggestions (names the game shows), any non-empty name is an answer.
+    | 'player'
+    | 'cardName'
     | 'option'
     | 'attackTarget'
     | 'assignOpponent'
@@ -905,7 +916,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     // CR 608.2d, 801.5b: "an opponent separates / chooses / copies ...": the controller of the effect chooses which opponent (`source` is the spell or ability): the options are `seat:<n>`.
     | 'chooseOpponent'
     // CR 310.9a, 310.12a: as a battle enters, its controller chooses its protector from among their living opponents: the options are `seat:<n>`, and `source` is the battle.
-    | 'protector';
+    | 'protector'
+    // CR 309.5a, 701.49b: a player venturing from a room with two arrows leaving it chooses the room to move their venture marker into: the options are the names of the rooms.
+    | 'dungeonRoom';
   readonly options: readonly string[];
   /**
    * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second
@@ -1340,6 +1353,19 @@ export interface ChoosePayOptionsDecision extends DecisionBase {
   readonly choices: readonly (readonly ObjectId[])[];
 }
 
+/**
+ * Each player chooses a party from among creatures they control (Stick Together, CR 700.8d, 101.4): `seat` chooses, for each creature type of `slots` (Cleric, Rogue, Warrior, Wizard,
+ * in that order), up to one creature of `legal` (the creatures they control with that type, as `derive` gives them now); one creature fills at most one slot, so a creature with several of the types
+ * may fill any one of them but not two. Answered with a `chooseParty` action naming the slots filled; the creatures the player controls that are left out are sacrificed once the last player has
+ * chosen. Only asked when a creature of the player has one of the types. Public: the creatures are on the battlefield, and each player knows the parties chosen before theirs (CR 101.4b).
+ */
+export interface ChoosePartyDecision extends DecisionBase {
+  readonly kind: 'chooseParty';
+  /** The spell or ability that is resolving. */
+  readonly source: ObjectId;
+  readonly slots: readonly { readonly type: PartyType; readonly legal: readonly ObjectId[] }[];
+}
+
 export type PendingDecision =
   | PriorityDecision
   | MulliganDecision
@@ -1359,7 +1385,8 @@ export type PendingDecision =
   | ChooseOptionDecision
   | ChooseXDecision
   | ChooseModesDecision
-  | ChoosePayOptionsDecision;
+  | ChoosePayOptionsDecision
+  | ChoosePartyDecision;
 
 export type DecisionKind = PendingDecision['kind'];
 
@@ -1390,6 +1417,7 @@ export const DECISION_KINDS = [
   'chooseX',
   'chooseModes',
   'choosePayOptions',
+  'chooseParty',
 ] as const satisfies readonly DecisionKind[];
 
 /** A UI or AI handler per kind. Exhaustive by construction (SPEC 4.2). */
@@ -1438,6 +1466,8 @@ export function handleDecision<R>(d: PendingDecision, handlers: DecisionHandlers
       return handlers.chooseModes(d);
     case 'choosePayOptions':
       return handlers.choosePayOptions(d);
+    case 'chooseParty':
+      return handlers.chooseParty(d);
     default: {
       const unreachable: never = d;
       return unreachable;

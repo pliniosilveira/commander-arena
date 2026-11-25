@@ -443,7 +443,10 @@ function effectOf(
     case 'addTypes':
       // "... are Juggernauts in addition to their other creature types" (stage P31, D-140, CR 205.1b, 613.1d): layer 4; and, stage P33
       // (D-150), "Enchanted creature ... is an Angel in addition to its other types".
-      return subject.kind === 'filter' || subject.kind === 'attached'
+      // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard", the permanent itself, creature types only.
+      return subject.kind === 'filter' ||
+        subject.kind === 'attached' ||
+        (subject.kind === 'this' && effect.types === undefined)
         ? ok({
             kind: 'setTypes',
             subject,
@@ -501,7 +504,9 @@ function effectOf(
       });
     }
     case 'loseAllAbilities':
-      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says.
+      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says; or (Sludge Monster, CR 613.7) a group the
+      // permanent names, whose filter the engine checks (`validateCard`: no keyword or ability in it).
+      if (subject.kind === 'filter') return ok({ kind: 'loseAllAbilities', subject });
       return subject.kind === 'attached'
         ? ok({ kind: 'loseAllAbilities', subject: { kind: 'attached' } })
         : failure(at);
@@ -604,7 +609,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'definesPt':
       return [
         'static:characteristicPt',
-        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+        effect.count.kind === 'lifeTotalOf'
+          ? 'amount:lifeTotalOf'
+          : effect.count.kind === 'partySize'
+            ? 'amount:partySize'
+            : 'amount:countOf',
       ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
@@ -643,6 +652,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'beginGameOnBattlefield':
+      return ['static:beginGameOnBattlefield'];
     case 'creatureOffBattlefield':
       return ['static:creatureOffBattlefield'];
     case 'chosenType':
@@ -712,6 +723,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'legendRuleDoesntApply':
     case 'chosenTypeGroups':
     case 'graveyardEncore':
+    case 'graveyardUnearth':
       return [...sliverLordNeeds(effect)];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
@@ -750,6 +762,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:damageCantBePrevented'];
     case 'damageAsThoughWither':
       return ['static:damageAsThoughWither'];
+    case 'cantActivateChosenName':
+      return ['static:cantActivateChosenName'];
+    case 'opponentSearchTopOnly':
+      return ['static:opponentSearchTopOnly'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':
@@ -1178,6 +1194,45 @@ export function lowerStatic(ability: Static, ctx: LowerContext): LowerResult<rea
 }
 
 /**
+ * "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ..." (CR 611.3a, 613.1f): one static ability for each keyword, with that keyword's
+ * own condition (the same lowering as a statement with one condition, once for each effect). The conditions name no keyword and no power or toughness (CR 613.8).
+ */
+function lowerEffectConditions(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const { effectConditions = [] } = statement;
+  if (
+    effectConditions.length !== statement.effects.length ||
+    statement.condition !== undefined ||
+    statement.also !== undefined
+  ) {
+    return failure(ability);
+  }
+  const abilities: Ability[] = [];
+  for (const [i, effect] of statement.effects.entries()) {
+    const written = effectConditions[i];
+    if (written === undefined) return failure(ability);
+    ctx.staticCondition = true;
+    ctx.staticSubjectIsSelf = false;
+    const lowered = lowerCondition(written, true, ctx);
+    ctx.staticCondition = false;
+    if (!lowered.ok) return lowered;
+    if (conditionNamesLayerValue(lowered.value)) return failure(ability);
+    const done = lowerPart(
+      { subject: statement.subject, effects: [effect] },
+      ability,
+      lowered.value,
+      ctx,
+    );
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * "• Temur — Creatures you control get +1/+0 and have trample and haste." (CR 607.2d, 614.12; Frostcliff Siege): the changes work only while the permanent has the option
  * it chose as it entered, which the engine reads as the static condition `chosenOption` (what no layer changes).
  */
@@ -1202,6 +1257,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   const { statement } = ability;
   const [first, ...more] = statement.effects;
   if (first === undefined) return failure(ability);
+  // CR 611.3a, 613.1f (Multiclass Baldric): "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ...": each keyword with its own condition.
+  if (statement.effectConditions !== undefined) return lowerEffectConditions(ability, ctx);
   if (statement.option !== undefined && first.kind !== 'doubleTriggers') {
     return lowerOptionStatic(ability, ctx);
   }
@@ -1592,6 +1649,19 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the card's own pregame option.
+  if (first.kind === 'beginGameOnBattlefield') {
+    if (more.length > 0 || statement.subject.det !== 'self' || statement.condition !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures(['ability:static', ...needsOf(first)]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'beginGameOnBattlefield' } }],
+      rule: ability.rule,
+    };
+  }
   if (first.kind === 'noMaxHandSize') {
     if (more.length > 0 || statement.subject.det !== 'you') return failure(ability);
     return lowerNoMaximum(ability);
@@ -1720,6 +1790,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
   'static:creatureOffBattlefield',
+  'static:beginGameOnBattlefield',
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',

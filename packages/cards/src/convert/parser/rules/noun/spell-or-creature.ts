@@ -47,4 +47,45 @@ export const NOUN_TARGET_SPELL_OR_CREATURE = defineRule<IrNoun>({
   ),
 });
 
-export const SPELL_OR_CREATURE_NOUN_RULES = [NOUN_TARGET_SPELL_OR_CREATURE];
+const PERMANENT_ID = 'noun.target-spell-or-permanent';
+
+/**
+ * `noun.target-spell-or-permanent`: "target spell or permanent" (Eight-and-a-Half-Tails, CR 115.1, 601.2c, 405.1: one target, a spell on the stack or a permanent on the battlefield, chosen
+ * as the ability is put on the stack). The engine's `objectOrSpell` slot with any permanent. Not read: another order, a type ("or creature"), a plural, a kind of spell, "target permanent or spell".
+ */
+export const NOUN_TARGET_SPELL_OR_PERMANENT = defineRule<IrNoun>({
+  id: PERMANENT_ID,
+  family: 'noun',
+  leading: ['target'],
+  cites: ['CR 115.1 (Targets)', 'CR 405.1 (Stack)', 'CR 601.2c (Casting Spells)'],
+  examples: ['target spell or permanent'],
+  rejects: [
+    'target permanent or spell',
+    'target spells or permanents',
+    'target spell or permanents',
+    'target creature spell or permanent',
+    'target spell',
+    'spell or permanent',
+  ],
+  parse: node<string, IrNoun>(
+    PERMANENT_ID,
+    map(literal('target spell or permanent'), (raw) => raw),
+    (raw): Bare => {
+      const orSpell: IrFilter = { ...toFilter('stack', NO_PARTS, 'spell'), stackKind: 'spell' };
+      return {
+        kind: 'noun',
+        det: 'target',
+        filter: toFilter('battlefield', NO_PARTS, raw),
+        orSpell,
+        upTo: false,
+        plural: false,
+        other: false,
+      };
+    },
+  ),
+});
+
+export const SPELL_OR_CREATURE_NOUN_RULES = [
+  NOUN_TARGET_SPELL_OR_CREATURE,
+  NOUN_TARGET_SPELL_OR_PERMANENT,
+];

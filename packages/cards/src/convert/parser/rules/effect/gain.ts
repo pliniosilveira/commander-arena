@@ -539,6 +539,66 @@ export const EFFECT_LEAD_GRANTED_ABILITY = defineRule<Clauses>({
 });
 
 /**
+ * `effect.lead-grant-ability-all`: "Until end of turn, Angels you control gain \"{T}: Destroy target creature with power less than this creature's power.\"" (Firja's Retribution, CR 611.2a, 611.2c,
+ * 613.1f): a group of permanents is given an activated or a triggered ability for the turn; which permanents it means is fixed as the effect resolves, so one that comes under your control later
+ * does not get it. Not read: a target subject (`effect.lead-granted-ability`), a mana ability, another duration, a pump with it, a keyword.
+ */
+export const EFFECT_LEAD_GRANT_ABILITY_ALL = defineRule<Clauses>({
+  id: 'effect.lead-grant-ability-all',
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'Until end of turn, Angels you control gain "{T}: Destroy target creature with power less than this creature\'s power."',
+    'Until end of turn, creatures you control gain "When ~ dies, draw a card."',
+  ],
+  rejects: [
+    'Until end of turn, Angels you control gains "{T}: Destroy target creature."',
+    'Until your next turn, Angels you control gain "{T}: Destroy target creature."',
+    'Until end of turn, target Angel gain "{T}: Destroy target creature."',
+    'Until end of turn, Angels you control gain "{T}: Add {G}."',
+    'Until end of turn, Angels you control gain flying',
+    'Until end of turn, other Angels you control gain "{T}: Destroy target creature."',
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.lead-grant-ability-all';
+    const duration = family<IrDuration>('duration')(ctx, pos);
+    if (!duration.ok) return duration;
+    if (duration.value.scope !== 'untilEndOfTurn') return fail(ctx, pos);
+    const comma = literal(', ')(ctx, duration.pos);
+    if (!comma.ok) return comma;
+    const subject = family<IrNoun>('noun', { only: ['noun.plain-permanents'] })(ctx, comma.pos);
+    if (!subject.ok) return subject;
+    const gain = literal(' gain ')(ctx, subject.pos);
+    if (!gain.ok) return gain;
+    const quoted = readQuotedAbility(ctx, gain.pos, { mana: false });
+    if (!quoted.ok) return quoted;
+    if (quoted.value.ability.kind !== 'triggered' && quoted.value.ability.kind !== 'activated') {
+      return fail(ctx, gain.pos);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(
+            rule,
+            'grantAbility',
+            { objects: subject.value, ability: quoted.value },
+            quoted.value.span,
+          ),
+          duration: duration.value,
+        },
+      ],
+      pos: quoted.pos,
+    };
+  },
+});
+
+/**
  * `effect.lead-gain`: "Until end of turn, target creature gets +2/+2 and gains first strike.", "Until end of turn, ~
  * gains trample.": the duration first, then one object that gets a pump, keywords, or both in either order (stage P28:
  * "gains trample and gets +X/+X"). The same continuous effects as `effect.gain-keyword` and `effect.pump`, said in the
@@ -621,6 +681,7 @@ export const GAIN_RULES = [
   EFFECT_GAIN_KEYWORD_EACH,
   EFFECT_GAIN_KEYWORD_THOSE,
   EFFECT_LEAD_GRANTED_ABILITY,
+  EFFECT_LEAD_GRANT_ABILITY_ALL,
   EFFECT_LEAD_GAIN,
   EFFECT_LEAD_GAIN_ALL,
 ];

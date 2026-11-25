@@ -11,6 +11,7 @@ import { arrangementActions, orderedChoices } from './rules/arrange-choices';
 import { cardTypeCovers } from './rules/card-types-choice';
 import { defaultDivision } from './rules/combat-flow';
 import { crewChoices, keepChoices } from './rules/crew-choices';
+import { enumerateParties } from './rules/party';
 import { distinctAssignments } from './rules/sacrifice-groups';
 import { sharesLandType } from './rules/share-type';
 import { targetAnswerError } from './rules/target-choice';
@@ -29,6 +30,8 @@ function combinations<T>(items: readonly T[], k: number): T[][] {
 
 /** Longest list of answers `legalActionsForDecision` builds for a choice among many permanents. */
 const MAX_LISTED_CHOICES = 500;
+/** The most parties a `chooseParty` decision lists (CR 700.8d); any legal party is accepted. */
+const MAX_LISTED_PARTIES = 200;
 
 /** Most combinations `firstCombinations` looks at while it waits for `limit` that `accept` takes. */
 const MAX_COMBINATIONS_TRIED = 200_000;
@@ -405,8 +408,12 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       ];
     case 'chooseOption':
       // CR 614.12a: one action per option, in the decision's order (every creature type, or five colors).
+      // CR 201.2: "choose a nonland card name" is free text, so these are only the suggestions; with none to suggest, the name of the permanent that asks is one.
       return [
-        ...d.options.map((option) => ({ kind: 'chooseOption' as const, option })),
+        ...(d.purpose === 'cardName' && d.options.length === 0 && d.sourceName !== ''
+          ? [d.sourceName]
+          : d.options
+        ).map((option) => ({ kind: 'chooseOption' as const, option })),
         // CR 733: the counters removed to pay a cost can be taken back, which rewinds the activation.
         ...(d.forCost === true ? [{ kind: 'cancel' as const }] : []),
         { kind: 'concede' },
@@ -431,6 +438,15 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       return [
         ...d.sets.map((modes) => ({ kind: 'chooseModes' as const, modes: [...modes] })),
         ...(d.forTrigger === true ? [] : [{ kind: 'cancel' as const }]),
+        { kind: 'concede' },
+      ];
+    case 'chooseParty':
+      // CR 700.8d: the parties the creatures allow, the fullest first (up to a limit; any legal party is accepted, the empty one included).
+      return [
+        ...enumerateParties(d.slots, MAX_LISTED_PARTIES).map((party) => ({
+          kind: 'chooseParty' as const,
+          party,
+        })),
         { kind: 'concede' },
       ];
     case 'choosePayOptions':

@@ -50,6 +50,8 @@ describe('the dimensions', () => {
     // The costs and durations the engine pays and ends (scenario-xx-activated-*, -pump-*).
     expect(SUPPORTED_FEATURES.costKinds).toEqual([
       'tap',
+      // CR 107.6: the untap symbol {Q}.
+      'untap',
       'mana',
       'payLife',
       'payXLife',
@@ -118,6 +120,7 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
+      'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',
       'counterPutOnThisThisTurn',
@@ -166,6 +169,7 @@ describe('the dimensions', () => {
       'yourTurn',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
+      'playedLandThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
@@ -211,6 +215,7 @@ describe('the dimensions', () => {
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
+      'thisSuspended',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
@@ -280,11 +285,14 @@ describe('the dimensions', () => {
       // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
       'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
+      'beginGameOnBattlefield',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
+      // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated."
+      'cantActivateChosenName',
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',
@@ -295,6 +303,7 @@ describe('the dimensions', () => {
       'cantGainLife',
       'damageCantBePrevented',
       'damageAsThoughWither',
+      'opponentSearchTopOnly',
       'playerProtection',
       'cantHaveCounters',
       'cantBeSacrificed',
@@ -326,6 +335,7 @@ describe('the dimensions', () => {
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
       'grantEncoreToGraveyardCards',
+      'grantUnearthToGraveyardCards',
     ]);
     expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.
@@ -396,7 +406,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('amount:countOf')).toBe(true);
     expect(isFeatureSupported('static:costReduction')).toBe(true);
     expect(isFeatureSupported('condition:controlCommander')).toBe(true);
-    expect(isFeatureSupported('cost:untap')).toBe(false);
+    expect(isFeatureSupported('cost:untap')).toBe(true);
     // D-232: the cost of an activated ability (Coin of Fate); an additional cost of a spell refuses it.
     expect(isFeatureSupported('cost:exileFromGraveyard')).toBe(true);
     expect(isFeatureSupported('selector:anyOf')).toBe(true);

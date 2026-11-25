@@ -85,6 +85,7 @@ import {
   riderOf,
   slotOf,
 } from './rules/graveyard-play';
+import { initiativeAfterLoss } from './rules/initiative';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
@@ -93,13 +94,14 @@ import { sameCombination } from './rules/mana-outcomes';
 import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
+import { isLegalParty } from './rules/party';
 import { answerResolutionPile } from './rules/pile-answer';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
 import { matchesGroups } from './rules/sacrifice-groups';
 import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
-import { bottomCards, keepHand, takeMulligan } from './rules/setup';
+import { answerOpeningHand, bottomCards, keepHand, takeMulligan } from './rules/setup';
 import { sharesLandType } from './rules/share-type';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
@@ -117,10 +119,12 @@ import {
   answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionDredge,
+  answerResolutionDungeonRoom,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
   answerResolutionOptional,
+  answerResolutionParty,
   answerResolutionPayAmount,
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
@@ -330,9 +334,15 @@ function concede(state: GameState, seat: SeatId): Result {
   // CR 725.4 (D-127): a monarch who concedes hands the designation on at once.
   const left = leaveGame(next, [seat]);
   events.push(...left.events);
-  const handed = monarchAfterLoss(left.state);
+  const monarchHanded = monarchAfterLoss(left.state);
+  events.push(...monarchHanded.events);
+  // CR 726.4: a player with the initiative who concedes hands it on at once (and the player who takes it ventures, CR 726.2).
+  const handed = initiativeAfterLoss(monarchHanded.state);
   events.push(...handed.events);
-  const end = evaluateGameEnd(handed.state);
+  // CR 726.4: the same for the initiative.
+  const initiative = initiativeAfterLoss(handed.state);
+  events.push(...initiative.events);
+  const end = evaluateGameEnd(initiative.state);
   events.push(...end.events);
   if (end.state.result) return ok(end.state, events);
   // CR 800.4j: the game goes on without the seat that left; the next seat in turn order gets priority.
@@ -429,6 +439,11 @@ function answerConfirm(
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
+  // CR 103.6: "begin the game with this card on the battlefield?", asked after the mulligans and before the first turn.
+  if (d.purpose === 'openingHand') {
+    const r = answerOpeningHand(state, accept);
+    return r === null ? fail('The card cannot begin on the battlefield') : ok(r.state, r.events);
+  }
   // CR 701.30c: "put the card you revealed on the bottom of your library?", asked of each clashing player as the clash resolves.
   if (d.purpose === 'clash') return finishResolutionAnswer(answerResolutionClash(state, accept));
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
@@ -555,6 +570,11 @@ function answerChooseOption(
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
   }
+  if (d.purpose === 'dungeonRoom') {
+    // CR 701.49b, 309.5a: the room a player venturing chose among the arrows leaving their room.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionDungeonRoom(state, option));
+  }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
@@ -639,7 +659,10 @@ function answerChooseOption(
     return ok(played.state, [answered, ...played.events]);
   }
   const chosen = chosenFromOption(d.purpose, option, d.options);
-  if (chosen === null || !d.options.includes(option)) return fail('That is not one of the options');
+  // CR 201.2: a card name is typed, so the options of that question are only suggestions; every other choice is one of the options.
+  if (chosen === null || (d.purpose !== 'cardName' && !d.options.includes(option))) {
+    return fail('That is not one of the options');
+  }
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
@@ -1263,6 +1286,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (!isLegalModeSet(d.sets, action.modes)) return fail('That is not a legal choice of modes');
       if (d.forTrigger === true) return answerTriggerModeChoice(state, action.modes);
       return answerModes(state, action.modes);
+    }
+    case 'chooseParty': {
+      // CR 700.8d, 101.4 (Stick Together): the party the player chose among the creatures they control.
+      if (action.kind !== 'chooseParty') return fail('Choose a party');
+      if (!isLegalParty(d.slots, action.party)) return fail('That is not a legal party');
+      return finishResolutionAnswer(answerResolutionParty(state, action.party));
     }
     case 'choosePayOptions': {
       // CR 601.2f-h, 702.51a, 702.126a, 702.66a (D-120): what is tapped or exiled for the cost of a spell being

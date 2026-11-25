@@ -22,6 +22,7 @@ import type { IrAmount, IrNoun, IrQuotedAbility, IrToken } from '../../ir/types'
 import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
+import { PROTECTION_COLORS } from '../keyword/protection';
 import { defineRule, family, node, spanned } from '../registry';
 import {
   namedTokenQuotedAbility,
@@ -30,6 +31,7 @@ import {
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
 import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
+import { TOKEN_COPY_EXCEPT_PT } from './copy-except-pt';
 import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
@@ -200,8 +202,17 @@ const CHANGELING_WORD: Parser<string> = map(
   () => 'changeling',
 );
 
-/** The words a token's own description may name as keywords: those the engine can grant, and changeling. */
-const TOKEN_KEYWORD_WORD: Parser<string> = choice(KEYWORD_WORD, CHANGELING_WORD);
+/**
+ * "protection from black" (CR 702.16a, 111.4): a token's own keyword, one word that carries its colors ("protection from black and from red"); the lowering reads it back into the
+ * engine's protection from colors. Other qualities (a card type, multicolored, a player) are not read.
+ */
+const PROTECTION_WORD: Parser<string> = map(
+  PROTECTION_COLORS,
+  (colors) => `protection from ${colors.join(' and from ')}`,
+);
+
+/** The words a token's own description may name as keywords: those the engine can grant, changeling and protection from colors. */
+const TOKEN_KEYWORD_WORD: Parser<string> = choice(KEYWORD_WORD, CHANGELING_WORD, PROTECTION_WORD);
 const TOKEN_KEYWORD_WORDS: Parser<string[]> = keywordWordsOf(TOKEN_KEYWORD_WORD);
 
 /**
@@ -445,6 +456,10 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a tapped 2/2 black Zombie creature token',
     'thirteen tapped 2/2 black Zombie creature tokens',
     'two 2/2 black Zombie Knight creature tokens with menace',
+    // CR 702.16a (Hunted Horror): a token that has protection from a color.
+    'two 3/3 green Centaur creature tokens with protection from black',
+    'a 2/2 white Knight creature token with protection from red and from blue',
+    'a 1/1 white Soldier creature token with flying and protection from black',
     // Stage P35 (D-176, CR 111.4, 113.1): an ability the token has, in quotes, alone or after keywords; a quote inside the quote is the ability of
     // the token it makes.
     'a 0/1 colorless Eldrazi Spawn creature token with "Sacrifice ~: Add {C}."',
@@ -969,6 +984,7 @@ export const TOKEN_RULES = [
   TOKEN_COPY_EXCEPT_ADDITIVE_TYPES,
   // Espers to Magicite: "..., except it's an artifact and it loses all other card types".
   TOKEN_COPY_EXCEPT_SET_TYPES,
+  TOKEN_COPY_EXCEPT_PT,
   // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.

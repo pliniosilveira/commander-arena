@@ -8,7 +8,7 @@
 import type { ObjectId } from '../ids';
 import type { GameState } from '../state/types';
 import { copiableValues } from './copiable';
-import { hasLostAbilities } from './lost-abilities';
+import { hasLostAbilitiesBase } from './lost-abilities-core';
 
 /** One static control effect on a permanent: who controls it (the monarch) and when the effect began. */
 export interface StaticControl {
@@ -36,7 +36,7 @@ function scan(state: GameState): Found {
     const host = state.objects[source.attachedTo];
     if (host?.zone !== 'battlefield') continue;
     // CR 613.1f: a permanent that lost all abilities has no static ability left to apply.
-    if (hasLostAbilities(state, id)) continue;
+    if (hasLostAbilitiesBase(state, id)) continue;
     for (const a of copiableValues(state, source).abilities) {
       if (a.kind !== 'static' || a.static.kind !== 'controlAttached') continue;
       const list = found.get(host.id) ?? [];

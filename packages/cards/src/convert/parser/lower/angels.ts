@@ -11,10 +11,11 @@ import type {
   CountAmount,
   ManaSpentAmount,
 } from '@commander-arena/engine';
-import type { IrAbility, IrClause, IrStaticEffect } from '../ir/types';
+import type { IrAbility, IrClause, IrCondition, IrStaticEffect } from '../ir/types';
 import { lowerAmount } from './amounts';
 import { withoutZone } from './attachments';
 import { amountArg, arg, type Effects } from './clauses';
+import { lowerCondition } from './conditions';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter } from './nouns';
 import {
@@ -65,6 +66,8 @@ export type AngelStaticEffect = Extract<
       | 'cantGainLife'
       | 'damageCantBePrevented'
       | 'damageAsThoughWither'
+      | 'cantActivateChosenName'
+      | 'opponentSearchTopOnly'
       | 'preventDamageToThis'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
@@ -79,6 +82,8 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'cantGainLife' ||
     effect.kind === 'damageCantBePrevented' ||
     effect.kind === 'damageAsThoughWither' ||
+    effect.kind === 'cantActivateChosenName' ||
+    effect.kind === 'opponentSearchTopOnly' ||
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
@@ -160,6 +165,47 @@ function lowerOthersEnter(
   };
 }
 
+/**
+ * "As long as you have a full party, prevent all damage that would be dealt to equipped creature." (CR 615.1, 611.3a): the engine's `preventDamageToThis` of the attached
+ * permanent, with the condition read for the controller of the Equipment or Aura as the damage would be dealt.
+ */
+function lowerConditionalPrevention(
+  ability: Static,
+  effect: Extract<AngelStaticEffect, { kind: 'preventDamageToThis' }>,
+  condition: IrCondition,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { subject } = ability.statement;
+  if (subject.det !== 'enchanted' && subject.det !== 'equipped') return failure(ability);
+  if (effect.removeCounter !== undefined) return failure(ability);
+  const blocked = missingFeatures([
+    'ability:static',
+    'static:preventDamageToThis',
+    'ability:staticCondition',
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  ctx.staticCondition = true;
+  ctx.staticSubjectIsSelf = false;
+  const lowered = lowerCondition(condition, true, ctx);
+  ctx.staticCondition = false;
+  if (!lowered.ok) return lowered;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'preventDamageToThis',
+          subject: { kind: 'attached' },
+          scope: effect.scope,
+        },
+        condition: lowered.value,
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** One static ability of this slice, or the failure that says what the engine lacks. */
 export function lowerAngelStatic(
   ability: Static,
@@ -168,8 +214,13 @@ export function lowerAngelStatic(
   const { statement } = ability;
   const { subject, effects } = statement;
   const [first] = effects;
-  if (first === undefined || statement.condition !== undefined || statement.also !== undefined) {
-    return failure(ability);
+  if (first === undefined || statement.also !== undefined) return failure(ability);
+  // CR 615.1, 611.3a (Multiclass Baldric): "As long as you have a full party, prevent all damage that would be dealt to equipped creature." is the one statement here that holds
+  // while a condition does; the engine reads the condition where the damage would be dealt.
+  if (statement.condition !== undefined) {
+    return first.kind === 'preventDamageToThis' && effects.length === 1
+      ? lowerConditionalPrevention(ability, first, statement.condition, ctx)
+      : failure(ability);
   }
   if (first.kind === 'othersEnterWithCounters') {
     return effects.length === 1 ? lowerOthersEnter(ability, first, ctx) : failure(ability);
@@ -197,8 +248,20 @@ export function lowerAngelStatic(
         abilities.push({ kind: 'static', static: { kind: 'cantGainLife', who: effect.who } });
         break;
       }
+      case 'opponentSearchTopOnly': {
+        // CR 701.23, 614.1a: a rule of the game about the opponents of the controller; the line is its own statement.
+        if (effects.length !== 1) return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:opponentSearchTopOnly']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'opponentSearchTopOnly', count: effect.count },
+        });
+        break;
+      }
       case 'damageCantBePrevented':
-      case 'damageAsThoughWither': {
+      case 'damageAsThoughWither':
+      case 'cantActivateChosenName': {
         // CR 615.12, 702.80a: a rule of the game, whoever controls the permanent; the line is its own statement.
         if (effects.length !== 1) return failure(ability);
         const blocked = missingFeatures(['ability:static', `static:${effect.kind}`]);
@@ -207,14 +270,19 @@ export function lowerAngelStatic(
         break;
       }
       case 'preventDamageToThis': {
-        if (subject.det !== 'self') return failure(ability);
+        const attached = subject.det === 'enchanted' || subject.det === 'equipped';
+        if (subject.det !== 'self' && !attached) return failure(ability);
+        // "Prevent all damage that would be dealt to enchanted creature": the permanent the Aura or Equipment is attached to, no counter removed (CR 303.4, 301.5).
+        if (attached && (effects.length !== 1 || effect.removeCounter !== undefined)) {
+          return failure(ability);
+        }
         const blocked = missingFeatures(['ability:static', 'static:preventDamageToThis']);
         if (blocked.length > 0) return failure(ability, blocked);
         abilities.push({
           kind: 'static',
           static: {
             kind: 'preventDamageToThis',
-            subject: { kind: 'this' },
+            subject: attached ? { kind: 'attached' } : { kind: 'this' },
             scope: effect.scope,
             ...(effect.removeCounter === undefined ? {} : { removeCounter: effect.removeCounter }),
           },
@@ -254,6 +322,8 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:cantGainLife',
   'static:damageCantBePrevented',
   'static:damageAsThoughWither',
+  'static:cantActivateChosenName',
+  'static:opponentSearchTopOnly',
   'static:preventDamageToThis',
   'static:cantCastThis',
   'condition:ownTurnNumber',

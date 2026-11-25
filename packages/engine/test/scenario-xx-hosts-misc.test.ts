@@ -524,6 +524,15 @@ describe('"When you cycle this card, destroy up to X target artifacts" (CR 702.2
     expect(zoneOf(g, 'mine')).toBe('battlefield');
   });
 
+  test('while X is still to be chosen, the other seats cannot see which card is being cycled (CR 602.2b)', () => {
+    const g = board();
+    g.act(0).activate(MAMMOTH);
+    expect(g.state.pending?.kind).toBe('chooseX');
+    const other = JSON.stringify(getView(g.state, 1));
+    expect(other).not.toContain(MAMMOTH);
+    expect(JSON.stringify(getView(g.state, 0))).toContain(MAMMOTH);
+  });
+
   test('up to: fewer targets than X is allowed', () => {
     const g = board();
     g.act(0).activate(MAMMOTH, { x: 2, pay: true });

@@ -16,6 +16,8 @@ export function citysBlessingHolders(state: GameState): SeatId[] {
 /** The players who have a designation now. */
 export function designationHolders(state: GameState, designation: Designation): SeatId[] {
   if (designation === 'citysBlessing') return citysBlessingHolders(state);
+  // CR 726.1, 726.3: the initiative is held by one player at most, as the monarch is.
+  if (designation === 'initiative') return state.initiative === undefined ? [] : [state.initiative];
   return state.monarch === null ? [] : [state.monarch];
 }
 

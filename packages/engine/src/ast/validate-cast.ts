@@ -421,6 +421,32 @@ export function checkCastFace(
   if (!replicable && (mentionsReplicated(abilities) || mentionsReplicated(spell))) {
     issue(out, path, 'the replicated condition needs a replicate ability (CR 702.56a)');
   }
+  // CR 702.56a (Psionic Ritual): a replicate cost that taps permanents is paid with the cost of tapping permanents the cast already has (a `tapPermanents` alternative cost, convoke, improvise
+  // or delve), which the engine does not combine.
+  const tapsReplicate = abilities.some(
+    (a) =>
+      a.kind === 'keyword' &&
+      a.keyword.kind === 'replicate' &&
+      Array.isArray(a.keyword.cost) &&
+      a.keyword.cost.some((c) => c?.kind === 'tapPermanents'),
+  );
+  if (
+    tapsReplicate &&
+    (alternatives.some((a) => a?.kind === 'tapPermanents') ||
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      ))
+  ) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'a replicate cost that taps permanents with a tapPermanents alternative cost, convoke, improvise or delve is not supported',
+    );
+  }
   // D-135, CR 702.174: "Gift a card" is on a card that is cast (a permanent or an instant or sorcery); the conditions and
   // selectors that read the gift need a gift to be promised.
   const gifts = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'gift');

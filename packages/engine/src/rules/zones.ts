@@ -681,6 +681,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           entering === null ? undefined : entersColorExcept(entering.abilities),
           // CR 119.4, 119.8: a player whose life total cannot change can pay only 0.
           lifeTotalIsLocked(before, enterController) ? 0 : getSeat(before, enterController).life,
+          { state: before, seat: enterController },
         ),
         source: old.id,
         sourceName: info?.name ?? '',
@@ -1087,6 +1088,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
+    // CR 702.84a, 613.1f: the Unearth was one a static ability gave the card in the graveyard, which its face does not have.
+    ...(to === 'battlefield' &&
+    request.alt === 'unearth' &&
+    printed !== null &&
+    definitionOf(next, printed).faces[faceIndex]?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'unearth',
+    ) !== true
+      ? { unearthGranted: true as const }
+      : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").
     ...(to === 'battlefield' && riotGivesHaste(riotAnswers) ? { riotHaste: true as const } : {}),
     // CR 715.3d: an Adventure that resolved is exiled, and its owner may cast the card from there.
@@ -1217,6 +1227,17 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       ],
     };
   }
+  // CR 400.7a (Eight-and-a-Half-Tails): an effect that changed the color of a permanent spell on the stack goes on applying to the permanent the spell becomes.
+  if (to === 'battlefield' && old.zone === 'stack') {
+    next = {
+      ...next,
+      continuousEffects: next.continuousEffects.map((e) =>
+        e.change.kind === 'setColors' && e.objects.includes(old.id)
+          ? { ...e, objects: [...e.objects, newId] }
+          : e,
+      ),
+    };
+  }
   // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the permanent a creature spell with that rider becomes has the abilities.
   if (
     to === 'battlefield' &&
@@ -1339,6 +1360,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: {
         ...next.turnLog,
         discardedOrFromLibrary: [...(next.turnLog.discardedOrFromLibrary ?? []), newId],
+        graveyardedFromLibrary: [...(next.turnLog.graveyardedFromLibrary ?? []), newId],
       },
     };
   }

@@ -12,6 +12,8 @@ import { parseTypeLine } from './type-line';
 export interface ConvertedCharacteristics {
   /** Everything but the abilities: what a fixture can be compared with. */
   readonly characteristics: Characteristics;
+  /** The whole number a printed `1+*` adds, for the stat that prints one (the face's characteristic-defining ability must state it). */
+  readonly offsets: { readonly power?: number; readonly toughness?: number };
   /** Problems with the printed data that make the card unsupported. */
   readonly reasons: string[];
 }
@@ -48,8 +50,36 @@ export function convertCharacteristics(face: StoredFace): ConvertedCharacteristi
       defense: defense.value,
       oracleText: face.oracleText,
     },
+    offsets: {
+      ...(power.offset === undefined ? {} : { power: power.offset }),
+      ...(toughness.offset === undefined ? {} : { toughness: toughness.offset }),
+    },
     reasons,
   };
+}
+
+/**
+ * CR 208.2a: a printed `1+*` is read as a star the card's own characteristic-defining ability sets to the whole number ("equal to 1 plus the number of ..."); the ability must be a sum
+ * that adds that number, or the card keeps the problem it had before.
+ */
+function offsetProblems(
+  offsets: ConvertedCharacteristics['offsets'],
+  abilities: readonly Ability[],
+): string[] {
+  const out: string[] = [];
+  for (const key of ['power', 'toughness'] as const) {
+    const offset = offsets[key];
+    if (offset === undefined) continue;
+    const stated = abilities.some((a) => {
+      if (a.kind !== 'static' || a.static.kind !== 'characteristicPt') return false;
+      const amount = a.static[key];
+      return (
+        typeof amount === 'object' && amount.kind === 'sum' && amount.of.some((p) => p === offset)
+      );
+    });
+    if (!stated) out.push(`unsupported ${key} value "${offset}+*"`);
+  }
+  return out;
 }
 
 /**
@@ -153,7 +183,7 @@ export function convertFace(
   rules: readonly GrammarRule[] = DEFAULT_RULES,
   spellRules: readonly SpellRule[] = DEFAULT_SPELL_RULES,
 ): ConvertedFace {
-  const { characteristics, reasons } = convertCharacteristics(stored);
+  const { characteristics, offsets, reasons } = convertCharacteristics(stored);
   const isSpellCard =
     characteristics.types.includes('instant') || characteristics.types.includes('sorcery');
   const parsed = parseFaceText(
@@ -204,6 +234,7 @@ export function convertFace(
       : []),
     ...(boxed ?? parsed.abilities),
   ];
+  reasons.push(...offsetProblems(offsets, abilities));
   const finalChapter = finalChapterOf(characteristics.subtypes, parsed.lines);
   return {
     face: {

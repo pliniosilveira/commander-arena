@@ -54,6 +54,14 @@ export function usesSharesWithSource(written: unknown): boolean {
   if (written === null || typeof written !== 'object') return false;
   if (Array.isArray(written)) return written.some(usesSharesWithSource);
   const record = written as Record<string, unknown>;
+  // Haunted One (CR 603.2e, 613.1f): a triggered ability a static ability grants is lowered, and its own check made, as an ability about the creature that has it ("it" is
+  // that creature), so what its words say is not the granting ability's.
+  if (record.kind === 'grantAbility') {
+    const quoted = record.ability as { readonly ability?: { readonly kind?: unknown } } | undefined;
+    if (quoted?.ability?.kind === 'triggered') return false;
+  }
+  // An ability in quotes is read as the ability of the permanent that has it, with its own check (Folk Hero: a granted triggered ability).
+  if (record.kind === 'quoted') return false;
   if (record.sharesCreatureTypeWithSource === true) return true;
   return Object.values(record).some(usesSharesWithSource);
 }

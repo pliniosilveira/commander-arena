@@ -78,3 +78,14 @@ test('a collection answer is read by set and number, not by position; foreign im
   });
   expect(parseListedImages(null).size).toBe(0);
 });
+
+test('a printing that shows another printed name than the card is marked as renamed', () => {
+  const prints = parseCardPrints({
+    data: [
+      { id: 'a', name: 'Giada', printed_name: 'Miku', set: 'sld', image_uris: img('a') },
+      { id: 'b', name: 'Giada', printed_name: 'Giada', set: 'fdc', image_uris: img('b') },
+      { id: 'c', name: 'Giada', set: 'fdn', image_uris: img('c') },
+    ],
+  });
+  expect(prints.map((p) => p.renamed)).toEqual([true, false, false]);
+});

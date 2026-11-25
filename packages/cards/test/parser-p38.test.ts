@@ -247,6 +247,29 @@ describe('"As an additional cost to cast ~, A or B." (CR 118.8, 601.2b)', () => 
     expect(imported.definition.faces[0]?.additionalCostChoice).toEqual([first, second]);
   });
 
+  test('a choice of three ways (CR 118.8, 601.2b)', () => {
+    const imported = face(
+      'As an additional cost to cast ~, sacrifice a creature, discard a card, or pay 4 life.',
+    );
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.reasons).toEqual([]);
+    expect(imported.definition.faces[0]?.additionalCostChoice).toEqual([
+      [{ kind: 'sacrifice', what: { types: ['creature'] } }],
+      [{ kind: 'discard', count: 1 }],
+      [{ kind: 'payLife', amount: 4 }],
+    ]);
+  });
+
+  test.each([
+    'As an additional cost to cast ~, sacrifice a creature, sacrifice an artifact, or pay {2}.',
+    'As an additional cost to cast ~, pay X life, discard a card, or pay {2}.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or pay 4 life, or pay {2}.',
+  ])('"%s" is dropped whole', (text) => {
+    const imported = face(text);
+    expect(imported.support.status).toBe('unsupported');
+    expect(imported.definition.faces[0]?.additionalCostChoice).toBeUndefined();
+  });
+
   test.each([
     'As an additional cost to cast ~, pay X life or discard a card.',
     'As an additional cost to cast ~, pay {X} or discard a card.',

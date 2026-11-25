@@ -80,3 +80,9 @@ export {
   tableReport,
   VALUE_BANDS,
 } from './table-report';
+export {
+  type AgentWeights,
+  DEFAULT_WEIGHTS,
+  type PartialWeights,
+  withWeights,
+} from './weights';

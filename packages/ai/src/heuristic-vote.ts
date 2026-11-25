@@ -15,6 +15,7 @@ import {
 } from '@commander-arena/engine';
 import { evaluate } from './evaluate';
 import { applyOrNull, playOut } from './heuristic-sim';
+import type { AgentWeights } from './weights';
 
 /** The vote that asked is over: another decision, or the end of the game. */
 const voteOver =
@@ -35,6 +36,7 @@ export function chooseVoteByOutcome(
   d: ChooseOptionDecision,
   sample: GameState | undefined,
   fallback: Action,
+  weights: AgentWeights,
 ): Action {
   const asked = sample?.pending;
   if (
@@ -53,7 +55,7 @@ export function chooseVoteByOutcome(
     if (cast === null) continue;
     const end = playOut(cast, d.seat, {}, voteOver(d), VOTE_STEPS);
     if (end === null) continue;
-    const { score } = evaluate(getView(end, d.seat), d.seat);
+    const { score } = evaluate(getView(end, d.seat), d.seat, weights);
     if (score > bestScore) {
       best = action;
       bestScore = score;

@@ -293,15 +293,14 @@ export function additionalWayText(costs: readonly Cost[]): string {
 }
 
 /**
- * The two ways to pay an additional cost to cast a spell (CR 118.8, D-181) as the preview lists them: "Sacrifice an artifact or creature, or pay
+ * The two or three ways to pay an additional cost to cast a spell (CR 118.8, D-181) as the preview lists them: "Sacrifice an artifact or creature, or pay
  * {4}". Empty for none.
  */
-export function additionalCostChoiceText(
-  choice: readonly [readonly Cost[], readonly Cost[]] | undefined,
-): string {
+export function additionalCostChoiceText(choice: readonly (readonly Cost[])[] | undefined): string {
   if (choice === undefined) return '';
-  const first = additionalWayText(choice[0]);
-  return `${first.replace(/^./, (c) => c.toUpperCase())}, or ${additionalWayText(choice[1])}`;
+  const ways = choice.map(additionalWayText);
+  const text = `${ways.slice(0, -1).join(', ')}, or ${ways[ways.length - 1]}`;
+  return text.replace(/^./, (c) => c.toUpperCase());
 }
 
 export { tappedWhat };

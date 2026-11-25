@@ -347,6 +347,7 @@ export function checkFilter(
       'triggerPlayer',
       'defendingPlayer',
       'monarch',
+      'chosenPlayer',
     ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);
@@ -410,6 +411,7 @@ export function checkFilter(
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'discardedOrFromLibraryThisTurn',
+    'putFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
@@ -595,6 +597,13 @@ export function checkFilter(
     issue(
       out,
       `${path}.discardedOrFromLibraryThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
+  if (f.putFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.putFromLibraryThisTurn`,
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
@@ -938,6 +947,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
+  f.putFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.dealtDamageThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
@@ -2246,9 +2256,11 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderColors':
     case 'commanderManaValue':
     case 'commanderCasts':
+    case 'partySize':
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'creatureTypesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
     case 'chosenPlayerLead':
@@ -2274,6 +2286,15 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'multiple':
       checkAmount({ ...a, of: 0 }, path, NO_SCOPE, out);
       checkStateAmount(a.of, `${path}.of`, out, label);
+      break;
+    case 'extreme':
+      // CR 608.2c (Valiant Changeling: "can't reduce ... by more than {5}"): the lesser or the greater of amounts that each read the game as it is now.
+      checkAmount({ ...a, of: [0, 0] }, path, NO_SCOPE, out);
+      if (Array.isArray(a.of)) {
+        a.of.forEach((part, i) => {
+          checkStateAmount(part, `${path}.of[${i}]`, out, label);
+        });
+      }
       break;
     case 'sum':
       checkAmount({ ...a, of: [0, 0] }, path, NO_SCOPE, out);
@@ -2474,6 +2495,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         }
       }
       break;
+    case 'creatureTypesAmong':
+      // CR 205.3m (Valiant Changeling): the distinct creature types among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'creatureTypesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'creatureTypesAmong counts the creature types of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'creatureTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2): the distinct names among the battlefield permanents a filter matches; no combat, source power, power or toughness is read.
       if (a.filter === undefined || a.filter === null) {
@@ -2635,6 +2683,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
       checkSinglePlayer(a.player, `${path}.player`, 'poisonShortfall', out);
+      break;
+    case 'partySize':
+      // CR 700.8 (Archpriest of Iona): the controller's own party now; valid wherever an amount of an effect is.
       break;
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the controller's own experience counters now; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
@@ -3003,12 +3054,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'countOf needs a filter');
       } else if (
         a.filter.owner !== undefined &&
-        kindOf(a.filter.owner) === 'target' &&
+        (kindOf(a.filter.owner) === 'target' || kindOf(a.filter.owner) === 'defendingPlayer') &&
         a.filter.zone !== undefined &&
         a.filter.zone !== 'battlefield'
       ) {
         // D-649 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
-        // the amount is read, with the targets.
+        // the amount is read, with the targets. CR 508.5 (Guiltfeeder): "defending player loses 1 life for each card in their graveyard": the one player the attacking source attacks.
         const { owner, ...rest } = a.filter;
         checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
         if (rest.controller !== undefined || rest.controlledBy !== undefined) {
@@ -3025,7 +3076,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.filter.owner`,
-          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player owns",
+          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player or the defending player owns",
         );
         if (rest.controlledBy !== undefined) {
           issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
@@ -3125,7 +3176,7 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' = 'countOf',
+  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' | 'cardTypesAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -3154,7 +3205,7 @@ function checkCountOnly(
     );
   }
   if (
-    kind === 'greatestPowerAmong' &&
+    (kind === 'greatestPowerAmong' || kind === 'cardTypesAmong') &&
     filterSome(
       amount.filter,
       (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
@@ -3163,7 +3214,9 @@ function checkCountOnly(
     issue(
       out,
       `${path}.filter.zone`,
-      'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
+      kind === 'cardTypesAmong'
+        ? 'only the card types of cards outside the battlefield and the stack are counted (CR 613.8)'
+        : 'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, readsCombatOrSource)) {
@@ -3282,14 +3335,52 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     checkCountOnly(amount, path, out, 'greatestPowerAmong', false);
     return;
   }
+  // CR 700.8 (Archpriest of Iona): "equal to the number of creatures in your party": a characteristic-defining ability only.
+  if (amount?.kind === 'partySize') {
+    if (plain) {
+      issue(
+        out,
+        path,
+        'a party size is the amount of a characteristic-defining ability, not a plain static power/toughness modifier',
+      );
+    }
+    return;
+  }
   if (amount?.kind === 'sum') {
     // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".
     if (!Array.isArray(amount.of) || amount.of.length < 2) {
       issue(out, `${path}.of`, 'a sum needs at least two counts');
     } else {
       amount.of.forEach((part, i) => {
-        checkCountOnly(part, `${path}.of[${i}]`, out, 'countOf', plain);
+        // CR 604.3, 208.2a ("1 plus the number of ..."): a characteristic-defining ability's sum may also have a whole number and a count of card types among the cards of a zone.
+        if (!plain && typeof part === 'number') {
+          if (!Number.isSafeInteger(part) || part < 1) {
+            issue(out, `${path}.of[${i}]`, 'a number in a sum is a whole number of 1 or more');
+          }
+          return;
+        }
+        checkCountOnly(
+          part,
+          `${path}.of[${i}]`,
+          out,
+          !plain && (part as { kind?: string })?.kind === 'cardTypesAmong'
+            ? 'cardTypesAmong'
+            : 'countOf',
+          plain,
+        );
       });
+      if (!plain && !amount.of.some((part) => typeof part !== 'number')) {
+        issue(out, `${path}.of`, 'a sum counts something besides numbers');
+      }
+    }
+    return;
+  }
+  // CR 205.2a, 604.3 (Nighthawk Scavenger): "equal to the number of card types among cards in your opponents' graveyards": a characteristic-defining ability only.
+  if (amount?.kind === 'cardTypesAmong') {
+    if (plain) {
+      issue(out, path, 'a card type count is the amount of a characteristic-defining ability');
+    } else {
+      checkCountOnly(a, path, out, 'cardTypesAmong', false);
     }
     return;
   }
@@ -3317,6 +3408,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       checkManaSymbols(cost.symbols, `${path}.symbols`, out);
       if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
         issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
+      }
+      if (cost.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blueAsAnyColor is given by an effect to the abilities it grants, a card does not write it',
+        );
       }
       break;
     case 'tap':
@@ -3777,7 +3875,21 @@ export function loyaltyOffPlaneswalkerIssues(
   });
 }
 
-export const DESIGNATIONS = ['monarch', 'citysBlessing'];
+/** Whether a player selector can name more than one player (the effects of one player, as the designations, refuse it). */
+function namesSeveralPlayers(player: PlayerSelector | undefined): boolean {
+  return (
+    player?.kind === 'eachPlayer' ||
+    player?.kind === 'eachOpponent' ||
+    player?.kind === 'eachOtherOpponent' ||
+    player?.kind === 'eachPlayerExcept' ||
+    player?.kind === 'attackedPlayers' ||
+    player?.kind === 'triggerDamagedPlayers' ||
+    player?.kind === 'combatDamagedByNamed' ||
+    player?.kind === 'all'
+  );
+}
+
+export const DESIGNATIONS = ['monarch', 'citysBlessing', 'initiative'];
 
 /** The players a condition names: no target and no trigger subject to read there (D-131). */
 function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): void {
@@ -3870,6 +3982,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'cardLeftYourGraveyard':
     case 'descendedThisTurn':
+    case 'playedLandThisTurn':
     case 'yourMainPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
@@ -4062,6 +4175,18 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       if (!isOneOf(c.stat, ['power', 'toughness'])) {
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      break;
+    case 'subjectMatches':
+      // CR 603.10a (Endless Evil): the filter describes the permanent the event is about; where it may stand is checked with the trigger (validate.ts).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
       }
       break;
     case 'subjectControlledByYou':
@@ -4271,6 +4396,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'thisSuspended':
+      // CR 702.62b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
     case 'thisOnBattlefield':
       // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
       break;
@@ -4397,6 +4525,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
+    // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
+    (e?.kind === 'lookAtTop' && e.take?.to === 'exileFaceDownUnlinked') ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -4680,13 +4810,26 @@ function checkChooseMove(
   if (
     (!perPlayer && (sel.greatest !== undefined || sel.least !== undefined)) ||
     sel.dealtCombatDamageToYou !== undefined ||
-    (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
+    // Glorious Protector (CR 608.2d, 610.3): "exile any number of ... creatures you control until ~ leaves the battlefield" is the one other place an `anyNumber` choice goes, among
+    // the permanents on the battlefield (`moveToZone.until`, checked with the move).
+    (sel.anyNumber !== undefined &&
+      sel.minCardTypes === undefined &&
+      (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(
       out,
       path,
       'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least (a move has them only when players choose, `moveToZone.player`)',
     );
+  }
+  if (sel.anyNumber !== undefined && sel.minCardTypes === undefined) {
+    if (sel.anyNumber !== true || sel.optional !== true || sel.count !== undefined) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        'anyNumber of a move choice is true, with optional and no count (the player may choose none)',
+      );
+    }
   }
   if (sel.greatest !== undefined && sel.least !== undefined) {
     issue(out, path, 'greatest and least exclude each other');
@@ -4987,6 +5130,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
       break;
     case 'this':
     case 'target':
+      checkRef(ref, 'object', path, scope, out);
+      break;
+    case 'attached':
+      // CR 707.2, 303.4b (Endless Evil, Helm of the Host): "a token that's a copy of enchanted creature": the permanent the Aura or Equipment is attached to.
       checkRef(ref, 'object', path, scope, out);
       break;
     case 'chosen':
@@ -5624,6 +5771,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectMatches':
     case 'subjectStat':
     case 'subjectPowerLessThanThis':
     case 'subjectGreaterThanEach':
@@ -6155,6 +6303,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
       }
       break;
+    case 'balance':
+      // CR 101.4, 701.21a, 701.9 (Magus of the Balance): every player keeps the smallest number of lands, cards in hand or creatures.
+      if (!isOneOf(e.what, ['lands', 'hand', 'creatures'])) {
+        issue(out, `${path}.what`, "balance is about 'lands', 'hand' or 'creatures'");
+      }
+      break;
+    case 'chooseParty':
+      // CR 700.8d, 701.21a (Stick Together): each player the selector names chooses a party among the creatures they control and sacrifices the rest.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      break;
     case 'keepOrSacrifice':
       // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
@@ -6191,6 +6349,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'another player can sacrifice only permanents they choose: use a choose selector',
           );
         }
+      }
+      if (e.exploit !== undefined) {
+        // CR 702.110b: the sacrifice of the engine's own Exploit ability; a card writes the keyword.
+        issue(
+          out,
+          `${path}.exploit`,
+          "exploit is the sacrifice of the engine's Exploit ability (CR 702.110a); a card writes the keyword",
+        );
       }
       if (e.byController !== undefined) {
         // D-196: "its controller sacrifices it": a named permanent, sacrificed by whoever controls it; no player and no choice.
@@ -6879,18 +7045,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (
-        e.player?.kind === 'eachPlayer' ||
-        e.player?.kind === 'eachOpponent' ||
-        e.player?.kind === 'eachOtherOpponent' ||
-        e.player?.kind === 'eachPlayerExcept' ||
-        e.player?.kind === 'attackedPlayers' ||
-        e.player?.kind === 'triggerDamagedPlayers' ||
-        e.player?.kind === 'combatDamagedByNamed' ||
-        e.player?.kind === 'all'
-      ) {
+      if (namesSeveralPlayers(e.player)) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');
       }
+      break;
+    case 'takeInitiative':
+      // CR 726.3: one player takes the initiative, so the selector names exactly one.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (namesSeveralPlayers(e.player)) {
+        issue(out, `${path}.player`, 'only one player can have the initiative (CR 726.3)');
+      }
+      break;
+    case 'venture':
+      // CR 701.49: any number of players may venture (in APNAP order); Undercity is the one dungeon there is.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.dungeon !== 'undercity') issue(out, `${path}.dungeon`, 'the dungeon is undercity');
       break;
     case 'cascade':
       // CR 702.85a: no operand; it is the effect of "When you cast this spell" and stands nowhere else.
@@ -6916,6 +7085,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkRef(e.object, 'object', `${path}.object`, scope, out);
       } else {
         issue(out, `${path}.object`, 'changeTarget names a target spell or ability');
+      }
+      // CR 115.7b: the named new target is the ability's source.
+      if (e.to !== undefined && kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'changeTarget changes a target to the source of the ability');
       }
       break;
     case 'copySpell':
@@ -7315,6 +7488,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (scope.triggerSubject !== 'permanent') {
           issue(out, `${path}.objects`, "'triggerCard' needs a trigger about a permanent");
         }
+      } else if (kindOf(e.objects) === 'triggerSubject') {
+        // CR 603.2, 400.3 ("Whenever a creature you control becomes blocked, you may return it to its owner's hand"): the permanent the trigger is about, still on the battlefield,
+        // goes to a zone that is not the battlefield (a permanent put onto the battlefield would be a new object, CR 400.7).
+        checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
+        if (e.to === 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'the permanent a trigger is about is not put onto the battlefield',
+          );
+        }
       } else if (kindOf(e.objects) === 'thisCard') {
         // D-110: the card the source became, in an ability; it can be put onto the battlefield only.
         if (scope.owner !== 'ability') {
@@ -7485,14 +7669,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.
       if (e.to === 'exile') {
         const chosen = kindOf(e.objects) === 'choose' ? (e.objects as ChooseSelector) : null;
+        // Glorious Protector (CR 610.3): permanents of the controller chosen and exiled until the permanent with the ability leaves the battlefield.
+        const untilExile =
+          e.untilSourceLeaves === true &&
+          chosen !== null &&
+          chosen.anyNumber === true &&
+          (chosen.filter?.zone ?? 'battlefield') === 'battlefield';
         if (
-          chosen === null ||
-          (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard')
+          !untilExile &&
+          (chosen === null ||
+            (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard'))
         ) {
           issue(
             out,
             `${path}.to`,
             "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
+          );
+        }
+      }
+      // Glorious Protector (CR 610.3): "until this creature leaves the battlefield" is for a choice of permanents exiled by an ability of a permanent.
+      if (e.untilSourceLeaves !== undefined) {
+        if (
+          e.untilSourceLeaves !== true ||
+          e.to !== 'exile' ||
+          scope.owner !== 'ability' ||
+          kindOf(e.objects) !== 'choose' ||
+          (e.objects as ChooseSelector).anyNumber !== true ||
+          ((e.objects as ChooseSelector).filter?.zone ?? 'battlefield') !== 'battlefield'
+        ) {
+          issue(
+            out,
+            `${path}.untilSourceLeaves`,
+            "untilSourceLeaves is true, with to 'exile' and an anyNumber choice of permanents on the battlefield, in an ability of a permanent",
           );
         }
       }
@@ -7610,10 +7818,77 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isCount(e.take?.max) || e.take.max < 1) {
         issue(out, `${path}.take.max`, 'max must be a positive integer');
       }
+      // Gonti (CR 406.3, 608.2d): the library of one other player, one card of it exiled face down and remembered by nobody; the rest on the bottom of that library in a random order.
+      if (e.from !== undefined) {
+        checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      }
+      if ((e.from !== undefined) !== (e.take?.to === 'exileFaceDownUnlinked')) {
+        issue(
+          out,
+          `${path}.from`,
+          "from (another player's library) and take.to 'exileFaceDownUnlinked' go together",
+        );
+      }
+      if (
+        e.take?.to === 'exileFaceDownUnlinked' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.kinds !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.all !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.manaValueAtMost !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          e.rest !== 'bottomRandom')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order",
+        );
+      }
+      // Harper Recruiter: one card for each of several kinds, put into the hand.
+      if (e.take?.kinds !== undefined) {
+        const kinds = e.take.kinds;
+        if (!Array.isArray(kinds) || kinds.length < 2) {
+          issue(out, `${path}.take.kinds`, 'kinds is a list of two or more filters');
+        } else {
+          for (const [i, k] of kinds.entries()) checkFilter(k, `${path}.take.kinds[${i}]`, out);
+          if (e.take.max !== kinds.length) {
+            issue(out, `${path}.take.max`, 'max is the number of kinds');
+          }
+        }
+        if (
+          (e.take.to !== undefined && e.take.to !== 'hand') ||
+          e.take.min !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.all !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.manaValueAtMost !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          Object.keys(e.take.filter ?? {}).length > 0
+        ) {
+          issue(
+            out,
+            `${path}.take`,
+            'a take of one card for each kind goes into the hand, with an empty filter and no min, hidden, all, tapped, totalManaValue, manaValueAtMost or elseAnyToHand',
+          );
+        }
+      }
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree', 'top'])
+        !isOneOf(e.take.to, [
+          'hand',
+          'battlefield',
+          'exileFaceDown',
+          'exileFaceDownUnlinked',
+          'castFree',
+          'top',
+        ])
       ) {
         issue(
           out,
@@ -7727,6 +8002,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.take.elseAnyToHand`,
           'elseAnyToHand is true, for one optional card taken onto the battlefield unrevealed (to battlefield, hidden, max 1, no min or totalManaValue)',
         );
+      }
+      // CR 122.6, 614.1c: "onto the battlefield with three +1/+1 counters on it": the counters the cards put onto the battlefield enter with.
+      if (e.take?.withCounters !== undefined) {
+        const w = e.take.withCounters;
+        if (e.take.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.take.withCounters`,
+            'counters on entering are only for the battlefield',
+          );
+        }
+        if (typeof w?.counter !== 'string' || w.counter === '') {
+          issue(out, `${path}.take.withCounters.counter`, 'counter name must be non-empty');
+        }
+        if (!isCount(w?.count) || w.count < 1) {
+          issue(out, `${path}.take.withCounters.count`, 'counter count must be a positive integer');
+        }
+        if (w?.also !== undefined) {
+          issue(out, `${path}.take.withCounters.also`, 'one kind of counter is put on');
+        }
       }
       // CR 701.20, 608.2c: "any number of permanent cards from among them onto the battlefield": the cards revealed, a number the player chooses up to all of them.
       if (
@@ -9103,6 +9398,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'gainActivatedAbilitiesOf':
       // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (e.blueAsAnyColor !== undefined && e.blueAsAnyColor !== true) {
+        issue(out, `${path}.blueAsAnyColor`, 'blueAsAnyColor must be true when present');
+      }
+      if (kindOf(e.from) === 'target') {
+        // Grell Philosopher (CR 611.2c, 613.1f): "each Horror you control gains all activated abilities of target artifact": a group, fixed as the effect resolves, gets those of a target.
+        checkRef(e.from, 'object', `${path}.from`, scope, out);
+        if (kindOf(e.to) === 'each') {
+          checkObjectSelector(e.to, `${path}.to`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.to`,
+            'the abilities of a target go to a group (each) the effect names',
+          );
+        }
+        break;
+      }
       if (kindOf(e.to) !== 'this') {
         issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
       }
@@ -9110,6 +9422,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
       } else {
         checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blue mana is spent as any color only for the abilities of a target',
+        );
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');

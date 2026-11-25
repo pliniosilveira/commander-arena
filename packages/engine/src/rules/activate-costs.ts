@@ -37,6 +37,7 @@ import { type RemoveCountersSpec, removeCountersRefusal } from './remove-counter
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
+import { untapPermanent } from './untap';
 import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
@@ -44,6 +45,8 @@ import { moveObject } from './zones';
 /** An activation cost split by how it is paid. */
 export interface CostBreakdown {
   readonly tap: boolean;
+  /** The untap symbol {Q} (CR 107.6): untap the permanent the ability belongs to. */
+  readonly untap: boolean;
   readonly life: number;
   /** "Pay {E}{E}" (CR 107.14, 118.3, issue 105): the energy counters the payer removes from themselves. */
   readonly energy: number;
@@ -73,6 +76,8 @@ export interface CostBreakdown {
   readonly hasX: boolean;
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the mana of the cost is of the color the source chose as it entered. */
   readonly onlyChosenColor: boolean;
+  /** "You may spend blue mana as though it were mana of any color to activate those abilities" (Grell Philosopher, CR 609.4b): blue mana pays a symbol of any color of the cost. */
+  readonly blueAsAnyColor: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -112,6 +117,7 @@ export interface CostBreakdown {
  */
 export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
+  let untap = false;
   let life = 0;
   let energy = 0;
   let discardThis = false;
@@ -147,6 +153,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let removeAmong: CostBreakdown['removeAmong'] = null;
   let removeAmongCosts = 0;
   let onlyChosenColor = false;
+  let blueAsAnyColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
   const mana: string[] = [];
@@ -156,6 +163,9 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     switch (cost.kind) {
       case 'tap':
         tap = true;
+        break;
+      case 'untap':
+        untap = true;
         break;
       case 'payLife':
         // D-135: an amount that reads the game was worked out as the ability was activated (`rules/activate-adjust.ts`).
@@ -228,6 +238,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'mana':
         mana.push(...withX(cost.symbols, x));
         if (cost.onlyChosenColor === true) onlyChosenColor = true;
+        if (cost.blueAsAnyColor === true) blueAsAnyColor = true;
         break;
       case 'sacrifice':
         sacrifices += 1;
@@ -303,10 +314,12 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   }
   return {
     tap,
+    untap,
     life,
     energy,
     hasX: hasX(abilityXCost(costs)),
     onlyChosenColor,
+    blueAsAnyColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -361,6 +374,11 @@ function immediateRefusal(
     // CR 602.5a, 302.6: a creature's {T} ability needs it to have been under control since the turn began.
     if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
   }
+  // CR 107.6, 602.5a: an untapped permanent can't be untapped to pay the cost, and a creature's {Q} ability needs it under control since the turn began.
+  if (costs.untap) {
+    if (source.zone !== 'battlefield' || !source.tapped) return 'it is already untapped';
+    if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
+  }
   // CR 119.4: life can be paid only if the life total is at least the amount.
   // A cost of no life is payable at any life total, a negative one included (the player cannot lose the game, CR 104.3b, issue 254).
   if (costs.life > 0 && costs.life > getSeat(state, seat).life) {
@@ -413,6 +431,12 @@ export function payImmediateCosts(
   if (costs.tap) {
     state = patchObject(state, source, { tapped: true });
     events.push({ kind: 'tapped', object: source, by: seat });
+  }
+  if (costs.untap) {
+    // CR 122.1d: a stun counter is removed instead of untapping, and the cost is paid all the same.
+    const untapped = untapPermanent(state, source);
+    state = untapped.state;
+    events.push(...untapped.events);
   }
   if (costs.life > 0) {
     const life = getSeat(state, seat).life;
@@ -530,13 +554,15 @@ export function planActivationMana(
   const x = costs.hasX ? ({ hasX: true } as const) : {};
   // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability": the color the source chose as it entered, or none.
   const only = costs.onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
+  // Grell Philosopher (CR 609.4b): blue mana may pay any color of the cost.
+  const blue = costs.blueAsAnyColor ? ({ blueAsAnyColor: true } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true, ...x, ...only }
-      : { ability: true, ...x, ...only, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x, ...only, ...blue }
+      : { ability: true, ...x, ...only, ...blue, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 

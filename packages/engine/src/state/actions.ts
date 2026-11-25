@@ -4,7 +4,7 @@
  * actions the given seat may take now.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { CardType } from '../characteristics';
+import type { CardType, PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { ChosenTarget } from './chosen';
@@ -163,6 +163,14 @@ export type Action =
    * mana. Which mana each pays is worked out by the engine (colors first).
    */
   | { readonly kind: 'choosePayOptions'; readonly objects: readonly ObjectId[] }
+  /**
+   * Answer a chooseParty decision (CR 700.8d): the party, one entry for each type filled (up to one each of Cleric, Rogue, Warrior and Wizard), each a different creature the
+   * decision lists for that type. An empty list chooses no one.
+   */
+  | {
+      readonly kind: 'chooseParty';
+      readonly party: readonly { readonly type: PartyType; readonly object: ObjectId }[];
+    }
   /** Answer declareAttackers: an empty list attacks with nothing. */
   | {
       readonly kind: 'declareAttackers';
