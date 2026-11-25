@@ -62,3 +62,9 @@ export {
   type TableOptions,
   type TableResult,
 } from './table';
+export {
+  type AgentWeights,
+  DEFAULT_WEIGHTS,
+  type PartialWeights,
+  withWeights,
+} from './weights';

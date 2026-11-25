@@ -19,18 +19,28 @@ import { hasKeyword } from './casual-view';
 import { creatureValue } from './evaluate';
 import { potentialBlockers } from './greedy-combat';
 import { duel } from './heuristic-duel';
+import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
 
 /** Whether `blocker` blocking `attacker` is a block a sensible player makes. */
-function sensible(attacker: ObjectView, blocker: ObjectView): boolean {
+function sensible(attacker: ObjectView, blocker: ObjectView, weights: AgentWeights): boolean {
   const r = duel(attacker, blocker);
-  return !r.blockerDies || (r.attackerDies && creatureValue(attacker) >= creatureValue(blocker));
+  return (
+    !r.blockerDies ||
+    (r.attackerDies && creatureValue(attacker, weights) >= creatureValue(blocker, weights))
+  );
 }
 
 export class OpponentModel {
+  /** The weights the creature values of a sensible block are read with (the agent's). */
+  private readonly weights: AgentWeights;
   private offered = 0;
   private made = 0;
   private readonly bySeat = new Map<SeatId, { offered: number; made: number }>();
   private seenTurn = -1;
+
+  constructor(weights: AgentWeights = DEFAULT_WEIGHTS) {
+    this.weights = weights;
+  }
 
   /** Reads the declare-blockers step of the agent's own turn, once per turn. */
   observe(view: GameView): void {
@@ -51,7 +61,8 @@ export class OpponentModel {
       // The defender is the player attacked; an attack on a permanent has no seat to credit.
       const defender = a.target.kind === 'player' ? a.target.seat : null;
       const offered = potentialBlockers(view, attacker).filter(
-        (b) => (defender === null || b.controller === defender) && sensible(attacker, b),
+        (b) =>
+          (defender === null || b.controller === defender) && sensible(attacker, b, this.weights),
       );
       if (offered.length === 0) continue;
       this.offered += 1;
