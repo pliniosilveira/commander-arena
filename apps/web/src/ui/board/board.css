@@ -338,6 +338,11 @@
   overscroll-behavior-x: contain;
 }
 
+.board-field-rows-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
 .board-field-rows::-webkit-scrollbar {
   display: none;
 }
