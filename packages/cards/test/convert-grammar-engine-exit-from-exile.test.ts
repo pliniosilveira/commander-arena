@@ -808,7 +808,6 @@ describe('Journey to the Lost City: exile four, roll a d20 and read the results 
     'At the beginning of your upkeep, exile the top four cards of your library, then roll a d20.\n1—9 | You may put a land card from among those cards onto the battlefield.\n10—19 | Create a 2/2 green Wolf creature token, then put a +1/+1 counter on it for each creature card among those cards.\n20 | Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',
     { manaCost: '{3}{G}', colors: ['G'] },
   );
-  type Rolled = { kind: 'dieRolled'; result: number };
   const play = (seed: number) => {
     const g = scenario()
       .seed(seed)
@@ -822,9 +821,7 @@ describe('Journey to the Lost City: exile four, roll a d20 and read the results 
       .build();
     g.advanceTo('upkeep', { turn: 'next' });
     g.passAll();
-    const result = (g.events as { kind: string; result?: number }[])
-      .filter((e): e is Rolled => e.kind === 'dieRolled')
-      .map((e) => e.result)[0];
+    const result = g.events.flatMap((e) => (e.kind === 'dieRolled' ? [e.result] : []))[0];
     return { g, result };
   };
 
