@@ -264,7 +264,8 @@ export function lowerCondition(
       // from exile); anywhere else it is a test the engine does not run for that shape.
       const blocked = missingFeatures(['condition:thisSuspended']);
       if (blocked.length > 0) return failure(c, blocked);
-      if (ctx?.interveningCondition !== true) return failure(c, []);
+      // Greater Gargadon (CR 602.5b): or the "activate only if" of an activated ability, read with no context of a trigger (the lowering of the ability then makes it work from exile).
+      if (ctx !== undefined && ctx.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisSuspended' });
     }
     case 'thisOnBattlefield': {

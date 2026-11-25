@@ -469,6 +469,8 @@ describe('supported feature gate', () => {
       // Issue 102: "enters from a graveyard" and "leaves your graveyard during your turn".
       'entersBattlefieldFromGraveyard',
       'entersBattlefieldFromYourGraveyard',
+      // Exit from Exile precon (issue 168): "a land you control enters from exile".
+      'entersBattlefieldFromExile',
       'leftGraveyardDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',

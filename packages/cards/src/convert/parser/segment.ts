@@ -1639,6 +1639,12 @@ function costSpans(text: string, end: number): Span[] {
       .slice(0, end)
       .matchAll(/\bfrom among (?:other )?[a-z]+s(?:, [a-z]+s)+,? and [a-z]+s you control\b/giu),
   ].map((m) => ({ start: m.index ?? 0, end: (m.index ?? 0) + m[0].length }));
+  // Greater Gargadon: "Sacrifice an artifact, creature, or land" is one cost: the commas of a list of card types the player chooses among do not separate costs.
+  lists.push(
+    ...[
+      ...text.slice(0, end).matchAll(/\bsacrifice an? [a-z]+(?:, [a-z]+)+,? or [a-z]+(?= *$|,)/giu),
+    ].map((m) => ({ start: m.index ?? 0, end: (m.index ?? 0) + m[0].length })),
+  );
   for (const comma of topLevelCommas(text, 0, end)) {
     if (lists.some((list) => comma > list.start && comma < list.end)) continue;
     spans.push(trimmed(text, from, comma));

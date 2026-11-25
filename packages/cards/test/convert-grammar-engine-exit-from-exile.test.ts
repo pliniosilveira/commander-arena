@@ -1091,3 +1091,43 @@ describe('"Exile cards from the top of your library until you exile a land card.
     expect(g.find({ name: 'Serra Angel', zone: 'library', seat: 0 })).toHaveLength(1);
   });
 });
+
+describe('"Sacrifice an artifact, creature, or land: Remove a time counter from ~. Activate only if ~ is suspended." (CR 113.6b, 602.5b, 702.62b, 701.21)', () => {
+  const gargadon = parsed(
+    'SYNTHETIC Suspended Beast',
+    'Creature — Beast',
+    'Suspend 10—{R}\nSacrifice an artifact, creature, or land: Remove a time counter from ~. Activate only if ~ is suspended.',
+    { manaCost: '{5}{R}', power: '9', toughness: '7', colors: ['R'] },
+  );
+  const build = () =>
+    scenario()
+      .define(gargadon)
+      .seat(0)
+      .hand(gargadon.name)
+      .battlefield('Mountain', 'Grizzly Bears', 'Forest')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('while suspended, sacrificing a permanent removes a time counter', () => {
+    const g = build();
+    g.act(0).suspend(gargadon.name, { pay: true });
+    expect(g.object(gargadon.name).counters?.time).toBe(10);
+    g.act(0).activate({ name: gargadon.name, zone: 'exile' });
+    g.act(0).choosePermanents('Grizzly Bears');
+    g.passAll();
+    g.expect.noObject('Grizzly Bears', { zone: 'battlefield' });
+    expect(g.object(gargadon.name).counters?.time).toBe(9);
+  });
+
+  test('a land can be sacrificed too', () => {
+    const g = build();
+    g.act(0).suspend(gargadon.name, { pay: true });
+    g.act(0).activate({ name: gargadon.name, zone: 'exile' });
+    g.act(0).choosePermanents('Forest');
+    g.passAll();
+    expect(g.object(gargadon.name).counters?.time).toBe(9);
+  });
+});

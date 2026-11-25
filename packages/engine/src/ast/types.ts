@@ -9336,7 +9336,7 @@ export type Ability =
        * The zone the ability functions from (CR 113.6b). Default the battlefield; Cycling uses the hand and
        * Unearth (CR 702.84a, D-124) the graveyard.
        */
-      readonly functionsIn?: 'battlefield' | 'hand' | 'graveyard';
+      readonly functionsIn?: 'battlefield' | 'hand' | 'graveyard' | 'exile';
       /**
        * "This ability costs {4} less to activate if an opponent controls four or more nonbasic lands" (D-135, CR 601.2f, 602.2b):
        * when the condition holds as the ability is activated, `generic` is taken off the generic part of its mana cost (never

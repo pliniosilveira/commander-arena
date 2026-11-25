@@ -2707,7 +2707,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       if (
         a.functionsIn !== undefined &&
-        !isOneOf(a.functionsIn, ['battlefield', 'hand', 'graveyard'])
+        !isOneOf(a.functionsIn, ['battlefield', 'hand', 'graveyard', 'exile'])
       ) {
         issue(out, `${path}.functionsIn`, `unknown zone ${String(a.functionsIn)}`);
       }

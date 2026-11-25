@@ -597,8 +597,23 @@ export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[])
   if (where === undefined) return;
   if (where === 'exile') {
     // CR 113.6b, 702.62b (Nihilith): a triggered ability of a card in exile, which needs the card suspended (the card has no other way to be in exile with its abilities running).
+    // Greater Gargadon (CR 113.6b, 602.5b, 702.62b): or an activated ability that can be activated only while its card is suspended.
+    if (a.kind === 'activated') {
+      if (!JSON.stringify(a.activateOnlyIf ?? null).includes('"thisSuspended"')) {
+        issue(
+          out,
+          `${path}.functionsIn`,
+          "an activated ability that works from exile needs 'activateOnlyIf' thisSuspended",
+        );
+      }
+      return;
+    }
     if (a.kind !== 'triggered') {
-      issue(out, `${path}.functionsIn`, 'only a triggered ability works from exile here');
+      issue(
+        out,
+        `${path}.functionsIn`,
+        'only a triggered or an activated ability works from exile here',
+      );
       return;
     }
     if (!JSON.stringify(a.interveningIf ?? null).includes('"thisSuspended"')) {
