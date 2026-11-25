@@ -90,6 +90,36 @@ export const SYNTHETIC_D1_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever this creature deals combat damage to a player, destroy target nonland permanent of that player's choice that one of your opponents controls."
+  singleFace({
+    name: 'SYNTHETIC Choosing Griffin',
+    manaCost: ['4'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Griffin'],
+    colors: [],
+    colorIdentity: [],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      "Whenever this creature deals combat damage to a player, destroy target nonland permanent of that player's choice that one of your opponents controls.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+        targets: [
+          {
+            id: 't1',
+            chosenBy: 'triggerPlayer',
+            what: {
+              kind: 'object',
+              filter: { zone: 'battlefield', notTypes: ['land'], controller: 'opponent' },
+            },
+          },
+        ],
+        effect: { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+      },
+    ],
+  }),
   // "Reach"
   singleFace({
     name: 'SYNTHETIC Reach Spider',

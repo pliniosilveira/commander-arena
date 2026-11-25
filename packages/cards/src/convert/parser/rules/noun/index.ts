@@ -30,6 +30,7 @@ import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
+import { CHOSEN_BY_PLAYER_NOUN_RULES } from './chosen-by-player';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
 import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
@@ -1172,6 +1173,8 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARDS,
   // D-521 (Hylda deck, group 2): "target creature that player controls", whose first words are those of `noun.target-permanent`.
   ...HYLDA_G2_TARGET_NOUN_RULES,
+  // Bladegriff Prototype: "target nonland permanent of that player's choice that one of your opponents controls", whose first words are those of `noun.target-permanent`.
+  ...CHOSEN_BY_PLAYER_NOUN_RULES,
   // Breaking of the Fellowship: "another target creature that player controls", whose first words are those of `noun.target-permanent`.
   ...SAME_CONTROLLER_TARGET_NOUN_RULES,
   // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.

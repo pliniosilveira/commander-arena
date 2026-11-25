@@ -131,6 +131,11 @@ export interface TargetsDecision extends DecisionBase {
    */
   readonly forTrigger?: true;
   /**
+   * With `forTrigger` (Bladegriff Prototype, CR 603.3d, `TargetSpec.chosenBy`): the seat that controls the triggered ability when another player (the decision's `seat`) chooses its target.
+   * Absent when the controller chooses.
+   */
+  readonly forController?: SeatId;
+  /**
    * True when `source` is a copy of a spell that was just put on the stack and its controller may choose new targets
    * for it (CR 707.10c, D-129). The copy has `current` targets; the answer is any set within the slots' bounds in which
    * each target is a legal one or is the target the copy has in that slot (the player may leave any number of targets

@@ -602,7 +602,12 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       literal('destroy '),
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
-        [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+        [
+          ...SELF_OR_PERMANENT_OPERANDS,
+          'noun.target-permanent-of-that-player',
+          // "destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d).
+          'noun.target-permanent-of-that-players-choice',
+        ],
         'effect.destroy',
       ),
     ),

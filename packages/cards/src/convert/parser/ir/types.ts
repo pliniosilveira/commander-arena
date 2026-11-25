@@ -184,6 +184,11 @@ export interface IrNoun extends IrNode {
    */
   readonly sameControllerAsPrevious?: true;
   /**
+   * "target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d): the player the event of the trigger is about chooses the target
+   * (the engine's `TargetSpec.chosenBy` 'triggerPlayer').
+   */
+  readonly chosenByTriggerPlayer?: true;
+  /**
    * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
    * this one, not only the slot just before it.
    */

@@ -1404,6 +1404,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'ownedByTarget',
     // CR 115.1, 109.4: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
     'sameControllerAs',
+    // Bladegriff Prototype (CR 603.3d): "target nonland permanent of that player's choice" (`TargetSpec.chosenBy`).
+    'targetChosenBy',
     'greatest',
     'least',
     'giftRecipient',
@@ -2648,6 +2650,8 @@ export const SELECTOR_KINDS = [
   'ownedByTarget',
   /** "Another target creature that player controls" (CR 115.1, 109.4, Breaking of the Fellowship): the engine's `TargetSpec.sameControllerAs`. */
   'sameControllerAs',
+  /** "Target nonland permanent of that player's choice" (CR 603.3d, Bladegriff Prototype): the engine's `TargetSpec.chosenBy`. */
+  'targetChosenBy',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "A creature with the least power among creatures they control" (CR 701.21a): the engine's `ChooseSelector.least`. */

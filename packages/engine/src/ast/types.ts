@@ -1777,6 +1777,13 @@ export interface TargetSpec {
    */
   readonly sameControllerAs?: string;
   /**
+   * "Destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 115.1, 603.3d, 109.4, ruling 2020-11-10): the player the event of the
+   * trigger is about (`triggerPlayer`: the player dealt the combat damage) chooses the target of this slot as the ability is put on the stack, among the legal targets (the filter is read for the
+   * controller of the ability, "your opponents"); the controller of the ability stays its controller (hexproof, ward, and who "you" is). If that player has left the game, the first opponent of the
+   * controller in turn order who is still in the game chooses. Only a triggered ability with no modes whose event is about a player, and it is the only target slot.
+   */
+  readonly chosenBy?: 'triggerPlayer';
+  /**
    * "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature" (CR 115.3): also none of the
    * targets of these earlier slots of the same ability (`differentFrom` names the nearest one; a third target differs from both). Only with `differentFrom`.
    */

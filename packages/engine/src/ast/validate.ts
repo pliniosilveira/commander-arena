@@ -2351,6 +2351,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
         // CR 701.37c: the becomes monstrous trigger of the permanent itself may take up to as many targets as the X of its monstrosity.
         a.trigger?.kind === 'becomesMonstrous' && kindOf(a.trigger.what) === 'this',
+        // CR 603.3d (Bladegriff Prototype): the player the event is about may choose the target.
+        triggerHasPlayer(a.trigger) && a.modes === undefined && a.chooseModes === undefined,
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
