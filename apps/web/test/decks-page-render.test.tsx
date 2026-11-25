@@ -79,7 +79,6 @@ describe('the editor on a precon', () => {
         onText={() => {}}
         onName={() => {}}
         onImport={() => {}}
-        onExample={null}
         precon={precon}
       />,
     );

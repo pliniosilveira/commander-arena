@@ -15,7 +15,6 @@ import { DeckScreen } from './DeckScreen';
 import { type EditingPrecon, InputPanel } from './InputPanel';
 import { useImportEnv } from './import-context';
 import { SavedDecksView } from './ListViews';
-import { sampleOf } from './model';
 import { loadNiceArt, saveNiceArt, withNiceCommanderArt } from './nice-art';
 import { PreconDecksView } from './PreconDecksView';
 import { OfflineNotice, ResultsView } from './ResultsView';
@@ -36,7 +35,6 @@ export function ImportScreen() {
   const env = useImportEnv();
   const actions = useActions();
   const precons = usePrecons();
-  const sample = sampleOf(precons.list);
   const initialTab = useApp((s) => s.importTab);
   const [tab, setTab] = useState<ImportTab>(initialTab);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -228,14 +226,6 @@ export function ImportScreen() {
                 await flow.start();
               })();
             }}
-            onExample={
-              sample === null
-                ? null
-                : () => {
-                    flow.setText(sample.text);
-                    flow.setName(sample.name);
-                  }
-            }
             precon={editingPrecon}
           />
           {flow.error !== null && (
