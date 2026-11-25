@@ -1432,6 +1432,7 @@ describe('unmatched abilities', () => {
       'noun.all-graveyard-cards',
       'noun.all-graveyards',
       'noun.target-permanent-of-that-player',
+      'noun.another-target-of-same-controller',
       'noun.target-creature-attacking-you',
       'noun.target-creature-attacking-you-plain',
       'noun.target-creature-token',
