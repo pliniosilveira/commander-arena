@@ -69,6 +69,7 @@ export interface Scope {
         kind:
           | 'modifyPt'
           | 'setPt'
+          | 'switchPt'
           | 'loseAllAbilities'
           | 'loseHexproofShroud'
           | 'setTypes'
@@ -154,6 +155,8 @@ export interface Scope {
   readonly chosenNumber?: boolean;
   /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
   readonly entersX?: boolean;
+  /** True in the effect (and the target counts) of the triggered ability "When this permanent becomes monstrous": `monstrousX` reads the X of its monstrosity (CR 701.37c). */
+  readonly monstrousX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
@@ -418,6 +421,7 @@ export function checkFilter(
     'castFromOwnGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
+    'firstOfTypeThisTurn',
     'enteredThisTurn',
     'dealtDamageThisTurn',
     'exiledWithSource',
@@ -437,6 +441,10 @@ export function checkFilter(
     (!Number.isInteger(f.nthSpellThisTurn) || f.nthSpellThisTurn < 2)
   ) {
     issue(out, `${path}.nthSpellThisTurn`, 'nthSpellThisTurn must be a whole number of 2 or more');
+  }
+  // CR 601.2i: "the first artifact spell you cast each turn" is the first of the card types the filter names.
+  if (f.firstOfTypeThisTurn === true && (f.types?.length ?? 0) === 0) {
+    issue(out, `${path}.firstOfTypeThisTurn`, 'firstOfTypeThisTurn needs types');
   }
   // CR 208.4b: "with base power 0" is a whole number of power.
   if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
@@ -978,6 +986,7 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'x',
   'enteredX',
+  'monstrousX',
   'lifePaidAsEntered',
   'powerOf',
   'manaValueOf',
@@ -1021,6 +1030,8 @@ export function declareTargets(
   xFilterAllowed = false,
   /** CR 107.3m (Blitzball Stadium: "When this artifact enters, support X"): the enters trigger of the permanent itself can take up to as many targets as the X of the spell it came from. */
   upToEntersX = false,
+  /** CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures"): the becomes monstrous trigger of the permanent itself can take up to as many targets as the X of its monstrosity. */
+  upToMonstrousX = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -1293,13 +1304,18 @@ export function declareTargets(
         checkAmount(
           spec.upToAmount,
           `${p}.upToAmount`,
-          upToEntersX ? { ...NO_SCOPE, entersX: true } : NO_SCOPE,
+          upToEntersX
+            ? { ...NO_SCOPE, entersX: true }
+            : upToMonstrousX
+              ? { ...NO_SCOPE, monstrousX: true }
+              : NO_SCOPE,
           out,
         );
         if (
           typeof spec.upToAmount === 'object' &&
           READS_NO_OBJECT.has(spec.upToAmount.kind) &&
-          !(upToEntersX && spec.upToAmount.kind === 'enteredX')
+          !(upToEntersX && spec.upToAmount.kind === 'enteredX') &&
+          !(upToMonstrousX && spec.upToAmount.kind === 'monstrousX')
         ) {
           issue(out, `${p}.upToAmount`, 'the number of targets reads the game, not an object');
         }
@@ -1575,6 +1591,9 @@ export function checkRef(
         );
       }
       break;
+    case 'putCountersOn':
+      // CR 608.2c: the objects the `addCounters` effects before it in the resolution put counters on; empty when there were none.
+      break;
     case 'triggerSubject':
       // The engine reads it only where a node says so (`checkSubjectRef`), not in any selector.
       issue(
@@ -1802,6 +1821,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'defendingPlayer':
     case 'playerToYourRight':
     case 'chosenPlayer':
+    case 'enteredChosenPlayer':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -2027,6 +2047,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
   'triggerDamagedPlayers',
   'attackedPlayers',
@@ -2378,6 +2399,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           "'enteredX' needs a triggered ability whose trigger is this permanent entering the battlefield",
+        );
+      }
+      break;
+    case 'monstrousX':
+      // CR 701.37c: only the becomes monstrous trigger of the permanent itself reads the X of its monstrosity (the face must have a `monstrosity` effect: checked with the face).
+      if (scope.monstrousX !== true) {
+        issue(
+          out,
+          path,
+          "'monstrousX' needs a triggered ability whose trigger is this permanent becoming monstrous",
         );
       }
       break;
@@ -3900,6 +3931,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'defendingPlayer':
     case 'playerToYourRight':
     case 'chosenPlayer':
+    case 'enteredChosenPlayer':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -4190,6 +4222,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'subjectControlledByYou':
+    case 'subjectHadToAttack':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
       break;
     case 'subjectStat':
@@ -4511,6 +4544,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'moveToZone' ||
     // Call for Aid (CR 611.2c): "Untap those creatures. They gain haste": the permanents a `gainControl` took are "those creatures".
     e?.kind === 'gainControl' ||
+    // CR 701.12a: the permanents an `exchangeControlOfAll` exchanged are "those creatures".
+    e?.kind === 'exchangeControlOfAll' ||
     // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
     (e?.kind === 'counter' && e.exileInstead === true) ||
     e?.kind === 'createToken' ||
@@ -4584,6 +4619,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
 ];
 
@@ -5771,6 +5807,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectHadToAttack':
     case 'subjectMatches':
     case 'subjectStat':
     case 'subjectPowerLessThanThis':
@@ -6626,6 +6663,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.duration !== 'untilEndOfTheirNextTurn') {
         issue(out, `${path}.duration`, "this lasts through the end of the player's next turn");
       }
+      if (e.anything !== undefined && e.anything !== true) {
+        issue(out, `${path}.anything`, 'anything is true when present');
+      }
       break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for the named permanents: a target, a group (`each`) or the permanent that caused the trigger.
@@ -6713,6 +6753,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'exchangeControlOfAll':
+      // CR 701.12a: a group of permanents and the one other player it is exchanged with.
+      if (kindOf(e.objects) !== 'each') {
+        issue(out, `${path}.objects`, 'exchangeControlOfAll names a group (each)');
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!isOneOf(e.duration, ['untilEndOfTurn', 'permanent'])) {
+        issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
+      }
+      break;
     case 'removeCounters':
       // CR 122.1 (Galadriel group 3): counters of one kind come off the permanents the selector names, a number read as the effect resolves.
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
@@ -8863,6 +8915,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
     case 'setTypes':
@@ -9523,6 +9576,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
       if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
         issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
+      break;
+    case 'eachPlayerRollsBarHighest':
+      // CR 706.1a, 508.1a: a die of N sides; the creature of the ability, which is a permanent.
+      if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
+        issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
+      if (e.creature.kind !== 'this') {
+        issue(
+          out,
+          `${path}.creature`,
+          "'eachPlayerRollsBarHighest' names the creature of the ability ('this')",
+        );
+      }
+      if (scope.owner !== 'ability') {
+        issue(
+          out,
+          path,
+          "'eachPlayerRollsBarHighest' needs an ability of a permanent, not a spell",
+        );
       }
       break;
     case 'eachPlayerChoosesDestroy':

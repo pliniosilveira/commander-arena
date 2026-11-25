@@ -102,6 +102,8 @@ export function becomeCopyAsItEnters(
             abilities: [
               ...values.abilities,
               ...(rule.gains ?? []).map((keyword) => ({ kind: 'keyword' as const, keyword })),
+              // CR 707.9b (Mocking Doppelganger): "except it has \"...\"": the abilities of the exception are copiable values too.
+              ...(rule.addStatics ?? []),
             ],
             ...(values.doors === undefined ? {} : { doors: values.doors }),
           },

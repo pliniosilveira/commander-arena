@@ -815,10 +815,13 @@ function readsCombat(filter: ObjectFilter): boolean {
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
     // D-416 (CR 700.9): "modified" is read from the counters and attachments (`subjectAffects`, issue 345), so a subject may name it.
-    // CR 701.15b: the designation is read from the game, which `derive` does not have while it matches a subject.
-    filter.goaded === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, names a goaded creature (CR 701.15b). */
+function readsGoaded(filter: ObjectFilter): boolean {
+  return filter.goaded === true || (filter.anyOf?.some(readsGoaded) ?? false);
 }
 
 /** "You have no maximum hand size." (CR 402.2). */
@@ -1056,6 +1059,15 @@ function lowerPart(
   // Resolution-only values cannot be read by a static ability.
   if (subject.value.kind === 'filter' && readsCombat(subject.value.filter))
     return failure(part.subject);
+  // CR 701.15b, 613.11 (Bothersome Quasit): "goaded creatures your opponents control can't block" is a restriction, read where the rule acts after the layers and after the
+  // abilities that goad (`derive-statics.ts`); any other effect on a goaded group reads the designation before it is settled, which `validateCard` would refuse.
+  if (
+    subject.value.kind === 'filter' &&
+    readsGoaded(subject.value.filter) &&
+    part.effects.some((e) => e.kind !== 'restriction')
+  ) {
+    return failure(part.subject);
+  }
   const needs: FeatureRef[] = ['ability:static', `staticSubject:${subject.value.kind}`];
   if (subject.value.kind === 'filter' && namesKeyword(subject.value.filter)) {
     needs.push('selector:keywords');

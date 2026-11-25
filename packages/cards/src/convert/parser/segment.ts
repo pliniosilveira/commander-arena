@@ -432,6 +432,13 @@ const IF_NOT_ONTO_BATTLEFIELD_HAND =
 const CHOOSE_OPPONENT_AT_RANDOM =
   /(?:^|, )choose an opponent at random that ~ didn['’]t attack during your last combat\.$/i;
 const ATTACKS_THAT_PLAYER_THIS_COMBAT = /^~ attacks that player this combat if able\.$/i;
+/**
+ * "Each player rolls a d20. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this combat." (Chaos Dragon, CR 706.2, 508.1a):
+ * the roll and what its result does, one instruction (`effect.each-player-rolls-bar-highest`); the roll may follow the comma of a trigger.
+ */
+const EACH_PLAYER_ROLLS_D = /(?:^|, )each player rolls a d\d+\.$/i;
+const IF_OPPONENTS_HIGHEST_CANT_ATTACK =
+  /^if one or more opponents had the highest result, ~ can['’]t attack those players or planeswalkers they control this combat\.$/i;
 const CANT_CHOOSE_TAP_IT = /^if you can['’]t choose an opponent this way, tap ~\.$/i;
 /**
  * "Mill a card and choose an opponent at random. ~ attacks that player this combat if able." (Ursine Monstrosity, CR 508.1d): the choice may follow a comma, "and" or nothing, and
@@ -1397,6 +1404,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, CHOOSE_ANY_OPPONENT_AT_RANDOM) && said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT)) ||
+        (said(a, EACH_PLAYER_ROLLS_D) && said(b, IF_OPPONENTS_HIGHEST_CANT_ATTACK)) ||
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||

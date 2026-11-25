@@ -68,6 +68,8 @@ const ADD_COUNTERS_OPERANDS = [
   ...COUNTER_OPERANDS,
   // "Choose target creature attacking you. Put a stun counter on that creature.": the object the sentence before named (CR 608.2c).
   'noun.that-object',
+  // Agitator Ant: "a creature they control", the creature the asked player chooses (before the plain "a creature", which would stop at "they").
+  'noun.a-permanent-they-control',
   'noun.a-permanent',
   // "each of up to two Soldiers you control": a resolving choice of up to that many.
   'noun.each-of-up-to-permanents',
