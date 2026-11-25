@@ -289,10 +289,11 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
   // A card in the hand is the top of a card: lifted, it no longer reaches past the player's strip to the
   // land row, and the hand's scroll box clips what rises more than 110px (the land stack's badge is further
   // up than that). The test lifts the card further and lets it out of the box itself, since what it checks
-  // is which of the two is drawn on top.
+  // is which of the two is drawn on top. The hand's cards no longer start under the land stack, so the test also slides each
+  // lifted card sideways (`--test-dx`, set per card below) until it is over the badge.
   await page.addStyleTag({
     content:
-      '.board-hand-card:hover { transform: translateY(-260px) scale(1.2) !important; transition: none !important; } .board-hand-fan { overflow: visible !important; }',
+      '.board-hand-card:hover { transform: translate(var(--test-dx, 0px), -260px) scale(1.2) !important; transition: none !important; } .board-hand-fan { overflow: visible !important; }',
   });
   const b = await badge.boundingBox();
   if (b === null) throw new Error('no badge box');
@@ -306,6 +307,11 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
     await page.waitForTimeout(100);
     const rest = await cards.nth(i).boundingBox();
     if (rest === null) throw new Error('no card box');
+    // The hand scrolls sideways when it holds more cards than the window is wide: a card out of the window cannot be pointed at.
+    if (rest.x + 8 >= 1366) continue;
+    // Slide the lifted card so that its middle is over the middle of the badge.
+    const dx = b.x + b.width / 2 - (rest.x + rest.width / 2);
+    await cards.nth(i).evaluate((el, shift) => el.style.setProperty('--test-dx', `${shift}px`), dx);
     await page.mouse.move(rest.x + 8, rest.y + 8, { steps: 4 });
     // The card is lifted by the test's own rule (no transition) once the pointer is on it.
     await expect

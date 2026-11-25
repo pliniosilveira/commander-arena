@@ -80,6 +80,8 @@ test('the top card shows for you, never for the opponent, and hovers like any ca
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const lens = 'SYNTHETIC Seer Lens';
+  // At this width the first card of the hand starts right on the top card chip of the strip: the chip must still take the pointer.
+  await page.setViewportSize({ width: 1280, height: 720 });
   // Both decks hold the Lens: the opponent will have its own, and still none of its top card is shown.
   await page.goto(game('synthetic-top-card', 'synthetic-top-card', 1));
   await playUntil(page, async () => (await mine(page, lens).count()) > 0, [lens]);
