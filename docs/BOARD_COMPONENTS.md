@@ -27,6 +27,7 @@ Without a pending question (a player opens a graveyard, the exile or the command
 - every legal target of a targets question is a card in one graveyard (#23); or
 - the player searches their own library (a `chooseCards` question with purpose `search`): the list is the matching cards the engine shows the searcher, titled "Search your library". The library itself stays hidden; or
 - the player looks at or reveals the top cards of their library and may take one (purpose `lookTake`, Hideaway and the like): the cards that can be taken are the list, and the others looked at follow as dimmed text cards marked "Cannot be taken" (their faces only, as the dock shows them). Titled "Cards looked at" or "Cards revealed"; or
+- the player splits the cards looked at into piles (purpose `lookSplit`, Expressive Iteration: one into the hand, one on the bottom, one exiled): each pile's question lists the cards still to place, and the card already chosen for the hand follows, marked "Already put into your hand"; or
 - a `chooseCards` question picks cards in a graveyard or in exile (purposes `move`, `exile`, `additionalExile`: "return a creature card from your graveyard to your hand", "exile a card from your graveyard"): the legal cards are the list, titled "Choose from a graveyard" or "Choose from exile".
 
 It closes by itself when the question is answered. The player can also open any zone from its button, and reopen the question's picker from the dock ("Open graveyard", "Open library").

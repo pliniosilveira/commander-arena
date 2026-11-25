@@ -4,7 +4,7 @@
  * battlefield ..." (CR 402.3) that do not match, for that player's own question. The engine's view lists only
  * the cards that may be taken (`pendingCards` are the decision's `legal` cards), but the player looked at all of them
  * (`looked`), so the host reads the faces of the others from the state and sends them with the snapshot. Only the
- * viewer's own pending `lookTake` or `move` question gives any: the opponent's looked cards never leave the Worker (CR 401.2).
+ * viewer's own pending `lookTake`, `lookSplit` (the cards already put into the hand) or `move` question gives any: the opponent's looked cards never leave the Worker (CR 401.2).
  * Pure.
  */
 import type { GameState, ObjectView, SeatId } from '@commander-arena/engine';
@@ -18,7 +18,13 @@ export type LookedCard = Pick<
 export function lookedCards(state: GameState, viewer: SeatId): readonly LookedCard[] {
   const pending = state.pending;
   if (pending?.kind !== 'chooseCards') return [];
-  if (pending.purpose !== 'lookTake' && pending.purpose !== 'move') return [];
+  if (
+    pending.purpose !== 'lookTake' &&
+    pending.purpose !== 'lookSplit' &&
+    pending.purpose !== 'move'
+  ) {
+    return [];
+  }
   if (pending.seat !== viewer) return [];
   return (pending.looked ?? []).flatMap((id) => {
     if (pending.legal.includes(id)) return [];

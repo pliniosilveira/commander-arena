@@ -131,6 +131,7 @@ export function TableBoard({ flow }: { flow?: ReactNode }) {
               title={open.title}
               objects={open.objects}
               {...(open.others === undefined ? {} : { others: open.others })}
+              {...(open.othersMark === undefined ? {} : { othersMark: open.othersMark })}
               onClose={() => setZone(null)}
             />
           )}
