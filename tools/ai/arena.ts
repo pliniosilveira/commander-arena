@@ -19,6 +19,9 @@
 //            precons once per cycle. The decks stay with the seat when the agents swap seats.
 // --max-turns, --max-actions  the limits of one game (defaults: MATCH_LIMITS; the precon games are longer)
 // --log-slow <ms>  print one line per decision that took longer than this (agent, turn, decision kind, time)
+// --report   with --seats 3|4: after the table, the measuring report of the run: place, elimination, all-in attacks,
+//            blocks (damage through and avoidable) and removal targets of each agent (table-report.ts)
+// --events <file>  with --seats 3|4: write the events of every game to <file>, one JSON line per game
 // --real-clock  hand the agents a real clock (performance.now) so their time budget is live; the default is
 //            the logical clock of the runner, which keeps a result independent of the machine's speed
 //
@@ -30,6 +33,7 @@
 // they are in place.
 
 import '../corpus/register.ts';
+import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import type { Agent, AgentFactory, MatchDeck, TableDeck } from '@commander-arena/ai';
 import {
@@ -37,6 +41,7 @@ import {
   formatMatch,
   formatRound,
   formatTable,
+  formatTableReport,
   formatTimes,
   percentile,
 } from './format.ts';
@@ -58,6 +63,8 @@ const { values } = parseArgs({
     pairing: { type: 'string', default: 'mirror' },
     'max-turns': { type: 'string' },
     'max-actions': { type: 'string' },
+    report: { type: 'boolean', default: false },
+    events: { type: 'string' },
   },
 });
 
@@ -115,6 +122,7 @@ const {
   isExplaining,
   playMatch,
   playTable,
+  tableReport,
 } = await import('@commander-arena/ai');
 
 /** Measures the time of every `decide` of the agents it makes, per label. */
@@ -208,6 +216,7 @@ if (seats > 2) {
     },
     games,
     baseSeed: seed,
+    trace: values.report || values.events !== undefined,
     ...(values['real-clock'] ? { now: () => performance.now() } : {}),
   });
   const tableCommand = `node tools/ai/arena.ts --seats ${seats} --agents ${seated.join(',')} --games ${games} --seed ${seed}${values['real-clock'] ? ' --real-clock' : ''}${values.precons ? ' --precons' : ''}${maxTurns === undefined ? '' : ` --max-turns ${maxTurns}`}${maxActions === undefined ? '' : ` --max-actions ${maxActions}`}${logSlowMs === undefined ? '' : ` --log-slow ${logSlowMs}`}`;
@@ -217,6 +226,23 @@ if (seats > 2) {
     p95Ms: percentile(t.samples, 0.95),
   }));
   process.stdout.write(`${formatTable(tableResult, { seed, command: tableCommand })}\n`);
+  if (values.report) process.stdout.write(`\n${formatTableReport(tableReport(tableResult))}\n\n`);
+  if (values.events !== undefined) {
+    // One JSON line per game: its seed, rotation, places and events (`--events <file>`).
+    writeFileSync(
+      values.events,
+      `${tableResult.log
+        .map((g) =>
+          JSON.stringify({
+            seed: g.seed,
+            rotation: g.rotation,
+            places: g.places,
+            events: g.events,
+          }),
+        )
+        .join('\n')}\n`,
+    );
+  }
   if (deckNote !== '') process.stdout.write(`${deckNote}\n`);
   process.stdout.write(
     `unfinished games: ${
