@@ -236,7 +236,8 @@ async function playOnWorkers(
     pool.map(
       (child, i) =>
         new Promise<readonly ('a' | 'b' | null)[]>((done, failed) => {
-          const id = (requestId += 1);
+          requestId += 1;
+          const id = requestId;
           const onMessage = (reply: WorkReply): void => {
             if (reply.id !== id) return;
             child.off('message', onMessage);
