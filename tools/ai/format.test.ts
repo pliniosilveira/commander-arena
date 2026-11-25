@@ -1,6 +1,13 @@
-import type { MatchResult, TableResult } from '@commander-arena/ai';
+import type { MatchResult, PlanWork, TableResult } from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { formatMatch, formatRound, formatTable, formatTimes, percentile } from './format.ts';
+import {
+  formatMatch,
+  formatPlanning,
+  formatRound,
+  formatTable,
+  formatTimes,
+  percentile,
+} from './format.ts';
 
 const result: MatchResult = {
   a: 'casual',
@@ -38,6 +45,39 @@ describe('formatMatch', () => {
 
   test('prints the command that reproduces the run', () => {
     expect(text).toContain('command: node tools/ai/arena.ts --seed 7');
+  });
+});
+
+describe('formatPlanning', () => {
+  const work = (o: Partial<PlanWork> = {}): PlanWork => ({
+    planned: true,
+    playOuts: 4,
+    steps: 100,
+    views: 30,
+    applies: 110,
+    cut: null,
+    ms: 2,
+    ...o,
+  });
+
+  test('counts the plannings, the share each cut ended and the mean work of one planning', () => {
+    const failed = work({
+      planned: false,
+      cut: 'clock',
+      playOuts: 0,
+      steps: 0,
+      views: 2,
+      applies: 0,
+      ms: 4,
+    });
+    expect(formatPlanning('heuristic', [work(), failed, work({ cut: 'work' }), work()])).toBe(
+      'planning heuristic: 4 plannings, 3 with a plan; cut by the clock 25.0%, by a work bound 25.0%; ' +
+        'per planning: 23.0 views, 82.5 engine actions, 3.0 play-outs, 75.0 steps, 2.50 ms',
+    );
+  });
+
+  test('says nothing for an agent that never planned', () => {
+    expect(formatPlanning('greedy', [])).toBeNull();
   });
 });
 

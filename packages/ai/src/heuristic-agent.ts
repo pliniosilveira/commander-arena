@@ -56,6 +56,7 @@ import {
 } from './heuristic-plan';
 import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
 import { type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
+import type { PlanWork } from './heuristic-plan-work';
 import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
 import { chooseRemovalTargets, creatureToHelp } from './heuristic-targets';
@@ -93,6 +94,7 @@ export class HeuristicAgent implements ExplainingAgent {
   /** The plan of the turn (`heuristic-plan.ts`); its end-step steps last into the opponents' turns. */
   private plan: TurnPlan | null = null;
   private readonly planList: PlanRecord[] = [];
+  private readonly workList: PlanWork[] = [];
   /** The plannings tried this turn (see `priorityChoice`). */
   private tries: { turn: number; count: number; failed: Set<Window> } = {
     turn: -1,
@@ -119,6 +121,11 @@ export class HeuristicAgent implements ExplainingAgent {
   /** Every planning the agent did, oldest first (lines, scenarios, the line chosen). */
   get plans(): readonly PlanRecord[] {
     return this.planList;
+  }
+
+  /** What every planning cost, oldest first: the ones that ended in a plan and the ones that did not. */
+  get plannings(): readonly PlanWork[] {
+    return this.workList;
   }
 
   /** Inner agents for the planner's play-outs: the same rules and weights, no sample, so no planning. */
@@ -180,7 +187,8 @@ export class HeuristicAgent implements ExplainingAgent {
       this.tries = { turn: view.turn, count: 0, failed: new Set() };
     if (this.tries.count >= MAX_PLANS_PER_TURN || this.tries.failed.has(when)) return today;
     this.tries.count += 1;
-    const planned = choosePlan(view, when, lines, think, this.simAgents);
+    const { planned, work } = choosePlan(view, when, lines, think, this.simAgents);
+    this.workList.push(work);
     if (planned === null) {
       this.tries.failed.add(when);
       return today;

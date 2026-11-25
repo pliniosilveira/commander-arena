@@ -1,6 +1,6 @@
 // The report of `pnpm ai:arena`: one match result as plain text. Pure, so a test can pin it.
 
-import type { MatchResult, TableResult } from '@commander-arena/ai';
+import type { MatchResult, PlanWork, TableResult } from '@commander-arena/ai';
 
 const pct = (n: number, of: number): string => (of === 0 ? '-' : `${((100 * n) / of).toFixed(1)}%`);
 
@@ -75,6 +75,30 @@ export function formatTimes(times: readonly DecisionTimes[], budgetMs: number): 
     return `decision time ${t.label}: ${t.decisions} decisions, mean ${mean.toFixed(2)} ms, ${t.p95Ms === undefined ? '' : `95th percentile ${t.p95Ms.toFixed(1)} ms, `}slowest ${t.slowestMs.toFixed(1)} ms (budget ${budgetMs} ms${t.overBudget === undefined ? '' : `, ${t.overBudget} over it`})`;
   });
   return lines.join('\n');
+}
+
+/**
+ * The plannings of one agent's turn planner (issue 653): how many it ran, how many ended in a plan, the share
+ * the decision's clock cut (rather than a bound of the work) and the mean work of one planning. Null when the
+ * agent has no planner.
+ */
+export function formatPlanning(label: string, works: readonly PlanWork[]): string | null {
+  const n = works.length;
+  if (n === 0) return null;
+  const count = (keep: (w: PlanWork) => boolean): number => works.filter(keep).length;
+  const mean = (of: (w: PlanWork) => number, digits = 1): string =>
+    (works.reduce((sum, w) => sum + of(w), 0) / n).toFixed(digits);
+  return [
+    `planning ${label}: ${n} plannings, ${count((w) => w.planned)} with a plan`,
+    `cut by the clock ${pct(
+      count((w) => w.cut === 'clock'),
+      n,
+    )}, by a work bound ${pct(
+      count((w) => w.cut === 'work'),
+      n,
+    )}`,
+    `per planning: ${mean((w) => w.views)} views, ${mean((w) => w.applies)} engine actions, ${mean((w) => w.playOuts)} play-outs, ${mean((w) => w.steps)} steps, ${mean((w) => w.ms, 2)} ms`,
+  ].join('; ');
 }
 
 /** The report of a table of three or four seats: each agent once in every seat of every seed (`playTable`). */

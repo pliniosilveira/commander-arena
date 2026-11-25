@@ -18,11 +18,9 @@
  */
 import {
   type Action,
-  applyAction,
   type DecisionHandlers,
   type GameState,
   type GameView,
-  getView,
   handleDecision,
   type ObjectId,
   type PendingDecision,
@@ -33,6 +31,7 @@ import { withFace } from './casual-priority';
 import type { Budget } from './heuristic-budget';
 import { planLand } from './heuristic-lands';
 import { type BoardPrint, boardPrint } from './heuristic-plan-print';
+import type { PlanCounter } from './heuristic-plan-work';
 import { payHolding } from './heuristic-protect';
 import type { AgentWeights } from './weights';
 
@@ -71,11 +70,11 @@ export interface PlayContext {
   readonly budget: Budget;
   readonly weights: AgentWeights;
   /**
-   * The engine steps every play-out of one planning has taken, and the most it may take: a bound of the
-   * work that holds whatever the clock says (a logical clock never runs out). A play-out that would pass it
-   * is dropped.
+   * The work of the planning (`heuristic-plan-work.ts`): every view and action of a play-out goes through it.
+   * Its engine steps, over every play-out of the planning, are bounded by its limit whatever the clock says
+   * (a logical clock never runs out); a play-out that would pass it is dropped.
    */
-  readonly work: { steps: number; readonly limit: number };
+  readonly work: PlanCounter;
 }
 
 /** Enough actions for a turn of the agent and one turn of each opponent on a big board. */
@@ -179,7 +178,14 @@ export function playLine(
     if (current.result !== null) return { end: current, steps };
     if (current.turn.activeSeat === me && current.turn.number > start)
       return { end: current, steps };
-    if (ctx.budget.over() || ctx.work.steps >= ctx.work.limit) return null;
+    if (ctx.budget.over()) {
+      ctx.work.stop('clock');
+      return null;
+    }
+    if (ctx.work.steps >= ctx.work.limit) {
+      ctx.work.stop('work');
+      return null;
+    }
     ctx.work.steps += 1;
     const d = current.pending;
     if (d === null) return { end: current, steps };
@@ -187,12 +193,12 @@ export function playLine(
     // Nothing to do but pass (or tap mana, which no rule of the agent does by hand): pass without building a
     // view, the costliest part of a step on a big board. A recorded window of the agent still needs its print.
     if (onlyPass(d) && !(record && seat === me && inWindow(current, me))) {
-      const passed = applyAction(current, seat, { kind: 'pass' });
+      const passed = ctx.work.apply(current, seat, { kind: 'pass' });
       if (!passed.ok) return null;
       current = passed.state;
       continue;
     }
-    const view = getView(current, seat);
+    const view = ctx.work.view(current, seat);
     const handlers = handlersOf(seat)(view);
     let action: Action;
     try {
@@ -228,10 +234,11 @@ export function playLine(
     } catch {
       return null;
     }
-    const applied = applyAction(current, seat, action);
+    const applied = ctx.work.apply(current, seat, action);
     if (!applied.ok) return null;
     current = applied.state;
   }
+  ctx.work.stop('work');
   return null;
 }
 
