@@ -106,6 +106,8 @@ Your imported decks are saved in your browser and appear on the **My decks** pag
 - **Ctrl+Z** takes back a small action, such as tapping a land for mana.
 - **F** turns Full Control on or off. With it on, the game stops at every step so you can respond. With it off, the game also answers for you the two questions of "Partner with" when the partner is your commander and in plain sight: it cannot be in your library, so nobody searches.
 
+If the opponent makes a move you think is a mistake, press **That was a dumb move** in the log: it opens a GitHub issue with a replay of the game for you to submit, so the AI can learn from it.
+
 The game passes for you when there is nothing to decide, and it always stops to show you an opponent's spell before it happens. **Settings** has the theme, text size, animation speed, where the game stops, and Concede.
 
 ## What to expect
