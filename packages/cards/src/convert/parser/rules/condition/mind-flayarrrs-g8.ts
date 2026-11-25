@@ -29,7 +29,7 @@ export const CONDITION_THIS_SUSPENDED = defineRule<IrCondition>({
     '~ is suspended.',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/(?:~|this card) is suspended(?![\p{L}\p{N}.])(?! or )(?! and )/iu))(
+    const r = spanned(pattern(/(?:~|this card) is suspended(?![\p{L}\p{N}])(?! or )(?! and )/iu))(
       ctx,
       pos,
     );

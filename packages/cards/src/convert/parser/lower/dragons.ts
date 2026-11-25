@@ -145,6 +145,7 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
     if (look !== undefined && (look.kind !== 'flag' || !ctx.exiledFaceDown)) return failure(clause);
     // "You may play that card for as long as it remains exiled" (CR 406.3): cards exiled face down stay hidden without "look at", so the permission to play them alone is not read.
     if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown) return failure(clause);
+    ctx.mayPlayLasts = lasts;
     return {
       ok: true,
       value: [

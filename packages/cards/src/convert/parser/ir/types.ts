@@ -326,6 +326,8 @@ export interface IrFilter {
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
   readonly targets?: IrFilter;
+  /** "from an artifact or enchantment source" (Green Slime, CR 113.7a): the source of the ability on the stack the filter names is an object this filter matches (the engine's `abilitySource`). */
+  readonly abilitySource?: IrFilter;
   /** "that targets only a single creature you control" (issue 144, CR 115.9c): a spell whose chosen targets are one object of this kind, however many times it was chosen. */
   readonly targetsOnly?: IrFilter;
   /** "that targets you" (Siren Stormtamer, CR 115.1, 601.2c): a spell or ability with a chosen target that is the player the filter is read for ("you"). Only a member of a choice on the stack. */
@@ -465,6 +467,8 @@ export interface IrFilter {
   readonly castFromHand?: true;
   /** "from a graveyard" (issue 102, River Kelpie, CR 601.2a): a spell that was cast from a graveyard (the engine's `castFromGraveyard`). */
   readonly castFromGraveyard?: true;
+  /** "from exile" (Exit from Exile deck, CR 601.2a): a spell that was cast from exile (the engine's `castFromExile`). */
+  readonly castFromExile?: true;
   /** "from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1): a spell its caster cast from their own graveyard (the engine's `castFromOwnGraveyard`). */
   readonly castFromOwnGraveyard?: true;
   /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
@@ -473,6 +477,8 @@ export interface IrFilter {
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
   readonly firstXSpellThisTurn?: true;
+  /** "the first spell you cast from exile each turn" (Wild-Magic Sorcerer, CR 601.2i): the first spell the caster cast from exile this turn (the engine's `firstCastFromExileThisTurn`). */
+  readonly firstCastFromExileThisTurn?: true;
   /** "the second spell you cast each turn" (Alisaie Leveilleur, CR 601.2i): the spell is the nth (2 or more) its caster cast this turn (the engine's `nthSpellThisTurn`). */
   readonly nthSpellThisTurn?: number;
   /** "the first artifact spell you cast each turn" (Artifact Class, CR 601.2i): the spell is the first of its caster's this turn that has one of `types` (the engine's `firstOfTypeThisTurn`). */
@@ -1036,8 +1042,10 @@ export interface IrCondition extends IrNode {
     | {
         readonly kind: 'designation';
         readonly who: IrNoun;
-        readonly designation: 'monarch' | 'citysBlessing';
+        readonly designation: 'monarch' | 'citysBlessing' | 'initiative';
       }
+    // Sarevok's Tome (CR 309.7, 701.49c): "you've completed a dungeon"
+    | { readonly kind: 'completedDungeon'; readonly who: IrNoun }
     // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value" (CR 603.4): one of
     // the permanents of the kind, whoever controls them, with the greatest value of the stat, a tie counting for each tied one
     | {
@@ -1826,7 +1834,7 @@ export interface IrTrigger extends IrNode {
    * types the card played has ("a card with two or more card types").
    */
   readonly atLeast?: number;
-  /** 'playsCard' (Urianger Augurelt, CR 305.1, 601.2a): "you play a land from exile or cast a spell from exile", only a card played or cast from exile. */
+  /** 'enters' (Faldorn, CR 603.6a): "enters from exile", the permanent came from exile. 'playsCard' (Urianger Augurelt, CR 305.1, 601.2a): "you play a land from exile or cast a spell from exile", only a card played or cast from exile. */
   readonly fromExile?: true;
   /**
    * 'tappedForMana' "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the permanent the Aura is attached to (the `subject` says its kind) is tapped for mana by whoever
@@ -2228,7 +2236,7 @@ export type IrStaticEffect =
    */
   | {
       readonly kind: 'spellKeyword';
-      readonly keyword: 'demonstrate' | 'convoke' | 'improvise' | 'replicateAtManaCost';
+      readonly keyword: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' | 'replicateAtManaCost';
     }
   /**
    * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9, 601.2b): the permanent spells the subject names (a noun with the controller
@@ -2256,7 +2264,15 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'graveyardFlashback'; readonly cards: IrNoun }
   /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14): the permanent spells of the controller may be cast for `count` energy counters. The subject is `you`. */
-  | { readonly kind: 'energyAlternative'; readonly count: number }
+  | {
+      readonly kind: 'energyAlternative';
+      readonly count: number;
+      /** Tlincalli Hunter (CR 118.9, 601.2b): "Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile": the spells are cast from exile, one each turn. */
+      readonly fromExile?: true;
+      readonly oncePerTurn?: true;
+      /** The card types of the spells the grant is for ("a creature spell"); left out for permanent spells. */
+      readonly types?: readonly string[];
+    }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */

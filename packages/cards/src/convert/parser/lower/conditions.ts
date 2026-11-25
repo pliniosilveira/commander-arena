@@ -264,7 +264,8 @@ export function lowerCondition(
       // from exile); anywhere else it is a test the engine does not run for that shape.
       const blocked = missingFeatures(['condition:thisSuspended']);
       if (blocked.length > 0) return failure(c, blocked);
-      if (ctx?.interveningCondition !== true) return failure(c, []);
+      // Greater Gargadon (CR 602.5b): or the "activate only if" of an activated ability, read with no context of a trigger (the lowering of the ability then makes it work from exile).
+      if (ctx !== undefined && ctx.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisSuspended' });
     }
     case 'thisOnBattlefield': {
@@ -566,6 +567,14 @@ export function lowerCondition(
         player: player.value,
         designation: test.designation,
       });
+    }
+    case 'completedDungeon': {
+      // CR 309.7, 701.49c (Sarevok's Tome): the player has completed a dungeon at some time.
+      const blocked = missingFeatures(['condition:completedDungeon']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const player = playerSelectorOf(test.who, ctx ?? newContext('ability', []));
+      if (!player.ok) return player;
+      return ok({ kind: 'completedDungeon', player: player.value });
     }
     case 'objectMatches': {
       // CR 608.2c, 113.7a (stage P30, D-135): "if it's a Zombie card" asks what a target of this text is, as it is or as it last

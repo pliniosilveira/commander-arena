@@ -425,9 +425,11 @@ export function checkFilter(
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
+    'castFromExile',
     'castFromOwnGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
+    'firstCastFromExileThisTurn',
     'firstOfTypeThisTurn',
     'enteredThisTurn',
     'dealtDamageThisTurn',
@@ -715,6 +717,27 @@ export function checkFilter(
     }
     checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
   }
+  // CR 113.7a (Green Slime): "from an artifact or enchantment source": an ability on the stack, whose source is a permanent the inner filter describes.
+  if (f.abilitySource !== undefined) {
+    if (f.stackKind === undefined || f.stackKind === 'spell') {
+      issue(
+        out,
+        `${path}.abilitySource`,
+        'the source of an ability is read for a filter with a stackKind of an ability',
+      );
+    }
+    if (
+      filterSome(f.abilitySource, (m) => m.zone !== undefined && m.zone !== 'battlefield') ||
+      filterSome(f.abilitySource, (m) => m.stackKind !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.abilitySource`,
+        'the source of an ability is a permanent on the battlefield: no zone or stackKind',
+      );
+    }
+    checkFilter(f.abilitySource, `${path}.abilitySource`, out);
+  }
   // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
   if (f.targetsPlayer !== undefined) {
     if (f.targetsPlayer !== true && f.targetsPlayer !== 'you') {
@@ -992,6 +1015,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.goaded !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined ||
+  f.abilitySource !== undefined ||
   f.targetsPlayer !== undefined;
 
 /**
@@ -2245,6 +2269,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   }
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures', 'exiledCreatureCards'];
+  // Journey to the Lost City (CR 608.2c): the creature cards `exileTop` exiled from a library are "creature cards among those cards".
+  if (e?.kind === 'exileTop') return ['exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -4552,6 +4578,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
       break;
+    case 'completedDungeon':
+      // CR 309.7: whether one of the players the selector names has completed a dungeon.
+      checkConditionPlayers(c.player, `${path}.player`, out);
+      break;
     case 'maxSpeed':
       // CR 702.179e: whether one of the players the selector names has speed 4. A condition has no targets and reads no trigger subject.
       checkConditionPlayers(c.player, `${path}.player`, out);
@@ -4610,7 +4640,8 @@ function movesObjects(e: Effect): boolean {
     // CR 701.12a: the permanents an `exchangeControlOfAll` exchanged are "those creatures".
     e?.kind === 'exchangeControlOfAll' ||
     // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
-    (e?.kind === 'counter' && e.exileInstead === true) ||
+    // CR 113.7a (Green Slime): the permanents whose abilities a `counter` countered are "that permanent" ("If a permanent's ability is countered this way, destroy that permanent").
+    e?.kind === 'counter' ||
     e?.kind === 'createToken' ||
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
@@ -4624,7 +4655,8 @@ function movesObjects(e: Effect): boolean {
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
     // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
-    (e?.kind === 'lookAtTop' && e.take?.to === 'exileFaceDownUnlinked') ||
+    (e?.kind === 'lookAtTop' &&
+      (e.take?.to === 'exileFaceDownUnlinked' || e.take?.to === 'exile')) ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -4917,8 +4949,10 @@ function checkChooseMove(
     sel.dealtCombatDamageToYou !== undefined ||
     // Glorious Protector (CR 608.2d, 610.3): "exile any number of ... creatures you control until ~ leaves the battlefield" is the one other place an `anyNumber` choice goes, among
     // the permanents on the battlefield (`moveToZone.until`, checked with the move).
+    // Xenagos, the Reveler (CR 608.2d): "put any number of creature and/or land cards from among them onto the battlefield": among the cards the effect before it moved (`fromMoved`).
     (sel.anyNumber !== undefined &&
       sel.minCardTypes === undefined &&
+      sel.fromMoved !== true &&
       (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(
@@ -6225,6 +6259,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.planeswalker`, 'planeswalker is true, and has no players');
       }
       break;
+    case 'addManaCombination':
+      // CR 106.1b (Xenagos): two different colors of the five, and an amount read as the effect runs.
+      if (
+        !Array.isArray(e.colors) ||
+        e.colors.length !== 2 ||
+        e.colors[0] === e.colors[1] ||
+        e.colors.some((c) => !['W', 'U', 'B', 'R', 'G'].includes(c))
+      ) {
+        issue(out, `${path}.colors`, 'addManaCombination names two different colors of the five');
+      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
+      break;
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): "Choose a number between 0 and 10": whole numbers, the least first.
       if (!Number.isInteger(e.min) || !Number.isInteger(e.max) || e.min < 0 || e.max < e.min) {
@@ -7088,6 +7134,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-660 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      // Venture Forth (CR 701.13, 401.4): the card found goes onto the battlefield, the rest to the bottom of the library; the library is the controller's own.
+      if (e.outcome !== undefined) {
+        if (e.outcome.found !== 'battlefield' || e.outcome.rest !== 'bottomRandom') {
+          issue(
+            out,
+            `${path}.outcome`,
+            'then puts the card found onto the battlefield and the rest on the bottom in a random order',
+          );
+        }
+        if (kindOf(e.players) !== 'you') {
+          issue(
+            out,
+            `${path}.outcome`,
+            'outcome is for the controller of the effect: players is you',
+          );
+        }
+      }
       break;
     case 'opponentChoosesCard':
       // D-660 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
@@ -7101,6 +7164,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      if (e.byController !== undefined && e.byController !== true) {
+        issue(out, `${path}.byController`, 'byController must be true when present');
+      }
+      if (e.keepChosen !== undefined && e.keepChosen !== true) {
+        issue(out, `${path}.keepChosen`, 'keepChosen must be true when present');
+      }
+      if ((e.byController === true) !== (e.keepChosen === true)) {
+        issue(
+          out,
+          `${path}.byController`,
+          'byController and keepChosen are said together: the controller chooses the card that is kept',
+        );
+      }
       break;
     case 'exilePiles':
       // D-663 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
@@ -7386,6 +7462,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // Nalfeshnee (CR 707.10f, 613.1f): what the token a copy of a permanent spell becomes has; one copy of the spell of the trigger.
+      if (e.permanentGains !== undefined) {
+        if (
+          !Array.isArray(e.permanentGains) ||
+          e.permanentGains.length === 0 ||
+          e.count !== undefined ||
+          e.forEach !== undefined ||
+          e.copier !== undefined ||
+          e.newTarget !== undefined ||
+          kindOf(e.spell) !== 'triggerSubject'
+        ) {
+          issue(
+            out,
+            `${path}.permanentGains`,
+            'permanentGains is a list of abilities of the one copy of the spell of the trigger (triggerSubject), with no count, forEach, copier or newTarget',
+          );
+        } else {
+          e.permanentGains.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.permanentGains[${i}]`, out);
+          });
+        }
+      }
       if (e.copier !== undefined && e.copier !== 'triggerPlayer' && e.copier !== 'opponent') {
         issue(out, `${path}.copier`, 'copier is "triggerPlayer" or "opponent"');
       } else if (e.copier === 'opponent') {
@@ -7533,6 +7631,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.counter`, 'moveCountersOnto names a kind of counter');
       }
       checkFilter(e.to, `${path}.to`, out);
+      break;
+    case 'damageCantBePreventedThisTurn':
+      // CR 615.12: no parameters.
       break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
@@ -8070,11 +8171,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
       }
-      if ((e.from !== undefined) !== (e.take?.to === 'exileFaceDownUnlinked')) {
+      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked') {
         issue(
           out,
           `${path}.from`,
-          "from (another player's library) and take.to 'exileFaceDownUnlinked' go together",
+          "from (another player's library) needs take.to 'exileFaceDownUnlinked'",
         );
       }
       if (
@@ -8089,7 +8190,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           e.take.manaValueAtMost !== undefined ||
           e.take.elseAnyToHand !== undefined ||
           e.revealAll !== undefined ||
-          e.rest !== 'bottomRandom')
+          (e.rest !== 'bottomRandom' && (e.from !== undefined || e.rest !== 'bottomChosen')))
       ) {
         issue(
           out,
@@ -8134,6 +8235,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'battlefield',
           'exileFaceDown',
           'exileFaceDownUnlinked',
+          'exile',
           'castFree',
           'top',
         ])

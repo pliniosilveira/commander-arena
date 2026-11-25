@@ -182,6 +182,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeFromGraveyard',
     // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
     'castFreeCreatureGains',
+    // Nalfeshnee (CR 707.10f, 613.1f): "If it's a permanent spell, the copy gains haste and ..." (`copySpell.permanentGains`).
+    'copySpellPermanentGains',
     // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
     'castPayingFromLinkedExile',
     // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
@@ -257,6 +259,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseCreatureType',
     // Expel the Interlopers: "Choose a number between 0 and 10" (`chooseNumber`, CR 608.2d).
     'chooseNumber',
+    // Exit from Exile deck (Xenagos, the Reveler): "Add X mana in any combination of {R} and/or {G}" as an effect (`addManaCombination`).
+    'addManaCombination',
     'dealDamage',
     'destroy',
     'exile',
@@ -543,6 +547,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'blight',
     // Issue 208: "You may play an additional land this turn." (CR 305.2).
     'additionalLandDropThisTurn',
+    // Exit from Exile deck (Stomp): "Damage can't be prevented this turn." (CR 615.12).
+    'damageCantBePreventedThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
     // Gatewatch Beacon: "move a loyalty counter from this artifact onto that planeswalker" (CR 122.1).
@@ -754,6 +760,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersBattlefieldFromGraveyard',
     // Revival Trance (Flayer of the Hatebound): "enters from your graveyard" (`entersBattlefield` with `fromGraveyard` and `graveyardOwner`).
     'entersBattlefieldFromYourGraveyard',
+    // Exit from Exile deck (Faldorn): "a land you control enters from exile" (`entersBattlefield` with `fromExile`).
+    'entersBattlefieldFromExile',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -1171,11 +1179,15 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromHand',
     // Issue 102 (River Kelpie): "a spell cast from a graveyard" (`ObjectFilter.castFromGraveyard`).
     'castSpellFromGraveyard',
+    // Exit from Exile deck (Faldorn, Nalfeshnee): "a spell cast from exile" (`ObjectFilter.castFromExile`).
+    'castSpellFromExile',
     // Scions of Spellcraft deck (Emet-Selch of the Third Seat): "spells you cast from your graveyard" (`ObjectFilter.castFromOwnGraveyard`).
     'castFromOwnGraveyard',
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
+    // Exit from Exile deck (Wild-Magic Sorcerer): "the first spell you cast from exile each turn" (`ObjectFilter.firstCastFromExileThisTurn`).
+    'firstCastFromExileThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
     // Draconic Dissent (Artifact Class): "the first artifact spell you cast each turn" (`ObjectFilter.firstOfTypeThisTurn`).
@@ -1235,6 +1247,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'targetCountAtLeast',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
+    // Exit from Exile deck (Green Slime): "counter target activated or triggered ability from an artifact or enchantment source" (`ObjectFilter.abilitySource`).
+    'abilitySource',
     // "copy that spell if it targets a permanent or player" (`ObjectFilter.targetsPlayer`).
     'targetsPlayer',
     // "a spell or ability that targets you" (`ObjectFilter.targetsPlayer` of 'you').
@@ -1487,6 +1501,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerHasDesignation',
     // CR 702.179e, 702.178a: "Max speed -- [ability]", "if you have max speed".
     'maxSpeed',
+    // CR 309.7, 701.49c: "Activate only if you've completed a dungeon".
+    'completedDungeon',
     // D-235: "Activate only if this Class is level N".
     'classLevelIs',
     // D-133: "as long as you have 30 or more life", "as long as it's untapped" (also "if you control your commander").
@@ -2020,6 +2036,8 @@ export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'flanking',
   // CR 702.8a (Flash): "a card with flash" in a library search (Mystical Teachings); flash is printed, never granted, so only a filter reads it.
   'flash',
+  // CR 702.85a (Cascade): "you cast a spell with cascade" (Aurora Phoenix): cascade is printed or granted by an effect that applies as the spell is cast; a filter reads its presence.
+  'cascade',
 ];
 
 /**
@@ -2185,6 +2203,8 @@ export const ABILITY_FEATURES = [
   'castFreeFromGraveyard',
   /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
   'castFreeCreatureGains',
+  /** "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 613.1f): the engine's `copySpell.permanentGains`. */
+  'copySpellPermanentGains',
   /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
   'castPayingFromLinkedExile',
   /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
@@ -2285,6 +2305,8 @@ export const TRIGGER_FEATURES = [
   'entersBattlefieldFromGraveyard',
   /** "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 404.1): `entersBattlefield` with `fromGraveyard` and `graveyardOwner: 'you'`. */
   'entersBattlefieldFromYourGraveyard',
+  /** "Whenever a land you control enters from exile" (CR 603.6a, 406.1): `entersBattlefield` with `fromExile`. */
+  'entersBattlefieldFromExile',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -2431,6 +2453,8 @@ export const SELECTOR_KINDS = [
   'searchMayPut',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
+  /** "An ability from an artifact source" (CR 113.7a): the engine's `ObjectFilter.abilitySource`. */
+  'abilitySource',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
   'targetsPlayer',
   /** "That targets you" (Siren Stormtamer, CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer` of `'you'`. */
@@ -2465,12 +2489,16 @@ export const SELECTOR_KINDS = [
   'castFromHand',
   /** "A spell cast from a graveyard" (CR 601.2a, issue 102): the engine's `ObjectFilter.castFromGraveyard`. */
   'castSpellFromGraveyard',
+  /** "A spell cast from exile" (CR 601.2a, 406.1): the engine's `ObjectFilter.castFromExile`. */
+  'castSpellFromExile',
   /** "Spells you cast from your graveyard" (CR 601.2a, 404.1, Emet-Selch of the Third Seat): the engine's `ObjectFilter.castFromOwnGraveyard`. */
   'castFromOwnGraveyard',
   /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
   'firstXSpellThisTurn',
+  /** "The first spell you cast from exile each turn" (CR 601.2i, Wild-Magic Sorcerer): the engine's `ObjectFilter.firstCastFromExileThisTurn`. */
+  'firstCastFromExileThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
   'nthSpellThisTurn',
   /** "The first artifact spell you cast each turn" (CR 601.2i, Artifact Class): the engine's `ObjectFilter.firstOfTypeThisTurn`. */
@@ -2726,6 +2754,8 @@ export const CONDITION_KINDS = [
   'playerHasDesignation',
   /** "Max speed -- [ability]" (CR 702.178a, 702.179e): the engine's `maxSpeed`. */
   'maxSpeed',
+  /** "Activate only if you've completed a dungeon" (Sarevok's Tome, CR 309.7): the engine's `completedDungeon`. */
+  'completedDungeon',
   /** "Activate only if this Class is level N" (CR 716.2a, D-235): the engine's `classLevelIs`. */
   'classLevelIs',
   /** "As long as you have 30 or more life", "7 life more than your starting life total" (CR 119.1, D-133): the engine's `lifeTotal`. */
@@ -3353,6 +3383,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
+  copySpellPermanentGains: true,
   castPayingFromLinkedExile: true,
   chosenByOpponent: true,
   spellXAtMost: true,
@@ -3579,6 +3610,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseOne: true,
   chooseCreatureType: true,
   chooseNumber: true,
+  addManaCombination: true,
   vote: true,
   voteFor: true,
   ringTempts: true,
@@ -3588,6 +3620,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   populate: true,
   blight: true,
   additionalLandDropThisTurn: true,
+  damageCantBePreventedThisTurn: true,
   moveCountersOnto: true,
   moveCounterFromThis: true,
   forgetLoyaltyActivations: true,
@@ -3695,6 +3728,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leftGraveyardDuringYourTurn: true,
   entersBattlefieldFromGraveyard: true,
   entersBattlefieldFromYourGraveyard: true,
+  entersBattlefieldFromExile: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,

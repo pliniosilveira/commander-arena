@@ -5,7 +5,7 @@
  */
 import type { IrClause } from '../ir/types';
 import { arg, type Effects, failure } from './clauses';
-import type { FeatureRef } from './features';
+import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter } from './nouns';
 import type { Lowering } from './types';
 
@@ -66,6 +66,11 @@ export const PUT_FROM_AMONG_EXILED: Lowering<IrClause, Effects> = {
     }
     const filter = lowerFilter(objects);
     if (!filter.ok) return filter;
+    // Xenagos, the Reveler (CR 608.2d): "any number of creature and/or land cards from among them": none, or as many as the player chooses.
+    if (objects.anyNumber === true) {
+      const blocked = missingFeatures(['selector:anyNumber']);
+      if (blocked.length > 0) return failure(clause, blocked);
+    }
     return {
       ok: true,
       value: [
@@ -76,6 +81,7 @@ export const PUT_FROM_AMONG_EXILED: Lowering<IrClause, Effects> = {
             filter: { ...filter.value, zone: 'exile', controller: 'you' },
             optional: true,
             fromMoved: true,
+            ...(objects.anyNumber === true ? { anyNumber: true as const } : {}),
           },
           to: 'battlefield',
         },

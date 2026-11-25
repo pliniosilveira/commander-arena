@@ -52,6 +52,8 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Exit from Exile deck (Sweet-Gum Recluse): "each of any number of target creatures that entered this turn".
+  'noun.each-of-any-number-targets',
   // Counter Blitz deck, group C (Collective Effort): "each creature target player controls".
   'noun.each-permanent-of-target-player',
   // Monstrosity of the Lake: "Tap all creatures your opponents control, then put a stun counter on each of those creatures." (the binding pass turns the words into the group before)

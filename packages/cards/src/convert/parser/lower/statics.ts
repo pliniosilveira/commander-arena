@@ -1312,7 +1312,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       ability.statement.condition !== undefined ||
       ability.statement.also !== undefined ||
       ability.statement.functionsIn !== undefined ||
-      first.count < 1
+      (first.count < 1 && first.oncePerTurn !== true)
     ) {
       return failure(ability);
     }
@@ -1329,8 +1329,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           kind: 'static',
           static: {
             kind: 'grantEnergyAlternative',
-            what: { controller: 'you' },
+            what: {
+              controller: 'you',
+              ...(first.types === undefined ? {} : { types: [...first.types] as never }),
+            },
             energy: first.count,
+            ...(first.fromExile === true ? { from: 'exile' as const } : {}),
+            ...(first.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
           },
         },
       ],

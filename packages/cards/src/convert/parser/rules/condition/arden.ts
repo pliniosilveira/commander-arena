@@ -47,7 +47,7 @@ export const CONDITION_DIE_RESULT = defineRule<IrCondition>({
   parse: (ctx, pos) => {
     const r = spanned(
       pattern(
-        /the result is (\d+)(?: or (more|higher|greater|less|lower))?(?![\p{L}\p{N}])(?![-–—])(?! or )/iu,
+        /the result is (\d+)(?: or (more|higher|greater|less|lower))?(?![\p{L}\p{N}])(?![-–—])(?! or )(?! to \d)/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -156,8 +156,60 @@ export const CONDITION_YOU_WIN_CLASH = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.die-result-range`: "the result is 10 to 19" (CR 706.2, 706.3a: a row of a results table names the results it covers, a range of two numbers): the result of the latest roll of
+ * this resolution is at least the first and at most the second. The engine's `and` of two `dieResult` comparisons. Not read: a range that runs backwards or has one end, "or", a third number.
+ */
+export const CONDITION_DIE_RESULT_RANGE = defineRule<IrCondition>({
+  id: 'condition.die-result-range',
+  family: 'condition',
+  leading: ['the'],
+  cites: ['CR 706.2 (Rolling a Die)', 'CR 706.3a (Rolling a Die)'],
+  examples: ['the result is 10 to 19', 'the result is 1 to 9'],
+  rejects: [
+    'the result is 19 to 10',
+    'the result is 10 to',
+    'the result is 10 to 19 to 20',
+    'the result is 0 to 9',
+    'the result is 10 or 19',
+    'the result is 10–19',
+    'the result is X to 19',
+    'the result is 5 to 5',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/the result is (\d+) to (\d+)(?![\p{L}\p{N}])(?! to )/iu))(ctx, pos);
+    if (!r.ok) return r;
+    const { value: match, span } = r.value;
+    const low = Number(match[1]);
+    const high = Number(match[2]);
+    if (!Number.isSafeInteger(low) || !Number.isSafeInteger(high) || low < 1 || high <= low) {
+      return fail(ctx, pos);
+    }
+    const term = (compare: IrComparison): IrCondition => ({
+      kind: 'condition',
+      test: { kind: 'dieResult', compare },
+      span,
+      rule: 'condition.die-result-range',
+    });
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: {
+          kind: 'and',
+          terms: [term({ cmp: 'atLeast', value: low }), term({ cmp: 'atMost', value: high })],
+        },
+        span,
+        rule: 'condition.die-result-range',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const ARDEN_CONDITION_RULES = [
   CONDITION_DIE_RESULT,
   CONDITION_THIS_IN_YOUR_GRAVEYARD,
   CONDITION_YOU_WIN_CLASH,
+  CONDITION_DIE_RESULT_RANGE,
 ];

@@ -1037,12 +1037,15 @@ function lowerOrdinary(written: Activated, ctx: LowerContext): LowerResult<reado
     cost: [...costs],
     ...(ctx.targets.length > 0 ? { targets: [...ctx.targets] } : {}),
     effect,
-    ...(functionsInGraveyard
-      ? { functionsIn: 'graveyard' as const }
-      : // CR 113.6b (stage P68, D-229): "Discard this card" is paid from the hand, so the ability works from there.
-        costs.some((c) => c.kind === 'discardThis' || c.kind === 'revealThis')
-        ? { functionsIn: 'hand' as const }
-        : {}),
+    ...(JSON.stringify(restrictions.activateOnlyIf ?? null).includes('"thisSuspended"')
+      ? // CR 113.6b, 702.62b (Greater Gargadon): "Activate only if this card is suspended": the card is in exile, so that is where the ability works from.
+        { functionsIn: 'exile' as const }
+      : functionsInGraveyard
+        ? { functionsIn: 'graveyard' as const }
+        : // CR 113.6b (stage P68, D-229): "Discard this card" is paid from the hand, so the ability works from there.
+          costs.some((c) => c.kind === 'discardThis' || c.kind === 'revealThis')
+          ? { functionsIn: 'hand' as const }
+          : {}),
     ...restrictionFields(restrictions),
   };
   return { ok: true, value: [value], rule: ability.rule };

@@ -5,6 +5,7 @@ import { defineRule, spanned } from '../registry';
 import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { CHOSEN_PLAYER_LEAD_AMOUNT_RULES } from './chosen-player-lead';
 import { COUNT_AMOUNT_RULES } from './count';
+import { CREATURE_CARDS_AMONG_AMOUNT_RULES } from './creature-cards-among';
 import { DAMAGED_PLAYERS_AMOUNT_RULES } from './damaged-players';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
@@ -522,6 +523,7 @@ export const AMOUNT_RULES = [
   // Issue 144 (Glimpse the Impossible): "for each card put into your graveyard this way".
   ...F144_AMOUNT_RULES,
   ...DISCARDED_TYPES_AMOUNT_RULES,
+  ...CREATURE_CARDS_AMONG_AMOUNT_RULES,
   // Aetherdrift energy deck (issue 105): "where X is the amount of {E} paid this way".
   ...ENERGY_PAID_AMOUNT_RULES,
   // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.

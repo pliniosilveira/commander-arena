@@ -241,6 +241,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.triggers-additional-time-entering-types': asIs,
   'static.triggers-additional-time-entering-land': asIs,
   'static.pay-energy-alt-cost-permanents': asIs,
+  'static.pay-zero-alt-cost-creatures-from-exile': asIs,
   'effect.each-player-may-choose': permanent(
     (e) => `When ~ enters, ${e}. Destroy each permanent chosen this way.`,
   ),
@@ -313,6 +314,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'trigger.cast-from-hand': whenever,
   'trigger.cast-from-graveyard': whenever,
+  'trigger.cast-from-exile': whenever,
+  'trigger.cast-with-keyword': whenever,
+  'trigger.cast-or-land-enters-from-exile': whenever,
   'trigger.token-combat-damage-batch': whenever,
   'trigger.enters-and-token-damage': permanent((e) => `When ${e}, you gain 1 life.`),
   'effect.exile-instead-when-leaving': permanent(
@@ -402,6 +406,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-at-most': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-a': permanent((e) => `~ enters tapped unless ${e}.`),
+  'condition.control-exact-pt-creature': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-land-type': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.opponents-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   // An intervening "if" (CR 603.4): the condition follows the trigger, after "if".
@@ -493,7 +498,32 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-opponent': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
+  'effect.put-from-among-those-cards-onto-battlefield': spell(
+    () =>
+      'Exile the top four cards of your library. You may put a land card from among those cards onto the battlefield.',
+  ),
+  'effect.put-any-number-from-among-them-onto-battlefield': spell(
+    () =>
+      'Exile the top four cards of your library. You may put any number of land cards from among them onto the battlefield.',
+  ),
+  'effect.exile-until-put-rest-bottom': spell((e) => `${cap(e)}.`),
+  'effect.may-play-this-way-free': spell(
+    (e) =>
+      `Exile the top three cards of your library. Until the end of your next turn, you may play those cards. If ~ was cast from a graveyard, ${e}.`,
+  ),
+  'effect.add-mana-combination-of-two-colors': spell(
+    () =>
+      'Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control.',
+  ),
+  'effect.put-all-permanent-cards-exiled-with-then-sacrifice': permanent(
+    () =>
+      'At the beginning of your upkeep, exile the top four cards of your library. Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',
+  ),
+  'amount.for-each-creature-card-among-those-cards': spell(
+    (e) => `Exile the top four cards of your library. Draw a card ${e}.`,
+  ),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.completed-dungeon': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
   'condition.opponent-cards-in-graveyard': permanent(
@@ -648,6 +678,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-commander': spell((e) => `Destroy ${e}.`),
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
+  'noun.each-of-any-number-targets': spell((e) => `Put a +1/+1 counter on ${e}.`),
   // Prismari deck, group 2 (D-656, D-657): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
   'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
   // Issue 145 (Gruff Triplets): "each creature you control named ~" is the objects of a counters effect.
@@ -853,6 +884,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `You lose 1 life, then clash with an opponent. If ${e}, you gain 1 life.`,
   ),
   'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
+  'condition.die-result-range': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
   'condition.this-in-your-graveyard': permanent(
     (e) =>
       `At the beginning of your upkeep, if ${e}, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.`,
@@ -1076,12 +1108,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
+  'noun.target-ability-from-source': spell((e) => `Counter ${e}.`),
+  'effect.destroy-countered-ability-source': spell(
+    () =>
+      "Counter target activated or triggered ability from an artifact source. If a permanent's ability is countered this way, destroy that permanent.",
+  ),
   'noun.up-to-one-target-spell': spell(
     (e) =>
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
+  'static.first-spell-from-exile-has-cascade': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
   'static.permanent-spells-from-hand-gain-evoke': asIs,
   'static.legend-rule-doesnt-apply': asIs,
@@ -1247,6 +1285,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.creature-land-pair': spell((e) => `${cap(e)} gain indestructible until end of turn.`),
   'noun.that-sources-controller': permanent(
     (e) => `Whenever a source deals damage to ~, ${e} exiles a card from their hand at random.`,
+  ),
+  'noun.that-spells-controller': permanent(
+    (e) => `Whenever ~ becomes the target of a spell, ~ deals 2 damage to ${e}.`,
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
@@ -1690,6 +1731,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.player-exiles-until-cast': permanent(
     (e) => `When ~ enters, ${e}${e.endsWith('"') ? '' : '.'}`,
   ),
+  'effect.target-player-exiles-until-cast-bottom': permanent((e) => `When ~ enters, ${e}.`),
   'effect.controller-reveals-until-puts': spell(
     (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
   ),

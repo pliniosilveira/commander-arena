@@ -473,6 +473,13 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'graveyard') return false;
   }
+  // CR 601.2a, 406.1 (Exit from Exile deck): "a spell cast from exile": a spell on the stack that was cast from exile.
+  if (filter.castFromExile === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'exile') return false;
+  }
   // CR 601.2a, 404.1 (Emet-Selch of the Third Seat): "spells you cast from your graveyard": cast from a graveyard, the card owned by the caster (a graveyard is its owner's, CR 404.1).
   if (filter.castFromOwnGraveyard === true) {
     const from =
@@ -491,6 +498,15 @@ export function matchesFilterWith(
     filter.firstXSpellThisTurn === true &&
     state.turnLog.castSpells.some(
       (e) => e.hasX === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
+  // CR 601.2i (Wild-Magic Sorcerer): "the first spell you cast from exile each turn": no other spell the caster cast from exile this turn so far.
+  if (
+    filter.firstCastFromExileThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) => e.fromExile === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
     )
   ) {
     return false;

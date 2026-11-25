@@ -18,7 +18,7 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { CREATURE_TYPE_LIST } from './becomes';
 import { COPY_LOYALTY_EFFECT_RULES } from './copy-loyalty';
 import { GUFF_EFFECT_RULES } from './guff';
-import { type Clauses, makeClause } from './operands';
+import { type Clauses, makeClause, single } from './operands';
 import { impliedYou } from './player';
 import { EFFECT_LEAD_THEY_BECOME_COLORED_CREATURES_ABILITY } from './they-become-bird';
 import { VRONOS_EFFECT_RULES } from './vronos';
@@ -424,7 +424,7 @@ const EXILE_THAT_MANY_ID = 'effect.exile-that-many-top';
 
 /**
  * `effect.exile-that-many-top`: "Exile that many cards from the top of your library." (Chandra, Legacy of Fire; CR 701.13, 608.2c): the number of counters the instruction before it
- * removed. The engine's `exileTop` with that number. Not read: another number ("the top two cards" is `effect.exile-top`), another library, "face down".
+ * removed, or (Dream Pillager) what the trigger's event says. The engine's `exileTop` with that number. Not read: another number ("the top two cards" is `effect.exile-top`), another library, "face down".
  */
 export const EFFECT_EXILE_THAT_MANY_TOP = defineRule<Clauses>({
   id: EXILE_THAT_MANY_ID,
@@ -440,17 +440,19 @@ export const EFFECT_EXILE_THAT_MANY_TOP = defineRule<Clauses>({
     'exile those cards from the top of your library',
     'exile that card from the top of your library',
   ],
-  parse: (ctx, pos) => {
-    const r = pattern(
-      /exile that many cards from the top of your library(?![\p{L}\p{N}])(?!\s+face down)/iu,
-    )(ctx, pos);
-    if (!r.ok) return r;
-    return {
-      ok: true,
-      value: [makeClause(EXILE_THAT_MANY_ID, 'exileTopThatMany', {}, { start: pos, end: r.pos })],
-      pos: r.pos,
-    };
-  },
+  parse: single(
+    EXILE_THAT_MANY_ID,
+    sequence(
+      // One guard, so a text that is not this exile fails where it starts ("exile your graveyard" is no near miss of this rule).
+      pattern(
+        /exile (?=that many cards from the top of your library(?![\p{L}\p{N}])(?!\s+face down))/iu,
+      ),
+      family<IrAmount>('amount', { only: ['amount.that-many'] }),
+      literal(' cards from the top of your library'),
+      pattern(/(?![\p{L}\p{N}])(?!\s+face down)/u),
+    ),
+    ([, count]) => ({ verb: 'exileTopThatMany', args: { count } }),
+  ),
 });
 
 const TEYO_ID = 'effect.choose-direction-attack-nearest';

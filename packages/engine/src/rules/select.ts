@@ -224,6 +224,17 @@ export function matchesFilter(
       });
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
+  // CR 113.7a (Green Slime): "from an artifact or enchantment source": the ability's source, as it is or as it last was, is an object the inner filter matches.
+  if (filter.abilitySource !== undefined) {
+    const { abilitySource, ...rest } = filter;
+    const source = obj.stack?.kind === 'ability' ? obj.stack.source : null;
+    const from = source === null ? null : objectOrLki(state, source);
+    return (
+      from !== null &&
+      matchesFilter(state, from, abilitySource, ctx) &&
+      matchesFilter(state, obj, rest, ctx)
+    );
+  }
   // CR 115.1, 601.2c: "that targets a player": one of the spell's chosen targets is a player.
   if (filter.targetsPlayer !== undefined) {
     const { targetsPlayer: _aimedAtPlayer, ...rest } = filter;

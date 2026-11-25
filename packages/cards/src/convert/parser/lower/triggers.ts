@@ -204,12 +204,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ]);
         if (blocked.length > 0) return failure(t, blocked);
       }
+      if (t.fromExile === true) {
+        const blocked = missingFeatures(['trigger:entersBattlefieldFromExile']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
       return ok({
         kind: 'entersBattlefield',
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
         ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
+        ...(t.fromExile === true ? { fromExile: true as const } : {}),
         ...(t.fromGraveyard === true && t.yourGraveyard === true
           ? { graveyardOwner: 'you' as const }
           : {}),
@@ -995,7 +1000,6 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ([
       'drawn',
       'sacrifice',
-      'becomesTarget',
       'lifeGained',
       'lifeLost',
       'attackBatch',
@@ -1014,6 +1018,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'winsCoinFlip',
     ].includes(only.event) &&
       only.actor !== undefined) ||
+    // Exit from Exile deck (Bonecrusher Giant, CR 603.2, 115.1): the controller of the spell or ability that targeted is the player of the event, said or not ("that spell's controller").
+    only.event === 'becomesTarget' ||
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
@@ -2041,6 +2047,8 @@ function lowerTriggeredAbility(
       (c.verb === 'putFromZone' && sentences.length > 1) ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong' ||
+      // Journey to the Lost City: "you may put a land card from among those cards onto the battlefield": the engine's choice of none or one exiled card is the offer.
+      c.verb === 'putFromAmongExiled' ||
       // Kimahri, Valiant Guardian (CR 707.9b): "Then you may have ~ become a copy of that creature, except ...": the lowering wraps the copy in the engine's `may`.
       c.verb === 'becomeCopyKeepingAbility' ||
       // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.

@@ -25,6 +25,7 @@ import { defineRule, family, spanned } from '../registry';
 import { ABOLETH_EFFECT_RULES } from './aboleth';
 import { ABZAN_SPELLS_EFFECT_RULES } from './abzan-spells';
 import { ADAPT_EFFECT_RULES } from './adapt';
+import { ADD_MANA_COMBINATION_EFFECT_RULES } from './add-mana-combination';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { AHOY_G1B_EFFECT_RULES } from './ahoy-g1b';
 import { AHOY_G2_EFFECT_RULES } from './ahoy-g2';
@@ -45,8 +46,10 @@ import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRAINSTEALER_G9_EFFECT_RULES } from './brainstealer-g9';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CAST_AMONG_EXILED_EFFECT_RULES } from './cast-among-exiled';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
+import { CHOOSE_ONE_OF_THEM_EFFECT_RULES } from './choose-one-of-them';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES } from './choose-opponent-library-card';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
@@ -77,6 +80,8 @@ import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DAMAGE_IT_COUNT_EFFECT_RULES } from './damage-it-count';
 import { DAMAGE_SELF_INSTEAD_EFFECT_RULES } from './damage-self-instead';
+import { DAMAGE_THEIR_CREATURES_EFFECT_RULES } from './damage-their-creatures';
+import { DAMAGE_UNPREVENTABLE_EFFECT_RULES } from './damage-unpreventable';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -85,10 +90,12 @@ import { DEATH_TOLL_B_EFFECT_RULES } from './death-toll-b';
 import { DEATH_TOLL_C_EFFECT_RULES } from './death-toll-c';
 import { DEATH_TOLL_WINTER_EFFECT_RULES } from './death-toll-winter';
 import { DELAYED_RULES } from './delayed';
+import { DESTROY_COUNTERED_SOURCE_EFFECT_RULES } from './destroy-countered-source';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
+import { DURNAN_EFFECT_RULES } from './durnan';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
 import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
@@ -100,6 +107,7 @@ import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
+import { EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -159,6 +167,7 @@ import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES } from './land-creature-unblockable';
+import { LEAD_GAIN_NEXT_TURN_EFFECT_RULES } from './lead-gain-next-turn';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
@@ -176,6 +185,7 @@ import {
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
+import { MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES } from './may-play-this-way-free';
 import { MELD_EFFECT_RULES } from './meld';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -235,7 +245,9 @@ import { PUMP_TARGETS_EFFECT_RULES } from './pump-targets';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUMP_UNBLOCKABLE_EFFECT_RULES } from './pump-unblockable';
 import { PUT_RULES } from './put';
+import { PUT_ALL_LINKED_EXILED_EFFECT_RULES } from './put-all-linked-exiled';
 import { PUT_ANY_GRAVEYARD_RULES } from './put-any-graveyard';
+import { PUT_FROM_AMONG_EXILED_EFFECT_RULES } from './put-from-among-exiled';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
@@ -1240,6 +1252,7 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
         only: [
           'noun.target-spell',
           'noun.target-triggered-ability-or-spell',
+          'noun.target-ability-from-source',
           'noun.target-activated-or-triggered-ability',
           // Issue 105 (Disallow).
           'noun.target-spell-activated-or-triggered-ability',
@@ -1445,6 +1458,17 @@ export const EFFECT_RULES = [
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
+  ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
+  ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
+  ...DESTROY_COUNTERED_SOURCE_EFFECT_RULES,
+  ...CHOOSE_ONE_OF_THEM_EFFECT_RULES,
+  ...PUT_FROM_AMONG_EXILED_EFFECT_RULES,
+  ...PUT_ALL_LINKED_EXILED_EFFECT_RULES,
+  ...ADD_MANA_COMBINATION_EFFECT_RULES,
+  ...MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES,
+  ...EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES,
+  ...CAST_AMONG_EXILED_EFFECT_RULES,
+  ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
@@ -1509,6 +1533,7 @@ export const EFFECT_RULES = [
   // Planeswalker Party deck (Chandra, Awakened Inferno): the damage and the exile of what dies, before the plain damage, which would read the first sentence and leave the rest.
   ...PLANESWALKER_PARTY_EFFECT_RULES,
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
+  ...DURNAN_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,

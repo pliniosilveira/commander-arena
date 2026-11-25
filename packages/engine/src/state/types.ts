@@ -464,6 +464,8 @@ export interface StackData {
   readonly lifeForMana?: true;
   /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */
   readonly energyGrant?: number;
+  /** The permanent whose "once each turn" alternative cost the spell was cast for (`grantEnergyAlternative` with `oncePerTurn`), recorded in the turn log as the spell is cast. */
+  readonly energyGrantOnce?: ObjectId;
   /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
@@ -605,6 +607,8 @@ export interface StackData {
    * ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
    */
   readonly creatureGains?: readonly Ability[];
+  /** Nalfeshnee (CR 707.10f, 613.1f): a copy of a spell that carries abilities its permanent has (`copySpell.permanentGains`), whatever the permanent's types. */
+  readonly permanentGains?: readonly Ability[];
   /**
    * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
    * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
@@ -797,6 +801,11 @@ export interface SeatState {
    */
   readonly speed?: number;
   /**
+   * How many dungeons this player has completed (CR 309.7, 701.49c): added to as a dungeon is removed from the game on its last room (`rules/dungeon.ts`). Absent until the first. What
+   * "if you've completed a dungeon" reads. Public.
+   */
+  readonly dungeonsCompleted?: number;
+  /**
    * The energy counters the player has (CR 107.14, 122.1, D-209), kept for the rest of the game; paid by removing them. Absent until the first time
    * (a player has none). Public.
    */
@@ -828,6 +837,8 @@ export interface TurnState {
   readonly passedInSuccession: readonly SeatId[];
   /** Additional land plays granted this turn by effects (CR 305.2). */
   readonly extraLandDrops: number;
+  /** "Damage can't be prevented this turn" (CR 615.12, Exit from Exile deck): set by the effect, gone with the turn (the next turn is built without it). */
+  readonly damageUnpreventable?: true;
   /**
    * Phases added to this turn that have not begun yet (CR 500.8, D-151, D-187), in the order they will occur. An effect that adds a phase "after this
    * phase" puts it directly after the phase that is going on, so it goes first in this list (CR 500.8: the most recently created one occurs first);
@@ -1719,6 +1730,8 @@ export type Instruction =
       readonly seat: SeatId;
       readonly cards: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
+      /** The controller chose (Tectonic Giant) and `moved` names the card chosen afterwards, not the others. */
+      readonly keepChosen?: true;
     }
   /**
    * "Exile the top four cards of your library in a face-down pile, then exile the top four cards in a face-up pile. An opponent chooses one of those piles. Put that pile into
@@ -1775,7 +1788,7 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree' | 'top';
+      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'castFree' | 'top';
       /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
       readonly libraryOf?: SeatId;
       /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
@@ -1839,6 +1852,8 @@ export type Instruction =
       readonly min: number;
       readonly max: number;
       readonly amount: number | null;
+      /** `addManaCombination` (Xenagos): once answered, `amount` mana of the first color and the rest (`max` less `amount`) of the second are added to the pool of `seat`. */
+      readonly manaSplit?: readonly [ManaColor, ManaColor];
     }
   /**
    * "Behold a Dragon" (`behold`, CR 701.4, D-151): `seat` chooses a card in their hand or a permanent they control that `filter` matches
@@ -2093,6 +2108,8 @@ export type Instruction =
       readonly among?: readonly ObjectId[];
       readonly controller?: SeatId;
       readonly retarget?: ObjectId;
+      /** Nalfeshnee (CR 707.10f, 613.1f): what the permanent the copy becomes has (`copySpell.permanentGains`). */
+      readonly gains?: readonly Ability[];
     }
   /**
    * CR 115.7a, 115.7b (D-181): "Change the target of target spell or ability with a single target." The target of `object`, a spell or ability on
@@ -2661,6 +2678,10 @@ export type ContinuousChange =
       readonly exileInstead?: true;
       /** "Spells you cast this way cost {2} less to cast" (`mayPlay.lessGeneric`, Urianger Augurelt, CR 601.2f): the generic mana the cost of a spell cast with this permission goes down by (`rules/play-permission-cost.ts`). */
       readonly lessGeneric?: number;
+      /** "That spell has undaunted" (`mayPlay.undaunted`, Durnan, CR 702.125a): the spell costs {1} less to cast for each opponent of its caster still in the game (`rules/play-permission-cost.ts`). */
+      readonly undaunted?: true;
+      /** "... you may cast it if it's a creature spell" (`mayPlay.creatureSpellsOnly`, Vivien, CR 601.2): only a creature card may be cast with this permission. */
+      readonly creatureSpellsOnly?: true;
       /**
        * "You may play that card until you exile another card with this enchantment" (`mayPlay.lasts` `untilSourceExilesAnother`, Furious Rise, CR 607.2a): the permanent whose linked
        * ability exiled the card; the permission is removed as that permanent exiles another card with `exileTop` `linked` (`rules/impulse.ts`).
@@ -3207,7 +3228,11 @@ export interface TurnLog {
     readonly hasX?: true;
     /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
     readonly fromGraveyard?: true;
+    /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
+    readonly fromExile?: true;
   }[];
+  /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
+  readonly oncePerTurnGrants?: readonly ObjectId[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {

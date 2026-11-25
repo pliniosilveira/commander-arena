@@ -54,11 +54,17 @@ function revealedEvent(
 }
 
 /** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-396), "You may put a card that matches into your hand". */
-function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown' | 'top'): string {
+function mayTakeWords(
+  ins: LookTake,
+  to: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top',
+): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
   // `min`: a card that must be taken (Cavalier of Thorns: "Put a land card from among them onto the battlefield"), not a "you may".
   const must = (ins.min ?? 0) > 0;
   const them = ins.max === 1 ? 'it' : 'them';
+  // Durnan (CR 701.13): "You may exile a creature card from among them".
+  if (to === 'exile')
+    return must ? `Exile ${cards} from among them` : `You may exile ${cards} from among them`;
   const where =
     to === 'hand'
       ? 'into your hand'
@@ -248,14 +254,17 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
                 ins.withCounters,
               ),
             )
-          : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
-            moveInstructions(chosen, 'exile').map((i) =>
-              i.kind === 'move'
-                ? ins.unlinked === true
-                  ? { ...i, faceDown: true as const }
-                  : { ...i, linkTo: res.source, faceDown: true as const }
-                : i,
-            )),
+          : to === 'exile'
+            ? // CR 406.3 (Durnan): exiled face up; no permanent remembers it, `moved` names it afterwards.
+              moveInstructions(chosen, 'exile')
+            : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
+              moveInstructions(chosen, 'exile').map((i) =>
+                i.kind === 'move'
+                  ? ins.unlinked === true
+                    ? { ...i, faceDown: true as const }
+                    : { ...i, linkTo: res.source, faceDown: true as const }
+                  : i,
+              )),
     { ...ins, stage: 'rest', chosen, left },
   ]);
 }

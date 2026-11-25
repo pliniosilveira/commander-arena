@@ -240,7 +240,7 @@ interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
   readonly keyword:
-    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
     | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;
@@ -277,7 +277,12 @@ export interface AltCostGrantSource {
   readonly alt:
     | { readonly kind: 'evoke'; readonly cost: readonly Cost[] }
     // Issue 105: energy counters rather than the mana cost.
-    | { readonly kind: 'energy'; readonly count: number };
+    | {
+        readonly kind: 'energy';
+        readonly count: number;
+        readonly from?: 'hand' | 'exile';
+        readonly oncePerTurn?: true;
+      };
   readonly condition?: Condition;
 }
 
@@ -616,7 +621,12 @@ function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): Alt
       out.push({
         object,
         what: a.static.what,
-        alt: { kind: 'energy', count: a.static.energy },
+        alt: {
+          kind: 'energy',
+          count: a.static.energy,
+          ...(a.static.from === undefined ? {} : { from: a.static.from }),
+          ...(a.static.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
+        },
         ...(a.condition === undefined ? {} : { condition: a.condition }),
       });
     }

@@ -856,6 +856,11 @@ export interface ObjectFilter {
    */
   readonly castFromGraveyard?: true;
   /**
+   * "Whenever you cast a spell from exile" (Exit from Exile deck, Faldorn, Nalfeshnee; CR 601.2a, 406.1): the spell on the stack was cast from exile. Read from the spell itself as it is
+   * cast (the zone it came from), so only a spell is matched. Not with `notCastFromHand`, `castFromHand` or `castFromGraveyard`.
+   */
+  readonly castFromExile?: true;
+  /**
    * "Spells you cast from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1, 108.3): the spell on the stack was cast from the caster's own graveyard, that is, from a
    * graveyard and the card is owned by its caster (a graveyard is its owner's). Read from the spell itself as it is cast (the zone it came from, `castFrom`), so only a spell is
    * matched; in a cost reduction (`costReduction.spells`) it is read as the cost is determined. Not with `notCastFromHand`, `castFromHand` or `castFromGraveyard`.
@@ -872,6 +877,11 @@ export interface ObjectFilter {
    * trigger) or as its cost is determined (a cost reduction, where the spell is not yet logged); refused in a static ability that nothing refreshes (a layer effect).
    */
   readonly firstXSpellThisTurn?: true;
+  /**
+   * "The first spell you cast from exile each turn" (Wild-Magic Sorcerer, CR 601.2i, 601.2a): no other spell was cast from exile by the caster of this one this turn, before it
+   * (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Meant with `castFromExile`. Read as `firstXSpellThisTurn` is.
+   */
+  readonly firstCastFromExileThisTurn?: true;
   /**
    * "The second spell you cast each turn" (Alisaie Leveilleur, CR 601.2f, 601.2i, 604.2): the spell is the `nthSpellThisTurn`th spell its caster casts this turn, that is, exactly
    * `nthSpellThisTurn - 1` other spells were cast by that caster before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10, and the spell itself is left out of the count
@@ -1241,6 +1251,13 @@ export interface ObjectFilter {
    * static ability and where `derive` matches filters.
    */
   readonly targetsObject?: ObjectFilter;
+  /**
+   * "Counter target activated or triggered ability from an artifact or enchantment source" (Green Slime, CR 113.7a, 113.3b, 109.1): an ability on the stack whose source (the object that
+   * generated it, as it is or as it last was on the battlefield) is an object this filter matches. Only with `stackKind` `ability` (or `activatedAbility`/`triggeredAbility`); the
+   * inner filter names permanents on the battlefield and no stack kind. Read where a filter is matched against the game (a target slot); refused in a static ability and where `derive`
+   * matches filters.
+   */
+  readonly abilitySource?: ObjectFilter;
   /**
    * "A spell that targets a player" (CR 115.1, 601.2c, Shiko and Narset, Unified: "copy that spell if it targets a permanent or player", read as a disjunction of `targetsObject`
    * of a permanent and this): a spell or ability on the stack with at least one chosen target that is a player. Read as `targetsObject` is, with the same limits.
@@ -2639,6 +2656,16 @@ export type Effect =
    */
   | { readonly kind: 'chooseNumber'; readonly min: number; readonly max: number }
   /**
+   * "Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control." (Xenagos, the Reveler, CR 106.1b, 608.2d, 107.3c): an effect (not a mana ability: it
+   * uses the stack) that adds `amount` mana, read as the effect runs, each of the first or the second color: the controller chooses how many of the first (a whole number from 0 to the amount,
+   * a `chooseX` decision of purpose `chooseNumber`), the rest are the second. The two colors are different. Nothing is asked, and nothing added, for an amount of 0 or less.
+   */
+  | {
+      readonly kind: 'addManaCombination';
+      readonly colors: readonly [ManaColor, ManaColor];
+      readonly amount: Amount;
+    }
+  /**
    * `effect` is done once for each player `players` names, by the controller of the ability (a "for each opponent" that repeats an effect). With `runsAs: 'each'` (Sail into the West:
    * "Each player returns up to two cards from their graveyard to their hand", CR 101.4, 608.2d) each player in turn order does it themselves: that player is "you" in `effect`,
    * and the choices in it are theirs. A player who has lost the game does nothing.
@@ -3516,6 +3543,16 @@ export type Effect =
        * reduction of the total cost, never below the colored and hybrid symbols). A land card is played as usual. A positive whole number; not with `free` (there is nothing to reduce).
        */
       readonly lessGeneric?: number;
+      /**
+       * "That spell has undaunted." (Durnan of the Yawning Portal, CR 702.125a, 702.125b, 601.2f): a spell cast with this permission costs {1} less to cast for each opponent of its caster still in
+       * the game, counted as the cost is determined. A cost reduction like `lessGeneric`: not with `free`.
+       */
+      readonly undaunted?: true;
+      /**
+       * "For as long as it remains exiled, you may cast it if it's a creature spell." (Vivien, Champion of the Wilds, CR 601.2, 611.2a): the permission is to cast the card only when it is a
+       * creature card (a card of any other kind stays where it is). Needs `castOnly`.
+       */
+      readonly creatureSpellsOnly?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -3609,6 +3646,12 @@ export type Effect =
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
       /**
+       * "Exile cards from the top of your library until you exile a land card. Put that card onto the battlefield and the rest on the bottom of your library in a random order." (Venture Forth,
+       * CR 701.13, 401.4, 110.2a): what is done with the cards as the effect ends. The card found, if any, goes onto the battlefield under the control of the player; the other cards go on the
+       * bottom of that player's library in a random order from the seeded generator. Only for `players` `you`.
+       */
+      readonly outcome?: { readonly found: 'battlefield'; readonly rest: 'bottomRandom' };
+      /**
        * "... until they exile a nonland card, then puts the rest on the bottom of their library in a random order" (CR 701.13, 401.4, Guff Rewrites History): the cards each player exiled
        * other than the one the filter matched go to the bottom of that player's library in an order the seeded generator makes, and only the matching cards are what `moved` names afterwards.
        */
@@ -3625,6 +3668,13 @@ export type Effect =
       readonly kind: 'opponentChoosesCard';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
       readonly filter: ObjectFilter;
+      /**
+       * "Exile the top two cards of your library. Choose one of them. Until the end of your next turn, you may play that card." (Tectonic Giant, CR 608.2d, 701.13): the controller of the effect
+       * chooses, not an opponent (which opponent is not asked), and what `moved` names afterwards is the card chosen (`keepChosen`), not the others. Not without `keepChosen`.
+       */
+      readonly byController?: true;
+      /** With `byController`: afterwards `moved` names the cards chosen, and the others are left out. */
+      readonly keepChosen?: true;
     }
   /**
    * "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that
@@ -3733,6 +3783,12 @@ export type Effect =
        * CR 707.10e gives the controller is not asked, see docs/ROADMAP.md).
        */
       readonly newTarget?: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 608.3f, 613.1f): the abilities the
+       * permanent a copy of a permanent spell becomes (a token) has for as long as it stays on the battlefield. A copy of an instant or a sorcery spell never becomes a permanent and gives
+       * nothing. Only with one copy made by the effect of a trigger about a cast spell (no `count`, `forEach`, `copier` or `newTarget`).
+       */
+      readonly permanentGains?: readonly Ability[];
     }
   /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,
@@ -4814,6 +4870,12 @@ export type Effect =
    */
   | { readonly kind: 'additionalLandDropThisTurn'; readonly count: Amount }
   /**
+   * "Damage can't be prevented this turn." (Stomp of Bonecrusher Giant, CR 615.12, 101.2, 611.2a): until the end of this turn no damage is prevented, whoever deals it and whoever or
+   * whatever it is dealt to; the prevention effects still apply once each and prevent nothing (as for the static `damageCantBePrevented`). It begins as the effect resolves and ends
+   * with the turn.
+   */
+  | { readonly kind: 'damageCantBePreventedThisTurn' }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
@@ -5203,6 +5265,8 @@ export type Effect =
          * 401.4): the card taken stays where it is, in the library, unrevealed, and what is left goes where `rest` says (the bottom), so it is the top card afterwards; with `hidden`,
          * `min` and `max` of 1, no `tapped`, `totalManaValue`, `all` or `elseAnyToHand`, and `rest` the bottom or the graveyard.
          */
+        // `exile` (Durnan of the Yawning Portal, CR 406.3, 701.13): "You may exile a creature card from among them": the card taken is exiled face up (no permanent remembers it); it is what `moved` names
+        // afterwards, for a `mayPlay` of it (`whileExiled`). `min` and `max` of 1 or `max` of 1 with "you may"; the rest goes where `rest` says.
         // `exileFaceDownUnlinked` (Gonti, CR 406.3): exiled face down as `exileFaceDown` is, but no permanent remembers the card: it is what `moved` names afterwards, for a `mayPlay` of it
         // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` and `max` of 1, and the rest on the bottom in a random order.
         readonly to?:
@@ -5210,6 +5274,7 @@ export type Effect =
           | 'battlefield'
           | 'exileFaceDown'
           | 'exileFaceDownUnlinked'
+          | 'exile'
           | 'castFree'
           | 'top';
         /**
@@ -5915,6 +5980,11 @@ export type Trigger =
        * this ability, that is, the permanent is owned by that player. Only with `fromGraveyard`.
        */
       readonly graveyardOwner?: 'you';
+      /**
+       * "Whenever a land you control enters from exile" (Exit from Exile deck, Faldorn; CR 603.6a, 400.7, 406.1): only a permanent that came onto the battlefield from exile (the zone it
+       * moved from, read as the event happens), never a token. Not with `fromGraveyard`.
+       */
+      readonly fromExile?: true;
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**
@@ -7664,6 +7734,11 @@ export type Condition =
    */
   | { readonly kind: 'maxSpeed'; readonly player: PlayerSelector }
   /**
+   * "Activate only if you've completed a dungeon" (Sarevok's Tome, CR 309.7, 701.49c): one of the players `player` names has completed a dungeon at some time in the game
+   * (`SeatState.dungeonsCompleted`). A condition has no targets and reads no trigger subject.
+   */
+  | { readonly kind: 'completedDungeon'; readonly player: PlayerSelector }
+  /**
    * "Activate only if this Class is level 1" (CR 716.2a, 716.2d, D-235): the source permanent is at level `level` now; a permanent with no level is at level 1.
    * Read for the permanent the ability belongs to (an activated ability's `activateOnlyIf`).
    */
@@ -8604,7 +8679,7 @@ export type StaticEffect =
       readonly kind: 'grantKeywordToSpells';
       readonly what: ObjectFilter;
       readonly keyword:
-        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
+        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
         | { readonly kind: 'replicateAtManaCost' };
     }
   /**
@@ -8639,6 +8714,16 @@ export type StaticEffect =
       readonly kind: 'grantEnergyAlternative';
       readonly what: ObjectFilter;
       readonly energy: number;
+      /**
+       * "Once each turn, you may pay {0} rather than pay the mana cost for a creature spell you cast from exile." (Tlincalli Hunter, CR 118.9, 601.2b, 601.2a): the zone the spell is cast
+       * from, the hand when left out. Only a card in exile the player may cast (a play permission); the alternative cost is paid in place of the mana cost.
+       */
+      readonly from?: 'hand' | 'exile';
+      /**
+       * "Once each turn" (CR 601.2b): the permanent gives the alternative cost to one spell in a turn; the cast is recorded in the turn log (`TurnLog.oncePerTurnGrants`). With it `energy` may
+       * be 0: paying {0} is paying nothing, rather than the mana cost.
+       */
+      readonly oncePerTurn?: true;
     }
   /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
@@ -9638,7 +9723,7 @@ export type Ability =
        * The zone the ability functions from (CR 113.6b). Default the battlefield; Cycling uses the hand and
        * Unearth (CR 702.84a, D-124) the graveyard.
        */
-      readonly functionsIn?: 'battlefield' | 'hand' | 'graveyard';
+      readonly functionsIn?: 'battlefield' | 'hand' | 'graveyard' | 'exile';
       /**
        * "This ability costs {4} less to activate if an opponent controls four or more nonbasic lands" (D-135, CR 601.2f, 602.2b):
        * when the condition holds as the ability is activated, `generic` is taken off the generic part of its mana cost (never

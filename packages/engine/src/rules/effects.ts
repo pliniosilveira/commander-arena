@@ -1062,6 +1062,25 @@ function runEffect(
               seat,
             })),
       );
+    case 'addManaCombination': {
+      // CR 106.1b, 608.2d (Xenagos, the Reveler): the controller chooses how many of the first color; the rest are the second (rules/choose-number.ts).
+      const total = amountOf(state, effect.amount, ctx, targets);
+      if (total <= 0) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseNumber',
+            seat: res.controller,
+            min: 0,
+            max: total,
+            amount: null,
+            manaSplit: effect.colors,
+          },
+        ],
+      );
+    }
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): the controller chooses a whole number from `min` to `max`.
       return done(
@@ -1636,6 +1655,16 @@ function runEffect(
       if (effect.exileInstead === true) {
         return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
       }
+      // CR 113.7a, 701.6a (Green Slime): "If a permanent's ability is countered this way, destroy that permanent": the permanents on the battlefield that were the sources of the abilities
+      // countered are what `moved` names afterwards. A countered spell names nothing (it is a card that goes to a graveyard, and no instruction reads it).
+      const sources = ids.flatMap((id) => {
+        const stack = state.objects[id]?.stack;
+        const source = stack?.kind === 'ability' ? stack.source : null;
+        return source !== null && state.objects[source]?.zone === 'battlefield' ? [source] : [];
+      });
+      if (sources.length > 0 || ids.some((id) => state.objects[id]?.stack?.kind === 'ability')) {
+        return { ...done(state, events, moveInstructions(ids, 'graveyard')), lastMoved: sources };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 
@@ -1804,7 +1833,9 @@ function runEffect(
         ...done(
           state,
           [],
-          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets, opponent)),
+          spells.flatMap((id) =>
+            copyInstructions(id, copies, effect.newTargets, opponent, effect.permanentGains),
+          ),
         ),
         performed: copies > 0 ? spells.length : 0,
       };
@@ -2483,6 +2514,10 @@ function runEffect(
     case 'empowerJace':
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
+
+    case 'damageCantBePreventedThisTurn':
+      // CR 615.12, 611.2a: for the rest of this turn no damage is prevented (read by `damageCantBePrevented`, `rules/global-statics.ts`).
+      return done({ ...state, turn: { ...state.turn, damageUnpreventable: true } });
 
     case 'additionalLandDropThisTurn':
       // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.

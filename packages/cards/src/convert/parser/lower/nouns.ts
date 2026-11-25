@@ -299,7 +299,7 @@ function lowerFilterAt(
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
-      if (word === 'toxic' || word === 'flash') {
+      if (word === 'toxic' || word === 'flash' || word === 'cascade') {
         kinds.push(word);
         continue;
       }
@@ -370,6 +370,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castSpellFromGraveyard');
   }
+  // Exit from Exile deck: "a spell cast from exile" (CR 601.2a), a spell on the stack.
+  if (filter.castFromExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castSpellFromExile');
+  }
   // Emet-Selch of the Third Seat: "spells you cast from your graveyard" (CR 601.2a, 404.1), a spell on the stack.
   if (filter.castFromOwnGraveyard === true) {
     if (inner) return bad([]);
@@ -388,6 +393,11 @@ function lowerFilterAt(
   if (filter.firstXSpellThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:firstXSpellThisTurn');
+  }
+  // Wild-Magic Sorcerer: "the first spell you cast from exile each turn" (CR 601.2i).
+  if (filter.firstCastFromExileThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstCastFromExileThisTurn');
   }
   // Artifact Class: "the first artifact spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.firstOfTypeThisTurn === true) {
@@ -502,6 +512,15 @@ function lowerFilterAt(
     const aimed = lowerFilterAt(filter.targets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
+  }
+  // Green Slime (CR 113.7a): "from an artifact or enchantment source", an ability on the stack.
+  let abilitySource: ObjectFilter | undefined;
+  if (filter.abilitySource !== undefined) {
+    if (inner || filter.stackKind === undefined) return bad([]);
+    parts.push('selector:abilitySource');
+    const from = lowerFilterAt(filter.abilitySource, noun, true, false, false);
+    if (!from.ok) return from;
+    abilitySource = from.value;
   }
   // Siren Stormtamer (CR 115.1, 601.2c): "that targets you": a chosen target that is the controller of the ability, a member of the choice that also reads "a creature you control".
   let targetsPlayer: 'you' | undefined;
@@ -680,10 +699,14 @@ function lowerFilterAt(
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
+    ...(filter.castFromExile === true ? { castFromExile: true as const } : {}),
     ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
+    ...(filter.firstCastFromExileThisTurn === true
+      ? { firstCastFromExileThisTurn: true as const }
+      : {}),
     ...(filter.firstOfTypeThisTurn === true ? { firstOfTypeThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.dealtDamageThisTurn === true ? { dealtDamageThisTurn: true as const } : {}),
@@ -724,6 +747,7 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(abilitySource === undefined ? {} : { abilitySource }),
     ...(targetsPlayer === undefined ? {} : { targetsPlayer }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),

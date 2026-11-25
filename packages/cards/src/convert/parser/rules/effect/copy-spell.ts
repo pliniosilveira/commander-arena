@@ -12,10 +12,20 @@
  * its owner's hand (CR 400.3, 608.2b). Not read: "except" copies, copies of abilities and "for each" counts. "it" is read
  * as the spell of a cast trigger (Quandrix Unlimited group E); the lowering refuses it anywhere the binding pass did not make it that spell.
  */
-import { literal, map, optional, pattern, quiet, satisfy, sequence } from '../../combinators';
+import {
+  literal,
+  map,
+  optional,
+  type ParseContext,
+  pattern,
+  quiet,
+  satisfy,
+  sequence,
+} from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { BOUNDARY, spellPhrase } from '../noun/phrases';
 import { defineRule, node, spanned } from '../registry';
+import { readQuotedAbility } from '../static/quoted';
 import { type Clauses, makeClause } from './operands';
 
 /** " you control": the spell is one of the caster's. The only words after the spell phrase that are read. */
@@ -39,6 +49,15 @@ const COPY_TARGETS_TOKEN = quiet(
 
 /** ", then return it to its owner's hand": the original goes back to its owner's hand once copied. Only after a target. */
 const THEN_RETURN = quiet(pattern(/, then return it to its owner(?:'|’)s hand(?![\p{L}\p{N}])/iu));
+
+/**
+ * ". If it's a permanent spell, the copy gains haste and \"...\"": the next sentence (Nalfeshnee, CR 707.10f, 613.1f): the ability in quotes is read as an ability of its own. Only after
+ * the copy of the spell of the trigger.
+ */
+const PERMANENT_GAINS = sequence(
+  quiet(pattern(/\. if it['’]s a permanent spell, the copy gains haste and /iu)),
+  (ctx: ParseContext, pos: number) => readQuotedAbility(ctx, pos, { mana: false }),
+);
 
 /** What may follow the copied spell on the same clause: a join says a second instruction, which is not read. */
 const CLAUSE_END = pattern(/(?=\.|$)/u);
@@ -137,6 +156,9 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     // Issue 144 (Frontline Heroism, CR 707.10e): the copy targets the token the instruction before made.
     'copy that spell. the copy targets that token',
     'copy it. the copy targets that token',
+    // Nalfeshnee (CR 707.10f, 613.1f): what the token a copy of a permanent spell becomes has.
+    'copy it. you may choose new targets for the copy. if it’s a permanent spell, the copy gains haste and "at the beginning of the end step, sacrifice ~."',
+    'copy it. if it\'s a permanent spell, the copy gains haste and "at the beginning of the end step, sacrifice ~."',
   ],
   rejects: [
     "copy that spell, then return it to its owner's hand",
@@ -173,6 +195,9 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy that spell. the copy targets that creature',
     'copy that spell. the copy targets that token. the copy targets that token',
     'copy that spell and the copy targets that token',
+    'copy target instant or sorcery spell. if it’s a permanent spell, the copy gains haste and "at the beginning of the end step, sacrifice ~."',
+    'copy it. if it’s a permanent spell, the copy gains flying and "at the beginning of the end step, sacrifice ~."',
+    'copy it. if it’s a permanent spell, the copy gains haste and "at the beginning of the end step, sacrifice ~." you gain 1 life',
   ],
   parse: (ctx, pos) =>
     map(
@@ -193,10 +218,22 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
             optional(NEW_TARGETS, null),
             optional(COPY_TARGETS_TOKEN, null),
             optional(ELSE_DRAW, null),
+            optional(PERMANENT_GAINS, null),
           ),
         ),
         ({ value }) => {
-          const [, spell, returnIt, ifTargets, andNew, , nextNew, onToken, elseDraw] = value;
+          const [, spell, returnIt, ifTargets, andNew, , nextNew, onToken, elseDraw, gains] = value;
+          // The rider is said of the one copy of the spell of the trigger and nothing else.
+          if (
+            gains !== null &&
+            (spell.det !== 'anaphor' ||
+              returnIt !== null ||
+              ifTargets !== null ||
+              onToken !== null ||
+              elseDraw !== null)
+          ) {
+            return false;
+          }
           // "The copy targets that token" is said of the spell of the trigger, with nothing else asked of the copy.
           if (
             onToken !== null &&
@@ -217,7 +254,7 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
         },
       ),
       ({ value, span }): Clauses => {
-        const [, spell, returnIt, ifTargets, andNew, , nextNew, onToken, elseDraw] = value;
+        const [, spell, returnIt, ifTargets, andNew, , nextNew, onToken, elseDraw, gains] = value;
         const newTargets = andNew ?? nextNew;
         return [
           makeClause(
@@ -243,6 +280,7 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
               ...(elseDraw === null
                 ? {}
                 : { elseDraw: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),
+              ...(gains === null ? {} : { quoted: gains[1] }),
             },
             span,
           ),

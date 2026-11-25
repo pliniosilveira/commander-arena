@@ -490,6 +490,14 @@ export function evaluateCondition(
       );
       return named.some((seat) => holders.includes(seat));
     }
+    case 'completedDungeon':
+      // CR 309.7, 701.49c (Sarevok's Tome): a player who completed a dungeon at some time in the game.
+      return resolvePlayers(
+        state,
+        condition.player,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      ).some((seat) => (getSeat(state, seat).dungeonsCompleted ?? 0) > 0);
     case 'maxSpeed': {
       // CR 702.179e: speed is 4. (The validator lets a condition name only players that need neither a target nor the trigger subject.)
       return resolvePlayers(

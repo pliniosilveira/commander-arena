@@ -305,6 +305,13 @@ const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
 /** "Round up each time." (Saw in Half, CR 107.1a): the rounding of the halves the copy exception before it says, so it stays with that sentence. */
 const ROUND_UP_SENTENCE = /^round up each time\.$/i;
 const HALF_COPY_END = /their toughness is half that creature['’]s toughness\.$/i;
+/**
+ * "Whenever you cast a spell from exile, copy it. You may choose new targets for the copy. If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this
+ * permanent.\"" (Nalfeshnee, CR 707.10f): the third sentence says what the token a copy of a permanent spell becomes has, so it is read with the copy (`effect.copy-spell`).
+ */
+const COPY_GAINS_SENTENCE = /^if it['’]s a permanent spell, the copy gains haste and ["“].*["”]$/i;
+const COPY_WITH_NEW_TARGETS_END =
+  /(?:^|, )copy (?:that spell|it)\.(?: you may choose new targets for the copy\.)?$/i;
 const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
 
 /**
@@ -325,6 +332,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
   if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
+  if (COPY_GAINS_SENTENCE.test(said)) return COPY_WITH_NEW_TARGETS_END.test(beforeText);
   if (ROUND_UP_SENTENCE.test(said)) return HALF_COPY_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
@@ -640,6 +648,14 @@ const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
  */
 const EXILE_UNTIL_NONLAND =
   /^exile cards from the top of your library until you exile a nonland card\.$/i;
+/**
+ * "Exile cards from the top of your library until you exile a land card. Put that card onto the battlefield and the rest on the bottom of your library in a random order." (Venture Forth,
+ * CR 701.13, 401.4): "that card" and "the rest" are the cards the first sentence exiles, so the two are one instruction (`effect.exile-until-put-rest-bottom`).
+ */
+const EXILE_UNTIL_A_CARD =
+  /^exile cards from the top of your library until you exile an? [^.,]*\.$/i;
+const PUT_FOUND_REST_BOTTOM =
+  /^put that card onto the battlefield and the rest on the bottom of your library in a random order\.$/i;
 const MAY_CAST_FREE_IF =
   /^you may cast it without paying its mana cost if that spell['’]s mana value is \d+ or less\.$/i;
 const ELSE_INTO_HAND = /^if you don['’]t, put that card into your hand\.$/i;
@@ -1091,9 +1107,12 @@ const YOU_PUT_AND_LOSE_LIFE =
  * first sentence exiles and "this way" the cast of the second, so the two or three sentences are one instruction (`effect.player-exiles-until-cast`).
  */
 const PLAYER_EXILES_UNTIL_CAST =
-  /^target (?:opponent|player) exiles cards from the top of their library until they exile [^.]*\.$/i;
+  /^(?:target (?:opponent|player) exiles cards from the top of their library until they exile|exile cards from the top of your library until you exile) [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
 const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
+/** Chaos Wand (CR 401.4): "Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." closes the three sentences of the exile of a target player. */
+const THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY =
+  /^then put the exiled cards that weren['’]t cast this way on the bottom of that library in a random order\.$/i;
 const THAT_PLAYER_PUTS_REST_RANDOM =
   /^that player puts the rest of the revealed cards on the bottom of their library in a random order\.$/i;
 const CONTROLLER_REVEALS_UNTIL =
@@ -1111,12 +1130,57 @@ const TROI_CAST =
 const TROI_COPY = /^if they do, you copy that spell\. you may choose new targets for the copy\.$/i;
 const TROI_ELSE_DRAW = /^if they don['’]t, you draw a card\.$/i;
 
+/**
+ * "Look at the top four cards of your library. You may exile a creature card from among them. Put the rest on the bottom of your library in any order. For as long as that card remains
+ * exiled, you may cast it. That spell has undaunted." (Durnan of the Yawning Portal, CR 401.2, 406.3, 702.125a): five sentences, one instruction (`effect.look-exile-creature-cast-undaunted`).
+ */
+const LOOK_AT_TOP_OWN = /(?:^|, )look at the top [^.]* cards of your library\.$/i;
+const MAY_EXILE_CREATURE_FROM_AMONG = /^you may exile a creature card from among them\.$/i;
+const PUT_REST_ANY_ORDER = /^put the rest on the bottom of your library in any order\.$/i;
+const CAST_THAT_CARD_WHILE_EXILED = /^for as long as that card remains exiled, you may cast it\.$/i;
+const THAT_SPELL_HAS_UNDAUNTED = /^that spell has undaunted\.$/i;
+/**
+ * "Look at the top three cards of your library. Exile one face down and put the rest on the bottom of your library in any order. For as long as it remains exiled, you may cast it if it's a
+ * creature spell." (Vivien, Champion of the Wilds, CR 401.2, 406.3): three sentences, one instruction (`effect.look-exile-face-down-cast-creature`).
+ */
+const EXILE_ONE_FACE_DOWN_REST_ANY_ORDER =
+  /^exile one face down and put the rest on the bottom of your library in any order\.$/i;
+const CAST_IT_IF_CREATURE =
+  /^for as long as it remains exiled, you may cast it if it['’]s a creature spell\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
     const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    const e = spans[i + 4];
+    // Durnan of the Yawning Portal: the look, the offer of a creature card, the rest, the permission and undaunted.
+    if (
+      a !== undefined &&
+      e !== undefined &&
+      said(a, LOOK_AT_TOP_OWN) &&
+      said(b, MAY_EXILE_CREATURE_FROM_AMONG) &&
+      said(c, PUT_REST_ANY_ORDER) &&
+      said(d, CAST_THAT_CARD_WHILE_EXILED) &&
+      said(e, THAT_SPELL_HAS_UNDAUNTED)
+    ) {
+      out.push({ start: a.start, end: e.end });
+      i += 4;
+      continue;
+    }
+    // Vivien, Champion of the Wilds: the look, the card exiled face down with the rest, and the permission to cast it if it is a creature.
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, LOOK_AT_TOP_OWN) &&
+      said(b, EXILE_ONE_FACE_DOWN_REST_ANY_ORDER) &&
+      said(c, CAST_IT_IF_CREATURE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
     // Genesis Wave: the reveal, the take of any number of permanents and the rest into the graveyard (`effect.reveal-any-permanents-x`).
     if (
       a !== undefined &&
@@ -1162,7 +1226,11 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, PLAYER_EXILES_UNTIL_CAST) &&
       said(b, MAY_CAST_THAT_CARD_FREE)
     ) {
-      const last = c !== undefined && said(c, CREATURE_THIS_WAY_GAINS) ? c : b;
+      const last =
+        c !== undefined &&
+        (said(c, CREATURE_THIS_WAY_GAINS) || said(c, THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY))
+          ? c
+          : b;
       out.push({ start: a.start, end: last.end });
       i += last === b ? 1 : 2;
       continue;
@@ -1352,6 +1420,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EXILE_UNTIL_A_CARD) &&
+      said(b, PUT_FOUND_REST_BOTTOM)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
     } else if (
       a !== undefined &&
       c !== undefined &&
@@ -1737,6 +1813,12 @@ function costSpans(text: string, end: number): Span[] {
       .slice(0, end)
       .matchAll(/\bfrom among (?:other )?[a-z]+s(?:, [a-z]+s)+,? and [a-z]+s you control\b/giu),
   ].map((m) => ({ start: m.index ?? 0, end: (m.index ?? 0) + m[0].length }));
+  // Greater Gargadon: "Sacrifice an artifact, creature, or land" is one cost: the commas of a list of card types the player chooses among do not separate costs.
+  lists.push(
+    ...[
+      ...text.slice(0, end).matchAll(/\bsacrifice an? [a-z]+(?:, [a-z]+)+,? or [a-z]+(?= *$|,)/giu),
+    ].map((m) => ({ start: m.index ?? 0, end: (m.index ?? 0) + m[0].length })),
+  );
   for (const comma of topLevelCommas(text, 0, end)) {
     if (lists.some((list) => comma > list.start && comma < list.end)) continue;
     spans.push(trimmed(text, from, comma));

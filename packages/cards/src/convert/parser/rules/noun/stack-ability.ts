@@ -2,7 +2,7 @@
  * Noun rule of the Sublime Epiphany group (issue 100): "target activated or triggered ability".
  */
 import { literal, map, pattern } from '../../combinators';
-import type { IrNoun } from '../../ir/types';
+import type { IrFilter, IrNoun } from '../../ir/types';
 import { defineRule, node } from '../registry';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -99,7 +99,72 @@ export const NOUN_TARGET_SPELL_ACTIVATED_OR_TRIGGERED_ABILITY = defineRule<IrNou
   ),
 });
 
-export const STACK_ABILITY_NOUN_RULES = [NOUN_TARGET_ACTIVATED_OR_TRIGGERED_ABILITY];
+const FROM_SOURCE_ID = 'noun.target-ability-from-source';
+
+/**
+ * `noun.target-ability-from-source`: "target activated or triggered ability from an artifact or enchantment source" (Green Slime; CR 113.7a, 113.3b, 109.1, 701.6a): an ability on the stack
+ * whose source is a permanent of one of the card types named. The engine's `abilitySource` of the stack filter of `noun.target-activated-or-triggered-ability`. One or two types joined with
+ * "or". Not read: a plural, another order, "controlled by", a source that is not a card type, three types, "and".
+ */
+export const NOUN_TARGET_ABILITY_FROM_SOURCE = defineRule<IrNoun>({
+  id: FROM_SOURCE_ID,
+  family: 'noun',
+  leading: ['target'],
+  cites: [
+    'CR 113.7a (Abilities)',
+    'CR 113.3b (Abilities)',
+    'CR 113.3c (Abilities)',
+    'CR 701.6a (Counter)',
+    'CR 115.1 (Targets)',
+  ],
+  examples: [
+    'target activated or triggered ability from an artifact or enchantment source',
+    'target activated or triggered ability from a creature source',
+  ],
+  rejects: [
+    'target activated or triggered abilities from an artifact source',
+    'target activated or triggered ability from an artifact',
+    'target activated or triggered ability from an artifact, creature, or land source',
+    'target activated or triggered ability from an artifact and enchantment source',
+    'target activated or triggered ability from a Goblin source',
+    'target activated or triggered ability from an instant source',
+    'target activated or triggered ability from source',
+    'target activated or triggered ability you control',
+  ],
+  parse: node<Bare, IrNoun>(
+    FROM_SOURCE_ID,
+    map(
+      pattern(
+        /target activated or triggered ability from an? (artifact|creature|enchantment|land|planeswalker)(?: or (artifact|creature|enchantment|land|planeswalker))? source(?![\p{L}\p{N}])/iu,
+      ),
+      (m): Bare => {
+        const types = [m[1], m[2]]
+          .filter((t): t is string => t !== undefined)
+          .map((t) => t.toLowerCase());
+        const source: IrFilter = {
+          raw: types.join(' or '),
+          ...(types.length === 1
+            ? { types }
+            : { anyOf: types.map((t): IrFilter => ({ types: [t], raw: t })) }),
+        };
+        return {
+          kind: 'noun',
+          det: 'target',
+          filter: { zone: 'stack', stackKind: 'ability', abilitySource: source, raw: m[0] },
+          upTo: false,
+          plural: false,
+          other: false,
+        };
+      },
+    ),
+    (b) => b,
+  ),
+});
+
+export const STACK_ABILITY_NOUN_RULES = [
+  NOUN_TARGET_ABILITY_FROM_SOURCE,
+  NOUN_TARGET_ACTIVATED_OR_TRIGGERED_ABILITY,
+];
 
 /** Before `noun.target-spell`, which would read the prefix "target spell" of the list and leave the rest. */
 export const STACK_ABILITY_EARLY_NOUN_RULES = [NOUN_TARGET_SPELL_ACTIVATED_OR_TRIGGERED_ABILITY];

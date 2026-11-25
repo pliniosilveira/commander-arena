@@ -11,6 +11,7 @@ import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type { ChosenTarget, GameState, ResolutionContext } from '../state/types';
+import { moveInstructions } from './effect-support';
 import { apnapOrder, matchesFilter, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 import { moveObject } from './zones';
@@ -62,6 +63,16 @@ export function runExileUntilFound(
         events.push(...back.events);
       }
     }
+  }
+  // CR 701.13, 401.4, 110.2a (Venture Forth): the card found goes onto the battlefield, the others on the bottom of the library in a random order (the seeded generator's).
+  if (effect.outcome !== undefined) {
+    const rest = exiled.filter((id) => !found.includes(id));
+    const [order, rng] = shuffle(rest, next.rng);
+    const moves = [
+      ...(found.length === 0 ? [] : moveInstructions(found, 'battlefield', 'top', false, 'you')),
+      ...moveInstructions(order, 'library', 'bottom'),
+    ];
+    return { ...done({ ...next, rng }, events, moves), lastMoved: exiled };
   }
   return { ...done(next, events), lastMoved: effect.restToBottom === true ? found : exiled };
 }

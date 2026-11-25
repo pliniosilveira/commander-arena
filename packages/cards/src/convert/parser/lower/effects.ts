@@ -22,6 +22,7 @@ import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, landwalkOf, plainKeyword } from '../rules/keyword/vocabulary';
 import { ABZAN_SPELLS_LOWERINGS } from './abzan-spells';
 import { ADAPT_LOWERINGS } from './adapt';
+import { ADD_MANA_COMBINATION_LOWERINGS } from './add-mana-combination';
 import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { AHOY_G3_LOWERINGS } from './ahoy-g3';
 import { AHOY_G7_LOWERINGS } from './ahoy-g7';
@@ -36,6 +37,7 @@ import { lowerAuraToken } from './aura-token';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
+import { CHOOSE_ONE_OF_THEM_LOWERINGS } from './choose-one-of-them';
 import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -79,6 +81,7 @@ import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
+import { DAMAGE_UNPREVENTABLE_LOWERINGS } from './damage-unpreventable';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
@@ -86,8 +89,10 @@ import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
 import { DEATH_TOLL_C_LOWERINGS } from './death-toll-c';
 import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
+import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
+import { DURNAN_LOWERINGS } from './durnan';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
@@ -96,6 +101,7 @@ import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
+import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
@@ -146,6 +152,7 @@ import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
+import { MAY_PLAY_THIS_WAY_FREE_LOWERINGS } from './may-play-this-way-free';
 import { MELD_LOWERINGS } from './meld';
 import { MONARCH_LOWERINGS } from './monarch';
 import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
@@ -176,6 +183,7 @@ import { PRIMORDIAL_LOWERINGS } from './primordial';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
+import { PUT_ALL_LINKED_EXILED_LOWERINGS } from './put-all-linked-exiled';
 import { PUT_MILLED_LOWERINGS } from './put-milled';
 import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
@@ -3080,6 +3088,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
   ...DEATH_TOLL_WINTER_LOWERINGS,
   ...PARTY_TIME_LIBRARY_LOWERINGS,
+  ...DURNAN_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
@@ -3203,6 +3212,13 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Mirkwood Trapper: "that player chooses an attacking creature".
   ...PLAYER_CHOOSES_ATTACKER_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...DAMAGE_UNPREVENTABLE_LOWERINGS,
+  ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
+  ...CHOOSE_ONE_OF_THEM_LOWERINGS,
+  ...PUT_ALL_LINKED_EXILED_LOWERINGS,
+  ...ADD_MANA_COMBINATION_LOWERINGS,
+  ...MAY_PLAY_THIS_WAY_FREE_LOWERINGS,
+  ...EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MARDU_SURGE_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
