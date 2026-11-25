@@ -8,6 +8,8 @@
 //               default: DEFAULT_FIELDS below
 // --iterations  the iteration to stop before (default 100); with --resume, the run continues up to it
 // --pairs       pairs per iteration (default 8): each pair is one seed played twice, seats swapped
+// --workers     processes that play the pairs of an iteration in parallel (default 1); the same flags give the
+//               same weights whatever the number of workers: use the machine's core count
 // --seed        the run seed (default 1): the signs of the perturbations, and the first game seed
 // --a, --c, --A the SPSA gains (spsa.ts; defaults 0.5, 0.2, 5): step size, perturbation size in
 //               normalised units (0.2 = 20% of a field's default), stability constant
@@ -39,7 +41,9 @@
 // The manual workflow `AI tune` runs this tool on one runner and uploads the weights file.
 
 import '../corpus/register.ts';
+import { type ChildProcess, fork } from 'node:child_process';
 import { readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import type { AgentFactory, PartialWeights } from '@commander-arena/ai';
 import { gameScore } from './benchmark-stats.ts';
@@ -59,6 +63,7 @@ import {
   unflatten,
   update,
 } from './spsa.ts';
+import type { WorkReply, WorkRequest } from './tune-worker.ts';
 
 export const DEFAULT_FIELDS = [
   'evaluator.lifeCap',
@@ -79,6 +84,7 @@ const { values } = parseArgs({
     fields: { type: 'string' },
     iterations: { type: 'string', default: '100' },
     pairs: { type: 'string', default: '8' },
+    workers: { type: 'string', default: '1' },
     seed: { type: 'string' },
     a: { type: 'string' },
     c: { type: 'string' },
@@ -145,6 +151,7 @@ function writeWhole(file: string, text: string): void {
 
 const iterations = whole(values.iterations, 'iterations', 1) as number;
 const pairs = whole(values.pairs, 'pairs', 1) as number;
+const workers = whole(values.workers, 'workers', 1) as number;
 const maxTurns = whole(values['max-turns'], 'max-turns', 1);
 const maxActions = whole(values['max-actions'], 'max-actions', 1);
 
@@ -198,6 +205,52 @@ const agentOf = (label: string, theta: readonly number[]): AgentFactory => {
   return { label, create: (s) => new HeuristicAgent({ seed: s, weights }) };
 };
 
+const limits = {
+  maxTurns: maxTurns ?? MATCH_LIMITS.maxTurns,
+  maxActions: maxActions ?? MATCH_LIMITS.maxActions,
+};
+
+// `--workers n` (n > 1): the pairs of an iteration are dealt to n worker processes (`tune-worker.ts`). Each
+// pair is played on the same seeds as in one process and the scores are summed, so a run gives the same
+// weights whatever the number of workers.
+const pool: ChildProcess[] = [];
+if (workers > 1) {
+  const script = fileURLToPath(new URL('./tune-worker.ts', import.meta.url));
+  for (let i = 0; i < workers; i += 1) {
+    const child = fork(script, [], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
+    await new Promise<void>((resolveReady, rejectReady) => {
+      child.once('message', () => resolveReady());
+      child.once('exit', (code) => rejectReady(new Error(`worker exited with ${code}`)));
+    });
+    pool.push(child);
+  }
+}
+let requestId = 0;
+async function playOnWorkers(
+  work: readonly { gameSeed: number; deck: number }[],
+  plus: PartialWeights,
+  minus: PartialWeights,
+): Promise<('a' | 'b' | null)[]> {
+  const chunks = pool.map((_, i) => work.filter((_, j) => j % pool.length === i));
+  const replies = await Promise.all(
+    pool.map(
+      (child, i) =>
+        new Promise<readonly ('a' | 'b' | null)[]>((done, failed) => {
+          const id = (requestId += 1);
+          const onMessage = (reply: WorkReply): void => {
+            if (reply.id !== id) return;
+            child.off('message', onMessage);
+            done(reply.winners);
+          };
+          child.on('message', onMessage);
+          child.once('exit', (code) => failed(new Error(`worker exited with ${code}`)));
+          child.send({ id, plus, minus, pairs: chunks[i] ?? [], limits } satisfies WorkRequest);
+        }),
+    ),
+  );
+  return replies.flat();
+}
+
 const fmt = (x: number): string => Number(x.toPrecision(4)).toString();
 
 process.stderr.write(
@@ -214,24 +267,33 @@ while (state.iteration < iterations) {
   const b = agentOf('theta-', minus);
   let total = 0;
   const tally = { won: 0, lost: 0, other: 0 };
-  for (let j = 0; j < pairs; j += 1) {
+  const work = Array.from({ length: pairs }, (_, j) => {
     const gameSeed = state.nextSeed + j;
-    const deck = (gameSeed - state.firstSeed) % decks.length;
-    const result = await playMatch({
-      a,
-      b,
-      decks: [decks[deck] as (typeof decks)[number]],
-      games: 2,
-      baseSeed: gameSeed,
-      limits: {
-        maxTurns: maxTurns ?? MATCH_LIMITS.maxTurns,
-        maxActions: maxActions ?? MATCH_LIMITS.maxActions,
-      },
-    });
-    for (const game of result.log) {
-      total += gameScore(game.winner === 'a' ? 'win' : game.winner === 'b' ? 'loss' : 'draw');
-      tally[game.winner === 'a' ? 'won' : game.winner === 'b' ? 'lost' : 'other'] += 1;
+    return { gameSeed, deck: (gameSeed - state.firstSeed) % decks.length };
+  });
+  let winners: ('a' | 'b' | null)[] = [];
+  if (pool.length > 0) {
+    winners = await playOnWorkers(
+      work,
+      unflatten(rawValues(state.fields, plus)) as PartialWeights,
+      unflatten(rawValues(state.fields, minus)) as PartialWeights,
+    );
+  } else {
+    for (const pair of work) {
+      const result = await playMatch({
+        a,
+        b,
+        decks: [decks[pair.deck] as (typeof decks)[number]],
+        games: 2,
+        baseSeed: pair.gameSeed,
+        limits,
+      });
+      for (const game of result.log) winners.push(game.winner);
     }
+  }
+  for (const winner of winners) {
+    total += gameScore(winner === 'a' ? 'win' : winner === 'b' ? 'loss' : 'draw');
+    tally[winner === 'a' ? 'won' : winner === 'b' ? 'lost' : 'other'] += 1;
   }
   const score = total / (2 * pairs);
   const theta = update(state.fields, state.theta, delta, 2 * score - 1, state.gains, k);
@@ -254,6 +316,7 @@ while (state.iteration < iterations) {
   }
 }
 
+for (const child of pool) child.kill();
 process.stdout.write(
   `${JSON.stringify(unflatten(rawValues(state.fields, state.theta)), null, 1)}\n`,
 );
