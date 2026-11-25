@@ -57,7 +57,6 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
     'attach target Equipment to target creature',
     // Thieving Skydiver (CR 701.3): the permanent with the ability is what the Equipment is attached to.
     'attach it to ~',
-    'attach that artifact to ~',
   ],
   rejects: [
     'attach ~ to ~',

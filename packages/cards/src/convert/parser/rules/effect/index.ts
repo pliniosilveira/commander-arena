@@ -104,6 +104,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
+import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
@@ -712,8 +713,6 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.attached-permanent',
             // Soul Snare (CR 508.1b, 506.3): "Exile target creature that's attacking you or a planeswalker you control."
             'noun.target-creature-attacking-you',
-            // Smirking Spelljacker (CR 405.1, 406.1, 115.1): "exile target spell an opponent controls", a spell on the stack.
-            'noun.target-spell',
           ],
           'effect.exile',
         ),
@@ -1666,6 +1665,8 @@ export const EFFECT_RULES = [
   ...FLICKER_RULES,
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
+  // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
+  ...EXILE_SPELL_RULES,
   EFFECT_EXILE,
   // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
   ...WITHERBLOOM_C_EARLY_EFFECT_RULES,

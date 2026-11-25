@@ -302,7 +302,6 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     "search your graveyard, hand, and/or library for up to two cards named God-Pharaoh's Gift and put them onto the battlefield",
     "search their graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     'search your library and/or graveyard for creature cards with mana value X or less and put them onto the battlefield',
-    'search your library and/or graveyard for a creature card with mana value X or less, reveal it, and put it onto the battlefield',
   ],
   parse: single(
     RULE,

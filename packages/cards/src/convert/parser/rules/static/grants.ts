@@ -518,6 +518,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Juggernauts you control can't be blocked by Walls.",
     // Issue 133 (Shifting Sliver, CR 509.1b): the blockers are the creatures that are not of the type.
     "Slivers can't be blocked except by Slivers.",
+    // Silhana Ledgewalker (CR 509.1b, 702.9b): the blockers are the creatures that do not have flying.
+    "Slivers can't be blocked except by creatures with flying.",
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
@@ -538,7 +540,6 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Creatures you control can attack as though they didn't have flying.",
     'Creatures you control assigns combat damage equal to their toughness rather than their power.',
     'Creatures you control assign combat damage equal to their power rather than their toughness.',
-    "Slivers can't be blocked except by creatures with flying.",
     "Slivers can't be blocked except by Slivers you control.",
     'Zombie tokens you control have flash.',
     'Zombie token you control has haste.',
