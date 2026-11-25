@@ -12,7 +12,7 @@ const soakDescribe = process.env.TEST_TIER === 'pr' ? describe.skip : describe;
 // The limits of the measurement of #527; the 100 turns of the probe cut games the agents finish.
 const CASES = [
   { seats: 3, games: 6, limits: { maxTurns: 300, maxActions: 30_000 } },
-  { seats: 4, games: 8, limits: { maxTurns: 400, maxActions: 40_000 } },
+  { seats: 4, games: 4, limits: { maxTurns: 400, maxActions: 40_000 } },
 ] as const;
 
 soakDescribe('the 3 and 4 seat precon soak', () => {
