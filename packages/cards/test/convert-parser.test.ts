@@ -806,6 +806,7 @@ describe('unmatched abilities', () => {
       'effect.destroy-countered-ability-source',
       'effect.choose-one-of-them',
       'effect.put-from-among-those-cards-onto-battlefield',
+      'effect.put-any-number-from-among-them-onto-battlefield',
       'effect.put-all-permanent-cards-exiled-with-then-sacrifice',
       'effect.exile-that-many-from-top',
       'effect.cast-among-exiled-any-color',

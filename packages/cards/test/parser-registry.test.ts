@@ -497,6 +497,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     () =>
       'Exile the top four cards of your library. You may put a land card from among those cards onto the battlefield.',
   ),
+  'effect.put-any-number-from-among-them-onto-battlefield': spell(
+    () =>
+      'Exile the top four cards of your library. You may put any number of land cards from among them onto the battlefield.',
+  ),
   'effect.put-all-permanent-cards-exiled-with-then-sacrifice': permanent(
     () =>
       'At the beginning of your upkeep, exile the top four cards of your library. Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',

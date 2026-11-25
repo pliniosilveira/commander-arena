@@ -4839,8 +4839,10 @@ function checkChooseMove(
     sel.dealtCombatDamageToYou !== undefined ||
     // Glorious Protector (CR 608.2d, 610.3): "exile any number of ... creatures you control until ~ leaves the battlefield" is the one other place an `anyNumber` choice goes, among
     // the permanents on the battlefield (`moveToZone.until`, checked with the move).
+    // Xenagos, the Reveler (CR 608.2d): "put any number of creature and/or land cards from among them onto the battlefield": among the cards the effect before it moved (`fromMoved`).
     (sel.anyNumber !== undefined &&
       sel.minCardTypes === undefined &&
+      sel.fromMoved !== true &&
       (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(

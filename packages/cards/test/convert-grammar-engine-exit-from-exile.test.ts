@@ -855,3 +855,42 @@ describe('Journey to the Lost City: exile four, roll a d20 and read the results 
     expect([...seen].sort()).toEqual(['all', 'land', 'wolf']);
   });
 });
+
+describe('"−6: Exile the top seven cards of your library. You may put any number of creature and/or land cards from among them onto the battlefield." (CR 608.2d, 110.2a, 606.4)', () => {
+  const walker = parsed(
+    'SYNTHETIC Wild Walker',
+    'Legendary Planeswalker — Test',
+    '−6: Exile the top seven cards of your library. You may put any number of creature and/or land cards from among them onto the battlefield.',
+    { manaCost: '{4}{R}{G}', colors: ['R', 'G'], loyalty: '6' },
+  );
+  const build = () =>
+    scenario()
+      .define(walker)
+      .seat(0)
+      .battlefield(walker.name)
+      .library('Forest', 'Grizzly Bears', 'Serra Angel', 'Lightning Bolt', 'Island', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('any number of the creature and land cards enter; the spell and the cards not chosen stay exiled', () => {
+    const g = build();
+    g.act(0).activate(walker.name, { ability: 0 });
+    g.passAll();
+    g.act(0).chooseCards('Forest', 'Grizzly Bears', 'Serra Angel');
+    g.expect.zone('Forest', 'battlefield', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone('Lightning Bolt', 'exile', { seat: 0 });
+    g.expect.zone('Island', 'exile', { seat: 0 });
+  });
+
+  test('none is a legal answer', () => {
+    const g = build();
+    g.act(0).activate(walker.name, { ability: 0 });
+    g.passAll();
+    g.act(0).chooseCards();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+  });
+});
