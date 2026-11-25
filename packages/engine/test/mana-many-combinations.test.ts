@@ -116,4 +116,27 @@ describe('the payment planner beside a big "any combination" source (SPEC 4.2)',
     expect(plan?.spentColors).toEqual(['W', 'W', 'R', 'G', 'G']);
     expect(plan?.leftover.map((m) => m.color)).toEqual(Array.from({ length: 15 }, () => 'W'));
   }, 3_000);
+
+  test('X = 45: a source with more combinations than one call takes as arguments (211876) is planned', () => {
+    // A tuning run crashed with "Maximum call stack size exceeded": the planner spread every outcome of a source into one call.
+    const outcomes = combinations(45);
+    expect(outcomes).toHaveLength(211876);
+    const plan = planPayment({
+      cost: parseManaCost(['1', 'G']),
+      x: 0,
+      pool: [],
+      lifeAvailable: 0,
+      spell: { types: ['sorcery'] },
+      sources: [
+        land(1, 'G'),
+        source(2, outcomes, { tier: 'creature', cost: parseManaCost(['G']) }),
+      ],
+    });
+    // The Forest pays the {G} of the source, whose first combination with a {G} (forty-four {W} and a {G}) pays {1}{G}.
+    const first = outcomes.findIndex((o) => o.join('') === `${'W'.repeat(44)}G`);
+    expect(plan?.taps).toEqual([
+      { object: oid(1), abilityIndex: 0, outcome: 0 },
+      { object: oid(2), abilityIndex: 0, outcome: first },
+    ]);
+  }, 10_000);
 });

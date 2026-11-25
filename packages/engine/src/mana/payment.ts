@@ -118,6 +118,8 @@ interface Entry {
   readonly abilityIndex: number;
   /** The source the entry is an outcome of, numbered within the items: the entries of one source share their cost vector and flags (`distinctEntries`). */
   readonly source: number;
+  /** The payment source itself (none for pool mana): `distinctEntries` keeps its results for it across plans. */
+  readonly from?: PaymentSource;
   readonly outcome: number;
   readonly colors: readonly ManaColor[];
   readonly snow: boolean;
@@ -379,6 +381,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         entries.push({
           abilityIndex: source.abilityIndex,
           source: sourceNumber,
+          from: source,
           outcome,
           colors,
           snow: source.snow,
@@ -393,11 +396,14 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
       });
     }
     if (entries.length === 0) continue;
+    // A loop, not a spread: "X mana in any combination of colors" can have more outcomes than one call takes as arguments (issue 632).
+    let maxYield = 0;
+    for (const entry of entries) maxYield = Math.max(maxYield, entry.colors.length);
     items.push({
       poolIndex: -1,
       object,
       entries,
-      maxYield: Math.max(...entries.map((e) => e.colors.length)),
+      maxYield,
       mandatory,
     });
   }
@@ -433,11 +439,11 @@ function unitDims(
 }
 
 /**
- * The entries of an item worth trying against the remaining demand `state` (issue 632). `assignUnits` gives each unit one of the open
+ * The entries among `among` (indices into the item's entries, in order) worth trying against the remaining demand `state` (issue 632). `assignUnits` gives each unit one of the open
  * demands it may pay or leaves it over, so what an entry can reach depends only on how many units it has of each kind (the open demands a
  * unit may pay), and no more units of a kind are ever used than those demands add up to: the rest are left over whatever happens. Two
  * entries of the same source (so the same cost vector and flags), with as many units, that have the same count of each kind once capped
- * that way reach the same remaining demands with the same mana left over, so they offer the same plans at the same cost: the later one can
+ * that way reach the same remaining demands with as much mana left over, so they offer the same plans at the same cost: the later one can
  * never be strictly better (`solve` keeps the first of equal plans) and is left out, which changes no plan. "Add X mana in any combination
  * of colors" has C(X + 4, 4) outcomes, but against a demand of a few mana only a few of them differ.
  */
@@ -447,36 +453,82 @@ function distinctEntries(
   state: readonly number[],
   flex: readonly (readonly ManaColor[])[],
 ): number[] {
-  // By source and color: the open demands a unit may pay, and how many units of that kind could be used at most.
-  const kinds = new Map<string, { key: string; cap: number }>();
-  const kindOf = (entry: Entry, color: ManaColor): { key: string; cap: number } => {
-    const at = `${entry.source}|${color}`;
-    let kind = kinds.get(at);
-    if (kind === undefined) {
-      const dims = unitDims(entry, color, flex)
-        .filter((d) => (state[d] ?? 0) > 0)
-        .sort((a, b) => a - b);
-      kind = { key: dims.join('.'), cap: dims.reduce((n, d) => n + (state[d] ?? 0), 0) };
-      kinds.set(at, kind);
+  // By source: the kind of a unit of each color (the open demands it may pay) and, by kind, how many units could be used at most.
+  const shapes = new Map<number, { kindOfColor: number[]; caps: number[] }>();
+  const shapeOf = (entry: Entry): { kindOfColor: number[]; caps: number[] } => {
+    let shape = shapes.get(entry.source);
+    if (shape === undefined) {
+      const keys: string[] = [];
+      const caps: number[] = [];
+      const kindOfColor: number[] = [];
+      for (const color of COLOR_DIMS) {
+        const dims = unitDims(entry, color, flex)
+          .filter((d) => (state[d] ?? 0) > 0)
+          .sort((x, y) => x - y);
+        const key = dims.join('.');
+        let kind = keys.indexOf(key);
+        if (kind < 0) {
+          kind = keys.length;
+          keys.push(key);
+          caps.push(dims.reduce((n, d) => n + (state[d] ?? 0), 0));
+        }
+        kindOfColor.push(kind);
+      }
+      shape = { kindOfColor, caps };
+      shapes.set(entry.source, shape);
     }
-    return kind;
+    return shape;
   };
-  const seen = new Set<string>();
+  // The key of an entry is its number of units and its capped count of each kind, as the digits of one number in base `maxYield + 1` (a
+  // count is at most `maxYield`), within each source; a string when that number could pass the safe integers.
+  const base = item.maxYield + 1;
+  const seen = new Map<number, Set<number | string>>();
+  const perKind = COLOR_DIMS.map(() => 0);
   const kept: number[] = [];
   for (const index of among) {
     const entry = item.entries[index] as Entry;
-    const counts = new Map<string, number>();
-    for (const color of entry.colors) {
-      const { key, cap } = kindOf(entry, color);
-      counts.set(key, Math.min(cap, (counts.get(key) ?? 0) + 1));
+    const { kindOfColor, caps } = shapeOf(entry);
+    perKind.fill(0);
+    const counts = colorCounts(entry.colors);
+    for (let c = 0; c < counts.length; c += 1) {
+      const kind = kindOfColor[c] as number;
+      perKind[kind] = (perKind[kind] ?? 0) + (counts[c] ?? 0);
     }
-    const units = [...counts].map(([key, n]) => `${key}x${n}`).sort();
-    const key = `${entry.source}#${entry.colors.length}#${units.join(',')}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+    let key: number | string = entry.colors.length;
+    if (base ** (caps.length + 1) <= Number.MAX_SAFE_INTEGER) {
+      for (let k = 0; k < caps.length; k += 1) {
+        key = key * base + Math.min(perKind[k] ?? 0, caps[k] ?? 0);
+      }
+    } else {
+      key = `${key}#${caps.map((cap, k) => Math.min(perKind[k] ?? 0, cap)).join(',')}`;
+    }
+    let keys = seen.get(entry.source);
+    if (keys === undefined) {
+      keys = new Set();
+      seen.set(entry.source, keys);
+    }
+    if (keys.has(key)) continue;
+    keys.add(key);
     kept.push(index);
   }
   return kept;
+}
+
+const countsOf = new WeakMap<readonly ManaColor[], readonly number[]>();
+
+/** How many units of each type (in the order of `COLOR_DIMS`) an outcome holds, kept for the outcome: the payment sources of a state are kept, and so are their outcomes. */
+function colorCounts(colors: readonly ManaColor[]): readonly number[] {
+  let counts = countsOf.get(colors);
+  if (counts === undefined) {
+    const fresh = COLOR_DIMS.map(() => 0);
+    for (const color of colors) {
+      const c = colorDim(color);
+      fresh[c] = (fresh[c] ?? 0) + 1;
+    }
+    counts = fresh;
+    countsOf.set(colors, counts);
+  }
+  return counts;
 }
 
 /**
@@ -517,6 +569,46 @@ function assignUnits(
   return level;
 }
 
+/** The entries of one source within an item: a run of its entries, in order. */
+interface EntryGroup {
+  readonly from: PaymentSource | undefined;
+  /** What the entries' kept outcomes depend on besides the demand: their flags, the hybrid halves and the request's `only` color. */
+  readonly key: string;
+  readonly indices: readonly number[];
+  readonly indexOfOutcome: ReadonlyMap<number, number>;
+}
+
+/** The outcomes `distinctEntries` keeps for a source, by `EntryGroup.key` and the capped demand (issue 632). */
+const keptOutcomes = new WeakMap<PaymentSource, Map<string, readonly number[]>>();
+
+function entryGroups(
+  item: Item,
+  flex: readonly (readonly ManaColor[])[],
+  only: string,
+): EntryGroup[] {
+  const out: {
+    from: PaymentSource | undefined;
+    key: string;
+    indices: number[];
+    indexOfOutcome: Map<number, number>;
+  }[] = [];
+  item.entries.forEach((entry, index) => {
+    let group = out.at(-1);
+    if (group === undefined || item.entries[index - 1]?.source !== entry.source) {
+      group = {
+        from: entry.from,
+        key: `${only}|${JSON.stringify(flex)}|${entry.genericOnly}|${entry.notGeneric}|${entry.snow}|${entry.payAct}|${entry.anyColor}`,
+        indices: [],
+        indexOfOutcome: new Map(),
+      };
+      out.push(group);
+    }
+    group.indices.push(index);
+    group.indexOfOutcome.set(entry.outcome, index);
+  });
+  return out;
+}
+
 interface Solution {
   readonly cost: readonly number[];
   readonly picks: { item: Item; entry: Entry; usedMask: number; actMask: number }[];
@@ -526,6 +618,7 @@ function solveProfile(
   items: readonly Item[],
   demand: readonly number[],
   flex: readonly (readonly ManaColor[])[],
+  only: string,
 ): Solution | null {
   const radix = demand.map((d) => d + 1);
   const mult: number[] = [];
@@ -545,34 +638,56 @@ function solveProfile(
   }
   const memo: Map<number, Node | null>[] = items.map(() => new Map());
   // `distinctEntries` of each item, by the demand capped at the most mana one of its entries makes (a demand past that caps no count further).
-  // Two steps, each kept by its key: first by which demands are open (with no cap: a demand of `maxYield` caps nothing), then the
-  // survivors by the demand capped at `maxYield`. An entry the first step leaves out has the same capped key as an earlier one, so the
-  // second step keeps the same entries as it would from all of them, and it starts from far fewer.
-  const byOpen: Map<string, readonly number[]>[] = items.map(() => new Map());
-  const byCapped: Map<string, readonly number[]>[] = items.map(() => new Map());
+  // It is found for each source of the item and kept for the source (`keptOutcomes`) under everything else it depends on: the flags of its
+  // entries, the hybrid halves `flex`, and `only`, which decides which of its outcomes are entries.
+  const tried: Map<string, readonly number[]>[] = items.map(() => new Map());
+  const groups: (readonly EntryGroup[] | undefined)[] = items.map(() => undefined);
   const entriesToTry = (i: number, item: Item, state: readonly number[]): readonly number[] => {
     if (item.entries.length === 1) return [0];
-    const open = state.map((v) => (v > 0 ? item.maxYield : 0));
-    const openKey = open.join(',');
-    const openTable = byOpen[i] as Map<string, readonly number[]>;
-    let first = openTable.get(openKey);
-    if (first === undefined) {
-      first = distinctEntries(
-        item,
-        item.entries.map((_, index) => index),
-        open,
-        flex,
-      );
-      openTable.set(openKey, first);
-    }
     const capped = state.map((v) => Math.min(v, item.maxYield));
-    const cappedKey = capped.join(',');
-    const cappedTable = byCapped[i] as Map<string, readonly number[]>;
-    let kept = cappedTable.get(cappedKey);
-    if (kept === undefined) {
-      kept = distinctEntries(item, first, capped, flex);
-      cappedTable.set(cappedKey, kept);
+    const cappedKey = `${item.maxYield}|${capped.join(',')}`;
+    const table = tried[i] as Map<string, readonly number[]>;
+    const hit = table.get(cappedKey);
+    if (hit !== undefined) return hit;
+    let itemGroups = groups[i];
+    if (itemGroups === undefined) {
+      itemGroups = entryGroups(item, flex, only);
+      groups[i] = itemGroups;
     }
+    // The groups are runs of the entries in order, so their kept entries, one group after the other, are in order too.
+    const kept: number[] = [];
+    for (const group of itemGroups) {
+      if (group.from === undefined || group.indices.length === 1) {
+        for (const index of group.indices) kept.push(index);
+        continue;
+      }
+      let byKey = keptOutcomes.get(group.from);
+      if (byKey === undefined) {
+        byKey = new Map();
+        keptOutcomes.set(group.from, byKey);
+      }
+      const outcomesOf = (indices: readonly number[]): number[] =>
+        indices.map((index) => (item.entries[index] as Entry).outcome);
+      // First against the whole demand of the profile, which every remaining demand is at most: entries alike there are alike against any
+      // remaining demand too (fewer open demands only merge kinds, and lower caps only cap more), so the second step, against `state`,
+      // starts from the first step's survivors and keeps what it would keep from all the entries.
+      const whole = demand.map((v) => Math.min(v, item.maxYield));
+      const firstKey = `${group.key}|${item.maxYield}|${whole.join(',')}`;
+      let first = byKey.get(firstKey);
+      if (first === undefined) {
+        first = outcomesOf(distinctEntries(item, group.indices, whole, flex));
+        byKey.set(firstKey, first);
+      }
+      const key = `${group.key}|${cappedKey}`;
+      let outcomes = byKey.get(key);
+      if (outcomes === undefined) {
+        const among = first.map((outcome) => group.indexOfOutcome.get(outcome) as number);
+        outcomes = outcomesOf(distinctEntries(item, among, capped, flex));
+        byKey.set(key, outcomes);
+      }
+      for (const outcome of outcomes) kept.push(group.indexOfOutcome.get(outcome) as number);
+    }
+    table.set(cappedKey, kept);
     return kept;
   };
 
@@ -715,7 +830,12 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
     for (const activation of vectors) {
       for (const profile of profiles) {
         if (best !== null && profile.life > best.life) break; // profiles are sorted by life
-        const solution = solveProfile(items, [...profile.demand, ...activation], flex);
+        const solution = solveProfile(
+          items,
+          [...profile.demand, ...activation],
+          flex,
+          String(onlyColorOf(request)),
+        );
         if (solution === null) continue;
         const cost = solution.cost.slice();
         cost[C_LIFE] = profile.life;
