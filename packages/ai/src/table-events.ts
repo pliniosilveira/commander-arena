@@ -21,6 +21,7 @@ import { COMMANDER_LETHAL, commanderClock, POISON_LETHAL } from './evaluate';
 import { futureAttackers, hitDamage } from './heuristic-danger';
 import { isRemovalSpell, threatValue } from './heuristic-targets';
 import type { ActionStep } from './runner';
+import { DEFAULT_WEIGHTS } from './weights';
 
 export type EliminationCause = 'life' | 'poison' | 'commander' | 'decked' | 'concede' | 'other';
 
@@ -85,7 +86,7 @@ export type TableEvent =
       /** The permanent targeted, or null (no object target). */
       readonly target: string | null;
       readonly targetOwner: SeatId | null;
-      /** `threatValue` of the target: the number the AI ranks removal targets by. */
+      /** `threatValue` of the target at the default weights: the number the AI ranks removal targets by. */
       readonly targetValue: number;
       readonly targetToken: boolean;
       /** The seat the target was attacking when the spell was cast, or null when it was not attacking a player. */
@@ -205,10 +206,10 @@ function removalEvent(step: ActionStep, view: GameView, action: Action): TableEv
     spell: source.name,
     target: target?.name ?? null,
     targetOwner: target?.controller ?? null,
-    targetValue: target === undefined ? 0 : threatValue(target),
+    targetValue: target === undefined ? 0 : threatValue(target, DEFAULT_WEIGHTS),
     targetToken: target?.isToken ?? false,
     attackingSeat: attack === undefined ? null : asPlayer(attack.target),
-    bestValue: Math.max(0, ...opposing.map(threatValue)),
+    bestValue: Math.max(0, ...opposing.map((o) => threatValue(o, DEFAULT_WEIGHTS))),
   };
 }
 
