@@ -192,6 +192,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
     }
+    case 'castForAlternative': {
+      // CR 118.9, 608.2c (Baleful Mastery): "If the {1}{B} cost was paid": the spell carries the alternative cost on the stack (a copy of it too); last-known information says once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && source.stack?.alt === condition.alternative;
+    }
     case 'foretold': {
       // CR 702.143a (Foretell): a spell cast for its foretell cost carries the alternative cost on the stack; last-known information says once it has left (CR 113.7a).
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);

@@ -970,6 +970,12 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'abilityCostReduction':
       checkAbilityCostReduction(s, path, out);
       break;
+    case 'plotCostReduction':
+      // CR 702.170a (Doc Aurlock, Grizzled Genius): the generic mana taken off a plot cost, a positive whole number.
+      if (!isCount(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'a plot cost reduction must be a positive integer');
+      }
+      break;
     case 'castFromGraveyard':
       // D-133: the face-level checks say where it may stand. D-656: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
       // CR 702.152a: `using` names the alternative cost the permission is for: blitz only, and then the ability has no cost of its own.

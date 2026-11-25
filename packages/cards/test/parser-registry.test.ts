@@ -219,6 +219,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.nth-spell-cost-reduction': asIs,
   'static.first-typed-spell-cost-reduction': asIs,
   'static.pay-life-alt-cost': asIs,
+  'static.pay-mana-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -1082,6 +1083,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ deals combat damage to a player, gain control of ${e}.`,
   ),
   'static.first-targeting-ability-cost-reduction': asIs,
+  'static.plot-cost-reduction': asIs,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
@@ -1365,6 +1367,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Burning Curiosity (CR 118.8, 701.68a): the optional blight of the additional cost is what the condition reads.
   // CR 702.143a: "If this spell was foretold, ... instead."
   'condition.foretold': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
+  'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
@@ -1499,6 +1502,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-opponent-exile-graveyard': permanent((e) => `{1}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
@@ -1815,6 +1819,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
   ),
   'static.self-also-types': asIs,
+  'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

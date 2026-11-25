@@ -79,6 +79,7 @@ describe('the dimensions', () => {
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
       'putLinkedExileInGraveyard',
+      'putOpponentExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -139,6 +140,7 @@ describe('the dimensions', () => {
       'escaped',
       // CR 702.143a: "if this spell was foretold".
       'foretold',
+      'castForAlternative',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',
@@ -327,6 +329,7 @@ describe('the dimensions', () => {
       'playLandsFromGraveyard',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
+      'plotCostReduction',
       // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
       'loyaltyActivationLimit',
       // D-179: "Your opponents can't cast spells during your turn."

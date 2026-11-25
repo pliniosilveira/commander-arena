@@ -53,6 +53,7 @@ import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
+import { GRAND_LARCENY_C_CONDITION_RULES } from './grand-larceny-c';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
@@ -679,6 +680,7 @@ export const CONDITION_RULES = [
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_FORETOLD,
+  ...GRAND_LARCENY_C_CONDITION_RULES,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_ADDITIONAL_COST_PAID,
   CONDITION_X_AT_LEAST,

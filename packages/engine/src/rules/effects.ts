@@ -2327,6 +2327,9 @@ function runEffect(
           ...inner,
           mana: { ...inner.mana, times: amountOf(state, inner.mana.times, ctx, targets) },
         };
+      } else if (inner.kind === 'addManaCombination') {
+        // CR 603.7c (Plasm Capture): "that spell's mana value" is what the spell was as this resolves, fixed now.
+        baked = { ...inner, amount: amountOf(state, inner.amount, ctx, targets) };
       } else if (inner.kind === 'draw' && inner.player.kind !== 'you') {
         player = resolvePlayers(state, inner.player, ctx, targets)[0];
         if (player === undefined) return done(state);

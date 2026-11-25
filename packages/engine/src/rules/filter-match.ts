@@ -487,6 +487,14 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'graveyard' || obj.owner !== controllerOf(state, obj)) return false;
   }
+  // CR 601.2a, 404.1, 406.1 (Doc Aurlock, Grizzled Genius): "spells you cast from your graveyard or from exile": cast from exile, or from a graveyard of the caster's own.
+  if (filter.castFromOwnGraveyardOrExile === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    const ownGraveyard = from === 'graveyard' && obj.owner === controllerOf(state, obj);
+    if (from !== 'exile' && !ownGraveyard) return false;
+  }
   // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
   if (
     filter.xInManaCost === true &&

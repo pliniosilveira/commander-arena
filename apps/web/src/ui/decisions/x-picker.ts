@@ -41,7 +41,21 @@ export function isCount(d: Partial<Pick<ChooseXDecision, 'purpose'>>): boolean {
 }
 
 /** "Expel the Interlopers: choose a number between 0 and 10." (CR 608.2d). */
-export function chooseNumberPrompt(d: Pick<ChooseXDecision, 'sourceName' | 'min' | 'max'>): string {
+export function chooseNumberPrompt(
+  d: Pick<ChooseXDecision, 'sourceName' | 'min' | 'max' | 'manaColor'>,
+): string {
+  // CR 106.1b (Plasm Capture): "Add X mana in any combination of colors": how many of this color, the rest asked for the colors after it.
+  if (d.manaColor !== undefined) {
+    const names: Readonly<Record<string, string>> = {
+      W: 'white',
+      U: 'blue',
+      B: 'black',
+      R: 'red',
+      G: 'green',
+    };
+    const color = names[d.manaColor] ?? d.manaColor;
+    return `${d.sourceName}: how many of the ${d.max} mana are ${color}? (${d.min} to ${d.max})`;
+  }
   return `${d.sourceName}: choose a number between ${d.min} and ${d.max}.`;
 }
 

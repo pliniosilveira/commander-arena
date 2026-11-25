@@ -867,6 +867,12 @@ export interface ObjectFilter {
    */
   readonly castFromOwnGraveyard?: true;
   /**
+   * "Spells you cast from your graveyard or from exile" (Doc Aurlock, Grizzled Genius, CR 601.2a, 404.1, 406.1, 108.3): the spell on the stack was cast from exile, or from a graveyard
+   * the card's owner is the caster of (as `castFromOwnGraveyard`). Read from the spell itself as it is cast (the zone it came from, `castFrom`), so only a spell is matched; in a cost
+   * reduction (`costReduction.spells`) it is read as the cost is determined. Not with `notCastFromHand`, `castFromHand`, `castFromGraveyard`, `castFromExile` or `castFromOwnGraveyard`.
+   */
+  readonly castFromOwnGraveyardOrExile?: true;
+  /**
    * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
    * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -2023,6 +2029,14 @@ export type Cost =
    * `forCost` (the engine takes the card when only one can be chosen), and with no such card the ability cannot be activated (CR 118.3). Only the cost of an ordinary activated ability.
    */
   | { readonly kind: 'putLinkedExileInGraveyard'; readonly filter: ObjectFilter }
+  /**
+   * "Put a card an opponent owns from exile into that player's graveyard" (Void Attendant; CR 108.3, 118.3, 602.2b, 400.7, 404.1): as the cost of an activated ability, the player chooses
+   * a face-up card in exile that an opponent of theirs owns and that `filter` matches (a filter of cards in exile: card types, subtypes, colors, mana value; no zone, controller or
+   * owner) and puts it into its owner's graveyard. The player chooses with a `chooseCards` decision of purpose `exile` and `forCost` (the engine takes the card when only one can be
+   * chosen), and with no such card the ability cannot be activated (CR 118.3). A card exiled face down cannot be chosen (`docs/ROADMAP.md`). Only the cost of an ordinary activated
+   * ability of a permanent.
+   */
+  | { readonly kind: 'putOpponentExileInGraveyard'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'removeCounters';
       /**
@@ -2131,6 +2145,7 @@ export type NamedAlternativeKind =
   | 'sacrificeFromGraveyard'
   | 'sacrificePermanents'
   | 'payLife'
+  | 'payMana'
   | 'impending'
   | 'blitz';
 
@@ -2242,6 +2257,10 @@ export type AlternativeCost =
         | 'impending'
         | 'blitz'
       >;
+      /**
+       * `payMana` is "You may pay {1}{B} rather than pay this spell's mana cost" (Baleful Mastery, CR 118.9, 601.2b, 601.2f): the mana `cost` is paid in place of the mana cost, with no
+       * other effect on the spell; a condition on the alternative cost paid is `castForAlternative`.
+       */
       readonly cost: readonly Cost[];
       /**
        * `evoke` only (CR 702.74a, 118.9, 601.2b, 601.2h: "Evoke—Exile a red card from your hand"): besides the `cost` (mana, {0} when it has none) the caster exiles one other card
@@ -2666,10 +2685,12 @@ export type Effect =
    * "Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control." (Xenagos, the Reveler, CR 106.1b, 608.2d, 107.3c): an effect (not a mana ability: it
    * uses the stack) that adds `amount` mana, read as the effect runs, each of the first or the second color: the controller chooses how many of the first (a whole number from 0 to the amount,
    * a `chooseX` decision of purpose `chooseNumber`), the rest are the second. The two colors are different. Nothing is asked, and nothing added, for an amount of 0 or less.
+   * With more colors (Plasm Capture, "Add X mana in any combination of colors": all five, CR 106.1b, 105.1) the controller chooses how many of each in turn, in the order listed, and the last
+   * color takes what is left (nothing is asked for it); a number of mana that is all taken by the colors before it asks no more.
    */
   | {
       readonly kind: 'addManaCombination';
-      readonly colors: readonly [ManaColor, ManaColor];
+      readonly colors: readonly ManaColor[];
       readonly amount: Amount;
     }
   /**
@@ -7517,6 +7538,12 @@ export type Condition =
    */
   | { readonly kind: 'replicated' }
   /**
+   * "If the {1}{B} cost was paid" (Baleful Mastery, CR 118.9, 601.2b, 608.2c): the spell that is resolving was cast for the alternative cost `alternative` names (`payMana`: the face's
+   * "You may pay {1}{B} rather than pay this spell's mana cost"). Read from the spell, or from its last-known information once it has left (CR 113.7a); a copy of the spell was cast the
+   * same way (CR 707.10c). Only on a face that lists that alternative cost.
+   */
+  | { readonly kind: 'castForAlternative'; readonly alternative: 'payMana' }
+  /**
    * "If this spell was foretold" (CR 702.143a, 702.143c: a spell is foretold when it is cast from exile for its foretell cost): the spell that is resolving was cast for its
    * foretell cost. Read from the spell, or from its last-known information once it has left (CR 113.7a). Only on a face that lists a foretell cost.
    */
@@ -9101,6 +9128,12 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
+   * "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a, 118.7): a static ability of a permanent on the battlefield that takes
+   * `amount` generic mana off the generic part of the plot cost of each card its controller plots from their hand. Plotting is a special action, not a spell or an ability, so
+   * this is no `costReduction`; it never takes the cost below zero and changes no colored mana, and every instance applies.
+   */
+  | { readonly kind: 'plotCostReduction'; readonly amount: number }
+  /**
    * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-461, CR 601.2f, 602.2b, 118.7, 113.6b): a static ability of a permanent on the
    * battlefield that takes `amount` generic mana off the generic part of the first mana cost of every activated ability (not a mana ability) of an object `objects` describes, whoever
    * activates it. The object is a card in the graveyard (`zone` is `graveyard`, `controller: 'you'` is "your graveyard", relative to the controller of the permanent with this ability)
@@ -9898,6 +9931,12 @@ export interface ManaAbility {
      * `monocoloredChosen`.
      */
     readonly fromGraveyard?: true;
+    /**
+     * "Spend this mana only to cast spells you don't own." (Thieving Varmint; CR 106.6, 108.3): the mana can pay for a spell whose owner is not the player who casts it, never for
+     * a spell of their own and never for an ability. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities`, `xCost`, `abilitiesOnly`, `monocoloredChosen`,
+     * `notGeneric` or `fromGraveyard`.
+     */
+    readonly notOwned?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

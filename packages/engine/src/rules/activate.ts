@@ -53,6 +53,7 @@ import {
   exileCostCandidates,
   linkedExileCandidates,
   linkedExileToGraveyard,
+  opponentExileCandidates,
 } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
@@ -735,15 +736,21 @@ function payLinkedExile(state: GameState, events: GameEvent[]): Result {
   const { casting, costs } = going;
   if (costs.linkedExile === null) return finishActivation(state, events);
   const source = state.objects[casting.object]?.stack?.source ?? casting.object;
-  const legal = linkedExileCandidates(state, source, costs.linkedExile);
+  const legal = costs.linkedExileOpponents
+    ? opponentExileCandidates(state, casting.seat, source, costs.linkedExile)
+    : linkedExileCandidates(state, source, costs.linkedExile);
   if (legal.length === 0) {
-    return fail('No card exiled with this permanent can be put into a graveyard');
+    return fail(
+      costs.linkedExileOpponents
+        ? 'No card an opponent owns can be put into its owner’s graveyard from exile'
+        : 'No card exiled with this permanent can be put into a graveyard',
+    );
   }
   if (legal.length === 1) return linkedExileChosen(state, events, legal);
   return pause(
     { ...state, casting: { ...casting, stage: 'linkedExile' } },
     events,
-    activationLinkedExileDecision(casting.seat, casting.object, legal),
+    activationLinkedExileDecision(casting.seat, casting.object, legal, costs.linkedExileOpponents),
   );
 }
 

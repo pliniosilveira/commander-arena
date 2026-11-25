@@ -382,6 +382,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castFromOwnGraveyard');
   }
+  // Doc Aurlock, Grizzled Genius: "spells you cast from your graveyard or from exile" (CR 601.2a, 404.1, 406.1), a spell on the stack.
+  if (filter.castFromOwnGraveyardOrExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromOwnGraveyardOrExile');
+  }
   // Alisaie Leveilleur: "the second spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.nthSpellThisTurn !== undefined) {
     if (inner) return bad([]);
@@ -703,6 +708,9 @@ function lowerFilterAt(
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
     ...(filter.castFromExile === true ? { castFromExile: true as const } : {}),
     ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+    ...(filter.castFromOwnGraveyardOrExile === true
+      ? { castFromOwnGraveyardOrExile: true as const }
+      : {}),
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),

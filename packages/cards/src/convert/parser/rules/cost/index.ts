@@ -15,6 +15,7 @@ import { DANITHA_G5_COST_RULES } from './danitha-group-5';
 import { EXTRA_TURN_COST_RULES } from './extra-turns';
 import { FEDERATION_D_COST_RULES } from './federation-d';
 import { GISA_G4_COST_RULES } from './gisa-g4';
+import { GRAND_LARCENY_C_COST_RULES } from './grand-larceny-c';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
@@ -960,6 +961,7 @@ export const COST_RULES = [
   // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
   ...EXTRA_TURN_COST_RULES,
   ...PUT_LINKED_EXILE_COST_RULES,
+  ...GRAND_LARCENY_C_COST_RULES,
   // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,
