@@ -575,6 +575,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
+  // Sauron deck (Uglúk of the White Hand): the creature that died, said as one of two creature types.
+  'condition.that-was-either': permanent(
+    (e) =>
+      `Whenever another creature you control dies, put a +1/+1 counter on ~. If ${e}, put two +1/+1 counters on ~ instead.`,
+  ),
   'condition.discarded-card-matches': permanent(
     (e) => `{T}, Discard a card: Draw a card. If ${e}, you gain 1 life.`,
   ),

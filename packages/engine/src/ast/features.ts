@@ -1022,7 +1022,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
-  sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
+  // CR 701.21a, 603.2c (Gorbag of Minas Morgul): `triggerSubject`, "you may sacrifice it" in a trigger about a permanent its controller controls.
+  sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis', 'triggerSubject'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
   tokenPresets: [
     'Treasure',

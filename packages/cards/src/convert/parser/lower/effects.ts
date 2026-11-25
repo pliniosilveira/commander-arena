@@ -2045,6 +2045,15 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       if (!ref.ok) return ref;
       return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
     }
+    // "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it." (Gorbag of Minas Morgul, CR 701.21a, 603.2c): "it" is the permanent the trigger is
+    // about, which its controller (the controller of the ability) sacrifices; the engine's `sacrifice` of the `triggerSubject`.
+    if (what.det === 'triggerSubject' && arg(clause, 'player') === undefined) {
+      const blocked = missingFeatures(['selector:triggerSubject']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const ref = objectRefOf(what, ctx, { triggerSubject: true });
+      if (!ref.ok) return ref;
+      return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
+    }
     if (what.det !== 'a') return failure(clause);
     // "Any number of other permanents" and "a creature with the greatest power among creatures they control" (stage P30, D-135).
     const blocked = missingFeatures([

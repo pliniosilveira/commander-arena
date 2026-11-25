@@ -86,6 +86,7 @@ import {
   CONDITION_THAT_OBJECT_POWER,
 } from './that-object-power';
 import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
+import { THAT_WAS_EITHER_CONDITION_RULES } from './that-was-either';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ARENT_ATTACKING_YOU_CONDITION_RULES } from './they-arent-attacking-you';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
@@ -593,6 +594,8 @@ export const CONDITION_RULES = [
   ...SELF_STATE_CONDITION_RULES,
   ...NO_COUNTERS_CONDITION_RULES,
   ...COUNTER_COUNT_CONDITION_RULES,
+  // Sauron deck (Uglúk of the White Hand): "that creature was a Goblin or Orc", before `condition.it-matches`, which would stop after "a Goblin".
+  ...THAT_WAS_EITHER_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
   // Revolt (CR 207.2c): "a permanent left the battlefield under your control this turn".
   ...REVOLT_CONDITION_RULES,
