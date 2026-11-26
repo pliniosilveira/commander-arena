@@ -75,6 +75,8 @@ const GROUP = [
   'noun.other-subtype-permanents',
   'noun.subtype-union',
   'noun.all-permanents',
+  // Sylvan Advocate: "~ and land creatures you control get +2/+2".
+  'noun.self-and-group',
 ];
 
 /** `~` alone, with what it gets or has; a group; each permanent of a kind. */

@@ -2232,7 +2232,8 @@ function lowerDoneReflexive(
   // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
   const madeToken = only?.kind === 'createToken';
   // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done.
-  const putCounter = only?.kind === 'addCounters';
+  // Earth Rumble: "Earthbend 2. When you do, ...": the land bent and the counters put on it are something done.
+  const putCounter = only?.kind === 'addCounters' || only?.kind === 'earthbend';
   if (
     only === undefined ||
     rest.length > 0 ||

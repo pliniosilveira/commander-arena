@@ -3437,7 +3437,12 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' | 'cardTypesAmong' = 'countOf',
+  kind:
+    | 'countOf'
+    | 'colorsAmong'
+    | 'greatestPowerAmong'
+    | 'cardTypesAmong'
+    | 'countersAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -3586,6 +3591,18 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not colors');
     }
     checkCountOnly(amount, path, out, 'colorsAmong', false);
+    return;
+  }
+  // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control": a characteristic-defining ability only.
+  if (amount?.kind === 'countersAmong') {
+    if (plain) {
+      issue(out, path, 'a count of counters is the amount of a characteristic-defining ability');
+    }
+    const counter = (amount as { counter?: unknown }).counter;
+    if (counter !== undefined && (typeof counter !== 'string' || counter === '')) {
+      issue(out, `${path}.counter`, 'counter is the name of a kind of counter');
+    }
+    checkCountOnly(amount, path, out, 'countersAmong', false);
     return;
   }
   // CR 613.4c: "the greatest power among creature cards in your graveyard": plain (+X/+X) only, of cards outside the battlefield.
@@ -6633,7 +6650,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
               child?.kind === 'createToken' ||
               // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done (`performed`).
-              child?.kind === 'addCounters') &&
+              child?.kind === 'addCounters' ||
+              // Earth Rumble: "Earthbend 2. When you do, ...": the counters put on the land are something done (`performed`).
+              child?.kind === 'earthbend') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -10499,6 +10518,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
+      break;
+    case 'earthbend':
+      // "Earthbend N": the land the objects name (a target land the controller controls, or "it") and a count.
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'doubleCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);

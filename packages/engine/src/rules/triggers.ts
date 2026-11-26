@@ -743,6 +743,8 @@ function occurrences(
             seat: event.by ?? null,
             counter: event.counter,
             countersPut: event.count,
+            // CR 122.6 ("you gain that much life"): "that much" is the counters this instance of putting put on, one for each trigger of the singular wording.
+            damage: trigger.each === true ? 1 : event.count,
           }))
         : [];
     case 'playerAttacksOpponent': {

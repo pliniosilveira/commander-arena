@@ -34,6 +34,7 @@ import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
 import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
 import { ANY_NUMBER_OPPONENTS_RULES } from './any-number-opponents';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -101,6 +102,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { DURNAN_EFFECT_RULES } from './durnan';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { EARTHBEND_RULES } from './earthbend';
 import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
 import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
@@ -1484,6 +1486,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
+  // Issue 692 (Embodiment of Fury, Sylvan Awakening): lands that become creatures for a while.
+  ...ANIMATE_LANDS_EFFECT_RULES,
   // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
   // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
   ...GALADRIEL_G3_EFFECT_RULES,
@@ -1832,6 +1836,7 @@ export const EFFECT_RULES = [
   // Abzan Armor deck, group A: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
   ...COMBAT_RULE_EFFECT_RULES,
   ...COUNTER_RULES,
+  ...EARTHBEND_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,
   ...GAIN_RULES,

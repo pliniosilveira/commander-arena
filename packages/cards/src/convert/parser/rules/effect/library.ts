@@ -18,7 +18,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrArg, IrFilter, IrNoun } from '../../ir/types';
+import type { IrAmount, IrArg, IrFilter, IrNoun } from '../../ir/types';
 import { countAmount } from '../amount/count';
 import {
   CARD_TYPES,
@@ -462,7 +462,8 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     // Sliver Swarm deck, group C: the creature type the permanent chose as it entered, or the effect chose as it resolved.
     'look at the top three cards of your library. You may reveal a creature card of the chosen type from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in a random order',
-    'look at the top four cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in any order',
+    'look at the top four cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in any order', // Seismic Sense: X is the number of lands you control.
+    'look at the top X cards of your library, where X is the number of lands you control. You may reveal a creature or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
   ],
   rejects: [
     'look at the top six cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards onto the battlefield. Put the rest on the bottom of your library in a random order',
@@ -476,6 +477,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     'look at the top six cards of your library. You may reveal an artifact card from among them and put those cards into your hand. Put the rest on the bottom of your library in any order',
     'look at the top card of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top X cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top X cards of your library, where X is the number of lands you control. You may reveal an artifact card from among them and put it into your hand',
     'look at the top six cards of your library. You may reveal an instant, sorcery or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an instant, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an instant, sorcery, or dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
@@ -487,8 +489,21 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     'effect.look-take',
     sequence(
       literal('look at the top '),
-      AT_LEAST(2),
-      literal(' cards of your library. you may reveal '),
+      // "X cards of your library, where X is the number of lands you control" (Seismic Sense): X is read as the effect resolves.
+      choice(
+        map(
+          sequence(AT_LEAST(2), literal(' cards of your library. you may reveal ')),
+          ([n]): IrArg => n,
+        ),
+        map(
+          sequence(
+            literal('x cards of your library, '),
+            family<IrAmount>('amount', { only: ['amount.where-x'] }),
+            literal('. you may reveal '),
+          ),
+          ([, n]): IrArg => n,
+        ),
+      ),
       TAKE_CLAUSE,
       literal('. put the rest '),
       spanned(
@@ -507,7 +522,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
         ),
       ),
     ),
-    ([, count, , { take, atMost, where, anyNumber }, , rest]) => ({
+    ([, count, { take, atMost, where, anyNumber }, , rest]) => ({
       verb: 'lookTake',
       args: {
         count,

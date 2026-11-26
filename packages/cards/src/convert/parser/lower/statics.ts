@@ -162,6 +162,13 @@ function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResu
       ? { ...host, value: { ...host.value, andThis: true } }
       : host;
   }
+  // "~ and land creatures you control" (CR 611.3a): the group of the filter, and this permanent whether or not it matches.
+  if (noun.det === 'selfAndGroup') {
+    const group = groupSubject({ ...noun, det: 'each' }, keywords);
+    return group.ok && group.value.kind === 'filter'
+      ? { ...group, value: { ...group.value, andThis: true } }
+      : group;
+  }
   // "Each of those creatures" of a soulbond card (D-286, CR 702.95b): this permanent and the creature it is paired with.
   if (noun.det === 'pair') return { ok: true, value: { kind: 'pair' }, rule: noun.rule };
   return failure(noun);

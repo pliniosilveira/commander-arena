@@ -2102,6 +2102,79 @@ function runEffect(
           })),
         ],
       });
+    case 'earthbend': {
+      // Earthbend N (Avatar: The Last Airbender, rulings 2025-10-02): the land becomes a 0/0 land creature with haste, for good, in addition to its other types; N +1/+1 counters go on it;
+      // and when it dies or is exiled it returns to the battlefield tapped under the controller's control. The target is fixed as the effect resolves (CR 608.2b: a land that is gone, or
+      // no longer a land, is not affected). The counters are read once, now (CR 608.2h).
+      const lands = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
+        const obj = state.objects[id];
+        return obj?.zone === 'battlefield' && derive(state, obj).types.includes('land');
+      });
+      if (lands.length === 0) return done(state);
+      const counters = Math.max(0, amountOf(state, effect.count, ctx, targets));
+      return done(
+        {
+          ...state,
+          // CR 603.7c, 603.7e: one delayed ability of the controller for each land, about that permanent only; it has no end but the event, once.
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            ...lands.map((watched) => ({
+              source: res.source,
+              controller: res.controller,
+              watched,
+              ability: {
+                kind: 'triggered' as const,
+                trigger: {
+                  kind: 'leavesBattlefield' as const,
+                  what: {},
+                  to: ['graveyard', 'exile'] as const,
+                },
+                effect: {
+                  kind: 'moveToZone' as const,
+                  objects: { kind: 'triggerCard' as const, zones: ['graveyard', 'exile'] as const },
+                  to: 'battlefield' as const,
+                  tapped: true,
+                  controller: 'you' as const,
+                },
+              },
+            })),
+          ],
+        },
+        [],
+        [
+          {
+            kind: 'effect',
+            effect: {
+              kind: 'setTypes',
+              objects: effect.objects,
+              types: ['creature'],
+              additive: true,
+              basePt: { power: 0, toughness: 0 },
+              duration: 'permanent',
+            },
+          },
+          {
+            kind: 'effect',
+            effect: {
+              kind: 'grantKeyword',
+              objects: effect.objects,
+              keyword: { kind: 'haste' },
+              duration: 'permanent',
+            },
+          },
+          {
+            kind: 'effect',
+            effect: {
+              kind: 'addCounters',
+              objects: effect.objects,
+              counter: '+1/+1',
+              count: counters,
+            },
+          },
+        ],
+      );
+    }
+
     case 'delayedDies':
       // CR 603.7, 603.7c, 603.10a, 514.2 (Together Forever): "When that creature dies this turn, return that card to its owner's hand": one delayed ability of the controller for each
       // permanent the effect names as it resolves, about that object only (`watched`), once, ended with the turn. A permanent that is not on the battlefield as it resolves makes none.

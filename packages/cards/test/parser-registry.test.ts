@@ -587,6 +587,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.self-and-group': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
   'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
@@ -1184,6 +1185,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
   ),
   'trigger.n-or-more-attack-a-player': whenever,
+  'trigger.you-attack-player-with-one-or-more': whenever,
   'static.pt-counters-on-source': asIs,
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
@@ -1885,6 +1887,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.self-also-types': asIs,
   'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
+  // Embodiment of Fury (issue 692): the offer ("you may") is read by the sentence of the triggered ability.
+  'effect.may-have-target-land-become-creature': permanent(
+    (e) => `Whenever a land you control enters, you may ${e}.`,
+  ),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

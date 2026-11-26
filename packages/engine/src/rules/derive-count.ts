@@ -256,6 +256,34 @@ function greatestPrintedPowerFor(
   return best;
 }
 
+/**
+ * CR 122.1, 604.3 (Toph, the Blind Bandit: "the number of +1/+1 counters on lands you control"): the counters of the kind (every kind when none is named) on the battlefield permanents
+ * the filter matches, "you" being the controller of the source, added together. The permanents are matched through layers 1, 4 and 5 (`typeViewOf`); counters belong to no layer, so no
+ * count loops (CR 613.8).
+ */
+export function countersAmongForSource(
+  state: GameState,
+  filter: ObjectFilter,
+  counter: string | undefined,
+  source: GameObject,
+): number {
+  const chosen = chosenOf(state, source.id);
+  const ctx = {
+    controller: controllerOf(state, source),
+    source: source.id,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+  };
+  let total = 0;
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const view = typeViewOf(state, obj);
+    if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
+    total += countersOfKind(obj.counters, counter);
+  }
+  return total;
+}
+
 /** CR 903.8 (D-229): the times the commanders of `seat` were cast from the command zone this game, all of them added. */
 export function commandersCastCount(state: GameState, seat: GameObject['controller']): number {
   let total = 0;
@@ -293,6 +321,8 @@ export function staticAmountOf(
     return commandersCastCount(state, controllerOf(state, source));
   if (amount.kind === 'partySize') return partySizeForSource(state, source);
   if (amount.kind === 'colorsAmong') return colorsAmongForSource(state, amount.filter, source);
+  if (amount.kind === 'countersAmong')
+    return countersAmongForSource(state, amount.filter, amount.counter, source);
   if (amount.kind === 'greatestPowerAmong')
     return greatestPrintedPowerFor(state, amount.filter, source);
   if (amount.kind === 'times')

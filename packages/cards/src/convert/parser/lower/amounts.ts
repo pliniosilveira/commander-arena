@@ -413,6 +413,9 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'countersOnGroup':
+      // The counters of a kind on a group are read by a characteristic-defining ability only (`lowerDefinedPt`); an instruction that counts them is not read (honest: unsupported).
+      return { ok: false, needs: [], at: amount.span, rule };
     case 'attackersGreatestPower': {
       // CR 508.1, 603.2: the creatures the attack declaration of an `attackBatch` trigger held, read as the ability resolves; `validateCard` refuses it in any other ability.
       const blocked = needs('attackersGreatestPower');
@@ -1211,6 +1214,24 @@ export function lowerDefinedPt(
     const lowered = lowerAmount(count, ctx, rule);
     if (!lowered.ok) return lowered;
     return { ok: true, value: { kind: 'partySize' }, rule };
+  }
+  // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control", the engine's `countersAmong` of the battlefield permanents the group names.
+  if (count.kind === 'countersOnGroup') {
+    const missing = missingFeatures(['amount:countersAmong']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: count.span, rule };
+    if (staticCannotRead(count.of.filter, false)) {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    if (count.of.filter.zone !== undefined && count.of.filter.zone !== 'battlefield') {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    const filter = countFilter(count.of);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: { kind: 'countersAmong', filter: filter.value, counter: count.counter },
+      rule,
+    };
   }
   // CR 205.2a, 604.3 (Nighthawk Scavenger): "the number of card types among cards in your opponents' graveyards", alone or after a whole number ("1 plus", the printed `1+*`).
   if (count.kind === 'cardTypesAmong') return cardTypesInDefinedPt(count, ctx, rule);

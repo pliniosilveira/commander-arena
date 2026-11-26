@@ -111,6 +111,7 @@ describe('amounts that read an object', () => {
       'colorsAmong',
       // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
       'greatestPowerAmong',
+      'countersAmong',
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'differentManaValuesAmong',

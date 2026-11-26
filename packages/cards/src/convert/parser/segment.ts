@@ -1080,6 +1080,14 @@ const IF_ITS_LAND_OR_MAY_PUT =
 /** "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." (Galadriel deck, group 1, CR 205.1b): the second sentence keeps the old types. */
 const THEY_BECOME = /^they become [^.]*\.$/i;
 const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
+/**
+ * "Until your next turn, all lands you control become 2/2 Elemental creatures with reach, indestructible, and haste. They're still lands." (Sylvan Awakening, issue 692, CR 205.1b) and
+ * "Whenever a land you control enters, you may have target land you control become a 3/3 Elemental creature with haste until end of turn. It's still a land." (Embodiment of Fury): the
+ * second sentence keeps the land type (`effect.all-lands-become-creatures`, `effect.may-have-target-land-become-creature`).
+ */
+const ALL_LANDS_BECOME = /^(?:until [^.,]*, )?all lands you control become [^.]*\.$/i;
+const MAY_HAVE_TARGET_LAND_BECOME =
+  /(?:^|, )you may have target land [^.]* become an? \d+\/\d+ [^.]*\.$/i;
 /** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
 const BECOMES_LAND_CREATURE =
   /(?:^|: )until end of turn, ~ becomes an? (?:\d+|X)\/(?:\d+|X) [^.]*\.$/i;
@@ -1629,6 +1637,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_CARD_MAY_PUT_TAPPED)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
+        (said(a, ALL_LANDS_BECOME) && said(b, THEY_ARE_STILL)) ||
+        (said(a, MAY_HAVE_TARGET_LAND_BECOME) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, IT_BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, RETURN_IT_FACE_DOWN) && said(b, ITS_A_FOREST_LAND)) ||
@@ -1689,7 +1699,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
-      ((said(a, LOOK_AT_TOP) &&
+      (((said(a, LOOK_AT_TOP) || said(a, LOOK_TOP_X_WHERE)) &&
         (said(b, TAKE_FROM_AMONG) ||
           said(b, TAKE_ANY_OF_CHOSEN_TYPE) ||
           said(b, PUT_ANY_TOTAL) ||

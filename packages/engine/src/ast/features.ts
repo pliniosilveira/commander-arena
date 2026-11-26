@@ -498,6 +498,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // "You take the initiative" (CR 726) and "venture into Undercity" (CR 701.49, 309).
     'takeInitiative',
+    // Avatar: "earthbend N" (a land becomes a 0/0 haste land creature with counters, returning when it dies or is exiled).
+    'earthbend',
     'venture',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
@@ -1940,6 +1942,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
     'greatestPowerAmong',
+    // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control" (a characteristic-defining ability's amount).
+    'countersAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // Issue 121: "the number of different mana values among instant and sorcery cards in your graveyard" (Eris).
@@ -3332,6 +3336,8 @@ export const AMOUNT_KINDS = [
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
   'greatestPowerAmong',
+  /** "The number of +1/+1 counters on lands you control" (CR 122.1, 604.3): the engine's `countersAmong`, a characteristic-defining ability's amount. */
+  'countersAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "The number of different mana values among instant and sorcery cards in your graveyard" (CR 202.3, issue 121): the engine's `differentManaValuesAmong`. */
@@ -3745,6 +3751,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   takeInitiative: true,
+  earthbend: true,
   venture: true,
   extraTurn: true,
   loseLifeManaValue: true,

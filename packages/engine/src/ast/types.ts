@@ -765,6 +765,12 @@ export type DefinedPtAmount =
    * actions, and a characteristic-defining ability sets the number as it is).
    */
   | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
+  /**
+   * "~'s power is equal to the number of +1/+1 counters on lands you control" (Toph, the Blind Bandit; CR 122.1, 604.3, 208.2a): the counters of the kind `counter` (every kind when it is
+   * left out) on the battlefield permanents `filter` matches, added together, read each time the characteristics are worked out. The filter reads no power, toughness, combat, source power
+   * or keyword, and the permanents it matches are those after layers 1, 4 and 5 (counters belong to no layer, CR 613.8, so the count cannot loop). A characteristic-defining ability only.
+   */
+  | { readonly kind: 'countersAmong'; readonly filter: ObjectFilter; readonly counter?: string }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly (CountAmount | StaticPtSumPart)[] };
 
@@ -1417,7 +1423,7 @@ export type ObjectRef =
    * CR 400.7, 603.10a): the card the `triggerSubject` permanent became, if it is still in the graveyard (`zone` `graveyard`). Resolves to nothing when the card has left that zone
    * since (it would be a new object again) or the subject was a token. Valid only as the object of `moveToZone` or `exile` in a triggered ability whose subject is a permanent.
    */
-  | { readonly kind: 'triggerCard' }
+  | { readonly kind: 'triggerCard'; readonly zones?: readonly ('graveyard' | 'exile')[] }
   /**
    * "Those creatures" in the body of a `combatDamageBatch` trigger (Tamiyo, Upriser Crowned; CR 603.2c, 510.2, 400.7): the permanents `what` names that dealt the combat damage that
    * triggered the ability, as long as each is still the same permanent on the battlefield (one that left is a new object, or none, and is skipped).
@@ -4179,6 +4185,19 @@ export type Effect =
    * already the monarch or has left the game. The designation belongs to the player: it stays when the source
    * leaves the battlefield.
    */
+  /**
+   * "Earthbend N" (the keyword action of Avatar: The Last Airbender; rulings of 2025-10-02): the land `objects` names (a target land the controller controls) becomes a 0/0 land
+   * creature with haste in addition to its other types, for good (it keeps its land type, subtypes and abilities); then `count` +1/+1 counters are put on it; and a delayed triggered
+   * ability of the controller, about that permanent only (CR 603.7c, 603.7e), returns it to the battlefield tapped under the controller's control when it dies or is exiled
+   * (the card it became in a graveyard or in exile; a land that goes to any other zone, or a token, is not returned). A land that is no longer a land on the battlefield as the effect
+   * resolves is not affected and nothing is done (CR 608.2b); a land already a creature gets the counters and the 0/0 base power and toughness again. The counters put are something done, so a "When you do"
+   * reflexive ability may follow (Earth Rumble, CR 603.12).
+   */
+  | {
+      readonly kind: 'earthbend';
+      readonly objects: ObjectSelector;
+      readonly count: Amount;
+    }
   | { readonly kind: 'becomeMonarch'; readonly player: PlayerSelector }
   /**
    * "[Player] takes the initiative" (CR 726.1, 726.3, 726.5): the player the selector names (one player) has the initiative and the player who had it ceases to. A player who
@@ -4837,7 +4856,8 @@ export type Effect =
        * on again later does not bring it back). An object with no such counter as the effect begins gets nothing. With `duration` `permanent`, and no `basePt`.
        */
       readonly whileHasCounter?: string;
-      readonly duration: Duration;
+      /** `untilYourNextTurn` (CR 611.2a, 500.1; Sylvan Awakening): the objects named as the effect resolves (CR 611.2c) have the change (and `basePt`) until the next turn of the controller begins, the turn it resolves in not counted. */
+      readonly duration: Duration | 'untilYourNextTurn';
     }
   /**
    * "Target creature becomes blue": layer 5 (CR 613.1e). The new colors replace the old ones
@@ -8986,7 +9006,16 @@ export type StaticSubject =
        */
       readonly andThis?: true;
     }
-  | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean }
+  | {
+      readonly kind: 'filter';
+      readonly filter: ObjectFilter;
+      readonly other?: boolean;
+      /**
+       * "This creature and land creatures you control get +2/+2" (Sylvan Advocate, CR 611.3a, 613.4c): the permanent the ability belongs to as well as the group, whether or not
+       * the filter matches it. Only for a modification of power and toughness or a granted keyword (`validateCard` refuses the rest).
+       */
+      readonly andThis?: true;
+    }
   /**
    * "Each of those creatures", "both creatures" of a soulbond card (CR 702.95b, 611.3a, D-286): the permanent the ability belongs to and the creature it is
    * paired with, whatever the pair is at any moment (`rules/pairing.ts`, `partnerOf`): none while it is unpaired. Only for a modification of power and
