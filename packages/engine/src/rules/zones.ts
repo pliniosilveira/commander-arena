@@ -832,7 +832,9 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // when there is a permanent with a counter that matches (the permanent is not on the battlefield, so it is not one of them).
   const removeRule = entersRemoveCountersOf(faceAbilities);
   if (removeRule !== null && to === 'battlefield' && request.entersRemoved === undefined) {
-    const legal = removeCountersCandidates(before, enterController, removeRule, old.id);
+    const legal = removeCountersCandidates(before, enterController, removeRule.filter, old.id);
+    // Thief of Blood (CR 614.12, 122.1): "remove all counters from all permanents" asks nothing; every permanent with a counter loses them, as if all had been chosen.
+    if (removeRule.all) return moveObject(state, { ...request, entersRemoved: legal });
     if (legal.length > 0) {
       return {
         kind: 'needsDecision',

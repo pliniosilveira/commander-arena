@@ -308,6 +308,9 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with a charge counter on it for each time it was kicked.',
     // Issue 101 (Bone Devourer, CR 614.12): a count of what died this turn.
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn.',
+    // Centaur Vinecrasher (CR 614.12, 404.1): a count of cards in every graveyard, made as it enters.
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of creature cards in your graveyard.',
   ],
   rejects: [
     '~ enters with two +1/+1 counters on it for each creature you control.',
@@ -328,6 +331,10 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with two +1/+1 counters on it and draw a card.',
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn and draw a card.',
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died last turn.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards and draw a card.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards',
+    '~ enters with a number of +1/+1 counters on it equal to the number of lands.',
+    '~ enters with a number of +1/+1 counters on it equal to its power.',
   ],
   parse: (ctx, pos) => {
     const r = sequence(ENTERS, countersTail('replacement.enters-with-counters', true, true))(

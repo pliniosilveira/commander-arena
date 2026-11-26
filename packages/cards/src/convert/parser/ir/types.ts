@@ -1904,6 +1904,8 @@ export interface IrTrigger extends IrNode {
   readonly fromNotBattlefield?: true;
   /** 'putIntoGraveyard' "a card is put into an opponent's graveyard from anywhere" (CR 603.2, 404.1): the graveyard of a player other than the controller of the ability. */
   readonly opponentGraveyard?: true;
+  /** 'putIntoGraveyard' "a land card is put into a graveyard from anywhere" (Centaur Vinecrasher, CR 603.2, 404.1): the graveyard of any player, from any zone, the battlefield included. */
+  readonly anyGraveyard?: true;
   /** 'leftGraveyard' "a creature card leaves your graveyard" (CR 603.2, 400.7): once for each card, not one trigger for the cards that leave together. */
   readonly each?: true;
   /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */

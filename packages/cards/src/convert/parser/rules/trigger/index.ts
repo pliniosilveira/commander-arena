@@ -30,6 +30,7 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { ABOLETH_TRIGGER_RULES } from './aboleth';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
+import { ANY_GRAVEYARD_TRIGGER_RULES } from './any-graveyard';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
 import { ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES } from './attacks-you-or-walkers';
@@ -1661,6 +1662,8 @@ export const TRIGGER_RULES = [
   ...TROYAN2_TRIGGER_RULES,
   // Mind Flayarrrs deck, group 8: "a card is put into an opponent's graveyard from anywhere".
   ...MIND_FLAYARRRS_G8_TRIGGER_RULES,
+  // Centaur Vinecrasher: "a land card is put into a graveyard from anywhere".
+  ...ANY_GRAVEYARD_TRIGGER_RULES,
   // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
   ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,
