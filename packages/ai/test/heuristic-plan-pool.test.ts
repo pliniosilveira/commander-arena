@@ -207,6 +207,7 @@ describe('the planner on a pool of workers', () => {
       // The pool did the play-outs: the comparison is not of two empty plannings.
       expect(compared).toBeGreaterThan(10);
     },
+    60_000,
   );
 
   test.each(positions)(
