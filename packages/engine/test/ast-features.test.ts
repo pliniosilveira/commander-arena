@@ -175,6 +175,7 @@ describe('the dimensions', () => {
       'descendedThisTurn',
       'playedLandThisTurn',
       'manaSpentAtLeast',
+      'manaSpentFromSubtype',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
       'wasCast',
