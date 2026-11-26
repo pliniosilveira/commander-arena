@@ -142,3 +142,51 @@ describe('Inside Information (CR 118.9, 119.4, 601.2f)', () => {
     g.expect.life(0, 19);
   });
 });
+
+// Outrageous Robbery: "Target opponent exiles the top X cards of their library face down. You may look at and play those cards for as long as they remain exiled. If you cast a spell
+// this way, you may spend mana as though it were mana of any type to cast it." (CR 406.3, 609.4b). The opponent exiles their own cards, face down, which the controller may look at.
+describe('Outrageous Robbery (CR 406.3, 609.4b)', () => {
+  const ROBBERY = real('Outrageous Robbery');
+
+  test('is valid', () => {
+    expect(validateCard(ROBBERY)).toEqual([]);
+  });
+
+  const table = () =>
+    scenario({ seats: 3 })
+      .define(ROBBERY)
+      .seat(0)
+      .life(20)
+      .library(...FILLER)
+      .hand(ROBBERY.name)
+      .pool('BBRRR')
+      .seat(1)
+      .life(20)
+      .library(ELVES, 'Forest', 'Forest', ...FILLER)
+      .seat(2)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('X=2 exiles two cards of the opponent’s library face down; a spell cast from them takes any mana', () => {
+    const g = table();
+    g.act(0).cast(ROBBERY.name, { x: 2 }).targets([{ player: 1 }]).pay();
+    g.passAll();
+    g.expect.zone(ELVES, 'exile', { seat: 1 });
+    // {G} is paid with red mana: any type of mana can be spent on the spell.
+    g.act(0).cast({ name: ELVES, seat: 1, zone: 'exile' }, { pay: true });
+    g.passAll();
+    g.expect.zone(ELVES, 'battlefield', { seat: 0 });
+  });
+
+  test('the cards stay playable on a later turn: nothing but leaving exile ends the permission', () => {
+    const g = table();
+    g.act(0).cast(ROBBERY.name, { x: 2 }).targets([{ player: 1 }]).pay();
+    g.passAll();
+    for (let i = 0; i < 3; i += 1) g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.zone('Forest', 'exile', { seat: 1, count: 1 });
+    g.act(0).playLand({ name: 'Forest', seat: 1, zone: 'exile', nth: 0 });
+    g.expect.zone('Forest', 'battlefield', { seat: 0 });
+  });
+});
