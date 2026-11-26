@@ -4189,9 +4189,7 @@
           "closestRule": "none"
         }
       ],
-      "reasons": [
-        "layout \"case\" is not supported"
-      ],
+      "reasons": ["layout \"case\" is not supported"],
       "ast": "f58a4f7c"
     },
     "40eb9904-dea3-47cf-963a-04821f98ba64": {
