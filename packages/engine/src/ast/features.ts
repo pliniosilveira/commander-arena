@@ -1397,6 +1397,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 701.38a, 701.38b: "each creature with one or more votes" (Trap the Trespassers), "each player who received no votes" (Círdan the Shipwright), "each opponent who voted for a
     // choice you voted for" (Erestor of the Council).
     'votedObjects',
+    'mostVotedObjects',
     'eachPlayerWithoutVotes',
     'eachOpponentWhoVoted',
     // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
@@ -2662,6 +2663,8 @@ export const SELECTOR_KINDS = [
   'eachObject',
   /** "Each creature with one or more votes" (CR 701.38a, Trap the Trespassers): the engine's `ObjectRef` `votedObjects`. */
   'votedObjects',
+  /** "Exile each permanent with the most votes or tied for most votes" (CR 701.38a, Council's Judgment): the engine's `ObjectRef` `mostVotedObjects`. */
+  'mostVotedObjects',
   /** "Each player who received no votes" (CR 701.38a, Círdan the Shipwright): the engine's `eachPlayerWithoutVotes`. */
   'eachPlayerWithoutVotes',
   /** "Each opponent who voted for a choice you voted for" (CR 701.38a, Erestor of the Council): the engine's `eachOpponentWhoVoted`. */

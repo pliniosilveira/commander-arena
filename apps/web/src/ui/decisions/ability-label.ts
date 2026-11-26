@@ -444,6 +444,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'votedObjects':
       // CR 701.38a (Trap the Trespassers).
       return 'each creature with one or more votes';
+    case 'mostVotedObjects':
+      // CR 701.38a (Council's Judgment).
+      return 'each permanent with the most votes or tied for most votes';
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen).
       return 'your Ring-bearer';
@@ -627,6 +630,7 @@ function recipientText(
     case 'putWithThis':
     case 'eachObject':
     case 'votedObjects':
+    case 'mostVotedObjects':
     case 'ringBearer':
     case 'each':
       return objectText(to, ability, self);

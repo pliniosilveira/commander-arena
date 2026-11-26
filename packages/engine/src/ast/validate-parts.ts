@@ -1751,6 +1751,18 @@ export function checkRef(
         );
       }
       break;
+    case 'mostVotedObjects':
+      // CR 701.38a, 701.38b (Council's Judgment): the permanents with the most votes, after a vote for permanents in the same sequence.
+      if (expect === 'player')
+        issue(out, path, "'mostVotedObjects' is a set of permanents, not a player");
+      else if (scope.voteChoices !== 'objects') {
+        issue(
+          out,
+          path,
+          "'mostVotedObjects' needs a vote for permanents before it in the same sequence",
+        );
+      }
+      break;
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
       if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");

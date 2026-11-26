@@ -1406,6 +1406,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'votedObjects' }
   /**
+   * "Each permanent with the most votes or tied for most votes" (CR 701.38a, 701.38b, Council's Judgment): of the permanents voted for in the latest `voteFor` of objects of this resolution
+   * that are still on the battlefield, those with the greatest number of votes (every one of a tie), in the order they were first voted for. Nothing when no permanent got a vote. Valid
+   * only after such a `voteFor` in the same sequence (`validateCard`).
+   */
+  | { readonly kind: 'mostVotedObjects' }
+  /**
    * The engine's own form of `moved` inside a delayed triggered ability (D-639, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
    * and a card that left and came back is a new object with a new id). Never written in a card (`validateCard`): the engine writes it when it creates the delayed ability.
