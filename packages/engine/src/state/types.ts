@@ -1604,6 +1604,12 @@ export type Instruction =
       readonly anyNumber?: true;
       /** "Untap up to three lands" (D-216): the tapped permanents the filter matches, none up to `count`, are untapped instead of tapped. */
       readonly untap?: true;
+      /**
+       * "You may turn a permanent you control face up" (`turnFaceUp` with a `choose` selector, CR 608.2d, 701.40g): the face-down permanents the controller controls that the filter matches
+       * (`upTo`: the controller chooses none or `count`) are turned face up instead of tapped. See rules/turn-face-up.ts.
+       */
+      readonly turnUp?: true;
+      readonly upTo?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   | {

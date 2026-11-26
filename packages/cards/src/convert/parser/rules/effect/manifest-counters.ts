@@ -10,6 +10,7 @@ import {
   map,
   type Parser,
   pattern,
+  satisfy,
   separatedBy1,
   sequence,
 } from '../../combinators';
@@ -235,9 +236,57 @@ export const EFFECT_TURN_FACE_UP_OR_COUNTER = defineRule<Clauses>({
   ),
 });
 
+const CHOSEN_ID = 'effect.turn-face-up-chosen';
+
+/**
+ * `effect.turn-face-up-chosen`: "Turn a permanent you control face up." (Zimone, Mystery Unraveler; CR 608.2d, 701.40g, 708.8): the controller chooses one of the face-down permanents
+ * they control as the effect resolves and an effect turns it face up, paying nothing. The engine's `turnFaceUp` of a `choose` selector. The permanent is one the controller has ("a
+ * permanent you control", "a creature you control"), no count, no target. Not read: a target, a count, another player's permanent, "face down", "it".
+ */
+export const EFFECT_TURN_FACE_UP_CHOSEN = defineRule<Clauses>({
+  id: CHOSEN_ID,
+  family: 'effect',
+  leading: ['turn'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 701.40g (Manifest)',
+    'CR 708.8 (Face-Down Spells and Permanents)',
+  ],
+  examples: [
+    'turn a permanent you control face up',
+    'turn a creature you control face up',
+    'Turn a permanent you control face up',
+  ],
+  rejects: [
+    'turn target permanent you control face up',
+    'turn a permanent you control face down',
+    'turn two permanents you control face up',
+    'turn a permanent an opponent controls face up',
+    'turn a permanent you control face up and draw a card',
+    'turn a permanent you control',
+  ],
+  parse: single(
+    CHOSEN_ID,
+    map(
+      sequence(
+        literal('turn '),
+        // One permanent: "two permanents" is a count this reading does not have.
+        satisfy(
+          family<IrNoun>('noun', { only: ['noun.a-permanent'] }),
+          (noun) => noun.count === undefined,
+        ),
+        pattern(/ face up(?![\p{L}\p{N}])/iu),
+      ),
+      ([, noun]) => noun,
+    ),
+    (objects) => ({ verb: 'turnFaceUpChosen', args: { objects } }),
+  ),
+});
+
 export const MANIFEST_COUNTERS_EFFECT_RULES = [
   EFFECT_ADD_COUNTERS_COUNTED_KINDS,
   // Before the plain turning face up, of which it is the start.
   EFFECT_TURN_FACE_UP_OR_COUNTER,
   EFFECT_TURN_FACE_UP,
+  EFFECT_TURN_FACE_UP_CHOSEN,
 ] as const;

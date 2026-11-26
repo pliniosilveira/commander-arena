@@ -2925,9 +2925,11 @@ export type Effect =
   /**
    * "Turn that creature face up" (CR 701.40g, 708.8, Staff Room): each face-down permanent `objects` names is turned face up by the effect, with no cost paid (the special action
    * `turnFaceUp` is the one that pays). It is the same object with the characteristics of its card, nothing enters, and the `turnedFaceUp` event comes out. A permanent that is
-   * not face down is left alone; a manifested permanent whose card is an instant or sorcery is revealed and stays face down (CR 701.40g).
+   * not face down is left alone; a manifested permanent whose card is an instant or sorcery is revealed and stays face down (CR 701.40g). A `choose` selector (Zimone, Mystery Unraveler,
+   * "you may turn a permanent you control face up", CR 608.2d): the controller chooses one of the face-down permanents they control that the filter matches (`filter.controller` `you`,
+   * `filter.zone` the battlefield or left out); with `optional` they may choose none.
    */
-  | { readonly kind: 'turnFaceUp'; readonly objects: ObjectSelector }
+  | { readonly kind: 'turnFaceUp'; readonly objects: ObjectSelector | ChooseSelector }
   /**
    * CR 701.8 (Destroy). `cantBeRegenerated` is "It can't be regenerated" (CR 701.19c, D-120): the
    * regeneration shields of the permanents it destroys are not applied (they stay until they end).

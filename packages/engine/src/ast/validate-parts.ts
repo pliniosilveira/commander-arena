@@ -4873,6 +4873,38 @@ function checkSacrificeSelector(
 }
 
 /**
+ * The `choose` selector of `turnFaceUp` ("you may turn a permanent you control face up", CR 608.2d): the controller chooses one of the face-down permanents they control that match; the
+ * other fields of a choice are for other effects.
+ */
+function checkChooseTurnUp(sel: ChooseSelector, path: string, out: Out): void {
+  checkFilter(sel.filter, `${path}.filter`, out);
+  if (sel.filter?.controller !== 'you') {
+    issue(
+      out,
+      `${path}.filter.controller`,
+      "a choice of what to turn face up is among the permanents you control: set controller to 'you'",
+    );
+  }
+  if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
+    issue(out, `${path}.filter.zone`, 'only permanents on the battlefield are face down');
+  }
+  if (
+    sel.count !== undefined ||
+    sel.anyNumber !== undefined ||
+    sel.upTo !== undefined ||
+    sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.chosenBy !== undefined
+  ) {
+    issue(
+      out,
+      path,
+      'a turn-face-up choice picks one permanent: only filter and optional belong to it',
+    );
+  }
+}
+
+/**
  * The `choose` selector of `tap` ("tap X untapped Myr you control", D-139): the controller chooses among the untapped permanents on the
  * battlefield they control that match (CR 608.2d), none to all (`anyNumber`) or `count` of them.
  */
@@ -6601,7 +6633,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'turnFaceUp':
       // CR 701.40g, 708.8: the permanents turned face up: a selector, or the permanent a trigger is about ("turn that creature face up").
-      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      if (kindOf(e.objects) === 'choose') {
+        checkChooseTurnUp(e.objects as ChooseSelector, `${path}.objects`, out);
+      } else {
+        checkAffectedObjects(e.objects as ObjectSelector, `${path}.objects`, scope, out);
+      }
       break;
     case 'balance':
       // CR 101.4, 701.21a, 701.9 (Magus of the Balance): every player keeps the smallest number of lands, cards in hand or creatures.
