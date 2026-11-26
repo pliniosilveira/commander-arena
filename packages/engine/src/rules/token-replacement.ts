@@ -185,6 +185,14 @@ function applyEffect(
   }
   const made = madeBy(effect);
   if (made === null) return batch;
+  // CR 614.1a (Chatterfang): the matching tokens stay and as many more of the token are made as they are. What the instruction said about the tokens (tapped) applies to the
+  // added ones too (the Scryfall ruling of 2021-06-18 of Chatterfang; not their abilities, which are the definition's), so each added part keeps `original` of its part.
+  if (effect.replacement.mode === 'plusThatMany') {
+    return [
+      ...batch,
+      ...hit.map((part) => ({ definition: made, count: part.count, original: part.original })),
+    ];
+  }
   if (effect.replacement.mode === 'thatMany') {
     const total = hit.reduce((n, part) => n + part.count, 0);
     return [
@@ -326,6 +334,9 @@ const effectText = (effect: TokenEffect): string => {
   }
   if (made === null) return 'Create twice that many of those tokens instead';
   const name = made.name;
+  if (effect.replacement.mode === 'plusThatMany') {
+    return `Create those tokens plus that many ${name} tokens instead`;
+  }
   return effect.replacement.mode === 'thatMany'
     ? `Create that many ${name} tokens instead`
     : `Create those tokens plus an additional ${name} token instead`;

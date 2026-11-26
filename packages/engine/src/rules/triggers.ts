@@ -774,6 +774,11 @@ function occurrences(
             damage: trigger.each === true ? 1 : event.count,
           }))
         : [];
+    case 'lastCounterRemoved':
+      // CR 702.63a: counters of this kind were taken off a permanent; whether it was the last of them is read against the permanent as it is when the event is noticed.
+      return event.kind === 'counterRemoved' && event.counter === trigger.counter && event.count > 0
+        ? [{ subject: event.object, seat: null, counter: event.counter }]
+        : [];
     case 'playerAttacksOpponent': {
       // CR 508.1, 508.6, 603.2c (D-648): once for each player the declaration attacks (a planeswalker or a battle attacked is no player), however many creatures attack them.
       if (event.kind !== 'attackersDeclared') return [];
@@ -1262,6 +1267,12 @@ function matches(
         if (now < trigger.reaches || now - (occ.countersPut ?? 0) >= trigger.reaches) return false;
       }
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'lastCounterRemoved':
+      // CR 702.63a: the permanent has none of that kind of counter now, and is the one the ability belongs to.
+      return (
+        (subject?.counters[trigger.counter] ?? 0) === 0 &&
+        matchesWhat(state, trigger.what, subject, candidate)
+      );
     case 'playerAttacksOpponent': {
       // "One of your opponents": a player other than the controller of the ability (D-648).
       const attacked = occ.attacked?.[0];
@@ -1558,6 +1569,8 @@ function isRelevant(event: GameEvent): boolean {
     case 'classLevelReached':
     case 'votesRevealed': // CR 701.38a: "whenever players finish voting"
       return true;
+    case 'counterRemoved':
+      return true; // CR 702.63a (Vanishing): "When the last time counter is removed from this permanent"
     case 'counterAdded':
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
     case 'lifeGained':

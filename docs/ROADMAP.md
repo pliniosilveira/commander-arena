@@ -167,6 +167,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
 - A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
+- "Tap X untapped tokens you control: Add X mana in any combination of colors" (Hazel of the Rootbloom) is never part of automatic payment and has no control in the web's payment prompt: activate it at priority, then cast.
 - Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).
 - "That was dealt damage this turn" is read only in "costs {3} less to cast if it targets a creature that was dealt damage this turn"; as a target or group wording elsewhere it stays unread.
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
@@ -175,6 +176,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Until you exile another card with ~" is read only after exiling the top card of your own library, and ends the permission as that same permanent exiles its next card.
 - Panharmonicon-style "artifact or creature entering" doubles only triggers with an entering subject; "one or more creatures enter" batch triggers are not doubled by it.
 - A name set by `setTypes` (CR 612.8) applies in timestamp order with layer 4, not as layer 3, and only "it's a land named X" after a returned card is read.
+- Vanishing with no number (CR 702.63b) is unread, and so is "When the last time counter is removed from ~" written out in a card's own text; only the keyword with a number runs.
 - Explore emits no event and ignores APNAP order.
 - `delayedDies` only returns the card to its owner's hand; "those counters" and "that number" are read only after an intervening "if it had counters on it"; "support X" only in the enters trigger of its own permanent.
 - Sunburst as the number of another ability (Modular-Sunburst, CR 702.44c) is unread; a spell gains sunburst only through a cast trigger, never a permanent or for a duration.
@@ -618,6 +620,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- A "with base power or toughness 1" count (CR 208.4b) reads printed values, characteristic-defining abilities and resolved effects that set them; a static ability of another permanent that sets base power and toughness is not seen by it.
+- "..., then you may X" reads as two sentences only in a triggered or loyalty body; "If you do, repeat this process" runs only after tokens, life or draws then "you may exile N cards from your graveyard".
 - "Whenever you remove a time counter from this card while it's exiled" counts only Suspend's upkeep removal; other removals do not say who removed the counter. Surveil rulings (Dream Eater, Eye of Duskmantle) are unverified.
 - "Each opponent returns ..., then discards a card" runs as all returns, then all discards; with three or more seats a per-player order was not checked against rulings or the CR text (not available).
 - `playerSpellsCostLess` reduces generic mana by a number for spells of card types, for a target player, until your next turn; other spell filters and durations are unread.

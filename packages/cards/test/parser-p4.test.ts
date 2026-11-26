@@ -736,6 +736,16 @@ describe('Food and Clue lower (CR 111.10b, 111.10f)', () => {
     );
   });
 
+  test('Blood runs (Squirreled Away deck, group 1, CR 111.10)', () => {
+    expect(readAll('When ~ enters, create a Blood token.', 'creature').abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Blood' }, count: 1 },
+      },
+    ]);
+  });
+
   test('Blood runs since CR 111.10g; a mana ability that discards still needs what the engine lacks', () => {
     expect(dropped('{T}, Discard a card: Add {R}{R}.', 'creature')).toMatchObject({
       reason: 'notRunnable',

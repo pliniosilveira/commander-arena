@@ -94,8 +94,10 @@ import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-
 import { SAME_CONTROLLER_TARGET_NOUN_RULES } from './same-controller-target';
 import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
+import { SQUIRRELED_G4_NOUN_RULES } from './squirreled-g4';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SELF_AND_GROUP, NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
+import { withSubtypeClause } from './subtype-clause';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -1036,11 +1038,17 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
     // Oran-Rief, the Vastwood: the permanents that entered the battlefield this turn (CR 400.7, 110.1).
     'each green creature that entered this turn',
     'each creature you control that entered this turn',
+    // Swarmyard Massacre (CR 205.3d): the creatures with none of the creature types named.
+    "each creature that isn't an Insect, Rat, Spider, or Squirrel",
+    "each creature that isn't a Rat",
     // Massacre Girl (CR 109.1): every one but the source of the ability, said after the phrase.
     'each creature other than ~',
     'each creature you control other than ~',
   ],
   rejects: [
+    "each creature that isn't an Insect, Rat, Spider, or Rat",
+    "each creature that's a Rat or Squirrel",
+    "each creature that isn't an Insects",
     'each creatures',
     'all creatures',
     'each opponent',
@@ -1063,7 +1071,7 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
             map(literal('other '), () => true),
             false,
           ),
-          permanentPhrase(false, 'all'),
+          withSubtypeClause(permanentPhrase(false, 'all'), 'hasNot'),
           // "that entered this turn" (CR 400.7): the permanents that entered the battlefield during this turn.
           optional(
             map(literal(' that entered this turn'), () => true),
@@ -1221,6 +1229,7 @@ export const NOUN_RULES = [
   ...ATTACKING_YOU_NOUN_RULES,
   // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
   ...QUANDRIX_G_TARGET_NOUN_RULES,
+  // Hazel of the Rootbloom: "target token you control", before `noun.target-permanent`.
   // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
   ...AHOY_G7_NOUN_RULES,
   // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.
@@ -1250,6 +1259,8 @@ export const NOUN_RULES = [
   ...AHOY_G4_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
+  // Squirreled Away deck, group 4: "each Garruk you control".
+  ...SQUIRRELED_G4_NOUN_RULES,
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
   ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,

@@ -780,6 +780,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'lastCounterRemoved':
+      // CR 702.63a (Vanishing): the last counter of a kind comes off this permanent.
+      return `When the last ${trigger.counter} counter is removed from this permanent`;
     case 'damageToPlayerPrevented': {
       // CR 615.6: "Whenever damage that would be dealt to you is prevented".
       const to = { you: 'you', opponent: 'an opponent', player: 'a player' }[trigger.who];

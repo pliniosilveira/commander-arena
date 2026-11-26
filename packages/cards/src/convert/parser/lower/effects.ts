@@ -220,6 +220,7 @@ import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
+import { SQUIRRELED_G4_LOWERINGS } from './squirreled-g4';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { THEN_MAY_RETURN_LOWERINGS } from './then-may-return';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
@@ -3180,6 +3181,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...MANIFEST_COUNTERS_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
+  // Squirreled Away deck, group 4: "you may exile three cards from your graveyard".
+  ...SQUIRRELED_G4_LOWERINGS,
   // D-445: "Monstrosity 5".
   ...FEATHER_G2_LOWERINGS,
   // Quandrix Unlimited deck, group I: "double the value of X".

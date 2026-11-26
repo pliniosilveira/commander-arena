@@ -591,6 +591,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
   'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
+  'cost.tap-permanents-x': permanent((e) => `{T}, ${e}: Add X mana in any combination of colors.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
@@ -1310,6 +1311,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
+  'replacement.tokens-plus-that-many': asIs,
   'replacement.tokens-each-of': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
@@ -1483,6 +1485,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  'noun.target-permanent-and-same-name-permanents': spell((e) => `Destroy ${e}.`),
   'noun.target-permanent-and-same-name-others': spell((e) => `Exile ${e}.`),
   // Breaking of the Fellowship: a second target of the controller of the first.
   'noun.another-target-of-same-controller': spell(
@@ -1647,6 +1650,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
+  // Squirreled Away deck, group 4 (Garruk, Cursed Huntsman).
+  'noun.each-planeswalker-type': spell((e) => `Put a loyalty counter on ${e}.`),
   // D-270: a target of two zones, read by `exile`.
   'noun.target-creatures-battlefield-or-graveyard': spell((e) => `Exile ${e}.`),
   'amount.for-each-own-nontoken-destroyed': spell(
@@ -1655,6 +1660,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
   'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.copy-each-creature-token': permanent((e) => `At the beginning of your end step, ${e}.`),
+  'effect.copy-each-token-that-permanent': spell((e) => `${cap(e)}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),

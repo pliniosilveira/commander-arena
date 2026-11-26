@@ -1204,6 +1204,13 @@ export interface ObjectFilter {
    */
   readonly basePowerIs?: number;
   /**
+   * "Creatures you control with base power or toughness 1" (CR 208.4b): the object's base power or its base toughness (what layer 7b leaves, before counters and "+N/+N"
+   * effects) is this whole number. An object with no power and toughness matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). A count a
+   * "+N/+N" static ability reads may use it (the count reads base values of the objects it counts without their own static abilities, so it cannot loop, CR 613.8); refused in a
+   * characteristic-defining ability, in the subject of a static ability and wherever else `derive` matches filters, as `basePowerIs` is.
+   */
+  readonly basePowerOrToughnessIs?: number;
+  /**
    * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
    * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
    * (as `controlledBy` is). An object with no power, or a reference that names nothing, matches nothing.
@@ -1994,6 +2001,14 @@ export type Cost =
    * or `tapCreatures`; it differs from `tapCreatures` (Crew), which counts total power.
    */
   | { readonly kind: 'tapPermanents'; readonly filter: ObjectFilter; readonly count: number }
+  /**
+   * "Tap X untapped tokens you control" (Hazel of the Rootbloom, CR 118.3, 107.3, 602.2b, 605.3b): the player taps any number of untapped permanents they control that match `filter`,
+   * as part of the cost of a mana ability; X is the number they tap, which they choose as the ability is activated (a mana ability never uses the stack, so X is not announced: it is
+   * the length of the list the activation names, `Action.tappedMany`). X may be 0. As for `tapPermanents`, a creature that came under their control this turn may be tapped (CR 302.6:
+   * only its own {T} ability is held back), and the source may be one of them only when its own cost leaves it untapped. Only in a mana ability whose production is
+   * `anyCombinationTapped` (`validateCard`), and the other way round.
+   */
+  | { readonly kind: 'tapPermanentsX'; readonly filter: ObjectFilter }
   /**
    * "Untap two tapped creatures you control" (CR 701.26b, 118.3, 602.2b): the player untaps `count` tapped permanents they control that match `filter`, as part of the cost of an
    * activated ability. Only a tapped permanent can be untapped, so a player with fewer than `count` of them cannot pay (CR 118.3). The costs are paid in the order the player likes
@@ -6184,6 +6199,14 @@ export type ManaProduction =
    */
   | { readonly kind: 'anyCombinationAmount'; readonly amount: Amount }
   /**
+   * "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors." (Hazel of the Rootbloom; CR 106.1b, 107.3, 605.3b): X is the number of permanents the
+   * `tapPermanentsX` cost of the same ability taps, each mana a color of the five chosen on its own, so the activation names the permanents (`Action.tappedMany`) and the combination
+   * (`Action.combination`, as many colors as permanents). No X is announced and none is read from the game, so no listing of the combinations is possible before the player chooses
+   * X: the priority options hold a few representative ones and the engine accepts any other the activation names. Only a mana ability that has a `tapPermanentsX` cost, and the
+   * other way round (`validateCard`); never part of the payment planner's sources (the player activates it at priority, or names it in a `payManual`).
+   */
+  | { readonly kind: 'anyCombinationTapped' }
+  /**
    * "{T}: For each color among permanents you control, add one mana of that color." (Faeburrow Elder; CR 105.2, 106.1b, 605.3b): one mana of each of the colors the permanents
    * `filter` matches on the battlefield have between them (the `colorsAmong` count, colorless is no color), read as the ability is activated for its controller with its permanent as
    * "this" (a mana ability resolves at once). Nothing is chosen: the mana is one fixed list, empty when no permanent has a color. Only a mana ability (`validateCard`), and not with
@@ -6961,6 +6984,15 @@ export type Trigger =
        * an instance that puts three counters triggers it three times. Not with `reaches`.
        */
       readonly each?: true;
+    }
+  /**
+   * "When the last time counter is removed from this permanent" (CR 702.63a, Vanishing, 603.2): once each time an instance of removing counters takes the last counter of kind `counter` off
+   * the permanent the ability belongs to (it had some, and has none now). The ability of the keyword that has it (`rules/derive-keywords.ts`); a permanent that left the battlefield has no ability to trigger.
+   */
+  | {
+      readonly kind: 'lastCounterRemoved';
+      readonly what: { readonly kind: 'this' };
+      readonly counter: string;
     }
   /**
    * "Whenever you attack" (`atLeast` 1, D-187), "Whenever you attack with two or more creatures", "whenever another player attacks with two or more creatures" (CR 508.1, 603.2, D-149):
@@ -7763,6 +7795,13 @@ export type Keyword =
    * (CR 702.75b: older cards have it as its own ability). `count` is N, a positive whole number.
    */
   | { readonly kind: 'hideaway'; readonly count: number }
+  /**
+   * CR 702.63a, 702.63b (Vanishing): "Vanishing N" means "This permanent enters with N time counters on it", "At the beginning of your upkeep, if this permanent has a time counter on it,
+   * remove a time counter from it" and "When the last time counter is removed from this permanent, sacrifice it". Vanishing with no number (`count` left out) is the last two. The counters
+   * are put as the permanent enters (`rules/enters.ts`); the other two abilities are written by `derive` (`rules/derive-keywords.ts`), and each instance works separately (CR 702.63c).
+   * `count` is a positive whole number.
+   */
+  | { readonly kind: 'vanishing'; readonly count?: number }
   /**
    * CR 702.105a (Dethrone, D-151): "Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on
    * it." A triggered ability that `derive` writes (`rules/derive-keywords.ts`), with the condition `attackingMostLife` as part of the trigger.
@@ -8769,6 +8808,8 @@ export type Replacement =
    * and the replacements of several permanents apply in timestamp order, the oldest first, the tokens it made being looked at by the next (CR 616.1: the
    * affected player's choice of order is not offered, `docs/ROADMAP.md`). The tokens it makes enter untapped and with none of the choices of the original.
    * It is the ability of a permanent on the battlefield, lost with "loses all abilities". `what` names no zone, owner, X, combat or stack kind.
+   * `plusThatMany` (Chatterfang, Squirrel General): "..., those tokens plus that many 1/1 green Squirrel creature tokens are created instead": the tokens `what` matches stay
+   * and as many of `token` as each of them are added, with what the instruction said about them (tapped) as for the original.
    * `double` (D-378; the Hashaton deck, Bard, King of Dale): "If one or more tokens would be created under your control, twice that many of those tokens are
    * created instead." The tokens `what` matches stay what they are (the same definition and what the instruction said about them, tapped for one) and are
    * made twice over: there is no `token`. It is applied once to one event (CR 614.5), so two of them make four; it does not change which tokens, so the order
@@ -8777,7 +8818,7 @@ export type Replacement =
   | {
       readonly kind: 'tokensInstead';
       readonly what: ObjectFilter;
-      readonly mode: 'thatMany' | 'plus';
+      readonly mode: 'thatMany' | 'plus' | 'plusThatMany';
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }

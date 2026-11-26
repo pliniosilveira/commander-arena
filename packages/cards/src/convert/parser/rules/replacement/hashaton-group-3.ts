@@ -74,7 +74,7 @@ export const REPLACEMENT_DRAW_INSTEAD = defineRule<IrAbility>({
 });
 
 /** The tokens a doubling names: every token ("tokens"), as a group the engine reads with no controller of its own (the controller is the player of the effect). */
-function everyToken(span: { start: number; end: number }, rule: string): IrNoun {
+export function everyToken(span: { start: number; end: number }, rule: string): IrNoun {
   return {
     kind: 'noun',
     det: 'each',

@@ -2025,6 +2025,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'dealtDamage':
     case 'leavesBattlefield':
     case 'countersAdded':
+    case 'lastCounterRemoved':
     case 'tapsForMana':
     case 'exerted':
       return 'permanent';

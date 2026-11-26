@@ -749,17 +749,22 @@ class Binder {
             arg.toughness !== undefined
               ? { itTokenGains: true as const }
               : {}),
-            noun: {
-              kind: 'noun',
-              det: 'a',
-              filter: { raw: 'token' },
-              upTo: false,
-              plural: false,
-              other: false,
-              span: arg.span,
-              rule: arg.rule,
-              ref,
-            },
+            // Hazel of the Rootbloom (CR 111.4, 608.2c): in "create a token that's a copy of target token you control. If that token is a Squirrel, ...", "that token" is the
+            // target token, which is what the instruction names (the copy is a new object that the sentence never refers to again).
+            noun:
+              copyOf?.det === 'target' && copyOf.filter.token === true
+                ? copyOf
+                : {
+                    kind: 'noun',
+                    det: 'a',
+                    filter: { raw: 'token' },
+                    upTo: false,
+                    plural: false,
+                    other: false,
+                    span: arg.span,
+                    rule: arg.rule,
+                    ref,
+                  },
           });
         }
         return {

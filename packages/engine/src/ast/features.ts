@@ -764,6 +764,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 119.3, 603.2: "whenever you lose life [for the first time each turn]".
     'lifeLost',
     'countersAdded',
+    // CR 702.63a (Vanishing): "When the last time counter is removed from this permanent".
+    'lastCounterRemoved',
     'attackBatch',
     // CR 509.1h: "Whenever one or more creatures an opponent controls attack you and aren't blocked".
     'unblockedAttackBatch',
@@ -1002,6 +1004,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-145: Escalate (CR 702.120) and Hideaway (CR 702.75).
     'escalate',
     'hideaway',
+    // CR 702.63 (Vanishing).
+    'vanishing',
     // D-151: Read ahead (CR 702.155), Dethrone (CR 702.105), Myriad (CR 702.116).
     'readAhead',
     'dethrone',
@@ -1071,6 +1075,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payLife',
     'mill',
     'tapPermanents',
+    // CR 107.3, 118.3 (Hazel of the Rootbloom): "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors." (with `anyCombinationTapped`).
+    'tapPermanentsX',
     // Issue 105 (Aether Hub): "{T}, Pay {E}: Add one mana of any color." (CR 107.14, 118.3, 605.3).
     'energy',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
@@ -1100,6 +1106,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorAmong',
     // "Add X mana in any combination of colors, where X is the greatest power among creatures you control." (`anyCombinationAmount`)
     'anyCombinationAmount',
+    // CR 106.1b, 107.3 (Hazel of the Rootbloom): "Add X mana in any combination of colors", X the number of permanents tapped for the cost.
+    'anyCombinationTapped',
     // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
     'eachColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
@@ -1429,6 +1437,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerAboveBase',
     // "Creatures you control with base power 0" (`ObjectFilter.basePowerIs`).
     'basePowerIs',
+    // "Creatures you control with base power or toughness 1" (`ObjectFilter.basePowerOrToughnessIs`).
+    'basePowerOrToughnessIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
     // Expel the Interlopers: "with power greater than or equal to the chosen number" (`ObjectFilter.powerAtLeastChosenNumber`).
@@ -2760,6 +2770,8 @@ export const SELECTOR_KINDS = [
   'powerAboveBase',
   /** "With base power 0" (CR 208.4b): the engine's `ObjectFilter.basePowerIs`. */
   'basePowerIs',
+  /** "With base power or toughness 1" (CR 208.4b): the engine's `ObjectFilter.basePowerOrToughnessIs`. */
+  'basePowerOrToughnessIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
   /** "With power greater than or equal to the chosen number" (CR 208.1, 608.2c, Expel the Interlopers): the engine's `ObjectFilter.powerAtLeastChosenNumber`. */
@@ -3950,6 +3962,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeGained: true,
   lifeLost: true,
   countersAdded: true,
+  lastCounterRemoved: true,
   attackBatch: true,
   unblockedAttackBatch: true,
   playerAttacksOpponent: true,
@@ -4103,6 +4116,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   jobSelect: true,
   escalate: true,
   hideaway: true,
+  vanishing: true,
   readAhead: true,
   dethrone: true,
   melee: true,
@@ -4150,6 +4164,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyColorAmount: true,
   anyColorAmong: true,
   anyCombinationAmount: true,
+  anyCombinationTapped: true,
   eachColorAmong: true,
   producedType: true,
 };
@@ -4170,6 +4185,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  tapPermanentsX: true,
   untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,

@@ -130,6 +130,14 @@ export function sacrificeParts(cost: Extract<Cost, { kind: 'sacrifice' }>): stri
   return parts.map((part) => sacrificeWhat(part)).join(' and ');
 }
 
+/** "tokens", "creature tokens", "Elves": the plural of what a filter names, the word "token" included when it says so. */
+function tokenKinds(filter: Extract<Cost, { kind: 'tapPermanentsX' }>['filter']): string {
+  const { token, ...rest } = filter;
+  const words = nounsOf(rest);
+  if (token !== true) return plural(words);
+  return words === 'permanent' ? 'tokens' : `${words} tokens`;
+}
+
 const countText = (n: number, one: string, many: string): string =>
   n === 1 ? `a ${one}` : `${n} ${many}`;
 
@@ -176,6 +184,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'tapPermanents':
       // D-133: "Tap two untapped artifacts you control".
       return `Tap ${tappedWhat(cost.filter, cost.count)}`;
+    case 'tapPermanentsX':
+      // CR 107.3 (Hazel of the Rootbloom): "Tap X untapped tokens you control".
+      return `Tap X untapped ${tokenKinds(cost.filter)} you control`;
     case 'untapPermanents':
       // CR 701.26b: "Untap two tapped creatures you control".
       return `Untap ${untapWhat(cost.filter, cost.count)}`;

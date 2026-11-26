@@ -315,6 +315,7 @@ function recordLki(
     power: d.power,
     toughness: d.toughness,
     basePower: d.basePower,
+    baseToughness: d.baseToughness,
   };
   return { ...state, lki: { ...state.lki, [obj.id]: info } };
 }

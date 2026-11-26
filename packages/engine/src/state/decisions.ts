@@ -83,6 +83,13 @@ export type PriorityOption =
        * when the player has more than one to tap: one option for each permanent they may tap, this one. Absent otherwise.
        */
       readonly tapped?: ObjectId;
+      /**
+       * For a mana ability whose cost taps X untapped permanents besides the source ("{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors.",
+       * CR 118.3, 106.1b, 605.3b): the permanents the option taps; `combination` has one color for each. The options hold only the representative ones (all the permanents the player
+       * may tap, with a few of the many combinations of that many mana), because every X, set of permanents and combination is a play: the engine accepts any other that
+       * `Action.tappedMany` names. Absent for any other mana ability.
+       */
+      readonly tappedMany?: readonly ObjectId[];
     }
   /** Suspend a card from the hand (CR 702.62a, D-128): a special action, see the `suspend` action. */
   | { readonly kind: 'suspend'; readonly object: ObjectId }

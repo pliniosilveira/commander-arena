@@ -35,7 +35,6 @@ import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
-import { ANY_NUMBER_OPPONENTS_RULES } from './any-number-opponents';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -305,6 +304,7 @@ import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { SQUIRRELED_G4_EFFECT_RULES } from './squirreled-g4';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THEN_MAY_RETURN_EFFECT_RULES } from './then-may-return';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -617,6 +617,8 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
     'destroy target permanent you own',
+    // Maelstrom Pulse (CR 201.2, 608.2c): the target and the other permanents with the same name.
+    'destroy target nonland permanent and all other permanents with the same name as that permanent',
     "destroy target creature with power less than ~'s power",
   ],
   rejects: [
@@ -631,6 +633,8 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
         [
+          // Maelstrom Pulse (CR 201.2, 608.2c): the target and every other permanent with its name.
+          'noun.target-permanent-and-same-name-permanents',
           ...SELF_OR_PERMANENT_OPERANDS,
           'noun.target-permanent-of-that-player',
           // "destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d).
@@ -668,6 +672,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile it',
     'exile that card',
     'exile that card from your graveyard',
+    'exile this card from your graveyard',
     'exile that creature',
     // D-407: the permanent an Aura or Equipment is attached to.
     'exile enchanted creature',
@@ -738,6 +743,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.it',
             // Stage P49 (D-206): "you may exile that card from your graveyard" (the card a trigger is about, CR 701.9a).
             'noun.that-card',
+            // Skyfisher Spider (CR 400.7, 603.10a): "exile this card from your graveyard" (the card the source became).
+            'noun.this-card',
             // Stage P63 (D-216): "If you control three or more artifacts, exile that creature." (the target of the sentence before, CR 608.2c).
             'noun.that-object',
             // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
@@ -1727,6 +1734,8 @@ export const EFFECT_RULES = [
   ...FLICKER_RULES,
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
+  // Squirreled Away deck, group 4: "exile three cards from your graveyard".
+  ...SQUIRRELED_G4_EFFECT_RULES,
   // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
   ...EXILE_SPELL_RULES,
   EFFECT_EXILE,
@@ -1875,7 +1884,6 @@ export const EFFECT_RULES = [
   ...LIBRARY_RULES,
   ...PUT_RULES,
   ...PUT_ANY_GRAVEYARD_RULES,
-  ...ANY_NUMBER_OPPONENTS_RULES,
   ...RECURSION_EFFECT_RULES,
   ...GRELL_EFFECT_RULES,
   ...ABOLETH_EFFECT_RULES,

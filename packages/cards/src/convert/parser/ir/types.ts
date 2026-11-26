@@ -545,6 +545,8 @@ export interface IrFilter {
   readonly powerAboveBase?: true;
   /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
   readonly basePowerIs?: number;
+  /** "with base power or toughness 1" (CR 208.4b): the engine's `basePowerOrToughnessIs`. */
+  readonly basePowerOrToughnessIs?: number;
   /**
    * "any number of target creature cards with total power 10 or less from your graveyard" (Reunion of the House, CR 115.1, 208.1): the powers of the targets of the slot add up to at
    * most this number; the engine's `TargetSpec.totalPowerAtMost`. Read only by the target slot of a noun of any number of targets (`declareTarget`).
@@ -1220,6 +1222,8 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Tap X untapped tokens you control" (Hazel of the Rootbloom, CR 118.3, 107.3): `what` the permanents; X is how many the player taps
+    | { readonly kind: 'tapPermanentsX'; readonly what: IrNoun }
     // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): `what` the permanent
     | { readonly kind: 'exilePermanent'; readonly what: IrNoun }
     // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many

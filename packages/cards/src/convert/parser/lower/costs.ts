@@ -230,6 +230,13 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       const filter = lowerFilter(cost.what);
       return filter.ok ? ok({ kind: 'exilePermanent', filter: filter.value }) : filter;
     }
+    case 'tapPermanentsX': {
+      // "Tap X untapped tokens you control" (Hazel of the Rootbloom, CR 107.3, 118.3, 605.3b): the engine's `tapPermanentsX`, the cost of a mana ability whose mana is X in any
+      // combination of colors; X is how many the player taps, which nothing else reads, so no other kind of ability has a way to run it.
+      if (options.mana !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'tapPermanentsX', filter: filter.value }) : filter;
+    }
     case 'untapPermanents': {
       // "Untap two tapped creatures you control" (CR 701.26b, 118.3): the engine's `untapPermanents`, a cost of an ordinary activated ability.
       if (options.ordinary !== true) return failure(cost);
@@ -404,6 +411,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:untap',
   'cost:sacrifice',
   'cost:tapPermanents',
+  'cost:tapPermanentsX',
   'cost:untapPermanents',
   'cost:exilePermanent',
   'cost:blight',

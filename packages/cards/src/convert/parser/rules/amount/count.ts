@@ -44,6 +44,7 @@ import {
   typeChoice,
   typeWords,
 } from '../noun/phrases';
+import { withSubtypeClause } from '../noun/subtype-clause';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 
@@ -154,7 +155,7 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
     );
     return { ok: true, value: { ...base, anyOf: list.value }, pos: control.pos };
   };
-  const phrase = choice(kinds, permanentPhrase(plural, 'all'));
+  const phrase = choice(kinds, withSubtypeClause(permanentPhrase(plural, 'all')));
   return (ctx, pos) => {
     const other = optional(
       map(literal('other '), () => true),
@@ -619,6 +620,9 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
   ],
   examples: [
     'for each creature you control',
+    // Swarmyard Massacre (CR 205.3d): the creatures you control that have one of the creature types named.
+    "for each creature you control that's an Insect, Rat, Spider, or Squirrel",
+    "for each creature you control that's a Squirrel",
     'for each creature on the battlefield',
     'for each other creature you control',
     'for each artifact you control',

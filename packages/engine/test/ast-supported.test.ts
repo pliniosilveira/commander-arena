@@ -24,6 +24,7 @@ const EXECUTABLE_KEYWORDS = [
   'haste', // scenario-xx-combat-attack-restrictions
   'hexproof', // scenario-xx-hexproof-shroud
   'hideaway', // scenario-xx-hideaway
+  'vanishing', // convert-grammar-engine-squirreled-away-g3 (CR 702.63a, Vanishing 3 on the real card)
   'indestructible', // scenario-xx-combat-deathtouch
   'kicker', // scenario-xx-kicker
   'lifelink', // scenario-xx-combat-lifelink
@@ -240,6 +241,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   jobSelect: { kind: 'jobSelect' },
   escalate: { kind: 'escalate', cost: [{ kind: 'mana', symbols: ['1'] }] },
   hideaway: { kind: 'hideaway', count: 3 },
+  vanishing: { kind: 'vanishing', count: 3 },
   dethrone: { kind: 'dethrone' },
   melee: { kind: 'melee' },
   readAhead: { kind: 'readAhead' },
@@ -399,6 +401,7 @@ describe('supported feature gate', () => {
         'exiledFromLibraryOrGraveyard',
         'exploits',
         'landfall',
+        'lastCounterRemoved',
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
@@ -512,6 +515,8 @@ describe('supported feature gate', () => {
       'mill',
       // D-625: "{T}, Tap an untapped creature you control: Add one mana of any color" (Jaspera Sentinel, Holdout Settlement).
       'tapPermanents',
+      // "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors" (Hazel of the Rootbloom).
+      'tapPermanentsX',
       // Issue 105: "{T}, Pay {E}: Add one mana of any color" (Aether Hub).
       'energy',
       // Issue 245 (PR #280): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).

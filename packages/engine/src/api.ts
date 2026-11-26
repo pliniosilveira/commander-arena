@@ -186,6 +186,12 @@ function sameType(offered: CardType | undefined, asked: CardType | undefined): b
   return offered === undefined || asked === undefined || offered === asked;
 }
 
+/** The permanents a cost "Tap X untapped tokens you control" taps: the same list, in the same order, or neither names any. */
+function sameIds(a: readonly ObjectId[] | undefined, b: readonly ObjectId[] | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
+
 function sameAction(a: Action, b: Action): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -202,7 +208,8 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         sameChoice(o.combination, action.combination) &&
         sameChoice(o.extraColors, action.extraColors) &&
         o.sacrifice === action.sacrifice &&
-        o.tapped === action.tapped
+        o.tapped === action.tapped &&
+        sameIds(o.tappedMany, action.tappedMany)
       );
     }
     // A cast and a flashback cast of the same object are different plays (CR 118.9a), and so are
@@ -911,6 +918,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.sacrifice,
             action.tapped,
             action.extraColors ?? null,
+            action.tappedMany,
           );
           if ('error' in why) return fail(`That is not a legal play now. ${why.error}`);
         }
@@ -994,6 +1002,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.sacrifice,
             action.tapped,
             action.extraColors ?? null,
+            action.tappedMany,
           );
           if ('error' in r) return fail(r.error);
           const next = {

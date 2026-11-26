@@ -12,6 +12,7 @@ import {
   setTapTapped,
 } from './payment';
 import { clickOutcome } from './priority';
+import { TapManyPopover } from './TapManyPopover';
 import type { UiState } from './ui-state';
 
 /**
@@ -264,6 +265,18 @@ export function ChooserPopover({
         items={outcome.items}
         anchor={anchor}
         pick={(i) => act(i.action)}
+        close={close}
+      />
+    );
+  }
+  if (outcome.kind === 'tapMany') {
+    return (
+      <TapManyPopover
+        anchor={anchor}
+        ask={outcome}
+        life={lifeCostOf(index?.get(anchor.object), null)}
+        index={index}
+        act={act}
         close={close}
       />
     );

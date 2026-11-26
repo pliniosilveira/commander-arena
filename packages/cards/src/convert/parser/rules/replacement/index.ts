@@ -30,6 +30,7 @@ import { PAY_LIFE_REPLACEMENT_RULES } from './pay-life';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
 import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
+import { SQUIRREL_G1_REPLACEMENT_RULES } from './squirrel-g1';
 import { TOKEN_EACH_OF_REPLACEMENT_RULES } from './token-each-of';
 import { UNLESS_RULES } from './unless';
 
@@ -442,6 +443,8 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  // Squirreled Away deck, group 1: "..., those tokens plus that many ... are created instead" and "..., instead create one of each".
+  ...SQUIRREL_G1_REPLACEMENT_RULES,
   // Most Wanted deck, group 2: "If you would create a Clue, Food, or Treasure token, instead create one of each."
   ...TOKEN_EACH_OF_REPLACEMENT_RULES,
   ...DRAW_REDIRECT_REPLACEMENT_RULES,

@@ -2,7 +2,7 @@
  * CasualAgent priority decisions. The engine lists `playLand` and `castSpell` only when they are
  * legal and affordable, so the agent never has to check costs. The casting flow pays with
  * `payAuto`, so manual mana abilities (`activateAbility`) are never needed and never sent, and the
- * agent never concedes. It activates only the abilities `casual-activations.ts` describes. After the
+ * agent never concedes. It activates only the abilities `casual-activations.ts` describes, and the mana ability that taps X tokens (`casual-tap-mana.ts`). After the
  * hand spells it casts a card from the graveyard with flashback when one is worth casting (step 2b);
  * the kicker question is answered in `casual-permanents.ts` (it pays whenever it is asked).
  *
@@ -54,6 +54,7 @@ import { PAY_LIFE_ABOVE } from './casual-permanents';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey, worthCastingPrevention } from './casual-prevention';
 import { chooseUnlockDoor } from './casual-rooms';
+import { chooseTapForMana } from './casual-tap-mana';
 import {
   asFace,
   effectiveCost,
@@ -495,6 +496,11 @@ export function choosePriorityAction(
     if (chosen !== undefined) return { kind: 'castSpell', object: chosen.id, alternative: 'blitz' };
   }
 
+  // 2c'''. "Tap X untapped tokens you control: Add X mana in any combination of colors" (Hazel of the Rootbloom, `casual-tap-mana.ts`): the engine's payment never taps it, so the agent
+  // activates it for the mana a spell it wants is missing, once nothing else in the hand can be cast.
+  const tapMana = chooseTapForMana(view, d, (s) => allowed(view, s, activations));
+  if (tapMana !== null) return tapMana;
+
   // 2d. The special actions of Suspend and Foretell (D-128, `casual-later.ts`): once nothing worth casting is left.
   const special = chooseSpecialAction(view, d, worthCasting);
   if (special !== null) return special;
@@ -515,6 +521,6 @@ export function choosePriorityAction(
   const activation = chooseActivation(view, d, activations);
   if (activation !== null) return activation;
 
-  // 4. Pass. Never activateAbility, never concede.
+  // 4. Pass. Never concede; no other mana ability is activated by hand.
   return { kind: 'pass' };
 }
