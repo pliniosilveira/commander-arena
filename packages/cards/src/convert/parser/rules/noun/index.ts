@@ -1024,6 +1024,9 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
     // Oran-Rief, the Vastwood: the permanents that entered the battlefield this turn (CR 400.7, 110.1).
     'each green creature that entered this turn',
     'each creature you control that entered this turn',
+    // Massacre Girl (CR 109.1): every one but the source of the ability, said after the phrase.
+    'each creature other than ~',
+    'each creature you control other than ~',
   ],
   rejects: [
     'each creatures',
@@ -1034,26 +1037,37 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
     'each creature that entered',
     'each creature that entered this turn or last turn',
     'each creature that entered the battlefield this turn',
+    'each creature other than',
+    'each creature other than target creature',
+    'each other creature other than ~',
   ],
   parse: node<{ filter: IrFilter; other: boolean }, IrNoun>(
     ID.eachPermanent,
     map(
-      sequence(
-        literal('each '),
-        optional(
-          map(literal('other '), () => true),
-          false,
+      satisfy(
+        sequence(
+          literal('each '),
+          optional(
+            map(literal('other '), () => true),
+            false,
+          ),
+          permanentPhrase(false, 'all'),
+          // "that entered this turn" (CR 400.7): the permanents that entered the battlefield during this turn.
+          optional(
+            map(literal(' that entered this turn'), () => true),
+            false,
+          ),
+          // "each creature other than ~" (Massacre Girl, CR 109.1): not the source of the ability.
+          optional(
+            map(literal(' other than ~'), () => true),
+            false,
+          ),
         ),
-        permanentPhrase(false, 'all'),
-        // "that entered this turn" (CR 400.7): the permanents that entered the battlefield during this turn.
-        optional(
-          map(literal(' that entered this turn'), () => true),
-          false,
-        ),
+        ([, other, , , otherThanSelf]) => !(other && otherThanSelf),
       ),
-      ([, other, filter, entered]) => ({
+      ([, other, filter, entered, otherThanSelf]) => ({
         filter: entered ? { ...filter, enteredThisTurn: true as const } : filter,
-        other,
+        other: other || otherThanSelf,
       }),
     ),
     ({ filter, other }) => bare('each', filter, { other }),

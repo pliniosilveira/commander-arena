@@ -666,6 +666,8 @@ export const PLAYER_SUBJECTS = [
   'noun.each-other-player',
   // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
   'noun.each-player-other-than-its-controller',
+  // Bounty Board: "each of its controller's opponents draws a card and gains 2 life".
+  'noun.each-of-its-controllers-opponents',
   'noun.defending-player',
   'noun.player-to-your-right',
   'noun.player',

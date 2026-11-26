@@ -85,6 +85,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return "that creature's";
     case 'eachObject':
     case 'votedObjects':
+    case 'mostVotedObjects':
       // Canopy Gargantuan: the creature the counters are being put on right now. Trap the Trespassers: a creature with votes.
       return "that creature's";
     case 'ringBearer':
@@ -127,6 +128,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'putWithThis':
     case 'eachObject':
     case 'votedObjects':
+    case 'mostVotedObjects':
       return 'that creature';
     case 'ringBearer':
       return 'your Ring-bearer';

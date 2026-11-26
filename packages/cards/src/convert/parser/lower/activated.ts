@@ -22,6 +22,7 @@ import {
   type Effect,
   type ManaAbility,
   type ManaProduction,
+  OUTLAW_CREATURE_TYPES,
 } from '@commander-arena/engine';
 import type {
   IrAbility,
@@ -145,6 +146,17 @@ function spellKindsOf(
   filter: IrFilter,
 ): { types?: CardType[]; subtypes?: string[]; chosenType?: true } | null {
   const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw', 'chosen']);
+  // CR 700.12 (Discreet Retreat): "outlaw spells" are the spells of at least one of the five outlaw creature types, which is the engine's list of creature types.
+  if (filter.outlaw === true) {
+    const { outlaw: _outlaw, ...rest } = filter;
+    if (
+      Object.keys(rest).some((key) => !['zone', 'stackKind', 'raw'].includes(key)) ||
+      filter.types !== undefined
+    ) {
+      return null;
+    }
+    return { subtypes: [...OUTLAW_CREATURE_TYPES] };
+  }
   if (Object.keys(filter).some((key) => !known.has(key))) return null;
   // Issue 199 (CR 106.6, 607.2d): "a creature spell of the chosen type": the card types, and the creature type the permanent chose as it entered; not with named creature types.
   if (filter.chosen === 'type') {
@@ -351,10 +363,20 @@ function lowerManaAbility(
     if (counted === undefined || counted.kind === 'flag') return failure(ability);
     const amount = lowerAmount(counted as IrAmount, trial, spec.rule);
     if (!amount.ok) return amount;
-    // The amount is counted before the costs are paid, so no cost may change what it reads (CR 605.3a, 605.3b).
+    // The amount is counted before the costs are paid, so no cost may change what it reads (CR 605.3a, 605.3b). The one exception: giving up the permanent itself when the amount counts
+    // the counters on it (Glittering Stockpile), which the sacrifice leaves as they were (CR 113.7a, last-known information).
+    const ownCounters =
+      amount.value !== null &&
+      typeof amount.value === 'object' &&
+      amount.value.kind === 'countersOn' &&
+      amount.value.of.kind === 'this';
     if (
       costs.value.some(
-        (c) => c.kind === 'sacrifice' || c.kind === 'removeCounters' || c.kind === 'putCounters',
+        (c) =>
+          (c.kind === 'sacrifice' &&
+            !(ownCounters && 'kind' in c.what && c.what.kind === 'this')) ||
+          c.kind === 'removeCounters' ||
+          c.kind === 'putCounters',
       )
     ) {
       return failure(ability);
@@ -531,7 +553,11 @@ function lowerManaAbility(
 /**
  * "{T}: Put a charge counter on ~. Add X mana of any one color, where X is the number of charge counters on ~." (Empowered Autogenerator; CR 605.1a, 605.3b, 122.6): a mana ability whose
  * first instruction puts counters on its own permanent, which the engine's `putCounter` does before the mana is added (the amount counts after). Exactly these two sentences, each of one
- * instruction, the first a number of counters of a named kind on `~`; the second is read as any mana ability is. Null when the ability is not of this shape (the ordinary reading follows).
+ * instruction, the first a number of counters of a named kind on `~`; the second is read as any mana ability is.
+ *
+ * "{T}: Add {R}. Put a stash counter on ~." (Glittering Stockpile; CR 605.1a, 605.3b, 122.6): the same two sentences in the other order. The engine puts the counters first, which no
+ * one can tell from putting them after the mana when the mana does not depend on the counters, so this order is read only for mana that is a fixed amount or one color of a choice (never an
+ * amount that counts something). Null when the ability is not of one of these shapes (the ordinary reading follows).
  */
 function lowerCounterThenMana(
   ability: Activated,
@@ -539,18 +565,25 @@ function lowerCounterThenMana(
 ): LowerResult<readonly Ability[]> | null {
   const [first, second, ...more] = ability.body.sentences;
   if (first === undefined || second === undefined || more.length > 0) return null;
-  const [put, ...firstMore] = first.clauses;
-  const [add, ...secondMore] = second.clauses;
-  if (put?.verb !== 'addCounters' || add?.verb !== 'addMana') return null;
+  const [one, ...firstMore] = first.clauses;
+  const [two, ...secondMore] = second.clauses;
+  const manaFirst = one?.verb === 'addMana' && two?.verb === 'addCounters';
+  const counterFirst = one?.verb === 'addCounters' && two?.verb === 'addMana';
+  if (!manaFirst && !counterFirst) return null;
+  const put = counterFirst ? one : two;
+  const add = counterFirst ? two : one;
+  const putSentence = counterFirst ? first : second;
+  const addSentence = counterFirst ? second : first;
+  if (put === undefined || add === undefined) return null;
   if (
     firstMore.length > 0 ||
     secondMore.length > 0 ||
     !plainClause(put) ||
-    first.condition !== undefined ||
-    first.where !== undefined ||
-    first.instead === true ||
-    first.otherwise === true ||
-    first.delayed !== undefined
+    putSentence.condition !== undefined ||
+    putSentence.where !== undefined ||
+    putSentence.instead === true ||
+    putSentence.otherwise === true ||
+    putSentence.delayed !== undefined
   ) {
     return failure(ability);
   }
@@ -563,13 +596,16 @@ function lowerCounterThenMana(
   if (!count.ok) return count;
   if (typeof count.value !== 'number' || count.value < 1) return failure(ability);
   const base = lowerManaAbility(
-    { ...ability, body: { ...ability.body, sentences: [second] } },
-    second.clauses,
+    { ...ability, body: { ...ability.body, sentences: [addSentence] } },
+    addSentence.clauses,
     faceTypes,
   );
   if (base === null || !base.ok) return base;
   const [mana] = base.value;
   if (mana?.kind !== 'mana') return failure(ability);
+  if (manaFirst && !COUNTER_BLIND_PRODUCTION.has(productionShape(mana.production))) {
+    return failure(ability);
+  }
   const blocked = gate(ability, ['ability:manaPutCounter']);
   if (blocked !== null) return blocked;
   return {
@@ -577,6 +613,22 @@ function lowerCounterThenMana(
     value: [{ ...mana, putCounter: { counter: counter.name, count: count.value } }],
     rule: base.rule,
   };
+}
+
+/** The productions that read nothing of the game, so the counters may be put before them (`lowerCounterThenMana`). */
+const COUNTER_BLIND_PRODUCTION: ReadonlySet<string> = new Set([
+  'fixed',
+  'anyColor',
+  'oneOf',
+  'anyCombination',
+  'combination',
+]);
+
+/** The kind of a production, `fixed-times` for a fixed one that counts something. */
+function productionShape(production: ManaProduction): string {
+  return production.kind === 'fixed' && production.times !== undefined
+    ? 'fixed-times'
+    : production.kind;
 }
 
 /**

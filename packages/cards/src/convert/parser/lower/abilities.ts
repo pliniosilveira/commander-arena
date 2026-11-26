@@ -13,6 +13,7 @@ import type {
   Cost,
   Keyword,
   ObjectFilter,
+  TokenPreset,
 } from '@commander-arena/engine';
 import { isNonCreatureSubtype } from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
@@ -43,6 +44,11 @@ import {
 } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
+
+/** The predefined tokens a replacement of "one of each" is read for (the engine's `tokensInstead` in `eachOf` mode). */
+function isEachOfPreset(name: string): name is TokenPreset {
+  return name === 'Clue' || name === 'Food' || name === 'Treasure';
+}
 
 function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
   return { ok: false, needs, at: node.span, rule: node.rule };
@@ -614,6 +620,26 @@ function lowerProtection(ability: IrKeyword): LowerResult<readonly Ability[]> {
       rule: 'keyword.line',
     };
   }
+  if (ability.manaValue !== undefined && ability.colors === undefined) {
+    // CR 702.16a, 202.3: protection from sources whose mana value compares as stated.
+    const blockedValue = gate(ability, ['ability:keyword', 'keyword:protection']);
+    if (blockedValue !== null) return blockedValue;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: {
+            kind: 'protection',
+            from: 'manaValue',
+            cmp: ability.manaValue.cmp,
+            value: ability.manaValue.value,
+          },
+        },
+      ],
+      rule: 'keyword.line',
+    };
+  }
   const words = ability.colors ?? [];
   const colors = words.map((w) => colorLetter(w));
   if (colors.length === 0 || colors.some((c) => c === undefined) || ability.params.length > 0) {
@@ -1123,6 +1149,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const blocked = gate(ability, ['ability:replacement', 'replacement:drawRedirect']);
     if (blocked !== null) return blocked;
     return built({ kind: 'drawRedirect', exceptFirstInDrawStep: true });
+  }
+  if (event.verb === 'tokensInstead' && event.args.eachOf !== undefined) {
+    // "If you would create a Clue, Food, or Treasure token, instead create one of each." (Most Wanted deck group 2, Academy Manufactor, CR 614.1a, 614.5): the engine's
+    // `tokensInstead` in `eachOf` mode, whose tokens are the predefined ones the members of the filter name.
+    const objects = event.args.what;
+    if (objects?.kind !== 'noun') return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:tokensInstead']);
+    if (blocked !== null) return blocked;
+    const what = lowerFilter(objects);
+    if (!what.ok) return what;
+    const { zone, ...filter } = what.value;
+    void zone;
+    const tokens = (filter.anyOf ?? []).flatMap((member) => member.subtypes ?? []);
+    if (!tokens.every(isEachOfPreset)) return failure(ability);
+    return built({ kind: 'tokensInstead', what: filter, mode: 'eachOf', tokens });
   }
   if (event.verb === 'tokensInstead' && event.args.double !== undefined) {
     // "If one or more tokens would be created under your control, twice that many of those tokens are created instead." (Hashaton deck group 3, D-378, CR 614.1a,

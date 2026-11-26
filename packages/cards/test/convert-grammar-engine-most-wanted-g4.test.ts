@@ -1,0 +1,387 @@
+// Most Wanted deck, group 4 (Mistmeadow Skulk, Rankle, Misfortune Teller, Massacre Girl): the Oracle text of each card read through the grammar only (SYNTHETIC names,
+// the real text) and played through applyAction. Pins: CR 702.16a (protection from a quality: a mana value), 702.16b (targeting), 702.16e (damage), 702.16f (blocking),
+// CR 202.3 and 202.3e (the mana value of a spell counts its X). Stand-ins are the engine's real fixtures.
+import type { GameState, ObjectId } from '@commander-arena/engine';
+import { scenario } from '@commander-arena/engine/testing';
+import { describe, expect, test } from 'vitest';
+import { parsed, parseOnly, spellCard } from './convert-grammar-helpers';
+
+const SKULK = parsed(
+  'SYNTHETIC Mistmeadow Skulk',
+  'Creature — Kithkin Rogue',
+  'Lifelink, protection from mana value 3 or greater',
+  { manaCost: '{2}{W}', power: '3', toughness: '1', colors: ['W'] },
+);
+
+const targetsOf = (state: GameState): ObjectId[] => {
+  const d = state.pending;
+  if (d?.kind !== 'targets') throw new Error(`expected targets, got ${d?.kind}`);
+  return (d.specs[0]?.legal ?? []).flatMap((t) => (t.kind === 'object' ? [t.id] : []));
+};
+
+describe('Mistmeadow Skulk: lifelink, protection from mana value 3 or greater', () => {
+  test('reads as lifelink and a protection from a mana value', () => {
+    const keywords = (SKULK.faces[0]?.abilities ?? []).flatMap((a) =>
+      a.kind === 'keyword' ? [JSON.stringify(a.keyword)] : [],
+    );
+    expect(keywords).toEqual([
+      '{"kind":"lifelink"}',
+      '{"kind":"protection","from":"manaValue","cmp":"atLeast","value":3}',
+    ]);
+  });
+
+  const board = () =>
+    scenario()
+      .define(SKULK)
+      .seat(0)
+      .hand('Murder', 'Lightning Bolt')
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Mountain')
+      .battlefield('Grizzly Bears')
+      .seat(1)
+      .battlefield(SKULK.name)
+      .at('precombatMain');
+
+  test('a spell with mana value 3 (Murder) can not target it, one with mana value 1 (Lightning Bolt) can (CR 702.16b)', () => {
+    const g = board().build();
+    g.act(0).cast('Murder');
+    expect(targetsOf(g.state)).not.toContain(g.id(SKULK.name));
+    expect(targetsOf(g.state)).toContain(g.id('Grizzly Bears'));
+    const h = board().build();
+    h.act(0).cast('Lightning Bolt');
+    expect(targetsOf(h.state)).toContain(h.id(SKULK.name));
+  });
+
+  test('damage from a source with mana value 1 is dealt', () => {
+    const g = board().build();
+    g.act(0).cast('Lightning Bolt', { targets: [SKULK.name], pay: true });
+    g.passAll();
+    g.expect.zone(SKULK.name, 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('a creature with mana value 3 or more can not block it (CR 702.16f); a cheaper one can', () => {
+    const g = scenario()
+      .define(SKULK)
+      .seat(0)
+      .battlefield(SKULK.name)
+      .seat(1)
+      .battlefield('Serra Angel', 'Grizzly Bears')
+      .at('precombatMain')
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(SKULK.name);
+    g.advanceTo('declareBlockers');
+    expect(
+      g.act(1).try.action({
+        kind: 'declareBlockers',
+        blocks: [{ blocker: g.id('Serra Angel'), attacker: g.id(SKULK.name) }],
+      }).ok,
+    ).toBe(false);
+    g.act(1).declareBlockers([{ blocker: 'Grizzly Bears', attacker: SKULK.name }]);
+  });
+
+  test('combat damage from a creature with mana value 3 or more is prevented (CR 702.16e)', () => {
+    const g = scenario()
+      .define(SKULK)
+      .seat(0)
+      .battlefield(SKULK.name)
+      .seat(1)
+      .battlefield('Giant Spider')
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(1).attack('Giant Spider');
+    g.advanceTo('declareBlockers');
+    g.act(0).declareBlockers([{ blocker: SKULK.name, attacker: 'Giant Spider' }]);
+    g.passAll();
+    g.expect.zone(SKULK.name, 'battlefield', { seat: 0 });
+    expect(g.object(SKULK.name).damage).toBe(0);
+    g.expect.invariants();
+  });
+});
+
+const RANKLE = parsed(
+  'SYNTHETIC Rankle, Master of Pranks',
+  'Legendary Creature — Faerie Rogue',
+  'Flying, haste\nWhenever ~ deals combat damage to a player, choose any number —\n• Each player discards a card.\n• Each player loses 1 life and draws a card.\n• Each player sacrifices a creature of their choice.',
+  { manaCost: '{2}{B}{B}', power: '3', toughness: '3', colors: ['B'] },
+);
+
+describe('Rankle: whenever it deals combat damage to a player, choose any number of three modes', () => {
+  test('reads as a modal triggered ability that chooses none, some or all of its three modes (CR 700.2b)', () => {
+    const trigger = (RANKLE.faces[0]?.abilities ?? []).find((a) => a.kind === 'triggered');
+    if (trigger?.kind !== 'triggered') throw new Error('no triggered ability');
+    expect(trigger.modes?.length).toBe(3);
+    expect(trigger.chooseModes).toEqual({ min: 0, max: 3 });
+  });
+
+  test('a spell that chooses any number of modes is not read: it could choose none (CR 700.2a)', () => {
+    const spell = parseOnly(
+      spellCard(
+        'SYNTHETIC Any Number',
+        'Choose any number —\n• Each player discards a card.\n• Each player loses 1 life and draws a card.',
+      ),
+    );
+    expect(spell.support.status).toBe('unsupported');
+  });
+
+  const LIB = Array.from({ length: 10 }, () => 'Plains');
+  const game = () =>
+    scenario({ seats: 3 })
+      .define(RANKLE)
+      .seat(0)
+      .library(...LIB)
+      .hand('Island', 'Plains')
+      .battlefield(RANKLE.name, 'Llanowar Elves')
+      .seat(1)
+      .library(...LIB)
+      .hand('Forest', 'Swamp')
+      .battlefield('Grizzly Bears', 'Giant Spider')
+      .seat(2)
+      .library(...LIB)
+      .hand('Mountain', 'Forest')
+      .battlefield('Serra Angel')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  const hit = (g: ReturnType<typeof game>) => {
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(RANKLE.name, { player: 1 });
+    g.advanceTo('declareBlockers');
+    g.act(1).noBlocks();
+    g.passAll();
+  };
+
+  test('the controller is asked for the modes as the trigger goes on the stack; none removes it (CR 700.2b)', () => {
+    const g = game();
+    hit(g);
+    g.expect.pending('chooseModes', 0);
+    g.act(0).chooseModes();
+    g.passAll();
+    g.expect.life(1, 37);
+    expect(g.state.seats[1]?.hand.length).toBe(2);
+    g.expect.invariants();
+  });
+
+  /** Answers every pending decision of the kind with its first legal choice and returns the seats asked, in order. */
+  const answerAll = (g: ReturnType<typeof game>, kind: 'chooseCards' | 'choosePermanent') => {
+    const asked: number[] = [];
+    for (let i = 0; i < 10 && g.state.pending?.kind === kind; i++) {
+      const d = g.state.pending;
+      if (d?.kind !== 'chooseCards' && d?.kind !== 'choosePermanent') break;
+      asked.push(d.seat);
+      const pick = d.legal[0];
+      if (pick === undefined) break;
+      const answer =
+        kind === 'chooseCards'
+          ? ({ kind: 'chooseCards', objects: [pick] } as const)
+          : ({ kind: 'choosePermanents', objects: [pick] } as const);
+      expect(g.act(d.seat).try.action(answer).ok).toBe(true);
+    }
+    return asked;
+  };
+
+  test('discard mode: each player discards a card, the active player choosing first, then the others in turn order (CR 101.4)', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(0);
+    g.passAll();
+    const asked = answerAll(g, 'chooseCards');
+    expect(asked.join()).toBe('0,1,2');
+    for (const seat of [0, 1, 2]) expect(g.state.seats[seat]?.hand.length).toBe(1);
+    g.expect.invariants();
+  });
+
+  test('life and draw mode: each player loses 1 life and draws a card, the damaged player too', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(1);
+    g.passAll();
+    // Seat 1 was dealt 3 combat damage first.
+    g.expect.life(0, 39);
+    g.expect.life(1, 36);
+    g.expect.life(2, 39);
+    expect(g.state.seats.map((x) => x.hand.length)).toEqual([3, 3, 3]);
+    g.expect.invariants();
+  });
+
+  test('sacrifice mode: each player sacrifices a creature of their choice, a player with one has no choice', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(2);
+    g.passAll();
+    const asked = answerAll(g, 'choosePermanent');
+    // Seat 0 (Rankle, Llanowar Elves) and seat 1 (Grizzly Bears, Giant Spider) choose; seat 2 has one creature.
+    expect(asked.join()).toBe('0,1');
+    for (const seat of [0, 1, 2]) {
+      const creatures = g.state.battlefield.filter((id) => {
+        const o = g.state.objects[id];
+        return o !== undefined && o.owner === seat;
+      });
+      expect(creatures.length).toBe(seat === 0 ? 1 : seat === 1 ? 1 : 0);
+    }
+    g.expect.invariants();
+  });
+
+  test('all three modes are performed in printed order (discard, then life and draw, then sacrifice)', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(0, 1, 2);
+    g.passAll();
+    answerAll(g, 'chooseCards');
+    // The discard is done before the draw: each player discarded from two cards, then drew one.
+    expect(g.state.seats.map((x) => x.hand.length)).toEqual([2, 2, 2]);
+    expect(g.state.seats.map((x) => x.graveyard.length)).toEqual([1, 1, 1]);
+    g.expect.life(0, 39);
+    g.expect.life(2, 39);
+    answerAll(g, 'choosePermanent');
+    g.expect.invariants();
+  });
+});
+
+const TELLER = parsed(
+  'SYNTHETIC Misfortune Teller',
+  'Creature — Human Rogue',
+  'Whenever ~ enters or deals combat damage to a player, exile target card from a graveyard. If it was a creature card, create a 2/2 black Rogue creature token. If it was a land card, create a Treasure token. Otherwise, you gain 3 life.',
+  { manaCost: '{2}{B}', power: '2', toughness: '2', colors: ['B'] },
+);
+// SYNTHETIC: a card that is both a land and a creature (the shape of Dryad Arbor).
+const ARBOR = parsed('SYNTHETIC Land Creature', 'Land Creature — Forest Dryad', '', {
+  power: '1',
+  toughness: '1',
+  colors: ['G'],
+});
+
+describe('Misfortune Teller: enters or deals combat damage to a player, exile a card from a graveyard, and what it was decides', () => {
+  test('reads as two triggered abilities (CR 603.2c) with the same body', () => {
+    const triggers = (TELLER.faces[0]?.abilities ?? []).flatMap((a) =>
+      a.kind === 'triggered' ? [a.trigger.kind] : [],
+    );
+    expect(triggers).toEqual(['entersBattlefield', 'dealsCombatDamage']);
+  });
+
+  const board = () =>
+    scenario()
+      .define(TELLER)
+      .define(ARBOR)
+      .seat(0)
+      .hand(TELLER.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .graveyard('Grizzly Bears', 'Forest', 'Lightning Bolt', ARBOR.name)
+      .at('precombatMain');
+
+  const enter = (target: string) => {
+    const g = board().build();
+    g.act(0).cast(TELLER.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ name: target, zone: 'graveyard', seat: 1 });
+    g.passAll();
+    return g;
+  };
+  const tokens = (g: ReturnType<typeof board>['build'] extends () => infer G ? G : never) =>
+    g.state.battlefield.flatMap((id) => {
+      const o = g.state.objects[id];
+      return o?.token != null ? [o.token.characteristics.name] : [];
+    });
+
+  test('a creature card: exiled, and a 2/2 black Rogue token, no life', () => {
+    const g = enter('Grizzly Bears');
+    g.expect.zone('Grizzly Bears', 'exile');
+    expect(tokens(g)).toEqual(['Rogue']);
+    g.expect.life(0, 40);
+    g.expect.invariants();
+  });
+
+  test('a land card: exiled, and a Treasure token, no life', () => {
+    const g = enter('Forest');
+    g.expect.zone('Forest', 'exile');
+    expect(tokens(g)).toEqual(['Treasure']);
+    g.expect.life(0, 40);
+  });
+
+  test('any other card: exiled, you gain 3 life, no token', () => {
+    const g = enter('Lightning Bolt');
+    g.expect.zone('Lightning Bolt', 'exile');
+    expect(tokens(g)).toEqual([]);
+    g.expect.life(0, 43);
+  });
+
+  test('a card that is a land and a creature gives both tokens and no life (Scryfall ruling 2022-04-29)', () => {
+    const g = enter(ARBOR.name);
+    expect(tokens(g).sort()).toEqual(['Rogue', 'Treasure']);
+    g.expect.life(0, 40);
+  });
+
+  test('it also triggers when it deals combat damage to a player, and the opponent graveyard of any seat is a target', () => {
+    const g = scenario({ seats: 3 })
+      .define(TELLER)
+      .seat(0)
+      .battlefield(TELLER.name)
+      .seat(1)
+      .graveyard('Lightning Bolt')
+      .seat(2)
+      .graveyard('Grizzly Bears')
+      .at('precombatMain')
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(TELLER.name, { player: 1 });
+    g.advanceTo('combatDamage');
+    g.act(0).chooseTargets({ name: 'Grizzly Bears', zone: 'graveyard', seat: 2 });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile');
+    expect(tokens(g)).toEqual(['Rogue']);
+    g.expect.invariants();
+  });
+});
+
+const GIRL = parsed(
+  'SYNTHETIC Massacre Girl',
+  'Creature — Human Assassin',
+  'When ~ enters, each other creature gets -1/-1 until end of turn. Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn.',
+  { manaCost: '{3}{B}{B}', power: '4', toughness: '4', colors: ['B'] },
+);
+
+describe('Massacre Girl: each other creature gets -1/-1, and again for each creature that dies this turn', () => {
+  test('reads as an enters trigger whose second sentence makes a delayed trigger for the turn (CR 603.7)', () => {
+    const trigger = (GIRL.faces[0]?.abilities ?? []).find((a) => a.kind === 'triggered');
+    if (trigger?.kind !== 'triggered' || trigger.effect.kind !== 'sequence') {
+      throw new Error('expected a triggered sequence');
+    }
+    expect(trigger.effect.effects.map((e) => e.kind)).toEqual(['modifyPt', 'delayedDiesTurn']);
+  });
+
+  const board = () =>
+    scenario()
+      .define(GIRL)
+      .seat(0)
+      .hand(GIRL.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .battlefield('Llanowar Elves', 'Grizzly Bears')
+      .seat(1)
+      .battlefield('Giant Spider', 'Serra Angel')
+      .at('precombatMain');
+
+  test('every creature but Massacre Girl gets -1/-1; the deaths it causes trigger the delayed ability, which chains (CR 603.7, 603.2c)', () => {
+    const g = board().build();
+    g.act(0).cast(GIRL.name, { pay: true });
+    g.passAll();
+    // Elves (1/1) die to the first -1/-1; that triggers one more -1/-1 for every other creature, which kills Bears (2/2); that death triggers one more.
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.pt(GIRL.name, 4, 4);
+    g.expect.pt('Giant Spider', -1, 1);
+    g.expect.pt('Serra Angel', 1, 1);
+    g.expect.invariants();
+  });
+
+  test('the delayed ability is still waiting after the first deaths, and ends with the turn (CR 514.2)', () => {
+    const g = board().build();
+    g.act(0).cast(GIRL.name, { pay: true });
+    g.passAll();
+    expect(g.state.delayedTriggers.length).toBe(1);
+    g.advanceTo('upkeep', { turn: 4 });
+    expect(g.state.delayedTriggers.length).toBe(0);
+    g.expect.invariants();
+  });
+});

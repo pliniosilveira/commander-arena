@@ -112,6 +112,8 @@ type EventName =
   | 'becomesUnblocked'
   // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
   | 'leavesBattlefield'
+  // Misfortune Teller (CR 510.2, 603.2c): "deals combat damage to a player", for the alternatives of `trigger.or` only.
+  | 'dealsCombatDamageToPlayer'
   // Stage P36 (D-178): "becomes the target of a spell", for the alternatives of `trigger.or` only.
   | 'becomesTargetSpell'
   // Exit from Exile deck (Tectonic Giant): "becomes the target of a spell an opponent controls", for the alternatives of `trigger.or` only.
@@ -162,6 +164,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
     pattern(/ leaves the battlefield(?![\p{L}\p{N}])/iu),
     (): EventName => 'leavesBattlefield',
   ),
+  // CR 120.2a, 510.2: "deals combat damage to a player" (the engine's `dealsCombatDamage` to a player), one event of an "or" list.
+  dealsCombatDamageToPlayer: map(
+    pattern(/ deals combat damage to a player(?![\p{L}\p{N}])(?! or)/iu),
+    (): EventName => 'dealsCombatDamageToPlayer',
+  ),
   // CR 603.2, 601.2c: "becomes the target of a spell" (a spell, not an ability: the engine's `becomesTarget` with `spellOnly`).
   becomesTargetSpell: map(
     pattern(/ becomes the target of a spell(?![\p{L}\p{N}])(?! or ability)/iu),
@@ -193,6 +200,7 @@ const OR_EVENT = choice(
   EVENT_WORDS.becomesTargetSpellOpponent,
   EVENT_WORDS.becomesTargetSpell,
   EVENT_WORDS.becomesMonstrous,
+  EVENT_WORDS.dealsCombatDamageToPlayer,
 );
 
 function trigger(
@@ -210,6 +218,18 @@ function trigger(
       args: {},
       ...parts,
       actor: makeNoun(rule, span, 'eachOpponent', { raw: 'an opponent' }),
+      span,
+      rule,
+    };
+  }
+  // CR 120.2a, 510.2: "deals combat damage to a player" is the event `dealsCombatDamage` to a player.
+  if (event === 'dealsCombatDamageToPlayer') {
+    return {
+      kind: 'trigger',
+      event: 'dealsCombatDamage',
+      damaged: 'player',
+      args: {},
+      ...parts,
       span,
       rule,
     };
@@ -647,8 +667,14 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     'another creature you control attacks, blocks, or dies',
     // CR 701.37a (Monstrosity), 603.2: the monstrosity action is an event like any other of the subject.
     '~ enters or becomes monstrous',
+    // CR 510.2, 603.2c: Misfortune Teller.
+    '~ enters or deals combat damage to a player',
+    '~ attacks or deals combat damage to a player',
   ],
   rejects: [
+    '~ deals combat damage to a player or enters',
+    '~ enters or deals combat damage to a player or planeswalker',
+    '~ enters or deals combat damage to a creature',
     '~ becomes monstrous or becomes monstrous',
     '~ attacks or becomes the target of a spell or ability',
     '~ becomes the target of a spell or becomes the target of a spell',

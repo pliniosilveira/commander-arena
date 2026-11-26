@@ -736,10 +736,10 @@ describe('Food and Clue lower (CR 111.10b, 111.10f)', () => {
     );
   });
 
-  test('Blood still needs what the engine lacks', () => {
-    expect(dropped('Create a Blood token.')).toMatchObject({
+  test('Blood runs since CR 111.10g; a mana ability that discards still needs what the engine lacks', () => {
+    expect(dropped('{T}, Discard a card: Add {R}{R}.', 'creature')).toMatchObject({
       reason: 'notRunnable',
-      needs: ['token:Blood'],
+      needs: ['manaCost:discard'],
     });
   });
 });

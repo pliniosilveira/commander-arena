@@ -1,5 +1,5 @@
 {
-  "parserVersion": 215,
+  "parserVersion": 216,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -106,6 +106,14 @@
       ],
       "reasons": [],
       "ast": "e7704bfc"
+    },
+    "0158634a-08a3-4eb8-8216-bf85161fd168": {
+      "name": "Discreet Retreat",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5f597a3c"
     },
     "01766d9b-b2af-4a27-9e65-08c82e7d7637": {
       "name": "Pyretic Charge",
@@ -462,6 +470,14 @@
       "reasons": [],
       "ast": "779677f5"
     },
+    "0613a0d8-f6bc-41ca-8070-b2506f756fc8": {
+      "name": "Vihaan, Goldwaker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eeca46a7"
+    },
     "0636b6c3-0662-420a-b30d-f0a14e7c512d": {
       "name": "Mirkwood Bats",
       "group": "acceptance",
@@ -750,6 +766,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "28bfdb6c"
+    },
+    "0b620775-70a5-4423-8453-e403a5b79554": {
+      "name": "Kamber, the Plunderer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0232facb"
     },
     "0b67c4e2-f88b-4e01-85a1-9d5f5b8db13b": {
       "name": "Commander's Sphere",
@@ -1930,6 +1954,14 @@
       "reasons": [],
       "ast": "364c242c"
     },
+    "2038138e-2e52-41e4-90fc-443fa054c5c0": {
+      "name": "Shoot the Sheriff",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "14d45e7d"
+    },
     "204a5616-9f19-4d4c-aeb0-d1ec486b9ace": {
       "name": "Gavel of the Righteous",
       "group": "acceptance",
@@ -2941,6 +2973,14 @@
       "reasons": [],
       "ast": "e58e0ad2"
     },
+    "31b990e3-9bad-4b0a-a9d5-f5b9ed2ad0b0": {
+      "name": "Fain, the Broker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fd44e7d0"
+    },
     "31cb87bf-1020-4fd5-95f7-8ecb197d823b": {
       "name": "Pia Nalaar, Chief Mechanic",
       "group": "acceptance",
@@ -3849,6 +3889,14 @@
       "reasons": [],
       "ast": "1d978945"
     },
+    "3d1b09a3-f151-4218-974b-02bb6159247a": {
+      "name": "Seize the Spotlight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd0b3314"
+    },
     "3d6fa57a-aa53-4b5c-b8af-a7612c823117": {
       "name": "Faithless Looting",
       "group": "training",
@@ -4409,6 +4457,14 @@
       "reasons": [],
       "ast": "2ac2b45b"
     },
+    "490df3b5-ece2-45bb-af38-fcd7f83e37b0": {
+      "name": "Mistmeadow Skulk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1a58d779"
+    },
     "4945f03b-ff99-4923-b62d-3cdb60275ef1": {
       "name": "The Elder Dragon War",
       "group": "training",
@@ -4785,6 +4841,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dc997d74"
+    },
+    "4e5e0b22-ee5a-4c19-be95-2f9bd50641bc": {
+      "name": "Olivia, Opulent Outlaw",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd5a8f59"
     },
     "4e769107-0f32-4181-9e57-ffebc2228d3a": {
       "name": "Rise from the Grave",
@@ -5234,6 +5298,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8050fce"
+    },
+    "5675ac63-b69b-41b9-a7ed-4085a4e431b2": {
+      "name": "We Ride at Dawn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "10c4c14c"
     },
     "56773795-bd8b-4ac4-8f2c-a9d6275989bb": {
       "name": "Elminster",
@@ -5752,6 +5824,14 @@
       "reasons": [],
       "ast": "b7e66ba7"
     },
+    "5f1fdc23-9af0-41a1-aeba-7288f9642734": {
+      "name": "Mari, the Killing Quill",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f2f5084a"
+    },
     "5f2be3c2-060a-43e1-b63b-9cd3c78ffcb0": {
       "name": "Ilysian Caryatid",
       "group": "training",
@@ -5807,6 +5887,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "189e5f2f"
+    },
+    "60c77b18-c111-4e16-ad19-2ef32582cd9e": {
+      "name": "Angelic Sell-Sword",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8d09f8a2"
     },
     "60cb885c-5cd3-4963-8a6a-cebf07cc61b5": {
       "name": "Storm Fleet Negotiator",
@@ -6032,6 +6120,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "422686ad"
+    },
+    "63e6cb7d-cc27-4200-85fc-ff6472318c1a": {
+      "name": "Massacre Girl",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6e717f2e"
     },
     "640a7d2c-42c4-4ea7-bd5b-72f12a65785e": {
       "name": "Synthetic Destiny",
@@ -8882,6 +8978,14 @@
       "reasons": [],
       "ast": "325dd6e9"
     },
+    "93438939-3909-4e59-bfe4-760ec73eb57d": {
+      "name": "Graywater's Fixer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3354c4eb"
+    },
     "934bd9f9-937b-4c6b-a849-012ae6bd3321": {
       "name": "Incandescent Soulstoke",
       "group": "acceptance",
@@ -8994,6 +9098,14 @@
       "reasons": [],
       "ast": "03fb6d2d"
     },
+    "949a02ad-7530-4b2b-a1e3-0c70324e23d6": {
+      "name": "Dead Before Sunrise",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ac1fe8ac"
+    },
     "94e8b0a9-44a1-4dce-8d44-78681ae638a1": {
       "name": "Fountainport",
       "group": "acceptance",
@@ -9041,6 +9153,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b4cc00ab"
+    },
+    "960cff3b-678c-404e-a643-ac5e91e6b50c": {
+      "name": "Charred Graverobber",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fa125af0"
     },
     "96230edf-568a-47dd-b877-9d92aa58fac8": {
       "name": "Nevinyrral's Disk",
@@ -10611,6 +10731,14 @@
       "reasons": [],
       "ast": "645a3fb0"
     },
+    "acf4d685-a718-42f7-9a7a-dee069ae8db2": {
+      "name": "Council's Judgment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d443473c"
+    },
     "acfa77fd-3610-4f12-9c3c-bd860ce91700": {
       "name": "Rhythm of the Wild",
       "group": "acceptance",
@@ -11223,6 +11351,14 @@
       "reasons": [],
       "ast": "1dafb6ba"
     },
+    "b8619990-9dc2-4fcc-bc7e-457b77cd2a8e": {
+      "name": "Rankle, Master of Pranks",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4546cd48"
+    },
     "b86d3142-568a-4eea-b1ae-5fcfc1453533": {
       "name": "Boon Reflection",
       "group": "acceptance",
@@ -11478,6 +11614,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ccb41bea"
+    },
+    "bd1ccc6f-d281-413e-889e-1e022c3f2a99": {
+      "name": "Misfortune Teller",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ea6a77b"
     },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
       "name": "Rabanastre, Royal City",
@@ -12530,6 +12674,14 @@
       "reasons": [],
       "ast": "6875583f"
     },
+    "ce723db6-2a80-42a5-a176-cd322b4e1e27": {
+      "name": "Back in Town",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d3422f02"
+    },
     "cecd2f49-8ccb-472d-9cf1-fd0f4d93546d": {
       "name": "Summon: Esper Valigarmanda",
       "group": "acceptance",
@@ -13194,6 +13346,14 @@
       "reasons": [],
       "ast": "320cc8c6"
     },
+    "d96763a0-6a6e-4520-899a-468b4bb307c8": {
+      "name": "Mass Mutiny",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a177c4f5"
+    },
     "d9722ec3-aa5e-4c69-8ff0-cef1b1839fa4": {
       "name": "Wisdom of Ages",
       "group": "acceptance",
@@ -13786,6 +13946,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3c36c352"
+    },
+    "e40c66cf-0a4a-4833-98bf-c685d35b9309": {
+      "name": "Bounty Board",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1e683f1f"
     },
     "e43b478b-4cb8-42b1-a5b0-0b1421b84852": {
       "name": "Coin of Fate",
@@ -14404,6 +14572,14 @@
       "reasons": [],
       "ast": "2bae1436"
     },
+    "ef1e2d3d-e977-4729-9430-eba6242e5dfe": {
+      "name": "Rain of Riches",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b27fc9f3"
+    },
     "ef47c447-bd7f-43c6-b4db-4a848c39820c": {
       "name": "Visions of Glory",
       "group": "acceptance",
@@ -14655,6 +14831,14 @@
       ],
       "ast": "b1faf333"
     },
+    "f2f8847d-17a8-4c26-8a7a-1bb6c02f2b39": {
+      "name": "Laurine, the Diversion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2ccd78b8"
+    },
     "f2fae95d-074b-4c0c-99cd-f9385a424c05": {
       "name": "Villainous Wealth",
       "group": "acceptance",
@@ -14686,6 +14870,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "013fe4ec"
+    },
+    "f36d1d8b-8303-44a9-ab56-531931641ea2": {
+      "name": "Academy Manufactor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0f956ed6"
     },
     "f398d222-f8e7-4983-9a77-267adef7f551": {
       "name": "Agatha of the Vile Cauldron",
@@ -15392,6 +15584,14 @@
       "reasons": [],
       "ast": "21efc425"
     },
+    "feaf9dcb-d845-4cf9-b35d-cd58175162e7": {
+      "name": "Glittering Stockpile",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8b19cb6f"
+    },
     "ff3de07d-86c3-49e1-9de0-97c85301ff93": {
       "name": "Parasitic Impetus",
       "group": "acceptance",
@@ -15415,6 +15615,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c7093b70"
+    },
+    "ff6427f6-d2b1-4e33-984d-c06bd15d7c2c": {
+      "name": "Aetherborn Marauder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7a9691c6"
     },
     "ff6b52b7-ae3c-465b-b10e-901160e5230e": {
       "name": "Nils, Discipline Enforcer",
@@ -15467,8 +15675,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1631,
-      "total": 1647
+      "supported": 1657,
+      "total": 1673
     }
   }
 }

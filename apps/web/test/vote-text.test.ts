@@ -87,3 +87,16 @@ test('the amount: "twice the number of profit votes" and "the number of security
     amountPhrase({ kind: 'multiple', factor: 2, of: { kind: 'votesFor', option: 'profit' } }),
   ).toBe('twice the number of profit votes');
 });
+
+test('a choice that is not a vote reads "Choose ..." and "chose" (CR 101.4, 701.38c)', () => {
+  expect(votePrompt(['fame', 'fortune'], { controller: 0, cast: [], choice: true }, 1)).toBe(
+    'Choose fame or fortune.',
+  );
+  expect(
+    votePrompt(
+      ['fame', 'fortune'],
+      { controller: 0, cast: [{ seat: 1, option: 'fame' }], choice: true },
+      2,
+    ),
+  ).toBe('Choose fame or fortune. Opponent chose fame.');
+});

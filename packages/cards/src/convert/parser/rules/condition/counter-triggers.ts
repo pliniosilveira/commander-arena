@@ -88,7 +88,7 @@ export const CONDITION_CONTROL_THAT_CREATURE = defineRule<IrCondition>({
 /**
  * `condition.its-stat-was`: "its toughness was less than 1", "its power was 2 or less", "its toughness was 4 or greater" (CR 603.10a, 113.7a, 208.1: the power or toughness the
  * permanent the trigger is about has, or had as it left the battlefield). The number is a whole number written in digits. "Less than N" is at most N - 1 and "greater than N" at
- * least N + 1. Not read: a word for the number, a stat besides power and toughness, "more than" (Oracle text says "greater than"), "is" for a permanent that has left, another
+ * least N + 1. "Is" and "was" are read alike (the engine reads the stat as it is, or as it last was). Not read: a word for the number, a stat besides power and toughness, "more than" (Oracle text says "greater than"), another
  * object than "its", a missing number.
  */
 export const CONDITION_ITS_STAT_WAS = defineRule<IrCondition>({
@@ -106,6 +106,9 @@ export const CONDITION_ITS_STAT_WAS = defineRule<IrCondition>({
     'its toughness was 4 or greater',
     'its power was greater than 3',
     'its toughness was less than 0',
+    // CR 603.4 (Angelic Sell-Sword): the intervening "if" of an attack trigger reads the power the attacker has as the ability triggers and resolves.
+    'its power is 6 or greater',
+    'its toughness is less than 1',
   ],
   rejects: [
     'its toughness was',
@@ -118,13 +121,13 @@ export const CONDITION_ITS_STAT_WAS = defineRule<IrCondition>({
     'that creature’s toughness was less than 1',
     'his toughness was less than 1',
     'its toughness was less than 1 and',
-    'its toughness is less than 1',
+    'its toughness is',
     'its toughness was less than -1',
   ],
   parse: (ctx, pos) => {
     const r = pattern(
       new RegExp(
-        `its (power|toughness) was (?:(less than|greater than) (\\d+)|(\\d+) or (less|greater))${END}`,
+        `its (power|toughness) (?:was|is) (?:(less than|greater than) (\\d+)|(\\d+) or (less|greater))${END}`,
         'iu',
       ),
     )(ctx, pos);

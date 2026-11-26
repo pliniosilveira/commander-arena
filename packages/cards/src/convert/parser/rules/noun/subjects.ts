@@ -164,6 +164,8 @@ export const NOUN_OTHER_SUBTYPE_PERMANENTS = defineRule<IrNoun>({
     'other nontoken Zombies you control',
     'other non-Zombie Wizards you control',
     'other Mice you control',
+    // CR 700.12: outlaw is the group of the five creature types Assassin, Mercenary, Pirate, Rogue and Warlock.
+    'other outlaws you control',
   ],
   rejects: [
     'other elves you control',
@@ -180,7 +182,8 @@ export const NOUN_OTHER_SUBTYPE_PERMANENTS = defineRule<IrNoun>({
     'noun.other-subtype-permanents',
     satisfy(
       map(sequence(literal('other '), permanentPhrase(true, 'all')), ([, filter]) => filter),
-      (filter) => (filter.subtypes?.length ?? 0) > 0,
+      // CR 700.12 (Vihaan, Goldwaker): "other outlaws you control" names a group by its creature types too, though outlaw is no subtype.
+      (filter) => (filter.subtypes?.length ?? 0) > 0 || filter.outlaw === true,
     ),
     (filter) => bare('each', filter, { plural: true, other: true }),
   ),

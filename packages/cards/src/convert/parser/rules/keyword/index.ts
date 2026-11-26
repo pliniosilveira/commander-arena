@@ -217,10 +217,16 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // CR 702.16a, 105.2: protection from multicolored sources.
     'Protection from multicolored',
     'Reach, trample, protection from multicolored',
+    // CR 702.16a, 202.3: protection from sources with a stated mana value.
+    'Lifelink, protection from mana value 3 or greater',
+    'Protection from mana value 2 or less',
+    'Protection from mana value 0',
   ],
   rejects: [
     'Ward {2}',
     'Protection from monocolored',
+    'Protection from mana value',
+    'Protection from mana value 3 or more',
     'Protection from multicolored and from red',
     'Protection from multicoloredx',
     'Protection from artifacts',

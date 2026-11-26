@@ -122,6 +122,8 @@ export interface Scope {
   readonly voteOptions?: readonly string[];
   /** What the latest vote earlier in the same sequence is for (CR 701.38b): `players` or `objects` for a `voteFor`, `words` for a `vote`. The votes of players and of permanents are read only after the matching one. */
   readonly voteChoices?: 'words' | 'players' | 'objects';
+  /** The options of the latest `eachPlayerChooses` earlier in the same sequence: `eachPlayerWhoChose` and `chooseObjects.perChoice` read who chose one of them (CR 101.4). */
+  readonly choiceOptions?: readonly string[];
   /** True in an ability whose trigger is `votingFinished`: it reads the record of the vote that finished (CR 701.38a), whatever the vote was for. */
   readonly voteTrigger?: boolean;
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
@@ -339,6 +341,13 @@ export function checkFilter(
   if (f.colorless !== undefined && f.colorless !== true) {
     issue(out, `${path}.colorless`, 'colorless must be true');
   }
+  if (f.outlaw !== undefined && typeof f.outlaw !== 'boolean') {
+    issue(
+      out,
+      `${path}.outlaw`,
+      'outlaw must be a boolean (true: outlaws only, false: non-outlaws only)',
+    );
+  }
   if (f.token !== undefined && typeof f.token !== 'boolean') {
     issue(
       out,
@@ -431,6 +440,7 @@ export function checkFilter(
     'xInManaCost',
     'firstXSpellThisTurn',
     'firstCastFromExileThisTurn',
+    'firstManaSpentFromSubtypeThisTurn',
     'firstOfTypeThisTurn',
     'enteredThisTurn',
     'dealtDamageThisTurn',
@@ -451,6 +461,20 @@ export function checkFilter(
     (!Number.isInteger(f.nthSpellThisTurn) || f.nthSpellThisTurn < 2)
   ) {
     issue(out, `${path}.nthSpellThisTurn`, 'nthSpellThisTurn must be a whole number of 2 or more');
+  }
+  // CR 601.2h (Rain of Riches): "a spell that mana from a Treasure was spent to cast" names a subtype; "the first such spell each turn" needs it.
+  if (
+    f.manaSpentFromSubtype !== undefined &&
+    (typeof f.manaSpentFromSubtype !== 'string' || f.manaSpentFromSubtype === '')
+  ) {
+    issue(out, `${path}.manaSpentFromSubtype`, 'manaSpentFromSubtype must be a subtype name');
+  }
+  if (f.firstManaSpentFromSubtypeThisTurn === true && f.manaSpentFromSubtype === undefined) {
+    issue(
+      out,
+      `${path}.firstManaSpentFromSubtypeThisTurn`,
+      'firstManaSpentFromSubtypeThisTurn needs manaSpentFromSubtype',
+    );
   }
   // CR 601.2i: "the first artifact spell you cast each turn" is the first of the card types the filter names.
   if (f.firstOfTypeThisTurn === true && (f.types?.length ?? 0) === 0) {
@@ -925,6 +949,7 @@ const HOST_FILTER_KEYS: readonly string[] = [
   'notSupertypes',
   'subtypes',
   'notSubtypes',
+  'outlaw',
   'colors',
   'notColors',
   'colorless',
@@ -1753,6 +1778,18 @@ export function checkRef(
         );
       }
       break;
+    case 'mostVotedObjects':
+      // CR 701.38a, 701.38b (Council's Judgment): the permanents with the most votes, after a vote for permanents in the same sequence.
+      if (expect === 'player')
+        issue(out, path, "'mostVotedObjects' is a set of permanents, not a player");
+      else if (scope.voteChoices !== 'objects') {
+        issue(
+          out,
+          path,
+          "'mostVotedObjects' needs a vote for permanents before it in the same sequence",
+        );
+      }
+      break;
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
       if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");
@@ -1900,6 +1937,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'opponentsAttackingTriggerPlayer':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
+    case 'eachPlayerWhoChose':
     case 'all':
       return true;
     default:
@@ -2074,6 +2112,24 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerWhoChose':
+      // CR 101.4, 608.2d (Seize the Spotlight): who chose an option of an `eachPlayerChooses` earlier in the same sequence.
+      if (typeof sel.option !== 'string' || sel.option.trim() === '') {
+        issue(out, `${path}.option`, "'eachPlayerWhoChose' names the option that was chosen");
+      } else if (scope.choiceOptions === undefined) {
+        issue(
+          out,
+          path,
+          "'eachPlayerWhoChose' needs an eachPlayerChooses effect before it in the same sequence",
+        );
+      } else if (!scope.choiceOptions.includes(sel.option)) {
+        issue(
+          out,
+          `${path}.option`,
+          `"${sel.option}" is not an option of the choice (${scope.choiceOptions.join(', ')})`,
+        );
+      }
+      break;
     case 'eachOpponentWhoVoted':
       // CR 701.38a (Erestor of the Council): who voted for what, in a vote earlier in the same sequence or the one that triggered the ability.
       if (scope.voteChoices === undefined && scope.voteTrigger !== true) {
@@ -2163,6 +2219,7 @@ export const PLAYER_ONLY = [
   'discardedThisWay',
   'eachPlayerWithoutVotes',
   'eachOpponentWhoVoted',
+  'eachPlayerWhoChose',
 ];
 
 export function checkDamageRecipient(
@@ -4753,6 +4810,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Lander',
   'Wicked Role',
   'Junk',
+  'Blood',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
@@ -5864,6 +5922,8 @@ export const MAY_EFFECT_KINDS = [
   'revealTop',
   // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
   'removeCounters',
+  // Mari, the Killing Quill (CR 122.1, 608.2c): "you may remove a hit counter from a card that player owns in exile. If you do, ...": a removal that took a counter is something done.
+  'removeChosenCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
   // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
@@ -6294,6 +6354,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // Zack Fair (CR 113.7a): "attach an Equipment that was attached to ~" is a forced choice among the objects that were attached to the sacrificed permanent, whoever controls them.
       if (
         e.chooser === undefined &&
+        e.perChoice === undefined &&
         e.filter.controller !== 'you' &&
         !(e.filter.controller === undefined && e.exactly !== true) &&
         !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
@@ -6305,6 +6366,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
+      // CR 101.4, 608.2d (Seize the Spotlight): "for each player who chose fame, gain control of a creature that player controls": the controller chooses among the permanents of each player who chose.
+      if (e.perChoice !== undefined) {
+        if (e.chooser !== undefined || e.perVote !== undefined) {
+          issue(out, `${path}.perChoice`, 'perChoice has no chooser and no perVote');
+        }
+        if (e.filter.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'perChoice reads the permanents of each player who chose: the filter names no controller',
+          );
+        }
+        if (typeof e.perChoice !== 'string' || e.perChoice.trim() === '') {
+          issue(out, `${path}.perChoice`, 'perChoice names the option whose choosers are read');
+        } else if (scope.choiceOptions === undefined) {
+          issue(
+            out,
+            `${path}.perChoice`,
+            'perChoice needs an eachPlayerChooses effect before it in the same sequence',
+          );
+        } else if (!scope.choiceOptions.includes(e.perChoice)) {
+          issue(
+            out,
+            `${path}.perChoice`,
+            `"${e.perChoice}" is not an option of the choice (${scope.choiceOptions.join(', ')})`,
+          );
+        }
+      }
       // CR 701.38a (Elrond of the White Council): "for each fellowship vote, the voter chooses": a vote for that option before it in the same sequence or the one that triggered the ability.
       if (e.perVote !== undefined) {
         if (e.chooser !== undefined) {
@@ -6425,6 +6514,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
             after = { ...after, voteOptions: child.options, voteChoices: 'words' };
+          }
+          // CR 101.4: after "each player chooses A or B", `eachPlayerWhoChose` and `perChoice` can read who chose which.
+          if (child?.kind === 'eachPlayerChooses' && Array.isArray(child.options)) {
+            after = { ...after, choiceOptions: child.options };
           }
           // CR 701.38b: after a vote for players or permanents, the votes for each can be read; no option word is named.
           if (child?.kind === 'voteFor') {
@@ -7306,6 +7399,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
+    case 'delayedDiesTurn': {
+      // CR 603.7c, 603.10a, 700.4 (Massacre Girl): the permanents that die are named by a filter of the battlefield (any controller); what the ability does names no target and reads
+      // nothing of the spell.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the permanents that die are read as they were on the battlefield: no zone',
+        );
+      }
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
+    }
     case 'delayedCombatDamageToPlayer': {
       // Issue 144 (CR 603.7c, 510.3a): the sources are creatures the controller controls; the player is a target of the spell or ability; what the ability does names no target and
       // reads nothing of the spell (nothing of it is left when the ability triggers).
@@ -7859,11 +7966,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'moveCounter':
-      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
-      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`; the first may be several (`each`).
+      checkObjectSelector(e.from, `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
       if (e.anyNumber !== undefined && e.anyNumber !== true) {
         issue(out, `${path}.anyNumber`, 'anyNumber must be true');
+      }
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'moveCounter names a kind of counter');
       }
       break;
     case 'removeChosenCounters':
@@ -7871,6 +7981,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       if (e.upTo !== undefined && (!isCount(e.upTo) || e.upTo < 1)) {
         issue(out, `${path}.upTo`, 'upTo must be a positive integer');
+      }
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'removeChosenCounters names a kind of counter');
+      }
+      if (e.required !== undefined && (e.required !== true || e.upTo === undefined)) {
+        issue(out, `${path}.required`, 'required must be true, and needs upTo');
       }
       break;
     case 'moveAllCounters':
@@ -9653,6 +9769,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.secret !== undefined && e.secret !== true) {
         issue(out, `${path}.secret`, 'secret must be true when present');
       }
+      break;
+    }
+    case 'eachPlayerChooses': {
+      // CR 101.4, 608.2d (Seize the Spotlight): each player the selector names chooses one of two to eight distinct words.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      const options = Array.isArray(e.options) ? e.options : [];
+      if (!Array.isArray(e.options) || options.length < 2 || options.length > 8) {
+        issue(out, `${path}.options`, 'a choice offers two to eight options');
+      }
+      const seen = new Set<string>();
+      options.forEach((option, i) => {
+        if (typeof option !== 'string' || option.trim() === '') {
+          issue(out, `${path}.options[${i}]`, 'a choice option needs its words');
+        } else if (seen.has(option)) {
+          issue(out, `${path}.options[${i}]`, `two options of the choice are both "${option}"`);
+        } else {
+          seen.add(option);
+        }
+      });
       break;
     }
     case 'voteFor': {
