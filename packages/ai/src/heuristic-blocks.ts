@@ -82,7 +82,7 @@ export function chooseHeuristicBlocks(
   d: DeclareBlockersDecision,
   ctx: BlockContext,
 ): BlockChoice {
-  const fallback = defaultPlan(view, d, ctx.weights);
+  const fallback = defaultPlan(view, d, ctx.weights, true);
   const sample = ctx.sample;
   if (sample === undefined || sample.pending?.kind !== 'declareBlockers') {
     return asChoice(d, fallback);
