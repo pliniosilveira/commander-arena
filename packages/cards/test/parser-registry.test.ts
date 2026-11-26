@@ -1077,6 +1077,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,
+  'trigger.play-card-from-exile': whenever,
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,

@@ -45,6 +45,7 @@ import { DAMAGE_PREVENTED_TRIGGER_RULES } from './damage-prevented';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
+import { FLINT_TRIGGER_RULES } from './flint';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
@@ -1669,6 +1670,7 @@ export const TRIGGER_RULES = [
   ...GISA_G2_TRIGGER_RULES,
   // Death Toll deck, group D: "you play a card with two or more card types".
   ...DEATH_TOLL_D_TRIGGER_RULES,
+  ...FLINT_TRIGGER_RULES,
   // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
   ...ACTIVATES_ABILITY_TRIGGER_RULES,
   // Limit Break deck, group 4 (Professor Hojo): "one or more creatures you control become the target of an activated ability".
