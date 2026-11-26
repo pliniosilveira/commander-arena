@@ -31,6 +31,7 @@ export {
 export { TOKEN_PRESETS } from './cards/tokens';
 export * from './characteristics';
 export { CREATURE_TYPES } from './data/creature-types';
+export { isOutlaw, OUTLAW_CREATURE_TYPES } from './data/outlaw';
 export { PLANESWALKER_TYPES } from './data/planeswalker-types';
 export { determinize } from './determinize';
 export { stateHash } from './hash';

@@ -790,6 +790,12 @@ export interface ObjectFilter {
   readonly subtypes?: readonly Subtype[];
   /** "Non-Zombie creature" (D-133, CR 205.3d): none of these creature types (or other subtypes). */
   readonly notSubtypes?: readonly Subtype[];
+  /**
+   * "Outlaw creature", "outlaws you control", "outlaw card", "outlaw spell", "non-outlaw creature" (CR 700.12): `true` matches an object that has at least one of the Assassin,
+   * Mercenary, Pirate, Rogue and Warlock creature types, `false` one that has none. Outlaw is no creature type, so it is no `subtypes` entry. Read from the object's types as it is now
+   * (a permanent through layers 1, 4 and 5, a card as printed, a spell as it is on the stack), so it works in every zone.
+   */
+  readonly outlaw?: boolean;
   readonly colors?: readonly Color[];
   /** "Nonblack creature", "nonartifact, nonblack creature" (CR 105.2, 205.4): the object has none of these colors (a colorless object has none, CR 105.2c). */
   readonly notColors?: readonly Color[];

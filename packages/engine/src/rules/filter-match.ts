@@ -9,6 +9,7 @@
 import type { AttachedTo, Keyword, NumberComparison, ObjectFilter } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
+import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
@@ -366,6 +367,8 @@ export function matchesFilterWith(
   if (filter.notSupertypes?.some((t) => d.supertypes.includes(t))) return false;
   if (filter.subtypes && !filter.subtypes.every((t) => d.subtypes.includes(t))) return false;
   if (filter.notSubtypes?.some((t) => d.subtypes.includes(t))) return false;
+  // CR 700.12 (outlaw): at least one of the Assassin, Mercenary, Pirate, Rogue and Warlock creature types; `false` is "non-outlaw".
+  if (filter.outlaw !== undefined && isOutlaw(d.subtypes) !== filter.outlaw) return false;
   if (filter.colorless === true && d.colors.length > 0) return false;
   // CR 105.2c: a colorless object has no color, so it is "nonblack" like any object that lacks black.
   if (filter.notColors?.some((c) => d.colors.includes(c))) return false;

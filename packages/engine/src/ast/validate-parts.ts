@@ -339,6 +339,13 @@ export function checkFilter(
   if (f.colorless !== undefined && f.colorless !== true) {
     issue(out, `${path}.colorless`, 'colorless must be true');
   }
+  if (f.outlaw !== undefined && typeof f.outlaw !== 'boolean') {
+    issue(
+      out,
+      `${path}.outlaw`,
+      'outlaw must be a boolean (true: outlaws only, false: non-outlaws only)',
+    );
+  }
   if (f.token !== undefined && typeof f.token !== 'boolean') {
     issue(
       out,
@@ -925,6 +932,7 @@ const HOST_FILTER_KEYS: readonly string[] = [
   'notSupertypes',
   'subtypes',
   'notSubtypes',
+  'outlaw',
   'colors',
   'notColors',
   'colorless',
