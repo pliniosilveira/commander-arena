@@ -594,10 +594,27 @@ function linkExile(abilities: readonly Ability[]): {
   }
   const [only] = exilers;
   const one = only !== undefined ? abilities[only] : undefined;
+  // Hazel's Brewmaster (CR 603.2c, 607.2a): "Whenever this creature enters or attacks, exile up to one target card from a graveyard ...": one ability of the text, which the lowering makes an
+  // ability of the engine for each event. The exilers are that one ability when they are triggered abilities that differ in their event only.
+  const sameAbility = (a: Ability, b: Ability | undefined): boolean => {
+    if (a.kind !== 'triggered' || b?.kind !== 'triggered') return false;
+    const { trigger: _a, ...restA } = a;
+    const { trigger: _b, ...restB } = b;
+    void _a;
+    void _b;
+    return JSON.stringify(restA) === JSON.stringify(restB);
+  };
+  const oneText =
+    one !== undefined &&
+    exilers.every((i) => {
+      const a = abilities[i];
+      return a !== undefined && sameAbility(a, one);
+    });
   const linkable =
     readers.length === 1 &&
     replacers.length === 0 &&
-    exilers.length === 1 &&
+    exilers.length >= 1 &&
+    (exilers.length === 1 || oneText) &&
     one !== undefined &&
     (one.kind === 'triggered' || one.kind === 'activated') &&
     exilesIn(one.effect) === 1;
@@ -606,7 +623,7 @@ function linkExile(abilities: readonly Ability[]): {
   }
   return {
     abilities: abilities.map((a, i) =>
-      i === only && (a.kind === 'triggered' || a.kind === 'activated')
+      exilers.includes(i) && (a.kind === 'triggered' || a.kind === 'activated')
         ? { ...a, effect: linkedEffect(a.effect) }
         : a,
     ),

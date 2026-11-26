@@ -150,6 +150,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:targetsOnly',
   'selector:powerAboveBase',
   'selector:basePowerIs',
+  'selector:basePowerOrToughnessIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
   'selector:sharesCreatureTypeWithSource',
@@ -408,6 +409,7 @@ function lowerFilterAt(
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
+  if (filter.basePowerOrToughnessIs !== undefined) parts.push('selector:basePowerOrToughnessIs');
   // Expel the Interlopers (CR 208.1, 608.2c): "with power greater than or equal to the chosen number", read where an effect's `each` selector is read (the engine checks the choice).
   if (filter.powerAtLeastChosenNumber === true) {
     if (inner) return bad([]);
@@ -649,6 +651,9 @@ function lowerFilterAt(
     ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
+    ...(filter.basePowerOrToughnessIs === undefined
+      ? {}
+      : { basePowerOrToughnessIs: filter.basePowerOrToughnessIs }),
     ...(filter.powerAtLeastChosenNumber === true
       ? { powerAtLeastChosenNumber: true as const }
       : {}),

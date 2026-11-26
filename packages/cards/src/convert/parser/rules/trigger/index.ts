@@ -225,6 +225,8 @@ export const TRIGGER_ENTERS = singleEvent('trigger.enters', 'enters', {
     '~ enters the battlefield',
     'another creature you control enters',
     'a creature enters',
+    // CR 205.3m (Sword of the Squeak): a list of creature types with commas, one subject.
+    'a Hamster, Mouse, Rat, or Squirrel you control enters',
   ],
   rejects: [
     'a land you control enters',

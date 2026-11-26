@@ -1185,6 +1185,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerAboveBase',
     // "Creatures you control with base power 0" (`ObjectFilter.basePowerIs`).
     'basePowerIs',
+    // "Creatures you control with base power or toughness 1" (`ObjectFilter.basePowerOrToughnessIs`).
+    'basePowerOrToughnessIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
     // Expel the Interlopers: "with power greater than or equal to the chosen number" (`ObjectFilter.powerAtLeastChosenNumber`).
@@ -2266,6 +2268,8 @@ export const SELECTOR_KINDS = [
   'powerAboveBase',
   /** "With base power 0" (CR 208.4b): the engine's `ObjectFilter.basePowerIs`. */
   'basePowerIs',
+  /** "With base power or toughness 1" (CR 208.4b): the engine's `ObjectFilter.basePowerOrToughnessIs`. */
+  'basePowerOrToughnessIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
   /** "With power greater than or equal to the chosen number" (CR 208.1, 608.2c, Expel the Interlopers): the engine's `ObjectFilter.powerAtLeastChosenNumber`. */

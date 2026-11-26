@@ -453,12 +453,16 @@ function powerAboveBase(plural: boolean): Parser<boolean> {
 }
 
 /**
- * " with base power 0" (CR 208.4b, 208.1: the power the object has before counters and the effects that only modify it), the engine's `basePowerIs`. Only a
- * whole number is read ("with base power 2", "with base power 0"); "base power or toughness", a comparison and "X" are not.
+ * " with base power 0" (CR 208.4b, 208.1: the power the object has before counters and the effects that only modify it), the engine's `basePowerIs`, and " with base power or
+ * toughness 1" (Sword of the Squeak), its `basePowerOrToughnessIs`. Only a whole number is read ("with base power 2", "with base power 0"); a comparison and "X" are not.
  */
-const basePowerSuffix: Parser<number> = map(
-  pattern(new RegExp(` with base power (\\d+)${BOUNDARY}`, 'iu')),
-  (m) => Number(m[1]),
+/** What a "with base power ..." suffix says: the power alone, or the power or the toughness. */
+type BasePt = { basePowerIs: number } | { basePowerOrToughnessIs: number };
+
+const basePowerSuffix: Parser<BasePt> = map(
+  pattern(new RegExp(` with base power (or toughness )?(\\d+)${BOUNDARY}`, 'iu')),
+  (m): BasePt =>
+    m[1] === undefined ? { basePowerIs: Number(m[2]) } : { basePowerOrToughnessIs: Number(m[2]) },
 );
 
 /**
@@ -561,7 +565,7 @@ export function permanentPhrase(
     damaged: boolean;
     counter: true | string | undefined;
     aboveBase: boolean;
-    basePower: number | undefined;
+    basePower: BasePt | undefined;
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
@@ -690,7 +694,7 @@ export function permanentPhrase(
           ...(damaged ? { controllerDamagedBySource: true as const } : {}),
           ...(counter === undefined ? {} : { hasCounter: counter }),
           ...(aboveBase ? { powerAboveBase: true as const } : {}),
-          ...(basePower === undefined ? {} : { basePowerIs: basePower }),
+          ...(basePower === undefined ? {} : basePower),
         },
         compared,
       ),

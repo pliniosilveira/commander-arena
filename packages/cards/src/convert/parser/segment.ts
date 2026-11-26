@@ -173,6 +173,22 @@ function insideSpellTypeList(text: string, at: number): boolean {
   );
 }
 
+/**
+ * Whether the comma at `at` separates two creature types in the subject of a trigger ("Whenever a Hamster, Mouse, Rat, or Squirrel you control enters, ..."; CR 205.3m, 603.2): the
+ * words before it are "Whenever a" and the types so far, and the words after it go on with types and end the list with "or <Type>". The comma after the event ends the condition.
+ */
+function insideSubjectTypeList(text: string, at: number): boolean {
+  const TYPE = "\\p{Lu}[\\p{L}'’-]*";
+  return (
+    new RegExp(`(?:[Ww]henever|[Ww]hen) (?:an?|another) ${TYPE}(?:, ${TYPE})*$`, 'u').test(
+      text.slice(Math.max(0, at - 120), at),
+    ) &&
+    new RegExp(`^, (?:${TYPE}, )*or ${TYPE}(?![\\p{L}\\p{N}'’-])`, 'u').test(
+      text.slice(at, at + 80),
+    )
+  );
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -197,6 +213,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       !insideGraveyardEventList(text, i) &&
       // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
       !insideSpellTypeList(text, i) &&
+      // CR 205.3m: "Whenever a Hamster, Mouse, Rat, or Squirrel you control enters, ...": a comma between the creature types of the subject.
+      !insideSubjectTypeList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {

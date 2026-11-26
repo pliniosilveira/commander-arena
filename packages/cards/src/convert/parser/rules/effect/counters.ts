@@ -50,6 +50,8 @@ const COUNTER_OPERANDS = [
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
   'noun.each-of-them',
+  // Squirreled Away deck, group 4 (Garruk, Cursed Huntsman): "put a loyalty counter on each Garruk you control".
+  'noun.each-planeswalker-type',
 ] as const;
 
 /**

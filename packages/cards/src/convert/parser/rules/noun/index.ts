@@ -83,6 +83,7 @@ import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
 import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
+import { SQUIRRELED_G4_NOUN_RULES } from './squirreled-g4';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
@@ -1071,6 +1072,8 @@ export const NOUN_RULES = [
   ...AHOY_G4_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
+  // Squirreled Away deck, group 4: "each Garruk you control".
+  ...SQUIRRELED_G4_NOUN_RULES,
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
   ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,

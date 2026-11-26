@@ -1021,6 +1021,13 @@ export interface ObjectFilter {
    */
   readonly basePowerIs?: number;
   /**
+   * "Creatures you control with base power or toughness 1" (CR 208.4b): the object's base power or its base toughness (what layer 7b leaves, before counters and "+N/+N"
+   * effects) is this whole number. An object with no power and toughness matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). A count a
+   * "+N/+N" static ability reads may use it (the count reads base values of the objects it counts without their own static abilities, so it cannot loop, CR 613.8); refused in a
+   * characteristic-defining ability, in the subject of a static ability and wherever else `derive` matches filters, as `basePowerIs` is.
+   */
+  readonly basePowerOrToughnessIs?: number;
+  /**
    * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
    * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
    * (as `controlledBy` is). An object with no power, or a reference that names nothing, matches nothing.

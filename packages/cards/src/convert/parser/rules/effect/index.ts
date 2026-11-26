@@ -235,6 +235,7 @@ import { SEEK_OUT_EFFECT_RULES } from './seek-out';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { SQUIRRELED_G4_EFFECT_RULES } from './squirreled-g4';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
@@ -1447,6 +1448,8 @@ export const EFFECT_RULES = [
   ...FLICKER_RULES,
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
+  // Squirreled Away deck, group 4: "exile three cards from your graveyard".
+  ...SQUIRRELED_G4_EFFECT_RULES,
   EFFECT_EXILE,
   // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
   ...WITHERBLOOM_C_EARLY_EFFECT_RULES,
