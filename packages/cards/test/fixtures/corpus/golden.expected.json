@@ -4172,25 +4172,10 @@
     "409697d5-ce3c-46aa-a97d-969d143a2a65": {
       "name": "Case of the Shifting Visage",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "To solve — There are fifteen or more cards in your graveyard.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Solved — Whenever you cast a nonlegendary creature spell, copy that spell.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": ["layout \"case\" is not supported"],
-      "ast": "f58a4f7c"
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe471729"
     },
     "40eb9904-dea3-47cf-963a-04821f98ba64": {
       "name": "The Black Gate",
@@ -6827,34 +6812,10 @@
     "699b192c-f3f2-4ac5-9ca9-e35bcf08ad8a": {
       "name": "Necromancy",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.cast-self-as-though-flash"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, if it's on the battlefield, it becomes an Aura with \"enchant creature put onto the battlefield with ~.\" Put target creature card from a graveyard onto the battlefield under your control and attach ~ to it.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.it-becomes-land-creature-keywords"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When ~ leaves the battlefield, that creature's controller sacrifices it.",
-          "reason": "notRunnable",
-          "closestRule": "effect.controller-sacrifices-linked"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "17377bf4"
+      "ast": "dc05aed6"
     },
     "69a72414-d02f-4a5c-b5c9-8941bb181f61": {
       "name": "Aven Fisher",
@@ -16522,7 +16483,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1756,
+      "supported": 1758,
       "total": 1774
     }
   }
