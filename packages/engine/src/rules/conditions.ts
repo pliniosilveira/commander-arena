@@ -21,6 +21,7 @@ import {
   lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
+  sacrificedThisTurnHolds,
   spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
@@ -603,6 +604,9 @@ export function evaluateCondition(
     case 'yourTurn':
       // CR 611.3a, 613.8 (D-206): it is a turn of the controller.
       return state.turn.activeSeat === ctx.controller;
+    case 'sacrificedThisTurn':
+      // CR 701.21a (Evendo Brushrazer): the controller sacrificed a permanent like this one this turn.
+      return sacrificedThisTurnHolds(state, ctx.controller, condition);
     case 'yourMainPhase':
       // CR 505.1 (D-187): the precombat main phase or the postcombat main phase, of a turn of the controller.
       return (

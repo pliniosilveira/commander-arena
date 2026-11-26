@@ -630,6 +630,8 @@ function linkExile(abilities: readonly Ability[]): {
     (a.kind === 'static' &&
       // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~" reads the cards too.
       (a.static.kind === 'takeFromLinkedExile' ||
+        // Evendo Brushrazer (CR 607.2a): "you may play cards exiled with ~" reads the cards the permanent exiled.
+        a.static.kind === 'playFromLinkedExile' ||
         a.static.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||

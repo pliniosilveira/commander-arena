@@ -1754,6 +1754,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.by, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.by`, `unknown sacrificing player ${String(t.by)}`);
       }
+      if (t.duringTurn !== undefined && t.duringTurn !== 'you') {
+        issue(out, `${path}.duringTurn`, "duringTurn must be 'you' when present");
+      }
       if (t.filter !== undefined) checkFilter(t.filter, `${path}.filter`, out);
       break;
     case 'upkeep':

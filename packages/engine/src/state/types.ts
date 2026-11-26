@@ -573,6 +573,8 @@ export interface StackData {
     readonly slot?: CardType;
     /** Issue 102 (Kotis): the other cards of the graveyard exiled as an additional cost of this spell. */
     readonly exileOthers?: number;
+    /** Exploration Broodship: the permanent sacrificed as an additional cost of this spell (CR 601.2b). */
+    readonly sacrifice?: ObjectFilter;
   };
   /**
    * The named alternative cost the spell was cast for (D-121): `overload` (CR 702.96a: its text has
@@ -2530,6 +2532,8 @@ export interface ThisWayCounts {
   readonly milledCreature?: number;
   /** The land cards milled by `mill` effects, for "for each land card milled this way" (Dune Chanter). */
   readonly milledLand?: number;
+  /** The land cards (never tokens) `discard` and `sacrifice` effects put into a graveyard, each read as a card in the graveyard (Eumidian Wastewaker: "for each land card put into a graveyard this way", CR 701.9, 701.21); left out until there is one. */
+  readonly landCardsToGraveyard?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
   /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */
@@ -3216,6 +3220,15 @@ export interface TurnLog {
    * whether it is a token. Absent until one left, so the state of a game where none did is as it was.
    */
   readonly left?: readonly {
+    readonly controller: SeatId;
+    readonly types: readonly CardType[];
+    readonly token: boolean;
+  }[];
+  /**
+   * Each permanent sacrificed this turn (CR 701.21a; Evendo Brushrazer: "as long as you've sacrificed a nontoken permanent this turn"): the player who sacrificed it, its card types as it was
+   * sacrificed and whether it is a token. Absent until one was sacrificed, so the state of a game where none was is as it was.
+   */
+  readonly sacrificed?: readonly {
     readonly controller: SeatId;
     readonly types: readonly CardType[];
     readonly token: boolean;

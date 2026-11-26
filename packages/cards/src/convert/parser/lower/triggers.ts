@@ -926,14 +926,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
               ? 'opponent'
               : null;
       if (by === null) return failure(t);
-      if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by });
+      // "... during your turn" (Szarel, CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const during = missingFeatures(['trigger:sacrificedDuringYourTurn']);
+        if (during.length > 0) return failure(t, during);
+      }
+      const during = t.duringTurn === 'you' ? { duringTurn: 'you' as const } : {};
+      if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by, ...during });
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
       // "a permanent" says nothing about the permanent: no filter, any permanent.
       return ok(
         Object.keys(filter.value).length === 0
-          ? { kind: 'permanentSacrificed', by }
-          : { kind: 'permanentSacrificed', by, filter: filter.value },
+          ? { kind: 'permanentSacrificed', by, ...during }
+          : { kind: 'permanentSacrificed', by, filter: filter.value, ...during },
       );
     }
     default:

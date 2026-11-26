@@ -328,6 +328,14 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                       discardedNonland:
                         (res.thisWay?.discardedNonland ?? 0) + (out.thisWay.discardedNonland ?? 0),
                     }),
+                ...(res.thisWay?.landCardsToGraveyard === undefined &&
+                out.thisWay.landCardsToGraveyard === undefined
+                  ? {}
+                  : {
+                      landCardsToGraveyard:
+                        (res.thisWay?.landCardsToGraveyard ?? 0) +
+                        (out.thisWay.landCardsToGraveyard ?? 0),
+                    }),
                 ...(res.thisWay?.countersPut === undefined && out.thisWay.countersPut === undefined
                   ? {}
                   : {

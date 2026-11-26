@@ -2,7 +2,7 @@
  * Effects of the "you may" family (D-135): the reflexive triggered ability of CR 603.12 ("When you do, ...") and the permission to
  * cast a card from the graveyard this turn.
  */
-import type { Effect, Trigger } from '../ast/types';
+import type { Effect, TargetSpec, Trigger } from '../ast/types';
 import type { ObjectId } from '../ids';
 import { allocateTimestamp, setObject } from '../state/ops';
 import type {
@@ -52,15 +52,18 @@ export function runReflexive(
       return done(state);
     }
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
-  // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, fixed now.
+  // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, or (Loamcrafter Faun) the cards it discarded, fixed now.
   const sacrificedCount = res.sacrificed?.length ?? 0;
-  if (sacrificedCount === 0 && effect.targets?.some((spec) => spec.upToThatMany === true)) {
+  const discardedCount = res.thisWay?.discarded ?? 0;
+  const thatMany = (spec: TargetSpec): number =>
+    spec.upToThatMany === 'discarded' ? discardedCount : sacrificedCount;
+  if (effect.targets?.some((spec) => spec.upToThatMany !== undefined && thatMany(spec) === 0)) {
     return done(state);
   }
   const targets = effect.targets?.map((spec) => {
-    if (spec.upToThatMany !== true) return spec;
+    if (spec.upToThatMany === undefined) return spec;
     const { upToThatMany: _fixed, ...rest } = spec;
-    return { ...rest, min: 0, max: sacrificedCount };
+    return { ...rest, min: 0, max: thatMany(spec) };
   });
   const ability: TriggeredAbility = {
     kind: 'triggered',

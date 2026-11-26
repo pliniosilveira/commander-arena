@@ -1090,8 +1090,8 @@ export function declareTargets(
   out: Out,
   /** D-145: only the targets of a spell's own text, an activated ability or a triggered ability (not a mode, not a reflexive ability) can divide something among them (CR 601.2d). */
   divideAllowed = false,
-  /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
-  thatManyAllowed = false,
+  /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12); `'discarded'`: after a discard, in a reflexive ability that counts the cards discarded (`ifThisWay`). */
+  thatManyAllowed: boolean | 'discarded' = false,
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
@@ -1336,9 +1336,15 @@ export function declareTargets(
     }
     if (spec.upToThatMany !== undefined) {
       // D-187, CR 603.12: "up to that many target creatures" after "you may sacrifice one or more ...".
-      if (spec.upToThatMany !== true) {
-        issue(out, `${p}.upToThatMany`, 'upToThatMany must be true when present');
-      } else if (!thatManyAllowed) {
+      if (spec.upToThatMany !== true && spec.upToThatMany !== 'discarded') {
+        issue(out, `${p}.upToThatMany`, "upToThatMany must be true or 'discarded' when present");
+      } else if (spec.upToThatMany === 'discarded' && thatManyAllowed !== 'discarded') {
+        issue(
+          out,
+          `${p}.upToThatMany`,
+          'only a slot of a reflexive ability that counts the cards discarded (ifThisWay discarded) takes up to as many targets as were discarded',
+        );
+      } else if (spec.upToThatMany === true && thatManyAllowed !== true) {
         issue(
           out,
           `${p}.upToThatMany`,
@@ -2282,6 +2288,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   milledValue: 'a mill effect',
   milledCreature: 'a mill effect',
   milledLand: 'a mill effect',
+  landCardsToGraveyard: 'a discard or sacrifice effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
@@ -2307,7 +2314,7 @@ const THIS_WAY_KINDS = Object.keys(THIS_WAY_SOURCES);
 function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
-  if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
+  if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn', 'landCardsToGraveyard'];
   if (e?.kind === 'destroy')
     return [
       'destroyed',
@@ -2337,6 +2344,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedInstantOrSorcery',
       'discardedMost',
       'discardedTypeCount',
+      'landCardsToGraveyard',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature', 'milledLand'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
@@ -2358,7 +2366,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
-  if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
+  // "Discard a card or sacrifice a permanent" (Eumidian Wastewaker): what the declined (otherwise) effect does is counted too.
+  if (e?.kind === 'playersMay') {
+    return [
+      ...thisWayProduced(e.effect),
+      ...(e.otherwise === undefined ? [] : thisWayProduced(e.otherwise)),
+    ];
+  }
   // CR 608.2c (Travel Through Caradhras): "For each Redhorn Pass vote, search ...": what the repeated effect does is counted each time it is done (0 for a number of 0).
   if (e?.kind === 'repeat') return thisWayProduced(e.effect);
   // "You may discard all the cards in your hand. If you do, draw that many cards": a declined offer counts 0.
@@ -2451,6 +2465,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'differentPowersAmong':
     case 'creatureTypesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
@@ -2747,6 +2762,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'differentNamesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'differentPowersAmong':
+      // CR 208.1 (Augur of Autumn): the distinct powers among the battlefield permanents a filter matches; no combat, source power, power or toughness filter is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'differentPowersAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'differentPowersAmong counts the powers of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'differentPowersAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }
@@ -4206,6 +4248,19 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'yourMainPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
+      break;
+    case 'sacrificedThisTurn':
+      // CR 701.21a (Evendo Brushrazer): the card types the permanent had and whether it is a token, both optional.
+      if (c.token !== undefined && typeof c.token !== 'boolean') {
+        issue(out, `${path}.token`, 'token must be a boolean when present');
+      }
+      if (c.types !== undefined) {
+        for (const [i, t] of (Array.isArray(c.types) ? c.types : []).entries()) {
+          if (!CARD_TYPES.includes(t))
+            issue(out, `${path}.types[${i}]`, `unknown card type ${String(t)}`);
+        }
+        if (!Array.isArray(c.types)) issue(out, `${path}.types`, 'types is a list of card types');
+      }
       break;
     case 'yourCombatPhase':
       // Issue 144: no parameters but `first` (Tifa, Martial Artist).
@@ -6694,10 +6749,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be sacrificed');
       }
-      if ((e.totalPowerAtMost === undefined) === (e.keepAtMost === undefined)) {
-        issue(out, path, 'name exactly one of totalPowerAtMost and keepAtMost');
+      if (
+        [e.totalPowerAtMost, e.keepAtMost, e.keepExactly].filter((n) => n !== undefined).length !==
+        1
+      ) {
+        issue(out, path, 'name exactly one of totalPowerAtMost, keepAtMost and keepExactly');
       }
-      for (const key of ['totalPowerAtMost', 'keepAtMost'] as const) {
+      for (const key of ['totalPowerAtMost', 'keepAtMost', 'keepExactly'] as const) {
         const limit = e[key];
         if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
           issue(out, `${path}.${key}`, `${key} must be a whole number, 0 or more`);
@@ -9888,7 +9946,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         `${path}.targets`,
         out,
         false,
-        scope.sacrificedEarlier === true,
+        scope.sacrificedEarlier === true ? true : e.ifThisWay === 'discarded' ? 'discarded' : false,
       );
       // Issue 89 (CR 603.12, 400.7j): "Create a token. When you do, return ... attached to that token": the ability carries the objects the resolution before it made.
       if (e.carriesMoved !== undefined) {

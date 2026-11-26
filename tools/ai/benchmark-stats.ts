@@ -5,7 +5,8 @@
 // two games of a pair share the deal and are not independent. The candidate's score in a game is 1 for a win,
 // 0 for a loss and 1/2 for a draw or a game without a result; the score of a pair is the mean of its two
 // games. The interval is the normal approximation over the pair scores (mean +/- 1.96 standard errors),
-// which is sound for the hundreds of pairs a benchmark plays.
+// which is sound for the hundreds of pairs a benchmark plays. The agent seed goes with the seat, so an agent
+// scores exactly 50% against itself and only the pairs where a decision differs move the score.
 
 /** One game of a pair, from the candidate's side. */
 export type GameOutcome = 'win' | 'loss' | 'draw' | 'unfinished';

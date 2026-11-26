@@ -119,6 +119,7 @@ import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
+import { recordSacrificed } from './sacrifice-log';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -443,7 +444,7 @@ export function sacrificeForDevour(
       ...(going.length > 1 ? { lkiRecorded: true as const } : {}),
     });
     if (moved.kind !== 'done') continue;
-    state = moved.state;
+    state = recordSacrificed(state, moved.state, obj, seat);
     events.push(...moved.events, { kind: 'sacrificed', permanent: id, controller: seat });
     count += 1;
   }

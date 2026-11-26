@@ -347,7 +347,7 @@ const inThatPlayersGraveyard: Parser<{
   return { ok: true, value: { zone: 'graveyard', controller: { noun: player } }, pos: r.pos };
 };
 
-function cards(plural: boolean): Parser<IrFilter> {
+function cards(plural: boolean, are = false): Parser<IrFilter> {
   const itsControllerGraveyard: Parser<{
     zone: 'graveyard';
     controller: { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
@@ -428,6 +428,8 @@ function cards(plural: boolean): Parser<IrFilter> {
     inTargetPlayersZone,
     inThatPlayersGraveyard,
   );
+  // Scouring Swarm (CR 603.4): "seven or more land cards are in your graveyard": the zone said after "are", not "in" alone.
+  const zoneOf = are ? map(sequence(literal(' are'), where), ([, place]) => place) : where;
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(
     sequence(
@@ -458,7 +460,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       ),
       literal(' '),
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
-      where,
+      zoneOf,
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -498,7 +500,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       supertypes,
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
-      where,
+      zoneOf,
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -534,6 +536,29 @@ function cards(plural: boolean): Parser<IrFilter> {
     };
   };
   return choice(union, single);
+}
+
+/**
+ * The cards a condition says "are in" a zone ("seven or more land cards are in your graveyard", Scouring Swarm, CR 603.4): the noun of `counted` for the cards of a zone, said with "are in"
+ * where `counted` says "in".
+ */
+export function countedAre(rule: string): Parser<IrNoun> {
+  const phrase = cards(true, true);
+  return (ctx, pos) => {
+    const r = phrase(ctx, pos);
+    if (!r.ok) return r;
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: r.value,
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule,
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  };
 }
 
 /** What a count is of, as the group noun it is: `det` `each`, the filter and `other`. */

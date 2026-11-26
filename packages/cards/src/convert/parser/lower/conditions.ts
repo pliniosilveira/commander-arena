@@ -916,6 +916,17 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'castFromZone', zone: test.zone });
     }
+    case 'sacrificedThisTurn': {
+      // CR 701.21a (Evendo Brushrazer): the permanents the controller sacrificed this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:sacrificedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({
+            kind: 'sacrificedThisTurn',
+            ...(test.types === undefined ? {} : { types: test.types as CardType[] }),
+            ...(test.token === undefined ? {} : { token: test.token }),
+          });
+    }
     case 'yourTurn': {
       // CR 611.3a (stage P49, D-206): the active player is the controller, read each time the static ability is looked at.
       const blocked = missingFeatures(['condition:yourTurn']);
@@ -1131,6 +1142,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedAndLostThisTurn',
   'condition:aPlayerLostLifeThisTurn',
   'condition:spellsCastThisTurn',
+  'condition:sacrificedThisTurn',
   'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',

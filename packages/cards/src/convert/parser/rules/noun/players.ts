@@ -24,7 +24,7 @@ function bare(det: IrNoun['det'], raw: string, extra: Partial<Bare> = {}): Bare 
  * opponent is the second player; "you and each opponent" is "each player" in other words, and is not read. Since
  * D-269 the second player may also be "that player" ("you and that player each gain that much life"), the player a trigger or an earlier
  * target names; the binding pass points it at that player (and refuses a text that names none), and the lowering at what the engine can
- * name (`triggerPlayer` or the target).
+ * name (`triggerPlayer` or the target). Or "defending player" (CR 508.5, Eumidian Wastewaker: "you and defending player each discard a card or sacrifice a permanent").
  */
 export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
   id: 'noun.you-and-player',
@@ -35,8 +35,11 @@ export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
     'you and target opponent each',
     'you and target player each',
     'you and that player each',
+    'you and defending player each',
   ],
   rejects: [
+    'you and the defending player each',
+    'you and defending players each',
     'you and that player',
     'you and that players each',
     'you and those players each',
@@ -57,14 +60,15 @@ export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
   parse: (ctx, pos) => {
     const you = spanned(pattern(/you and /i))(ctx, pos);
     if (!you.ok) return you;
-    const other = family<IrNoun>('noun', { only: ['noun.player', 'noun.that-player'] })(
-      ctx,
-      you.pos,
-    );
+    const other = family<IrNoun>('noun', {
+      only: ['noun.player', 'noun.that-player', 'noun.defending-player'],
+    })(ctx, you.pos);
     if (!other.ok) return other;
     // The second player is chosen as a target or is the player the text already names ("that player"); "each opponent" and "you" are other readings.
     const named = other.value.det === 'anaphor' && /^that player$/iu.test(other.value.filter.raw);
-    if (other.value.det !== 'target' && !named) return fail(ctx, you.pos);
+    if (other.value.det !== 'target' && other.value.det !== 'defendingPlayer' && !named) {
+      return fail(ctx, you.pos);
+    }
     const each = pattern(new RegExp(` each${END}`, 'iu'))(ctx, other.pos);
     if (!each.ok) return each;
     const youNoun: IrNoun = {

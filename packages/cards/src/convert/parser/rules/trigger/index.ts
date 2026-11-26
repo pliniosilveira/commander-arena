@@ -30,7 +30,6 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { ABOLETH_TRIGGER_RULES } from './aboleth';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
-import { ANY_GRAVEYARD_TRIGGER_RULES } from './any-graveyard';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
 import { ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES } from './attacks-you-or-walkers';
@@ -1251,6 +1250,8 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'a player sacrifices a creature',
     'an opponent sacrifices a permanent',
     'an opponent sacrifices a nontoken permanent',
+    'you sacrifice another nontoken permanent during your turn',
+    'you sacrifice a creature during your turn',
   ],
   rejects: [
     'you sacrifice ~',
@@ -1262,6 +1263,9 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'a player sacrifices ~',
     'a player sacrifices a creature you control',
     'an opponent sacrifices a creature you control',
+    'you sacrifice a permanent during your turns',
+    'you sacrifice a permanent during their turn',
+    'you sacrifice a permanent during your turn or',
     'an opponent sacrifice a permanent',
     'a player sacrifice a permanent',
   ],
@@ -1287,9 +1291,11 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
         ),
       ),
       satisfy(objectSubject('trigger.sacrifice'), (n) => n.filter.controller !== 'opponent'),
+      // Szarel (CR 603.2): "during your turn", the active player is the controller of this ability.
+      optional(pattern(/ during your turn(?![\p{L}\p{N}])(?!\s+or(?![\p{L}\p{N}]))/iu), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, subject] = r.value;
+    const [actor, subject, during] = r.value;
     // Whoever sacrifices, the permanent is theirs, so "a player sacrifices a creature you control"
     // says something else.
     if (actor.det !== 'you' && subject.filter.controller !== undefined) return fail(ctx, pos);
@@ -1298,6 +1304,7 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
       value: trigger('trigger.sacrifice', { start: pos, end: r.pos }, 'sacrifice', {
         subject,
         actor,
+        ...(during === null ? {} : { duringTurn: 'you' as const }),
       }),
       pos: r.pos,
     };
@@ -1691,7 +1698,6 @@ export const TRIGGER_RULES = [
   // Mind Flayarrrs deck, group 8: "a card is put into an opponent's graveyard from anywhere".
   ...MIND_FLAYARRRS_G8_TRIGGER_RULES,
   // Centaur Vinecrasher: "a land card is put into a graveyard from anywhere".
-  ...ANY_GRAVEYARD_TRIGGER_RULES,
   // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
   ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,

@@ -114,6 +114,7 @@ describe('amounts that read an object', () => {
       'cardTypesAmong',
       'differentManaValuesAmong',
       'differentNamesAmong',
+      'differentPowersAmong',
       'creatureTypesAmong',
       'timesAttacked',
       // Issue 81 (Omnath): "for each unspent mana you have".

@@ -7,6 +7,7 @@
  * "card" is a subtype; a choice joins types or subtypes with "or" and is read without modifiers
  * (the same ambiguity as "tapped creature or planeswalker").
  */
+import { BASIC_LAND_TYPES } from '@commander-arena/engine';
 import {
   choice,
   fail,
@@ -242,6 +243,26 @@ function libraryPhraseOne(plural: boolean): Parser<IrFilter> {
               ),
             ),
           )(ctx, word.pos);
+    // Sprouting Goblin (CR 205.3i, 305.6): "a land card with a basic land type": a land of any of the five basic land types, basic or not. One card; the lands only.
+    const basicType =
+      !plural &&
+      named?.ok !== true &&
+      withKeyword?.ok !== true &&
+      shared.pos === word.pos &&
+      'types' in kinds &&
+      kinds.types.length === 1 &&
+      kinds.types[0] === 'land'
+        ? quiet(pattern(new RegExp(` with a basic land type${BOUNDARY}`, 'u')))(ctx, word.pos)
+        : null;
+    if (basicType?.ok === true) {
+      const filter = toFilter(
+        'library',
+        { ...parts, types: ['land'] },
+        ctx.text.slice(pos, basicType.pos),
+      );
+      const anyOf = Object.keys(BASIC_LAND_TYPES).map((s): IrFilter => ({ subtypes: [s], raw: s }));
+      return { ok: true, value: { ...filter, card: true, anyOf }, pos: basicType.pos };
+    }
     const end =
       named?.ok === true ? named.pos : withKeyword?.ok === true ? withKeyword.pos : shared.pos;
     const filter = toFilter(
@@ -369,6 +390,8 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a card named Regna, the Redeemer',
     // Mystical Teachings (CR 702.8a): a card that has a keyword, alone or as one of the kinds of a choice.
     'a card with flash',
+    // Sprouting Goblin (CR 205.3i, 305.6): a land with any basic land type.
+    'a land card with a basic land type',
     'a creature card with flying',
     'an instant card or a card with flash',
   ],
@@ -434,6 +457,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a creature card with total mana value 6 or less',
     'up to two creature cards with total mana value 6 or less',
     'a card without flash',
+    'a creature card with a basic land type',
+    'lands cards with a basic land type',
+    'a land card with a basic land types',
     'a card with flash and haste',
     'a card named',
     'a card named gift',
