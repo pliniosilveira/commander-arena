@@ -59,6 +59,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return "the chosen creature's";
     case 'moved':
     case 'putCountersOn':
+    case 'putIntoGraveyardThisWay':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -107,6 +108,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'the chosen creature';
     case 'moved':
     case 'putCountersOn':
+    case 'putIntoGraveyardThisWay':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -193,6 +195,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'discardedTypeCount':
       // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way".
       return 'the number of card types among cards discarded this way';
+    case 'chosenStillOnBattlefield':
+      // Disorienting Choice (CR 608.2c): "up to that many land cards", the chosen permanents still on the battlefield.
+      return 'the number of chosen permanents still on the battlefield';
     case 'returned':
       // Revival Experiment (CR 608.2c): "for each card returned this way".
       return 'the number of cards returned to the battlefield this way';

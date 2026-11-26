@@ -14,6 +14,7 @@ import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { evaluate } from '../src/evaluate';
 import {
+  type Budget,
   DEEP_FACTOR,
   DEEP_HARD_SHARE,
   DEEP_SEARCH_SHARE,
@@ -194,6 +195,55 @@ describe('a planning that deepens', () => {
   });
 });
 
+/** Plays `deepen` the way the planner's own-thread driver does (`choosePlan`): each request on the deepening's budget. */
+function drive(
+  p: {
+    lines: readonly Line[];
+    scenarios: Parameters<typeof deepen>[0]['scenarios'];
+    scored: Scored[];
+    work: PlanCounter;
+    weights: AgentWeights;
+    ctx: { agents: typeof agents; budget: Budget; weights: AgentWeights; work: PlanCounter };
+  },
+  budget: Budget,
+  perPlayOut: number,
+): Map<number, number> | null {
+  const gen = deepen({
+    budget,
+    lines: p.lines.length,
+    scored: p.scored,
+    scenarios: p.scenarios,
+    weights: p.weights,
+    work: p.work,
+    perPlayOut,
+  });
+  let step = gen.next();
+  while (!step.done) {
+    const r = step.value;
+    if (r.kind !== 'play') {
+      step = gen.next();
+      continue;
+    }
+    const played = playLine(
+      (p.scenarios[r.scenario] as (typeof p.scenarios)[number]).state,
+      0,
+      p.lines[r.line] as Line,
+      { ...p.ctx, budget },
+      r.record,
+      r.horizon,
+    );
+    step = gen.next(
+      played === null
+        ? null
+        : {
+            score: evaluate(p.work.view(played.end, 0), 0, p.weights).score,
+            steps: played.steps,
+          },
+    );
+  }
+  return step.value;
+}
+
 describe('the deeper value of a line', () => {
   /** The pieces `deepen` takes, for the first main phase of the quiet position (one scenario, the base). */
   function pieces(weights: AgentWeights, bounds: WorkBounds = UNBOUNDED) {
@@ -222,7 +272,7 @@ describe('the deeper value of a line', () => {
     const weights = withWeights({ plan: { deepBlend: 0.5, deepMargin: 1000 } });
     const p = pieces(weights);
     expect(p.scenarios).toHaveLength(1);
-    const out = deepen({ ...p, budget: p.budget.deep(), me: 0, perPlayOut: 1 });
+    const out = drive(p, p.budget.deep(), 1);
     if (out === null) throw new Error('the deepening did not run');
     expect([...out.keys()].sort()).toEqual(
       p.lines
@@ -253,22 +303,22 @@ describe('the deeper value of a line', () => {
     const room = deep.left();
     expect(room).toBe(2000);
     // A play-out that costs more than what is left: no deep play-out starts.
-    expect(deepen({ ...p, budget: deep, me: 0, perPlayOut: room })).toBeNull();
+    expect(drive(p, deep, room)).toBeNull();
     expect(p.work.deepPlayOuts).toBe(0);
     // One that costs less than half of it (DEEP_COST times it fits): the deepening runs.
     const ok = pieces(DEFAULT_WEIGHTS, { budget: 1e9, limit: 1e9 });
-    expect(deepen({ ...ok, budget: ok.budget.deep(), me: 0, perPlayOut: 10 })).not.toBeNull();
+    expect(drive(ok, ok.budget.deep(), 10)).not.toBeNull();
   });
 
   test('gives nothing when the budget runs out inside the phase', () => {
     const p = pieces(DEFAULT_WEIGHTS, { budget: 1, limit: 1 });
-    expect(deepen({ ...p, budget: p.budget.deep(), me: 0, perPlayOut: 0 })).toBeNull();
+    expect(drive(p, p.budget.deep(), 0)).toBeNull();
     expect(p.work.deepPlayOuts).toBe(1);
   });
 
   test('does not run with a blend of 0', () => {
     const p = pieces(withWeights({ plan: { deepBlend: 0 } }));
-    expect(deepen({ ...p, budget: p.budget.deep(), me: 0, perPlayOut: 1 })).toBeNull();
+    expect(drive(p, p.budget.deep(), 1)).toBeNull();
     expect(p.work.deepPlayOuts).toBe(0);
   });
 });

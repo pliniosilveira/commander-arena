@@ -50,6 +50,7 @@ import { EXACT_PT_CONDITION_RULES } from './exact-pt';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
+import { FLINT_CONDITION_RULES } from './flint';
 import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
@@ -58,9 +59,11 @@ import { GRAND_LARCENY_C_CONDITION_RULES } from './grand-larceny-c';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
+import { IF_YOU_CANT_CONDITION_RULES } from './if-you-cant';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
 import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
+import { JUMP_SCARE_C_CONDITION_RULES } from './jump-scare-c';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
@@ -585,6 +588,8 @@ export const CONDITION_RULES = [
   ...DIFFERENT_POWERS_CONDITION_RULES,
   // Ahoy Mateys deck, group 8: "you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   ...AHOY_G8_CONDITION_RULES,
+  // Jump Scare! deck, group C (Augur of Autumn): "you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.
+  ...JUMP_SCARE_C_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,
   CONDITION_CONTROL_AT_MOST,
@@ -623,6 +628,7 @@ export const CONDITION_RULES = [
   ...PLAYED_LAND_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
+  ...FLINT_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".
   ...PRISMARI_G2_CONDITION_RULES,
   // Prismari deck, group 3 (issue 87, D-661): "the total mana value of the cards exiled this way is 13 or less".
@@ -648,6 +654,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G1B_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-411): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.
   ...DANITHA_G2_LATE_CONDITION_RULES,
+  // Eldrazi Monument: "you can't", after "sacrifice a creature".
+  ...IF_YOU_CANT_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
   // Issue 89: "it's attacking one of your opponents".

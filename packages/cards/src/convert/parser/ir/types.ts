@@ -159,7 +159,9 @@ export interface IrNoun extends IrNode {
     | 'eachPlayerControllingMore' // "the number of players who control more lands than you" (CR 102.1): the other players with more battlefield permanents like `of` than the controller
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
+    | 'selfAndGroup' // "~ and land creatures you control" (Sylvan Advocate, CR 611.3a): the permanent itself and the group the filter names
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
+    | 'graveyardedThisWay' // "each permanent put into a graveyard this way" (Terastodon, CR 608.2c): what the destroy effects before it put into graveyards
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -379,6 +381,8 @@ export interface IrFilter {
   readonly modified?: true;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds (the engine's `goaded`). */
   readonly goaded?: true;
+  /** "face-down" or "face-up" (CR 708.2): the status the permanent has now (the engine's `facing`). */
+  readonly facing?: 'down' | 'up';
   /** "with the same name as ~" (Mocking Doppelganger, CR 201.2): the creature has the name of the permanent with the static ability (the engine's `sameNameAsSource`), read in the subject of a static ability only. */
   readonly sameNameAsSource?: true;
   /**
@@ -620,6 +624,7 @@ export type IrAmount =
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
   // "the amount of life you lost this turn" (Betor, CR 119.3): the controller's own, valid anywhere an amount is
   | { readonly kind: 'controllerLifeLostThisTurn'; readonly span: Span }
+  | { readonly kind: 'opponentsLifeLostThisTurn'; readonly span: Span }
   | { readonly kind: 'lifeGainedOrLostThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
@@ -676,6 +681,13 @@ export type IrAmount =
       readonly counter?: string;
       /** "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter, not of counters. Never with `counter`. */
       readonly kinds?: true;
+      readonly span: Span;
+    }
+  // "the number of +1/+1 counters on lands you control" (Toph, the Blind Bandit, CR 122.1): the counters of one kind on the permanents of a group, added together
+  | {
+      readonly kind: 'countersOnGroup';
+      readonly of: IrNoun;
+      readonly counter: string;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"
@@ -988,6 +1000,8 @@ export interface IrCondition extends IrNode {
       }
     // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
+    // "~'s power is even", "~'s power is odd" (Kianne, Corrupted Memory, CR 107.1): the power of the permanent itself
+    | { readonly kind: 'thisPowerParity'; readonly parity: 'even' | 'odd' }
     // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
     | { readonly kind: 'aPlayerCardsInHand'; readonly compare: IrComparison }
     // "the player is your opponent and has four or more cards in hand" (Fevered Visions, CR 603.2b, 102.2, 402.1): the player the event of the trigger is about is an
@@ -1041,6 +1055,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'milledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
+    // "If you can't, sacrifice ~" (Eldrazi Monument, CR 608.2c, 701.21a): the sacrifice the sentence before it asks for sacrificed nothing
+    | { readonly kind: 'youCant' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
     // "if you cast it" (CR 601.2a, 603.4): the permanent the trigger is about came from a spell that was cast
@@ -1137,6 +1153,10 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
     // Prismari deck, group 2 (D-646, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
     | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
+    // Flint deck (issue 685, CR 601.2h): "mana from a Treasure was spent to cast it": the spell of a cast trigger was paid in part with mana a source of this subtype made.
+    | { readonly kind: 'manaSpentFromSubtype'; readonly subtype: string }
+    // Flint deck (issue 685, Anje Falkenrath, CR 603.4, 702.35): "if it has madness": the card a discard trigger is about has the keyword; a part of the filter of that trigger.
+    | { readonly kind: 'discardedCardHasKeyword'; readonly keyword: string }
     // Prismari deck, group 3 (D-661, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
     // only after an instruction that exiled cards.
     | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }
@@ -1198,6 +1218,8 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): `what` the permanent
+    | { readonly kind: 'exilePermanent'; readonly what: IrNoun }
     // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
     | {
         readonly kind: 'untapPermanents';
@@ -1396,6 +1418,8 @@ export interface IrZoneSpec extends IrNode {
    */
   readonly whose?: 'you' | 'owner';
   readonly tapped?: boolean;
+  /** "to the battlefield face up or face down" (Deathmist Raptor, CR 708.2a, 708.3): the controller chooses as the effect resolves whether the card enters face up or face down. */
+  readonly faceChoice?: true;
   /** "onto the battlefield tapped and attacking" (stage P34, D-152, CR 508.4): the permanent enters attacking, never declared as an attacker. */
   readonly attacking?: true;
   /** `top`, `bottom`, or "third from the top" as 3 (stage P30, CR 401.7): a number of 2 or more. */
@@ -1757,6 +1781,12 @@ export interface IrSentence extends IrNode {
    * the card type the words name (kept here in lower case). Not `reflexive`: the lowering reads it alone, and refuses it where no such reveal came before.
    */
   readonly afterReveal?: string;
+  /**
+   * "When you do, if it has four or more quest counters on it, ..." (Earthbender Ascension, CR 603.12, 603.4, 122.1): a reflexive triggered ability created when the counter put by the instruction
+   * before it was put, with the intervening "if" about the counters of the kind on the source ("it" is the permanent the ability is on). Not `reflexive`: the lowering reads it alone, and
+   * refuses it where no counter of the kind was put on the source before.
+   */
+  readonly afterCounters?: { readonly counter: string; readonly atLeast: number };
   /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
@@ -2717,6 +2747,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
   'controllerLifeLostThisTurn',
+  'opponentsLifeLostThisTurn',
   'lifeGainedOrLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -2728,6 +2759,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'cardsToGraveyardThisTurn',
   'toughnessOf',
   'countersOn',
+  'countersOnGroup',
   'aggregate',
   'attackersGreatestPower',
   'devotion',
@@ -2776,6 +2808,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'manaValueOf':
     case 'toughnessOf':
     case 'countersOn':
+    case 'countersOnGroup':
     case 'aggregate':
     case 'colorsAmong':
     case 'cardTypesAmong':

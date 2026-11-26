@@ -36,6 +36,19 @@ describe('the kicker question', () => {
     expect(await at(PAY_LIFE_ABOVE + 1)).toEqual({ kind: 'acceptOptional' });
     expect(await at(PAY_LIFE_ABOVE)).toEqual({ kind: 'declineOptional' });
   });
+
+  test('a kicker that sacrifices a creature is declined (the agent keeps its permanents)', async () => {
+    const g = scenario()
+      .seat(0)
+      .hand('SYNTHETIC Kicker Sacrifice Draw')
+      .battlefield('Swamp', { count: 2 })
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .build();
+    g.act(0).cast('SYNTHETIC Kicker Sacrifice Draw');
+    expect(await answer(g)).toEqual({ kind: 'declineOptional' });
+  });
 });
 
 describe('flashback', () => {

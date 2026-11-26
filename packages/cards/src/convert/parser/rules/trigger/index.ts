@@ -54,6 +54,7 @@ import { ENTERS_AND_ATTACKS_TRIGGER_RULES } from './enters-and-attacks';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
 import { EXILE_CAST_TRIGGER_RULES } from './exile-cast';
+import { FLINT_TRIGGER_RULES } from './flint';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
@@ -77,6 +78,7 @@ import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
 import { PLAYER_ATTACKS_TRIGGER_RULES } from './player-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
+import { PUT_WITH_TRIGGER_RULES } from './put-with';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
 import { RIDERS_C_TRIGGER_RULES } from './riders-c';
@@ -91,6 +93,7 @@ import {
   youNoun,
 } from './subjects';
 import { TROYAN2_TRIGGER_RULES } from './troyan2';
+import { TURN_FACE_UP_TRIGGER_RULES } from './turn-face-up';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
 import { VOTING_TRIGGER_RULES } from './voting';
@@ -104,6 +107,8 @@ type EventName =
   | 'becomesUntapped'
   // CR 701.37 (Monstrosity): "becomes monstrous".
   | 'becomesMonstrous'
+  // CR 701.40b, 708.8: "is turned face up".
+  | 'turnedFaceUp'
   | 'blocks'
   | 'becomesBlocked'
   // CR 509.1h: "attacks and isn't blocked", for `trigger.attacks-unblocked` only.
@@ -142,6 +147,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
   becomesMonstrous: map(
     pattern(/ becomes monstrous(?![\p{L}\p{N}])/iu),
     (): EventName => 'becomesMonstrous',
+  ),
+  // CR 701.40b, 708.8: "is turned face up" (a face-down permanent turned face up, the special action).
+  turnedFaceUp: map(
+    pattern(/ is turned face up(?![\p{L}\p{N}])/iu),
+    (): EventName => 'turnedFaceUp',
   ),
   // Stage P21 (CR 509.3a, 509.3c): "blocks" once for each creature declared as a blocker, "becomes
   // blocked" once for each attacking creature a blocker is declared for. "Blocks a creature" and "becomes
@@ -548,6 +558,28 @@ export const TRIGGER_BECOMES_MONSTROUS = singleEvent(
     ],
   },
 );
+
+/** `trigger.turned-face-up`: "~ is turned face up", "a permanent you control is turned face up" (CR 701.40b, 708.8, 603.2: the permanent is the same object, now face up; the engine's `turnedFaceUp`). */
+export const TRIGGER_TURNED_FACE_UP = singleEvent('trigger.turned-face-up', 'turnedFaceUp', {
+  cites: [
+    'CR 701.40b (Manifest)',
+    'CR 708.8 (Face-Down Spells and Permanents)',
+    'CR 603.2 (Handling Triggered Abilities)',
+  ],
+  examples: [
+    '~ is turned face up',
+    'a permanent you control is turned face up',
+    'another creature you control is turned face up',
+    'a creature is turned face up',
+  ],
+  rejects: [
+    '~ is turned face down',
+    '~ is turned face up or attacks',
+    '~ turned face up',
+    '~ becomes face up',
+    'you turn ~ face up',
+  ],
+});
 
 /**
  * `trigger.blocks`: "~ blocks", "a creature you control blocks", "equipped creature blocks" (CR 509.3a: it
@@ -1602,6 +1634,7 @@ export const TRIGGER_RULES = [
   ...ANGEL_TRIGGER_RULES,
   ...MARDU_SURGE_TRIGGER_RULES,
   ...UNBLOCKED_TRIGGER_RULES,
+  ...TURN_FACE_UP_TRIGGER_RULES,
   ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
@@ -1651,6 +1684,7 @@ export const TRIGGER_RULES = [
   TRIGGER_BECOMES_TAPPED,
   TRIGGER_BECOMES_UNTAPPED,
   TRIGGER_BECOMES_MONSTROUS,
+  TRIGGER_TURNED_FACE_UP,
   TRIGGER_BLOCKS,
   TRIGGER_BECOMES_BLOCKED,
   TRIGGER_SACRIFICE,
@@ -1677,6 +1711,7 @@ export const TRIGGER_RULES = [
   ...GISA_G2_TRIGGER_RULES,
   // Death Toll deck, group D: "you play a card with two or more card types".
   ...DEATH_TOLL_D_TRIGGER_RULES,
+  ...FLINT_TRIGGER_RULES,
   // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
   ...ACTIVATES_ABILITY_TRIGGER_RULES,
   // Limit Break deck, group 4 (Professor Hojo): "one or more creatures you control become the target of an activated ability".
@@ -1693,8 +1728,10 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
   ...TROYAN2_TRIGGER_RULES,
+  ...PUT_WITH_TRIGGER_RULES,
   // Mind Flayarrrs deck, group 8: "a card is put into an opponent's graveyard from anywhere".
   ...MIND_FLAYARRRS_G8_TRIGGER_RULES,
+  // Centaur Vinecrasher: "a land card is put into a graveyard from anywhere".
   // Ahoy Mateys deck, group 1: "one or more Pirates you control deal damage to a player".
   ...DAMAGE_BATCH_TRIGGER_RULES,
   TRIGGER_CHAPTER,

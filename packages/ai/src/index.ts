@@ -29,8 +29,16 @@ export {
   type ScoreTerm,
 } from './evaluate';
 export { GreedyAgent, type GreedyAgentOptions } from './greedy-agent';
-export { HeuristicAgent, type HeuristicAgentOptions } from './heuristic-agent';
+export { HeuristicAgent, type HeuristicAgentOptions, simAgentsOf } from './heuristic-agent';
 export type { Cut, SearchWork } from './heuristic-budget';
+export { PlanService } from './heuristic-plan-runner';
+export type {
+  Line,
+  PlanJobSpec,
+  PlayOutJob,
+  PlayOutPool,
+  PlayOutTrace,
+} from './heuristic-plan-types';
 export type { PlanWork } from './heuristic-plan-work';
 export { firstAcceptedAction, firstSafeAction, preferredActions } from './legal';
 export {

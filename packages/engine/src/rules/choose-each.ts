@@ -3,6 +3,7 @@
  * issue 105; CR 101.4, 608.2d, 701.8). Every player still in the game, in turn order starting with the controller of the effect, is asked in turn (a `choosePermanent` decision of purpose
  * 'effect', none allowed) which permanent the filter matches they choose, nothing being asked of a player with no candidate; the question is asked again for the next player once an
  * answer is in. When the last has chosen every permanent chosen is destroyed together (`destroy` of the objects `moved` names).
+ * `controllersMayExile` (Disorienting Choice) uses the same instruction with `mayExile`: the players who control the chosen permanents pick which of them to exile.
  */
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId } from '../ids';
@@ -30,14 +31,21 @@ export function chooseEachCandidates(
   });
 }
 
-/** Every permanent chosen is destroyed together: the objects `moved` names, which the instruction sets to the choices. */
-function finish(state: GameState, picked: readonly ObjectId[]): StepOutcome {
+/** Every permanent chosen is destroyed (or, for `controllersMayExile`, exiled) together: the objects `moved` names, which the instruction sets to the choices. */
+function finish(state: GameState, picked: readonly ObjectId[], exile = false): StepOutcome {
   if (picked.length === 0) return done(state);
   return {
     ...done(
       state,
       [],
-      [{ kind: 'effect', effect: { kind: 'destroy', objects: { kind: 'moved' } } }],
+      [
+        {
+          kind: 'effect',
+          effect: exile
+            ? { kind: 'exile', objects: { kind: 'moved' } }
+            : { kind: 'destroy', objects: { kind: 'moved' } },
+        },
+      ],
     ),
     lastMoved: picked,
   };
@@ -54,6 +62,30 @@ export function runChooseEach(
     return done(state, [], [{ ...ins, seats: ins.seats.slice(1), picked, chosen: null }]);
   }
   const [asked] = ins.seats;
+  if (ins.mayExile !== undefined) {
+    // CR 608.2d, 101.4 (`controllersMayExile`): "its controller may exile it": each player who controls some of the chosen permanents, in turn order, picks which of them to exile (none to all),
+    // knowing the picks before; then the permanents picked are exiled together. A permanent that is no longer there, or no longer theirs, is not offered.
+    if (asked === undefined) return finish(state, ins.picked, true);
+    const legal = ins.mayExile.filter((id) => {
+      const obj = state.objects[id];
+      return obj?.zone === 'battlefield' && controllerOf(state, obj) === asked;
+    });
+    if (legal.length === 0) return done(state, [], [{ ...ins, seats: ins.seats.slice(1) }]);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat: asked,
+        source: res.object,
+        purpose: 'effect',
+        min: 0,
+        max: legal.length,
+        legal,
+      },
+    };
+  }
   if (ins.perOpponent === true) {
     // CR 608.2d (`chooseOnePerOpponentDestroy`): the controller chooses one permanent for each opponent; an opponent with none to choose from is passed over.
     if (asked === undefined) return finish(state, ins.picked);

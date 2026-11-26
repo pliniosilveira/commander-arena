@@ -27,6 +27,7 @@ import {
   type SimAgents,
   type Window,
 } from './heuristic-plan-sim';
+import type { PlanRequest, PlayScore } from './heuristic-plan-types';
 import { PlanCounter, type PlanWork } from './heuristic-plan-work';
 import { scenariosOf } from './heuristic-threats';
 
@@ -34,7 +35,9 @@ import { scenariosOf } from './heuristic-threats';
  * The most play-outs of one planning (a bound of the search, not a weight): how many lines are scored on how
  * many scenarios. What they may cost is the decision's work budget (`heuristic-budget.ts`).
  */
-const MAX_PLAY_OUTS = 40;
+export const MAX_PLAY_OUTS = 40;
+
+export type { PlanRequest } from './heuristic-plan-types';
 
 export interface TurnPlan {
   /** The turn the plan was made in. */
@@ -106,26 +109,32 @@ export interface Planning {
 }
 
 /**
- * Scores `lines` (today's first) for the decision of `view` in window `now` and returns the plan of the
- * chosen one, or no plan when today's line could not be scored (no sample, a refused play-out, no time).
+ * The planner: scores `lines` (today's first) for the decision of `view` in window `now`, and ends with the
+ * plan of the chosen one, or no plan when today's line could not be scored (no sample, a refused play-out,
+ * no time). It never plays a line itself: it asks its driver (`yield`) for each play-out and gets the score
+ * of its end and its steps, or null when it was dropped. `choosePlan` plays them on the agent's own thread;
+ * `choosePlanOn` (`heuristic-plan-pool.ts`) on a pool of workers, settling their traces in this order, so
+ * the planning is the same either way. `work` is the planning's counter: the driver counts a play-out's
+ * engine calls in it.
  */
-export function choosePlan(
+export function* planning(
   view: GameView,
   now: Window,
   lines: readonly Line[],
   think: Think,
-  agents: SimAgents,
-): Planning {
+  work: PlanCounter,
+): Generator<PlanRequest, Planning, PlayScore | null | undefined> {
   const started = think.budget.elapsed();
-  // The planning's memo; what it has not kept it asks of the decision's engine, counted in its budget.
-  const work = new PlanCounter(think.budget.engine);
   const none = (): Planning => ({
     planned: null,
     work: work.done(false, think.budget.elapsed() - started),
   });
-  const me = view.viewer;
   const sample = think.sample();
-  if (sample === undefined || sample.pending?.kind !== 'priority' || sample.pending.seat !== me) {
+  if (
+    sample === undefined ||
+    sample.pending?.kind !== 'priority' ||
+    sample.pending.seat !== view.viewer
+  ) {
     return none();
   }
   // Today's choice may have used the budget already (its own vetting on the sample): no planning then.
@@ -139,16 +148,16 @@ export function choosePlan(
   const all = scenariosOf(view, sample, weights, see);
   // With more than one opponent every opponent's turn is played out: fewer scenarios.
   const scenarios = view.seats.length > 2 ? all.slice(0, 2) : all;
-  const ctx = { agents, budget: think.budget, weights, work };
+  yield { kind: 'open', states: scenarios.map((s) => s.state) };
   const scored: Scored[] = [];
   const usedAtStart = think.budget.used();
   // Today's line is always played; each later play-out only when it fits in what is left of the decision's
   // budget at the average cost of the play-outs so far.
   const search = think.budget.search();
-  outer: for (const [i, line] of lines.entries()) {
+  outer: for (let i = 0; i < lines.length; i += 1) {
     const scores: number[] = [];
     let steps: readonly PlanStep[] = [];
-    for (const [j, s] of scenarios.entries()) {
+    for (let j = 0; j < scenarios.length; j += 1) {
       if (i > 0) {
         const why = search.expired(work.playOuts);
         if (why !== null) {
@@ -160,11 +169,11 @@ export function choosePlan(
           break outer;
         }
       }
-      const result = playLine(s.state, me, line, ctx, j === 0);
+      const result = yield { kind: 'play', line: i, scenario: j, record: j === 0, horizon: 1 };
       work.playOuts += 1;
-      if (result === null) break;
+      if (result === null || result === undefined) break;
       if (j === 0) steps = result.steps;
-      scores.push(evaluate(work.view(result.end, me), me, weights).score);
+      scores.push(result.score);
     }
     if (scores.length < scenarios.length) {
       if (i === 0) break;
@@ -200,13 +209,11 @@ export function choosePlan(
   // Two players, every line scored: the lines that came out close are played one turn further (`heuristic-plan-deep.ts`).
   const deep =
     view.seats.length === 2 && work.cut === null
-      ? deepen({
+      ? yield* deepen({
           budget: think.budget.deep(),
-          me,
-          lines,
+          lines: lines.length,
           scored,
           scenarios,
-          ctx,
           weights,
           work,
           perPlayOut: (think.budget.used() - usedAtStart) / Math.max(1, work.playOuts),
@@ -246,6 +253,58 @@ export function choosePlan(
     score: value,
   };
   return { planned: { plan, index: best.index, record }, work: record };
+}
+
+/**
+ * Scores `lines` (today's first) for the decision of `view` in window `now` on the agent's own thread (see
+ * `planning`): each play-out is played with the engine, through the planning's memo.
+ */
+export function choosePlan(
+  view: GameView,
+  now: Window,
+  lines: readonly Line[],
+  think: Think,
+  agents: SimAgents,
+): Planning {
+  // The planning's memo; what it has not kept it asks of the decision's engine, counted in its budget.
+  const work = new PlanCounter(think.budget.engine);
+  const me = view.viewer;
+  const ctx = { agents, budget: think.budget, weights: think.weights, work };
+  const gen = planning(view, now, lines, think, work);
+  let states: readonly GameState[] = [];
+  let step = gen.next();
+  while (!step.done) {
+    const request = step.value;
+    if (request.kind === 'open') {
+      states = request.states;
+      step = gen.next();
+      continue;
+    }
+    if (request.kind === 'ahead') {
+      step = gen.next();
+      continue;
+    }
+    const start = states[request.scenario] as GameState;
+    // The deepening phase plays on its own, stretched bounds (`Budget.deep`).
+    const on = request.horizon > 1 ? { ...ctx, budget: think.budget.deep() } : ctx;
+    const result = playLine(
+      start,
+      me,
+      lines[request.line] as Line,
+      on,
+      request.record,
+      request.horizon,
+    );
+    step = gen.next(
+      result === null
+        ? null
+        : {
+            score: evaluate(work.view(result.end, me), me, think.weights).score,
+            steps: result.steps,
+          },
+    );
+  }
+  return step.value;
 }
 
 /** The first action of a plan (its first step). */

@@ -44,6 +44,12 @@ export function lowerCondition(
       if (count < 1) return failure(c, []);
       return ok({ kind: 'controlsAtLeast', filter: filter.value, count });
     }
+    case 'thisPowerParity': {
+      // CR 107.1 (Kianne, Corrupted Memory): the engine's `thisPowerParity`, the power of the permanent the ability belongs to.
+      const blocked = missingFeatures(['condition:thisPowerParity']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({ kind: 'thisPowerParity', parity: test.parity });
+    }
     case 'opponentsAtLeast': {
       const blocked = missingFeatures(['condition:opponentsAtLeast']);
       if (blocked.length > 0) return failure(c, blocked);
@@ -879,6 +885,17 @@ export function lowerCondition(
         filter: { manaValue: { cmp: 'atLeast', value: test.atLeast } },
       });
     }
+    case 'discardedCardHasKeyword':
+      // Anje Falkenrath: a part of the filter of a discard trigger (`lowerTriggered`), no condition of its own.
+      return failure(c, []);
+    case 'manaSpentFromSubtype': {
+      // CR 601.2h, 205.3i (Smaug, Wicked Worm): "it" is the spell that caused a cast trigger; in any other text no spell is named, so it is not lowered.
+      if (ctx?.castTrigger !== true) return failure(c, []);
+      const blocked = missingFeatures(['condition:manaSpentFromSubtype']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'manaSpentFromSubtype', subtype: test.subtype });
+    }
     case 'cardLeftYourGraveyard': {
       // CR 400.7 (stage P49, D-206): the turn log of cards that left a graveyard.
       const blocked = missingFeatures(['condition:cardLeftYourGraveyard']);
@@ -1075,6 +1092,9 @@ export function lowerCondition(
     case 'youDont':
       // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
       return failure(c, []);
+    case 'youCant':
+      // "If you can't, sacrifice ~" belongs to the pair of sentences of a sacrifice, which the lowering of the sentences reads.
+      return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
       return failure(c, []);
@@ -1086,6 +1106,7 @@ export function lowerCondition(
 /** The feature references the condition lowerings can name, for the dimension test. */
 export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlsAtLeast',
+  'condition:thisPowerParity',
   'condition:opponentsAtLeast',
   'condition:opponentPoisonAtLeast',
   'condition:kicked',

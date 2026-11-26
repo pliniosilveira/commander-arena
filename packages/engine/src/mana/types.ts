@@ -30,6 +30,11 @@ export type ManaRestriction =
    */
   | { readonly kind: 'notGeneric' }
   /**
+   * "Spend this mana only to turn permanents face up" (CR 106.6, 701.40b, 702.37e; Overgrown Zealot): it may be spent only on the cost of the special action that turns a
+   * face-down permanent face up (a morph cost or the mana cost of a manifested creature card), never on a spell or an ability.
+   */
+  | { readonly kind: 'turnFaceUp' }
+  /**
    * May be spent only on spells (never on abilities) that match (CR 106.6; D-149: "Spend this mana only to cast an Angel spell"): the spell
    * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
    */

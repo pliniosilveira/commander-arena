@@ -118,6 +118,9 @@ export interface Engine {
   readonly apply: (state: GameState, seat: SeatId, action: Action) => ApplyResult;
 }
 
+/** What one engine call on `state` costs in work units (`CALL_COST` and a unit per permanent). */
+export const callCost = (state: GameState): number => CALL_COST + state.battlefield.length;
+
 /** The engine itself, uncounted: for a play-out outside any decision's budget (a vote, a test). */
 export const DIRECT: Engine = { view: getView, apply: applyAction };
 
@@ -129,8 +132,13 @@ export class Work implements Engine {
   units = 0;
 
   private count(state: GameState): void {
+    this.charge(callCost(state));
+  }
+
+  /** One engine call of `units` work that was made elsewhere (a play-out a worker ran: `heuristic-plan-trace.ts`). */
+  charge(units: number): void {
     this.calls += 1;
-    this.units += CALL_COST + state.battlefield.length;
+    this.units += units;
   }
 
   readonly view = (state: GameState, seat: SeatId): GameView => {
@@ -158,6 +166,8 @@ export interface Search {
 export interface Budget {
   /** The engine of the decision: every play-out of its searches goes through it. */
   readonly engine: Engine;
+  /** Counts one engine call of `units` work made elsewhere, as if the decision's engine had made it. */
+  readonly charge: (units: number) => void;
   /** The work units used so far. */
   readonly used: () => number;
   /** The engine calls made so far. */
@@ -222,6 +232,7 @@ export function startBudget(
     const limitUnits = scale * bounds.limit;
     return {
       engine: work,
+      charge: (units) => work.charge(units),
       used: () => work.units,
       calls: () => work.calls,
       left: () => budgetUnits - work.units,
@@ -254,6 +265,7 @@ export function startBudget(
 /** A budget that never runs out and counts nothing (a decision answered from the view alone). */
 export const NO_BUDGET: Budget = {
   engine: DIRECT,
+  charge: () => undefined,
   used: () => 0,
   calls: () => 0,
   left: () => Number.POSITIVE_INFINITY,

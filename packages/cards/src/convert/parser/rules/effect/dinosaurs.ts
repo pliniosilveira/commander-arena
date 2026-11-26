@@ -205,7 +205,7 @@ const isOneOrUpToOne = (noun: IrNoun): boolean =>
 export const EFFECT_FIGHT = defineRule<Clauses>({
   id: 'effect.fight',
   family: 'effect',
-  leading: ['target', 'another', '~', 'it', 'have'],
+  leading: ['target', 'another', '~', 'it', 'have', 'up'],
   cites: ['CR 701.14 (Fight)', 'CR 701.14b (Fight)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
   examples: [
     "target creature you control fights target creature you don't control",
@@ -219,6 +219,8 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     // Primal Might: the creature fought is an "up to one" target.
     "it fights up to one target creature you don't control",
     "target creature you control fights up to one target creature you don't control",
+    // Earth Rumble: the creature that fights is an "up to one" target too (CR 701.14b: nothing fights unless both are chosen).
+    'up to one target creature you control fights target creature an opponent controls',
   ],
   rejects: [
     "have it fights target creature you don't control",
@@ -234,15 +236,20 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     '~ fights',
     'target creature fights it and draws a card',
     'target creature you control fights each creature',
-    'up to one target creature you control fights target creature',
+    'up to two target creatures you control fight target creature',
+    'up to one target creature you control fights each creature',
   ],
   parse: single(
     'effect.fight',
     choice(
-      sequence(
-        satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
-        literal(' fights '),
-        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+      satisfy(
+        sequence(
+          satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOneOrUpToOne),
+          literal(' fights '),
+          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+        ),
+        // Only one of the two creatures may be an "up to one" target: with neither chosen nothing would be said.
+        ([fighter, , against]) => !(fighter.upTo && against.upTo),
       ),
       // "have it fight target creature": the causative form, with the bare verb.
       map(

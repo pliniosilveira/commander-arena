@@ -1,7 +1,7 @@
 /**
  * Noun rules of group 3 of the Gisa deck (issue 41, D-486): "any number of target players" as the subject of a player verb (Priest of Forgotten Gods).
  */
-import { map, pattern, satisfy, sequence } from '../../combinators';
+import { literal, map, optional, pattern, satisfy, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { defineRule, node } from '../registry';
 import { BOUNDARY, permanentPhrase, withoutZone } from './phrases';
@@ -45,7 +45,7 @@ export const NOUN_ANY_NUMBER_TARGET_PLAYERS = defineRule<IrNoun>({
 
 /**
  * `noun.x-permanents`: "X creatures", "X artifacts", "X permanents" (CR 107.3a, 701.21a: the number of permanents is the X announced for the ability, and the player chooses
- * them among the permanents that match, as in "Sacrifice X creatures"). Plural, with a count of X and no "other" (a lord's "X other creatures" is not read). Read as the cost of
+ * them among the permanents that match, as in "Sacrifice X creatures"). Plural, with a count of X; "X other creatures" (Champion of Stray Souls) leaves the permanent with the ability out of the choice (CR 109.1). Read as the cost of
  * a sacrifice only (`cost.sacrifice`): an effect that sacrifices X permanents is another instruction. Not read: a number, "X target creatures", one creature, "X" alone.
  */
 export const NOUN_X_PERMANENTS = defineRule<IrNoun>({
@@ -57,12 +57,22 @@ export const NOUN_X_PERMANENTS = defineRule<IrNoun>({
     'CR 701.21a (Sacrifice)',
     'CR 602.2b (Activating Activated Abilities)',
   ],
-  examples: ['X creatures', 'X artifacts', 'X permanents', 'X Zombies', 'X nonland permanents'],
+  examples: [
+    'X creatures',
+    'X artifacts',
+    'X permanents',
+    'X Zombies',
+    'X nonland permanents',
+    'X other creatures',
+    'X other artifacts',
+  ],
   rejects: [
     'X creature',
     'X',
     'X target creatures',
-    'X other creatures',
+    'X other',
+    'X another creature',
+    'X other target creatures',
     'two creatures',
     'X creatures an opponent controls',
     'X cards',
@@ -70,27 +80,31 @@ export const NOUN_X_PERMANENTS = defineRule<IrNoun>({
     'X creatures you control',
     'a creature',
   ],
-  parse: node<IrFilter, IrNoun>(
+  parse: node<{ filter: IrFilter; other: boolean }, IrNoun>(
     'noun.x-permanents',
     map(
       sequence(
         satisfy(pattern(/X /u), () => true),
+        optional(
+          map(literal('other '), () => true),
+          false,
+        ),
         // Only your own permanents can be sacrificed (CR 701.21a): the phrase says no controller.
         satisfy(
           map(permanentPhrase(true, 'all'), withoutZone),
           (filter) => filter.controller === undefined,
         ),
       ),
-      ([, filter]) => filter,
+      ([, other, filter]) => ({ filter, other }),
     ),
-    (filter) => ({
+    ({ filter, other }) => ({
       kind: 'noun',
       det: 'a',
       filter,
       count: { kind: 'x', span: { start: 0, end: 0 } },
       upTo: false,
       plural: true,
-      other: false,
+      other,
     }),
   ),
 });

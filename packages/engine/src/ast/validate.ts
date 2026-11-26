@@ -458,6 +458,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           'the permanents are those of the battlefield, of any player: no zone, controller or owner',
         );
       }
+      if (r.all !== undefined && r.all !== true) issue(out, `${path}.all`, 'all is true or absent');
       break;
     }
     case 'asEntersChoose':
@@ -1220,6 +1221,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
@@ -1927,6 +1929,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'lifeGained' ||
     // CR 119.3: "Whenever an opponent loses life, ... that many": the life that event lost. A batch spans several events, so it has no one amount.
     (t?.kind === 'lifeLost' && t.batch !== true) ||
+    // CR 122.6: "Whenever you put one or more +1/+1 counters on a creature, you gain that much life": the counters this instance of putting put on.
+    t?.kind === 'countersAdded' ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||
     t?.kind === 'surveils'
@@ -1981,6 +1985,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
@@ -2195,6 +2200,7 @@ function checkActivationCosts(
       kind === 'loyalty' ||
       kind === 'putCounters' ||
       // D-540 (CR 602.2, 118.3): returning other permanents you control is paid wherever the ability works ("Return two lands you control to their owner's hand: Return this card from your graveyard to your hand"); returning the source itself needs it on the battlefield.
+      c?.kind === 'exilePermanent' ||
       (c?.kind === 'returnToHand' &&
         typeof c.what === 'object' &&
         c.what !== null &&
@@ -2876,6 +2882,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // D-232: "the exiled cards" are readable where the cost exiled cards from the graveyard.
         ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'exileFromGraveyard')
           ? { exiledCost: true }
+          : {}),
+        // Primordial Mist: "that card" is the card the cost exiled from the battlefield, which `moved` names.
+        ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'exilePermanent')
+          ? { movedAvailable: true }
           : {}),
         ...HOOKS,
       });

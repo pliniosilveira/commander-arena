@@ -177,6 +177,8 @@ export const EFFECT_EXILE_TOP_OF_TARGET_LIBRARY = defineRule<Clauses>({
   ],
   rejects: [
     "exile the top X cards of target opponent's library face down",
+    "exile the top X cards of target opponent's library, then draw a card",
+    "exile the top X cards of target opponent's library, where X is the number of outlaws you control",
     'exile the top X cards of your library',
     "exile the top X cards of each opponent's library",
     "exile the top one cards of target opponent's library",
@@ -206,7 +208,8 @@ export const EFFECT_EXILE_TOP_OF_TARGET_LIBRARY = defineRule<Clauses>({
     const owner = sequence(
       literal(' of '),
       family<IrNoun>('noun', { only: ['noun.player'] }),
-      pattern(/['’]s library(?![\p{L}\p{N}])(?!,| face down| and\b| then\b)/iu),
+      // Laughing Jasper Flint (issue 685): the count may be defined after the place, ", where X is the number of outlaws you control" (the sentence reads the definition).
+      pattern(/['’]s library(?![\p{L}\p{N}])(?!,(?! where X is )| face down| and\b| then\b)/iu),
     )(ctx, counted.pos);
     if (!owner.ok) return owner;
     const [, who] = owner.value;

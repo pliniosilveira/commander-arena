@@ -186,8 +186,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       }
       // "Sacrifice X creatures" (D-488, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
       if (what.det === 'a' && what.count?.kind === 'x') {
-        if ((options.ordinary !== true && options.discardX !== true) || what.other)
-          return failure(cost);
+        // "Sacrifice X other creatures" (Champion of Stray Souls, CR 109.1): the permanent with the ability is not one of them, the filter's `other`.
+        if (options.ordinary !== true && options.discardX !== true) return failure(cost);
+        if (what.other && options.ordinary !== true) return failure(cost);
         const { count: _counted, ...described } = what;
         const filter = lowerFilter(described);
         return filter.ok ? ok({ kind: 'sacrifice', what: filter.value, countX: true }) : filter;
@@ -222,6 +223,12 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return filter.ok
         ? ok({ kind: 'tapPermanents', filter: filter.value, count: cost.count })
         : filter;
+    }
+    case 'exilePermanent': {
+      // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): the engine's `exilePermanent`, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'exilePermanent', filter: filter.value }) : filter;
     }
     case 'untapPermanents': {
       // "Untap two tapped creatures you control" (CR 701.26b, 118.3): the engine's `untapPermanents`, a cost of an ordinary activated ability.
@@ -328,9 +335,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'exile': {
       // "Exile two creature cards from your graveyard" (stage P72, D-232, CR 118.1, 406.1): the engine's `exileFromGraveyard`, the cost of an ordinary activated ability.
       // CR 702.34a, 107.3a (Summons of Saruman, "Flashback—{3}{U}{R}, Exile X cards from your graveyard"): in a flashback cost only the X announced as the spell is cast.
+      // CR 118.8, 601.2b (Skaab Ruinator, "As an additional cost to cast this spell, exile three creature cards from your graveyard"): a fixed number of the kind, chosen as the spell is cast.
       if (
         options.ordinary !== true &&
-        !(options.flashback === true && cost.what.count?.kind === 'x')
+        !(options.flashback === true && cost.what.count?.kind === 'x') &&
+        !(options.additional === true && cost.what.count?.kind !== 'x')
       )
         return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
@@ -341,7 +350,12 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
       // The engine's flashback cost exiles cards of any kind: a kind of card ("X creature cards") is not read there.
-      if (options.ordinary !== true && filter.ok && Object.keys(filter.value).length > 0)
+      if (
+        options.ordinary !== true &&
+        options.additional !== true &&
+        filter.ok &&
+        Object.keys(filter.value).length > 0
+      )
         return failure(cost);
       return filter.ok
         ? ok({
@@ -391,6 +405,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:sacrifice',
   'cost:tapPermanents',
   'cost:untapPermanents',
+  'cost:exilePermanent',
   'cost:blight',
   'cost:payLife',
   'cost:payXLife',

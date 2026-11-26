@@ -8,7 +8,7 @@ import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { resolutionCount } from './action-taken';
-import { amountOf, playerStatOf, statOf } from './amounts';
+import { amountOf, playerStatOf, statOf, thisWayCount } from './amounts';
 import { castInOwnMainPhase } from './cast-phase';
 import { chosenOf } from './chosen';
 import {
@@ -151,6 +151,13 @@ export function evaluateCondition(
       }
       return count >= condition.count;
     }
+    case 'thisPowerParity': {
+      // CR 107.1, 208.1 (integers, a power may be below zero): the power of the permanent the condition belongs to, as it is now (or as it last was, CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      const power = source === null ? undefined : derive(state, source).power;
+      if (typeof power !== 'number') return false;
+      return (Math.abs(power) % 2 === 0) === (condition.parity === 'even');
+    }
     case 'opponentsAtLeast':
       return opponentsOf(state, ctx.controller).length >= condition.count;
     case 'opponentPoisonAtLeast':
@@ -227,7 +234,9 @@ export function evaluateCondition(
       // CR 603.10a, 113.7a: "if it had no -1/-1 counters on it" reads the permanent as it last existed
       // once it has left (Persist, Undying), as it is now while it is still on the battlefield.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
-      return source !== null && (source.counters[condition.counter] ?? 0) > 0;
+      return (
+        source !== null && (source.counters[condition.counter] ?? 0) >= (condition.atLeast ?? 1)
+      );
     }
     case 'subjectGreaterPt': {
       // CR 702.100a, 702.100c: that creature's power is greater and/or its toughness is greater than the
@@ -276,7 +285,7 @@ export function evaluateCondition(
       );
     case 'thisWayAtLeast':
       // D-210 (CR 608.2c): "if a creature card was discarded this way": what the effects before this one did.
-      return (ctx.thisWay?.[condition.what] ?? 0) >= condition.count;
+      return thisWayCount(state, ctx.thisWay, condition.what) >= condition.count;
     case 'didPrevious':
       // CR 603.12, 608.2c (D-135; Learn, CR 701.48a, reads the same way): "if you do": the nearest `may` effect before this was accepted and did something.
       return (ctx.performed ?? 0) > 0;
@@ -574,6 +583,12 @@ export function evaluateCondition(
       const spell =
         ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
       return manaSpentOf(spell) >= condition.count;
+    }
+    case 'manaSpentFromSubtype': {
+      // CR 601.2h, 205.3i: the spell that caused the cast trigger, as it is on the stack or as it last was; a copy was not cast and has no mana spent on it (CR 707.10).
+      const spell =
+        ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
+      return (spell?.stack?.manaSpent?.fromSubtypes?.[condition.subtype] ?? 0) > 0;
     }
     case 'spellTargets': {
       if (ctx.spellTargetsMayHold === true) return true;
