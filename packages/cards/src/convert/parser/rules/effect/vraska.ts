@@ -208,6 +208,7 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'choose target creature',
     'choose target permanent',
     'choose target opponent',
+    'choose up to one target nonland permanent',
   ],
   rejects: [
     'choose',
@@ -216,7 +217,8 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'choose two target creatures',
     'choose one',
     'choose target creature and draw a card',
-    'choose up to one target creature',
+    'choose up to two target creatures',
+    'choose up to one target creatures',
   ],
   parse: single(
     'effect.choose-target',
@@ -232,8 +234,13 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
         'effect.choose-target',
         {
           // One target, not "two target creatures" or "up to one target creature": the sentences after say "it".
+          // Star Athlete: "choose up to one target nonland permanent" is one target or none (the sentences after it read "it" and "its controller" of a target that may be absent).
           accept: (noun) =>
-            !noun.plural && !noun.upTo && noun.count === undefined && noun.anyNumber === undefined,
+            !noun.plural &&
+            noun.anyNumber === undefined &&
+            (noun.upTo
+              ? noun.count?.kind === 'number' && noun.count.value === 1
+              : noun.count === undefined),
           locate: (noun) => noun.span.start,
         },
       ),

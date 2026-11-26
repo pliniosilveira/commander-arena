@@ -1191,7 +1191,9 @@ export function declareTargets(
         }
         break;
       case 'player':
-        if (!isOneOf(what.filter, ['any', 'opponent', 'opponentWhoseTurn'])) {
+        if (
+          !isOneOf(what.filter, ['any', 'opponent', 'opponentWhoseTurn', 'otherThanTriggerPlayer'])
+        ) {
           issue(out, `${p}.what.filter`, `unknown player filter ${JSON.stringify(what.filter)}`);
         }
         break;
@@ -2243,6 +2245,7 @@ export const PLAYER_ONLY = [
   'chosenPlayer',
   'enteredChosenPlayer',
   'triggerPlayer',
+  'declinedPlayer',
   'triggerDamagedPlayers',
   'attackedPlayers',
   'combatDamagedByNamed',
@@ -3709,7 +3712,7 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
 
 // ---- Costs (CR 118)
 
-export function checkCost(cost: Cost, path: string, out: Out): void {
+export function checkCost(cost: Cost, path: string, out: Out, allowTarget = false): void {
   switch (cost?.kind) {
     case 'mana':
       checkManaSymbols(cost.symbols, `${path}.symbols`, out);
@@ -3927,7 +3930,32 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           issue(out, `${path}.count`, 'this permanent is sacrificed once: no count');
         }
       }
-      if (kindOf(cost.what) !== 'this') {
+      if (kindOf(cost.what) === 'target') {
+        // Enchanter's Bane (CR 701.21a): "unless that player sacrifices it", the permanent a target names; `unlessPays` checks the target and where the cost stands.
+        if (!allowTarget) {
+          issue(
+            out,
+            `${path}.what`,
+            'a sacrifice of a target is read only in the cost of an unlessPays',
+          );
+        }
+        const ref = cost.what as { readonly id?: unknown };
+        if (typeof ref.id !== 'string' || ref.id === '') {
+          issue(out, `${path}.what.id`, 'a sacrifice of a target names the target by its id');
+        }
+        if (
+          cost.count !== undefined ||
+          cost.countX !== undefined ||
+          cost.anyNumber !== undefined ||
+          cost.alongside !== undefined
+        ) {
+          issue(
+            out,
+            `${path}`,
+            'a sacrifice of a target is one permanent: no count, X, any number or alongside',
+          );
+        }
+      } else if (kindOf(cost.what) !== 'this') {
         const what = cost.what as ObjectFilter;
         checkFilter(what, `${path}.what`, out);
         // CR 701.21a: a player can only sacrifice permanents they control, on the battlefield.
@@ -4218,13 +4246,18 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
   }
 }
 
-export function checkCosts(costs: readonly Cost[], path: string, out: Out): void {
+export function checkCosts(
+  costs: readonly Cost[],
+  path: string,
+  out: Out,
+  allowTarget = false,
+): void {
   if (!Array.isArray(costs) || costs.length === 0) {
     issue(out, path, 'cost list is empty (an ability with no cost must say {0}, CR 602.1)');
     return;
   }
   costs.forEach((c, i) => {
-    checkCost(c, `${path}[${i}]`, out);
+    checkCost(c, `${path}[${i}]`, out, allowTarget);
   });
 }
 
@@ -6610,6 +6643,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (
         e.chooser === undefined &&
         e.perChoice === undefined &&
+        e.perPlayer === undefined &&
         e.filter.controller !== 'you' &&
         !(e.filter.controller === undefined && e.exactly !== true) &&
         !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
@@ -6621,6 +6655,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
+      // CR 101.4, 608.2d (Sadistic Shell Game): each player chooses in turn, the filter read for the controller.
+      if (e.perPlayer !== undefined) {
+        if (e.perPlayer !== true)
+          issue(out, `${path}.perPlayer`, 'perPlayer must be true when present');
+        if (
+          e.chooser !== undefined ||
+          e.perVote !== undefined ||
+          e.perChoice !== undefined ||
+          e.anyNumber !== undefined ||
+          e.fromMoved !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.perPlayer`,
+            'perPlayer goes with no chooser, perVote, perChoice, anyNumber or fromMoved',
+          );
+        }
+      }
       // CR 101.4, 608.2d (Seize the Spotlight): "for each player who chose fame, gain control of a creature that player controls": the controller chooses among the permanents of each player who chose.
       if (e.perChoice !== undefined) {
         if (e.chooser !== undefined || e.perVote !== undefined) {
@@ -7222,7 +7274,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'unlessPays':
       // CR 118.12a: "[do something] unless [a player] pays [cost]".
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      checkCosts(e.cost, `${path}.cost`, out);
+      checkCosts(e.cost, `${path}.cost`, out, true);
+      // Enchanter's Bane (CR 701.21a): a sacrifice of a target names a target of this ability, and is the only cost.
+      e.cost.forEach((c, i) => {
+        if (c?.kind === 'sacrifice' && kindOf(c.what) === 'target') {
+          checkTargetRef(
+            (c.what as { id: string }).id,
+            'object',
+            `${path}.cost[${i}].what`,
+            scope,
+            out,
+          );
+          if (e.cost.length !== 1) {
+            issue(out, `${path}.cost`, 'a sacrifice of a target is the whole cost');
+          }
+        }
+      });
       checkEffect(e.effect, `${path}.effect`, scope, out);
       if (e.optional !== undefined && e.optional !== true) {
         issue(out, `${path}.optional`, 'optional must be true when present');
@@ -7518,7 +7585,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // ability resolves, and `checkAmount` holds it to a trigger that has a spell.
       const readsTrigger = (a: Amount): boolean =>
         kindOf(a) === 'triggerDamage' ||
-        (kindOf(a) === 'manaValueOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject');
+        (kindOf(a) === 'manaValueOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject') ||
+        // CR 208.1, 603.10a (Mask of Griselbrand): "you may pay X life, where X is its power": the power of the creature that died, as it last was, read as the ability resolves.
+        (kindOf(a) === 'powerOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject');
       if (Array.isArray(e.cost)) {
         e.cost.forEach((c, i) => {
           if (c?.kind === 'payLife' && readsTrigger(c.amount)) {
@@ -10813,6 +10882,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.among !== 'mostLife' && e.among !== 'opponent') {
         issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
       }
+      if (e.random !== undefined && (e.random !== true || e.among !== 'opponent')) {
+        issue(out, `${path}.random`, 'random is true and only for choosing among the opponents');
+      }
+      break;
+    case 'dealDamageToChosenPlayerOrPlaneswalker':
+      // Vial Smasher the Fierce: the damage of an amount, to the player an earlier choosePlayer chose or a planeswalker they control.
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'cantBeBlockedByPlayer':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);

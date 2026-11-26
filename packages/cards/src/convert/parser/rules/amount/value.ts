@@ -303,7 +303,7 @@ const COUNTERS_AMONG = (rule: string): Parser<IrAmount> => {
 };
 
 /** "your devotion to black", "your devotion to white and blue" (CR 700.5): the colors, as the words write them. */
-const DEVOTION: Parser<IrAmount> = (ctx, pos) => {
+export const DEVOTION: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(
     sequence(
       literal('your devotion to '),

@@ -631,6 +631,56 @@ export const STATIC_CANT_CAST_EARLY = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.cant-cast-unless-opponent-lost-life`: "You can't cast ~ unless an opponent lost life this turn." (Rakdos, Lord of Riots; CR 101.2, 601.2, 119.3, 604.1): the card can't be
+ * cast, by any means, while no opponent has lost life this turn (damage, life loss and life paid all count). The same `cantCastThis` ability as the early-turn restriction.
+ */
+export const STATIC_CANT_CAST_UNLESS_OPPONENT_LOST_LIFE = defineRule<IrStatic>({
+  id: 'static.cant-cast-unless-opponent-lost-life',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 101.2 (Golden Rules)',
+    'CR 601.2 (Casting Spells)',
+    'CR 119.3 (Life)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "You can't cast ~ unless an opponent lost life this turn.",
+    'You can’t cast ~ unless an opponent lost life this turn.',
+  ],
+  rejects: [
+    "You can't cast ~ unless an opponent lost life this turn",
+    "You can't cast ~ unless a player lost life this turn.",
+    "You can't cast ~ unless an opponent lost life.",
+    "You can't cast ~ unless you lost life this turn.",
+    "You can't cast creature spells unless an opponent lost life this turn.",
+    "Your opponents can't cast ~ unless an opponent lost life this turn.",
+    "You can't cast ~ unless an opponent lost life this turn and draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      pattern(/you can['’]t cast /iu),
+      spanned(literal('~')),
+      literal(' unless an opponent lost life this turn'),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, self] = r.value;
+    return {
+      ok: true,
+      value: staticOf(
+        'static.cant-cast-unless-opponent-lost-life',
+        subjectNoun('self', '~', self.span, 'static.cant-cast-unless-opponent-lost-life'),
+        [{ kind: 'cantCastThis', unlessOpponentLostLife: true }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_PROTECTION_RULES = [
   STATIC_PLAYER_HEXPROOF,
   STATIC_CANT_LOSE_WIN,
@@ -641,4 +691,5 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_PREVENT_ALL_BUT,
   STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
+  STATIC_CANT_CAST_UNLESS_OPPONENT_LOST_LIFE,
 ].map(quietly);

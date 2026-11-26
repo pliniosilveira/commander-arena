@@ -1260,6 +1260,32 @@ const EXILE_ONE_FACE_DOWN_REST_ANY_ORDER =
 const CAST_IT_IF_CREATURE =
   /^for as long as it remains exiled, you may cast it if it['’]s a creature spell\.$/i;
 
+/**
+ * "Look at the top X cards of your library, where X is the total amount of life your opponents lost this turn. Exile one of those cards and put the rest on the bottom of your library in a
+ * random order. You may play the exiled card this turn." (Florian, Voldaren Scion, CR 401.2, 406.3, 119.3): three sentences, one instruction (`effect.look-lost-life-exile-one-play`).
+ */
+const LOOK_AT_TOP_X_LIFE_LOST =
+  /(?:^|, )look at the top X cards of your library, where X is the total amount of life your opponents lost this turn\.$/i;
+const EXILE_ONE_REST_BOTTOM_RANDOM =
+  /^exile one of those cards and put the rest on the bottom of your library in a random order\.$/i;
+const PLAY_THE_EXILED_CARD_THIS_TURN = /^you may play the exiled card this turn\.$/i;
+
+/**
+ * "Starting with the next opponent in turn order, each player chooses a creature you don't control. Destroy the chosen creatures." (Sadistic Shell Game, CR 101.4, 608.2d, 701.8): two
+ * sentences, one instruction (`effect.each-player-chooses-destroy-chosen`).
+ */
+const EACH_PLAYER_CHOOSES_CREATURE_YOU_DONT_CONTROL =
+  /^starting with the next opponent in turn order, each player chooses a creature you don['’]t control\.$/i;
+const DESTROY_THE_CHOSEN_CREATURES = /^destroy the chosen creatures\.$/i;
+
+/**
+ * "..., that player adds one mana of any type that land produced. Then that land deals 1 damage to that player." (Barbflare Gremlin, CR 605.1b, 605.4a): two sentences, one instruction
+ * (`effect.tapper-adds-produced-type-then-land-damages`).
+ */
+const THAT_PLAYER_ADDS_PRODUCED_TYPE =
+  /(?:^|, )that player adds one mana of any type that land produced\.$/i;
+const THEN_THAT_LAND_DEALS_DAMAGE = /^then that land deals \d+ damage to that player\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
@@ -1279,6 +1305,40 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: e.end });
       i += 4;
+      continue;
+    }
+    // Barbflare Gremlin: the mana the player who tapped the land adds, and the damage the land deals to them.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, THAT_PLAYER_ADDS_PRODUCED_TYPE) &&
+      said(b, THEN_THAT_LAND_DEALS_DAMAGE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
+    // Sadistic Shell Game: each player's choice and the destruction of the creatures chosen.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EACH_PLAYER_CHOOSES_CREATURE_YOU_DONT_CONTROL) &&
+      said(b, DESTROY_THE_CHOSEN_CREATURES)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
+    // Florian, Voldaren Scion: the look by the life the opponents lost, the card exiled with the rest on the bottom, and the permission to play it this turn.
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, LOOK_AT_TOP_X_LIFE_LOST) &&
+      said(b, EXILE_ONE_REST_BOTTOM_RANDOM) &&
+      said(c, PLAY_THE_EXILED_CARD_THIS_TURN)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
       continue;
     }
     // Vivien, Champion of the Wilds: the look, the card exiled face down with the rest, and the permission to cast it if it is a creature.

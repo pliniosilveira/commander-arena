@@ -131,10 +131,12 @@ export const AMOUNT_THAT_MUCH = defineRule<IrAmount>({
   family: 'amount',
   leading: ['that'],
   cites: ['CR 120.3 (Damage)', 'CR 603.2 (Handling Triggered Abilities)'],
-  examples: ['that much', 'That much'],
-  rejects: ['that many', 'that', 'that muchly', 'this much', 'much'],
+  examples: ['that much', 'That much', 'that amount'],
+  rejects: ['that many', 'that', 'that muchly', 'this much', 'much', 'that amounts'],
   parse: amountNode(
-    map(pattern(/that much(?![\p{L}\p{N}])/iu), () => ({ kind: 'triggerDamage' as const })),
+    map(pattern(/that (?:much|amount)(?![\p{L}\p{N}])/iu), () => ({
+      kind: 'triggerDamage' as const,
+    })),
   ),
 });
 

@@ -793,7 +793,9 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
-      return ['static:cantCastThis', 'condition:ownTurnNumber'];
+      return effect.unlessOpponentLostLife === true
+        ? ['static:cantCastThis', 'condition:aPlayerLostLifeThisTurn', 'condition:not']
+        : ['static:cantCastThis', 'condition:ownTurnNumber'];
     case 'blockTax':
       return ['static:blockTax', 'cost:mana'];
     case 'othersEnterWithCounters':

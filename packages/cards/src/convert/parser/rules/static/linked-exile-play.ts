@@ -89,4 +89,89 @@ export const STATIC_PLAY_LINKED_EXILE = defineRule<IrStatic>({
   },
 });
 
-export const LINKED_EXILE_PLAY_STATIC_RULES = [STATIC_PLAY_LINKED_EXILE];
+/**
+ * `static.play-linked-exile-lands-and-spells`: "During your turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled with ~." (Theater of Horrors;
+ * CR 607.2a, 601.2a, 305.1, 604.1): the same permission as `static.play-linked-exile`, worded as the two actions that playing a card is (a land as a land play, a spell cast), under "During
+ * your turn" and an "if" condition read where the card is played. Not read: a missing "During your turn", "as long as" for "if", "cast spells" alone, "play cards", a card exiled with another
+ * permanent, a missing comma or period, any condition but the one of a player's life lost this turn.
+ */
+export const STATIC_PLAY_LINKED_EXILE_LANDS_AND_SPELLS = defineRule<IrStatic>({
+  id: 'static.play-linked-exile-lands-and-spells',
+  family: 'static',
+  leading: ['during'],
+  cites: [
+    'CR 607.2a (Linked Abilities)',
+    'CR 601.2a (Casting Spells)',
+    'CR 305.1 (Lands)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'During your turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled with ~.',
+    'During your turn, if a player lost life this turn, you may play lands and cast spells from among cards exiled with ~.',
+  ],
+  rejects: [
+    'During your turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled with ~',
+    'During your turn, if an opponent lost life this turn, you may cast spells from among cards exiled with ~.',
+    'During your turn, if an opponent lost life this turn, you may play cards exiled with ~.',
+    'During your turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled with target creature.',
+    'During your turn, as long as an opponent lost life this turn, you may play lands and cast spells from among cards exiled with ~.',
+    'If an opponent lost life this turn, you may play lands and cast spells from among cards exiled with ~.',
+    'During your turn, if an opponent lost life this turn you may play lands and cast spells from among cards exiled with ~.',
+    "During an opponent's turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled with ~.",
+    "During your turn, if you've sacrificed a creature this turn, you may play lands and cast spells from among cards exiled with ~.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('during your turn, if '),
+      family<IrCondition>('condition', { only: ['condition.a-player-lost-life-this-turn'] }),
+      literal(', you may play lands and cast spells from among cards exiled with ~.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, condition] = r.value;
+    const span = { start: pos, end: r.pos };
+    const id = 'static.play-linked-exile-lands-and-spells';
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [{ kind: 'linkedExilePlay' }],
+        condition: {
+          kind: 'condition',
+          test: {
+            kind: 'and',
+            terms: [
+              {
+                kind: 'condition',
+                test: { kind: 'yourTurn' },
+                span: { start: pos, end: pos + 'during your turn'.length },
+                rule: id,
+              },
+              condition,
+            ],
+          },
+          span,
+          rule: id,
+        },
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const LINKED_EXILE_PLAY_STATIC_RULES = [
+  STATIC_PLAY_LINKED_EXILE,
+  STATIC_PLAY_LINKED_EXILE_LANDS_AND_SPELLS,
+];

@@ -202,8 +202,12 @@ describe('the other new kinds', () => {
       by: 'tapper',
     };
     expect(say(tapper)).toBe('Whenever enchanted land is tapped for mana');
-    // Any other permanent a player may tap has no words: null, never a guess.
-    expect(say({ ...tapper, what: { types: ['land'] } } as Trigger)).toBeNull();
+    // Any land a player taps, whoever controls it (CR 605.1b).
+    expect(say({ ...tapper, what: { types: ['land'] } } as Trigger)).toBe(
+      'Whenever a player taps a land for mana',
+    );
+    // A shape the words do not cover has no words: null, never a guess.
+    expect(say({ ...tapper, mana: 'G', what: { types: ['land'] } } as Trigger)).toBeNull();
   });
 
   test('a shape the words do not cover gives null, never a guess', () => {

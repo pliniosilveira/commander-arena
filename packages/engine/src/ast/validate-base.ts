@@ -53,6 +53,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     // D-648: the attacking player ("that attacking player").
     case 'playerAttacksOpponent':
     case 'tapsForMana':
+    // CR 106.12, 605.1b (Barbflare Gremlin): the player who tapped the permanent for mana ("that player").
+    case 'tappedForMana':
     case 'discarded':
     case 'crimeCommitted':
     case 'tokenCreated':

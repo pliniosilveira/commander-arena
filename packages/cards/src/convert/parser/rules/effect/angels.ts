@@ -17,6 +17,7 @@ import {
 import type { IrAmount, IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
 import {
   BOUNDARY,
+  mixedSpellListPhrase,
   permanentPhrase,
   spellPhrase,
   spellTypesAndPhrase,
@@ -360,6 +361,10 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type',
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
+    // Séance Board: card types and creature types in one list.
+    'spend this mana only to cast instant, sorcery, Demon, and Spirit spells',
+    'spend this mana only to cast artifact, Angel, and Demon spells',
+    'spend this mana only to cast instant, sorcery, Demon, or Spirit spells',
     'spend this mana only to cast artifact and creature spells',
     // Flamebraider, Primal Beyond: the sources of the spells' creature type, in the plural or with an article.
     'spend this mana only to cast Elemental spells or activate abilities of Elemental sources',
@@ -375,6 +380,10 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast instant and sorcery and spells',
     'spend this mana only to cast instant, sorcery spells',
     'spend this mana only to cast instant and sorcery spells and draw a card',
+    'spend this mana only to cast Demon, Spirit, and Angel spells',
+    'spend this mana only to cast instant, sorcery, Demon and Spirit spells',
+    'spend this mana only to cast instant, instant, and Demon spells',
+    'spend this mana only to cast instant, sorcery, Demon, and Spirit spell',
     'spend this mana only to cast',
     'spend this mana only to cast an Angel',
     'spend this mana only to cast spells',
@@ -405,10 +414,14 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     const article = pattern(/an? /iu)(ctx, head.pos);
     // D-329: "instant and sorcery spells": a list of card types joined by "and", read as the choice "instant or sorcery".
     const andList = article.ok ? null : spanned(spellTypesAndPhrase())(ctx, head.pos);
+    // Séance Board: "instant, sorcery, Demon, and Spirit spells", card types and creature types in one list.
+    const mixedList = article.ok ? null : spanned(mixedSpellListPhrase())(ctx, head.pos);
     const phrase =
       andList?.ok === true
         ? andList
-        : spanned(spellPhrase(!article.ok))(ctx, article.ok ? article.pos : head.pos);
+        : mixedList?.ok === true
+          ? mixedList
+          : spanned(spellPhrase(!article.ok))(ctx, article.ok ? article.pos : head.pos);
     if (!phrase.ok) return phrase;
     // A spell is named by its card types or its creature types: a color, a quality or a count says more than the engine's restriction.
     const filter: IrFilter = phrase.value.value;

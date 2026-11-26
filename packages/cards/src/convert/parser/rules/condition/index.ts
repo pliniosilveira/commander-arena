@@ -40,6 +40,7 @@ import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './d
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
 import { DEATH_TOLL_B_CONDITION_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
+import { DEVOTION_CONDITION_RULES } from './devotion';
 import { DIFFERENT_POWERS_CONDITION_RULES } from './different-powers';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
@@ -586,6 +587,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G2_CONDITION_RULES,
   // Augur of Autumn (coven): "you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.
   ...DIFFERENT_POWERS_CONDITION_RULES,
+  // Mogis, God of Slaughter: "your devotion to black and red is less than seven".
+  ...DEVOTION_CONDITION_RULES,
   // Ahoy Mateys deck, group 8: "you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   ...AHOY_G8_CONDITION_RULES,
   // Jump Scare! deck, group C (Augur of Autumn): "you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.

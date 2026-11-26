@@ -851,7 +851,17 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (!lowered.ok) return lowered;
     const { zone, ...filter } = lowered.value;
     void zone;
-    return built({ kind: 'damageBonus', sources: filter, amount: amount.value });
+    // Spiked Corridor (CR 120.2b): only noncombat damage, only to an opponent (not to their permanents).
+    const noncombat = event.args.noncombatOnly?.kind === 'flag' && event.args.noncombatOnly.value;
+    const playersOnly =
+      event.args.opponentPlayersOnly?.kind === 'flag' && event.args.opponentPlayersOnly.value;
+    return built({
+      kind: 'damageBonus',
+      sources: filter,
+      amount: amount.value,
+      ...(noncombat ? { noncombatOnly: true as const } : {}),
+      ...(playersOnly ? { opponentPlayersOnly: true as const } : {}),
+    });
   }
   if (event.verb === 'damageDouble') {
     // CR 614.1a, 120.3 (Angrath's Marauders): the damage a source the controller controls would deal to any permanent or player is doubled.

@@ -282,6 +282,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: what.value,
         by,
         ...(t.batch === true ? { batch: true as const } : {}),
+        ...(t.duringTheirTurn === true ? { duringTheirTurn: true as const } : {}),
       });
     }
     case 'scries': {
@@ -751,9 +752,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (who === null) return failure(t);
       // "Whenever one or more opponents lose life" (CR 603.2c): one trigger for the losses of one run of events, only of other players and with no ordinal.
       if (t.batch === true && (who === 'you' || t.firstEachTurn === true)) return failure(t);
+      if (t.duringTheirTurn === true && (t.batch === true || who === 'you')) return failure(t);
       const blocked = missingFeatures([
         'trigger:lifeLost',
         ...(t.batch === true ? (['trigger:lifeLostBatch'] as const) : []),
+        ...(t.duringTheirTurn === true ? (['trigger:lifeLostDuringTheirTurn'] as const) : []),
       ]);
       if (blocked.length > 0) return failure(t, blocked);
       return ok({
@@ -1730,7 +1733,13 @@ function lowerTriggeredAbility(
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.attachedTrigger =
     triggers.length > 0 &&
-    triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
+    // CR 603.10a (Mask of Griselbrand): "Whenever equipped creature dies, ... its power" is the power the creature had, the trigger's subject, as is the host of an attack trigger.
+    triggers.every(
+      (t) =>
+        (t.kind === 'attacks' || t.kind === 'dies') &&
+        'kind' in t.what &&
+        t.what.kind === 'attached',
+    );
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.excessDamageTrigger =
@@ -1905,6 +1914,11 @@ function lowerTriggeredAbility(
   }
   if (triggers.some((t) => t.kind === 'tappedForMana')) {
     return lowerTappedForMana(ability, triggers, interveningIf);
+  }
+  // Barbflare Gremlin: "Whenever a player taps a land for mana, if ~ is tapped, that player adds one mana of any type that land produced. Then that land deals 1 damage to that player."
+  if (triggers.some((t) => t.kind === 'tapsForMana')) {
+    const tapper = lowerTapperAddsMana(ability, triggers, interveningIf);
+    if (tapper !== null) return tapper;
   }
   const needs: FeatureRef[] = [
     'ability:triggered',
@@ -2423,6 +2437,70 @@ function lowerTappedForMana(
   };
 }
 
+/**
+ * "Whenever a player taps a land for mana, [if ~ is tapped,] that player adds one mana of any type that land produced. Then that land deals 1 damage to that player." (Barbflare
+ * Gremlin; CR 605.1b, 605.4a, 106.12a, 603.4): a triggered mana ability about whoever taps the land (`tappedForMana` by the `tapper`), whose effect is the mana and the damage, with the
+ * "if" only about the permanent itself (the engine reads it when the mana ability is activated). Null when the body is not that one instruction (the ordinary lowering takes the ability).
+ */
+function lowerTapperAddsMana(
+  ability: Triggered,
+  triggers: readonly Trigger[],
+  interveningIf: Condition | undefined,
+): LowerResult<readonly Ability[]> | null {
+  const [sentence, ...more] = ability.body.sentences;
+  const [clause, ...others] = sentence?.clauses ?? [];
+  if (clause?.verb !== 'tapperAddsProducedTypeThenDamage') return null;
+  const amount = clause.args.amount;
+  const [trigger] = triggers;
+  if (
+    triggers.length !== 1 ||
+    trigger?.kind !== 'tapsForMana' ||
+    trigger.who !== 'any' ||
+    more.length > 0 ||
+    others.length > 0 ||
+    ability.modal !== undefined ||
+    clause.optional ||
+    clause.condition !== undefined ||
+    amount?.kind !== 'number' ||
+    (interveningIf !== undefined &&
+      !(
+        interveningIf.kind === 'thisMatches' &&
+        Object.keys(interveningIf.filter).every((k) => k === 'tapped' || k === 'raw')
+      )) ||
+    sentence === undefined ||
+    sentence.where !== undefined
+  ) {
+    return failure(ability);
+  }
+  const blocked = missingFeatures([
+    'ability:triggered',
+    'trigger:tappedForMana',
+    'effect:addMana',
+    'effect:dealDamage',
+    'manaProduction:producedType',
+    ...(interveningIf === undefined ? [] : (['trigger:interveningIf'] as const)),
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'tappedForMana', what: trigger.what, by: 'tapper' },
+        ...(interveningIf === undefined ? {} : { interveningIf }),
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'addMana', mana: { kind: 'producedType' } },
+            { kind: 'dealDamage', amount: amount.value, to: { kind: 'triggerPlayer' } },
+          ],
+        },
+      },
+    ],
+    rule: ability.trigger.rule,
+  };
+}
+
 /** Features the trigger lowerings can name, for the dimension test. */
 export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'ability:triggered',
@@ -2493,6 +2571,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:lifeLostBatch',
+  'trigger:lifeLostDuringTheirTurn',
   'trigger:notAsAttacker',
   'trigger:entersBattlefieldFromGraveyard',
   'trigger:entersBattlefieldFromYourGraveyard',

@@ -517,10 +517,16 @@ export const CONDITION_DISCARDED_CARD_MATCHES = defineRule<IrCondition>({
     'the discarded card was a nonland card',
     'the discarded card was an Elf card',
     'the discarded card was a legendary creature card',
+    // Grab the Prize: the negation.
+    "the discarded card wasn't a land card",
+    'the discarded card wasn’t a creature card',
   ],
   rejects: [
     'the discarded card was a card',
     'the discarded card was not a creature card',
+    "the discarded card wasn't creature card",
+    "the discarded card wasn't a card",
+    "the discarded cards weren't creature cards",
     'the discarded card was creature card',
     'the discarded cards were creature cards',
     'the discarded card',
@@ -529,18 +535,29 @@ export const CONDITION_DISCARDED_CARD_MATCHES = defineRule<IrCondition>({
     'the discarded card was a creature card and',
   ],
   parse: (ctx, pos) => {
-    const lead = pattern(/the discarded card was (?:a|an) /iu)(ctx, pos);
+    // Grab the Prize (CR 601.2b, 701.9a): "the discarded card wasn't a land card" is the negation of "the discarded card was a land card".
+    const lead = pattern(/the discarded card (was|wasn['’]t) (?:a|an) /iu)(ctx, pos);
     if (!lead.ok) return lead;
+    const negated = /^wasn/iu.test(lead.value[1] ?? '');
     const what = WHAT_IT_IS(ctx, lead.pos);
     if (!what.ok) return what;
+    const span = { start: pos, end: what.pos };
+    const matches: IrCondition = {
+      kind: 'condition',
+      test: { kind: 'discardedAsCostMatches', filter: what.value },
+      span,
+      rule: 'condition.discarded-card-matches',
+    };
     return {
       ok: true,
-      value: {
-        kind: 'condition',
-        test: { kind: 'discardedAsCostMatches', filter: what.value },
-        span: { start: pos, end: what.pos },
-        rule: 'condition.discarded-card-matches',
-      },
+      value: negated
+        ? {
+            kind: 'condition',
+            test: { kind: 'not', term: matches },
+            span,
+            rule: 'condition.discarded-card-matches',
+          }
+        : matches,
       pos: what.pos,
     };
   },

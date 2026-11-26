@@ -1370,7 +1370,12 @@ export type AttachedTo =
  * Which players a player target may be: any, an opponent of the controller, or (`opponentWhoseTurn`, CR 115.1, 500.1: "target opponent whose turn it is", Cmdr. Troi) the opponent
  * whose turn it is, which is a legal target only during the turn of an opponent.
  */
-export type PlayerFilter = 'any' | 'opponent' | 'opponentWhoseTurn';
+export type PlayerFilter =
+  | 'any'
+  | 'opponent'
+  | 'opponentWhoseTurn'
+  /** "Another target player" of a trigger about a player (The Lord of Pain; CR 115.1, 603.2): any player but the one the event is about (`triggerPlayer`). With no such player nothing is a legal target. */
+  | 'otherThanTriggerPlayer';
 
 /**
  * The counters a permanent enters the battlefield with (`moveToZone.withCounters`, CR 122.6, 614.1c): `count` counters of the kind `counter`, and `also` more kinds ("with a vigilance counter
@@ -1954,7 +1959,14 @@ export type Cost =
   | { readonly kind: 'exileFromHand'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'sacrifice';
-      readonly what: { readonly kind: 'this' } | ObjectFilter;
+      /**
+       * `{ kind: 'target', id }` (Enchanter's Bane, Star Athlete; CR 701.21a, 118.12a): in the cost of an `unlessPays` only, the permanent a target of the ability names ("unless that player sacrifices
+       * it"), sacrificed by the player who pays, who must control it. Read when the effect resolves.
+       */
+      readonly what:
+        | { readonly kind: 'this' }
+        | { readonly kind: 'target'; readonly id: string }
+        | ObjectFilter;
       /**
        * "Sacrifice two artifacts" (D-133): how many permanents are sacrificed, 2 or more; left out for one. Only in the
        * cost of an activated ability (not an additional cost of a spell or the cost of a mana ability), and not with
@@ -2781,6 +2793,13 @@ export type Effect =
        * (when the player controls a match); not with `chooser` or `perVote`.
        */
       readonly perChoice?: string;
+      /**
+       * "Starting with the next opponent in turn order, each player chooses a creature you don't control" (Sadistic Shell Game; CR 101.4, 608.2d): each player still in the game chooses `count`
+       * permanents the filter matches, one player after the other, in turn order starting with the next opponent of the controller and ending with the controller, each seeing the choices before
+       * theirs. The filter is read for the controller of the ability ("you don't control"), whoever chooses; all the choices are remembered under `id` (a permanent chosen by several players
+       * once). Not with `chooser`, `perVote`, `perChoice`, `anyNumber` or `fromMoved`.
+       */
+      readonly perPlayer?: true;
       /**
        * "Proliferate, then choose any number of permanents you control that had a counter put on them this way" (Ripples of Potential, CR 608.2d, 701.34a): the controller chooses none, some
        * or all of the candidates, so `count` is not a limit (write 1). Not with `exactly`.
@@ -5921,7 +5940,16 @@ export type Effect =
       readonly kind: 'choosePlayer';
       /** `mostLife`: "Choose a player with the most life or tied for most life" (CR 608.2d, 119.1): the controller of the effect chooses among the players with the greatest life total; one candidate is chosen without asking. */
       readonly among: 'mostLife' | 'opponent';
+      /** "Choose an opponent at random" (Vial Smasher the Fierce; CR 701.13, 102.2): one opponent still in the game, picked by the seeded generator, nobody is asked. Only with `among` "opponent". */
+      readonly random?: true;
     }
+  /**
+   * "~ deals damage equal to that spell's mana value to that player or a planeswalker that player controls" (Vial Smasher the Fierce; CR 120.2, 608.2d): the damage of `amount`, read as
+   * the effect resolves, is dealt to the player a `choosePlayer` before it in the same resolution chose, or to a planeswalker that player controls, as the controller of the effect chooses
+   * as it resolves (nothing is targeted, so hexproof and protection do not apply to the choice). A player with no planeswalker is dealt the damage without a question. The source is the
+   * permanent with the ability. Valid only after a `choosePlayer` (`validateCard`).
+   */
+  | { readonly kind: 'dealDamageToChosenPlayerOrPlaneswalker'; readonly amount: Amount }
   /**
    * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): until end of turn each object the selector names as the effect begins
    * can't be blocked by a creature controlled by a player `player` names as it resolves (a creature that enters or changes control later counts, as it is read when blockers are declared).
@@ -6957,6 +6985,11 @@ export type Trigger =
       readonly kind: 'lifeLost';
       readonly who: 'you' | 'opponent' | 'any';
       readonly firstEachTurn?: true;
+      /**
+       * "Whenever an opponent loses life for the first time during each of their turns" (Valgavoth, Harrower of Souls; CR 119.3, 603.2): only a loss that happens during a turn of the
+       * player who loses the life, and with `firstEachTurn` the first loss of that player in that turn. Not with `batch`.
+       */
+      readonly duringTheirTurn?: true;
       /**
        * "Whenever one or more opponents lose life" (CR 603.2c, 119.3): one trigger for the whole run of events in which any player `who` names lost life, however many players
        * lost it and however many times, not one for each player. `triggerPlayer` is the first of them. Not with `firstEachTurn`, and not with `who` "you" (one player is one event).
@@ -9032,7 +9065,15 @@ export type Replacement =
    * `rules/damage-order.ts`): damage that is all prevented is no longer replaced. Damage a spell divides or a creature assigns is divided before this applies
    * (CR 120.3: each amount is its own event). It is the ability of the permanent (lost with "loses all abilities").
    */
-  | { readonly kind: 'damageBonus'; readonly sources: ObjectFilter; readonly amount: number }
+  | {
+      readonly kind: 'damageBonus';
+      readonly sources: ObjectFilter;
+      readonly amount: number;
+      /** "If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead" (Spiked Corridor, CR 120.2b): only damage that is not combat damage. */
+      readonly noncombatOnly?: true;
+      /** The same card: only damage dealt to an opponent of the controller, not to a permanent an opponent controls (CR 102.2). */
+      readonly opponentPlayersOnly?: true;
+    }
   /**
    * "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead." (Angrath's Marauders, CR 614.1a, 120.3):
    * a replacement effect of a permanent on the battlefield for every damage event, combat or not, whose source `sources` matches (read as for `damageBonus`, `controller: 'you'`
@@ -10366,6 +10407,11 @@ export interface ManaAbility {
      */
     readonly notTypes?: readonly CardType[];
     readonly subtypes?: readonly Subtype[];
+    /**
+     * "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells." (Séance Board; CR 106.6, 205.2a, 205.3m): with both `types` and `subtypes`, the spell is of one of the
+     * card types OR of one of the creature types, not of both as it is without this flag. Needs both lists. Not with `notTypes`, `chosenType`, `qualities` or `alsoAbilities`.
+     */
+    readonly typesOrSubtypes?: true;
     /**
      * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of
      * these qualities, as it is cast: `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at

@@ -81,6 +81,9 @@ function plainOnly(
   // CR 613.8, 122.1 (Arixmethes, Slumbering Isle): "as long as ~ has a slumber counter on it, it's a land": a test of the counters on the permanent itself and nothing else (no type, no
   // keyword, no power: those are what the layers change), which belong to no layer, so layer 4 may read it.
   if (c?.kind === 'thisMatches' && onlyCounterTest(c.filter)) return;
+  // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads the mana costs of the permanents they control (layers 1 and 2 only), which no layer 4 to 7 effect changes.
+  if (c?.kind === 'amountIs' && typeof c.amount !== 'number' && c.amount?.kind === 'devotion')
+    return;
   if (!PLAIN_CONDITIONS.includes(c?.kind)) {
     issue(
       out,
@@ -113,6 +116,21 @@ function filterProblem(f: ObjectFilter): string | null {
     return 'a power or a toughness';
   }
   return null;
+}
+
+/**
+ * CR 119.3 (Rakdos, Lord of Riots; Theater of Horrors): the conditions of a permission or restriction that is read where the card is cast or played (`evaluateCondition`, not
+ * `derive`) may also read the life players lost this turn. Terms joined by and, or, not are walked; anything else is the ordinary static condition.
+ */
+function checkReadAtUse(c: Condition, path: string, out: AstIssue[]): void {
+  if (c?.kind === 'aPlayerLostLifeThisTurn') return;
+  if (c?.kind === 'and' || c?.kind === 'or') {
+    for (const [i, t] of (c.terms ?? []).entries()) checkReadAtUse(t, `${path}.terms[${i}]`, out);
+  } else if (c?.kind === 'not') {
+    checkReadAtUse(c.term, `${path}.term`, out);
+  } else {
+    checkCondition(c, path, out);
+  }
 }
 
 function walk(c: Condition, path: string, out: AstIssue[]): void {
@@ -191,11 +209,13 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       }
       // CR 700.8, 613.8 (full party): the creatures in the party, read through layers 1, 4 and 5 like a count of objects.
       if (typeof amount !== 'number' && amount?.kind === 'partySize') return;
+      // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads mana costs (layers 1 and 2 only), which no type-changing or P/T effect changes.
+      if (typeof amount !== 'number' && amount?.kind === 'devotion') return;
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,
           `${path}.amount`,
-          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong)",
+          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong), or the devotion",
         );
         return;
       }
@@ -385,7 +405,12 @@ export function checkStaticCondition(
   // CR 607.2a, 601.2a (Evendo Brushrazer): "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with this creature": the permission is read as
   // the card is played (`rules/legality.ts`), with `evaluateCondition`, not by `derive`.
   if (s?.kind === 'playFromLinkedExile') {
-    checkCondition(condition, `${path}.condition`, out);
+    checkReadAtUse(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 101.2, 601.2 (Rakdos, Lord of Riots): "You can't cast ~ unless an opponent lost life this turn", read as the spell is cast (`rules/cast-restrictions.ts`).
+  if (s?.kind === 'cantCastThis') {
+    checkReadAtUse(condition, `${path}.condition`, out);
     return;
   }
   // Issue 81 (Windcrag Siege, "Mardu — ..."; CR 607.2d): an additional trigger linked to an option the permanent chose as it entered, read by `rules/trigger-doubling.ts`. No other condition.

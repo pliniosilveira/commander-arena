@@ -121,6 +121,7 @@ import { FEDERATION_F_LOWERINGS } from './federation-f';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { FLEET_E_LOWERINGS } from './fleet-e';
+import { FLORIAN_LOWERINGS } from './florian';
 import { FOOD_D_LOWERINGS } from './food-d';
 import { GAIN_KEYWORD_CHOICE_LOWERINGS } from './gain-keyword-choice';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
@@ -208,6 +209,7 @@ import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
 import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
 import { QUICK_DRAW_LOWERINGS } from './quick-draw';
 import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
+import { RANDOM_OPPONENT_LOWERINGS } from './random-opponent';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { RETURNED_LAND_LOWERINGS } from './returned-land';
 import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
@@ -218,6 +220,7 @@ import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { RIDERS_B_LOWERINGS } from './riders-b';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SECRET_VOTES_LOWERINGS } from './secret-votes';
+import { SHELL_GAME_LOWERINGS } from './shell-game';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { SQUIRRELED_G4_LOWERINGS } from './squirreled-g4';
@@ -2136,6 +2139,22 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       if (!ref.ok) return ref;
       return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
     }
+    // "Choose up to one target nonland permanent. Its controller may sacrifice it." (Star Athlete, CR 701.21a, 608.2c): "it" is a target of the ability, sacrificed by the player who
+    // controls it (the engine's `sacrifice` with `byController`), whoever the "may" asked.
+    if (
+      what.det === 'anaphor' &&
+      /^t\d+$/u.test(what.ref ?? '') &&
+      arg(clause, 'player') === undefined &&
+      ctx.askedActs
+    ) {
+      const ref = objectRefOf(what, ctx);
+      if (!ref.ok) return ref;
+      return {
+        ok: true,
+        value: [{ kind: 'sacrifice', objects: ref.value, byController: true }],
+        rule: clause.rule,
+      };
+    }
     // "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it." (Gorbag of Minas Morgul, CR 701.21a, 603.2c): "it" is the permanent the trigger is
     // about, which its controller (the controller of the ability) sacrifices; the engine's `sacrifice` of the `triggerSubject`.
     if (what.det === 'triggerSubject' && arg(clause, 'player') === undefined) {
@@ -3290,6 +3309,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EXILE_COUNTERS_LOWERINGS,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
   ...CONTROLLER_DAMAGE_LOWERINGS,
+  ...RANDOM_OPPONENT_LOWERINGS,
+  ...FLORIAN_LOWERINGS,
+  ...SHELL_GAME_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,

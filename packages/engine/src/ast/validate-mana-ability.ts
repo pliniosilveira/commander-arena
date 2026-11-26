@@ -309,6 +309,29 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
+      if (only.typesOrSubtypes !== undefined) {
+        if (only.typesOrSubtypes !== true) {
+          issue(
+            out,
+            `${path}.spendOnly.typesOrSubtypes`,
+            'typesOrSubtypes must be true when present',
+          );
+        }
+        if (
+          only.types === undefined ||
+          only.subtypes === undefined ||
+          only.notTypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.qualities !== undefined ||
+          only.alsoAbilities !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.spendOnly.typesOrSubtypes`,
+            'typesOrSubtypes needs both types and subtypes and goes with nothing else',
+          );
+        }
+      }
       if (only.xCost !== undefined && only.xCost !== true) {
         issue(out, `${path}.spendOnly.xCost`, 'xCost must be true when present');
       }

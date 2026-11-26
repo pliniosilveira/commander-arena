@@ -666,8 +666,9 @@ function activationCostIssues(
 function unlessSacrificeIssues(costs: readonly Cost[], path: string, out: AstIssue[]): void {
   for (const [i, c] of costs.entries()) {
     if (c.kind !== 'sacrifice') continue;
+    // Enchanter's Bane (CR 701.21a): "unless that player sacrifices it", the permanent a target named; `validateCard` allows it only in an `unlessPays`.
     if (
-      'kind' in c.what ||
+      ('kind' in c.what && c.what.kind !== 'target') ||
       c.countX !== undefined ||
       c.anyNumber !== undefined ||
       c.alongside !== undefined
@@ -867,7 +868,7 @@ function walkAbility(
         conditionIssues(a.static.unless, `${path}.static.unless`, out);
       }
       return;
-    case 'triggered':
+    case 'triggered': {
       if (!SUPPORTED_FEATURES.triggerKinds.includes(a.trigger.kind)) {
         out.push({
           path: `${path}.trigger`,
@@ -912,11 +913,16 @@ function walkAbility(
       }
       // CR 605.1b, 106.1b, 605.3b: the triggered mana ability of "adds an additional one mana of any color": the color is named as the mana ability that triggered it is activated
       // (`Action.extraColors`), so it is the one `addMana` of a choice the engine runs (the shape is checked in `validate.ts`).
+      // Barbflare Gremlin (CR 605.4a): the mana of the triggered mana ability may be followed by damage to the player who tapped the permanent (the shape is checked in `validate.ts`).
+      const triggeredMana =
+        a.effect.kind === 'sequence' && a.effect.effects[0]?.kind === 'addMana'
+          ? a.effect.effects[0]
+          : a.effect;
       if (
         a.trigger.kind === 'tappedForMana' &&
-        a.effect.kind === 'addMana' &&
-        ((a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
-          a.effect.mana.kind === 'producedType')
+        triggeredMana.kind === 'addMana' &&
+        ((triggeredMana.mana.kind === 'anyColor' && (triggeredMana.mana.count ?? 1) === 1) ||
+          triggeredMana.mana.kind === 'producedType')
       ) {
         return;
       }
@@ -929,6 +935,7 @@ function walkAbility(
         triggerSubjectFilter(a.trigger),
       );
       return;
+    }
     case 'activated':
       activationCostIssues(a.cost, `${path}.cost`, out, undefined, true, true);
       if (a.costReducedIf !== undefined) {

@@ -721,9 +721,19 @@ export function legalTargets(
 function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext): ChosenTarget[] {
   const out: ChosenTarget[] = [];
   const specId = spec.id;
-  const playersFor = (filter: 'any' | 'opponent' | 'opponentWhoseTurn'): ChosenTarget[] =>
+  const playersFor = (
+    filter: 'any' | 'opponent' | 'opponentWhoseTurn' | 'otherThanTriggerPlayer',
+  ): ChosenTarget[] =>
     seatsInOrder(state, ctx.controller)
-      .filter((s) => filter === 'any' || s !== ctx.controller)
+      .filter(
+        (s) => filter === 'any' || filter === 'otherThanTriggerPlayer' || s !== ctx.controller,
+      )
+      // CR 115.1, 603.2 (The Lord of Pain): "another target player": every player but the one the trigger is about, none when it is about no player.
+      .filter(
+        (s) =>
+          filter !== 'otherThanTriggerPlayer' ||
+          (ctx.triggerPlayer !== undefined && s !== ctx.triggerPlayer),
+      )
       // CR 115.1, 500.1 (Cmdr. Troi): "target opponent whose turn it is": the opponent who is the active player, so no one on the controller's own turn.
       .filter((s) => filter !== 'opponentWhoseTurn' || s === state.turn.activeSeat)
       // CR 702.11b (D-149): "You have hexproof": the opponents of that player can't target them.

@@ -500,6 +500,7 @@ describe('supported feature gate', () => {
       'countersAddedEach',
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
+      'lifeLostDuringTheirTurn',
       // Whispering Snitch: "Whenever you surveil for the first time each turn".
       'surveilsFirstEachTurn',
       'stepMonarch',

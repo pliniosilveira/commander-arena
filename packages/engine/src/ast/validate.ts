@@ -2133,8 +2133,14 @@ function checkDiscardedAsCost(face: CardFace, path: string, out: AstIssue[]): vo
       );
     }
   });
-  if (effectHas(face.spell, 'discardedAsCostMatches')) {
-    issue(out, `${path}.spell`, 'discardedAsCostMatches is not read by a spell (CR 602.2b)');
+  // CR 601.2b, 701.9a (Grab the Prize): a spell reads it when its additional cost discards cards from the hand.
+  const discardsToCast = (face.additionalCosts ?? []).some((c) => c?.kind === 'discard');
+  if (effectHas(face.spell, 'discardedAsCostMatches') && !discardsToCast) {
+    issue(
+      out,
+      `${path}.spell`,
+      'discardedAsCostMatches is read by a spell only when its additional cost discards cards from the hand (CR 601.2b)',
+    );
   }
 }
 
@@ -2586,17 +2592,34 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       // CR 605.1b (D-139): a triggered mana ability adds fixed mana at once, with nothing to choose.
       if (a.trigger?.kind === 'tappedForMana') {
+        // Barbflare Gremlin (CR 605.1b, 605.4a, 603.4): the mana may be followed by damage the tapped permanent deals to the player who tapped it ("Then that land deals 1 damage to that
+        // player"), and the ability may have the intervening "if" "this creature is tapped" (a `thisMatches` of the permanent itself that tests only its tapped status).
+        const [head, ...tail] =
+          a.effect?.kind === 'sequence' ? (a.effect.effects ?? []) : a.effect ? [a.effect] : [];
+        const damageOnly = tail.every(
+          (e) =>
+            e?.kind === 'dealDamage' &&
+            typeof e.amount === 'number' &&
+            e.amount >= 1 &&
+            e.to?.kind === 'triggerPlayer' &&
+            e.from === undefined,
+        );
+        const itsTapped =
+          a.interveningIf === undefined ||
+          (a.interveningIf.kind === 'thisMatches' &&
+            Object.keys(a.interveningIf.filter).every((k) => k === 'tapped' || k === 'raw'));
         const plain =
-          a.effect?.kind === 'addMana' &&
-          (a.effect.mana?.kind === 'fixed' ||
+          head?.kind === 'addMana' &&
+          (head.mana?.kind === 'fixed' ||
             // CR 106.1b, 605.3b: one mana of any color, named as the mana ability is activated.
-            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
+            (head.mana?.kind === 'anyColor' && (head.mana.count ?? 1) === 1) ||
             // CR 106.12a, 605.4a: one mana of a type the tapped permanent produced.
-            a.effect.mana?.kind === 'producedType') &&
+            head.mana?.kind === 'producedType') &&
+          damageOnly &&
           a.targets === undefined &&
           a.modes === undefined &&
           a.optional !== true &&
-          a.interveningIf === undefined;
+          itsTapped;
         if (!plain) {
           issue(
             out,

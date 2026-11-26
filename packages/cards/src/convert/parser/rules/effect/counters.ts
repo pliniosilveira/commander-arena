@@ -69,6 +69,8 @@ const COUNTER_OPERANDS = [
 const ADD_COUNTERS_OPERANDS = [
   // Lulu, Stern Guardian: "put a stun counter on target creature attacking you" (before the plain target, which would stop at "creature").
   'noun.target-creature-attacking-you-plain',
+  // Persistent Constrictor: "put a -1/-1 counter on up to one target creature they control", before the plain target, which would stop at "creature".
+  'noun.target-permanent-of-that-player',
   ...COUNTER_OPERANDS,
   // "Choose target creature attacking you. Put a stun counter on that creature.": the object the sentence before named (CR 608.2c).
   'noun.that-object',

@@ -734,6 +734,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `~ deals 3 damage to target creature. You gain life ${e}.`,
   ),
   'static.cant-cast-early': asIs,
+  'static.cant-cast-unless-opponent-lost-life': asIs,
   // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
   'static.opponents-cant-gain-life': asIs,
   // Everlasting Torment: each line stands alone.
@@ -864,6 +865,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
+  'replacement.damage-bonus-noncombat': asIs,
   'replacement.damage-double': asIs,
   'static.unspent-mana': asIs,
   // Revenant Recon deck, surveil group: Enhanced Surveillance and Eye of Duskmantle say the whole ability, and the two triggers are those of Unshakable Tail and Watcher of Hours.
@@ -1426,6 +1428,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.during-opponents-end-step': asIs,
   // World Shaper deck: the permission to play the cards exiled with ~, a whole line; the condition after "as long as" of a permission to cast from the top of the library.
   'static.play-linked-exile': asIs,
+  'static.play-linked-exile-lands-and-spells': asIs,
+  'condition.devotion': permanent((e) => `As long as ${e}, ~ has flying.`),
   'condition.control-different-powers': permanent(
     (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
   ),
@@ -1940,7 +1944,7 @@ describe('meta test 3: every rule is reached by the full pipeline', () => {
       }
     }
     expect(RULES.map((r) => r.id).filter((id) => !seen.has(id))).toEqual([]);
-  });
+  }, 60_000); // runs the examples of every rule; about 4 s alone, so a loaded CI runner needs room
 });
 
 describe('the segmenter and the rules agree on what a line is', () => {

@@ -1173,6 +1173,54 @@ export function spellTypesAndPhrase(): Parser<IrFilter> {
 }
 
 /**
+ * "instant, sorcery, Demon, and Spirit spells" (Séance Board, CR 106.6, 205.2a, 205.3m): a list of three or more card types and creature types joined by commas and a last ", and ", at
+ * least one of each kind, a spell of any one of them. Card types are lowercase and creature types capitalized (CR 205.3). The filter is the spells whose `anyOf` holds one member for each word.
+ * Not read: two words ("instant and sorcery spells" is `spellTypesAndPhrase`), one kind alone, a repeated word, "or", a missing "and" before the last word.
+ */
+export function mixedSpellListPhrase(): Parser<IrFilter> {
+  const item = choice(
+    map(pattern(new RegExp(`(?:${CARD_TYPES})${BOUNDARY}`, 'u')), (m) => ({
+      word: m[0],
+      subtype: false,
+    })),
+    map(pattern(new RegExp(`(?:${SUBTYPE_WORD})${BOUNDARY}`, 'u')), (m) => ({
+      word: m[0],
+      subtype: true,
+    })),
+  );
+  return (ctx, pos) => {
+    const first = item(ctx, pos);
+    if (!first.ok) return first;
+    const more = many(
+      map(sequence(choice(literal(', and '), literal(', ')), item), ([sep, it]) => ({
+        sep,
+        ...it,
+      })),
+    )(ctx, first.pos);
+    if (!more.ok) return more;
+    const items = [{ sep: '', ...first.value }, ...more.value];
+    const end = pattern(new RegExp(` spells${BOUNDARY}`, 'iu'))(ctx, more.pos);
+    if (!end.ok) return end;
+    const words = items.map((i) => i.word);
+    const last = items[items.length - 1];
+    const shaped =
+      items.length >= 3 &&
+      last?.sep === ', and ' &&
+      items.slice(1, -1).every((i) => i.sep === ', ') &&
+      new Set(words).size === words.length &&
+      items.some((i) => i.subtype) &&
+      items.some((i) => !i.subtype);
+    if (!shaped) return fail(ctx, pos);
+    const base = toFilter('stack', NO_PARTS, ctx.text.slice(pos, end.pos));
+    const anyOf = items.map(
+      (i): IrFilter =>
+        i.subtype ? { subtypes: [i.word], raw: i.word } : { types: [i.word], raw: i.word },
+    );
+    return { ok: true, value: { ...base, stackKind: 'spell', anyOf }, pos: end.pos };
+  };
+}
+
+/**
  * " that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4): a card in a graveyard that went there from the battlefield
  * during this turn (a creature that died, an artifact that was destroyed).
  */

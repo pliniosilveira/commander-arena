@@ -1251,6 +1251,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** `chooseObjects.perPlayer` (CR 101.4): `seat` chooses, the filter is read for the controller, and the choice joins what `id` already names (`first` starts it afresh). */
+      readonly joined?: { readonly first: boolean };
       /** `chooseObjects.perChoice` (CR 101.4): the candidates are the permanents of `seat` the filter matches, `seat` is not the chooser, and the choice joins what `id` already names (`first` starts it afresh). */
       readonly ofPlayer?: { readonly seat: SeatId; readonly first: boolean };
       /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */
@@ -1266,6 +1268,8 @@ export type Instruction =
   | {
       readonly kind: 'choosePlayer';
       readonly among: 'mostLife' | 'opponent';
+      /** "Choose an opponent at random": picked by the seeded generator, nobody asked. */
+      readonly random?: true;
       readonly chosen: SeatId | null;
     }
   /**
@@ -2107,6 +2111,8 @@ export type Instruction =
       readonly stage: 'ask' | 'discard' | 'blight' | 'sacrifice' | 'pay';
       readonly effect: Effect;
       readonly optional: boolean;
+      /** A sacrifice cost of `{ kind: 'target', id }` (CR 701.21a): the one permanent, worked out as the effect began, that the payer may sacrifice. */
+      readonly sacrificeOnly?: ObjectId;
       /**
        * "You may pay [cost]. If you do, [effect]" (`mayPay`, CR 702.101a, D-120): `seat` is the controller,
        * and `effect` runs when they pay, not when they do not. The purpose of both questions is 'mayPay'.

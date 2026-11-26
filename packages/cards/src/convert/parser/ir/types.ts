@@ -455,7 +455,7 @@ export interface IrFilter {
    */
   readonly anyOf?: readonly IrFilter[];
   /** The noun names a player, not an object: "target player", "target opponent". */
-  readonly player?: 'any' | 'opponent' | 'opponentWhoseTurn';
+  readonly player?: 'any' | 'opponent' | 'opponentWhoseTurn' | 'otherThanTriggerPlayer';
   /** "the chosen player casts a spell" (Sewer Nemesis, CR 607.2d): the player noun of a cast trigger is the player the permanent chose as it entered (the engine's `by: 'chosenPlayer'`). */
   readonly chosenPlayer?: true;
   /**
@@ -1927,6 +1927,8 @@ export interface IrTrigger extends IrNode {
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.
    */
   readonly firstEachTurn?: true;
+  /** 'lifeLost' "for the first time during each of their turns" (Valgavoth; CR 119.3, 603.2): only a loss in a turn of the player who lost the life; with `firstEachTurn`. */
+  readonly duringTheirTurn?: true;
   /**
    * 'countersRemoved' "Whenever you remove a time counter from this card while it's exiled" (Watcher of Hours, CR 122.1, 702.62a): the player removes a counter of the kind `counter` from the
    * card with the ability while it is in exile; the card is the subject (`~`).
@@ -2441,7 +2443,12 @@ export type IrStaticEffect =
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.
    */
-  | { readonly kind: 'cantCastThis'; readonly turns: number }
+  | {
+      readonly kind: 'cantCastThis';
+      readonly turns?: number;
+      /** "You can't cast ~ unless an opponent lost life this turn." (Rakdos, Lord of Riots; CR 101.2, 119.3): the card can be cast only when an opponent has lost life this turn. */
+      readonly unlessOpponentLostLife?: true;
+    }
   /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (stage P33, D-150, CR 509.1b, 509.1d): `cost` is
    * what each blocker costs its controller; `whileAttacking` is "As long as ~ is attacking," before it. The subject is `creatures`.

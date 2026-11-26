@@ -1,5 +1,5 @@
 {
-  "parserVersion": 223,
+  "parserVersion": 224,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -783,6 +783,14 @@
       "reasons": [],
       "ast": "28bfdb6c"
     },
+    "0ae74149-60fc-407a-8782-8865458606b5": {
+      "name": "Fear of Burning Alive",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3e23e728"
+    },
     "0b620775-70a5-4423-8453-e403a5b79554": {
       "name": "Kamber, the Plunderer",
       "group": "acceptance",
@@ -1321,6 +1329,14 @@
       "reasons": [],
       "ast": "93e2c117"
     },
+    "143a269a-b9ee-48ba-bd7b-4aa46eb36778": {
+      "name": "Rakdos, Lord of Riots",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "399aae7c"
+    },
     "14493624-fdc7-4630-9b1e-f35668651108": {
       "name": "Baldin, Century Herdmaster",
       "group": "acceptance",
@@ -1706,6 +1722,14 @@
       "reasons": [],
       "ast": "b89d6ba1"
     },
+    "1b355139-4891-436c-9079-0ce17ecc2d65": {
+      "name": "Vial Smasher the Fierce",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "030859ff"
+    },
     "1b388371-f9ef-45b4-82a3-ca20a8cd7807": {
       "name": "Dovin's Veto",
       "group": "training",
@@ -1977,6 +2001,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "129fb08a"
+    },
+    "1f0548f8-5dec-44b5-b5a9-e55fa4366e08": {
+      "name": "Enchanter's Bane",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "852c1911"
     },
     "1f139012-fa71-4f5f-8c57-6847bff95678": {
       "name": "Grishnákh, Brash Instigator",
@@ -4137,6 +4169,14 @@
       "reasons": [],
       "ast": "c800dfcf"
     },
+    "3e5ca524-8dd1-4f7f-a467-5210d768b8a1": {
+      "name": "Rampaging Ferocidon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5e379997"
+    },
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
       "group": "acceptance",
@@ -4224,6 +4264,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "36b1e8b0"
+    },
+    "41087db6-34c4-4e2b-9f54-5e4488ca9c0b": {
+      "name": "Blood Seeker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f3809976"
     },
     "41459587-7509-404e-bd7d-fb8831dee789": {
       "name": "Hostile Desert",
@@ -5434,6 +5482,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f6760bac"
+    },
+    "5401439c-4068-4490-8d53-8ffd0026dd7d": {
+      "name": "Valgavoth, Harrower of Souls",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "992ed197"
     },
     "541744d9-449d-420a-a5a1-2fffba18450f": {
       "name": "Primal Beyond",
@@ -8543,6 +8599,14 @@
       "reasons": [],
       "ast": "901f3d9f"
     },
+    "8331d2ff-3729-4014-8dcb-278644d2632a": {
+      "name": "Séance Board",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "982997d2"
+    },
     "834554f6-3b65-44fd-b1d1-8495b740dbfc": {
       "name": "Interpret the Signs",
       "group": "acceptance",
@@ -8807,6 +8871,14 @@
       "reasons": [],
       "ast": "7b6fbc9c"
     },
+    "875c3db1-2752-48e7-9664-bbb12120c032": {
+      "name": "Nightshade Harvester",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d0658f3f"
+    },
     "87b8fef3-f40e-44a9-afd5-31d3917b1d59": {
       "name": "U.S.S. Defiant, Tough Little Ship",
       "group": "acceptance",
@@ -8878,6 +8950,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4105ffb1"
+    },
+    "88c3fc46-f2f5-440c-80a6-fed5b42cd340": {
+      "name": "Sadistic Shell Game",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "623a10d5"
     },
     "88d0a394-79e2-42ac-9a37-1a7b78231941": {
       "name": "Thunderclap Drake",
@@ -9450,6 +9530,14 @@
       "reasons": [],
       "ast": "4ece6bfc"
     },
+    "922cf963-2b1b-43ad-819e-6e49133e6aae": {
+      "name": "Spiteful Visions",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b20c8cc6"
+    },
     "9259e918-ace5-4f13-9035-d8bc8c820d25": {
       "name": "March from the Black Gate",
       "group": "acceptance",
@@ -9873,6 +9961,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "93a767d7"
+    },
+    "98641070-93bd-4088-90cb-956c2b21979e": {
+      "name": "Suspended Sentence",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "205c1009"
     },
     "98a2a642-a30a-43e7-b47f-4776c22d1cb0": {
       "name": "Éowyn, Shieldmaiden",
@@ -10641,6 +10737,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "78cc758a"
+    },
+    "a37387f0-9d57-49ff-aa38-2c6b359e8916": {
+      "name": "Grab the Prize",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "47ea36ef"
     },
     "a38828be-781e-4340-9c6f-f40b1d34773f": {
       "name": "White Sun's Twilight",
@@ -11668,6 +11772,14 @@
       "reasons": [],
       "ast": "82c84849"
     },
+    "b194f277-5045-4391-8b48-d555a6d657a7": {
+      "name": "The Lord of Pain",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56bc45e2"
+    },
     "b2354092-7a4c-4e69-9c0a-0a2e146dc00c": {
       "name": "Watcher of Hours",
       "group": "acceptance",
@@ -11751,6 +11863,14 @@
       "reasons": [],
       "ast": "2885e63d"
     },
+    "b391a4ce-52ce-4a8c-bbe5-6053951ee1d4": {
+      "name": "Theater of Horrors",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c809b2bb"
+    },
     "b39f228f-d146-49c6-bab4-5304e0f742d8": {
       "name": "Azure Fleet Admiral",
       "group": "acceptance",
@@ -11798,6 +11918,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "14af731c"
+    },
+    "b46da6bd-578c-4040-97c3-0005b78e31be": {
+      "name": "Mask of Griselbrand",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2011c3e5"
     },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
@@ -12271,6 +12399,14 @@
       "reasons": [],
       "ast": "231bc7c5"
     },
+    "bd7accec-ca8a-49c7-9ae4-fe97d99b4a34": {
+      "name": "Barbflare Gremlin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f4a59a20"
+    },
     "bd7c5a8b-cf62-41e1-a664-b16e3e5d142b": {
       "name": "Laughing Jasper Flint",
       "group": "acceptance",
@@ -12358,6 +12494,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e08406c9"
+    },
+    "bf0ee9da-6071-440c-9149-d441f730fcfb": {
+      "name": "Persistent Constrictor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cdd56043"
     },
     "bf1341dd-41a3-49f6-87ec-63170dde4324": {
       "name": "Boseiju, Who Endures",
@@ -13977,6 +14121,14 @@
       "reasons": [],
       "ast": "79241754"
     },
+    "d74a2cbf-4d13-401d-9b3f-bfbde4942afd": {
+      "name": "Florian, Voldaren Scion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8cc75e91"
+    },
     "d751580b-bb72-4d1d-be27-d0410f883b2a": {
       "name": "Inspired Skypainter // Maestro's Gift",
       "group": "acceptance",
@@ -14850,6 +15002,14 @@
       "reasons": [],
       "ast": "9ba57160"
     },
+    "e49b902f-a556-4dab-8928-93caf0a3f609": {
+      "name": "Spiked Corridor // Torture Pit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75f13e1d"
+    },
     "e4a3d6f3-36ba-4e6d-a254-351bc8886f20": {
       "name": "Izzet Chemister",
       "group": "acceptance",
@@ -14865,6 +15025,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fe9ecaed"
+    },
+    "e5912d21-e188-4b9e-8e92-a6e8196353c6": {
+      "name": "Mogis, God of Slaughter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f807d4ed"
     },
     "e597d8a1-3bbc-4001-b642-f4421447970f": {
       "name": "Extract from Darkness",
@@ -16350,6 +16518,14 @@
       "reasons": [],
       "ast": "ef18b0f8"
     },
+    "fb03befb-b4e4-4ae9-908d-a16d5b03b054": {
+      "name": "Star Athlete",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f5473b90"
+    },
     "fb084141-cb80-479e-b5d4-114c1f31eb6c": {
       "name": "Generous Patron",
       "group": "acceptance",
@@ -16445,6 +16621,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5388b483"
+    },
+    "fc7b46af-6c07-455a-99c7-f1bccaa2a5f4": {
+      "name": "Kederekt Parasite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a15011c4"
     },
     "fc9ec820-4245-4a96-b009-5308a818ca58": {
       "name": "Watery Grave",
@@ -16634,8 +16818,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1778,
-      "total": 1794
+      "supported": 1801,
+      "total": 1817
     }
   }
 }

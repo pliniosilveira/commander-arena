@@ -44,6 +44,8 @@ export type ManaRestriction =
       /** "Spend this mana only to cast a noncreature spell" (CR 106.6): the spell has none of these card types. */
       readonly notTypes?: readonly string[];
       readonly subtypes?: readonly string[];
+      /** "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells" (CR 106.6): with `types` and `subtypes`, one of the two is enough, not both. */
+      readonly typesOrSubtypes?: true;
       /**
        * D-151: "Spend this mana only to cast Dragon spells or activate abilities of Dragons": the mana may also pay for an activated ability of a permanent that
        * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).

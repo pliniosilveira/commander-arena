@@ -45,6 +45,14 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (t.firstEachTurn !== undefined && t.firstEachTurn !== true) {
         issue(out, `${path}.firstEachTurn`, 'firstEachTurn must be true when present');
       }
+      if (t.kind === 'lifeLost' && t.duringTheirTurn !== undefined) {
+        if (t.duringTheirTurn !== true) {
+          issue(out, `${path}.duringTheirTurn`, 'duringTheirTurn must be true when present');
+        }
+        if (t.batch === true) {
+          issue(out, `${path}.duringTheirTurn`, 'duringTheirTurn does not go with batch');
+        }
+      }
       if (t.kind === 'lifeLost' && t.batch !== undefined) {
         if (t.batch !== true) issue(out, `${path}.batch`, 'batch must be true when present');
         if (t.who === 'you')

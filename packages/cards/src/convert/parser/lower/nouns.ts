@@ -1808,6 +1808,13 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       return blocked ?? ok({ kind: 'playerToYourRight' });
     }
     case 'enteredChosenPlayer': {
+      // The Lord of Pain (CR 115.1): "Choose another target player. ~ deals damage ... to the chosen player.": the player the instruction before named as a target of the ability,
+      // when it declared exactly one player target and the permanent chose nothing as it entered.
+      const chosen = ctx.targets.filter((t) => t.what.kind === 'player');
+      if (chosen.length === 1 && chosen[0] !== undefined) {
+        const blockedTarget = gate(noun, ['selector:target']);
+        return blockedTarget ?? ok({ kind: 'target', id: chosen[0].id });
+      }
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'enteredChosenPlayer' });
     }
@@ -1985,6 +1992,16 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
           return gate(noun, ['selector:triggerActor']) ?? failure(noun, []);
         const blocked = gate(noun, ctx.thatPlayer.needs);
         return blocked ?? ok(ctx.thatPlayer.selector);
+      }
+      // Enchanter's Bane (CR 109.4, 118.12a): "... deals damage equal to its mana value to its controller unless that player sacrifices it": "that player" is the controller of the
+      // object the instruction before it named, the player the instruction was said of.
+      if (
+        noun.det === 'anaphor' &&
+        (noun.ref === undefined || /^m\d+$/u.test(noun.ref)) &&
+        /^(?:that player|they)$/iu.test(noun.filter.raw.trim()) &&
+        (ctx.lastPlayer?.kind === 'controllerOf' || ctx.lastPlayer?.kind === 'ownerOf')
+      ) {
+        return ok(ctx.lastPlayer);
       }
       const to = followed(noun);
       if ('needs' in to) return gate(noun, [to.needs]) ?? failure(noun, []);

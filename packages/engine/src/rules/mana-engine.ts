@@ -48,7 +48,7 @@ import {
   spendRestrictionOf,
   spentRiderOf,
 } from './mana-outcomes';
-import { additionalManaOptions } from './mana-triggers';
+import { additionalManaOptions, triggeredManaDamage } from './mana-triggers';
 import {
   activatePlayerMana,
   isPlayerManaAbility,
@@ -377,6 +377,30 @@ export function activateManaAbility(
     next = extra.state;
     events.push(...extra.events);
   }
+  // CR 605.1b, 605.4a (Barbflare Gremlin): "Then that land deals 1 damage to that player": the triggered mana ability's damage, dealt by the land to the player who tapped it, with the mana.
+  const hurt = runManaTriggerDamage(next, seat, obj, found.ability, chosen);
+  next = hurt.state;
+  events.push(...hurt.events);
+  return { state: next, events };
+}
+
+/** The damage of the triggered mana abilities that trigger as `tapped` is tapped for `produced` (`triggeredManaDamage`): the land deals it to `seat`, who tapped it. */
+function runManaTriggerDamage(
+  state: GameState,
+  seat: SeatId,
+  tapped: GameObject,
+  ability: ManaAbility,
+  produced: readonly ManaColor[],
+): { state: GameState; events: GameEvent[] } {
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const amount of triggeredManaDamage(state, tapped, ability, produced)) {
+    const out = runImmediateEffects(next, seat, tapped.id, [
+      { kind: 'dealDamage', amount, to: { kind: 'you' } },
+    ]);
+    next = out.state;
+    events.push(...out.events);
+  }
   return { state: next, events };
 }
 
@@ -445,6 +469,14 @@ export function applyPaymentPlan(
       const extra = runImmediateEffects(next, seat, tap.object, ability.also ?? []);
       next = extra.state;
       events.push(...extra.events);
+    }
+    // CR 605.1b, 605.4a (Barbflare Gremlin): the damage of a triggered mana ability, dealt by the land to the player who tapped it.
+    const tappedObject = next.objects[tap.object];
+    if (tappedObject !== undefined) {
+      const produced = productionOutcomes(next, tappedObject, ability)[tap.outcome] ?? [];
+      const hurt = runManaTriggerDamage(next, seat, tappedObject, ability, produced);
+      next = hurt.state;
+      events.push(...hurt.events);
     }
   }
   if (lifeToPay > 0) {

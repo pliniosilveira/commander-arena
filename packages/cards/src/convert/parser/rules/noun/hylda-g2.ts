@@ -184,6 +184,9 @@ export const NOUN_TARGET_PERMANENT_OF_THAT_PLAYER = defineRule<IrNoun>({
     // Wakka, Devoted Guardian: "destroy up to one target artifact that player controls" (CR 115.1, 115.2: none or one target).
     'up to one target artifact that player controls',
     'up to one target creature that player controls',
+    // Persistent Constrictor: "they" is the player of the event, as "that player" is.
+    'up to one target creature they control',
+    'target creature they control',
   ],
   rejects: [
     'up to two target artifacts that player controls',
@@ -196,6 +199,9 @@ export const NOUN_TARGET_PERMANENT_OF_THAT_PLAYER = defineRule<IrNoun>({
     'target creature that opponent controls',
     'target creature that players control',
     'target creature that player',
+    'target creature they controls',
+    'target creatures they control',
+    'target creature they',
     'target creature you control that player controls',
     'target creature an opponent controls that player controls',
     "target creature that player's",
@@ -205,21 +211,23 @@ export const NOUN_TARGET_PERMANENT_OF_THAT_PLAYER = defineRule<IrNoun>({
     const r = sequence(
       choice(literal('up to one target '), literal('target ')),
       permanentPhrase(false, 'all'),
-      spanned(pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'))),
+      // Persistent Constrictor: "up to one target creature they control", the same player said as "they".
+      spanned(pattern(new RegExp(` (?:that player controls|they control)${BOUNDARY}`, 'iu'))),
     )(ctx, pos);
     if (!r.ok) return r;
     const [lead, filter, suffix] = r.value;
+    const said = /they control/iu.test(suffix.value[0] ?? '') ? 'they' : 'that player';
     if (filter.controller !== undefined) return fail(ctx, pos);
     const upTo = lead.toLowerCase().startsWith('up to');
     const start = suffix.span.start + 1;
     const player: IrNoun = {
       kind: 'noun',
       det: 'anaphor',
-      filter: { raw: 'that player' },
+      filter: { raw: said },
       upTo: false,
       plural: false,
       other: false,
-      span: { start, end: start + 'that player'.length },
+      span: { start, end: start + said.length },
       rule: 'noun.target-permanent-of-that-player',
     };
     const noun: IrNoun = {

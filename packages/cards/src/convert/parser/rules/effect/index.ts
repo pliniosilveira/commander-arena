@@ -134,6 +134,7 @@ import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FLINT_RIDER_EFFECT_RULES } from './flint-riders';
+import { FLORIAN_EFFECT_RULES } from './florian';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
@@ -280,6 +281,7 @@ import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
 import { QUICK_DRAW_EFFECT_RULES, QUICK_DRAW_FIRST_EFFECT_RULES } from './quick-draw';
 import { RAMP_LANDS_EFFECT_RULES } from './ramp-lands';
+import { RANDOM_OPPONENT_DAMAGE_RULE, RANDOM_OPPONENT_EFFECT_RULES } from './random-opponent';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
@@ -300,6 +302,7 @@ import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
 import { SECRET_VOTES_EFFECT_RULES } from './secret-votes';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
+import { SHELL_GAME_EFFECT_RULES } from './shell-game';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
@@ -361,6 +364,8 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     '~ deals 2 damage to its controller',
     // Rowan Kenrith: the creatures of a player the ability targets.
     '~ deals 3 damage to each tapped creature target player controls',
+    // Fear of Burning Alive: the creatures of the player of the event of the trigger.
+    '~ deals 2 damage to target creature that player controls',
   ],
   rejects: [
     '~ deals 2 damage to target creature and planeswalker',
@@ -1597,6 +1602,8 @@ export const EFFECT_RULES = [
   ...DURNAN_EFFECT_RULES,
   ...MANIFEST_DREAD_EFFECT_RULES,
   ...MANIFEST_COUNTERS_EFFECT_RULES,
+  // Vial Smasher the Fierce: damage to that player or a planeswalker that player controls, before the plain damage rule that would stop at "that player".
+  RANDOM_OPPONENT_DAMAGE_RULE,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,
@@ -1891,4 +1898,11 @@ export const EFFECT_RULES = [
   EFFECT_PAY,
   // Aetherdrift energy deck (issue 105): "pay one or more {E}".
   EFFECT_PAY_ENERGY_ANY,
+  // Vial Smasher the Fierce: "choose an opponent at random" and damage to that player or a planeswalker they control; after the rules that read longer sentences starting the same way
+  // ("Choose an opponent at random that ~ didn't attack ...").
+  ...RANDOM_OPPONENT_EFFECT_RULES,
+  // Florian, Voldaren Scion: the look at the top cards by the life the opponents lost, one exiled and played this turn.
+  ...FLORIAN_EFFECT_RULES,
+  // Sadistic Shell Game: each player chooses a creature the controller doesn't control, then those creatures are destroyed.
+  ...SHELL_GAME_EFFECT_RULES,
 ];

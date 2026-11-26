@@ -30,6 +30,11 @@ export const DAMAGE_AMOUNT = choice<IrAmount>(
     sequence(family<IrAmount>('amount', { only: ['amount.that-much'] }), literal(' damage')),
     ([amount]) => amount,
   ),
+  // Fear of Burning Alive (CR 120.3, 603.2): "~ deals that amount of damage to target creature that player controls", the same damage of the event as "that much damage".
+  map(
+    sequence(family<IrAmount>('amount', { only: ['amount.that-much'] }), literal(' of damage')),
+    ([amount]) => amount,
+  ),
 );
 
 /**

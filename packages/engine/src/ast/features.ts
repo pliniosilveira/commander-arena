@@ -126,6 +126,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyMonocolored',
     // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs." (`ManaAbility.spendOnly.notGeneric`)
     'manaSpendOnlyNotGeneric',
+    // Séance Board: "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells" (`spendOnly` with `typesOrSubtypes`).
+    'manaSpendOnlyTypesOrSubtypes',
     // Issue 102 (Lord of the Forsaken): "Spend this mana only to cast a spell from your graveyard." (`ManaAbility.spendOnly.fromGraveyard`)
     'manaSpendOnlyFromGraveyard',
     // Thieving Varmint: "Spend this mana only to cast spells you don't own." (`ManaAbility.spendOnly.notOwned`)
@@ -470,6 +472,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'youCantSacrifice',
     // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
     'choosePlayer',
+    // Vial Smasher the Fierce: "choose an opponent at random" (`choosePlayer` with `random`) and damage to that player or a planeswalker they control.
+    'dealDamageToChosenPlayerOrPlaneswalker',
     'cantBeBlockedByPlayer',
     'createToken',
     'search',
@@ -852,6 +856,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
     'lifeLostBatch',
+    // "Whenever an opponent loses life for the first time during each of their turns" (`lifeLost` with `duringTheirTurn`).
+    'lifeLostDuringTheirTurn',
     // Whispering Snitch: "Whenever you surveil for the first time each turn" (`surveils` with `firstEachTurn`).
     'surveilsFirstEachTurn',
     // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
@@ -2282,6 +2288,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyMonocolored',
   /** "This mana can't be spent to pay generic mana costs" (CR 106.6): `ManaAbility.spendOnly.notGeneric`. */
   'manaSpendOnlyNotGeneric',
+  /** "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells" (CR 106.6): the engine's `spendOnly` with `typesOrSubtypes`, a spell of one of the card types or of one of the creature types. */
+  'manaSpendOnlyTypesOrSubtypes',
   /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): `ManaAbility.spendOnly.fromGraveyard`. */
   'manaSpendOnlyFromGraveyard',
   /** "Spend this mana only to cast spells you don't own" (CR 106.6, 108.3, Thieving Varmint): `ManaAbility.spendOnly.notOwned`. */
@@ -2506,6 +2514,8 @@ export const TRIGGER_FEATURES = [
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
   'lifeLostBatch',
+  /** "Whenever an opponent loses life for the first time during each of their turns" (CR 119.3, 603.2): the engine's `lifeLost` with `duringTheirTurn`. */
+  'lifeLostDuringTheirTurn',
   /** "Whenever you surveil for the first time each turn" (CR 701.25, 603.2): the engine's `surveils` with `firstEachTurn`, only the first surveil of the player in the turn. */
   'surveilsFirstEachTurn',
   /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
@@ -3589,6 +3599,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyAbilities: true,
   manaSpendOnlyMonocolored: true,
   manaSpendOnlyNotGeneric: true,
+  manaSpendOnlyTypesOrSubtypes: true,
   manaSpendOnlyFromGraveyard: true,
   manaSpendOnlyNotOwned: true,
   manaSpendOnlyTurnFaceUp: true,
@@ -3793,6 +3804,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   youCantAttackPlayers: true,
   youCantSacrifice: true,
   choosePlayer: true,
+  dealDamageToChosenPlayerOrPlaneswalker: true,
   cantBeBlockedByPlayer: true,
   createToken: true,
   search: true,
@@ -4008,6 +4020,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  lifeLostDuringTheirTurn: true,
   surveilsFirstEachTurn: true,
   votingFinished: true,
   stepMonarch: true,
