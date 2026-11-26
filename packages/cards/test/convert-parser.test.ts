@@ -1491,6 +1491,7 @@ describe('unmatched abilities', () => {
       'noun.target-permanent-you-own',
       'noun.up-to-targets-controlled-by-different-players',
       'noun.target-permanent-and-same-name-tokens',
+      'noun.target-permanent-and-same-name-others',
       'noun.target-permanent-power-at-most-amassed',
       'noun.target-permanent',
       'noun.all-enchanted',
