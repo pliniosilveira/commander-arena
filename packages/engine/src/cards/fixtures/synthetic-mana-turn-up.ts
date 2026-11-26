@@ -48,7 +48,7 @@ export const SYNTHETIC_MANA_TURN_UP_LIST: readonly CardDefinition[] = [
     ],
   }),
   singleFace({
-    name: 'SYNTHETIC Green Sorcery',
+    name: 'SYNTHETIC Turn-Up Green Sorcery',
     manaCost: ['G'],
     types: ['sorcery'],
     colors: ['G'],

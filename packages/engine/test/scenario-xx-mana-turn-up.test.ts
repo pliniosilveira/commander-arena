@@ -5,7 +5,7 @@ import { syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const ROCK = 'SYNTHETIC Unmasking Rock'; // {T}: {G}{G}{G}{G}, only to turn permanents face up
-const SORCERY = 'SYNTHETIC Green Sorcery'; // {G}: gain 2
+const SORCERY = 'SYNTHETIC Turn-Up Green Sorcery'; // {G}: gain 2
 const BRUTE = 'SYNTHETIC Manifest Brute'; // {3}{G} 4/4 when face up
 const LORD = 'SYNTHETIC Manifest Lord'; // {1}{W}{W}
 const LIB = Array.from({ length: 12 }, () => 'Plains');

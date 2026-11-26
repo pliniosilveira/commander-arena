@@ -208,8 +208,8 @@ export const SYNTHETIC_MANIFEST_B_LIST: readonly CardDefinition[] = [
     manaCost: ['2', 'G', 'U'],
     types: ['creature'],
     subtypes: ['Human', 'Wizard'],
-    colors: ['G', 'U'],
-    colorIdentity: ['G', 'U'],
+    colors: ['U', 'G'],
+    colorIdentity: ['U', 'G'],
     power: 3,
     toughness: 3,
     oracleText:

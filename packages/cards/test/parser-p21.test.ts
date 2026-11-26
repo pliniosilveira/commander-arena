@@ -79,7 +79,8 @@ describe('keyword.line: the keywords of batch 2 (CR 702.118, 702.91, 702.134, 70
   });
 
   test.each([
-    ['Megamorph {3}', 'D-117'],
+    // Megamorph is read now (parser-megamorph-return.test.ts); Disguise is not.
+    ['Disguise {3}', 'D-117'],
     ['Flying, storm', 'one unread keyword leaves the whole line'],
     ['Skulk, storm', 'the same after a keyword of batch 2'],
   ])('"%s" stays unread (%s)', (text) => {

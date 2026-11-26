@@ -55,11 +55,11 @@ function turnUpCandidates(
   const scoped = { ...filter, zone: 'battlefield' as const, controller: 'you' as const };
   return objectsInZone(state, 'battlefield').filter((id) => {
     const obj = state.objects[id];
+    if (obj === undefined || obj.card === null) return false;
+    const by = faceDownBy(obj);
     return (
-      obj !== undefined &&
-      obj.card !== null &&
-      obj.faceDown !== undefined &&
-      obj.faceDown.by !== 'forestLand' &&
+      by !== null &&
+      by !== 'forestLand' &&
       matchesFilter(state, obj, scoped, { controller: res.controller, source: res.source })
     );
   });
