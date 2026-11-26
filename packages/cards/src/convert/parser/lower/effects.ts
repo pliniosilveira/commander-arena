@@ -178,6 +178,7 @@ import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { PLAYER_CHOICES_LOWERINGS } from './player-choices';
 import { PLAYER_CHOOSES_ATTACKER_LOWERINGS } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
@@ -212,6 +213,7 @@ import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
+import { VOTE_PERMANENTS_LOWERINGS } from './vote-permanents';
 import { VRASKA_LOWERINGS } from './vraska';
 import { VRONOS_LOWERINGS } from './vronos';
 import { WIN_GAME_LOWERINGS } from './win-game';
@@ -3159,6 +3161,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KORVOLD_LOWERINGS,
   ...COUNCIL_VOTES_LOWERINGS,
   ...SECRET_VOTES_LOWERINGS,
+  ...VOTE_PERMANENTS_LOWERINGS,
+  ...PLAYER_CHOICES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,

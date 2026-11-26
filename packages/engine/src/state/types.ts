@@ -1230,6 +1230,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** `chooseObjects.perChoice` (CR 101.4): the candidates are the permanents of `seat` the filter matches, `seat` is not the chooser, and the choice joins what `id` already names (`first` starts it afresh). */
+      readonly ofPlayer?: { readonly seat: SeatId; readonly first: boolean };
       /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */
       readonly asChooser?: true;
       readonly anyNumber?: true;
@@ -2218,6 +2220,8 @@ export type Instruction =
         | { readonly kind: 'objects'; readonly filter: ObjectFilter };
       /** "Secretly" (CR 701.38a): the votes are not shown until all are cast (`VoteQuestion.secret`). */
       readonly secret?: true;
+      /** `eachPlayerChooses` (CR 101.4): not a vote (CR 701.38c), asked of exactly these players, in this order (the active player first), and nothing is revealed at the end. */
+      readonly voters?: readonly SeatId[];
     }
   /**
    * CR 702.94a (Miracle, D-274): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,

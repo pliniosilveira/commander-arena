@@ -444,6 +444,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'votedObjects':
       // CR 701.38a (Trap the Trespassers).
       return 'each creature with one or more votes';
+    case 'mostVotedObjects':
+      // CR 701.38a (Council's Judgment).
+      return 'each permanent with the most votes or tied for most votes';
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen).
       return 'your Ring-bearer';
@@ -595,6 +598,9 @@ function recipientText(
       return "each player who can't";
     case 'eachPlayerWithoutVotes':
       return 'each player who received no votes';
+    case 'eachPlayerWhoChose':
+      // CR 101.4 (Seize the Spotlight).
+      return `each player who chose ${to.option}`;
     case 'eachOpponentWhoVoted':
       return to.choice === 'same'
         ? 'each opponent who voted for a choice you voted for'
@@ -627,6 +633,7 @@ function recipientText(
     case 'putWithThis':
     case 'eachObject':
     case 'votedObjects':
+    case 'mostVotedObjects':
     case 'ringBearer':
     case 'each':
       return objectText(to, ability, self);
@@ -805,6 +812,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'couldntSacrificeThisWay':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
+    case 'eachPlayerWhoChose':
     case 'attackedPlayers':
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
@@ -1511,7 +1519,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
     case 'voteFor':
       // CR 701.38a, 701.38b: a vote for a player or for a creature.
-      return `Each player ${effect.secret === true ? 'secretly ' : ''}votes for ${effect.choices.kind === 'players' ? 'a player' : "a creature you don't control"}${effect.secret === true ? ', then those votes are revealed' : ''}`;
+      return `Each player ${effect.secret === true ? 'secretly ' : ''}votes for ${effect.choices.kind === 'players' ? 'a player' : effect.choices.filter.types?.includes('creature') === true ? "a creature you don't control" : "a nonland permanent you don't control"}${effect.secret === true ? ', then those votes are revealed' : ''}`;
+    case 'eachPlayerChooses':
+      // CR 101.4 (Seize the Spotlight): "Each opponent chooses fame or fortune".
+      return `${effect.players.kind === 'eachOpponent' ? 'Each opponent' : 'Each player'} chooses ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
     case 'pair':
       // D-286 (CR 702.95a): the effect of the two abilities soulbond stands for; the creature is chosen as it resolves.
       return effect.partner === 'choose'

@@ -316,7 +316,10 @@ export function runInstruction(
     const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter(
       (id) =>
         (among === null || among.has(id)) &&
-        matchesFilter(state, getObject(state, id), instruction.filter, readFor),
+        matchesFilter(state, getObject(state, id), instruction.filter, readFor) &&
+        // CR 101.4 (`perChoice`): only what the player who chose controls.
+        (instruction.ofPlayer === undefined ||
+          controllerOf(state, getObject(state, id)) === instruction.ofPlayer.seat),
     );
     if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
     const max =
@@ -1021,6 +1024,26 @@ function runEffect(
             ...(effect.exactly === true ? { exactly: true as const } : {}),
             seat: c.seat,
             asVoter: { first: i === 0 },
+            chosen: null,
+          })),
+        );
+      }
+      // CR 101.4, 608.2d (Seize the Spotlight): "for each player who chose fame, gain control of a creature that player controls": one choice for each player who chose the option, by the
+      // controller, among the permanents the filter matches that player controls, all remembered under the one id.
+      if (effect.perChoice !== undefined) {
+        const chose = (ctx.voteCast ?? []).filter(
+          (c) => c.option === effect.perChoice && !getSeat(state, c.seat).hasLost,
+        );
+        return done(
+          state,
+          [],
+          chose.map((c, i) => ({
+            kind: 'chooseObjects' as const,
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
+            ofPlayer: { seat: c.seat, first: i === 0 },
             chosen: null,
           })),
         );
@@ -2822,6 +2845,23 @@ function runEffect(
             options: effect.options,
             cast: [],
             ...(effect.secret === true ? { secret: true as const } : {}),
+          },
+        ],
+      );
+
+    case 'eachPlayerChooses':
+      // CR 101.4, 608.2d (Seize the Spotlight): each player named chooses in the order of CR 101.4; not a vote (CR 701.38c), so nothing is revealed and no trigger of voting fires.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'vote',
+            options: effect.options,
+            cast: [],
+            voters: resolvePlayers(state, effect.players, ctx, targets).filter(
+              (seat) => !getSeat(state, seat).hasLost,
+            ),
           },
         ],
       );
