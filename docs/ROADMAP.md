@@ -139,7 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
-- Earthbend: the delayed return stays in the game state until the land dies or is exiled, even after the land left to another zone; harmless, as the new object never matches it. The Comprehensive Rules text here has no earthbend rule.
+- Earthbend: its delayed return stays in the game state until the land dies or is exiled, even after the land left to another zone (harmless). The Comprehensive Rules text here has no earthbend rule.
 - Skaab Ruinator shape: an additional cost of exiling graveyard cards is a fixed count, alone; it is not X cards and not one way of an "or" choice.
 - Disorienting Choice: a chosen permanent that became an illegal target before resolution is not counted as chosen, so it adds nothing to the number of lands searched for.
 - "Three or more creatures with different powers" and "~'s power is even/odd" are read only by permissions to cast (from the top of the library, as though with flash); a +N/+N or keyword static with them stays unsupported.
