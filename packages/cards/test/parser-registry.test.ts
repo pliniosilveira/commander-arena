@@ -367,6 +367,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-exiled-controller': spell(
     (e) => `Exile X target creatures. ${cap(e)} creates a 2/2 green Boar creature token.`,
   ),
+  // Terastodon: the sentence after a destroy.
+  'noun.each-graveyarded-controller': spell(
+    (e) =>
+      `Destroy target noncreature permanent. ${cap(e)} creates a 3/3 green Elephant creature token.`,
+  ),
   'noun.library-card': spell(
     (e) =>
       `Search your library for ${e}, put ${e.startsWith('up to') ? 'them' : 'it'} into your hand, then shuffle.`,
