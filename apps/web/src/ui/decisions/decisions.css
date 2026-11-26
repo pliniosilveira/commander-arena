@@ -312,6 +312,36 @@
   font-size: calc(11px * var(--text-scale));
   color: var(--text-dim, inherit);
 }
+.dec-tap-many {
+  max-width: min(320px, 92vw);
+}
+.dec-tap-many-colors {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dec-tap-many-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dec-tap-many-color output {
+  min-width: 1.5em;
+  text-align: center;
+}
+.dec-chip-primary {
+  background: var(--target);
+  border-color: var(--target);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.dec-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 .dec-popover-title {
   padding: 0 2px 4px;
   font-size: calc(12px * var(--text-scale));

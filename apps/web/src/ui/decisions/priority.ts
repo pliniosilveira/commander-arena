@@ -16,6 +16,7 @@ import { castAction } from './flashback';
 import { castPlayOptions, playAction } from './layouts';
 import { type Index, nameOf } from './lookup';
 import { lifeCostOf, manaChoiceLabel } from './mana-choice';
+import { type TapManyAsk, tapManyOf } from './tap-many';
 
 /** Objects the player may act on now: castable and playable cards, sources with abilities. */
 export function playableObjects(decision: PriorityDecision): ReadonlySet<ObjectId> {
@@ -74,7 +75,9 @@ export type ClickOutcome =
   /** One source with several ways to use it (mana of different colors): the player picks one. */
   | { readonly kind: 'choose'; readonly choices: readonly AbilityChoice[] }
   /** Several things to do with one object (cast and cycle, two abilities): the player picks one. */
-  | { readonly kind: 'menu'; readonly items: readonly MenuItem[] };
+  | { readonly kind: 'menu'; readonly items: readonly MenuItem[] }
+  /** A mana ability that taps X permanents ("Tap X untapped tokens you control: Add X mana in any combination of colors"): the player picks which and the colors in a form. */
+  | ({ readonly kind: 'tapMany' } & TapManyAsk);
 
 /** Whether a menu item is an ability with a loyalty symbol in its cost (CR 606.2). */
 function isLoyaltyItem(card: ObjectView | undefined, item: MenuItem): boolean {
@@ -133,6 +136,9 @@ export function clickOutcome(
       return { kind: 'act', action: playAction(o) };
     }
   }
+  // CR 107.3, 605.3b (Hazel of the Rootbloom): the options list only the play that taps every permanent; the form builds the player's own.
+  const many = tapManyOf(decision, id);
+  if (many !== null) return { kind: 'tapMany', ...many };
   const abilities: AbilityChoice[] = [];
   for (const o of decision.options) {
     if (o.kind !== 'activateAbility' || o.source !== id) continue;
