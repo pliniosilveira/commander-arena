@@ -1180,6 +1180,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
   ),
   'trigger.n-or-more-attack-a-player': whenever,
+  'trigger.you-attack-player-with-one-or-more': whenever,
   'static.pt-counters-on-source': asIs,
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,

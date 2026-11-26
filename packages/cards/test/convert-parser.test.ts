@@ -476,6 +476,7 @@ describe('unmatched abilities', () => {
       'trigger.enters-one-or-more',
       'trigger.cast-or-copy',
       'trigger.n-or-more-attack-a-player',
+      'trigger.you-attack-player-with-one-or-more',
       'trigger.enchanted-player-attacked',
       'trigger.player-attacks-you',
       'trigger.player-attacks-bare',
