@@ -567,11 +567,8 @@ const P1_EFFECTS: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Create a Blood token.',
-    expect: no('a Blood token.', 'token.predefined', {
-      reason: 'notRunnable',
-      needs: ['token:Blood'],
-    }),
-    note: 'the AST has no Blood token',
+    expect: OK,
+    note: 'the Blood token runs since the Squirreled Away deck, group 1 (CR 111.10)',
   },
   {
     kind: 'sorcery',

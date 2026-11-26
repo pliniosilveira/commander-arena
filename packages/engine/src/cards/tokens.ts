@@ -183,6 +183,19 @@ export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
       },
     ],
   ),
+  // CR 111.10 (Blood; the letter of the rule was not checked, the CR text was not available): "{1}, {T}, Discard a card, Sacrifice this token: Draw a card."
+  Blood: artifactToken('Blood', '{1}, {T}, Discard a card, Sacrifice this token: Draw a card.', [
+    {
+      kind: 'activated',
+      cost: [
+        { kind: 'mana', symbols: ['1'] },
+        { kind: 'tap' },
+        { kind: 'discard', count: 1 },
+        { kind: 'sacrifice', what: { kind: 'this' } },
+      ],
+      effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+    },
+  ]),
   // CR 111.10a: "{T}, Sacrifice this token: Add one mana of any color."
   Treasure: artifactToken('Treasure', '{T}, Sacrifice this token: Add one mana of any color.', [
     {

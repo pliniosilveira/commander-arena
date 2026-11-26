@@ -396,7 +396,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('token:Food')).toBe(true);
     expect(isFeatureSupported('token:Clue')).toBe(true);
     expect(isFeatureSupported('token:Map')).toBe(true); // issue 81: the Map token and explore
-    expect(isFeatureSupported('token:Blood')).toBe(false);
+    expect(isFeatureSupported('token:Blood')).toBe(true); // Squirreled Away deck, group 1: the Blood token (CR 111.10)
     // The intervening "if" (CR 603.4) is a `trigger:` feature; the condition is a `condition:`.
     expect(isFeatureSupported('trigger:interveningIf')).toBe(true);
     expect(isFeatureSupported('condition:kicked')).toBe(true);

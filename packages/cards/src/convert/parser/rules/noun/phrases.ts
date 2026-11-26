@@ -642,17 +642,25 @@ export function permanentPhrase(
           false,
         )
       : map(literal(''), () => false);
-    const r = sequence(
-      many(choice(MODIFIER, COMMANDER_MODIFIER)),
-      nouns,
-      tokenWord,
-      tail,
-    )(ctx, pos);
+    // Squirreled Away deck, group 1 (Nadier's Nightblade, CR 111.1): "a token you control", the word "token" alone naming the noun (no card type).
+    const nounAndToken: Parser<[{ subtypes: string[]; types: string[] }, boolean]> = tokens
+      ? choice(
+          map(
+            pattern(new RegExp(`token${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
+            (): [{ subtypes: string[]; types: string[] }, boolean] => [
+              { subtypes: [], types: [] },
+              true,
+            ],
+          ),
+          map(sequence(nouns, tokenWord), ([n, t]) => [n, t]),
+        )
+      : map(sequence(nouns, tokenWord), ([n, t]) => [n, t]);
+    const r = sequence(many(choice(MODIFIER, COMMANDER_MODIFIER)), nounAndToken, tail)(ctx, pos);
+    if (!r.ok) return r;
     if (!r.ok) return r;
     const [
       modifiers,
-      noun,
-      isToken,
+      [noun, isToken],
       {
         controller,
         chosen,

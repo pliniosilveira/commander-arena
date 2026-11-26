@@ -136,8 +136,8 @@ const COPIES: readonly Line[] = [
   {
     kind: 'creature',
     text: "When this Class becomes level 2, create a token that's a copy of target token you control.",
-    expect: no('token you control.', 'noun.target-permanent'),
-    note: 'backlog: 1 card (Caretaker\'s Talent); the level trigger is read, but "target token" remains unsupported',
+    expect: OK,
+    note: 'backlog: 1 card (Caretaker\'s Talent); "target token you control" is read since the Squirreled Away deck, group 1 (a token noun with no card type, CR 111.1)',
   },
   {
     kind: 'enchantment',

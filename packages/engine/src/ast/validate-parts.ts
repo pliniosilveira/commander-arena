@@ -4210,6 +4210,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Lander',
   'Wicked Role',
   'Junk',
+  'Blood',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */

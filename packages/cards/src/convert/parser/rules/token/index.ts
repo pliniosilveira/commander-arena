@@ -153,6 +153,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Wicked Role token',
     // CR 111.10t (Break Down).
     'a Junk token',
+    // CR 111.10 (Moonstone Eulogist): a Blood token.
+    'a Blood token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
@@ -855,10 +857,11 @@ export const TOKEN_COPY = defineRule<IrToken>({
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
+    // Squirreled Away deck, group 1 (CR 111.1, 707.2): the noun "token" alone, with no card type.
+    "a token that's a copy of target token you control",
   ],
   rejects: [
     "a token that's a copy of target creature, except it's a 1/1",
-    "a token that's a copy of target token you control",
     "a token that's a copy of equipped creature",
     "a token that's a copy of two target creatures",
     "a token that's a copy of target creatures",

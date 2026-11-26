@@ -435,6 +435,7 @@ describe('supported feature gate', () => {
       'Lander',
       'Wicked Role',
       'Junk',
+      'Blood',
     ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',
