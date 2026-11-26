@@ -12,8 +12,11 @@
  * points of the seeded stream); the pairing balances seats and deals, not hands.
  *
  * Everything is deterministic: the game seed of pair `i` is `baseSeed + i`, the deck is
- * `decks[i % decks.length]`, and the agent seeds are derived from the game seed, the same for both
- * games of a pair. The harness reads no clock; `now` and the budget come from the run options.
+ * `decks[i % decks.length]`, and the agent seed of each seat is derived from the game seed and the
+ * seat, whichever agent sits there. So two copies of one agent play the same game twice and split the
+ * pair, an agent scores exactly 50% against itself, and a candidate's pairs differ from its
+ * baseline's only where one of its decisions differs (common random numbers). The harness reads no
+ * clock; `now` and the budget come from the run options.
  *
  * A game that ends without a result (the turn or action cap, or a stuck run) counts as `unfinished`,
  * not as a draw, so a stalled agent shows up instead of hiding in the draw column.
@@ -161,8 +164,10 @@ export async function playMatch(options: MatchOptions): Promise<MatchResult> {
     const deckIndex = i % options.decks.length;
     const decks = decksOf(options.decks[deckIndex] as MatchDeck);
     for (const aSeat of [0, 1] as const) {
-      const a = options.a.create(2 * seed + 1);
-      const b = options.b.create(2 * seed + 2);
+      // The seed goes with the seat, not with the agent (see the header).
+      const seatSeed = (seat: 0 | 1): number => 2 * seed + 1 + seat;
+      const a = options.a.create(seatSeed(aSeat));
+      const b = options.b.create(seatSeed(aSeat === 0 ? 1 : 0));
       const agents = (aSeat === 0 ? [a, b] : [b, a]) as [Agent, Agent];
       const game = await runGame({ seed, decks }, agents, run);
       turns += game.state.turn.number;

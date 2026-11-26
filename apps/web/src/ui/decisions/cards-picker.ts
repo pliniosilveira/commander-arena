@@ -229,6 +229,8 @@ export function confirmLabel(
   if (decision.purpose === 'pair') return 'Choose';
   // D-303 (CR 700.3): the cards of pile 1; the others are pile 2, and either pile may be empty.
   if (decision.purpose === 'separate') return 'Make the piles';
+  // CR 608.2d (Extract Brain): the cards of the own hand another player looks at; the number is fixed, so there is no "none".
+  if (decision.purpose === 'handChoice') return 'Choose';
   // D-151 (CR 701.9): "Discard any number of cards": Confirm works with none.
   if (decision.purpose === 'discard' && chosen.length === 0 && (decision.min ?? 1) === 0) {
     return 'Discard none';
@@ -338,6 +340,7 @@ export function foundBadge(
   if (decision.purpose === 'copy') return 'Copy';
   if (decision.purpose === 'pair') return 'Chosen';
   if (decision.purpose === 'separate') return 'Pile 1';
+  if (decision.purpose === 'handChoice') return 'Chosen';
   if (decision.purpose === 'exile') return 'Exile';
   if (decision.purpose === 'move' && decision.minCardTypes !== undefined) return 'Exile';
   if (decision.purpose === 'move') {
@@ -522,6 +525,8 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   pile: 'choosing one of two piles of cards',
   // CR 608.2d (D-660): an opponent chooses one of the cards exiled.
   opponentChoice: 'choosing one of the exiled cards',
+  // CR 608.2d, 402.3 (Extract Brain): cards of their own hand another player will look at and may cast.
+  handChoice: 'choosing cards from their hand',
 };
 
 /**

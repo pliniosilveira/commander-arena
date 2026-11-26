@@ -306,9 +306,11 @@ function walkEffect(
         effect.cost,
         `${path}.cost`,
         out,
-        ['mana', 'payLife', 'discard', 'energy'],
+        ['mana', 'payLife', 'discard', 'energy', 'sacrifice'],
         effect.xIsHandSize === true,
       );
+      // CR 701.21a, 118.12a (Gitrog Monster): "unless you sacrifice a land" is paid as Ward—Sacrifice is.
+      unlessSacrificeIssues(effect.cost, `${path}.cost`, out);
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'becomeCopy':
@@ -975,8 +977,14 @@ function walkAbility(
         ]);
         unlessSacrificeIssues(a.keyword.cost, `${path}.keyword.cost`, out);
       } else if (a.keyword.kind === 'kicker' || a.keyword.kind === 'multikicker') {
-        // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts). "Kicker {X}. X can't be 0.": the X is announced as the spell is kicked (CR 107.3a).
+        activationCostIssues(
+          a.keyword.cost,
+          `${path}.keyword.cost`,
+          out,
+          ['mana', 'payLife'],
+          a.keyword.kind === 'kicker' && a.keyword.xNotZero === true,
+        );
       } else if (a.keyword.kind === 'typecycling') {
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
@@ -1118,7 +1126,8 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
     if (
       (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
       c.kind === 'exileFromGraveyard' ||
-      c.kind === 'putLinkedExileInGraveyard'
+      c.kind === 'putLinkedExileInGraveyard' ||
+      c.kind === 'putOpponentExileInGraveyard'
     ) {
       out.push({
         path: `${base}.additionalCosts[${i}]`,
@@ -1138,6 +1147,7 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
         c.kind === 'exileFromGraveyard' ||
         c.kind === 'putLinkedExileInGraveyard' ||
+        c.kind === 'putOpponentExileInGraveyard' ||
         c.kind === 'exileFromHand'
       ) {
         out.push({

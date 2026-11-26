@@ -21,6 +21,7 @@ import { DRAW_REDIRECT_REPLACEMENT_RULES } from './draw-redirect';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
+import { EXILE_PAIR_COPY_REPLACEMENT_RULES } from './exile-pair-copy';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KEEP_ONE_LOYALTY_REPLACEMENT_RULES } from './keep-one-loyalty';
@@ -29,6 +30,7 @@ import { PAY_LIFE_REPLACEMENT_RULES } from './pay-life';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
 import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
+import { TOKEN_EACH_OF_REPLACEMENT_RULES } from './token-each-of';
 import { UNLESS_RULES } from './unless';
 
 /**
@@ -306,7 +308,9 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with a +1/+1 counter on it for each time it was kicked.',
     '~ enters with a charge counter on it for each time it was kicked.',
     // Issue 101 (Bone Devourer, CR 614.12): a count of what died this turn.
-    '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn.', // Centaur Vinecrasher (CR 614.12): a count of the cards in graveyards, counted as it enters.
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of creature cards in your graveyard.',
   ],
   rejects: [
     '~ enters with two +1/+1 counters on it for each creature you control.',
@@ -327,6 +331,9 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with two +1/+1 counters on it and draw a card.',
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn and draw a card.',
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died last turn.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards and draw a card.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards',
+    '~ enters with a number of +1/+1 counters on it equal to the number of',
   ],
   parse: (ctx, pos) => {
     const r = sequence(ENTERS, countersTail('replacement.enters-with-counters', true, true))(
@@ -423,6 +430,8 @@ export const REPLACEMENT_RULES = [
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
   ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
+  // Grand Larceny deck (issue 119), The Mimeoplasm: "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards ...".
+  ...EXILE_PAIR_COPY_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
@@ -433,6 +442,8 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  // Most Wanted deck, group 2: "If you would create a Clue, Food, or Treasure token, instead create one of each."
+  ...TOKEN_EACH_OF_REPLACEMENT_RULES,
   ...DRAW_REDIRECT_REPLACEMENT_RULES,
   // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,

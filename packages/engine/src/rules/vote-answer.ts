@@ -20,7 +20,16 @@ export function answerResolutionVote(state: GameState, option: string): ResolveO
   const events: GameEvent[] =
     head.secret === true
       ? []
-      : [{ kind: 'optionChosen', seat: d.seat, source: d.source, purpose: 'vote', option }];
+      : [
+          {
+            kind: 'optionChosen',
+            seat: d.seat,
+            source: d.source,
+            // CR 701.38c: a choice made by "each opponent chooses" is not a vote.
+            purpose: head.voters === undefined ? 'vote' : 'option',
+            option,
+          },
+        ];
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     events,

@@ -1512,7 +1512,7 @@ describe('a grant to the creatures that have a keyword, and an alternative cost 
   );
 
   test.each([
-    "You may pay {W} rather than pay ~'s mana cost.",
+    "You may pay {W} and discard a card rather than pay ~'s mana cost.",
     "You may tap four untapped creatures you control with flying rather than pay ~'s mana cost.",
     "You may pay {W} and tap four untapped creatures with flying rather than pay ~'s mana cost.",
     "You may pay {X} and tap four untapped creatures you control rather than pay ~'s mana cost.",

@@ -93,7 +93,9 @@ function fakeClock(step: number) {
   };
 }
 
-describe('the time budget', () => {
+// The searches are bounded by work (`heuristic-work-budget.test.ts`); the clock only cuts them on a device too
+// slow for the work budget, at the same shares of the time budget as before.
+describe('the safety clock', () => {
   /** Three attackers into four blockers at low life: many candidate plans. */
   function busyBlock(): ScenarioGame {
     const g = scenario()
@@ -112,7 +114,7 @@ describe('the time budget', () => {
     return g;
   }
 
-  test('a search stops at 60% of the budget and takes the best candidate so far', async () => {
+  test('a search stops at 60% of the time budget and takes the best candidate so far', async () => {
     const generous = fakeClock(0);
     const full = await askHeuristic(busyBlock(), new HeuristicAgent({ seed: 1 }), {
       now: generous.now,
@@ -128,6 +130,8 @@ describe('the time budget', () => {
     expect(generous.clock.reads).toBeGreaterThan(hurried.clock.reads);
     expect(full.kind).toBe('declareBlockers');
     expect(agent.fallbacks).toHaveLength(0);
+    // The decision's record says the clock cut it.
+    expect(agent.searches.map((s) => s.cut)).toEqual(['clock']);
   });
 
   /** Four attackers into three blockers: more than five candidate attacks. */
@@ -157,7 +161,7 @@ describe('the time budget', () => {
     expect(hurried.clock.reads).toBeLessThan(generous.clock.reads);
   });
 
-  test('a play-out that runs past 70% of the budget is dropped and the rules-based plan answers (D-164)', async () => {
+  test('a play-out that runs past 70% of the time budget is dropped and the rules-based plan answers (D-164)', async () => {
     // 450 ms per read of a 1000 ms budget: every candidate is dropped inside its play-out, so no
     // candidate is scored and the plan of the rules (the answer without a sample) is given, with no
     // fallback recorded: running out of time is not a failure.

@@ -47,6 +47,8 @@ export const STATIC_SELF = defineRule<IrStatic>({
     "~ can't be blocked by creatures with power 2 or less.",
     "~ can't be blocked by Walls.",
     "~ can't be blocked by creatures with greater power.",
+    // Silhana Ledgewalker (CR 509.1b, 702.9b): only creatures with flying can block it.
+    "~ can't be blocked except by creatures with flying.",
     // Prismari deck, group 2 (D-648, CR 509.1b): the creatures it can block are those with flying.
     '~ can block only creatures with flying.',
     "~ can block only creatures with flying and can't be blocked.",
@@ -69,7 +71,9 @@ export const STATIC_SELF = defineRule<IrStatic>({
     '~ can block only flying creatures.',
     "~ can't block",
     "~ can't blocks.",
-    "~ can't be blocked except by creatures with flying.",
+    "~ can't be blocked except by creatures with reach.",
+    "~ can't be blocked except by creatures with flying or reach.",
+    "~ can't be blocked except by creature with flying.",
     "~ can't be blocked except by two or more creatures.",
     "~ can't be blocked except by three creatures.",
     "~ can't be blocked by creatures with greater toughness.",

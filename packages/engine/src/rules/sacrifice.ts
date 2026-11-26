@@ -13,6 +13,7 @@ import type { GameEvent } from '../state/events';
 import { objectsInZone } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
+import { recordSacrificed } from './sacrifice-log';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { matchesFilter } from './select';
 import { moveObject } from './zones';
@@ -38,7 +39,7 @@ export function sacrificePermanent(
   // applies to hand and library), so the move is always complete.
   if (moved.kind !== 'done') return null;
   return {
-    state: moved.state,
+    state: recordSacrificed(state, moved.state, obj, seat),
     events: [...moved.events, { kind: 'sacrificed', permanent: id, controller: seat }],
   };
 }

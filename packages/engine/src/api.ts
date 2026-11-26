@@ -96,6 +96,7 @@ import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
 import { isLegalParty } from './rules/party';
 import { answerResolutionPile } from './rules/pile-answer';
+import { endOneOfPermissions } from './rules/play-permission-one';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
 import { matchesGroups } from './rules/sacrifice-groups';
@@ -112,6 +113,7 @@ import {
   answerResolutionChooseOne,
   answerResolutionChooseOpponent,
   answerResolutionChoosePlayer,
+  answerResolutionCipher,
   answerResolutionClash,
   answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
@@ -299,6 +301,8 @@ function playLand(
   let next = patchSeat(moved.state, seat, {
     landsPlayedThisTurn: getSeat(moved.state, seat).landsPlayedThisTurn + 1,
   });
+  // Nashi (CR 305.1): "you may play one of those cards": playing one of them from exile ends the permissions for the others.
+  if (obj.zone === 'exile') next = endOneOfPermissions(next, seat, object);
   if (graveyardUse !== null) {
     // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
     if (graveyardUse.unlimited !== true) {
@@ -1141,7 +1145,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           : answerSacrificeCost(state, action.objects);
       }
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
-      if (d.purpose === 'entersCopy')
+      if (d.purpose === 'cipher')
+        return finishResolutionAnswer(answerResolutionCipher(state, action.objects));
+      if (d.purpose === 'entersCopy' || d.purpose === 'entersCopyOther')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
       // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
       if (d.purpose === 'entersRemoveCounters')

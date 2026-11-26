@@ -21,6 +21,19 @@ import {
 } from './validate-parts';
 import { checkPlainCondition } from './validate-static-condition';
 
+/** The predefined tokens a replacement of "one of each" may make: the ones that enter with no question and need no object (a Wicked Role is attached to a creature). */
+const EACH_OF_TOKENS: readonly string[] = [
+  'Treasure',
+  'Food',
+  'Clue',
+  'Gold',
+  'Map',
+  'Gingerbrute',
+  'Incubator',
+  'Lander',
+  'Junk',
+];
+
 /** The trigger kinds D-149 adds. True when `t` is one of them (it was checked here). */
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
   switch (t?.kind) {
@@ -99,6 +112,28 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           out,
           `${path}.attackedYou`,
           'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
+        );
+      }
+      if (t.attackedYouOrPlaneswalkers !== undefined && t.attackedYouOrPlaneswalkers !== true) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is true when present',
+        );
+      }
+      if (
+        t.attackedYouOrPlaneswalkers === true &&
+        (t.attackedYou === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackedInitiativeHolder === true ||
+          t.eachAttackedPlayer === true ||
+          t.eachAttackedOpponent === true ||
+          t.who === 'you')
+      ) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is about the attackers of another player and does not go with attackedYou, attackedEnchantedPlayer, attackedInitiativeHolder, eachAttackedPlayer or eachAttackedOpponent',
         );
       }
       if (t.attackedInitiativeHolder !== undefined && t.attackedInitiativeHolder !== true) {
@@ -252,10 +287,28 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
-      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double'])) {
+      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double', 'eachOf'])) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }
-      if (r.mode === 'double') {
+      if (r.mode === 'eachOf') {
+        // CR 614.1a (Academy Manufactor): "instead create one of each": at least two different predefined tokens that make themselves with no question or target.
+        const kinds: unknown = (r as { tokens?: unknown }).tokens;
+        if (
+          !Array.isArray(kinds) ||
+          kinds.length < 2 ||
+          new Set(kinds).size !== kinds.length ||
+          !kinds.every((k) => isOneOf(k, EACH_OF_TOKENS))
+        ) {
+          issue(
+            out,
+            `${path}.tokens`,
+            `one of each is of at least two different predefined tokens among ${EACH_OF_TOKENS.join(', ')}`,
+          );
+        }
+        if ((r as { token?: unknown }).token !== undefined) {
+          issue(out, `${path}.token`, 'a replacement of one of each makes no token of its own');
+        }
+      } else if (r.mode === 'double') {
         // D-378 (CR 614.1a): "twice that many of those tokens" makes more of the tokens `what` names, not a token of its own.
         if ((r as { token?: unknown }).token !== undefined) {
           issue(out, `${path}.token`, 'a doubling of tokens makes no token of its own');
@@ -510,7 +563,11 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) === 'creatureAttacks' || kindOf(s.cause) === 'permanentEnters') {
+        if (
+          kindOf(s.cause) === 'creatureAttacks' ||
+          kindOf(s.cause) === 'creatureDealsCombatDamageToPlayer' ||
+          kindOf(s.cause) === 'permanentEnters'
+        ) {
           // Issue 81 (CR 603.2d): a creature attacking, no parameter. Issue 105: the entering permanent may be limited to card types.
           const entering = (s.cause as { entering?: unknown }).entering;
           if (
@@ -526,7 +583,7 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
           issue(
             out,
             `${path}.cause`,
-            'the cause of an additional trigger is castOrCopySpell, creatureAttacks or permanentEnters',
+            'the cause of an additional trigger is castOrCopySpell, creatureAttacks, creatureDealsCombatDamageToPlayer or permanentEnters',
           );
         } else {
           const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;

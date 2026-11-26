@@ -87,6 +87,13 @@ export function lowerCondition(
       if (ctx?.owner !== 'spell') return failure(c, []);
       return ok({ kind: 'foretold' });
     }
+    case 'altCostPaid': {
+      // CR 118.9, 608.2c (Baleful Mastery): the engine reads the alternative cost from the spell; the lowering of a spell's sentence only (`validateCard` checks the face lists a `payMana` cost).
+      const blocked = missingFeatures(['condition:castForAlternative']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      return ok({ kind: 'castForAlternative', alternative: 'payMana' });
+    }
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
       const blocked = missingFeatures(['condition:xAtLeast']);
@@ -909,6 +916,17 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'castFromZone', zone: test.zone });
     }
+    case 'sacrificedThisTurn': {
+      // CR 701.21a (Evendo Brushrazer): the permanents the controller sacrificed this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:sacrificedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({
+            kind: 'sacrificedThisTurn',
+            ...(test.types === undefined ? {} : { types: test.types as CardType[] }),
+            ...(test.token === undefined ? {} : { token: test.token }),
+          });
+    }
     case 'yourTurn': {
       // CR 611.3a (stage P49, D-206): the active player is the controller, read each time the static ability is looked at.
       const blocked = missingFeatures(['condition:yourTurn']);
@@ -1121,6 +1139,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedAndLostThisTurn',
   'condition:aPlayerLostLifeThisTurn',
   'condition:spellsCastThisTurn',
+  'condition:sacrificedThisTurn',
   'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',

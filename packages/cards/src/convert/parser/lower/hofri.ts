@@ -533,6 +533,25 @@ export function lowerGraveyardPlayStatic(
     if (!lowered.ok) return lowered;
     cast = lowered.value;
   }
+  // Exploration Broodship (CR 601.2b, 118.8): the permanent a spell cast this way sacrifices as an additional cost.
+  let sacrifice: ObjectFilter | undefined;
+  if (effect.sacrifice !== undefined) {
+    const { zone, stackKind, ...described } = effect.sacrifice;
+    void zone;
+    void stackKind;
+    const lowered = lowerFilter({
+      kind: 'noun',
+      det: 'a',
+      filter: described,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: ability.span,
+      rule: ability.rule,
+    });
+    if (!lowered.ok) return lowered;
+    sacrifice = lowered.value;
+  }
   let gains: Ability | undefined;
   if (effect.gains !== undefined) {
     const own = lowerTokenAbility(effect.gains, [], [], ctx);
@@ -551,6 +570,7 @@ export function lowerGraveyardPlayStatic(
           ...(effect.entersTapped ? { entersTapped: true as const } : {}),
           ...(gains === undefined ? {} : { gains }),
           ...(effect.exileOthers === undefined ? {} : { exileOthers: effect.exileOthers }),
+          ...(sacrifice === undefined ? {} : { sacrifice }),
           ...(effect.putElsewhereThisTurn === true ? { putElsewhereThisTurn: true as const } : {}),
         },
       },

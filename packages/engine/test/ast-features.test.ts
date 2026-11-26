@@ -79,6 +79,7 @@ describe('the dimensions', () => {
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
       'putLinkedExileInGraveyard',
+      'putOpponentExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -134,11 +135,13 @@ describe('the dimensions', () => {
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      'sacrificedThisTurn',
       // Lorehold group 3: "if a player has one or fewer cards in hand".
       'aPlayerCardsInHand',
       'escaped',
       // CR 702.143a: "if this spell was foretold".
       'foretold',
+      'castForAlternative',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',
@@ -325,8 +328,10 @@ describe('the dimensions', () => {
       'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
+      'playFromLinkedExile',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
+      'plotCostReduction',
       // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
       'loyaltyActivationLimit',
       // D-179: "Your opponents can't cast spells during your turn."
@@ -423,7 +428,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('token:Food')).toBe(true);
     expect(isFeatureSupported('token:Clue')).toBe(true);
     expect(isFeatureSupported('token:Map')).toBe(true); // issue 81: the Map token and explore
-    expect(isFeatureSupported('token:Blood')).toBe(false);
+    expect(isFeatureSupported('token:Blood')).toBe(true); // CR 111.10g: the Blood token and its discard cost
     // The intervening "if" (CR 603.4) is a `trigger:` feature; the condition is a `condition:`.
     expect(isFeatureSupported('trigger:interveningIf')).toBe(true);
     expect(isFeatureSupported('condition:kicked')).toBe(true);

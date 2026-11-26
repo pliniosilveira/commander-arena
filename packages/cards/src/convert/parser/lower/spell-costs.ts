@@ -229,6 +229,26 @@ function lowerLifeAlternative(
 }
 
 /**
+ * "You may pay {1}{B} rather than pay ~'s mana cost." (Baleful Mastery, CR 118.9, 601.2b, 601.2f): the engine's alternative cost `payMana`: the mana is paid in place of the mana cost, with
+ * no other effect on the spell. The mana is plain (no X, no hybrid), as for the named alternative costs.
+ */
+function lowerManaAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'manaAlternative';
+  },
+): LowerResult<FaceCosts> {
+  if (effect.cost.length === 0) return failure(ability);
+  const blocked = missingFeatures(['castAlternative:payMana', 'cost:mana']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'payMana',
+    cost: [{ kind: 'mana', symbols: [...effect.cost] }],
+  };
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
  * "You may pay {W} and tap four untapped creatures you control with flying rather than pay ~'s mana cost." (stage P33, D-150, CR 118.9, 118.3):
  * the engine's alternative cost `tapPermanents`: its mana, and the number of untapped permanents of the caster's that match the filter,
  * which the engine plans the mana around and asks for. The mana is plain (no X, no hybrid, as for the named alternative costs) and the
@@ -362,6 +382,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
   if (effect.kind === 'lifeAlternative') return lowerLifeAlternative(ability, effect);
+  if (effect.kind === 'manaAlternative') return lowerManaAlternative(ability, effect);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
   if (effect.kind === 'graveyardSacrificeAlternative') {
     return lowerGraveyardSacrificeAlternative(ability, effect);

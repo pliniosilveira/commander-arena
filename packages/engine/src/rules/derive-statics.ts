@@ -192,6 +192,12 @@ export interface HasteActivationSource {
   readonly creatures: ObjectFilter;
 }
 
+/** A static ability of a permanent that takes generic mana off the plot cost of the cards its controller plots (`plotCostReduction`, CR 702.170a). */
+export interface PlotReductionSource {
+  readonly object: GameObject;
+  readonly amount: number;
+}
+
 /** A static ability of a permanent that raises the number of times a turn the loyalty abilities of some planeswalkers may be activated (`loyaltyActivationLimit`, CR 606.3). */
 export interface LoyaltyLimitSource {
   readonly object: GameObject;
@@ -216,8 +222,20 @@ export interface GraveyardPlaySource {
   readonly eachType?: true;
   /** Issue 102 (Kotis): the other cards of the graveyard a spell cast with this permission exiles as an additional cost. */
   readonly exileOthers?: number;
+  /** Exploration Broodship: the permanent a spell cast with this permission sacrifices as an additional cost (CR 601.2b, 118.8). */
+  readonly sacrifice?: ObjectFilter;
   /** Banon, the Returners' Leader: only a card put into the graveyard this turn from a zone other than the battlefield may be cast with this permission. */
   readonly putElsewhereThisTurn?: true;
+}
+
+/**
+ * A static ability of a permanent that lets its controller play the cards the permanent exiled with its linked ability (`playFromLinkedExile`, Evendo Brushrazer): read by
+ * `rules/linked-exile-play.ts`. A permanent that lost all its abilities has none (CR 613.1f).
+ */
+export interface LinkedExilePlaySource {
+  readonly object: GameObject;
+  /** "During your turn, as long as you've sacrificed a nontoken permanent this turn": read where the card is played, for the controller of the permanent. */
+  readonly condition?: Condition;
 }
 
 /**
@@ -314,10 +332,14 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
   readonly hasteActivations: readonly HasteActivationSource[];
+  /** Permanents with a `plotCostReduction` static ability, in battlefield order. */
+  readonly plotReductions: readonly PlotReductionSource[];
   /** Permanents with a `loyaltyActivationLimit` static ability, in battlefield order (CR 606.3). */
   readonly loyaltyLimits: readonly LoyaltyLimitSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
+  /** Permanents with a `playFromLinkedExile` static ability, in battlefield order. */
+  readonly linkedExilePlays: readonly LinkedExilePlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
   readonly handGrants: readonly HandGrantSource[];
   /** Permanents with a `grantKeywordToSpells` static ability, in battlefield order (issue 145). */
@@ -474,6 +496,7 @@ function graveyardPlaysOf(
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
         ...(a.static.exileOthers === undefined ? {} : { exileOthers: a.static.exileOthers }),
+        ...(a.static.sacrifice === undefined ? {} : { sacrifice: a.static.sacrifice }),
         ...(a.static.putElsewhereThisTurn === true ? { putElsewhereThisTurn: true as const } : {}),
       });
     }
@@ -643,8 +666,10 @@ function buildIndex(state: GameState): BoardIndex {
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const hasteActivations: HasteActivationSource[] = [];
+  const plotReductions: PlotReductionSource[] = [];
   const loyaltyLimits: LoyaltyLimitSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
+  const linkedExilePlays: LinkedExilePlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
@@ -670,6 +695,9 @@ function buildIndex(state: GameState): BoardIndex {
       if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
         hasteActivations.push({ object, creatures: a.static.creatures });
       }
+      if (a.kind === 'static' && a.static.kind === 'plotCostReduction') {
+        plotReductions.push({ object, amount: a.static.amount });
+      }
       if (a.kind === 'static' && a.static.kind === 'loyaltyActivationLimit') {
         loyaltyLimits.push({
           object,
@@ -679,6 +707,14 @@ function buildIndex(state: GameState): BoardIndex {
       }
     }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
+    for (const a of printed) {
+      if (a.kind === 'static' && a.static.kind === 'playFromLinkedExile') {
+        linkedExilePlays.push({
+          object,
+          ...(a.condition === undefined ? {} : { condition: a.condition }),
+        });
+      }
+    }
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
@@ -770,8 +806,10 @@ function buildIndex(state: GameState): BoardIndex {
     flashes,
     libraryCasts,
     hasteActivations,
+    plotReductions,
     loyaltyLimits,
     graveyardPlays,
+    linkedExilePlays,
     handGrants,
     spellGrants,
     flashbackGrants,
@@ -844,6 +882,11 @@ export function loyaltyLimitSources(state: GameState): readonly LoyaltyLimitSour
   return indexOf(state).loyaltyLimits;
 }
 
+/** The permanents whose static ability takes generic mana off the plot cost of the cards their controller plots (CR 702.170a). */
+export function plotReductionSources(state: GameState): readonly PlotReductionSource[] {
+  return indexOf(state).plotReductions;
+}
+
 /** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
 export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
   return indexOf(state).hasteActivations;
@@ -851,6 +894,11 @@ export function hasteActivationSources(state: GameState): readonly HasteActivati
 
 export function libraryCastSources(state: GameState): readonly LibraryCastSource[] {
   return indexOf(state).libraryCasts;
+}
+
+/** The permanents whose static ability lets their controller play the cards they exiled with their linked ability (Evendo Brushrazer). */
+export function linkedExilePlaySources(state: GameState): readonly LinkedExilePlaySource[] {
+  return indexOf(state).linkedExilePlays;
 }
 
 /** The permission "Once during each of your turns, you may play a land or cast a spell from your graveyard" of the permanents on the battlefield (D-232). */

@@ -58,9 +58,9 @@ describe('Rashmi, Eternities Crafter (CR 601.2i, 603.2, 701.20a, 608.2g)', () =>
   });
 
   test.each([
-    // the opponent's and everybody's first spell are other triggers
-    `Whenever an opponent casts their first spell each turn, ${BODY}`,
-    `Whenever a player casts their first spell each turn, ${BODY}`,
+    // the opponent's and everybody's first spell are other triggers (the engine's cast count, not the Troyan reveal; Mind's Dilation reads the trigger, with another body)
+    `Whenever an opponent casts their first creature spell each turn, ${BODY}`,
+    `Whenever a player casts their first creature spell each turn, ${BODY}`,
     // "greater" is not "lesser"
     `Whenever you cast a spell, ${BODY.replace('lesser', 'greater')}`,
     // the comparison, the kind of spell, the card's fate or the number of cards is not the one read

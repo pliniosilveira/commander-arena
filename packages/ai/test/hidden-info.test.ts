@@ -260,13 +260,15 @@ function auditView(state: GameState, viewer: SeatId, audit: Audit): void {
     }
   }
 
-  // No library contents or order: the view has no library field at all, and no library object.
+  // No library contents or order: the view has no library field at all, and no library object. The
+  // check is for the key `"library":`: a zone named in a visible card's ability (a search of
+  // "library" and "graveyard", say) is not library contents.
   const withoutTop = (v: unknown) =>
     JSON.stringify(v, (key, value) => (key === 'libraryTop' ? undefined : value));
   expect(
     searching === null && arranging === null ? withoutTop(view) : withoutTop(outsideTheChoice),
     at,
-  ).not.toContain('"library"');
+  ).not.toContain('"library":');
   expect(text, at).not.toContain('"libraryOrder"');
 
   // One assertion for all secrets: thousands of per-id expectations would dominate the runtime.

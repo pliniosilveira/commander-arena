@@ -573,6 +573,8 @@ export interface StackData {
     readonly slot?: CardType;
     /** Issue 102 (Kotis): the other cards of the graveyard exiled as an additional cost of this spell. */
     readonly exileOthers?: number;
+    /** Exploration Broodship: the permanent sacrificed as an additional cost of this spell (CR 601.2b). */
+    readonly sacrifice?: ObjectFilter;
   };
   /**
    * The named alternative cost the spell was cast for (D-121): `overload` (CR 702.96a: its text has
@@ -1230,6 +1232,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** `chooseObjects.perChoice` (CR 101.4): the candidates are the permanents of `seat` the filter matches, `seat` is not the chooser, and the choice joins what `id` already names (`first` starts it afresh). */
+      readonly ofPlayer?: { readonly seat: SeatId; readonly first: boolean };
       /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */
       readonly asChooser?: true;
       readonly anyNumber?: true;
@@ -1497,6 +1501,10 @@ export type Instruction =
       readonly chosen: string | null;
       /** A move that takes "any number of counters": the player may stop (`left` is null), as a removal may (Resourceful Defense). */
       readonly anyNumber?: true;
+      /** Only counters of this kind may be taken ("move any number of +1/+1 counters", "remove a hit counter"); left out, any kind. */
+      readonly counterKind?: string;
+      /** A removal that may not stop before it has taken `left` counters or has none left to take (no "Done" option). */
+      readonly required?: true;
     }
   | {
       readonly kind: 'moveCounters';
@@ -1722,6 +1730,17 @@ export type Instruction =
       readonly pick?: 1 | 2;
     }
   /**
+   * "Target opponent chooses X cards from their hand" (`handCards`, Extract Brain, CR 608.2d, 402.3): `seat` chooses `count` of the `cards` of their hand, a `chooseCards` decision of
+   * purpose `handChoice`; `chosen` is null until it is answered. The cards chosen stay in the hand and are what `moved` names afterwards. See rules/hand-cards.ts.
+   */
+  | {
+      readonly kind: 'handCards';
+      readonly seat: SeatId;
+      readonly count: number;
+      readonly cards: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
    * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-660, CR 608.2d): `seat` is the opponent who chooses, `cards` the cards of `moved` the filter
    * matches (face up in exile), `chosen` is null until the question is answered. The card chosen is left out of `moved` afterwards. See rules/choose-aside.ts.
    */
@@ -1852,8 +1871,11 @@ export type Instruction =
       readonly min: number;
       readonly max: number;
       readonly amount: number | null;
-      /** `addManaCombination` (Xenagos): once answered, `amount` mana of the first color and the rest (`max` less `amount`) of the second are added to the pool of `seat`. */
-      readonly manaSplit?: readonly [ManaColor, ManaColor];
+      /**
+       * `addManaCombination` (Xenagos, Plasm Capture): once answered, `amount` mana of the first color is added to the pool of `seat`; the rest (`max` less `amount`) is the second color, or,
+       * with more colors listed, is asked again for the second, and so on, the last color taking what is left.
+       */
+      readonly manaSplit?: readonly ManaColor[];
     }
   /**
    * "Behold a Dragon" (`behold`, CR 701.4, D-151): `seat` chooses a card in their hand or a permanent they control that `filter` matches
@@ -2200,6 +2222,8 @@ export type Instruction =
         | { readonly kind: 'objects'; readonly filter: ObjectFilter };
       /** "Secretly" (CR 701.38a): the votes are not shown until all are cast (`VoteQuestion.secret`). */
       readonly secret?: true;
+      /** `eachPlayerChooses` (CR 101.4): not a vote (CR 701.38c), asked of exactly these players, in this order (the active player first), and nothing is revealed at the end. */
+      readonly voters?: readonly SeatId[];
     }
   /**
    * CR 702.94a (Miracle, D-274): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
@@ -2332,6 +2356,8 @@ export type Instruction =
       /** `castFree.paying` (Summon: Esper Valigarmanda): the spell is cast paying its mana cost, with `anyManaType` as a rider of that spell. */
       readonly paying?: true;
       readonly anyManaType?: true;
+      /** `castFree.fromHand` (Silent-Blade Oni): the cards are in a hand, whoever's it is, and were looked at. */
+      readonly fromHand?: true;
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -2377,6 +2403,10 @@ export interface ResolutionContext {
   readonly entersChosen?: ChosenValues | null;
   /** The answer to "you may have it become a copy of any creature" (CR 707.9, D-151) for the move that asked it: the permanent copied, or null for none. Cleared once that move is done. */
   readonly entersCopy?: ObjectId | null;
+  /** The answer to the second question of `entersAsCopy.exileTwoFromGraveyards` (The Mimeoplasm, CR 707.9b) for the move that asked it: the other card exiled, whose power gives the counters. Cleared once that move is done. */
+  readonly entersCopyOther?: ObjectId;
+  /** The creature the controller of a resolving spell with Cipher chose to encode the card on (CR 702.99), or null for none. Absent until answered; the spell is then put where it goes. */
+  readonly cipherOn?: ObjectId | null;
   /** The protector the controller of a battle chose as it entered (CR 310.9a), for the move that asked. Absent until answered; cleared once that move is done. */
   readonly entersProtector?: SeatId;
   /**
@@ -2502,6 +2532,8 @@ export interface ThisWayCounts {
   readonly milledCreature?: number;
   /** The land cards milled by `mill` effects, for "for each land card milled this way" (Dune Chanter). */
   readonly milledLand?: number;
+  /** The land cards (never tokens) `discard` and `sacrifice` effects put into a graveyard, each read as a card in the graveyard (Eumidian Wastewaker: "for each land card put into a graveyard this way", CR 701.9, 701.21); left out until there is one. */
+  readonly landCardsToGraveyard?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
   /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */
@@ -2682,6 +2714,10 @@ export type ContinuousChange =
       readonly undaunted?: true;
       /** "... you may cast it if it's a creature spell" (`mayPlay.creatureSpellsOnly`, Vivien, CR 601.2): only a creature card may be cast with this permission. */
       readonly creatureSpellsOnly?: true;
+      /** "If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (`mayPlay.lifeForMana`, Nashi, CR 118.9): the spell is cast by the alternative cost `lifeForMana`, and no other way. */
+      readonly lifeForMana?: true;
+      /** "You may play one of those cards" (`mayPlay.oneOf`, Nashi): the permissions of one effect share this key, and casting or playing one of the cards ends the others (`rules/play-permission-one.ts`). */
+      readonly oneOf?: string;
       /**
        * "You may play that card until you exile another card with this enchantment" (`mayPlay.lasts` `untilSourceExilesAnother`, Furious Rise, CR 607.2a): the permanent whose linked
        * ability exiled the card; the permission is removed as that permanent exiles another card with `exileTop` `linked` (`rules/impulse.ts`).
@@ -3186,6 +3222,15 @@ export interface TurnLog {
     readonly types: readonly CardType[];
     readonly token: boolean;
   }[];
+  /**
+   * Each permanent sacrificed this turn (CR 701.21a; Evendo Brushrazer: "as long as you've sacrificed a nontoken permanent this turn"): the player who sacrificed it, its card types as it was
+   * sacrificed and whether it is a token. Absent until one was sacrificed, so the state of a game where none was is as it was.
+   */
+  readonly sacrificed?: readonly {
+    readonly controller: SeatId;
+    readonly types: readonly CardType[];
+    readonly token: boolean;
+  }[];
   /** Permanent-to-graveyard events, including tokens, with their characteristics immediately before leaving. */
   readonly died: readonly {
     readonly controller: SeatId;
@@ -3230,6 +3275,10 @@ export interface TurnLog {
     readonly fromGraveyard?: true;
     /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
     readonly fromExile?: true;
+    /** The spell was an outlaw as it was cast (CR 700.12): "your first outlaw spell each turn" tells it from the others. */
+    readonly outlaw?: true;
+    /** The subtypes of the sources that made the mana spent on the spell (Rain of Riches, CR 601.2h: "the first spell you cast each turn that mana from a Treasure was spent to cast"). */
+    readonly manaSubtypes?: readonly string[];
   }[];
   /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
   readonly oncePerTurnGrants?: readonly ObjectId[];

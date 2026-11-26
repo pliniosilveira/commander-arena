@@ -93,6 +93,9 @@ export function playerSubject(
     case 'couldntSacrificeThisWay':
       // CR 701.21a: "each player who can't discards a card" after a sacrifice.
       return { text: "each player who can't", base: false };
+    case 'eachPlayerWhoChose':
+      // CR 101.4 (Seize the Spotlight).
+      return { text: `each player who chose ${player.option}`, base: false };
     case 'eachPlayerWithoutVotes':
       // CR 701.38a (Círdan the Shipwright).
       return { text: 'each player who received no votes', base: false };
