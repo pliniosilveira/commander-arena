@@ -117,7 +117,12 @@ function lowerOthersEnter(
     | CountAmount
     | ManaSpentAmount
     | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>
-    | { readonly kind: 'toughnessOf'; readonly of: { readonly kind: 'this' } };
+    | { readonly kind: 'toughnessOf'; readonly of: { readonly kind: 'this' } }
+    | {
+        readonly kind: 'countersOn';
+        readonly of: { readonly kind: 'this' };
+        readonly counter?: string;
+      };
   if (effect.count.kind === 'number') {
     count = effect.count.value;
   } else if (effect.count.kind === 'manaSpent') {
@@ -140,6 +145,23 @@ function lowerOthersEnter(
       return failure(ability);
     }
     count = { kind: 'toughnessOf', of: { kind: 'this' } };
+  } else if (effect.count.kind === 'countersOn') {
+    // "where X is the number of +1/+1 counters on ~" (Bloodspore Thrinax, CR 614.12, 122.1): the counters of the permanent with the ability as the other one enters.
+    const counted = lowerAmount(effect.count, newContext('ability', []), ability.rule);
+    if (!counted.ok) return counted;
+    if (
+      typeof counted.value !== 'object' ||
+      counted.value.kind !== 'countersOn' ||
+      counted.value.of.kind !== 'this' ||
+      counted.value.kinds === true
+    ) {
+      return failure(ability);
+    }
+    count = {
+      kind: 'countersOn',
+      of: { kind: 'this' },
+      ...(counted.value.counter === undefined ? {} : { counter: counted.value.counter }),
+    };
   } else {
     // "for each Angel you already control": counted for the controller of the permanent, without the one that enters.
     const counted = lowerAmount(effect.count, newContext('ability', []), ability.rule);

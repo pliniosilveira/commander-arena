@@ -1438,6 +1438,16 @@ export function objectRefOf(
       gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
     );
   }
+  // Terastodon (CR 608.2c, 400.7): "each permanent put into a graveyard this way", the permanents the destroy effects before it put there.
+  if (noun.det === 'graveyardedThisWay') {
+    return (
+      gate(noun, ['selector:putIntoGraveyardThisWay']) ?? {
+        ok: true,
+        value: { kind: 'putIntoGraveyardThisWay' },
+        rule: noun.rule,
+      }
+    );
+  }
   if (noun.det === 'anaphor' || noun.det === 'triggerSubject') {
     if (noun.det === 'anaphor' && noun.ref !== undefined && ctx.chosenObjectRefs.has(noun.ref)) {
       return (

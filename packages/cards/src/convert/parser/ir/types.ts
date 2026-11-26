@@ -160,6 +160,7 @@ export interface IrNoun extends IrNode {
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
+    | 'graveyardedThisWay' // "each permanent put into a graveyard this way" (Terastodon, CR 608.2c): what the destroy effects before it put into graveyards
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -1041,6 +1042,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'milledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
+    // "If you can't, sacrifice ~" (Eldrazi Monument, CR 608.2c, 701.21a): the sacrifice the sentence before it asks for sacrificed nothing
+    | { readonly kind: 'youCant' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
     // "if you cast it" (CR 601.2a, 603.4): the permanent the trigger is about came from a spell that was cast

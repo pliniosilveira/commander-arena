@@ -58,6 +58,7 @@ import { GRAND_LARCENY_C_CONDITION_RULES } from './grand-larceny-c';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
+import { IF_YOU_CANT_CONDITION_RULES } from './if-you-cant';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
 import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
@@ -648,6 +649,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G1B_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-411): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.
   ...DANITHA_G2_LATE_CONDITION_RULES,
+  // Eldrazi Monument: "you can't", after "sacrifice a creature".
+  ...IF_YOU_CANT_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
   // Issue 89: "it's attacking one of your opponents".
