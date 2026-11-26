@@ -211,7 +211,9 @@ describe('one budget for the searches of a decision', () => {
     expect(full.planning.planned).not.toBeNull();
     const vetting = full.afterToday;
     const planner = full.used - vetting;
-    expect(full.planning.work.playOuts).toBeGreaterThan(3);
+    // The Serra Angels cannot attack before the agent's next turn (no haste: the opponent profile), so each line
+    // is played on the base scenario alone, one play-out a line.
+    expect(full.planning.work.playOuts).toBeGreaterThan(2);
 
     // Half of what the planner needs: it stops at the budget, having scored fewer play-outs.
     const bounds = { budget: vetting + planner / 2, limit: vetting + planner };
