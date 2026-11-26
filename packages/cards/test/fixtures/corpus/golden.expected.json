@@ -2413,19 +2413,10 @@
     "283054ed-5fbd-4202-bc02-294079aaff03": {
       "name": "The Ruinous Powers",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, choose an opponent at random. Exile the top card of that player's library. Until end of turn, you may play that card and you may spend mana as though it were mana of any color to cast it. When you cast a spell this way, its owner loses life equal to its mana value.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-target-dies-return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f1d3aaf4"
+      "ast": "2298d522"
     },
     "2837be10-23ad-49d2-943e-b1e00edbbbd9": {
       "name": "Sam, Loyal Attendant",
@@ -5231,19 +5222,10 @@
     "5513a221-dfff-4e02-8037-dcff3d0381d7": {
       "name": "Petty Larceny",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Freerunning {1}{B}",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e995a27a"
+      "ast": "44a282b2"
     },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
@@ -7591,19 +7573,10 @@
     "7a0bc265-6b40-48d6-a588-c9624df7d1bc": {
       "name": "Cruelclaw's Heist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Target opponent reveals their hand. You choose a nonland card from it. Exile that card. If the gift was promised, you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fa532fd4"
+      "ast": "9c976d68"
     },
     "7a2484a9-04fd-41a0-8224-610c1c07ed10": {
       "name": "Blasphemous Act",
@@ -13913,19 +13886,10 @@
     "e229d55c-9513-437d-bd67-015ac46aaa18": {
       "name": "The Infamous Cruelclaw",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ deals combat damage to a player, exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.exile-until-put-rest-bottom"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7cf8cfc9"
+      "ast": "9b053566"
     },
     "e233cb5b-7237-4271-8157-9179cc897b6c": {
       "name": "Killian, Ink Duelist",
@@ -15767,7 +15731,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1660,
+      "supported": 1664,
       "total": 1680
     }
   }
