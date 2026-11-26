@@ -114,14 +114,14 @@ describe('the cards are valid', () => {
     expect(validateCard(card)).toEqual([]);
   });
 
-  test('the real Hazel of the Rootbloom is still unsupported: its mana ability needs a cost that taps X tokens', () => {
+  test('the real Hazel of the Rootbloom is supported: her end step trigger and her tap-X-tokens mana ability both read', () => {
     const imported = importCard(
       fromGoldenCard(goldenCard('Hazel of the Rootbloom')),
       undefined,
       NO_OVERRIDES,
     );
-    expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.unparsed.map((u) => u.closestRule)).toEqual(['cost.tap-permanents']);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.support.unparsed).toEqual([]);
   });
 
   test('Caretaker\'s Talent, whose level 2 ability copies "target token you control", now reads too', () => {
