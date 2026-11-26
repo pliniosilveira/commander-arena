@@ -3055,6 +3055,35 @@ function lowerStep(
     // itself (`acceptsOptional`: the engine's `castFree`); any other optional clause makes `lowerClauses` fail, so it is never run as if it were not a choice.
     const other = lowerClauses(sentence.clauses, ctx);
     if (!other.ok) return stop(other);
+    // "If it was a creature card, create a Rogue. If it was a land card, create a Treasure. Otherwise, you gain 3 life." (Misfortune Teller, CR 608.2c, 205.2): after a run of
+    // conditional instructions that each test the same object (they do not exclude each other: a card that is both a creature and a land does both), "otherwise" is
+    // for the case where none of the tests held, so it is its own conditional on the negation of all of them, not the `else` of the last one.
+    const run: Extract<Effect, { kind: 'conditional' }>[] = [];
+    for (let k = steps.length - 1; k >= 0; k--) {
+      const only = steps[k]?.effects.length === 1 ? steps[k]?.effects[0] : undefined;
+      if (only?.kind !== 'conditional' || only.else !== undefined) break;
+      run.unshift(only);
+    }
+    const head = run[0];
+    const same = run.every(
+      (c) =>
+        c.condition.kind === 'objectMatches' &&
+        head?.condition.kind === 'objectMatches' &&
+        JSON.stringify(c.condition.of) === JSON.stringify(head.condition.of),
+    );
+    if (run.length >= 2 && same) {
+      steps.push({
+        effects: [
+          {
+            kind: 'conditional',
+            condition: { kind: 'not', term: { kind: 'or', terms: run.map((c) => c.condition) } },
+            effect: oneEffect(other.value),
+          },
+        ],
+        replaceable: false,
+      });
+      return { last: i };
+    }
     steps.pop();
     steps.push({
       effects: [{ ...before, else: oneEffect(other.value) }],

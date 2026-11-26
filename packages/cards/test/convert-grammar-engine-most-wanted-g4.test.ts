@@ -238,3 +238,99 @@ describe('Rankle: whenever it deals combat damage to a player, choose any number
     g.expect.invariants();
   });
 });
+
+const TELLER = parsed(
+  'SYNTHETIC Misfortune Teller',
+  'Creature — Human Rogue',
+  'Whenever ~ enters or deals combat damage to a player, exile target card from a graveyard. If it was a creature card, create a 2/2 black Rogue creature token. If it was a land card, create a Treasure token. Otherwise, you gain 3 life.',
+  { manaCost: '{2}{B}', power: '2', toughness: '2', colors: ['B'] },
+);
+// SYNTHETIC: a card that is both a land and a creature (the shape of Dryad Arbor).
+const ARBOR = parsed('SYNTHETIC Land Creature', 'Land Creature — Forest Dryad', '', {
+  power: '1',
+  toughness: '1',
+  colors: ['G'],
+});
+
+describe('Misfortune Teller: enters or deals combat damage to a player, exile a card from a graveyard, and what it was decides', () => {
+  test('reads as two triggered abilities (CR 603.2c) with the same body', () => {
+    const triggers = (TELLER.faces[0]?.abilities ?? []).flatMap((a) =>
+      a.kind === 'triggered' ? [a.trigger.kind] : [],
+    );
+    expect(triggers).toEqual(['entersBattlefield', 'dealsCombatDamage']);
+  });
+
+  const board = () =>
+    scenario()
+      .define(TELLER)
+      .define(ARBOR)
+      .seat(0)
+      .hand(TELLER.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .graveyard('Grizzly Bears', 'Forest', 'Lightning Bolt', ARBOR.name)
+      .at('precombatMain');
+
+  const enter = (target: string) => {
+    const g = board().build();
+    g.act(0).cast(TELLER.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ name: target, zone: 'graveyard', seat: 1 });
+    g.passAll();
+    return g;
+  };
+  const tokens = (g: ReturnType<typeof board>['build'] extends () => infer G ? G : never) =>
+    g.state.battlefield.flatMap((id) => {
+      const o = g.state.objects[id];
+      return o?.token != null ? [o.token.characteristics.name] : [];
+    });
+
+  test('a creature card: exiled, and a 2/2 black Rogue token, no life', () => {
+    const g = enter('Grizzly Bears');
+    g.expect.zone('Grizzly Bears', 'exile');
+    expect(tokens(g)).toEqual(['Rogue']);
+    g.expect.life(0, 40);
+    g.expect.invariants();
+  });
+
+  test('a land card: exiled, and a Treasure token, no life', () => {
+    const g = enter('Forest');
+    g.expect.zone('Forest', 'exile');
+    expect(tokens(g)).toEqual(['Treasure']);
+    g.expect.life(0, 40);
+  });
+
+  test('any other card: exiled, you gain 3 life, no token', () => {
+    const g = enter('Lightning Bolt');
+    g.expect.zone('Lightning Bolt', 'exile');
+    expect(tokens(g)).toEqual([]);
+    g.expect.life(0, 43);
+  });
+
+  test('a card that is a land and a creature gives both tokens and no life (Scryfall ruling 2022-04-29)', () => {
+    const g = enter(ARBOR.name);
+    expect(tokens(g).sort()).toEqual(['Rogue', 'Treasure']);
+    g.expect.life(0, 40);
+  });
+
+  test('it also triggers when it deals combat damage to a player, and the opponent graveyard of any seat is a target', () => {
+    const g = scenario({ seats: 3 })
+      .define(TELLER)
+      .seat(0)
+      .battlefield(TELLER.name)
+      .seat(1)
+      .graveyard('Lightning Bolt')
+      .seat(2)
+      .graveyard('Grizzly Bears')
+      .at('precombatMain')
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(TELLER.name, { player: 1 });
+    g.advanceTo('combatDamage');
+    g.act(0).chooseTargets({ name: 'Grizzly Bears', zone: 'graveyard', seat: 2 });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile');
+    expect(tokens(g)).toEqual(['Rogue']);
+    g.expect.invariants();
+  });
+});
