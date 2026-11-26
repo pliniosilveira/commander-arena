@@ -1214,6 +1214,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),
+  // Flint deck (issue 685): the rider of the permission before it (the sentence leads with "When", which reads as a trigger alone).
+  'effect.owner-loses-life-for-spell-cast-this-way': spell(
+    (e) =>
+      `Exile the top card of your library. Until end of turn, you may play that card. ${e[0]?.toUpperCase()}${e.slice(1)}.`,
+  ),
   // Flint deck (issue 685): the intervening "if" of a trigger about a spell that was cast.
   'condition.discarded-card-has-madness': permanent(
     (e) => `Whenever you discard a card, if ${e}, you gain 1 life.`,
