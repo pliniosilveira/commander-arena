@@ -404,9 +404,31 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly notOwned names nothing else');
       }
+      // CR 106.6, 701.40b (Overgrown Zealot): "to turn permanents face up" stands alone.
+      if (only.turnFaceUp !== undefined && only.turnFaceUp !== true) {
+        issue(out, `${path}.spendOnly.turnFaceUp`, 'turnFaceUp must be true when present');
+      }
+      if (
+        only.turnFaceUp === true &&
+        (only.types !== undefined ||
+          only.notTypes !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined ||
+          only.notGeneric !== undefined ||
+          only.fromGraveyard !== undefined ||
+          only.notOwned !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly turnFaceUp names nothing else');
+      }
       if (
         only.types === undefined &&
         only.subtypes === undefined &&
+        only.turnFaceUp !== true &&
         only.fromGraveyard !== true &&
         only.notOwned !== true &&
         only.chosenType !== true &&

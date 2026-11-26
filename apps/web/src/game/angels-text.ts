@@ -266,6 +266,8 @@ export function manaRestrictionWording(
     text = `${text}. Spend this mana only on costs that contain {X}`;
   } else if (ability.spendOnly?.notGeneric === true) {
     text = `${text}. This mana can't be spent to pay generic mana costs`;
+  } else if (ability.spendOnly?.turnFaceUp === true) {
+    text = `${text}. Spend this mana only to turn permanents face up`;
   } else if (ability.spendOnly !== undefined) {
     const spells =
       ability.spendOnly.alsoAbilities === true
@@ -305,6 +307,9 @@ export function restrictionWords(restriction: PoolRestriction): string {
     case 'notGeneric':
       // CR 106.6 (Jegantha, the Wellspring): a colored symbol of a cost, never generic mana.
       return "Can't be spent to pay generic mana costs";
+    case 'turnFaceUp':
+      // CR 106.6, 701.40b (Overgrown Zealot): the cost of turning a face-down permanent face up.
+      return 'Spend only to turn permanents face up';
     case 'xCost':
       // CR 106.6, 107.3 (Elementalist's Palette): a spell or an ability whose cost contains {X}.
       return 'Spend only on costs that contain {X}';

@@ -10024,6 +10024,11 @@ export interface ManaAbility {
      * `notGeneric` or `fromGraveyard`.
      */
     readonly notOwned?: true;
+    /**
+     * "Spend this mana only to turn permanents face up." (Overgrown Zealot; CR 106.6, 116.2b, 701.40b): the mana can pay only the cost of the special action of turning a face-down
+     * permanent face up (a morph cost, the mana cost of a manifested creature card), never a spell and never an ability. Alone: no other `spendOnly` field.
+     */
+    readonly turnFaceUp?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

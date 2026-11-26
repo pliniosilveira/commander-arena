@@ -1185,6 +1185,7 @@ describe('unmatched abilities', () => {
       'effect.spend-only-monocolored-chosen',
       'effect.spend-only-chosen-color-activate',
       'effect.mana-not-generic',
+      'effect.spend-only-turn-face-up',
       'effect.choose-graveyard-cards',
       'effect.copy-each-token',
       'effect.copy-each-creature-token',
