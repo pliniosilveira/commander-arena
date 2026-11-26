@@ -138,6 +138,7 @@ import { runLoseLifeManaValue } from './lose-life-mana-value';
 import { spendRestrictionOf } from './mana-outcomes';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
+import { runTurnFaceUp } from './turn-face-up';
 import {
   runGainActivatedAbilitiesOf,
   runMayCast,
@@ -651,7 +652,10 @@ export function runInstruction(
         : result.alsoNewObject === undefined
           ? [result.newObject]
           : [result.newObject, result.alsoNewObject];
-    const lastMoved = [...(res.lastMoved ?? []), ...movedObjects];
+    const lastMoved =
+      instruction.notMoved === true
+        ? (res.lastMoved ?? [])
+        : [...(res.lastMoved ?? []), ...movedObjects];
     // CR 702.84a, 603.7 (D-124): unearth also creates the delayed triggered ability that exiles the permanent it
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
@@ -1528,6 +1532,7 @@ function runEffect(
               count: amountOf(state, sel.count ?? 1, ctx, targets),
               to: effect.to,
               position: effect.position ?? 'top',
+              ...(effect.faceDownAs === 'manifest' ? { entersFaceDown: 'manifest' as const } : {}),
               ...(sel.optional === true ? { optional: true as const } : {}),
               ...(sel.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
               // "Put a creature card from defending player's hand": the hand of the one player the selector names (nothing to choose when it names none).
@@ -3026,6 +3031,10 @@ function runEffect(
     case 'manifest':
       // CR 701.40a (D-309): the top card of a library goes onto the battlefield face down as a 2/2 creature.
       return runManifest(state, effect, ctx, targets);
+
+    case 'turnFaceUp':
+      // CR 701.40g, 708.8: a face-down permanent is turned face up by the effect, at no cost.
+      return runTurnFaceUp(state, effect, ctx, targets);
 
     case 'gainLife':
     case 'loseLife': {

@@ -50,6 +50,8 @@ export interface FilterSubject {
   readonly modified?: boolean;
   /** Whether the permanent is goaded (`goaded`, CR 701.15b); left out where the caller does not know, which fails the test closed. */
   readonly goaded?: boolean;
+  /** Whether the permanent is face down (`facing`, CR 708.2); left out where the caller does not know, which fails the test closed (a face-up test as well). */
+  readonly isFaceDown?: boolean;
 }
 
 /** D-111: whether `value` satisfies the comparison; an object with no such value satisfies none. */
@@ -389,6 +391,8 @@ export function matchesFilterWith(
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.
   if (filter.goaded === true && d.goaded !== true) return false;
+  // CR 708.2, 701.40: "face-down" (true) or "face-up" (false) is the status the permanent has now.
+  if (filter.facing !== undefined && d.isFaceDown !== (filter.facing === 'down')) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
     return false;
   }

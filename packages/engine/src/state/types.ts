@@ -1635,6 +1635,8 @@ export type Instruction =
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
       readonly withCounters?: EntryCounter | readonly EntryCounter[];
+      /** "Manifest a card from your hand" (`moveToZone.faceDownAs` `manifest`, CR 701.40a): the card chosen enters the battlefield face down, manifested. */
+      readonly entersFaceDown?: 'manifest';
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
@@ -2279,6 +2281,8 @@ export type Instruction =
       readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
+      /** The new object is not added to `moved` (the cards manifest dread puts into the graveyard are not "that creature", CR 608.2c, 701.62a). */
+      readonly notMoved?: true;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */

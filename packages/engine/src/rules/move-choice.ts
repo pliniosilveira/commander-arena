@@ -221,6 +221,10 @@ export function runChooseMove(
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
           ...i,
+          // CR 701.40a (Scroll of Fate): "Manifest a card from your hand": the card enters face down.
+          ...(instruction.entersFaceDown === undefined
+            ? {}
+            : { entersFaceDown: instruction.entersFaceDown }),
           ...(instruction.countsNonland === true ? { countsNonland: true as const } : {}),
           ...(returns ? { countsReturned: true as const } : {}),
         };
