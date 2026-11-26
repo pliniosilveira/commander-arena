@@ -185,10 +185,13 @@ export function deckOf(state: GameState, seat: SeatId): DeckProfile {
   return profile;
 }
 
-/** Whether a permanent `seat` controls on the battlefield of `view` gives creatures haste (read from its card). */
+/**
+ * Whether a permanent `seat` controls on the battlefield of `view` gives creatures haste (read from its card). A
+ * face-down permanent shows no card (CR 708.5): the sample's card under it is a guess, so it is not read.
+ */
 function givesHaste(view: GameView, sample: GameState, seat: SeatId): boolean {
   return view.battlefield.some((o) => {
-    if (o.controller !== seat) return false;
+    if (o.controller !== seat || o.faceDownBy !== undefined) return false;
     const card = sample.objects[o.id]?.card;
     const def = card === undefined || card === null ? undefined : definitionOf(sample, card);
     return def !== undefined && traitsOf(def).hasteGiver;

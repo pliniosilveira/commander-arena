@@ -8,6 +8,7 @@ import {
   createRng,
   determinize,
   fixtureCard,
+  type GameState,
   type SpellText,
 } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
@@ -309,6 +310,27 @@ describe('the profile of an opponent at one decision', () => {
     expect(profileOf(banner.view, banner.sample, 1, poolOf(banner.sample, 1)).hasteOnBoard).toBe(
       true,
     );
+    // Face down it shows no card (CR 708.5): what the sample deals under it is not read.
+    const g = scenario()
+      .define(BANNER)
+      .seat(0)
+      .library('Island', { count: 5 })
+      .seat(1)
+      .battlefield(BANNER.name, { faceDown: true })
+      .library('Forest', { count: 5 })
+      .at('precombatMain', { active: 0 })
+      .build();
+    const samples = Array.from({ length: 12 }, (_, i) => determinize(g.state, 0, createRng(i)));
+    // The definition of the card under the face-down permanent (the only permanent on the battlefield).
+    const under = (s: GameState): number | undefined => {
+      const id = g.view(0).battlefield[0]?.id;
+      const card = id === undefined ? undefined : s.objects[id]?.card;
+      return card === undefined || card === null ? undefined : s.cards[card]?.definition;
+    };
+    // Some samples deal the Banner itself under it; none reads it.
+    expect(samples.some((s) => under(s) === under(g.state))).toBe(true);
+    for (const s of samples)
+      expect(profileOf(g.view(0), s, 1, poolOf(s, 1)).hasteOnBoard).toBe(false);
   });
 
   test('the same on every sample of the same position', () => {
