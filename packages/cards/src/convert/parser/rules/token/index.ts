@@ -831,12 +831,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
 });
 
 /** What a copy can be made of: this permanent, one target permanent, or "it" (CR 707.2). */
-const COPY_SOURCES = [
-  'noun.self',
-  'noun.target-permanent',
-  'noun.target-token-you-control',
-  'noun.it',
-] as const;
+const COPY_SOURCES = ['noun.self', 'noun.target-permanent', 'noun.it'] as const;
 
 const COPY_SOURCE = satisfy(family<IrNoun>('noun', { only: COPY_SOURCES }), (noun) => !noun.plural);
 

@@ -87,7 +87,6 @@ import { SQUIRRELED_G4_NOUN_RULES } from './squirreled-g4';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { withSubtypeClause } from './subtype-clause';
-import { TARGET_TOKEN_NOUN_RULES } from './target-token';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -1055,7 +1054,6 @@ export const NOUN_RULES = [
   // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
   ...QUANDRIX_G_TARGET_NOUN_RULES,
   // Hazel of the Rootbloom: "target token you control", before `noun.target-permanent`.
-  ...TARGET_TOKEN_NOUN_RULES,
   // Ahoy Mateys deck, group 7: "target nonland permanent controlled by a player who was dealt combat damage by three or more Pirates this turn", which `noun.target-permanent` would stop in the middle of.
   ...AHOY_G7_NOUN_RULES,
   // Abzan Armor deck: "target permanent you own", which `noun.target-permanent` would stop in the middle of.

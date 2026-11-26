@@ -1272,7 +1272,6 @@ describe('unmatched abilities', () => {
       'noun.target-permanent-of-that-player',
       'noun.target-creature-attacking-you',
       'noun.target-creature-token',
-      'noun.target-token-you-control',
       'noun.target-permanent-controller-dealt-damage-by',
       'noun.target-permanent-you-own',
       'noun.up-to-targets-controlled-by-different-players',
