@@ -272,7 +272,7 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     minThreatChance: 0.1,
     aggroOpenMana: 2,
     riskAversion: 0.25,
-    deepMargin: 4,
+    deepMargin: 1.5,
     deepBlend: 0.5,
   },
   removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6 },
