@@ -73,9 +73,15 @@ const KICKER: readonly Line[] = [
   },
   {
     kind: 'sorcery',
+    text: 'Kicker—Discard a card\nDraw a card.',
+    expect: no('Kicker—Discard a card', 'keyword.kicker', NOT_RUNNABLE),
+    note: 'SYNTHETIC; the engine pays mana, life and a sacrifice for kicker, nothing else',
+  },
+  {
+    kind: 'sorcery',
     text: 'Kicker—Sacrifice a creature\nDraw a card.',
-    expect: no('Kicker—Sacrifice a creature', 'keyword.kicker', NOT_RUNNABLE),
-    note: 'SYNTHETIC; the engine pays mana and life for kicker, nothing else',
+    expect: OK,
+    note: 'Primal Growth: a kicker that sacrifices a creature, paid after the mana (CR 702.33a, 701.21a)',
   },
   {
     kind: 'sorcery',

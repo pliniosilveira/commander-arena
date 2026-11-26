@@ -266,7 +266,10 @@ function lowerCostedKeyword(
         ? ['mana', 'tapPermanents']
         : name === 'ward'
           ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
-          : ['mana', 'payLife'];
+          : // CR 702.33a, 118.8, 701.21a: "Kicker—Sacrifice a creature." is paid after the mana, as an additional cost's sacrifice is.
+            name === 'kicker'
+            ? ['mana', 'payLife', 'sacrifice']
+            : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
   // "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): only the kicker keyword, and only with that sentence.
   if (ability.xNotZero === true && name !== 'kicker') return failure(ability);
@@ -282,6 +285,14 @@ function lowerCostedKeyword(
           : {},
   );
   if (!cost.ok) return cost;
+  // A kicker that sacrifices names permanents by a filter, never the spell's own permanent or an "and" of several (`validateCard`).
+  if (
+    name === 'kicker' &&
+    cost.value.kind === 'sacrifice' &&
+    ('kind' in cost.value.what || cost.value.alongside !== undefined)
+  ) {
+    return failure(ability);
+  }
   const blocked = gate(ability, [
     'ability:keyword',
     `keyword:${name}`,
@@ -290,6 +301,9 @@ function lowerCostedKeyword(
       ? (['ability:escalateTapCost'] as const)
       : []),
     ...(ability.xNotZero === true ? (['ability:kickerX'] as const) : []),
+    ...(name === 'kicker' && cost.value.kind === 'sacrifice'
+      ? (['ability:kickerSacrifice'] as const)
+      : []),
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
