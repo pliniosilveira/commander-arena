@@ -391,6 +391,8 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'boundObjects':
       // D-639: the engine's own form of `moved` inside a delayed ability.
       return 'it';
+    case 'putIntoGraveyardThisWay':
+      return 'each permanent put into a graveyard this way';
     case 'putCountersOn':
       // Spectacular Showdown (CR 608.2c): the objects the counters of the instruction before it went on.
       return what.counter === undefined
@@ -623,6 +625,7 @@ function recipientText(
     case 'thisSpell':
     case 'moved':
     case 'putCountersOn':
+    case 'putIntoGraveyardThisWay':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':

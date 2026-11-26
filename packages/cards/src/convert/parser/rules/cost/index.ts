@@ -200,6 +200,7 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice two tokens',
     'Sacrifice two other creatures',
     'Sacrifice X creatures',
+    'Sacrifice X other creatures',
     'Sacrifice one or more artifacts',
     'Sacrifice one or more other creatures',
     // Grave Danger (issue 159): the second cost of "Remove three study counters from ~ and sacrifice it": the permanent itself.
@@ -215,7 +216,6 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice one or more artifacts an opponent controls',
     'Sacrifice any number of artifacts',
     'Sacrifice',
-    'Sacrifice X other creatures',
     'Sacrifice X',
     'Sacrifice target creature',
     'Sacrifice all creatures',

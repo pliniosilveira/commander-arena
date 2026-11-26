@@ -982,7 +982,8 @@ function walkAbility(
           a.keyword.cost,
           `${path}.keyword.cost`,
           out,
-          ['mana', 'payLife'],
+          // CR 702.33a, 118.8, 701.21a: a plain kicker may sacrifice one permanent ("Kicker—Sacrifice a creature."), chosen as the cost is paid.
+          a.keyword.kind === 'kicker' ? ['mana', 'payLife', 'sacrifice'] : ['mana', 'payLife'],
           a.keyword.kind === 'kicker' && a.keyword.xNotZero === true,
         );
       } else if (a.keyword.kind === 'typecycling') {

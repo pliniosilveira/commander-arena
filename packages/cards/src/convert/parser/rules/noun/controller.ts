@@ -174,3 +174,64 @@ export const NOUN_EACH_EXILED_CONTROLLER = defineRule<IrNoun>({
     return { ok: true, value: noun, pos: end };
   }) satisfies Parser<IrNoun>,
 });
+
+/**
+ * `noun.each-graveyarded-controller`: "for each permanent put into a graveyard this way, its controller" (Terastodon; CR 109.4, 608.2c, 608.2h, 400.7): the player who controlled each
+ * permanent the destroy effects before it really put into a graveyard, once for each permanent (a player who controlled two is named twice), as it was as it left. Only "permanent":
+ * the engine's group is every permanent destroyed, so a narrower noun would claim more than it checks. Not read: another verb ("destroyed", "exiled", "sacrificed"), another noun,
+ * "its owner", "that permanent's controller", a missing "this way", "graveyards".
+ */
+export const NOUN_EACH_GRAVEYARDED_CONTROLLER = defineRule<IrNoun>({
+  id: 'noun.each-graveyarded-controller',
+  family: 'noun',
+  leading: ['for'],
+  cites: [
+    'CR 109.4 (Objects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 608.2h (Resolving Spells and Abilities)',
+    'CR 400.7 (General)',
+  ],
+  examples: [
+    'for each permanent put into a graveyard this way, its controller',
+    'For each permanent put into a graveyard this way, its controller',
+  ],
+  rejects: [
+    'for each creature put into a graveyard this way, its controller',
+    'for each permanent destroyed this way, its controller',
+    'for each permanent put into a graveyard this way, its owner',
+    "for each permanent put into a graveyard this way, that permanent's controller",
+    'for each permanent put into a graveyard, its controller',
+    'for each permanent put into a graveyard this way its controller',
+    'for each permanent put into a graveyard this way, its controllers',
+    'each permanent put into a graveyard this way, its controller',
+  ],
+  parse: ((ctx, pos) => {
+    const m = pattern(
+      /for each permanent put into a graveyard this way, its controller(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!m.ok) return fail(ctx, pos);
+    const end = m.pos;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'graveyardedThisWay',
+      filter: { raw: 'each permanent put into a graveyard this way' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end },
+      rule: 'noun.each-graveyarded-controller',
+    };
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'controllerOf',
+      filter: { raw: ctx.text.slice(pos, end) },
+      upTo: false,
+      plural: false,
+      other: false,
+      of,
+      span: { start: pos, end },
+      rule: 'noun.each-graveyarded-controller',
+    };
+    return { ok: true, value: noun, pos: end };
+  }) satisfies Parser<IrNoun>,
+});

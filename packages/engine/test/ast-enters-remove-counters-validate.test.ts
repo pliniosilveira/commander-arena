@@ -84,4 +84,25 @@ describe('asEntersRemoveCounters and countersRemovedAsEntered', () => {
       0,
     );
   });
+
+  test('"from all permanents" (all) is valid with the empty filter, asks nothing, and so leaves room for one question', () => {
+    const all: Ability = {
+      kind: 'replacement',
+      replacement: { kind: 'asEntersRemoveCounters', filter: {}, all: true },
+    };
+    const choose: Ability = {
+      kind: 'replacement',
+      replacement: { kind: 'asEntersChoose', what: 'color' },
+    };
+    expect(validateCard(creature([all, ENTERS_WITH()]))).toEqual([]);
+    expect(validateCard(creature([all, choose, ENTERS_WITH()]))).toEqual([]);
+  });
+
+  test('all is true or absent', () => {
+    const bad = {
+      kind: 'replacement',
+      replacement: { kind: 'asEntersRemoveCounters', filter: {}, all: false },
+    } as unknown as Ability;
+    expect(messages(creature([bad, ENTERS_WITH()]))).toMatch(/all is true or absent/);
+  });
 });

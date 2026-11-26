@@ -1220,6 +1220,8 @@ function runEffect(
         performed: destroyed.size > 0 ? 1 : 0,
         thisWay: {
           destroyed: destroyed.size,
+          // CR 608.2c, 400.7: the old ids of what was destroyed, for "for each permanent put into a graveyard this way" (`ObjectRef` `putIntoGraveyardThisWay`); left out when nothing was.
+          ...(destroyed.size === 0 ? {} : { destroyedObjects: [...destroyed] }),
           // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way": each as it last existed on the battlefield (before it moved); a token has the value its copiable
           // mana cost gives it (a token that is no copy has none: 0).
           destroyedValue: [...destroyed].reduce((total, id) => {
