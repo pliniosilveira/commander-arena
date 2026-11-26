@@ -1235,7 +1235,6 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creature returned this way',
     'for each cards returned this way',
     'for each card put into a graveyard this way',
-    'for each land card put into a graveyard this way',
     'for each creature put into a graveyard this way',
     'for each creature cards put into a graveyard this way',
     'for each creature card put into a graveyard',
