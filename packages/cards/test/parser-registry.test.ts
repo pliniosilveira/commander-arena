@@ -1394,6 +1394,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
   ),
+  // Eldrazi Monument: the rider of a sacrifice the controller may be unable to make.
+  'condition.if-you-cant': permanent(
+    (e) => `At the beginning of your upkeep, sacrifice a creature. If ${e}, sacrifice ~.`,
+  ),
   'condition.control-or-returned': spell(
     (e) =>
       `Mill four cards. You may put a permanent card from among them into your hand. If ${e}, create a Food token.`,
@@ -1419,6 +1423,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  'noun.target-permanent-and-same-name-others': spell((e) => `Exile ${e}.`),
   // Breaking of the Fellowship: a second target of the controller of the first.
   'noun.another-target-of-same-controller': spell(
     (e) => `Target creature an opponent controls deals damage equal to its power to ${e}.`,

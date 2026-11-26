@@ -142,6 +142,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
 - Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
 - Void Attendant: a card exiled face down cannot be chosen for the cost "Put a card an opponent owns from exile into that player's graveyard" (the rules pick a pile, then a card at random).
+- "Three or more lands with the same name" (`sameNameAtLeast`) counts face-down permanents, which have no name (CR 201.2a), as sharing the empty name; `sameNameAs` and `sameNameAsSource` already treat them as nameless.
 - Silent-Blade Oni and Extract Brain: looking at a hand shows the cards only in the question of which spell to cast, so a hand with no spell to cast shows nothing.
 - Vronos, Masked Inquisitor: "can't be blocked" given for good is a rules-modifying effect, not a granted ability, so "loses all abilities" does not remove it.
 - Jace, Architect of Thought: the +1 "until your next turn" ability does not end early when its controller leaves the game (CR 800.4m).

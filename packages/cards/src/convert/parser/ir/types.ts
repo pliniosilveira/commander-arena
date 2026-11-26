@@ -1032,6 +1032,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'milledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
+    // "If you can't, sacrifice ~" (Eldrazi Monument, CR 608.2c, 701.21a): the sacrifice the sentence before it asks for sacrificed nothing
+    | { readonly kind: 'youCant' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
     // "if you cast it" (CR 601.2a, 603.4): the permanent the trigger is about came from a spell that was cast
