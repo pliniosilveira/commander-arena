@@ -436,6 +436,11 @@ export interface LowerContext {
    */
   randomYardCard: boolean;
   /**
+   * True after "Reveal the top card of your library" (Twilight Prophet, CR 701.20a, 608.2c): what the engine's `moved` names is the card revealed, a card of the controller's own library,
+   * which "put it into your hand" moves to its owner's hand, which is theirs. Set by `lowerSentences`, never cleared inside one ability.
+   */
+  revealedTopCard: boolean;
+  /**
    * True after "Choose a player with the most life or tied for most life" (The Black Gate, CR 608.2d): "that player" of the instructions after it is the player chosen, the engine's `chosenPlayer`.
    * Set by the lowering of `choosePlayer`, never cleared inside one ability.
    */
@@ -555,6 +560,7 @@ export function newContext(
     gainedGroup: false,
     becameTarget: null,
     randomYardCard: false,
+    revealedTopCard: false,
     choseAPlayer: false,
     comparedStat: null,
     comparedPowerOf: null,

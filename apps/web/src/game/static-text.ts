@@ -340,7 +340,12 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
     }
     case 'castAsThoughFlash': {
       // D-408 (CR 601.3b, 113.6d): the spell's own permission, "You may cast this spell as though it had flash" (its condition is worded by `conditionalWording`).
-      if ('kind' in effect.spells) return 'You may cast this spell as though it had flash';
+      // CR 307.1, 603.7, 514.3a (Necromancy): with its rider, which is part of the same ability.
+      if ('kind' in effect.spells) {
+        return effect.sacrificeIfCastAtInstantSpeed === true
+          ? "You may cast this spell as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step"
+          : 'You may cast this spell as though it had flash';
+      }
       // D-139 (CR 601.3b, 702.8a): "You may cast artifact spells as though they had flash".
       const spells = spellsPhrase(effect.spells);
       return spells === null ? null : `You may cast ${spells} as though they had flash`;

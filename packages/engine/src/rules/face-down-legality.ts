@@ -26,7 +26,8 @@ export function turnUpSymbols(state: GameState, obj: GameObject): readonly strin
       ? null
       : manaSymbolsOf(cost).filter((symbol) => symbol !== 'X' && symbol !== '0');
   }
-  if (by !== 'manifest') return null;
+  // CR 701.40b: a manifested permanent; CR 701.58 (Cloak): a cloaked one is turned face up the same way (the CR text was not available to check 701.58b).
+  if (by !== 'manifest' && by !== 'cloak') return null;
   if (face === undefined || !face.types.includes('creature') || face.manaCost === null) {
     return null;
   }

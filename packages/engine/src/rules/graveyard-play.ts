@@ -60,9 +60,14 @@ export function graveyardPlayPermission(
   obj: GameObject,
   asLand: boolean,
   type?: CardType,
+  /**
+   * Eye of Duskmantle (CR 118.9): a spell cast for the alternative cost `lifeForMana`, which only a permission with `lifeForMana` gives; without it, only the permissions that let the spell
+   * be cast for its mana cost count.
+   */
+  lifeForMana = false,
 ): GraveyardUse | null {
   if (obj.zone !== 'graveyard' || obj.owner !== seat || obj.card === null) return null;
-  if (state.turn.activeSeat !== seat) return null;
+  const ownTurn = state.turn.activeSeat === seat;
   const used = state.turnLog.graveyardPlays ?? [];
   // Read only once a permanent offers a permission at all: most states have none, and deriving every card of a graveyard is the cost.
   let derived: readonly string[] | undefined;
@@ -71,6 +76,17 @@ export function graveyardPlayPermission(
   let limited: GraveyardUse | null = null;
   for (const source of graveyardPlaySources(state)) {
     if (controllerOf(state, source.object) !== seat) continue;
+    // "During each of your turns" and "once during each of your turns" permissions work in the controller's own turn only.
+    if (!ownTurn && source.surveiled !== true) continue;
+    // CR 701.25a, 400.7 (Eye of Duskmantle): the card as it is in the graveyard now, put there by a surveil of this player this turn.
+    if (
+      source.surveiled === true &&
+      !(state.turnLog.surveiledCards ?? []).some((s) => s.card === obj.id && s.by === seat)
+    ) {
+      continue;
+    }
+    // CR 118.9: a spell is cast for life by the permissions that say so and for its mana cost by the others; a land is neither.
+    if (!asLand && (source.lifeForMana === true) !== lifeForMana) continue;
     if (source.eachType === true) {
       // "a land and a permanent spell of each permanent type": a card is played as one of its types, whose slot is then used (a land is never cast).
       const slots = freeSlots(state, source, typesOf(), asLand).filter(

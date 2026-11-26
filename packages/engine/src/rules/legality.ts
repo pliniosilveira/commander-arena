@@ -109,6 +109,31 @@ export function castTiming(
 }
 
 /**
+ * CR 307.1, 601.3b, 603.7 (Necromancy): whether casting the spell with the face `face` now makes the permanent it becomes get the delayed sacrifice of the rider "If you cast it any
+ * time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step" (`castAsThoughFlash` with `spells: this` and
+ * `sacrificeIfCastAtInstantSpeed`): the face has the rider and `seat` could not cast a sorcery at this moment (it is not their main phase with an empty stack, CR 307.1). Read as the
+ * spell is cast, before it moves to the stack.
+ */
+export function castAtInstantSpeedRider(
+  state: GameState,
+  seat: SeatId,
+  face: CardFace | null,
+): boolean {
+  if (
+    !(face?.abilities ?? []).some(
+      (a) =>
+        a.kind === 'static' &&
+        a.static.kind === 'castAsThoughFlash' &&
+        'kind' in a.static.spells &&
+        a.static.sacrificeIfCastAtInstantSpeed === true,
+    )
+  ) {
+    return false;
+  }
+  return !hasSorceryTiming(state, seat);
+}
+
+/**
  * CR 601.3b, 601.3d, 113.6d (D-408): the spell's own permission to be cast as though it had flash (`castAsThoughFlash` with `spells: this`, on the face being
  * cast). With no condition, or one that holds as the spell is cast, it is plain permission. A `spellTargets` condition is read as CR 601.3b and 601.3d say: the
  * caster may begin to cast the spell as though it had flash when the targets they choose could meet it, so the permission is there and the targets are
@@ -604,6 +629,13 @@ export function castZone(
     if (state.turn.number <= obj.foretoldTurn) return null;
     return alternativeOf(faceOf(state, obj), 'foretell') === null ? null : 'exile';
   }
+  // CR 118.9, 601.2a (Eye of Duskmantle): a spell cast from the graveyard by paying life equal to its mana value rather than its mana cost, which the permission of a permanent says.
+  if (alternative === 'lifeForMana' && obj.zone === 'graveyard') {
+    return faceIndex === 0 &&
+      graveyardPlayPermission(state, seat, obj, false, undefined, true) !== null
+      ? 'graveyard'
+      : null;
+  }
   // The other alternatives are never cast from a graveyard (D-121); an Adventure card is cast from exile.
   if (obj.zone === 'exile' && obj.onAdventure === true) return faceIndex === 0 ? 'exile' : null;
   // CR 113.6b (D-133): "You may cast this card from your graveyard [as long as ...]": the card's own static ability.
@@ -870,9 +902,11 @@ export function canCast(
     return false;
   }
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
+  // CR 118.9 (Eye of Duskmantle): or a permanent's permission to cast a card of the graveyard for life (`castZone` has checked it).
   if (
     alternative === 'lifeForMana' &&
     !mayPayLifeForMana(state, seat) &&
+    !(zone === 'graveyard' && obj.zone === 'graveyard') &&
     // Nashi: a card in exile a permission lets the seat cast by paying life.
     !(obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, false, false, true))
   ) {
@@ -1165,6 +1199,14 @@ export function alternativeCastObjects(
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'command', seat),
     ...onAdventure,
+    // CR 118.9 (Eye of Duskmantle): the cards of the graveyard a permanent lets the seat cast for life.
+    ...(kind === 'lifeForMana'
+      ? zoneList(state, 'graveyard', seat).filter(
+          (id) =>
+            graveyardPlayPermission(state, seat, getObject(state, id), false, undefined, true) !==
+            null,
+        )
+      : []),
     ...freeFromExile,
     // CR 702.170d: the plotted cards of the seat in exile.
     ...(kind === 'free'

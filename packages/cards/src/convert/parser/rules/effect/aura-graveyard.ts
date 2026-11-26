@@ -171,7 +171,55 @@ export const EFFECT_EXILE_PUT_WITH_SELF = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.it-becomes-aura-with-enchant`: `it becomes an Aura with "enchant creature put onto the battlefield with ~."` (CR 303.4, 702.5a Enchant, 613.1d, 613.1f; Necromancy): the permanent the
+ * ability belongs to is an Aura, with that enchant ability, from now on. The engine's `becomeAura` of `this`, which lasts for as long as the permanent stays on the battlefield. The enchant
+ * ability is "enchant [type] put onto the battlefield with ~", whose period is the quote's own. Not read: another subject ("target enchantment becomes ..."), another ability than an enchant
+ * ability, an enchant ability of another kind of object, a quote with no period, a duration, more words after the quote.
+ */
+export const EFFECT_IT_BECOMES_AURA_WITH_ENCHANT = defineRule<Clauses>({
+  id: 'effect.it-becomes-aura-with-enchant',
+  family: 'effect',
+  leading: ['it'],
+  cites: [
+    'CR 303.4 (Enchantments)',
+    'CR 702.5a (Enchant)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'it becomes an Aura with "enchant creature put onto the battlefield with ~."',
+    'it becomes an Aura with "enchant permanent put onto the battlefield with ~."',
+  ],
+  rejects: [
+    'it becomes an Aura with "enchant creature put onto the battlefield with ~"',
+    'it becomes an Aura with "enchant creature put onto the battlefield with ~." until end of turn',
+    'it becomes an Aura with "enchant creature put onto the battlefield with ~." and draw a card',
+    'it becomes an Aura with "enchant creature put onto the battlefield with it."',
+    'it becomes an Aura with "flying."',
+    'it becomes an Aura with "enchant creature."',
+    'it becomes an Aura with "enchant player."',
+    'it becomes an Aura',
+    'it becomes an Equipment with "enchant creature put onto the battlefield with ~."',
+    'target enchantment becomes an Aura with "enchant creature put onto the battlefield with ~."',
+  ],
+  parse: single(
+    'effect.it-becomes-aura-with-enchant',
+    sequence(
+      pattern(/it becomes an Aura with "/iu),
+      enchantWords(['noun.put-onto-with-self']),
+      literal('."'),
+      (ctx, pos) =>
+        /^(?![\p{L}\p{N}])(?!\s*(?:\.|,|and\b|then\b|until\b))/u.test(ctx.text.slice(pos))
+          ? { ok: true, value: '', pos }
+          : fail(ctx, pos),
+    ),
+    ([, enchant]) => ({ verb: 'becomeAura', args: { enchant } }),
+  ),
+});
+
 export const AURA_GRAVEYARD_EFFECT_RULES = [
+  EFFECT_IT_BECOMES_AURA_WITH_ENCHANT,
   EFFECT_AURA_SWAPS_ENCHANT,
   EFFECT_RETURN_ENCHANTED_CARD_ATTACH,
   EFFECT_CONTROLLER_SACRIFICES_LINKED,

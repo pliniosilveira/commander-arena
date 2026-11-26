@@ -377,6 +377,23 @@ export function checkDragonsEffect(
         }
       }
       return true;
+    case 'becomeAura': {
+      // CR 303.4, 702.5a (Necromancy): the permanent the ability belongs to is an Aura from now on, with an enchant ability of permanents.
+      if (e.objects?.kind !== 'this' || scope.owner !== 'ability') {
+        issue(
+          out,
+          `${path}.objects`,
+          'a becomeAura is about the permanent the ability belongs to: this',
+        );
+      }
+      const k = e.enchant;
+      if (k?.kind !== 'enchant' || k.player !== undefined) {
+        issue(out, `${path}.enchant`, 'enchant is an enchant ability of permanents');
+      } else {
+        checkFilter(k.filter, `${path}.enchant.filter`, out);
+      }
+      return true;
+    }
     case 'revealTopCard':
       // CR 701.20a: the players who reveal the top card of their own library.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -817,6 +834,12 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
     case 'unspentManaBecomesColorless':
       // CR 106.4, 614.1a (issue 81, Omnath): no parameters; the permanent's own ability.
       return true;
+    case 'surveilLookAdditional':
+      // CR 701.25a (Enhanced Surveillance): a positive whole number of cards more.
+      if (!Number.isSafeInteger(s.count) || s.count < 1) {
+        issue(out, `${path}.count`, 'count must be a whole number of at least 1');
+      }
+      return true;
     case 'unspentManaStays':
       // CR 500.5, 106.4 (D-151): "You don't lose unspent red mana as steps and phases end": the colors of mana that stay.
       if (!Array.isArray(s.colors) || s.colors.length === 0) {
@@ -942,6 +965,8 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       return true;
     case 'playFromGraveyardEachType':
       return true;
+    case 'playSurveiledFromGraveyard':
+    // CR 701.25a (Eye of Duskmantle): no parameters; the permanent's own ability.
     case 'playFromLinkedExile':
       // CR 607.2a, 601.2a (Evendo Brushrazer): no parameters; the cards are the ones the permanent exiled with its linked ability (checked by `checkLinkedExile`).
       return true;

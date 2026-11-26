@@ -409,6 +409,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return stepWording('upkeep', trigger.whose);
     case 'endStep':
       return stepWording('endStep', trigger.whose);
+    case 'cleanupStep':
+      // CR 514.3a (Necromancy): the engine's own delayed trigger.
+      return 'At the beginning of the next cleanup step';
     case 'drawn': {
       const nth = trigger.nth;
       if (nth === undefined) {
@@ -503,13 +506,19 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return `Whenever ${trigger.who === 'you' ? 'you scry' : `${BY_WORDS[trigger.who]} scries`}`;
     case 'surveils':
       // CR 701.25 (Galadriel group 1): once each time the player surveils.
-      return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
+      return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
+    case 'removesCounterWhileExiled':
+      // CR 122.1, 702.62a (Watcher of Hours): the card's own ability, from exile.
+      return `Whenever you remove a ${trigger.counter} counter from this card while it's exiled`;
     case 'votingFinished':
       // CR 701.38a (Erestor of the Council): once each time every player has voted in a vote.
       return 'Whenever players finish voting';
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): once each time the player wins a coin flip.
       return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;
+    case 'winsClash':
+      // CR 701.30d (Marvo, Deep Operative): once each time the player wins a clash.
+      return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a clash`;
     case 'rollsHighest':
       // CR 706.1a, 706.2 (Galadriel group 3): once for each die the player rolls whose natural result is the most it can show.
       return `Whenever ${trigger.who === 'you' ? 'you roll' : `${BY_WORDS[trigger.who]} rolls`} a die's highest natural result`;

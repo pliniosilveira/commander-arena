@@ -295,8 +295,30 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you scry or surveil" (Galadriel deck, group 1, CR 701.25): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      const blocked = missingFeatures(['trigger:surveils']);
-      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
+      // Whispering Snitch: "Whenever you surveil for the first time each turn" (CR 603.2): the controller's own first surveil of the turn only.
+      if (t.firstEachTurn === true && who !== 'you') return failure(t);
+      const blocked = missingFeatures([
+        'trigger:surveils',
+        ...(t.firstEachTurn === true ? (['trigger:surveilsFirstEachTurn'] as const) : []),
+      ]);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({
+            kind: 'surveils',
+            who,
+            ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+          });
+    }
+    case 'countersRemoved': {
+      // "Whenever you remove a time counter from this card while it's exiled" (Watcher of Hours, CR 122.1, 702.62a): the owner removes it from the card itself, in exile.
+      if (t.whileExiled !== true || t.counter === undefined || whoOf(t.actor) !== 'you') {
+        return failure(t);
+      }
+      if (t.subject?.det !== 'self') return failure(t);
+      const blocked = missingFeatures(['trigger:removesCounterWhileExiled']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'removesCounterWhileExiled', counter: t.counter });
     }
     case 'milled': {
       // "Whenever a player mills one or more creature cards" (Zellix, CR 701.17a, 603.2c): the player is relative to the controller; a kind of card filters the cards milled.
@@ -330,6 +352,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (who === null) return failure(t);
       const blocked = missingFeatures(['trigger:winsCoinFlip']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsCoinFlip', who });
+    }
+    case 'winsClash': {
+      // "Whenever you win a clash" (Marvo, Deep Operative, CR 701.30d): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:winsClash']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsClash', who });
     }
     case 'turnedFaceUp': {
       // CR 701.40b, 708.8: "~ is turned face up", "a permanent you control is turned face up", "you turn a permanent face up" (`by`: the player who turned it).
@@ -1042,6 +1071,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'milled',
       'rollsHighest',
       'winsCoinFlip',
+      'winsClash',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     // Exit from Exile deck (Bonecrusher Giant, CR 603.2, 115.1): the controller of the spell or ability that targeted is the player of the event, said or not ("that spell's controller").
@@ -2468,8 +2498,11 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersBattlefieldFromYourGraveyard',
   'trigger:scries',
   'trigger:surveils',
+  'trigger:surveilsFirstEachTurn',
+  'trigger:removesCounterWhileExiled',
   'trigger:rollsHighest',
   'trigger:winsCoinFlip',
+  'trigger:winsClash',
   'trigger:votingFinished',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',

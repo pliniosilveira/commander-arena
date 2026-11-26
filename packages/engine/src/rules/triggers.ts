@@ -80,7 +80,11 @@ const STEP_OF: Readonly<Record<TriggerStep, StepId>> = {
   main2: 'postcombatMain',
   endStep: 'end',
 };
-const TRIGGER_STEP_IDS: ReadonlySet<StepId> = new Set(Object.values(STEP_OF));
+// CR 514.3a (Necromancy): the cleanup step too, for the engine's own delayed trigger at the beginning of the next one (`cleanupStep`).
+const TRIGGER_STEP_IDS: ReadonlySet<StepId> = new Set<StepId>([
+  ...Object.values(STEP_OF),
+  'cleanup',
+]);
 
 /** Who caused the trigger event: an object, a seat, or both. */
 interface Occurrence {
@@ -119,6 +123,8 @@ interface Occurrence {
   readonly cards?: readonly ObjectId[];
   /** For `lifeLost`: whether this is the first time the player lost life this turn (CR 119.3, 603.2). */
   readonly firstLoss?: boolean;
+  /** For `surveils`: whether this is the first surveil of the player this turn (CR 603.2, Whispering Snitch). */
+  readonly firstSurveil?: boolean;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
   readonly counter?: string;
   /** For `countersAdded`: how many counters were put on in this instance of putting (issue 121: `reaches`). */
@@ -213,6 +219,21 @@ function isFirstLifeLoss(state: GameState, events: readonly GameEvent[], index: 
   const earlierInBatch = events.slice(0, index).reduce((sum, e) => sum + lostIn(e), 0);
   const before = getSeat(state, event.seat).lifeLostThisTurn - inBatch;
   return before + earlierInBatch <= 0;
+}
+
+/**
+ * Whether the surveil that `events[index]` (a `surveiled`) tells of is the first of its player in the turn (CR 603.2: "for the first time each turn" counts the player's surveils).
+ * `state` already holds every surveil of these events in its turn log, so the surveils before them are what it records less their number; the surveils of these events that come
+ * before this one count as earlier ones.
+ */
+function isFirstSurveil(state: GameState, events: readonly GameEvent[], index: number): boolean {
+  const event = events[index];
+  if (event?.kind !== 'surveiled') return false;
+  const by = (e: GameEvent): number => (e.kind === 'surveiled' && e.seat === event.seat ? 1 : 0);
+  const inBatch = events.reduce((sum, e) => sum + by(e), 0);
+  const earlierInBatch = events.slice(0, index).reduce((sum, e) => sum + by(e), 0);
+  const recorded = (state.turnLog.surveils ?? []).filter((s) => s === event.seat).length;
+  return recorded - inBatch + earlierInBatch <= 0;
 }
 
 /** The trigger occurrences an event contains for a trigger kind. */
@@ -551,6 +572,7 @@ function occurrences(
               seat: event.seat,
               player: event.seat,
               damage: event.top + event.toGraveyard,
+              firstSurveil: isFirstSurveil(state, batch.events, batch.index),
             },
           ]
         : [];
@@ -567,6 +589,11 @@ function occurrences(
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): the player who flipped the coin and whose call matched the result.
       return event.kind === 'coinFlipped' && event.won
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
+    case 'winsClash':
+      // CR 701.30d (Marvo, Deep Operative): the player who won the clash.
+      return event.kind === 'clashWon'
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'becomesMonstrous':
@@ -866,10 +893,18 @@ function occurrences(
       return event.kind === 'classLevelReached' && event.level === trigger.level
         ? [{ subject: event.object, seat: null }]
         : [];
+    case 'removesCounterWhileExiled':
+      // CR 113.6b (Watcher of Hours): the ability of a card in exile, found by `findLaterTriggers`; a permanent on the battlefield has none of this event.
+      return [];
     case 'votingFinished':
       // CR 701.38a (Erestor of the Council): every player has voted in a vote of any spell or ability; the record of the votes goes to the ability.
       return event.kind === 'votesRevealed'
         ? [{ subject: null, seat: null, votes: event.cast }]
+        : [];
+    case 'cleanupStep':
+      // CR 514.3a, 603.2b (Necromancy): at the beginning of a cleanup step, whoever's turn it is.
+      return event.kind === 'stepBegan' && event.step === 'cleanup'
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     default: {
       const unreachable: never = trigger;
@@ -1122,10 +1157,14 @@ function matches(
     case 'surveils':
     case 'rollsHighest':
     case 'winsCoinFlip':
+    case 'winsClash':
       // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability. CR 706.1a: the player who rolled the die.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
-      return true;
+      // CR 603.2 (Whispering Snitch): "for the first time each turn" is the first surveil of that player in the turn.
+      return (
+        trigger.kind !== 'surveils' || trigger.firstEachTurn !== true || occ.firstSurveil === true
+      );
     case 'dealtDamage':
     case 'becomesUntapped':
     case 'becomesMonstrous':
@@ -1457,7 +1496,11 @@ function matches(
         matchesWhat(state, trigger.what, objectOrLki(state, earlier), candidate),
       );
     }
+    case 'removesCounterWhileExiled':
+      return false; // CR 113.6b: found from exile by `findLaterTriggers`, never matched on the battlefield
     case 'votingFinished':
+      return true;
+    case 'cleanupStep':
       return true;
     default: {
       const unreachable: never = trigger;
@@ -1486,6 +1529,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'surveiled':
     case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
     case 'coinFlipped': // CR 705.2 (Setzer): "whenever you win a coin flip"
+    case 'clashWon': // CR 701.30d (Marvo, Deep Operative): "whenever you win a clash"
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':

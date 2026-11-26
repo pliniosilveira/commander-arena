@@ -139,6 +139,8 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Necromancy's rider tests only the main-phase, empty-stack timing of a sorcery (CR 307.1); an effect that lets sorceries be cast at other times is not read. Scryfall rulings for it were unavailable: unverified.
+- A choice by each player exiled until the source leaves (Foreboding Steamboat): each player's creatures are exiled in a separate move, not one simultaneous event. CR numbers cited for it are unchecked.
 - Earthbend: its delayed return stays in the game state until the land dies or is exiled, even after the land left to another zone (harmless). The Comprehensive Rules text here has no earthbend rule.
 - Skaab Ruinator shape: an additional cost of exiling graveyard cards is a fixed count, alone; it is not X cards and not one way of an "or" choice.
 - Disorienting Choice: a chosen permanent that became an illegal target before resolution is not counted as chosen, so it adds nothing to the number of lands searched for.
@@ -317,7 +319,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Piles: the AI separates by a plain worth (mana value, a land a little, a creature's power and toughness) and does not read what the other player needs; the heuristic agent has no search over piles.
 - Piles: with fewer than two cards revealed the separator is not asked; the chooser still is.
 - Morph: a non-mana morph cost, a manifested card turned up for its morph cost (CR 701.40c), "when turned face up" triggers and an {X} morph cost are not built, nor is Disguise.
-- Cloak (CR 701.58) and manifest dread (CR 701.62) are not built or read; the cards stay unsupported.
 - "Manifest the top card of target opponent's library" runs in the engine but the parser does not read it, nor "manifest the top two cards" or a count.
 - "When ~ is turned face up" and other abilities that care about a permanent being turned face up are not built; no trigger kind reads the `turnedFaceUp` event.
 - Turning a manifested card face up: the cost is revealed when the card is turned up, not when the player starts the action (CR 701.40b); a cancelled payment shows nobody anything.
@@ -617,6 +618,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- "Whenever you remove a time counter from this card while it's exiled" counts only Suspend's upkeep removal; other removals do not say who removed the counter. Surveil rulings (Dream Eater, Eye of Duskmantle) are unverified.
+- "Each opponent returns ..., then discards a card" runs as all returns, then all discards; with three or more seats a per-player order was not checked against rulings or the CR text (not available).
 - `playerSpellsCostLess` reduces generic mana by a number for spells of card types, for a target player, until your next turn; other spell filters and durations are unread.
 - "Whenever you activate an ability that isn't a mana ability" is read for "you" only, not an opponent or a player.
 - "Spend blue mana as though it were any color to activate those abilities" (Grell Philosopher) applies to the mana cost of a granted activated ability, not to a granted mana ability that has a mana cost.
@@ -629,3 +632,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The `exilePermanent` cost exiles one permanent, only in an activated ability (no spell additional cost, no keyword cost). Mana "only to turn permanents face up" covers morph and manifest costs, not megamorph.
 - Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.
 - Graveyard permissions with a sacrifice (Exploration Broodship): when several permanents give a card a permission to be cast from the graveyard, the first in battlefield order is used; the caster cannot pick the one with the cheaper additional cost.
+- Case cards: "When this Case becomes solved" has no trigger wording (the `becameSolved` event exists); "To solve" with a condition the grammar cannot read leaves the Case unsupported.

@@ -93,9 +93,24 @@ export function findLaterTriggers(
           continue;
         found.push(trigger(id, card.owner, SUSPEND_TICK_ABILITY));
       }
-    } else if (event.kind === 'counterRemoved' && event.counter === TIME_COUNTER) {
+    } else if (event.kind === 'counterRemoved') {
       const card = state.objects[event.object];
-      if (card?.zone !== 'exile' || (card.counters[TIME_COUNTER] ?? 0) > 0) continue;
+      if (card?.zone !== 'exile') continue;
+      // CR 113.6b, 122.1 (Watcher of Hours): "Whenever you remove a time counter from this card while it's exiled": the card's own ability, found for the player who removed the counter
+      // (the owner, who controls the abilities of a card in exile, CR 108.4), in the order the card prints them.
+      if (event.by === card.owner) {
+        for (const ability of faceOf(state, card)?.abilities ?? []) {
+          if (
+            ability.kind === 'triggered' &&
+            ability.trigger.kind === 'removesCounterWhileExiled' &&
+            ability.trigger.counter === event.counter
+          ) {
+            found.push(trigger(card.id, card.owner, ability));
+          }
+        }
+      }
+      // CR 702.62a: the last time counter came off a suspended card.
+      if (event.counter !== TIME_COUNTER || (card.counters[TIME_COUNTER] ?? 0) > 0) continue;
       if (suspendOf(faceOf(state, card)) === null) continue;
       found.push(trigger(card.id, card.owner, SUSPEND_CAST_ABILITY));
     } else if (event.kind === 'madnessExiled') {

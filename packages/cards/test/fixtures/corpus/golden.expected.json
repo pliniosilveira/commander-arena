@@ -1,5 +1,5 @@
 {
-  "parserVersion": 221,
+  "parserVersion": 222,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -270,6 +270,14 @@
       "reasons": [],
       "ast": "284f9695"
     },
+    "038c0165-32b6-4e81-8180-604b49905207": {
+      "name": "Black Sun's Zenith",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1c6f33da"
+    },
     "03d3fee8-f7de-4152-8c18-6d279cc6c125": {
       "name": "Heaven // Earth",
       "group": "acceptance",
@@ -349,6 +357,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "08cc836d"
+    },
+    "04e7f739-fe50-440d-aa3d-e547295044a8": {
+      "name": "Eye of Duskmantle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "306992d5"
     },
     "05157e8e-4c8c-455e-a5a1-de8271951c51": {
       "name": "Endless Evil",
@@ -1466,6 +1482,14 @@
       "reasons": [],
       "ast": "95bf6d17"
     },
+    "1692f19e-4906-4808-965f-5f0284004f55": {
+      "name": "Mirko, Obsessive Theorist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bae394f5"
+    },
     "169a26d2-7bc9-4403-9c92-98d4bd5ca4f3": {
       "name": "Temple of the Dragon Queen",
       "group": "acceptance",
@@ -1889,6 +1913,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1b27351f"
+    },
+    "1dd336b0-9b13-4180-b80a-e8ba5d63d04f": {
+      "name": "Disinformation Campaign",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7da8f0a4"
     },
     "1e080c7d-102c-4d28-bcb9-62b36d400d13": {
       "name": "Rundvelt Hordemaster",
@@ -3077,6 +3109,14 @@
       "reasons": [],
       "ast": "5c986cf9"
     },
+    "317ab0b3-1163-4893-a881-4c397feb213d": {
+      "name": "Marvo, Deep Operative",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e862b667"
+    },
     "31851cb6-0caf-4575-aa5e-41aeadccafc1": {
       "name": "Cait Sith, Fortune Teller",
       "group": "acceptance",
@@ -3737,6 +3777,14 @@
       "reasons": [],
       "ast": "3178465c"
     },
+    "3a16bdda-8499-47e4-b870-b9576f4c1a83": {
+      "name": "Master of Death",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "23ad7068"
+    },
     "3a21a6ae-b2f2-4f0c-acfd-5f3e8d63fd2f": {
       "name": "Wall of Roots",
       "group": "acceptance",
@@ -3864,6 +3912,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "319a65a5"
+    },
+    "3bb7041c-4f3e-4123-9181-3442ea0c98e8": {
+      "name": "Dimir Spybug",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "68629534"
     },
     "3bbad38b-7d88-4ff2-9fd3-5081536e7c56": {
       "name": "Page, Loose Leaf",
@@ -4009,6 +4065,14 @@
       "reasons": [],
       "ast": "bd0b3314"
     },
+    "3d28e89d-d5e2-46b1-8dd2-d808b78f08fe": {
+      "name": "Unshakable Tail",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b7b64a22"
+    },
     "3d6fa57a-aa53-4b5c-b8af-a7612c823117": {
       "name": "Faithless Looting",
       "group": "training",
@@ -4105,6 +4169,14 @@
       "reasons": [],
       "ast": "0a62fcba"
     },
+    "409697d5-ce3c-46aa-a97d-969d143a2a65": {
+      "name": "Case of the Shifting Visage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe471729"
+    },
     "40eb9904-dea3-47cf-963a-04821f98ba64": {
       "name": "The Black Gate",
       "group": "acceptance",
@@ -4128,6 +4200,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "36b1e8b0"
+    },
+    "41459587-7509-404e-bd7d-fb8831dee789": {
+      "name": "Hostile Desert",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d72ee33d"
     },
     "41fb2b0e-d0a0-4e47-a6f3-fc9860ade65a": {
       "name": "Marshal's Anthem",
@@ -4641,6 +4721,14 @@
       "reasons": [],
       "ast": "a98d6e8c"
     },
+    "49c0aac5-d650-4ada-a194-3bf77f104bc1": {
+      "name": "Ransom Note",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "44dfe3fa"
+    },
     "49e3396a-a125-4cca-b02a-4a96102bcb16": {
       "name": "The Mouth of Sauron",
       "group": "acceptance",
@@ -4994,6 +5082,14 @@
       "reasons": [],
       "ast": "aa3ed9d5"
     },
+    "4ec84bb3-796a-4074-ac9a-1bd277158896": {
+      "name": "Dream Eater",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d41c515"
+    },
     "4edbaac4-dcb3-40b4-abd7-ff2683bd366d": {
       "name": "Champion of Stray Souls",
       "group": "acceptance",
@@ -5330,6 +5426,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a414255a"
+    },
+    "54c3d8ba-ee7c-4f15-8ee3-e5daf860b428": {
+      "name": "Charnel Serenade",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56ffff39"
     },
     "54d48e54-be4a-4a78-a778-b28e74ef7134": {
       "name": "Containment Construct",
@@ -6705,6 +6809,14 @@
       "reasons": [],
       "ast": "3ce55baf"
     },
+    "699b192c-f3f2-4ac5-9ca9-e35bcf08ad8a": {
+      "name": "Necromancy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dc05aed6"
+    },
     "69a72414-d02f-4a5c-b5c9-8941bb181f61": {
       "name": "Aven Fisher",
       "group": "training",
@@ -7016,6 +7128,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "76dd22f1"
+    },
+    "6e07e7ae-1bb7-4831-adb9-a5e71b7d79e3": {
+      "name": "Connive // Concoct",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "084effb7"
     },
     "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
       "name": "Steel Hellkite",
@@ -9082,6 +9202,14 @@
       "reasons": [],
       "ast": "6f752a1f"
     },
+    "8f1c1bd6-8420-4de2-81f4-5faa419da301": {
+      "name": "Discovery // Dispersal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3a8c1586"
+    },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
       "group": "acceptance",
@@ -10410,6 +10538,14 @@
       "reasons": [],
       "ast": "9171f689"
     },
+    "a3afd8b9-d499-40f7-be41-f8fee6636a1d": {
+      "name": "Twilight Prophet",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dfe6fa3c"
+    },
     "a3b39590-34b7-4fd0-877f-748e6df30e88": {
       "name": "Hateful Eidolon",
       "group": "acceptance",
@@ -11420,6 +11556,14 @@
       "reasons": [],
       "ast": "82c84849"
     },
+    "b2354092-7a4c-4e69-9c0a-0a2e146dc00c": {
+      "name": "Watcher of Hours",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "30321efb"
+    },
     "b23587e0-9fb7-492e-8bb4-f218e8e4ce6c": {
       "name": "Brisela, Voice of Nightmares",
       "group": "holdout",
@@ -11638,6 +11782,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6dca7e5c"
+    },
+    "b6836023-4475-415e-9671-980d9eb6e762": {
+      "name": "Whispering Snitch",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cd2e0d33"
     },
     "b6ec5a5c-144d-4ac3-bd05-2dc360c670fd": {
       "name": "Tempest Caller",
@@ -12120,6 +12272,14 @@
       "reasons": [],
       "ast": "c8c6700c"
     },
+    "bfb5104b-01e3-4d37-ac93-1dc342121531": {
+      "name": "Enhanced Surveillance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bb0b3c31"
+    },
     "bfbe28a2-b656-4575-8b7e-9dbc22f8d4bc": {
       "name": "Skarrgan Hellkite",
       "group": "acceptance",
@@ -12215,6 +12375,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "66b1e534"
+    },
+    "c14bcef2-6d49-4430-86d0-e5a87ba442d9": {
+      "name": "Lazav, the Multifarious",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "96812ed5"
     },
     "c15c13d2-8db9-4801-a1f0-f087f2551c92": {
       "name": "Scroll of Fate",
@@ -12343,6 +12511,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "630f7928"
+    },
+    "c3a68018-9eff-47e6-a612-182886d28fe3": {
+      "name": "Mission Briefing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4331a2a1"
     },
     "c3c25a2c-f71c-4cb7-9117-0bcda9248bfd": {
       "name": "Prismari Charm",
@@ -12800,6 +12976,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ececb964"
+    },
+    "ca14f1b6-e8c2-4ea5-9375-5ed63f355052": {
+      "name": "Thoughtbound Phantasm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8d18f66d"
     },
     "ca204b66-8d0c-431a-8d34-282f7c2d17da": {
       "name": "Lightning Greaves",
@@ -13770,6 +13954,14 @@
       "reasons": [],
       "ast": "b98a5bcd"
     },
+    "d8e276a8-1234-4b61-84cf-4bf231ea3129": {
+      "name": "Copy Catchers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f77414d7"
+    },
     "d8e2efe0-33a4-4303-9e83-ac42ea5df8cb": {
       "name": "Vivid Crag",
       "group": "acceptance",
@@ -13841,6 +14033,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "51fd6b31"
+    },
+    "d97a0e41-9dd7-4466-afb7-3d8bd6cd0eed": {
+      "name": "Foreboding Steamboat",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3bd830cb"
     },
     "d9826660-0f34-4d82-8915-cf2796ab8d9a": {
       "name": "Sproutback Trudge",
@@ -13961,6 +14161,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fd9f8577"
+    },
+    "dad4af15-5b26-417d-a41b-29e671e878f4": {
+      "name": "Counterpoint",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8fa3342"
     },
     "daff70a4-a990-47c9-b6ef-2c379272c8a3": {
       "name": "Dragonlord Atarka",
@@ -15228,6 +15436,14 @@
       "reasons": [],
       "ast": "b9cfc0a5"
     },
+    "f07db0f7-7d25-4395-9af3-6b0ca9197b61": {
+      "name": "Final-Word Phantom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8d3203cb"
+    },
     "f088817a-570d-4480-bc59-f2ad6675a71b": {
       "name": "Tromell, Seymour's Butler",
       "group": "acceptance",
@@ -16267,8 +16483,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1731,
-      "total": 1747
+      "supported": 1758,
+      "total": 1774
     }
   }
 }

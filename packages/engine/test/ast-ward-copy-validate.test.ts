@@ -276,13 +276,13 @@ describe('becomes a copy (CR 707.2, 613.2a)', () => {
     ]);
   });
 
-  test('the copied permanent must be on the battlefield', () => {
-    const fromGraveyard: Ability = {
+  test('the copied permanent must be on the battlefield (or a card in a graveyard)', () => {
+    const copyOf = (zone: 'graveyard' | 'exile'): Ability => ({
       kind: 'activated',
       cost: TWO,
       targets: [
         { id: 't1', what: { kind: 'object', filter: { types: ['creature'] } } },
-        { id: 't2', what: { kind: 'object', filter: { types: ['creature'], zone: 'graveyard' } } },
+        { id: 't2', what: { kind: 'object', filter: { types: ['creature'], zone } } },
       ],
       effect: {
         kind: 'becomeCopy',
@@ -290,10 +290,12 @@ describe('becomes a copy (CR 707.2, 613.2a)', () => {
         of: { kind: 'target', id: 't2' },
         duration: 'untilEndOfTurn',
       },
-    };
-    expect(issues(creature(fromGraveyard))).toEqual([
+    });
+    expect(issues(creature(copyOf('exile')))).toEqual([
       expect.stringContaining('only a permanent on the battlefield'),
     ]);
+    // Lazav, the Multifarious (CR 707.2, D-232): a card of a graveyard is copied as it is there.
+    expect(issues(creature(copyOf('graveyard')))).toEqual([]);
   });
 });
 

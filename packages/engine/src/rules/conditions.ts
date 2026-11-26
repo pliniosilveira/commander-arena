@@ -619,6 +619,9 @@ export function evaluateCondition(
     case 'yourTurn':
       // CR 611.3a, 613.8 (D-206): it is a turn of the controller.
       return state.turn.activeSeat === ctx.controller;
+    case 'opponentsEndStep':
+      // CR 513.1: the end step of a turn of another player (an opponent of the controller, in any seat count).
+      return state.turn.step === 'end' && state.turn.activeSeat !== ctx.controller;
     case 'sacrificedThisTurn':
       // CR 701.21a (Evendo Brushrazer): the controller sacrificed a permanent like this one this turn.
       return sacrificedThisTurnHolds(state, ctx.controller, condition);
@@ -743,6 +746,11 @@ export function evaluateCondition(
       // controller in a graveyard, CR 108.4a). A card that has left is another object, so it is read live, never from last-known information.
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
+    }
+    case 'thisSolved': {
+      // CR 719.3a, 719.3b, 400.7: the permanent itself is on the battlefield with the solved designation; read live, a permanent that left is a new object.
+      const permanent = ctx.source === null ? undefined : state.objects[ctx.source];
+      return permanent?.zone === 'battlefield' && permanent.solved === true;
     }
     case 'thisSuspended': {
       // CR 702.62b, 603.4, 400.7: the card itself is in exile, has Suspend and a time counter; read live, a card that left exile is another object.

@@ -51,6 +51,7 @@ import { MELD_STATIC_RULES } from './meld';
 import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
 import { STATIC_BEGIN_GAME_ON_BATTLEFIELD } from './opening-hand';
+import { OPPONENTS_END_STEP_STATIC_RULES } from './opponents-end-step';
 import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { POWER_LESS_GOADED_STATIC_RULES } from './power-less-goaded';
@@ -141,6 +142,7 @@ export const STATIC_RULES = [
   ...CONDITIONAL_STATIC_RULES,
   // Stage P49 (D-206): "During your turn, equipped creature has flying."
   ...VRASKA_STATIC_RULES,
+  ...OPPONENTS_END_STEP_STATIC_RULES,
   // Evendo Brushrazer: "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with ~."
   ...LINKED_EXILE_PLAY_STATIC_RULES,
   // Stage P31 (D-140): flash for a kind of spell, what a linked exile gives, and "unless that player is the monarch".

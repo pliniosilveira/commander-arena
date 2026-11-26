@@ -371,6 +371,7 @@ describe('supported feature gate', () => {
         'becomesUnblocked',
         'blocks',
         'castSpell',
+        'cleanupStep',
         'cycled',
         'chapter',
         // D-596: "When this Class becomes level N".
@@ -410,6 +411,8 @@ describe('supported feature gate', () => {
         'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".
         'playerAttacksOpponent',
+        // Watcher of Hours: "Whenever you remove a time counter from this card while it's exiled".
+        'removesCounterWhileExiled',
         'ringTempted',
         // Galadriel group 3: "Whenever you roll a die's highest natural result".
         'rollsHighest',
@@ -428,6 +431,7 @@ describe('supported feature gate', () => {
         'upkeep',
         'votingFinished',
         'winsCoinFlip',
+        'winsClash',
       ].sort(),
     );
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('triggered');
@@ -493,6 +497,8 @@ describe('supported feature gate', () => {
       'countersAddedEach',
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
+      // Whispering Snitch: "Whenever you surveil for the first time each turn".
+      'surveilsFirstEachTurn',
       'stepMonarch',
       'dealtDamageNoncombat',
       'dealtDamageExcess',
@@ -535,6 +541,8 @@ describe('supported feature gate', () => {
       'saga',
       // D-235: a Class (CR 716).
       'class',
+      // CR 719 (Case).
+      'case',
       // D-214: a preparation card (CR 722).
       'prepare',
       // D-277: a meld card (CR 701.42, 712.4).
