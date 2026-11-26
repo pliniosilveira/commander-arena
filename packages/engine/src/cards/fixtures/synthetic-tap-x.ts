@@ -94,4 +94,14 @@ export const SYNTHETIC_TAP_X_LIST: readonly CardDefinition[] = [
     oracleText: 'You gain 1 life.',
     spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 } },
   }),
+  // "{1}{W}{U}": a spell that needs two colors and one more mana, to be paid with the mana of the ability.
+  singleFace({
+    name: 'SYNTHETIC Triad Rite',
+    manaCost: ['1', 'W', 'U'],
+    types: ['sorcery'],
+    colors: ['W', 'U'],
+    colorIdentity: ['W', 'U'],
+    oracleText: 'You gain 1 life.',
+    spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 } },
+  }),
 ];
