@@ -309,8 +309,8 @@ describe('WhyDialog', () => {
   test('notRunnable: says the engine cannot run it and lists each missing feature', () => {
     const out = why(ENGINE_GAP);
     expect(out).toContain('The grammar reads this, but the engine cannot run it yet: needs ');
-    expect(out).toContain('token: Blood');
-    expect(out).toContain('Rules that matched before it stopped: trigger.enters');
+    expect(out).toContain('manaCost: discard');
+    expect(out).toContain('Rules that matched before it stopped: cost.tap, cost.discard');
     expect(out).toContain('<mark');
   });
 

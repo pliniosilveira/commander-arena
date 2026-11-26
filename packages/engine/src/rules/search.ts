@@ -26,6 +26,7 @@ import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
 import { searchTopLimit } from './global-statics';
+import { landCardsToGraveyard } from './graveyard-lands';
 import { discardOne } from './madness';
 import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
@@ -282,7 +283,12 @@ export function runSearch(
       seat,
       cards: cards.map((c) => c.card),
       names: cards.map((c) => c.name),
-      from: 'library',
+      // CR 701.23a, 701.20a: the zone the cards were found in (a search of several zones may find one in the graveyard or the hand).
+      from: found.every((id) => state.objects[id]?.zone === 'graveyard')
+        ? 'graveyard'
+        : found.every((id) => state.objects[id]?.zone === 'hand')
+          ? 'hand'
+          : 'library',
     });
   }
   // CR 608.2c, 608.2d (`mayPut`): "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand." The condition is
@@ -548,6 +554,8 @@ export function runDiscard(
       });
     }
   }
+  // CR 701.9, 608.2c (Eumidian Wastewaker): "for each land card put into a graveyard this way", read in the graveyard.
+  const landsToGraveyard = landCardsToGraveyard(next, events);
   // D-135: "if you do" counts the cards actually discarded (an empty hand discards nothing).
   return {
     ...done(next, events),
@@ -558,6 +566,7 @@ export function runDiscard(
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
       ...(discardedNonlands > 0 ? { discardedNonland: discardedNonlands } : {}),
+      ...(landsToGraveyard > 0 ? { landCardsToGraveyard: landsToGraveyard } : {}),
       discardedInstantOrSorcery: discardedSpells,
       ...(discardedCards > 0 ? { discardedValue } : {}),
       ...(discardedCards > 0 ? { discardedTypes, discardedTypeCount: discardedTypes.length } : {}),

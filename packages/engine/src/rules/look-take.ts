@@ -150,7 +150,12 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     );
   }
   // D-324: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
-  const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
+  // Gonti (CR 406.3, 608.2d): "look at the top card of that player's library, then exile it face down": the one card is the whole answer, so nobody is asked; the permission to play it
+  // lets the controller look at it (`mayPlay.lookAt`).
+  const forced =
+    (ins.hidden === true || ins.unlinked === true) &&
+    (ins.min ?? 0) >= legal.length &&
+    legal.length > 0;
   // `take.all`: "put all land cards from among them": every card that matches goes, with no question.
   const chosenNow = ins.all === true ? legal : (ins.chosen ?? (forced ? legal : null));
   // A kind with no card to take asks nothing: the next kind is asked, or the cards chosen are taken.
@@ -187,7 +192,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
             },
           }),
       reveal: to !== 'exileFaceDown' && ins.hidden !== true,
-      prompt: `${ins.revealAll === true ? 'Reveal' : 'Look at'} the top ${looked.length} card${looked.length === 1 ? '' : 's'} of your library. ${
+      prompt: `${ins.revealAll === true ? 'Reveal' : 'Look at'} the top ${looked.length} card${looked.length === 1 ? '' : 's'} of ${ins.libraryOf === undefined ? 'your' : 'that player’s'} library. ${
         to === 'exileFaceDown'
           ? 'Exile one of them face down'
           : ins.totalManaValue !== undefined

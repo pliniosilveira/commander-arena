@@ -137,6 +137,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
+  // Grand Larceny deck, group D1 (Thieving Skydiver).
+  'keyword.kicker-x': asIs,
   'keyword.multikicker': asIs,
   'keyword.flashback': asIs,
   // Stage P22: the named alternative costs are lines of their own.
@@ -217,6 +219,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.nth-spell-cost-reduction': asIs,
   'static.first-typed-spell-cost-reduction': asIs,
   'static.pay-life-alt-cost': asIs,
+  'static.pay-mana-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -315,6 +318,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cast-from-hand': whenever,
   'trigger.cast-from-graveyard': whenever,
   'trigger.cast-from-exile': whenever,
+  // Grand Larceny deck, group D1 (Ghostly Pilferer).
+  'trigger.cast-not-from-hand': whenever,
   'trigger.cast-with-keyword': whenever,
   'trigger.cast-or-land-enters-from-exile': whenever,
   'trigger.token-combat-damage-batch': whenever,
@@ -385,6 +390,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.landfall': whenever,
   // Brainstealer Dragon.
   'trigger.enters-under-your-control-opponent-owned': whenever,
+  'trigger.creature-not-owned-dies': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
   'trigger.enters-from-graveyard': whenever,
@@ -525,6 +531,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.completed-dungeon': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.amount-count-are': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
   'condition.opponent-cards-in-graveyard': permanent(
     (e) => `When ~ enters, if ${e}, you gain 1 life.`,
@@ -550,6 +557,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Federation Fleet deck, group B: "each player other than its controller" after a target ("Exile target nonland permanent. ...").
   'noun.each-player-other-than-its-controller': spell(
     (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
+  ),
+  // Bounty Board: the opponents of the controller of the creature that died.
+  'noun.each-of-its-controllers-opponents': permanent(
+    (e) => `Whenever a creature dies, ${e} draws a card.`,
   ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   'noun.entered-chosen-player': spell((e) => `~ deals 2 damage to ${e}.`),
@@ -834,6 +845,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-extra-counters': asIs,
   'replacement.enters-as-copy-except-quoted': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
+  'replacement.enters-as-copy-exile-two': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
@@ -1076,6 +1088,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ deals combat damage to a player, gain control of ${e}.`,
   ),
   'static.first-targeting-ability-cost-reduction': asIs,
+  'static.plot-cost-reduction': asIs,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
@@ -1091,6 +1104,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.each-player-draws-per-vote': spell((e) => `${cap(e)}.`),
   'effect.each-player-without-votes-may-put': spell((e) => `${cap(e)}.`),
   'effect.stun-voted-creatures': spell((e) => `${cap(e)}.`),
+  'effect.vote-for-nonland-permanent': spell((e) => `${cap(e)}.`),
+  'effect.exile-most-voted': spell((e) => `${cap(e)}.`),
+  'effect.each-player-chooses-words': spell((e) => `${cap(e)}.`),
+  'effect.gain-control-per-chooser': spell((e) => `${cap(e)}.`),
+  'effect.untap-chosen-gain-haste': spell((e) => `${cap(e)}.`),
+  'effect.per-chooser-draw-treasure': spell((e) => `${cap(e)}.`),
   'effect.voter-chooses-per-vote': spell((e) => `${cap(e)}.`),
   'effect.gain-control-chosen-cant-attack-owner': spell((e) => `${cap(e)}.`),
   'effect.then-for-each-vote-counters': spell((e) => `${cap(e)}.`),
@@ -1120,6 +1139,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
   'static.first-spell-from-exile-has-cascade': asIs,
+  'static.first-spell-with-treasure-mana-has-cascade': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
   'static.permanent-spells-from-hand-gain-evoke': asIs,
   'static.legend-rule-doesnt-apply': asIs,
@@ -1227,6 +1247,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (D-339): the line of its own, with the card's wording.
   'static.triggers-additional-time-cause': asIs,
   'static.triggers-additional-time-attacking': asIs,
+  // Grand Larceny deck, group D1 (Felix Five-Boots).
+  'static.triggers-additional-time-combat-damage': asIs,
   'static.triggers-additional-time-entering': asIs,
   'static.pt-unspent-mana': asIs,
   'static.unspent-mana-colorless': asIs,
@@ -1252,6 +1274,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
+  'replacement.tokens-each-of': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'static.same-name-goaded': asIs,
@@ -1269,6 +1292,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
   ),
   'trigger.opponent-attacks-you': whenever,
+  'trigger.opponent-attacks-you-or-planeswalkers': whenever,
   'trigger.you-attack-initiative-holder': whenever,
   'trigger.you-complete-dungeon': whenever,
   'effect.opponents-attacking-do-same': spell(
@@ -1356,8 +1380,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Burning Curiosity (CR 118.8, 701.68a): the optional blight of the additional cost is what the condition reads.
   // CR 702.143a: "If this spell was foretold, ... instead."
   'condition.foretold': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
+  'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
+  // World Shaper deck: the permission to play the cards exiled with ~, a whole line; the condition after "as long as" of a permission to cast from the top of the library.
+  'static.play-linked-exile': asIs,
+  'condition.control-different-powers': permanent(
+    (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
+  ),
+  'condition.sacrificed-this-turn': permanent(
+    (e) => `During your turn, as long as ${e}, you may play cards exiled with ~.`,
+  ),
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
@@ -1452,6 +1485,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.put-into-graveyard': whenever,
   // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
   'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.put-into-any-graveyard': whenever,
   'trigger.this-exploits': whenever,
   'condition.this-suspended': permanent(
     (e) =>
@@ -1490,6 +1524,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-opponent-exile-graveyard': permanent((e) => `{1}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
@@ -1688,6 +1723,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
   ),
   'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Grand Larceny deck, group D1 (Smirking Spelljacker).
+  'condition.a-card-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  // Grand Larceny deck, group D1 (Bladegriff Prototype).
+  'noun.target-permanent-of-that-players-choice': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, destroy ${e}.`,
+  ),
   'condition.cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
@@ -1798,6 +1841,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
   ),
   'static.self-also-types': asIs,
+  'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

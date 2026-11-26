@@ -12,13 +12,18 @@
  *    (70% of the way, the evaluator's own mark).
  * The danger thresholds are fields of `AgentWeights` (`weights.ts`), first tuned by the M7c measurements
  * (D-163); lethal is the rules' and takes no weights.
+ *
+ * `threatBonus` is what an opposing commander is worth on top of its body when the agent weighs a trade
+ * with it (issue 624): it comes back from the command zone (CR 903.9a), so it is worth `threat.commander`
+ * more, and `threat.lethal` more when its next hit brings the agent to 21 commander damage (CR 903.10a,
+ * `commanderLethalNext`, which removal targeting reads too).
  */
 import type { GameView, ObjectView, SeatId } from '@commander-arena/engine';
 import { couldBlock } from './casual-evasion';
 import { lifeDamageOf, poisonDamageOf } from './casual-poison';
 import { hasKeyword, isCreature, powerOf, toughnessOf } from './casual-view';
 import { COMMANDER_LETHAL, commanderClock, POISON_LETHAL } from './evaluate';
-import type { DangerWeights } from './weights';
+import type { AgentWeights, DangerWeights } from './weights';
 
 /** What gets past the blockers to the defender. */
 export interface Breakthrough {
@@ -145,4 +150,33 @@ export function attackIsLethal(
 ): boolean {
   if (attackers.length === 0) return false;
   return isLethal(view, defender, breakthrough(view, attackers, untappedCreatures(view, defender)));
+}
+
+/** The combat damage the worst commander of `owner` has dealt to `victim` (CR 903.10a counts each apart). */
+function commanderDamageFrom(view: GameView, owner: SeatId, victim: SeatId): number {
+  let worst = 0;
+  for (const [key, amount] of Object.entries(view.commanderDamage)) {
+    if (key.startsWith(`${victim}:`) && view.commanderDamageSources[key] === owner) {
+      worst = Math.max(worst, amount);
+    }
+  }
+  return worst;
+}
+
+/**
+ * Whether `o` is an opposing commander whose next hit brings the agent (`view.viewer`) to 21 commander
+ * damage (CR 903.10a). The view does not say which of an owner's commanders dealt which damage, so the
+ * worst clock of the owner's commanders is read: exact with one commander, pessimistic with partners.
+ */
+export function commanderLethalNext(view: GameView, o: ObjectView): boolean {
+  if (!isCreature(o) || !o.isCommander || o.controller === view.viewer) return false;
+  const hit = hitDamage(o);
+  return hit > 0 && commanderDamageFrom(view, o.owner, view.viewer) + hit >= COMMANDER_LETHAL;
+}
+
+/** What an opposing commander is worth to the agent on top of its body (see the module comment); 0 otherwise. */
+export function threatBonus(view: GameView, o: ObjectView, weights: AgentWeights): number {
+  if (!isCreature(o) || !o.isCommander || o.controller === view.viewer) return 0;
+  const w = weights.threat;
+  return w.commander + (commanderLethalNext(view, o) ? w.lethal : 0);
 }

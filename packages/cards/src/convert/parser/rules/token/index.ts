@@ -885,6 +885,9 @@ export const TOKEN_COPY = defineRule<IrToken>({
     "a token that's a copy of target creature",
     'a token that’s a copy of target creature you control',
     "a token that's a copy of ~",
+    // Scouring Swarm (CR 110.5b): the token enters tapped.
+    "a tapped token that's a copy of ~",
+    "a tapped token that's a copy of target creature you control",
     "a token that's a copy of it",
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
@@ -895,6 +898,10 @@ export const TOKEN_COPY = defineRule<IrToken>({
   ],
   rejects: [
     "a token that's a copy of target creature and that's tapped",
+    "a tapped tapped token that's a copy of ~",
+    "a token tapped that's a copy of ~",
+    "a untapped token that's a copy of ~",
+    'two tapped tokens that are copies of target creature',
     "a token that's a copy of target creature and that's attacking",
     "a token that's a copy of target creature and that's untapped and attacking",
     "a token that's a copy of target creature and that's tapped and attacking a player",
@@ -917,7 +924,7 @@ export const TOKEN_COPY = defineRule<IrToken>({
       map(
         sequence(
           map(spanned(article), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
-          pattern(/ token that['’]s a copy of /i),
+          pattern(/( tapped)? token that['’]s a copy of /i),
           COPY_SOURCE,
           optional(
             pattern(
@@ -926,10 +933,12 @@ export const TOKEN_COPY = defineRule<IrToken>({
             null,
           ),
         ),
-        ([count, , copyOf, attacking]): Bare => ({
+        ([count, head, copyOf, attacking]): Bare => ({
           kind: 'token',
           copyOf,
           count,
+          // Scouring Swarm (CR 110.5b): "a tapped token that's a copy of ~": the token enters tapped.
+          ...(head[1] === undefined ? {} : { tapped: true as const }),
           ...(attacking === null ? {} : { tappedAndAttacking: true as const }),
         }),
       ),

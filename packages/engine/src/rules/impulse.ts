@@ -147,6 +147,13 @@ export function runMayPlay(
   const until = playEnd(state, res.controller, effect.lasts);
   let next = state;
   const created: ContinuousEffect[] = [];
+  // Nashi, Moon Sage's Scion: "you may play one of those cards": the permissions of this effect share a key, which the card played ends the others by.
+  let oneOf: string | undefined;
+  if (effect.oneOf === true && cards.length > 0) {
+    const [stamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    oneOf = `one${stamp}`;
+  }
   for (const id of cards) {
     // CR 406.3 (D-187): "you may look at and play those cards": the controller may look at each card that is face down, until it leaves exile.
     if (effect.lookAt === true && next.objects[id]?.exiledFaceDown === true) {
@@ -184,6 +191,9 @@ export function runMayPlay(
         ...(effect.undaunted === true ? { undaunted: true as const } : {}),
         // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell".
         ...(effect.creatureSpellsOnly === true ? { creatureSpellsOnly: true as const } : {}),
+        // Nashi, Moon Sage's Scion (CR 118.9): "pay life equal to its mana value rather than paying its mana cost", and "play one of those cards".
+        ...(effect.lifeForMana === true ? { lifeForMana: true as const } : {}),
+        ...(oneOf === undefined ? {} : { oneOf }),
         // Furious Rise (CR 607.2a): "until you exile another card with this enchantment".
         ...(effect.lasts === 'untilSourceExilesAnother' && res.source !== null
           ? { endsWhenExilesAnother: res.source }

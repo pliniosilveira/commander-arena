@@ -8,7 +8,7 @@ import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { zoneList } from '../state/ops';
+import { opponentsOf, zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { opponentOf } from './choose-opponent';
 import { moveInstructions } from './effect-support';
@@ -59,11 +59,40 @@ export function linkedExileCandidates(
   });
 }
 
+/**
+ * The face-up cards in exile that an opponent of `seat` owns and that `filter` matches, for the cost "Put a card an opponent owns from exile into that player's graveyard" (CR 108.3,
+ * 118.3): a card exiled face down is not chosen (it may not be looked at, CR 406.3), and nobody has a card of a player who left the game in exile (CR 800.4a).
+ */
+export function opponentExileCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const { controller: _you, ...described } = filter;
+  return zoneList(state, 'exile', null).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      card.owner !== seat &&
+      opponentsOf(state, seat).includes(card.owner) &&
+      card.exiledFaceDown !== true &&
+      matchesFilter(
+        state,
+        card,
+        { ...described, zone: 'exile' },
+        { controller: card.owner, source },
+      )
+    );
+  });
+}
+
 /** The question "which card do you put into its owner's graveyard?" for a cost: exactly one of `legal`, public, and `cancel` rewinds the activation (CR 733). */
 export function activationLinkedExileDecision(
   seat: SeatId,
   source: ObjectId,
   legal: readonly ObjectId[],
+  opponents = false,
 ): NewDecision {
   return {
     kind: 'chooseCards',
@@ -75,7 +104,9 @@ export function activationLinkedExileDecision(
     min: 1,
     max: 1,
     reveal: true,
-    prompt: 'Put a card exiled with this permanent into its owner’s graveyard.',
+    prompt: opponents
+      ? 'Put a card an opponent owns from exile into its owner’s graveyard.'
+      : 'Put a card exiled with this permanent into its owner’s graveyard.',
     forCost: true,
   };
 }

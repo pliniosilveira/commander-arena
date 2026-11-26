@@ -162,9 +162,11 @@ export function votePrompt(
   seat?: number,
 ): string {
   // CR 701.38b: a vote for players or permanents has no words to list; CR 701.38a ("secretly"): nobody sees the votes until all are cast.
+  // CR 101.4, 701.38c ("Each opponent chooses fame or fortune"): a choice every player makes in turn, not a vote.
+  const choice = vote?.choice === true;
   const question =
     vote?.choices === undefined
-      ? `Vote for ${optionList(options)}.`
+      ? `${choice ? 'Choose' : 'Vote for'} ${optionList(options)}.`
       : vote.choices.some((c) => c.kind === 'object')
         ? 'Vote for a creature.'
         : 'Vote for a player.';
@@ -173,7 +175,7 @@ export function votePrompt(
   if (secret !== '') return `${question}${secret}`;
   if (cast.length === 0) return question;
   const who = (voter: number) => (voter === seat ? 'You' : 'Opponent');
-  return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
+  return `${question} ${cast.map((c) => `${who(c.seat)} ${choice ? 'chose' : 'voted for'} ${c.option}.`).join(' ')}`;
 }
 
 /** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-418). */

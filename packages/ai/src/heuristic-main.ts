@@ -179,11 +179,12 @@ function faceUpWindow(
   const me = view.viewer;
   const sample = think.sample();
   if (sample === undefined || sample.pending?.kind !== 'priority') return null;
+  const search = think.budget.search();
   const base = scoreCast(sample, me, null, answer, think);
   if (base === null) return null;
   let best: { object: ObjectId; score: number } | undefined;
   for (const [i, c] of candidates.entries()) {
-    if (think.budget.expired(i + 1)) break;
+    if (search.expired(i + 1) !== null) break;
     const score = scoreCast(sample, me, { kind: 'turnFaceUp', object: c.object.id }, answer, think);
     if (
       score !== null &&
@@ -246,11 +247,12 @@ function windowPlay(
     if (candidates.length === 0) return null;
     const sample = think.sample();
     if (sample === undefined || sample.pending?.kind !== 'priority') return null;
+    const search = think.budget.search();
     const base = scoreCast(sample, me, null, answer, think);
     if (base === null) return null;
     let best: { play: Play; score: number } | undefined;
     for (const [i, play] of candidates.entries()) {
-      if (think.budget.expired(i + 1)) break;
+      if (search.expired(i + 1) !== null) break;
       const score = scoreCast(sample, me, castAction(play), answer, think);
       if (
         score !== null &&

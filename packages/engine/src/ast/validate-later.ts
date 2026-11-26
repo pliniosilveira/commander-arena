@@ -206,6 +206,27 @@ export function checkDelayedTrigger(
     }
     return;
   }
+  // Plasm Capture (CR 603.7c, 106.1b, 202.3): "At the beginning of your next first main phase, add X mana in any combination of colors, where X is that spell's mana value": the mana value
+  // of the spell the ability targets, fixed as the ability is created; the controller chooses the colors as it resolves.
+  if (kind === 'addManaCombination') {
+    const amount = (inner as Extract<Effect, { kind: 'addManaCombination' }>).amount;
+    const ofTarget =
+      typeof amount === 'object' &&
+      amount !== null &&
+      amount.kind === 'manaValueOf' &&
+      kindOf(amount.of) === 'target';
+    if (!ofTarget) {
+      issue(
+        out,
+        `${path}.effect.amount`,
+        'a delayed mana combination adds as many mana as the mana value of the spell it targets',
+      );
+    }
+    if (e.at?.whose !== 'you') {
+      issue(out, `${path}.at`, "a delayed mana combination is added in the controller's own turn");
+    }
+    return;
+  }
   // Issue 81 (Synthetic Destiny, CR 603.7c, 701.20, 701.24): "At the beginning of the next end step, reveal cards ... until you reveal that many creature cards, put all creature cards
   // revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library": a reveal of that many, the rest left for the shuffle that follows.
   // Issue 144 (Glimpse the Impossible, CR 603.7c, 400.7, 608.2c): "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a

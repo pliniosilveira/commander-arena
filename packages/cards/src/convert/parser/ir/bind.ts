@@ -351,6 +351,11 @@ class Binder {
 
   /** A sentence of this body asked a player ("target opponent may have you ..."): "that player" then never means "you". */
   private playerAsked = false;
+  /**
+   * The sentence being bound offers to cast "it" for free ("If it's a nonland card, you may cast it without paying its mana cost", Mind's Dilation): "it" is then the one card the exile of
+   * the top card before it took (`thatCardOnly` otherwise keeps "it" away from that card), which the engine names `moved`.
+   */
+  private sentenceCastsIt = false;
 
   private resolveAnaphor(noun: IrNoun): IrNoun {
     // "for each card in their graveyard" (Guiltfeeder): "their" is the player of the instruction, which the lowering of that instruction names; the binding pass has nothing to say of it.
@@ -383,6 +388,8 @@ class Binder {
             // player, "that player" is that player and never the "you" of the sentence.
             !(
               (this.playerAsked ||
+                // Thieving Amalgam (CR 701.40a): "you manifest the top card of that player's library": the library is another player's, never the subject's.
+                this.clauseVerb === 'manifest' ||
                 (this.inAmount && this.antecedents.some((x) => x.noun.ref === 'trigActor'))) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
@@ -420,7 +427,11 @@ class Binder {
                   this.clauseVerb === 'grantKeyword' &&
                   /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
-            (a.thatCardOnly !== true || /^that card$/iu.test(noun.filter.raw.trim())) &&
+            (a.thatCardOnly !== true ||
+              /^that card$/iu.test(noun.filter.raw.trim()) ||
+              (this.sentenceCastsIt &&
+                a.noun.ref === 'moved' &&
+                /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             a.groupLine !== true &&
             !a.noun.plural &&
@@ -635,6 +646,7 @@ class Binder {
       case 'aggregate':
       case 'colorsAmong':
       case 'cardTypesAmong':
+      case 'differentPowersAmong':
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
       case 'damageDealtToThisTurn':
@@ -995,6 +1007,7 @@ class Binder {
     const bound = {
       ...body,
       sentences: body.sentences.map((s) => {
+        this.sentenceCastsIt = s.clauses.some((c) => c.verb === 'castMovedFree');
         // "If it's a Zombie card, ...": the pronoun of the condition (stage P30) comes before the clauses of its sentence.
         const test = s.condition?.test;
         const condition =

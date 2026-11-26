@@ -767,6 +767,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
+        ...(t.attackedYouOrPlaneswalkers === true
+          ? { attackedYouOrPlaneswalkers: true as const }
+          : {}),
         ...(t.attackedInitiativeHolder === true ? { attackedInitiativeHolder: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
         ...(t.eachAttackedOpponent === true ? { eachAttackedOpponent: true as const } : {}),
@@ -896,7 +899,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         kind: 'putIntoGraveyard',
         // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
         who:
-          t.fromNotBattlefield === true ? 'any' : t.opponentGraveyard === true ? 'opponent' : 'you',
+          t.fromNotBattlefield === true || t.anyGraveyard === true
+            ? 'any'
+            : t.opponentGraveyard === true
+              ? 'opponent'
+              : 'you',
         from:
           t.fromNotBattlefield === true
             ? 'notBattlefield'
@@ -919,14 +926,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
               ? 'opponent'
               : null;
       if (by === null) return failure(t);
-      if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by });
+      // "... during your turn" (Szarel, CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const during = missingFeatures(['trigger:sacrificedDuringYourTurn']);
+        if (during.length > 0) return failure(t, during);
+      }
+      const during = t.duringTurn === 'you' ? { duringTurn: 'you' as const } : {};
+      if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by, ...during });
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
       // "a permanent" says nothing about the permanent: no filter, any permanent.
       return ok(
         Object.keys(filter.value).length === 0
-          ? { kind: 'permanentSacrificed', by }
-          : { kind: 'permanentSacrificed', by, filter: filter.value },
+          ? { kind: 'permanentSacrificed', by, ...during }
+          : { kind: 'permanentSacrificed', by, filter: filter.value, ...during },
       );
     }
     default:

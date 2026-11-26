@@ -3,6 +3,7 @@
 // same result, up to a bound of what it keeps.
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
+import { Work } from '../src/heuristic-budget';
 import { KEEP, PlanCounter } from '../src/heuristic-plan-work';
 
 const position = () =>
@@ -19,7 +20,7 @@ const position = () =>
 describe('PlanCounter', () => {
   test('the same action on the same state is applied once and gives the same result', () => {
     const g = position();
-    const work = new PlanCounter(100);
+    const work = new PlanCounter(new Work());
     const first = work.apply(g.state, 0, { kind: 'pass' });
     const again = work.apply(g.state, 0, { kind: 'pass' });
     expect(again).toBe(first);
@@ -32,9 +33,23 @@ describe('PlanCounter', () => {
     expect(work.applies).toBe(3);
   });
 
+  test("what it builds is counted in the decision's work; what it kept costs nothing", () => {
+    const g = position();
+    const engine = new Work();
+    const work = new PlanCounter(engine);
+    work.apply(g.state, 0, { kind: 'pass' });
+    work.view(g.state, 0);
+    expect(engine.calls).toBe(2);
+    const units = engine.units;
+    work.apply(g.state, 0, { kind: 'pass' });
+    work.view(g.state, 0);
+    expect(engine.calls).toBe(2);
+    expect(engine.units).toBe(units);
+  });
+
   test('a state is viewed once for each seat', () => {
     const g = position();
-    const work = new PlanCounter(100);
+    const work = new PlanCounter(new Work());
     const view = work.view(g.state, 0);
     expect(work.view(g.state, 0)).toBe(view);
     expect(work.views).toBe(1);
@@ -44,7 +59,7 @@ describe('PlanCounter', () => {
 
   test('past KEEP results and views a planning keeps nothing more, and still finds what it kept', () => {
     const g = position();
-    const work = new PlanCounter(100);
+    const work = new PlanCounter(new Work());
     const kept = work.apply(g.state, 0, { kind: 'pass' });
     const keptView = work.view(g.state, 0);
     // As if the planning had built KEEP of each already.
@@ -65,7 +80,7 @@ describe('PlanCounter', () => {
 
   test('a refused action is kept too, and the record says what was built', () => {
     const g = position();
-    const work = new PlanCounter(100);
+    const work = new PlanCounter(new Work());
     const refused = work.apply(g.state, 1, { kind: 'pass' });
     expect(refused.ok).toBe(false);
     expect(work.apply(g.state, 1, { kind: 'pass' })).toBe(refused);

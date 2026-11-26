@@ -36,6 +36,7 @@ import { EXILE_SPELL_GRANT_STATIC_RULES } from './exile-spell-grant';
 import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
+import { GRAND_LARCENY_C_STATIC_RULES } from './grand-larceny-c';
 import { GRANT_STATIC_RULES } from './grants';
 import { GROUP_LOSES_STATIC_RULES } from './group-loses';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
@@ -45,6 +46,7 @@ import { HOFRI_STATIC_RULES } from './hofri';
 import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
+import { LINKED_EXILE_PLAY_STATIC_RULES } from './linked-exile-play';
 import { MELD_STATIC_RULES } from './meld';
 import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
@@ -61,6 +63,7 @@ import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
 import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
+import { TREASURE_SPELL_GRANT_STATIC_RULES } from './treasure-spell-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 import { WORLD_RULES_STATIC_RULES } from './world-rules';
 
@@ -138,6 +141,8 @@ export const STATIC_RULES = [
   ...CONDITIONAL_STATIC_RULES,
   // Stage P49 (D-206): "During your turn, equipped creature has flying."
   ...VRASKA_STATIC_RULES,
+  // Evendo Brushrazer: "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with ~."
+  ...LINKED_EXILE_PLAY_STATIC_RULES,
   // Stage P31 (D-140): flash for a kind of spell, what a linked exile gives, and "unless that player is the monarch".
   ...ARTIFACT_STATIC_RULES,
   // Fealty to the Realm: "The monarch controls enchanted creature."
@@ -191,6 +196,7 @@ export const STATIC_RULES = [
   ...DANITHA_G3_STATIC_RULES,
   // Limit Break deck, group 4 (Professor Hojo): "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate."
   ...LIMIT_BREAK_G4_STATIC_RULES,
+  ...GRAND_LARCENY_C_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
   // Food and Fellowship deck, group B (Sam): "Activated abilities of Foods you control cost {1} less to activate."
@@ -204,6 +210,8 @@ export const STATIC_RULES = [
   // Issue 145 (Hatsune Miku deck): "Creature spells you cast have demonstrate."
   ...SPELL_KEYWORD_GRANT_STATIC_RULES,
   ...EXILE_SPELL_GRANT_STATIC_RULES,
+  // Most Wanted deck, group 2 (Rain of Riches): "The first spell you cast each turn that mana from a Treasure was spent to cast has cascade."
+  ...TREASURE_SPELL_GRANT_STATIC_RULES,
   // Issue 133 (the Sliver Swarm deck, group B): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   ...SLIVER_LORDS_STATIC_RULES,
 ];

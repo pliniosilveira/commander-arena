@@ -50,6 +50,7 @@ import { SYNTHETIC_COUNTER_DOUBLING_LIST } from './synthetic-counter-doubling';
 import { SYNTHETIC_COUNTERS_PLUS_LIST } from './synthetic-counters-plus';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_CURSE_LIST } from './synthetic-curse';
+import { SYNTHETIC_D1_LIST } from './synthetic-d1';
 import { SYNTHETIC_DAMAGE_BONUS_LIST } from './synthetic-damage-bonus';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DANITHA_G1A_LIST } from './synthetic-danitha-g1a';
@@ -87,6 +88,7 @@ import { SYNTHETIC_EXTRA_TURNS_LIST } from './synthetic-extra-turns';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
+import { SYNTHETIC_FELIX_LIST } from './synthetic-felix';
 import { SYNTHETIC_FETCH_GRANTS_LIST } from './synthetic-fetch-grants';
 import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
@@ -196,6 +198,7 @@ import { SYNTHETIC_REVEAL_DUEL_LIST } from './synthetic-reveal-duel';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_ROOM_LIST } from './synthetic-rooms';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
+import { SYNTHETIC_SACRIFICE_PLAYS_LIST } from './synthetic-sacrifice-plays';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SAME_CONTROLLER_LIST } from './synthetic-same-controller';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
@@ -488,6 +491,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
   ...SYNTHETIC_YAROK_LIST,
+  ...SYNTHETIC_FELIX_LIST,
+  ...SYNTHETIC_D1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
   ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
@@ -622,6 +627,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ATTACK_LIMIT_LIST,
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_SLIVER_C_LIST,
+  ...SYNTHETIC_SACRIFICE_PLAYS_LIST,
   ...SYNTHETIC_CHOSEN_REVEAL_LIST,
   ...SYNTHETIC_PILES_LIST,
   ...SYNTHETIC_HASHATON_G2_LIST,

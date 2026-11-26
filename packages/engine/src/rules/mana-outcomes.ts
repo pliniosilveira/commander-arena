@@ -66,6 +66,8 @@ export function spendRestrictionOf(
   }
   // Issue 102 (Lord of the Forsaken, CR 106.6, 601.2a): "Spend this mana only to cast a spell from your graveyard".
   if (only.fromGraveyard === true) return { kind: 'spellMatch', fromGraveyard: true };
+  // CR 106.6, 108.3 (Thieving Varmint): "Spend this mana only to cast spells you don't own".
+  if (only.notOwned === true) return { kind: 'spellMatch', notOwned: true };
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
   // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."

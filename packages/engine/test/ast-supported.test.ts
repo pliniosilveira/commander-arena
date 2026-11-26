@@ -108,6 +108,7 @@ const EXECUTABLE_KEYWORDS = [
   'jobSelect', // convert-grammar-engine-p49 (Job select, D-206)
   'readAhead', // scenario-xx-read-ahead
   'rebound', // convert-grammar-engine-scions-e
+  'cipher', // scenario-xx-cipher
   'reconfigure', // scenario-xx-reconfigure
   'dethrone', // scenario-xx-extra-combat
   'melee', // convert-grammar-engine-limit-break-g4 (Tifa, Martial Artist)
@@ -243,6 +244,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   melee: { kind: 'melee' },
   readAhead: { kind: 'readAhead' },
   rebound: { kind: 'rebound' },
+  cipher: { kind: 'cipher' },
   reconfigure: { kind: 'reconfigure', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   myriad: { kind: 'myriad' },
   decayed: { kind: 'decayed' },
@@ -320,7 +322,7 @@ describe('supported feature gate', () => {
                             : kind === 'reconfigure'
                               ? // CR 702.151: an Equipment creature.
                                 syntheticCard('SYNTHETIC Reconfigure Blade')
-                              : kind === 'rebound'
+                              : kind === 'rebound' || kind === 'cipher'
                                 ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
                                 : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
@@ -449,6 +451,7 @@ describe('supported feature gate', () => {
       'Lander',
       'Wicked Role',
       'Junk',
+      'Blood',
     ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',
@@ -474,6 +477,8 @@ describe('supported feature gate', () => {
       // Exit from Exile precon (issue 168): "a land you control enters from exile".
       'entersBattlefieldFromExile',
       'leftGraveyardDuringYourTurn',
+      // Szarel, Genesis Shepherd: "Whenever you sacrifice another nontoken permanent during your turn".
+      'sacrificedDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',

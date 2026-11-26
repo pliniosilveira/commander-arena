@@ -28,11 +28,12 @@ function removalSetup(
   lands: string[],
   mine: string[],
   theirs: Permanent[],
-  opts: { defs?: CardDefinition[]; oppLife?: number; taken?: [string, number] } = {},
+  opts: { defs?: CardDefinition[]; life?: number; oppLife?: number; taken?: [string, number] } = {},
 ) {
   let b = scenario();
   for (const d of opts.defs ?? []) b = b.define(d);
   b = b.seat(0);
+  if (opts.life !== undefined) b = b.life(opts.life);
   if (opts.taken !== undefined) b = b.commanderDamageTaken(...opts.taken);
   b = b
     .hand(spell)
@@ -83,8 +84,7 @@ describe('removal goes at the real threat', () => {
     expect(targetName(g, targets?.[0])).toBe(boss.name);
   });
 
-  // Today: it aims at the 5/5; target ranking weighs creature value, not commander damage already taken.
-  test.fails('Murder goes at the 2/2 commander that has dealt 20 commander damage, not the 5/5', async () => {
+  test('Murder goes at the 2/2 commander that has dealt 20 commander damage, not the 5/5', async () => {
     // Wrong to hit the 5/5 here: the 2/2 commander kills the agent with its next hit (21 commander damage), the 5/5 does not.
     const boss = creature('SYNTHETIC Boss 2/2', 2, 2, [], { cost: ['2'] });
     const g = removalSetup('Murder', SWAMPS, [], [V5, [boss.name, { commander: true }]], {
@@ -93,6 +93,18 @@ describe('removal goes at the real threat', () => {
     });
     const targets = await targetsOf(g, 'Murder');
     expect(targetName(g, targets?.[0])).toBe(boss.name);
+  });
+
+  test('at 5 life, Murder goes at the 5/5, not the 2/2 commander that has dealt 18 commander damage', async () => {
+    // Wrong to hit the commander here: its next hit leaves the agent at 20 commander damage, the 5/5's next hit kills it.
+    const boss = creature('SYNTHETIC Boss 2/2', 2, 2, [], { cost: ['2'] });
+    const g = removalSetup('Murder', SWAMPS, [], [V5, [boss.name, { commander: true }]], {
+      defs: [boss],
+      life: 5,
+      taken: [boss.name, 18],
+    });
+    const targets = await targetsOf(g, 'Murder');
+    expect(targetName(g, targets?.[0])).toBe(V5);
   });
 
   test('Unsummon goes at the Serra Angel, not the Grizzly Bears', async () => {

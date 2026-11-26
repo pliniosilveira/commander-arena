@@ -131,6 +131,11 @@ export interface TargetsDecision extends DecisionBase {
    */
   readonly forTrigger?: true;
   /**
+   * With `forTrigger` (Bladegriff Prototype, CR 603.3d, `TargetSpec.chosenBy`): the seat that controls the triggered ability when another player (the decision's `seat`) chooses its target.
+   * Absent when the controller chooses.
+   */
+  readonly forController?: SeatId;
+  /**
    * True when `source` is a copy of a spell that was just put on the stack and its controller may choose new targets
    * for it (CR 707.10c, D-129). The copy has `current` targets; the answer is any set within the slots' bounds in which
    * each target is a legal one or is the target the copy has in that slot (the player may leave any number of targets
@@ -459,6 +464,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'proliferate'
     | 'auraHost'
     | 'entersCopy'
+    | 'entersCopyOther'
+    | 'cipher'
     | 'devour'
     | 'entersRemoveCounters'
     | 'ringBearer'
@@ -482,6 +489,11 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'entersCopy'` (D-151, CR 707.9, 614.12: "As this artifact enters, you may have it become a copy of any creature on the battlefield"): `seat`, the
    * player the permanent `subject` enters under, chooses which permanent of `legal` it becomes a copy of; `min` is 0 when that is optional, `max` 1. The
    * permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'entersCopyOther'` (The Mimeoplasm, CR 614.12, 707.9b: "you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1
+   * counters on it equal to the power of the other card"): asked after `'entersCopy'` chose the card to copy, `seat` chooses which of the other cards in `legal` (those of every graveyard that match) is the second one
+   * exiled, whose power is the number of counters; exactly one. The permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'cipher'` (CR 702.99: "Then you may exile this spell card encoded on a creature you control"): `seat`, the controller of the resolving spell `subject` (= `source`), chooses which creature of
+   * `legal` (all they control) the card is encoded on; `min` is 0 (the "may") and `max` 1. Asked as the spell has done everything else, before the card is put into exile or the graveyard.
    * For `'entersRemoveCounters'` (Sin, Unending Cataclysm, CR 614.12, 122.1: "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments"): `seat`, the player the
    * permanent `subject` enters under, chooses which of the permanents in `legal` (those of every player that have a counter and match the filter) lose every counter; `min` is 0 and `max` is
    * `legal.length`, and the permanent enters with counters for the number removed. The permanent has not entered yet: `source` and `subject` are the object it is now, or, for a token, the spell or
@@ -590,7 +602,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
  * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-660)
  * the question is asked again after each spell cast. `'opponentChoice'` (D-660, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
- * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
+ * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1). `'handChoice'` (Extract Brain, CR 608.2d, 402.3, "Target opponent chooses X cards from their hand"):
+ * `seat` is the player who chooses, `legal` the cards of their own hand (`zone` 'hand'), and exactly `min` = `max` of them are chosen; the cards stay hidden (`reveal` false).
  */
 export interface ChooseCardsDecision extends DecisionBase {
   readonly kind: 'chooseCards';
@@ -612,7 +625,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'copy'
     | 'pair'
     | 'separate'
-    | 'opponentChoice';
+    | 'opponentChoice'
+    | 'handChoice';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile' | 'command';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;
@@ -1125,6 +1139,8 @@ export interface VoteQuestion {
   readonly cast: readonly VoteCast[];
   /** A secret vote: `cast` is left empty on purpose. */
   readonly secret?: true;
+  /** Not a vote but a choice every player named makes in turn (`eachPlayerChooses`, CR 101.4, 701.38c): `cast` holds the choices already made, which later players see. */
+  readonly choice?: true;
   /**
    * For a vote for players or permanents (`voteFor`, CR 701.38b): what each of `options` (`seat:<n>`, `object:<id>`) stands for, in the same order, so a player can be shown who or
    * what it is. Absent for a vote with words.
@@ -1259,6 +1275,8 @@ export interface ChooseXDecision extends DecisionBase {
     | 'chooseNumber';
   readonly min: number;
   readonly max: number;
+  /** `chooseNumber` of `addManaCombination` (CR 106.1b): the color of the mana being counted, "how many {W}". Absent for any other number. */
+  readonly manaColor?: ManaColor;
   /**
    * The values from `min` to `max` that leave the spell a legal target, for a spell whose target is "with mana value X" (CR 601.2b, 601.2c: X is announced before the
    * targets, and a spell with no legal target cannot be cast). Absent: every value is legal.

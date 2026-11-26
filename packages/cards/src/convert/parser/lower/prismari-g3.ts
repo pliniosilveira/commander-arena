@@ -57,9 +57,12 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
     if (remember && (before !== 'exile' || anyFlag?.kind !== 'flag' || !anyFlag.value)) {
       return failure(clause);
     }
+    // Silent-Blade Oni, Extract Brain (CR 608.2g, 402.3): "from among those cards" after cards of a hand were named: the spell is cast from the hand it is in.
+    const fromHand = !other.value && !fromLinked && !remember && before === 'handCards';
     if (
       !fromLinked &&
       !remember &&
+      !fromHand &&
       (other.value
         ? before !== 'opponentChoosesCard'
         : // Summons of Saruman (CR 701.17a, 608.2g): "from among them" after the controller milled cards: the cards are in their graveyard.
@@ -89,13 +92,19 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
             anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
             ...(limit?.kind === 'flag' && limit.value ? { manaValueAtMost: { kind: 'x' } } : {}),
           }
-        : undefined;
+        : // Villainous Wealth (CR 608.2g, 202.3, 107.3a): spells of any type with a mana value no more than the X of the spell.
+          limit?.kind === 'flag' && limit.value
+          ? { manaValueAtMost: { kind: 'x' } }
+          : undefined;
+    // The X of the limit is the X of the spell: it needs {X} in the cost, which the card's mana cost shows (`validateCard`).
+    if (typed?.kind !== 'flag' && filter?.manaValueAtMost !== undefined) ctx.usesX = true;
     const effect: Effect = {
       kind: 'castFree',
       objects: fromLinked ? { kind: 'linkedExile' } : { kind: 'moved' },
       ...(max === undefined ? {} : { max }),
       ...(filter === undefined ? {} : { filter }),
       ...(remember ? { remember: true as const } : {}),
+      ...(fromHand ? { fromHand: true as const } : {}),
     };
     return { ok: true, value: [effect], rule: clause.rule };
   },

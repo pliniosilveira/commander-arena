@@ -90,7 +90,48 @@ export const CONDITION_N_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.a-card-exiled-with-self`: "a card is exiled with it", "a card is exiled with ~" (Smirking Spelljacker; CR 603.4 intervening "if", 607.2a linked abilities): at least one card the
+ * permanent exiled with its linked ability is still in exile, as `condition.cards-exiled-with-self` says it. "It" is the permanent with the ability. Not read: "a card has been exiled with ~", "no
+ * card is exiled with it", "a creature card is exiled with it", "cards are exiled with it", another source, a trailing word.
+ */
+export const CONDITION_A_CARD_EXILED_WITH_SELF = defineRule<IrCondition>({
+  id: 'condition.a-card-exiled-with-self',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 607.2a (Linked Abilities)'],
+  examples: ['a card is exiled with it', 'a card is exiled with ~'],
+  rejects: [
+    'a card has been exiled with it',
+    'no card is exiled with it',
+    'a creature card is exiled with it',
+    'cards are exiled with it',
+    'a card is exiled with target creature',
+    'a card is exiled with it.',
+    'a card is exiled with it and',
+    'a card is exiled with it or',
+    'a card is exiled with them',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/a card is exiled with (?:it|~)(?![\p{L}\p{N}'’])(?!\s+(?:and|or)\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'cardsExiledWithSelf' },
+        span: r.value.span,
+        rule: 'condition.a-card-exiled-with-self',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const EXILED_WITH_CONDITION_RULES = [
+  CONDITION_A_CARD_EXILED_WITH_SELF,
   CONDITION_CARDS_EXILED_WITH_SELF,
   CONDITION_N_CARDS_EXILED_WITH_SELF,
 ].map(quietly);

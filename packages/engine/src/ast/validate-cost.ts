@@ -214,6 +214,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'sacrificeFromGraveyard',
   'sacrificePermanents',
   'payLife',
+  'payMana',
   'blitz',
 ];
 

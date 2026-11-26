@@ -536,8 +536,21 @@ function choosesFromLinkedExile(effect: Effect, castReads = true): boolean {
 function choosesFromExile(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(choosesFromExile);
   if (typeof node !== 'object' || node === null) return false;
-  const o = node as { kind?: unknown; filter?: { zone?: unknown }; fromMoved?: unknown };
-  if (o.kind === 'choose' && o.filter?.zone === 'exile' && o.fromMoved !== true) return true;
+  const o = node as {
+    kind?: unknown;
+    filter?: { zone?: unknown };
+    fromMoved?: unknown;
+    fromExileOf?: unknown;
+  };
+  // Oblivion Sower: "land cards that player owns from exile" are the cards of a player, whoever exiled them, not the permanent's linked exile.
+  if (
+    o.kind === 'choose' &&
+    o.filter?.zone === 'exile' &&
+    o.fromMoved !== true &&
+    o.fromExileOf === undefined
+  ) {
+    return true;
+  }
   return Object.values(node).some(choosesFromExile);
 }
 
@@ -608,6 +621,8 @@ function linkExile(abilities: readonly Ability[]): {
     (a.kind === 'static' &&
       // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~" reads the cards too.
       (a.static.kind === 'takeFromLinkedExile' ||
+        // Evendo Brushrazer (CR 607.2a): "you may play cards exiled with ~" reads the cards the permanent exiled.
+        a.static.kind === 'playFromLinkedExile' ||
         a.static.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||

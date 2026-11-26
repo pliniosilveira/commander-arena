@@ -4,7 +4,7 @@
 import { createRng, determinize } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { atLeastOne, poolOf, scenariosOf, threatsOf } from '../src/heuristic-threats';
+import { atLeastOne, opponentsOf, poolOf, scenariosOf, threatsOf } from '../src/heuristic-threats';
 import { DEFAULT_WEIGHTS } from '../src/index';
 
 /** C(n, k) as a float, for the expected values. */
@@ -48,8 +48,7 @@ describe('threats by category', () => {
     expect(poolOf(sample, 1)).toHaveLength(43);
     const threats = threatsOf(view, sample, DEFAULT_WEIGHTS);
     // The pools a caller read already (`scenariosOf`) give the same threats as reading them again.
-    const pools = new Map([[1, poolOf(sample, 1)]]);
-    expect(threatsOf(view, sample, DEFAULT_WEIGHTS, pools)).toEqual(threats);
+    expect(threatsOf(view, sample, DEFAULT_WEIGHTS, opponentsOf(view, sample))).toEqual(threats);
     const counter = threats.find((t) => t.kind === 'counter');
     expect(counter?.chance).toBeCloseTo(atLeastOne(43, 8, 5), 12);
     const scenarios = scenariosOf(view, sample, DEFAULT_WEIGHTS);

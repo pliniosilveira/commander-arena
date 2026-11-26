@@ -118,6 +118,11 @@ export interface PlanWeights {
   readonly margin: number;
   /** A threat category (`heuristic-threats.ts`) gets a scenario of its own from this chance that the opponent holds one. */
   readonly minThreatChance: number;
+  /**
+   * Against an aggro deck (`heuristic-profile.ts`), which taps out on its own turn, a counterspell, a trick or a flash
+   * creature gets a scenario only from this many times `minThreatChance`: its open mana is respected less.
+   */
+  readonly aggroOpenMana: number;
   /** How much of the gap between a line's weighted mean and its worst scenario is taken off its value. */
   readonly riskAversion: number;
 }
@@ -129,6 +134,13 @@ export interface RemovalWeights {
   readonly walkerBase: number;
   /** ... and its value per loyalty counter. */
   readonly walkerLoyalty: number;
+}
+
+export interface ThreatWeights {
+  /** A trade with an opposing commander is worth this much more than its body: it comes back (CR 903.9a). */
+  readonly commander: number;
+  /** An opposing commander whose next hit brings the agent to 21 commander damage (CR 903.10a) is worth this much more. */
+  readonly lethal: number;
 }
 
 export interface ProtectionWeights {
@@ -157,6 +169,7 @@ export interface AgentWeights {
   readonly main: MainWeights;
   readonly plan: PlanWeights;
   readonly removal: RemovalWeights;
+  readonly threat: ThreatWeights;
   readonly protection: ProtectionWeights;
   readonly mulligan: MulliganWeights;
 }
@@ -243,8 +256,9 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     spellPerMana: 0.8,
     counterMinValue: 2,
   },
-  plan: { margin: 0.5, minThreatChance: 0.1, riskAversion: 0.25 },
+  plan: { margin: 0.5, minThreatChance: 0.1, aggroOpenMana: 2, riskAversion: 0.25 },
   removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6 },
+  threat: { commander: 2, lethal: 20 },
   protection: { margin: 0.5, commanderBonus: 4, permanentValue: 3, saveValue: 6 },
   mulligan: { minLands: 2, maxLands: 5 },
 });

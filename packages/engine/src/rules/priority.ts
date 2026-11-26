@@ -47,6 +47,7 @@ const ALTERNATIVES = [
   'tapPermanents',
   'sacrificePermanents',
   'payLife',
+  'payMana',
   'impending',
   // CR 702.152a: Blitz, from the hand (and from the graveyard, below).
   'blitz',

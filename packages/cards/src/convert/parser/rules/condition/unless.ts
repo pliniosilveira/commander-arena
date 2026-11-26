@@ -74,8 +74,17 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     'unless that player pays 3 life',
     'unless you pay 2 life',
     "unless that creature's controller pays {3}",
+    // Gitrog Monster (CR 701.21a, 118.12a): a permanent sacrificed to stop the instruction.
+    'unless you sacrifice a land',
+    'unless you sacrifice a creature',
   ],
   rejects: [
+    'unless you sacrifice ~',
+    'unless you sacrifice another creature',
+    'unless you sacrifice two lands',
+    'unless you sacrifice a land and a creature',
+    'unless you sacrifice',
+    'unless that player sacrifices a land',
     'unless that player pays {X}',
     'unless that player pays 0 life',
     'unless that player pays X life',
@@ -94,6 +103,48 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     'unless that player pay {1}',
   ],
   parse: (ctx, pos) => {
+    // Gitrog Monster (CR 701.21a, 118.12a): "unless you sacrifice a land": the payer sacrifices a permanent they control that matches, which the engine's `unlessPays` asks as it
+    // asks Ward—Sacrifice. One permanent of a kind, never the permanent itself, another permanent or several.
+    const sacrificed = sequence(
+      literal('unless you '),
+      satisfy(
+        spanned(family<IrCost>('cost', { only: ['cost.sacrifice'] })),
+        ({ value }) =>
+          value.kind === 'sacrifice' &&
+          value.what.det === 'a' &&
+          value.what.count === undefined &&
+          !value.what.other &&
+          value.also === undefined &&
+          value.what.anyNumber !== true,
+      ),
+    )(ctx, pos);
+    if (sacrificed.ok) {
+      const [, cost] = sacrificed.value;
+      const span = { start: pos + 'unless '.length, end: pos + 'unless you'.length };
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: {
+            kind: 'unlessPays',
+            who: {
+              kind: 'noun',
+              det: 'you',
+              filter: { raw: 'you' },
+              upTo: false,
+              plural: false,
+              other: false,
+              span,
+              rule: 'condition.unless-pays',
+            },
+            cost: [cost.value],
+          },
+          span: { start: pos, end: sacrificed.pos },
+          rule: 'condition.unless-pays',
+        },
+        pos: sacrificed.pos,
+      };
+    }
     const r = sequence(
       literal('unless '),
       PAYER,

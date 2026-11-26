@@ -22,7 +22,11 @@ import type { PaymentPlan } from '../mana';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
-import { exileCostCandidates, linkedExileCandidates } from './activation-exile';
+import {
+  exileCostCandidates,
+  linkedExileCandidates,
+  opponentExileCandidates,
+} from './activation-exile';
 import { blightCandidates } from './blight-candidates';
 import { controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
@@ -96,6 +100,8 @@ export interface CostBreakdown {
   readonly exileCards: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a): the filter of the cards the permanent exiled that may be chosen, or null for no such cost. */
   readonly linkedExile: ObjectFilter | null;
+  /** "Put a card an opponent owns from exile into that player's graveyard" (Void Attendant, CR 108.3): `linkedExile` names the opponents' cards in exile, not the ones the permanent exiled. */
+  readonly linkedExileOpponents: boolean;
   /** The untapped permanents to tap (D-133, "Tap three untapped Zombies you control"), or null. */
   readonly tapPermanents: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The tapped permanents to untap (CR 701.26b, "Untap two tapped creatures you control"), or null. */
@@ -142,6 +148,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let exileCardsCosts = 0;
   let linkedExile: CostBreakdown['linkedExile'] = null;
   let linkedExileCosts = 0;
+  let linkedExileOpponents = false;
   let tapPermanents: CostBreakdown['tapPermanents'] = null;
   let tapPermanentsCosts = 0;
   let untapPermanents: CostBreakdown['untapPermanents'] = null;
@@ -258,6 +265,11 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         linkedExileCosts += 1;
         linkedExile = cost.filter;
         break;
+      case 'putOpponentExileInGraveyard':
+        linkedExileCosts += 1;
+        linkedExile = cost.filter;
+        linkedExileOpponents = true;
+        break;
       case 'tapPermanents':
         tapPermanentsCosts += 1;
         tapPermanents = { filter: cost.filter, count: cost.count };
@@ -341,6 +353,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounceToLibraryBottom,
     exileCards,
     linkedExile,
+    linkedExileOpponents,
     tapPermanents,
     untapPermanents,
     tapCreatures,
@@ -685,8 +698,13 @@ export function costRefusal(
     }
   }
   if (parts.linkedExile !== null) {
-    // CR 118.3, 607.2a: a card the permanent exiled with its linked ability, still in exile, that the filter matches.
-    if (linkedExileCandidates(paid, source.id, parts.linkedExile).length === 0) {
+    if (parts.linkedExileOpponents) {
+      // CR 108.3, 118.3 (Void Attendant): a face-up card in exile that an opponent owns and the filter matches.
+      if (opponentExileCandidates(paid, seat, source.id, parts.linkedExile).length === 0) {
+        return 'no card an opponent owns is in exile for you to put into its owner’s graveyard';
+      }
+    } else if (linkedExileCandidates(paid, source.id, parts.linkedExile).length === 0) {
+      // CR 118.3, 607.2a: a card the permanent exiled with its linked ability, still in exile, that the filter matches.
       return 'there is no card exiled with it that you could put into a graveyard';
     }
   }

@@ -30,6 +30,13 @@ export function kickerCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'kicker');
 }
 
+/** "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): whether the face's kicker cost has an {X} that must be announced as at least 1. */
+export function kickerXNotZero(face: CardFace | null): boolean {
+  return (face?.abilities ?? []).some(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'kicker' && a.keyword.xNotZero === true,
+  );
+}
+
 /** The buyback cost of the face, or null when it has none (CR 702.27a): an optional additional cost, mana only. */
 export function buybackCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'buyback');

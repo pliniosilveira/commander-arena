@@ -6,9 +6,17 @@
  * The universe of what an opponent can hold is its POOL: the cards of its hand and library on the
  * determinized sample. `determinize` deals those slots from the opponent's decklist minus its public cards
  * (SPEC A31: the decklists are known), so the pool is the same multiset on every sample and never the
- * hidden truth. Each card of the pool is classified (`kindOf`) and is CASTABLE in a window when the mana
- * the opponent will have then pays for it: at instant speed during the agent's turn with the sources it
- * has untapped now, and anything but a counterspell or a trick on its own turn with all its sources.
+ * hidden truth. Each card of the pool is classified (`kindOf`) from the engine's parsed abilities
+ * (`heuristic-card-traits.ts`) and the opponent's profile (`heuristic-profile.ts`), and is CASTABLE in a
+ * window when the mana the opponent will have then pays for it: at instant speed during the agent's turn
+ * with the sources it has untapped now, and anything but a counterspell or a trick on its own turn with all
+ * its sources.
+ *
+ * The profile decides which questions are worth asking (issue 653, step 2b). The planner looks to the start
+ * of the agent's next turn, so a big creature is a THREAT only when it can attack before then: it has haste,
+ * or a permanent of its controller gives haste; a deck with neither gets no threat scenario. A counterspell,
+ * a trick or a flash creature (what open mana on the agent's turn means) is asked about from an aggro deck,
+ * which taps out on its own turn, only from `plan.aggroOpenMana` times the usual chance.
  *
  * The chance that the opponent holds at least one castable card of a category is hypergeometric:
  * `1 - C(N - k, h) / C(N, h)` for a pool of N cards, k of them in the category, and a hand of h. A
@@ -18,6 +26,10 @@
  * castable card (deterministic choice) and otherwise nothing relevant. Only the hidden slots of the
  * opponent on the sample are dealt again, as `determinize` deals them; the sample is a copy and the real
  * game is never touched.
+ *
+ * The attack search asks the same pool one more question (`hiddenAttackersOf`): which creature the opponent
+ * could cast and attack with before the agent's next turn (haste on its own turn, flash with the mana it has
+ * open now), and how likely it is to hold one.
  */
 import {
   type CardId,
@@ -28,12 +40,12 @@ import {
   type ObjectView,
   type SeatId,
 } from '@commander-arena/engine';
-import { isHelpfulSpell } from './casual-helpful';
-import { hasKeyword, isLand, manaValueOf, powerOf } from './casual-view';
+import { isLand, manaValueOf, powerOf } from './casual-view';
+import { type CardTraits, traitsOf } from './heuristic-card-traits';
+import { hitDamage } from './heuristic-danger';
 import { canPayAll, type Unit, unitsOf } from './heuristic-mana';
-import { isProtectionSpell } from './heuristic-protect';
-import { isCounter, isInstantSpeed } from './heuristic-sets';
-import { isRemovalSpell } from './heuristic-targets';
+import { attacksAtOnce, definitionOf, type OpponentProfile, profileOf } from './heuristic-profile';
+import { isInstantSpeed } from './heuristic-sets';
 import type { AgentWeights } from './weights';
 
 export type ThreatKind = 'counter' | 'wipe' | 'removal' | 'trick' | 'flash' | 'threat';
@@ -51,33 +63,28 @@ const IMPACT: Readonly<Record<ThreatKind, number>> = {
 /** The most categories that get a scenario of their own (a bound of the search). */
 export const MAX_THREATS = 3;
 
-const WIPE =
-  /\b(destroy|exile) (all|each|every) (creatures?|nonland permanents?|permanents?)\b|\bdeals? \d+ damage to each creature\b|\ball creatures get -/i;
+/** The least power of a creature that is a threat when it can attack at once (a bound, not a weight). */
+const THREAT_POWER = 3;
 
-/** The category of a card, or null when it is none of them. */
-export function kindOf(o: ObjectView): ThreatKind | null {
+/** The categories an opponent casts during the agent's turn, with the mana it left open. */
+const OPEN_MANA: ReadonlySet<ThreatKind> = new Set(['counter', 'trick', 'flash']);
+
+/**
+ * The category of a card of an opponent's pool, or null when it is none of them: `o` is its view in the hand,
+ * `t` its traits and `p` the opponent's profile (`hasteOnBoard`).
+ */
+export function kindOf(
+  o: ObjectView,
+  t: CardTraits,
+  p: Pick<OpponentProfile, 'hasteOnBoard'>,
+): ThreatKind | null {
   if (isLand(o)) return null;
-  if (isCounter(o)) return 'counter';
-  if (!o.types.includes('creature') && WIPE.test(o.oracleText)) return 'wipe';
-  if (isRemovalSpell(o)) return 'removal';
-  if (
-    isInstantSpeed(o) &&
-    !o.types.includes('creature') &&
-    (isHelpfulSpell(o) || isProtectionSpell(o))
-  ) {
-    return 'trick';
-  }
-  if (o.types.includes('creature')) {
-    if (hasKeyword(o, 'flash')) return 'flash';
-    const power = powerOf(o);
-    if (
-      (hasKeyword(o, 'haste') && power >= 3) ||
-      power >= 5 ||
-      ((hasKeyword(o, 'flying') || hasKeyword(o, 'trample')) && power >= 4)
-    ) {
-      return 'threat';
-    }
-  }
+  if (t.counter && t.instantSpeed) return 'counter';
+  if (!t.creature && t.wipe) return 'wipe';
+  if (!t.creature && t.removal) return 'removal';
+  if (t.trick) return 'trick';
+  if (t.creature && t.flash) return 'flash';
+  if (attacksAtOnce(t, p) && powerOf(o) >= THREAT_POWER) return 'threat';
   return null;
 }
 
@@ -90,12 +97,12 @@ export function atLeastOne(n: number, k: number, h: number): number {
   return 1 - none;
 }
 
-/** One card of the pool: its object on the sample, its card, its view (from its owner's seat) and category. */
+/** One card of the pool: its object on the sample, its card, its view (from its owner's seat) and traits. */
 export interface PoolCard {
   readonly object: ObjectId;
   readonly card: CardId;
   readonly view: ObjectView;
-  readonly kind: ThreatKind | null;
+  readonly traits: CardTraits;
 }
 
 /** How a view is built: `getView`, or the counted one of a planning (`heuristic-plan-work.ts`). */
@@ -124,9 +131,10 @@ export function poolOf(sample: GameState, seat: SeatId, see: ViewOf = getView): 
   const hand = see(copy, seat).seats.find((x) => x.id === seat)?.hand ?? [];
   return hand.flatMap((view) => {
     const card = sample.objects[view.id]?.card;
-    return card === undefined || card === null
+    const def = card === undefined || card === null ? undefined : definitionOf(sample, card);
+    return card === undefined || card === null || def === undefined
       ? []
-      : [{ object: view.id, card, view, kind: kindOf(view) }];
+      : [{ object: view.id, card, view, traits: traitsOf(def) }];
   });
 }
 
@@ -164,27 +172,56 @@ export interface Threat {
   readonly count: number;
 }
 
+/** The pools and profiles of the agent's living opponents on `sample`. */
+export interface Opponents {
+  readonly pools: ReadonlyMap<SeatId, readonly PoolCard[]>;
+  readonly profiles: ReadonlyMap<SeatId, OpponentProfile>;
+}
+
+/** The pool and the profile of each living opponent of the agent (`view.viewer`), each pool read once. */
+export function opponentsOf(view: GameView, sample: GameState, see: ViewOf = getView): Opponents {
+  const pools = new Map<SeatId, PoolCard[]>();
+  const profiles = new Map<SeatId, OpponentProfile>();
+  for (const seat of view.seats) {
+    if (seat.id === view.viewer || seat.hasLost) continue;
+    const pool = poolOf(sample, seat.id, see);
+    pools.set(seat.id, pool);
+    profiles.set(seat.id, profileOf(view, sample, seat.id, pool));
+  }
+  return { pools, profiles };
+}
+
+/** The least chance at which a category of `profile` gets a scenario (see the module comment). */
+function floorOf(kind: ThreatKind, profile: OpponentProfile | undefined, w: AgentWeights): number {
+  const open = OPEN_MANA.has(kind) && profile?.archetype === 'aggro';
+  return w.plan.minThreatChance * (open ? w.plan.aggroOpenMana : 1);
+}
+
 /**
- * The threats of every opponent of the agent (`view.viewer`), most important first, before the cut. `pools`
- * holds the opponents' pools when the caller has read them already (`scenariosOf`), so none is read twice.
+ * The threats of every opponent of the agent (`view.viewer`), most important first, before the cut. `known`
+ * holds the opponents' pools and profiles when the caller has read them already (`scenariosOf`), so none is
+ * read twice.
  */
 export function threatsOf(
   view: GameView,
   sample: GameState,
   weights: AgentWeights,
-  pools?: ReadonlyMap<SeatId, readonly PoolCard[]>,
+  known: Opponents = opponentsOf(view, sample),
 ): Threat[] {
   const me = view.viewer;
   const out: Threat[] = [];
   for (const seat of view.seats) {
     if (seat.id === me || seat.hasLost || seat.handCount === 0) continue;
-    const pool = pools?.get(seat.id) ?? poolOf(sample, seat.id);
+    const pool = known.pools.get(seat.id) ?? [];
+    const profile = known.profiles.get(seat.id);
+    const hasteOnBoard = profile?.hasteOnBoard ?? false;
     const now = unitsOfSeat(view, seat.id, false);
     const later = unitsOfSeat(view, seat.id, true);
     const byKind = new Map<ThreatKind, PoolCard[]>();
     for (const c of pool) {
-      if (c.kind === null || !castable(c.view, c.kind, now, later)) continue;
-      byKind.set(c.kind, [...(byKind.get(c.kind) ?? []), c]);
+      const kind = kindOf(c.view, c.traits, { hasteOnBoard });
+      if (kind === null || !castable(c.view, kind, now, later)) continue;
+      byKind.set(kind, [...(byKind.get(kind) ?? []), c]);
     }
     for (const [kind, cards] of byKind) {
       const chance = atLeastOne(pool.length, cards.length, seat.handCount);
@@ -194,7 +231,7 @@ export function threatsOf(
           powerOf(b.view) - powerOf(a.view) ||
           (a.card < b.card ? -1 : a.card > b.card ? 1 : 0),
       )[0];
-      if (best === undefined || chance < weights.plan.minThreatChance) continue;
+      if (best === undefined || chance < floorOf(kind, profile, weights)) continue;
       out.push({ seat: seat.id, kind, chance, card: best.card, count: cards.length });
     }
   }
@@ -270,22 +307,24 @@ export function scenariosOf(
   weights: AgentWeights,
   see: ViewOf = getView,
 ): Scenario[] {
+  const known = opponentsOf(view, sample, see);
   const kinds = new Map<SeatId, Map<CardId, ThreatKind | null>>();
-  const pools = new Map<SeatId, PoolCard[]>();
-  for (const seat of view.seats) {
-    if (seat.id === view.viewer || seat.hasLost) continue;
-    const pool = poolOf(sample, seat.id, see);
-    pools.set(seat.id, pool);
-    kinds.set(seat.id, new Map(pool.map((c) => [c.card, c.kind])));
+  for (const [seat, pool] of known.pools) {
+    const hasteOnBoard = known.profiles.get(seat)?.hasteOnBoard ?? false;
+    kinds.set(seat, new Map(pool.map((c) => [c.card, kindOf(c.view, c.traits, { hasteOnBoard })])));
   }
-  const top = threatsOf(view, sample, weights, pools).slice(0, MAX_THREATS);
+  const top = threatsOf(view, sample, weights, known).slice(0, MAX_THREATS);
   let none = 1;
   for (const seat of view.seats) {
     const chosen = top.filter((t) => t.seat === seat.id);
     if (chosen.length === 0) continue;
     none *=
       1 -
-      atLeastOne(pools.get(seat.id)?.length ?? 0, sum(chosen.map((t) => t.count)), seat.handCount);
+      atLeastOne(
+        known.pools.get(seat.id)?.length ?? 0,
+        sum(chosen.map((t) => t.count)),
+        seat.handCount,
+      );
   }
   const total = sum(top.map((t) => t.chance));
   const base: Scenario = {
@@ -301,6 +340,59 @@ export function scenariosOf(
       state: arrange(sample, kinds, { seat: t.seat, card: t.card }),
     })),
   ];
+}
+
+/** A creature an opponent may cast and attack with before the agent's next turn, and how likely it holds one. */
+export interface HiddenAttacker {
+  /** The chance it holds at least one such creature it can pay for, once it has drawn for its turn. */
+  readonly chance: number;
+  /** The one that would hit hardest, as it would attack: on its battlefield, untapped. */
+  readonly attacker: ObjectView;
+}
+
+/**
+ * For each living opponent of the agent whose deck can do it (its profile: a creature with haste, or haste given by a
+ * permanent it controls, or one with flash): the creature of its pool it could cast and attack with before the
+ * agent's next turn, haste on its own turn with all its mana, flash during the agent's turn with the mana it has
+ * open now; with the chance that its hand holds one once it has drawn. Opponents with none are left out.
+ */
+export function hiddenAttackersOf(
+  view: GameView,
+  sample: GameState,
+  known: Opponents = opponentsOf(view, sample),
+): Map<SeatId, HiddenAttacker> {
+  const out = new Map<SeatId, HiddenAttacker>();
+  for (const seat of view.seats) {
+    const pool = known.pools.get(seat.id);
+    const profile = known.profiles.get(seat.id);
+    if (pool === undefined || profile === undefined || seat.handCount + seat.libraryCount === 0)
+      continue;
+    const now = unitsOfSeat(view, seat.id, false);
+    const later = unitsOfSeat(view, seat.id, true);
+    const fits = pool.filter(
+      (c) =>
+        powerOf(c.view) > 0 &&
+        ((attacksAtOnce(c.traits, profile) && canPayAll([costOf(c.view)], later)) ||
+          (c.traits.creature && c.traits.flash && canPayAll([costOf(c.view)], now))),
+    );
+    const best = [...fits].sort(
+      (a, b) => hitDamage(b.view) - hitDamage(a.view) || (a.card < b.card ? -1 : 1),
+    )[0];
+    if (best === undefined) continue;
+    const hand = seat.handCount + (seat.libraryCount > 0 ? 1 : 0);
+    out.set(seat.id, {
+      chance: atLeastOne(pool.length, fits.length, hand),
+      attacker: {
+        ...best.view,
+        zone: 'battlefield',
+        controller: seat.id,
+        tapped: false,
+        summoningSick: false,
+        damage: 0,
+      },
+    });
+  }
+  return out;
 }
 
 const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0);

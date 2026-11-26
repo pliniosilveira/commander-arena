@@ -99,6 +99,7 @@ import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
 import { ELVEN_COUNCIL_REVEAL_LOWERINGS } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
+import { EXILE_COUNTERS_LOWERINGS } from './exile-counters';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
@@ -117,6 +118,8 @@ import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
+import { GRAND_LARCENY_B_LOWERINGS } from './grand-larceny-b';
+import { GRAND_LARCENY_C_LOWERINGS } from './grand-larceny-c';
 import { GAIN_ACTIVATED_ABILITIES, GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
@@ -137,6 +140,7 @@ import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
+import { IMPULSE_EXILE_LOWERINGS } from './impulse-exile';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEP_DESTROY_REST_LOWERINGS } from './keep-destroy-rest';
@@ -174,6 +178,7 @@ import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { PLAYER_CHOICES_LOWERINGS } from './player-choices';
 import { PLAYER_CHOOSES_ATTACKER_LOWERINGS } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
@@ -208,6 +213,7 @@ import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
+import { VOTE_PERMANENTS_LOWERINGS } from './vote-permanents';
 import { VRASKA_LOWERINGS } from './vraska';
 import { VRONOS_LOWERINGS } from './vronos';
 import { WIN_GAME_LOWERINGS } from './win-game';
@@ -1040,12 +1046,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       if (
         everyGraveyard.kind !== 'flag' ||
         !everyGraveyard.value ||
-        optional ||
         limit !== undefined ||
         arg(clause, 'alsoGraveyard') !== undefined ||
         arg(clause, 'count') !== undefined ||
         to.attacking === true ||
-        to.tapped === true ||
         filter.value.zone !== 'graveyard' ||
         filter.value.controller !== undefined
       ) {
@@ -1057,8 +1061,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
           kind: 'choose',
           filter: { ...filter.value, controller: 'you' },
           fromAnyGraveyard: true,
+          ...(optional ? { optional: true as const } : {}),
         },
         to: 'battlefield',
+        ...(to.tapped === true ? { tapped: true } : {}),
       };
       ctx.searched = named.ref ?? null;
       return { ok: true, value: [move], rule: clause.rule };
@@ -1574,6 +1580,8 @@ function playerVerb(
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
+        // "Discard one or more land cards" with no "you may" in front: at least one must be discarded, which the engine's choice of none to all does not say.
+        if (arg(clause, 'oneOrMore') !== undefined) return failure(clause);
         // CR 701.9 (Nantuko Cultivator): "discard any number of land cards": only the cards of that kind may be chosen.
         const kind = arg(clause, 'cards');
         let cards: ObjectFilter | undefined;
@@ -1671,7 +1679,19 @@ const MANIFEST: Lowering<IrClause, Effects> = {
     if (who?.kind !== 'noun') return failure(clause);
     const player = playerSelectorOf(who, ctx);
     if (!player.ok) return player;
-    return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+    // CR 701.40a: "the top card of that player's library" is the library of another player (the player of the trigger).
+    const owner = arg(clause, 'from');
+    if (owner === undefined) {
+      return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+    }
+    if (owner.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    return {
+      ok: true,
+      value: [{ kind: 'manifest', player: player.value, fromLibraryOf: from.value }],
+      rule: clause.rule,
+    };
   },
 };
 
@@ -2381,8 +2401,7 @@ const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
 
 /**
  * "Create a Treasure token", "create two 1/1 white Soldier creature tokens" (CR 111.2, 111.10).
- * A predefined token the engine cannot run (Food and Clue carry abilities it cannot activate yet,
- * Blood is not in the AST) is reported with `token:<name>`.
+ * A predefined token the engine cannot run is reported with `token:<name>`.
  */
 const CREATE_TOKEN: Lowering<IrClause, Effects> = {
   head: 'createToken',
@@ -2579,7 +2598,6 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
     if (blocked.length > 0) return { ok: false, needs: blocked, ...at };
-    if (name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
     // CR 111.10, 303.7: a Role token is an Aura token; the engine creates it only attached to the target the text names (`createToken.attachTo`).
     let attachTo: { kind: 'target'; id: string } | undefined;
     const host = arg(clause, 'attachTo');
@@ -3088,6 +3106,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
   ...DEATH_TOLL_WINTER_LOWERINGS,
   ...PARTY_TIME_LIBRARY_LOWERINGS,
+  ...IMPULSE_EXILE_LOWERINGS,
+  ...GRAND_LARCENY_B_LOWERINGS,
   ...DURNAN_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
@@ -3137,11 +3157,14 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DAWNBREAK_LOWERINGS,
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,
+  ...GRAND_LARCENY_C_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...COUNCIL_VOTES_LOWERINGS,
   ...SECRET_VOTES_LOWERINGS,
+  ...VOTE_PERMANENTS_LOWERINGS,
+  ...PLAYER_CHOICES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
@@ -3189,6 +3212,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
   ...JESKAI_FLASHBACK_LOWERINGS,
   ...LOREHOLD_G1_LOWERINGS,
+  ...EXILE_COUNTERS_LOWERINGS,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
   ...CONTROLLER_DAMAGE_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
@@ -3306,7 +3330,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                                 ? 'subjectControlledByYou'
                                 : test === 'thatPlayersTurn'
                                   ? 'triggerPlayerTurn'
-                                  : test;
+                                  : test === 'altCostPaid'
+                                    ? 'castForAlternative'
+                                    : test;
     return failure(
       clause,
       kind === 'raw' ||

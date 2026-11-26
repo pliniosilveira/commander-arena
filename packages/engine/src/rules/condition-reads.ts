@@ -160,6 +160,23 @@ export function enteredThisTurnHolds(
 }
 
 /**
+ * CR 701.21a (Evendo Brushrazer): `seat` has sacrificed a permanent this turn whose card types include all of the condition's `types` and that is a token or not as `token` says. Read from
+ * the turn log (`TurnLog.sacrificed`), so a permanent that has left since still counts as it was sacrificed.
+ */
+export function sacrificedThisTurnHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'sacrificedThisTurn' }>,
+): boolean {
+  return (state.turnLog.sacrificed ?? []).some(
+    (e) =>
+      e.controller === seat &&
+      (condition.types === undefined || condition.types.every((t) => e.types.includes(t))) &&
+      (condition.token === undefined || e.token === condition.token),
+  );
+}
+
+/**
  * D-151, CR 120.3: `seat` was dealt at least `atLeast` damage this turn (`you`), or some one opponent of `seat` still in the game was
  * (`opponent`), read from the turn log.
  */
