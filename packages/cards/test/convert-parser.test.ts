@@ -917,6 +917,7 @@ describe('unmatched abilities', () => {
       'effect.becomes-artifact-creature-unblockable',
       'effect.have-player-lose-life',
       'effect.lead-gain-mana-ability-all',
+      'effect.lead-pump-grant-ability-all',
       'effect.gain-keyword-all-next-turn',
       'effect.restrict-unblockable-until-next-turn',
       'effect.goad-countered',
