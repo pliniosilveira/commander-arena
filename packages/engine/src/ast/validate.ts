@@ -2330,8 +2330,30 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         issue(out, `${path}.abilities`, 'a class level bar adds at least one ability');
       } else {
         a.abilities.forEach((inner, i) => {
-          if (inner?.kind === 'level') {
+          if (inner?.kind === 'level' || inner?.kind === 'solved') {
             issue(out, `${path}.abilities[${i}]`, 'a class level bar does not hold another one');
+          } else {
+            checkAbility(inner, `${path}.abilities[${i}]`, out);
+          }
+        });
+      }
+      break;
+    case 'solved':
+      // CR 702.169, 719.3c: the abilities of a "Solved" label: one or more, none a level, a station symbol or another "Solved" (the card checks that only a Case has one).
+      if (!Array.isArray(a.abilities) || a.abilities.length === 0) {
+        issue(out, `${path}.abilities`, 'a "Solved" label gates at least one ability');
+      } else {
+        a.abilities.forEach((inner, i) => {
+          if (
+            inner?.kind === 'solved' ||
+            inner?.kind === 'stationLevel' ||
+            inner?.kind === 'level'
+          ) {
+            issue(
+              out,
+              `${path}.abilities[${i}]`,
+              `a "Solved" label does not hold a ${inner.kind} ability`,
+            );
           } else {
             checkAbility(inner, `${path}.abilities[${i}]`, out);
           }
@@ -2351,7 +2373,11 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         issue(out, `${path}.abilities`, 'a station symbol gates at least one ability');
       } else {
         a.abilities.forEach((inner, i) => {
-          if (inner?.kind === 'stationLevel' || inner?.kind === 'level') {
+          if (
+            inner?.kind === 'stationLevel' ||
+            inner?.kind === 'level' ||
+            inner?.kind === 'solved'
+          ) {
             issue(
               out,
               `${path}.abilities[${i}]`,
@@ -3460,6 +3486,7 @@ const LAYOUT_FACES: Readonly<Record<string, number>> = {
   normal: 1,
   saga: 1,
   class: 1,
+  case: 1,
   split: 2,
   adventure: 2,
   transform: 2,

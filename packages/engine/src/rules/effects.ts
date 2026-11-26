@@ -3987,6 +3987,18 @@ function runEffect(
       };
     }
 
+    case 'solve': {
+      // CR 719.3a, 719.3b: "this Case becomes solved": the permanent the ability belongs to, if it is still on the battlefield and is not solved already (it stays solved until it
+      // leaves the battlefield).
+      const source = res.source === null ? undefined : state.objects[res.source];
+      if (source?.zone !== 'battlefield' || source.solved === true) return done(state);
+      return {
+        ...done(patchObject(state, source.id, { solved: true })),
+        events: [{ kind: 'becameSolved', object: source.id }],
+        performed: 1,
+      };
+    }
+
     case 'monstrosity': {
       // CR 701.37a (D-445): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous": the permanent the ability belongs to, if it is still on the
       // battlefield. A permanent that can't have the counters (D-380) still becomes monstrous.

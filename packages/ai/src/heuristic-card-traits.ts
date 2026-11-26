@@ -245,7 +245,10 @@ function abilitiesOf(face: CardFace): readonly Node[] {
     for (const a of xs) {
       const n = asNode(a);
       if (n === null) continue;
-      if ((n.kind === 'level' || n.kind === 'stationLevel') && Array.isArray(n.abilities)) {
+      if (
+        (n.kind === 'level' || n.kind === 'stationLevel' || n.kind === 'solved') &&
+        Array.isArray(n.abilities)
+      ) {
         add(n.abilities);
       } else out.push(n);
     }

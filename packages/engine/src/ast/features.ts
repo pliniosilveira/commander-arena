@@ -86,6 +86,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'activated',
     'level',
     'stationLevel',
+    // CR 702.169: "Solved -- [ability]" on a Case.
+    'solved',
   ],
   // D-133: `staticCondition`, "as long as ..." on a static ability.
   abilityFeatures: [
@@ -332,6 +334,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'phaseOut',
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
     'gainLevel',
+    // CR 719.3a: "this Case becomes solved".
+    'solve',
     // D-445: "Monstrosity N" (CR 701.37).
     'monstrosity',
     'exileRandomFromGraveyard',
@@ -1135,6 +1139,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'transform',
     'saga',
     'class',
+    // CR 719 (Case).
+    'case',
     'prepare',
     'meld',
   ],
@@ -1699,6 +1705,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisOnBattlefield',
     // CR 702.62b, 603.4 (Nihilith): "if this card is suspended".
     'thisSuspended',
+    // CR 719.3a: "this Case is solved" (its negation is "and this Case is not solved").
+    'thisSolved',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -3053,6 +3061,8 @@ export const CONDITION_KINDS = [
   'thisOnBattlefield',
   /** "If this card is suspended" (CR 702.62b, 603.4, Nihilith): the engine's `thisSuspended`. */
   'thisSuspended',
+  /** "And this Case is not solved" (CR 719.3a): the engine's `thisSolved`. */
+  'thisSolved',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -3548,6 +3558,7 @@ type KindTable<T extends string> = { readonly [K in T]: true };
 const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   level: true,
   stationLevel: true,
+  solved: true,
   staticCondition: true,
   costReducedIf: true,
   ifGiftPromised: true,
@@ -3693,6 +3704,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnGraveyardPair: true,
   phaseOut: true,
   gainLevel: true,
+  solve: true,
   monstrosity: true,
   exileRandomFromGraveyard: true,
   chooseRandomFromGraveyard: true,

@@ -183,6 +183,11 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
+   * The solved designation (CR 719.3b): set when a Case becomes solved, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker that the
+   * "Solved" abilities (CR 702.169, 719.3c) read, is not an ability and is not a copiable value; a new object after any zone change (CR 400.7) is not solved.
+   */
+  readonly solved?: true;
+  /**
    * The X of the monstrosity action that made this permanent monstrous (CR 701.37c: "other abilities of that permanent may also refer to X", with the value of X as the permanent became
    * monstrous), `monstrousX` of an amount. Set with `monstrous`; a new object after any zone change (CR 400.7) has none.
    */

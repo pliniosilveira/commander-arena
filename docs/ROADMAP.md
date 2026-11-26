@@ -632,3 +632,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The `exilePermanent` cost exiles one permanent, only in an activated ability (no spell additional cost, no keyword cost). Mana "only to turn permanents face up" covers morph and manifest costs, not megamorph.
 - Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.
 - Graveyard permissions with a sacrifice (Exploration Broodship): when several permanents give a card a permission to be cast from the graveyard, the first in battlefield order is used; the caster cannot pick the one with the cheaper additional cost.
+- Case cards: "When this Case becomes solved" has no trigger wording (the `becameSolved` event exists); "To solve" with a condition the grammar cannot read leaves the Case unsupported.

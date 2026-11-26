@@ -4747,6 +4747,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'thisSolved':
+      // CR 719.3a: no parameters; the permanent the ability belongs to.
+      break;
     case 'thisSuspended':
       // CR 702.62b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
@@ -9397,6 +9400,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (scope.owner !== 'ability') {
         issue(out, path, 'only an ability of a permanent gains a level');
+      }
+      break;
+    case 'solve':
+      // CR 719.3a: no fields; the permanent the ability belongs to.
+      if (scope.owner !== 'ability') {
+        issue(out, path, 'only an ability of a permanent becomes solved');
       }
       break;
     case 'monstrosity':

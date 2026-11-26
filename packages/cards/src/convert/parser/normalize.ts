@@ -138,7 +138,7 @@ export function stripFlavorWord(line: string): string {
 }
 
 const SELF_NOUNS =
-  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class';
+  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class|case';
 const SELF_NOUN_RE = new RegExp(`\\bthis (?:${SELF_NOUNS})\\b`, 'gi');
 
 /**

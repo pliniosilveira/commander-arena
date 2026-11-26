@@ -699,6 +699,15 @@ export function describeEvent(
         [event.object, event.copy],
         'CR 722.3',
       );
+    case 'becameSolved':
+      // CR 719.3a, 719.3b: a Case became solved; it stays solved until it leaves the battlefield.
+      return line(
+        'major',
+        `${label(event.object)} became solved.`,
+        null,
+        [event.object],
+        'CR 719.3',
+      );
     case 'becameMonstrous':
       // CR 701.37a, 701.37b (D-445): the monstrosity action finished; the permanent is monstrous until it leaves the battlefield.
       return line(

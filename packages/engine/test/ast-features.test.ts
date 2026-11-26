@@ -227,6 +227,7 @@ describe('the dimensions', () => {
       'thisInYourGraveyard',
       'thisOnBattlefield',
       'thisSuspended',
+      'thisSolved',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',

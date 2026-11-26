@@ -3435,6 +3435,12 @@ export type Effect =
    */
   | { readonly kind: 'gainLevel'; readonly level: number }
   /**
+   * "This Case becomes solved." (CR 719.3a, 719.3b, 702.169): the effect of the triggered ability "To solve" stands for: the permanent the ability belongs to gets the solved designation
+   * (`GameObject.solved`), which stays until it leaves the battlefield and is not copiable. Nothing happens when the permanent has left the battlefield or is solved already. Only in
+   * an ability of a permanent.
+   */
+  | { readonly kind: 'solve' }
+  /**
    * "Monstrosity 5" (CR 701.37a, 701.37b, D-445): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous." `count` is N, an amount read as the effect
    * resolves. The permanent is the one the ability belongs to; nothing happens when it has left the battlefield or is monstrous already. Monstrous is a designation (`GameObject.monstrous`) that
    * stays until the permanent leaves the battlefield and is not copiable. A permanent that can't have +1/+1 counters (D-380) still becomes monstrous. Only in an ability of a permanent.
@@ -8515,6 +8521,11 @@ export type Condition =
    */
   | { readonly kind: 'thisSuspended' }
   /**
+   * "This Case is solved" (CR 719.3a, 719.3b): the permanent the condition belongs to is on the battlefield and has the solved designation. Read live (a permanent that left is another
+   * object, CR 400.7), as the event happens and again as the ability resolves; `not` of it is the "and this Case is not solved" of "To solve".
+   */
+  | { readonly kind: 'thisSolved' }
+  /**
    * "If it's on the battlefield" (CR 603.4, 400.7; Animate Dead): the permanent the condition belongs to is on the battlefield now, the same object that triggered (an object that has
    * left is a new object elsewhere, so this reads the live object, never last-known information). Read as the event happens and again as the ability resolves.
    */
@@ -10105,6 +10116,13 @@ export type Ability =
    * before this node). The abilities are not themselves `level` abilities. Levels are not copiable (CR 716.2b): a copy of the Class has the abilities its own level gives it.
    */
   | { readonly kind: 'level'; readonly level: number; readonly abilities: readonly Ability[] }
+  /**
+   * "Solved -- [Ability text]" (CR 702.169a-d, 719.3c): the permanent has `abilities` as long as it has the solved designation (`GameObject.solved`), read each time its abilities are looked
+   * at: a static ability then applies ("as long as this Case is solved", CR 702.169b), a triggered one triggers ("triggers only if this Case is solved", 702.169c) and an activated one can
+   * be activated ("activate only if", 702.169d). Without the designation it does not have them. The designation is not copiable (CR 719.3b): a copy of a Case has the abilities its own
+   * designation gives it. Only on a Case (layout case); the abilities are not themselves `solved` abilities.
+   */
+  | { readonly kind: 'solved'; readonly abilities: readonly Ability[] }
   /**
    * "12+ | {G}, {T}: Add {G} for each creature you control." (CR 721.2, 721.2a, Station): what follows a station symbol. The permanent has `abilities` as long as it has `threshold` or
    * more charge counters on it, read each time its abilities are looked at (nothing is locked in, CR 611.3a); with fewer it does not have them, and the abilities of the card that
