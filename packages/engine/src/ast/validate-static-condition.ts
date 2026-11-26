@@ -118,6 +118,21 @@ function filterProblem(f: ObjectFilter): string | null {
   return null;
 }
 
+/**
+ * CR 119.3 (Rakdos, Lord of Riots; Theater of Horrors): the conditions of a permission or restriction that is read where the card is cast or played (`evaluateCondition`, not
+ * `derive`) may also read the life players lost this turn. Terms joined by and, or, not are walked; anything else is the ordinary static condition.
+ */
+function checkReadAtUse(c: Condition, path: string, out: AstIssue[]): void {
+  if (c?.kind === 'aPlayerLostLifeThisTurn') return;
+  if (c?.kind === 'and' || c?.kind === 'or') {
+    for (const [i, t] of (c.terms ?? []).entries()) checkReadAtUse(t, `${path}.terms[${i}]`, out);
+  } else if (c?.kind === 'not') {
+    checkReadAtUse(c.term, `${path}.term`, out);
+  } else {
+    checkCondition(c, path, out);
+  }
+}
+
 function walk(c: Condition, path: string, out: AstIssue[]): void {
   switch (c?.kind) {
     case 'controlsAtLeast':
@@ -235,7 +250,6 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the spells cast this turn, from the turn log, which no layer changes
     case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
-    case 'aPlayerLostLifeThisTurn': // CR 119.3 (Rakdos, Lord of Riots): the seats' life lost this turn, which no layer changes
     case 'castFromGraveyardThisTurn': // Issue 159: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'cardsInLibrary': // D-331: the cards in a zone, which no layer changes
@@ -389,7 +403,12 @@ export function checkStaticCondition(
   // CR 607.2a, 601.2a (Evendo Brushrazer): "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with this creature": the permission is read as
   // the card is played (`rules/legality.ts`), with `evaluateCondition`, not by `derive`.
   if (s?.kind === 'playFromLinkedExile') {
-    checkCondition(condition, `${path}.condition`, out);
+    checkReadAtUse(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 101.2, 601.2 (Rakdos, Lord of Riots): "You can't cast ~ unless an opponent lost life this turn", read as the spell is cast (`rules/cast-restrictions.ts`).
+  if (s?.kind === 'cantCastThis') {
+    checkReadAtUse(condition, `${path}.condition`, out);
     return;
   }
   // Issue 81 (Windcrag Siege, "Mardu — ..."; CR 607.2d): an additional trigger linked to an option the permanent chose as it entered, read by `rules/trigger-doubling.ts`. No other condition.
