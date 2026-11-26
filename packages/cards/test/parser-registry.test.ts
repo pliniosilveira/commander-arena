@@ -205,6 +205,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
   'replacement.as-enters-remove-counters': asIs,
+  'replacement.as-enters-remove-all-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
   'static.attached-keywords-if': asIs,
@@ -742,6 +743,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
   'static.others-enter-with-counters-equal-to': asIs,
+  'static.others-enter-with-x-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
@@ -1464,6 +1466,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.put-into-graveyard': whenever,
   // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
   'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.put-into-any-graveyard': whenever,
   'trigger.this-exploits': whenever,
   'condition.this-suspended': permanent(
     (e) =>
