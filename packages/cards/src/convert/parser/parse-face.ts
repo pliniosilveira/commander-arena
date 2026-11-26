@@ -9,6 +9,7 @@ import type {
 import type { UnparsedAbility } from '../../types';
 import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
+import { linkPutWith } from './link-put-with';
 import { missingFeatures } from './lower/features';
 import { finishSpell, type SpellParts } from './lower/index';
 import { atMaxSpeedAll, withoutMaxSpeedLabel } from './max-speed';
@@ -308,7 +309,15 @@ export function parseFaceText(
       }),
     );
   }
-  const linked = groupLevels(linkExile(withChosenCardType(abilities)));
+  // CR 607.1, 607.2: abilities that read what another ability of the face put onto the battlefield are linked to it (or refused), after the exile link.
+  const putWith = linkPutWith(withChosenCardType(abilities));
+  const keptAt = abilities.map((_, i) => i).filter((i) => !putWith.refused.includes(i));
+  const grouped = groupLevels(linkExile(putWith.abilities));
+  const linked = {
+    abilities: grouped.abilities,
+    // The passes count the abilities `linkPutWith` kept: their indexes are mapped back to the lines of the face.
+    refused: [...putWith.refused, ...grouped.refused.map((i) => keptAt[i] ?? i)],
+  };
   for (const at of linked.refused) {
     const line = lineOf[at];
     if (line === undefined) continue;
@@ -621,6 +630,8 @@ function linkExile(abilities: readonly Ability[]): {
     (a.kind === 'static' &&
       // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~" reads the cards too.
       (a.static.kind === 'takeFromLinkedExile' ||
+        // Evendo Brushrazer (CR 607.2a): "you may play cards exiled with ~" reads the cards the permanent exiled.
+        a.static.kind === 'playFromLinkedExile' ||
         a.static.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
     ((a.kind === 'triggered' || a.kind === 'activated') &&
       (choosesFromLinkedExile(a.effect) ||

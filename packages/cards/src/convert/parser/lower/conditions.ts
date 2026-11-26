@@ -927,6 +927,17 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'castFromZone', zone: test.zone });
     }
+    case 'sacrificedThisTurn': {
+      // CR 701.21a (Evendo Brushrazer): the permanents the controller sacrificed this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:sacrificedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({
+            kind: 'sacrificedThisTurn',
+            ...(test.types === undefined ? {} : { types: test.types as CardType[] }),
+            ...(test.token === undefined ? {} : { token: test.token }),
+          });
+    }
     case 'yourTurn': {
       // CR 611.3a (stage P49, D-206): the active player is the controller, read each time the static ability is looked at.
       const blocked = missingFeatures(['condition:yourTurn']);
@@ -1075,6 +1086,9 @@ export function lowerCondition(
     case 'youDont':
       // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
       return failure(c, []);
+    case 'youCant':
+      // "If you can't, sacrifice ~" belongs to the pair of sentences of a sacrifice, which the lowering of the sentences reads.
+      return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
       return failure(c, []);
@@ -1139,6 +1153,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedAndLostThisTurn',
   'condition:aPlayerLostLifeThisTurn',
   'condition:spellsCastThisTurn',
+  'condition:sacrificedThisTurn',
   'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',

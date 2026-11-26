@@ -1,5 +1,5 @@
 {
-  "parserVersion": 216,
+  "parserVersion": 218,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -1161,6 +1161,14 @@
       "reasons": [],
       "ast": "9f8edb4f"
     },
+    "11a28f60-2456-4ed5-b1cc-03c395f55e59": {
+      "name": "Vulturous Zombie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "35cfe455"
+    },
     "11a46cb6-ab01-4630-9541-782db2ef3b91": {
       "name": "Map the Frontier",
       "group": "acceptance",
@@ -1498,6 +1506,14 @@
       "reasons": [],
       "ast": "63bacb23"
     },
+    "17975a20-2c13-4325-be1e-0bcda5063a2d": {
+      "name": "Terastodon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "17017803"
+    },
     "17a34f8d-a80f-4331-8be5-06cbb9d10d7b": {
       "name": "Terramorph",
       "group": "acceptance",
@@ -1802,6 +1818,14 @@
       "reasons": [],
       "ast": "5c715c87"
     },
+    "1d45f248-5b83-4377-a3ba-4eae48e63ca1": {
+      "name": "Planetary Annihilation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a680b22d"
+    },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
@@ -1906,6 +1930,22 @@
       "reasons": [],
       "ast": "47a26a63"
     },
+    "1f3c3365-7dc8-47e1-b304-2a09aa229292": {
+      "name": "Szarel, Genesis Shepherd",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea2838ab"
+    },
+    "1f4743ed-4e91-4344-9409-c8ede5c4804d": {
+      "name": "Bloodspore Thrinax",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da837c11"
+    },
     "1f91297a-ec2b-4ea8-9198-aa1daac20ff8": {
       "name": "Metallic Mimic",
       "group": "training",
@@ -1929,6 +1969,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "16010b8f"
+    },
+    "1fb5c014-9366-4f9e-9728-303ff766002b": {
+      "name": "Extractor Demon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "729610e6"
     },
     "1fbb2a7c-8093-4729-b8fe-cf032d99470f": {
       "name": "Fell the Mighty",
@@ -2715,6 +2763,14 @@
       "reasons": [],
       "ast": "90ac7519"
     },
+    "2d73a3bd-f052-4f48-9a72-12db03e27249": {
+      "name": "Soul of Windgrace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bcb82ed2"
+    },
     "2da7c49f-cc1e-45d9-9cbf-067e92b0daef": {
       "name": "Vivid Creek",
       "group": "acceptance",
@@ -2851,6 +2907,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0db1c71f"
+    },
+    "2fbfdbcc-5f89-47b2-bd8d-49c797e0624f": {
+      "name": "Loamcrafter Faun",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eadf6f87"
     },
     "2fdc0d17-b683-4263-949e-4f74ec76badf": {
       "name": "Temur Battle Rage",
@@ -3856,6 +3920,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "87ee75cc"
+    },
+    "3cbdf37b-7fe3-4791-b33c-8591158b0ce5": {
+      "name": "Primal Growth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "83028fdd"
     },
     "3cc4d6f4-79b2-4210-84de-a0febf81eb67": {
       "name": "Slash of Light",
@@ -4866,6 +4938,14 @@
       "reasons": [],
       "ast": "bd5a8f59"
     },
+    "4e769107-0f32-4181-9e57-ffebc2228d3a": {
+      "name": "Rise from the Grave",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "96377565"
+    },
     "4eb1414c-ba12-4bae-b410-79d51925d6fa": {
       "name": "Avalanche of Sector 7",
       "group": "acceptance",
@@ -4873,6 +4953,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "aa3ed9d5"
+    },
+    "4edbaac4-dcb3-40b4-abd7-ff2683bd366d": {
+      "name": "Champion of Stray Souls",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fcea107d"
     },
     "4ef583ab-e0a0-4e4b-bd65-af766038b1fd": {
       "name": "Ghost Vacuum",
@@ -5638,6 +5726,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2312e04b"
+    },
+    "5b6d933e-2830-4f5a-b244-a421aa9615dc": {
+      "name": "Eumidian Hatchery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e2fb0e06"
     },
     "5b7bbc76-22cc-482e-8d65-34cff34c93c8": {
       "name": "Unstable Experiment",
@@ -7113,6 +7209,14 @@
       "reasons": [],
       "ast": "6457331e"
     },
+    "72a570a2-0a22-4680-ac88-a1724faf17de": {
+      "name": "Eumidian Wastewaker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cbe7888c"
+    },
     "72aef1d8-11df-4bc2-af83-907b05df73a8": {
       "name": "Grim Haruspex",
       "group": "training",
@@ -7521,6 +7625,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "72a49612"
+    },
+    "795bc0b0-4b0a-49d6-ac8e-a52a10a93be8": {
+      "name": "Evendo Brushrazer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cd004fd9"
     },
     "79638767-fbc7-451a-b29f-d93f2ac6f102": {
       "name": "Kher Keep",
@@ -8497,6 +8609,14 @@
       "reasons": [],
       "ast": "d57d4a92"
     },
+    "8a83ecee-092b-456c-803f-a9aaa17c4da9": {
+      "name": "Exploration Broodship",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "df920f3e"
+    },
     "8ad0d89b-beef-40f7-8ce8-65589e3970be": {
       "name": "Walking Bulwark",
       "group": "acceptance",
@@ -8689,6 +8809,14 @@
       "reasons": [],
       "ast": "c20762ee"
     },
+    "8d6f82d9-5c5b-4c41-8857-c0936f2d894c": {
+      "name": "Hearthhull, the Worldseed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "385260cf"
+    },
     "8da29533-f389-4bc2-ab9b-b469f893a362": {
       "name": "Cactus Preserve",
       "group": "acceptance",
@@ -8841,6 +8969,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "946512a5"
+    },
+    "90629e9c-83c0-4eca-b4ed-d0494ded6704": {
+      "name": "Centaur Vinecrasher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9eca4451"
     },
     "9070c98b-fd01-4eeb-a4ec-fc464946c7c0": {
       "name": "Stridehangar Automaton",
@@ -9313,6 +9449,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "124087ac"
+    },
+    "97d61346-bd53-4eb8-a920-6ae0382eb20d": {
+      "name": "Thief of Blood",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d5397411"
     },
     "97e260c9-3e78-402b-8d97-af4b515b278b": {
       "name": "Hammers of Moradin",
@@ -9793,6 +9937,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9d0f8610"
+    },
+    "9e774188-caa1-4b62-b9cc-547f8e444b7f": {
+      "name": "Augur of Autumn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "336516df"
     },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
@@ -10283,6 +10435,14 @@
       "reasons": [],
       "ast": "50dba8fd"
     },
+    "a5e54d2b-aad8-4ddd-af4b-13668913762b": {
+      "name": "The Gitrog Monster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ac456640"
+    },
     "a5f5e662-b32c-44f1-848d-0228f0fe1eb6": {
       "name": "Journey to the Lost City",
       "group": "acceptance",
@@ -10538,6 +10698,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "844655b9"
+    },
+    "aa64f830-b9b6-4d5e-9a5d-f9e120089335": {
+      "name": "Scouring Swarm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "af1b6263"
     },
     "aa6723a2-75da-49f5-a1ba-cbfa82c55301": {
       "name": "Opal Palace",
@@ -11028,6 +11196,14 @@
       "reasons": [],
       "ast": "8a54de12"
     },
+    "b0871e12-b156-4fa6-b01c-acaae222b3a5": {
+      "name": "Sprouting Goblin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "14424b70"
+    },
     "b099fc54-cdbc-46cb-b4e4-7c2ca77b115b": {
       "name": "Plumb the Forbidden",
       "group": "acceptance",
@@ -11422,6 +11598,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2783dba8"
+    },
+    "b9019332-2f02-48d9-be0a-a2b41b79e136": {
+      "name": "Sever the Bloodline",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a914ddeb"
     },
     "b91b65b3-b35c-460e-a49b-333000a9a519": {
       "name": "Serra Avenger",
@@ -12280,6 +12464,14 @@
       "reasons": [],
       "ast": "5bbfa373"
     },
+    "c7ee1b21-d02e-49ef-95d6-d6dbf2f886ae": {
+      "name": "Eldrazi Monument",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e926b807"
+    },
     "c7f1a49a-cc22-432f-bf3e-50ba61982b87": {
       "name": "Sewer Nemesis",
       "group": "acceptance",
@@ -12673,6 +12865,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ae734dc7"
+    },
+    "cdc4048a-73ec-4ec1-a179-2b36c397bf1a": {
+      "name": "Dakmor Salvage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ec2ea93e"
     },
     "cdfa9de4-7d7d-4638-8ac4-793ece6372dd": {
       "name": "Changing Loyalty",
@@ -13234,6 +13434,14 @@
       "reasons": [],
       "ast": "1d05c81c"
     },
+    "d7407920-7596-497a-a135-b9343909a0cb": {
+      "name": "Kessig Cagebreakers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "79241754"
+    },
     "d751580b-bb72-4d1d-be27-d0410f883b2a": {
       "name": "Inspired Skypainter // Maestro's Gift",
       "group": "acceptance",
@@ -13555,6 +13763,14 @@
       "reasons": [],
       "ast": "8820c0a1"
     },
+    "dba3dcc1-2177-4a8c-8cf3-7d4fb83c7a16": {
+      "name": "Baloth Prime",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b97cb75a"
+    },
     "dbb8a3d9-6b1b-4ad1-b8b9-f92ead03d1d9": {
       "name": "Coercive Impetus",
       "group": "acceptance",
@@ -13683,6 +13899,14 @@
       "reasons": [],
       "ast": "ef3b396a"
     },
+    "de1ca6ed-b275-4f62-ba05-f31b3659b352": {
+      "name": "Windgrace's Judgment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7aaaa9ed"
+    },
     "de41081e-713c-4005-90f7-65d9426208f1": {
       "name": "Everlasting Torment",
       "group": "acceptance",
@@ -13738,6 +13962,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3c21c835"
+    },
+    "deeb7e22-b207-42de-b9d4-f790403d52a9": {
+      "name": "World Breaker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "796060ff"
     },
     "df08ac72-010f-42f8-beb3-6d645c638e1e": {
       "name": "Uthros, Titanic Godcore",
@@ -13914,6 +14146,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4c1e5bba"
+    },
+    "e275cbfb-3d25-4189-84f0-3162eadc7d65": {
+      "name": "Diabolic Servitude",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "51f99e58"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -14869,6 +15109,14 @@
       "reasons": [],
       "ast": "f2b32796"
     },
+    "f2c19fba-9b06-461f-bb5e-e827ba41204d": {
+      "name": "Groundskeeper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b683921f"
+    },
     "f2f165b6-ef0a-42ad-9352-ba68be8248b0": {
       "name": "Teferi, Hero of Dominaria",
       "group": "acceptance",
@@ -15731,8 +15979,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1664,
-      "total": 1680
+      "supported": 1695,
+      "total": 1711
     }
   }
 }

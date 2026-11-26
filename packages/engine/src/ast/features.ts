@@ -242,6 +242,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escalateTapCost',
     // Grand Larceny deck, group D1: "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): the engine's `kicker` keyword with an {X} in its cost and `xNotZero`.
     'kickerX',
+    // Plunder the Graves deck: "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost, paid after the mana.
+    'kickerSacrifice',
+    // Plunder the Graves deck: "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost, paid after the mana.
+    'kickerSacrifice',
     // Counter Blitz deck, group C: "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`.
     'moveChoosePlayers',
     // Counter Blitz deck, group C: "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`.
@@ -791,6 +795,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersBattlefieldFromExile',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
+    // CR 603.2 (Szarel, Genesis Shepherd): "Whenever you sacrifice another nontoken permanent during your turn" (`permanentSacrificed` with `duringTurn`).
+    'sacrificedDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -1315,6 +1321,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moved',
     // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
     'putCountersOn',
+    // CR 608.2c, 400.7: "for each permanent put into a graveyard this way, its controller creates a token" (`ObjectRef` `putIntoGraveyardThisWay`).
+    'putIntoGraveyardThisWay',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
@@ -1531,6 +1539,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
     'cardsInLibrary',
+    // CR 701.21a (Evendo Brushrazer): "you've sacrificed a nontoken permanent this turn".
+    'sacrificedThisTurn',
     // Lorehold group 3: "if a player has one or fewer cards in hand" (CR 402.1, 603.4).
     'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
@@ -1804,6 +1814,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playFromGraveyardEachType',
     // CR 305.1: "You may play Forests from your graveyard."
     'playLandsFromGraveyard',
+    // CR 607.2a, 601.2a (Evendo Brushrazer): "you may play cards exiled with this creature".
+    'playFromLinkedExile',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
     'activateAsThoughHaste',
     // CR 702.170a (Doc Aurlock, Grizzled Genius): "Plotting cards from your hand costs {2} less."
@@ -1912,6 +1924,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'differentManaValuesAmong',
     // Issue 101: "the number of differently named tokens you control" (CR 201.2).
     'differentNamesAmong',
+    // CR 208.1 (Augur of Autumn): "creatures with different powers".
+    'differentPowersAmong',
     // CR 205.3m: "for each creature type among creatures you control" (Valiant Changeling).
     'creatureTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
@@ -2323,6 +2337,8 @@ export const ABILITY_FEATURES = [
   'escalateTapCost',
   /** "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a, Thieving Skydiver): the engine's `kicker` keyword with an {X} in its cost and `xNotZero`. */
   'kickerX',
+  /** "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost of one permanent chosen by a filter, paid after the mana. */
+  'kickerSacrifice',
   /** "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card. */
   'spellPermanentOrCard',
   'opponentsControlling',
@@ -2380,6 +2396,8 @@ export const TRIGGER_FEATURES = [
   'castDuringYourTurn',
   /** "Whenever a card leaves your graveyard during your turn" (issue 102, CR 603.2): `leftGraveyard` with `duringTurn`. */
   'leftGraveyardDuringYourTurn',
+  /** "Whenever you sacrifice another nontoken permanent during your turn" (CR 603.2, Szarel): `permanentSacrificed` with `duringTurn`. */
+  'sacrificedDuringYourTurn',
   /** "Whenever this creature or another permanent enters from a graveyard" (issue 102, CR 603.6a): `entersBattlefield` with `fromGraveyard`. */
   'entersBattlefieldFromGraveyard',
   /** "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 404.1): `entersBattlefield` with `fromGraveyard` and `graveyardOwner: 'you'`. */
@@ -2458,6 +2476,8 @@ export const SELECTOR_KINDS = [
   'moved',
   /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
   'putCountersOn',
+  /** "For each permanent put into a graveyard this way" (CR 608.2c): the engine's `putIntoGraveyardThisWay`. */
+  'putIntoGraveyardThisWay',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
   'colorChoice',
   /**
@@ -2981,6 +3001,8 @@ export const CONDITION_KINDS = [
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',
+  /** "As long as you've sacrificed a nontoken permanent this turn" (CR 701.21a, Evendo Brushrazer): the engine's `sacrificedThisTurn`. */
+  'sacrificedThisTurn',
   /** "If a player has one or fewer cards in hand" (CR 402.1, 603.4; Lorehold group 3): the engine's `aPlayerCardsInHand`. */
   'aPlayerCardsInHand',
   'and',
@@ -3150,6 +3172,8 @@ export const STATIC_KINDS = [
   'playFromGraveyardEachType',
   /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
   'playLandsFromGraveyard',
+  /** "You may play cards exiled with this creature" (CR 607.2a, 601.2a, Evendo Brushrazer): `playFromLinkedExile`. */
+  'playFromLinkedExile',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
   'activateAsThoughHaste',
   /** "Plotting cards from your hand costs {2} less" (CR 702.170a, Doc Aurlock, Grizzled Genius): the engine's `plotCostReduction`. */
@@ -3278,6 +3302,8 @@ export const AMOUNT_KINDS = [
   'differentManaValuesAmong',
   /** "The number of differently named tokens you control" (CR 201.2, issue 101): the engine's `differentNamesAmong`. */
   'differentNamesAmong',
+  /** "You control three or more creatures with different powers" (CR 208.1, Augur of Autumn): the engine's `differentPowersAmong`. */
+  'differentPowersAmong',
   /** "For each creature type among creatures you control" (CR 205.3m): the engine's `creatureTypesAmong`. */
   'creatureTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
@@ -3519,6 +3545,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   spellPermanentOrCard: true,
   escalateTapCost: true,
   kickerX: true,
+  kickerSacrifice: true,
   moveChoosePlayers: true,
   attackTaxUntil: true,
   sacrificeX: true,
@@ -3845,6 +3872,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castDuringOpponentTurn: true,
   castDuringYourTurn: true,
   leftGraveyardDuringYourTurn: true,
+  sacrificedDuringYourTurn: true,
   entersBattlefieldFromGraveyard: true,
   entersBattlefieldFromYourGraveyard: true,
   entersBattlefieldFromExile: true,

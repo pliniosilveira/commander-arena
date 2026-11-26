@@ -31,7 +31,12 @@ import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { CHOSEN_BY_PLAYER_NOUN_RULES } from './chosen-by-player';
-import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
+import {
+  NOUN_EACH_EXILED_CONTROLLER,
+  NOUN_EACH_GRAVEYARDED_CONTROLLER,
+  NOUN_ITS_CONTROLLER,
+  NOUN_ITS_OWNER,
+} from './controller';
 import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
@@ -445,6 +450,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one or two target creature and/or planeswalker cards from your graveyard',
     "target creature card from an opponent's graveyard",
     'two target land cards from your graveyard',
+    // Groundskeeper (CR 205.4, 205.4a): the supertype basic with the land type.
+    'target basic land card from your graveyard',
+    'up to two target basic land cards from your graveyard',
     'up to three target land cards from your graveyard',
     'up to one target card from a graveyard',
     // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
@@ -494,6 +502,8 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
+    'target basic creature card from your graveyard',
+    'target basic card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',
     'target Aura or Equipment from your graveyard',
     'target Aura or Equipment or Saga card from your graveyard',
@@ -1275,6 +1285,8 @@ export const NOUN_RULES = [
   NOUN_ITS_OWNER,
   // Issue 279 (Curse of the Swine): "for each creature exiled this way, its controller".
   NOUN_EACH_EXILED_CONTROLLER,
+  // Terastodon: "for each permanent put into a graveyard this way, its controller".
+  NOUN_EACH_GRAVEYARDED_CONTROLLER,
   NOUN_ATTACKED_BY_IT,
   ...SUBJECT_NOUN_RULES,
   ...CHOOSE_NOUN_RULES,

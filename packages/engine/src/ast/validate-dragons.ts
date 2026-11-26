@@ -942,6 +942,9 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       return true;
     case 'playFromGraveyardEachType':
       return true;
+    case 'playFromLinkedExile':
+      // CR 607.2a, 601.2a (Evendo Brushrazer): no parameters; the cards are the ones the permanent exiled with its linked ability (checked by `checkLinkedExile`).
+      return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.
       if (s.cast === undefined && s.land !== true) {
@@ -953,6 +956,14 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
         (!Number.isSafeInteger(s.exileOthers) || s.exileOthers < 1 || s.cast === undefined)
       ) {
         issue(out, `${path}.exileOthers`, 'exileOthers is a whole number from 1, only with cast');
+      }
+      // CR 601.2b, 118.8 (Exploration Broodship): "by sacrificing a land in addition to paying its other costs": the permanent the spell cast this way sacrifices.
+      if (s.sacrifice !== undefined) {
+        if (s.cast === undefined) issue(out, `${path}.sacrifice`, 'sacrifice is only with cast');
+        else checkFilter(s.sacrifice, `${path}.sacrifice`, out);
+        if (filterSome(s.sacrifice, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(out, `${path}.sacrifice.zone`, 'the permanent to sacrifice is on the battlefield');
+        }
       }
       if (s.cast !== undefined) {
         checkFilter(s.cast, `${path}.cast`, out);

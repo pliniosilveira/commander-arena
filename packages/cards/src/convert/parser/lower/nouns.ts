@@ -1298,7 +1298,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               : noun.upToTriggerAmount === true || upToCycleX
                 ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
                 : noun.upToThatMany === true
-                  ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                  ? {
+                      id,
+                      what: { kind: 'object', filter: filter.value },
+                      // Loamcrafter Faun (CR 603.12): after "discard one or more land cards", "that many" is the cards discarded.
+                      upToThatMany: ctx.thisWay === 'discarded' ? ('discarded' as const) : true,
+                    }
                   : {
                       id,
                       what: { kind: 'object', filter: filter.value },
@@ -1431,6 +1436,16 @@ export function objectRefOf(
   ) {
     return (
       gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
+    );
+  }
+  // Terastodon (CR 608.2c, 400.7): "each permanent put into a graveyard this way", the permanents the destroy effects before it put there.
+  if (noun.det === 'graveyardedThisWay') {
+    return (
+      gate(noun, ['selector:putIntoGraveyardThisWay']) ?? {
+        ok: true,
+        value: { kind: 'putIntoGraveyardThisWay' },
+        rule: noun.rule,
+      }
     );
   }
   if (noun.det === 'anaphor' || noun.det === 'triggerSubject') {

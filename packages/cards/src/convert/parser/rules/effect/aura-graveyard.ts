@@ -132,8 +132,48 @@ export const EFFECT_CONTROLLER_SACRIFICES_LINKED = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.exile-put-with-self`: "exile the creature put onto the battlefield with ~" (CR 607.2, 400.7, 603.10a, 406.1): the creature that an effect of this permanent put onto the
+ * battlefield, whoever controls it, is exiled; the permanent may have left (the ability looks back in time) and the creature may have gone (nothing is exiled). The engine's `exile` of
+ * `putWithThis`, which the engine checks only on a face whose other ability puts a permanent onto the battlefield with `putWithSource`. Not read: "a creature", another object, a pronoun,
+ * another permanent ("with target Aura"), more words after it.
+ */
+export const EFFECT_EXILE_PUT_WITH_SELF = defineRule<Clauses>({
+  id: 'effect.exile-put-with-self',
+  family: 'effect',
+  leading: ['exile'],
+  cites: [
+    'CR 607.2 (Linked Abilities)',
+    'CR 400.7 (General)',
+    'CR 603.10a (Handling Triggered Abilities)',
+    'CR 406.1 (Exile)',
+  ],
+  examples: [
+    'exile the creature put onto the battlefield with ~',
+    'exile the permanent put onto the battlefield with ~',
+  ],
+  rejects: [
+    'exile a creature put onto the battlefield with ~',
+    'exile the creatures put onto the battlefield with ~',
+    'exile the creature put onto the battlefield with it',
+    'exile the creature put onto the battlefield with target Aura',
+    'exile the creature put onto the battlefield',
+    'exile the instant put onto the battlefield with ~',
+    'exile the creature put onto the battlefield with ~ and draw a card',
+    'exile creature put onto the battlefield with ~',
+  ],
+  parse: single(
+    'effect.exile-put-with-self',
+    pattern(
+      /exile the (?:creature|permanent|artifact|enchantment|land|planeswalker) put onto the battlefield with ~(?![\p{L}\p{N}])(?!\s*(?:,|and\b|then\b))/iu,
+    ),
+    () => ({ verb: 'exilePutWithSelf', args: {} }),
+  ),
+});
+
 export const AURA_GRAVEYARD_EFFECT_RULES = [
   EFFECT_AURA_SWAPS_ENCHANT,
   EFFECT_RETURN_ENCHANTED_CARD_ATTACH,
   EFFECT_CONTROLLER_SACRIFICES_LINKED,
+  EFFECT_EXILE_PUT_WITH_SELF,
 ].map(quietly);

@@ -458,6 +458,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           'the permanents are those of the battlefield, of any player: no zone, controller or owner',
         );
       }
+      if (r.all !== undefined && r.all !== true) issue(out, `${path}.all`, 'all is true or absent');
       break;
     }
     case 'asEntersChoose':
@@ -1752,6 +1753,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'permanentSacrificed':
       if (!isOneOf(t.by, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.by`, `unknown sacrificing player ${String(t.by)}`);
+      }
+      if (t.duringTurn !== undefined && t.duringTurn !== 'you') {
+        issue(out, `${path}.duringTurn`, "duringTurn must be 'you' when present");
       }
       if (t.filter !== undefined) checkFilter(t.filter, `${path}.filter`, out);
       break;

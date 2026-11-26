@@ -8,7 +8,10 @@ import { type CardType, isPermanentType } from '../characteristics';
 import type { Ability, AlternativeCost, Cost, SpellText } from './types';
 import { type AstIssue, checkCosts, issue } from './validate-parts';
 
-/** CR 702.33a: the kicker cost is mana, life, or both; X is not a cost the engine can ask for. */
+/**
+ * CR 702.33a: the kicker cost is mana, life, or both; X is not a cost the engine can ask for. A plain kicker (not Multikicker) may also sacrifice one permanent
+ * ("Kicker—Sacrifice a creature.", CR 118.8, 701.21a): a filter of the caster's permanents, paid after the mana as an additional cost's sacrifice is.
+ */
 export function checkKickerCost(
   cost: readonly Cost[],
   path: string,
@@ -31,8 +34,28 @@ export function checkKickerCost(
         issue(out, `${path}[${i}]`, 'X in a kicker cost is not supported');
     } else if (c?.kind === 'payLife') {
       if (c.amount < 1) issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');
+    } else if (c?.kind === 'sacrifice' && kicker !== undefined) {
+      if (
+        'kind' in c.what ||
+        c.count !== undefined ||
+        c.countX === true ||
+        c.anyNumber === true ||
+        c.atLeastOne === true ||
+        c.alongside !== undefined
+      ) {
+        issue(out, `${path}[${i}]`, 'a kicker sacrifice names one permanent by a filter');
+      }
+      if (cost.filter((o) => o?.kind === 'sacrifice').length > 1) {
+        issue(out, `${path}[${i}]`, 'a kicker cost has one sacrifice');
+      }
     } else {
-      issue(out, `${path}[${i}]`, 'a kicker cost may be mana or life only');
+      issue(
+        out,
+        `${path}[${i}]`,
+        kicker === undefined
+          ? 'a kicker cost may be mana or life only'
+          : 'a kicker cost may be mana, life or a sacrifice only',
+      );
     }
   });
 }
@@ -188,7 +211,11 @@ function mentionsTimesKicked(node: unknown): boolean {
 export function checkCastFace(
   abilities: readonly Ability[],
   spell: SpellText | null,
-  face: { readonly types: readonly CardType[]; readonly additionalCosts?: readonly Cost[] },
+  face: {
+    readonly types: readonly CardType[];
+    readonly additionalCosts?: readonly Cost[];
+    readonly additionalCostChoice?: readonly (readonly Cost[])[];
+  },
   path: string,
   out: AstIssue[],
   alternatives: readonly AlternativeCost[] = [],
@@ -444,6 +471,29 @@ export function checkCastFace(
       out,
       `${path}.abilities`,
       'a flashback sacrifice with an additional sacrifice is not supported',
+    );
+  }
+  // The cast pays one sacrifice: a kicker sacrifice cannot go with another sacrifice of the same cast (additional cost, either way of a cost choice, or a flashback cost).
+  const kickerAbility = abilities.find((a) => a.kind === 'keyword' && a.keyword.kind === 'kicker');
+  const sacrifices = (costs: readonly Cost[] | undefined): boolean =>
+    (costs ?? []).some((c) => c?.kind === 'sacrifice');
+  if (
+    kickerAbility?.kind === 'keyword' &&
+    kickerAbility.keyword.kind === 'kicker' &&
+    sacrifices(kickerAbility.keyword.cost) &&
+    (sacrifices(face.additionalCosts) ||
+      alternatives.some(
+        (a) => a.kind === 'sacrificeFromGraveyard' || a.kind === 'sacrificePermanents',
+      ) ||
+      (face.additionalCostChoice ?? []).some((way) => sacrifices(way)) ||
+      (flashbackAbility?.kind === 'keyword' &&
+        flashbackAbility.keyword.kind === 'flashback' &&
+        sacrifices(flashbackAbility.keyword.cost)))
+  ) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'a kicker sacrifice with another sacrifice in the cost of the spell is not supported',
     );
   }
   // D-667 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.

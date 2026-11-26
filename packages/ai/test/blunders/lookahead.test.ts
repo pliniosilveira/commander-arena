@@ -11,7 +11,7 @@
 // rule: a move a strong player could defend there does not belong here. Its comment says in one line why.
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { askHeuristic, creature } from '../heuristic-helpers';
+import { askHeuristic, creature, lastReason } from '../heuristic-helpers';
 import { blunderAgent, nameOf, playUntilPass } from './drive';
 
 const V2 = 'SYNTHETIC Vanilla 2/2';
@@ -94,8 +94,8 @@ describe('the counterspell waits for the commander', () => {
 });
 
 describe('no race into a crack-back from the hand', () => {
-  // Today: all three attack (reason `safe-attack`): the crack-back counts only the creatures already on the battlefield.
-  test.fails('at 7 life, three 2/2s do not all attack when five Forests can cast a 7/7 haste creature from the deck', async () => {
+  // Passes since the opponent profile (issue 653, step 2b): the crack-back counts a haste creature the deck still holds.
+  test('at 7 life, three 2/2s do not all attack when five Forests can cast a 7/7 haste creature from the deck', async () => {
     // Wrong to send all three here: 6 damage to a player at 20 wins nothing, and a 7/7 with haste (four in the opponent's hand and library) kills a player at 7 with no blocker home.
     const haste = creature('SYNTHETIC Haste 7/7', 7, 7, ['haste'], { cost: ['5'] });
     const g = scenario()
@@ -112,9 +112,11 @@ describe('no race into a crack-back from the hand', () => {
       .at('precombatMain', { active: 0 })
       .build();
     g.advanceTo('declareAttackers', { attack: false });
-    const action = await askHeuristic(g, blunderAgent());
+    const agent = blunderAgent();
+    const action = await askHeuristic(g, agent);
     if (action.kind !== 'declareAttackers')
       throw new Error(`declareAttackers expected: ${action.kind}`);
     expect(action.attacks.length).toBeLessThan(3);
+    expect(lastReason(agent)?.reason).toBe('crack-back');
   });
 });

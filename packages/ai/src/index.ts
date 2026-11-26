@@ -30,7 +30,8 @@ export {
 } from './evaluate';
 export { GreedyAgent, type GreedyAgentOptions } from './greedy-agent';
 export { HeuristicAgent, type HeuristicAgentOptions } from './heuristic-agent';
-export type { Cut, PlanWork } from './heuristic-plan-work';
+export type { Cut, SearchWork } from './heuristic-budget';
+export type { PlanWork } from './heuristic-plan-work';
 export { firstAcceptedAction, firstSafeAction, preferredActions } from './legal';
 export {
   createRandomHandlers,

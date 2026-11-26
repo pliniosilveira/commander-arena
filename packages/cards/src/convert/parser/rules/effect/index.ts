@@ -34,6 +34,7 @@ import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
 import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ANY_NUMBER_OPPONENTS_RULES } from './any-number-opponents';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -670,6 +671,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     "exile target creature that's attacking you or a planeswalker you control",
     // Legions to Ashes (CR 201.2, 608.2c): the target and the tokens with its name that its controller controls.
     'exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent',
+    // Sever the Bloodline (CR 201.2, 608.2c): the target and every other creature with its name.
+    'exile target creature and all other creatures with the same name as that creature',
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -711,6 +714,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.target-creatures-battlefield-or-graveyard',
             // Legions to Ashes (CR 201.2, 608.2c): "exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent".
             'noun.target-permanent-and-same-name-tokens',
+            // Sever the Bloodline (CR 201.2, 608.2c): "exile target creature and all other creatures with the same name as that creature".
+            'noun.target-permanent-and-same-name-others',
             ...SELF_OR_PERMANENT_OPERANDS,
             // Stage P30 (D-135): "you may exile it" (the card a permanent became when it died, or a target of the text).
             'noun.it',
@@ -1832,6 +1837,7 @@ export const EFFECT_RULES = [
   ...LIBRARY_RULES,
   ...PUT_RULES,
   ...PUT_ANY_GRAVEYARD_RULES,
+  ...ANY_NUMBER_OPPONENTS_RULES,
   ...RECURSION_EFFECT_RULES,
   ...GRELL_EFFECT_RULES,
   ...ABOLETH_EFFECT_RULES,

@@ -871,6 +871,22 @@ const PUT_LIBRARY: Lowering<IrClause, Effects> = {
     const to = zoneOf(clause);
     if (to?.zone !== 'library' || to.position === undefined) return failure(clause);
     const position = to.position;
+    // "Put this card from your graveyard on top of your library" (CR 113.6b, 401.3): an ability of the card itself that works from the graveyard, which only an ordinary activated
+    // ability can be (`ctx.graveyardSource`, as for "Return this card from your graveyard to your hand"); the card goes to its owner's library, on top or on the bottom.
+    if (to.from === 'graveyard') {
+      const what = operand(clause, 'objects');
+      if (what?.kind !== 'noun' || what.det !== 'self' || !ctx.graveyardSource) {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['selector:this']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      ctx.usedGraveyardSource = true;
+      return {
+        ok: true,
+        value: [{ kind: 'moveToZone', objects: { kind: 'this' }, to: 'library', position }],
+        rule: clause.rule,
+      };
+    }
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     // "Put it into its owner's library third from the top" (stage P30, D-135, CR 401.7): "it" may be the card the permanent became.
@@ -1046,12 +1062,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       if (
         everyGraveyard.kind !== 'flag' ||
         !everyGraveyard.value ||
-        optional ||
         limit !== undefined ||
         arg(clause, 'alsoGraveyard') !== undefined ||
         arg(clause, 'count') !== undefined ||
         to.attacking === true ||
-        to.tapped === true ||
         filter.value.zone !== 'graveyard' ||
         filter.value.controller !== undefined
       ) {
@@ -1063,8 +1077,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
           kind: 'choose',
           filter: { ...filter.value, controller: 'you' },
           fromAnyGraveyard: true,
+          ...(optional ? { optional: true as const } : {}),
         },
         to: 'battlefield',
+        ...(to.tapped === true ? { tapped: true } : {}),
       };
       ctx.searched = named.ref ?? null;
       return { ok: true, value: [move], rule: clause.rule };
@@ -1580,6 +1596,8 @@ function playerVerb(
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
+        // "Discard one or more land cards" with no "you may" in front: at least one must be discarded, which the engine's choice of none to all does not say.
+        if (arg(clause, 'oneOrMore') !== undefined) return failure(clause);
         // CR 701.9 (Nantuko Cultivator): "discard any number of land cards": only the cards of that kind may be chosen.
         const kind = arg(clause, 'cards');
         let cards: ObjectFilter | undefined;
@@ -3338,6 +3356,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'declined' ||
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
+        kind === 'youCant' ||
         kind === 'notDeclaredAttacker' ||
         kind === 'youAreDefendingPlayer' ||
         kind === 'damageDealtByType' ||

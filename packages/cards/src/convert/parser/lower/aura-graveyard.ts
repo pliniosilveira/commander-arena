@@ -74,10 +74,26 @@ export const SACRIFICE_LINKED_CREATURE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Exile the creature put onto the battlefield with ~" (Diabolic Servitude, CR 607.2, 400.7, 603.10a): the engine's `exile` of `putWithThis`, in an ability of a permanent (even one that
+ * has left: its source is gone, the creature is not). The face's link (`moveToZone.putWithSource` in the ability that put the creature there) is made by the face's pass (`link-put-with.ts`).
+ */
+export const EXILE_PUT_WITH_SELF: Lowering<IrClause, Effects> = {
+  head: 'exilePutWithSelf',
+  id: 'lower.exile-put-with-self',
+  needs: ['effect:exile', 'selector:putWithThis'],
+  lower(clause, ctx) {
+    if (ctx.owner !== 'ability') return failure(clause);
+    const effect: Effect = { kind: 'exile', objects: { kind: 'putWithThis' } };
+    return { ok: true, value: [effect], rule: clause.rule };
+  },
+};
+
 export const AURA_GRAVEYARD_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   AURA_SWAPS_ENCHANT,
   RETURN_ENCHANTED_CARD_ATTACH,
   SACRIFICE_LINKED_CREATURE,
+  EXILE_PUT_WITH_SELF,
 ];
 
 /** Features the lowerings of this file can name, for the dimension test. */
@@ -86,6 +102,7 @@ export const AURA_GRAVEYARD_NEEDS: readonly FeatureRef[] = [
   'effect:moveToZone',
   'effect:attach',
   'effect:sacrifice',
+  'effect:exile',
   'selector:putWithThis',
   'selector:putWithSource',
   'ability:putWithSource',

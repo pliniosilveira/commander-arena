@@ -61,12 +61,37 @@ export function countersTail(
   };
   return (ctx, pos) => {
     // Issue 101 (Bone Devourer, CR 614.12): "~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn": a count of the game's history, read as it enters.
+    // Centaur Vinecrasher: the same words with "equal to the number of land cards in all graveyards", a count of cards.
     if (allowEach) {
       const counted = sequence(
         literal(' with a number of '),
         spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
-        pattern(/ counters on it equal to /i),
-        HISTORY_VALUE,
+        pattern(/ counters on it /i),
+        choice(
+          map(sequence(literal('equal to '), HISTORY_VALUE), ([, value]) => value),
+          // Centaur Vinecrasher (CR 614.12): "equal to the number of land cards in all graveyards": a count of cards, made as it enters, for its controller.
+          family<IrAmount>('amount', { only: ['amount.number-of'] }),
+        ),
+        literal('.'),
+      )(ctx, pos);
+      if (counted.ok) {
+        const [, kind, , amount] = counted.value;
+        const counter: IrCounterSpec = {
+          kind: 'counterSpec',
+          name: kind.value[0].toLowerCase(),
+          span: kind.span,
+          rule,
+        };
+        return { ok: true, value: { count: amount, counter }, pos: counted.pos };
+      }
+    }
+    // Centaur Vinecrasher (CR 614.12, 122.6): "~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards.": a count of cards or permanents, worked out as the permanent enters.
+    if (allowEach) {
+      const counted = sequence(
+        literal(' with a number of '),
+        spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+        literal(' counters on it '),
+        family<IrAmount>('amount', { only: ['amount.number-of'] }),
         literal('.'),
       )(ctx, pos);
       if (counted.ok) {

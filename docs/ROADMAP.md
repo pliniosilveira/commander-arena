@@ -139,10 +139,12 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- "Discard a card or sacrifice a permanent" (Eumidian Wastewaker) is asked as a yes/no question (yes discards, no sacrifices) and the AI answers it like any "may"; the two options are not named.
 - Outlaw (CR 700.12): the singular noun alone ("an outlaw you control", "target outlaw") is not read, only "outlaw" before a type or card word and the plural "outlaws"; "Outlaw" is no subtype.
 - Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
 - Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
 - Void Attendant: a card exiled face down cannot be chosen for the cost "Put a card an opponent owns from exile into that player's graveyard" (the rules pick a pile, then a card at random).
+- "Three or more lands with the same name" (`sameNameAtLeast`) counts face-down permanents, which have no name (CR 201.2a), as sharing the empty name; `sameNameAs` and `sameNameAsSource` already treat them as nameless.
 - Silent-Blade Oni and Extract Brain: looking at a hand shows the cards only in the question of which spell to cast, so a hand with no spell to cast shows nothing.
 - Vronos, Masked Inquisitor: "can't be blocked" given for good is a rules-modifying effect, not a granted ability, so "loses all abilities" does not remove it.
 - Jace, Architect of Thought: the +1 "until your next turn" ability does not end early when its controller leaves the game (CR 800.4m).
@@ -173,8 +175,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.
-- `anyCombinationAmount` lists every combination, C(X+4,4) of them, as actions and payment sources: a large X slows the mana choice. The planner tries only combinations that differ for the cost, and "could produce" lists none (issue 632).
-- The payment planner marks the mana of one outcome in 32-bit masks (`assignUnits`): past 31 mana in one outcome, the mana it reports spent and left over can be wrong.
+- `anyCombinationAmount` with X above 8 offers 16 combinations to choose by hand, not all C(X+4,4); an activation that names any other combination of X mana is accepted, and the planner finds the best for the cost (issue 632).
 - "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
@@ -621,3 +622,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Undercity is the only dungeon: no other dungeon card, no choice of dungeon for "venture into the dungeon", and the parser reads neither "venture into Undercity" nor "if you have the initiative" (the engine runs both).
 - A room ability of a dungeon with no legal target is removed with no `abilityRemoved` event, so the log shows only the venture. The casual agent values rooms from a fixed table, with no look-ahead.
 - Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.
+- Graveyard permissions with a sacrifice (Exploration Broodship): when several permanents give a card a permission to be cast from the graveyard, the first in battlefield order is used; the caster cannot pick the one with the cheaper additional cost.

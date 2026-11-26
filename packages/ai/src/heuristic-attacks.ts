@@ -13,7 +13,10 @@
  *    `defaultPlan` says (good blocks, value trades, chump blocks only in danger), and the position is
  *    scored with `evaluate` from the agent's seat minus a CRACK-BACK penalty: the opponent's creatures
  *    all untap and attack, the agent's untapped ones block, and what gets through costs the life it
- *    takes, 40% of a loss when it is lethal.
+ *    takes, 40% of a loss when it is lethal (`heuristic-crack-back.ts`). Against a deck that has a
+ *    creature with haste (or haste given by its permanents) or with flash it can pay for, the attack is
+ *    also counted with that creature cast from the hand, in the share of the chance that it holds one
+ *    (the opponent profile, `heuristic-profile.ts`, issue 653 step 2b).
  * 3. The best score wins; an attack must beat staying home by `attacks.margin`. Ties go to fewer attackers.
  *
  * Every tunable number is a field of `AgentWeights` (`weights.ts`, groups `attacks` and `danger`), read from
@@ -30,25 +33,25 @@
  * Without a sample the safe attackers go, less the creatures needed at home against the crack-back
  * (`guardHome`).
  */
-import {
-  type Action,
-  type AttackTarget,
-  type DeclareAttackersDecision,
-  type GameState,
-  type GameView,
-  getView,
-  type ObjectId,
-  type ObjectView,
-  type SeatId,
+import type {
+  Action,
+  AttackTarget,
+  DeclareAttackersDecision,
+  GameState,
+  GameView,
+  ObjectId,
+  ObjectView,
+  SeatId,
 } from '@commander-arena/engine';
 import { rankOpponents, targetFor } from './attack-targets';
 import { isUnblockable } from './casual-evasion';
 import { type PlannedAttack, payForAttacks } from './casual-play-rules';
 import { findObject, hasKeyword, powerOf } from './casual-view';
-import { creatureValue, evaluate, LOSS, lifeValue } from './evaluate';
+import { creatureValue, evaluate } from './evaluate';
 import { survivesAttack } from './greedy-combat';
 import { dangerOnlyPlan, defaultPlan } from './heuristic-blockplan';
 import type { BlockContext } from './heuristic-blocks';
+import { crackBackPenalty } from './heuristic-crack-back';
 import {
   attackIsLethal,
   breakthrough,
@@ -56,7 +59,8 @@ import {
   untappedCreatures,
   verdict,
 } from './heuristic-danger';
-import { applyOrNull, playOut } from './heuristic-sim';
+import { applyOrNull, playOut, within } from './heuristic-sim';
+import { hiddenAttackersOf, opponentsOf } from './heuristic-threats';
 import { withinAttackBudget, withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
 import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
@@ -78,44 +82,6 @@ interface Candidate {
 }
 
 const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
-/**
- * What the opponent's next attack could cost the agent in this position (a score penalty, 0 or more):
- * all the opponent's creatures attack, the agent's untapped creatures block (`breakthrough`). Used on the
- * view after a simulated combat, where the agent's attackers are tapped. With several opponents each one's
- * loss is weighted by `attackShare`, how likely it is to turn on the agent rather than on the others.
- */
-export function crackBackPenalty(view: GameView, me: SeatId, weights: AgentWeights): number {
-  const w = weights.attacks;
-  const seat = view.seats.find((s) => s.id === me);
-  if (seat === undefined) return 0;
-  let penalty = 0;
-  for (const other of view.seats) {
-    if (other.id === me || other.hasLost) continue;
-    const b = breakthrough(view, futureAttackers(view, other.id), untappedCreatures(view, me));
-    const v = verdict(view, me, b, weights.danger);
-    // A lethal crack-back is still lethal when the opponent also has others to choose from.
-    if (v.lethal) return w.crackLethalShare * LOSS;
-    penalty +=
-      attackShare(view, other.id, me) *
-      (w.crackWeight * (lifeValue(seat.life, weights) - lifeValue(seat.life - b.life, weights)) +
-        (v.danger ? w.crackDanger : 0));
-  }
-  return penalty;
-}
-
-/**
- * How likely `attacker` is to attack `me` rather than another seat, from 0 to 1: its targets (every living
- * seat but itself) weighted by 1 / life, so the one with the least life draws the most attacks. With one
- * possible target (two seats) it is 1.
- */
-export function attackShare(view: GameView, attacker: SeatId, me: SeatId): number {
-  const targets = view.seats.filter((s) => s.id !== attacker && !s.hasLost);
-  const weight = (life: number): number => 1 / Math.max(life, 1);
-  const total = targets.reduce((sum, s) => sum + weight(s.life), 0);
-  const mine = targets.find((s) => s.id === me);
-  return mine === undefined || total === 0 ? 1 : weight(mine.life) / total;
-}
 
 /**
  * The view with the agent's own creatures untapped: its attackers untap before it matters, and being
@@ -323,13 +289,16 @@ export function chooseHeuristicAttack(
   if (sample === undefined || sample.pending?.kind !== 'declareAttackers' || opp === undefined) {
     return fallback();
   }
+  const engine = ctx.budget.engine;
+  // The creatures the opponents may cast and attack with at once, from what their decks can do (issue 653, 2b).
+  const hidden = hiddenAttackersOf(view, sample, opponentsOf(view, sample, engine.view));
 
   // 3. Play each candidate out on the sample and score it. The opponent is assumed to block sensibly
   // (`defaultPlan`) with probability 1 - `passive` and to block only in danger (`dangerOnlyPlan`) with
   // probability `passive`, which the agent learns from what it has seen (`heuristic-model.ts`); a
   // candidate's numbers are the average of the two plays.
   const policyOf = (plan: typeof defaultPlan) => ({
-    abort: ctx.budget.over,
+    ...within(ctx.budget),
     blocks: (v: GameView, bd: Parameters<typeof defaultPlan>[1]): Action => ({
       kind: 'declareBlockers',
       blocks: withinBlockBudget(bd, plan(v, bd, w).blocks),
@@ -353,22 +322,23 @@ export function chooseHeuristicAttack(
   const playCandidate = (o: (typeof options)[number], policy: typeof sensible) => {
     let end: GameState | null = sample;
     if (o.cs.length > 0) {
-      const declared = applyOrNull(sample, me, toAction(o));
+      const declared = applyOrNull(sample, me, toAction(o), engine);
       end = declared === null ? null : playOut(declared, me, policy);
     }
     if (end === null) return null;
-    const v = getView(end, me);
+    const v = engine.view(end, me);
     return {
       raw: evaluate(untappedFor(v, me), me, w).score,
-      crack: crackBackPenalty(v, me, w),
+      crack: crackBackPenalty(v, me, w, hidden),
       dealt: Math.max(oppLife - (v.seats.find((x) => x.id === opp)?.life ?? oppLife), 0),
     };
   };
   const weight = ctx.passiveWeightFor?.(opp) ?? ctx.passiveWeight;
-  // The stay-home candidate and the safe one are always scored; the others while time is left.
+  // The stay-home candidate and the safe one are always scored; the others while the budget lasts.
   const order = [...options].sort((x, y) => x.cs.length - y.cs.length);
+  const search = ctx.budget.search();
   for (const [i, o] of order.entries()) {
-    if (i >= 2 && ctx.budget.expired(i)) break;
+    if (i >= 2 && search.expired(i) !== null) break;
     const careful = weight < 1 || o.cs.length === 0 ? playCandidate(o, sensible) : null;
     const loose = weight > 0 && o.cs.length > 0 ? playCandidate(o, passive) : careful;
     if (careful === null && weight < 1) continue;
@@ -383,8 +353,8 @@ export function chooseHeuristicAttack(
     };
     scored.push({ o, ...c, score: scoreOf(c, hurry) });
   }
-  // Nothing scored, or a play-out ran out of time before two were: the rules-based attack answers.
-  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over())) return fallback();
+  // Nothing scored, or a play-out was dropped before two were: the rules-based attack answers.
+  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over() !== null)) return fallback();
   const home = scored.find((s) => s.o.cs.length === 0);
   const rank = (a: (typeof scored)[number], b: (typeof scored)[number], u: number): number =>
     scoreOf(b, u) - scoreOf(a, u) || a.o.cs.length - b.o.cs.length;

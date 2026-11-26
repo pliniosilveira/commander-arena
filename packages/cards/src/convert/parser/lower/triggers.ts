@@ -899,7 +899,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         kind: 'putIntoGraveyard',
         // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
         who:
-          t.fromNotBattlefield === true ? 'any' : t.opponentGraveyard === true ? 'opponent' : 'you',
+          t.fromNotBattlefield === true || t.anyGraveyard === true
+            ? 'any'
+            : t.opponentGraveyard === true
+              ? 'opponent'
+              : 'you',
         from:
           t.fromNotBattlefield === true
             ? 'notBattlefield'
@@ -922,14 +926,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
               ? 'opponent'
               : null;
       if (by === null) return failure(t);
-      if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by });
+      // "... during your turn" (Szarel, CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const during = missingFeatures(['trigger:sacrificedDuringYourTurn']);
+        if (during.length > 0) return failure(t, during);
+      }
+      const during = t.duringTurn === 'you' ? { duringTurn: 'you' as const } : {};
+      if (t.subject === undefined) return ok({ kind: 'permanentSacrificed', by, ...during });
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
       // "a permanent" says nothing about the permanent: no filter, any permanent.
       return ok(
         Object.keys(filter.value).length === 0
-          ? { kind: 'permanentSacrificed', by }
-          : { kind: 'permanentSacrificed', by, filter: filter.value },
+          ? { kind: 'permanentSacrificed', by, ...during }
+          : { kind: 'permanentSacrificed', by, filter: filter.value, ...during },
       );
     }
     default:
@@ -2094,7 +2104,7 @@ function lowerTriggeredAbility(
   // "you may" is of the return, and every sentence after it is about the card it returned ("it"), which does nothing when the player does not return it; so the ability's own `optional`
   // asks the one question for the whole chain.
   const [first, ...rest] = others;
-  const chain =
+  const returnChain =
     first !== undefined &&
     first.verb === 'return' &&
     first.optional &&
@@ -2108,6 +2118,24 @@ function lowerTriggeredAbility(
         objects.det === 'anaphor'
       );
     });
+  // Terastodon (CR 608.2d, 608.2c): "you may destroy up to three target noncreature permanents. For each permanent put into a graveyard this way, its controller creates a 3/3 ... token.":
+  // the one "you may" is of the destroy, and the tokens are made only for what it put into graveyards (none when the player declines), so the ability's own `optional` asks the one question.
+  const destroyChain =
+    first !== undefined &&
+    first.verb === 'destroy' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => {
+      const player = arg(c, 'player');
+      return (
+        !c.optional &&
+        c.verb === 'createToken' &&
+        player?.kind === 'noun' &&
+        player.det === 'controllerOf' &&
+        player.of?.det === 'graveyardedThisWay'
+      );
+    });
+  const chain = returnChain || destroyChain;
   // Sephiroth, Fallen Hero (CR 608.2d, 603.3d): "you may put a cell counter on target creature. Until end of turn, each modified creature you control has base power and toughness 7/5.":
   // the "you may" is of the first instruction alone (the target is chosen as the ability goes on the stack, the question is asked as it resolves), and the sentences after it are
   // not about what it did, so it is the engine's `may` of that one instruction and not the ability's own `optional`, which would also drop the rest.

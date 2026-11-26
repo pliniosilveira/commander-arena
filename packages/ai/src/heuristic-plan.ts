@@ -4,8 +4,8 @@
  * (`heuristic-plan-lines.ts`), plays each on the threat scenarios of the sample (`heuristic-threats.ts`,
  * `heuristic-plan-sim.ts`) to the start of its next turn, and scores the end with `evaluate`. A line's
  * value is the scenarios' weighted mean less `plan.riskAversion` times the gap between that mean and its
- * worst scenario. Lines are scored best guess first within the search share of the budget; today's line
- * is always scored, and another line replaces it only when it beats it by `plan.margin`.
+ * worst scenario. Lines are scored best guess first within the decision's work budget (`heuristic-budget.ts`);
+ * today's line is always scored, and another line replaces it only when it beats it by `plan.margin`.
  *
  * The chosen line becomes a `TurnPlan`: the agent's decisions on the base scenario, each with the board
  * print it expected (`heuristic-plan-print.ts`). At a later decision of a window, a step whose print
@@ -29,10 +29,11 @@ import {
 import { PlanCounter, type PlanWork } from './heuristic-plan-work';
 import { scenariosOf } from './heuristic-threats';
 
-/** The most play-outs of one planning, whatever the clock says (a bound of the search, not a weight). */
+/**
+ * The most play-outs of one planning (a bound of the search, not a weight): how many lines are scored on how
+ * many scenarios. What they may cost is the decision's work budget (`heuristic-budget.ts`).
+ */
 const MAX_PLAY_OUTS = 40;
-/** The most engine steps of all the play-outs of one planning (a bound of the search, not a weight). */
-const MAX_PLAN_STEPS = 6000;
 
 export interface TurnPlan {
   /** The turn the plan was made in. */
@@ -111,7 +112,8 @@ export function choosePlan(
   agents: SimAgents,
 ): Planning {
   const started = think.budget.elapsed();
-  const work = new PlanCounter(MAX_PLAN_STEPS);
+  // The planning's memo; what it has not kept it asks of the decision's engine, counted in its budget.
+  const work = new PlanCounter(think.budget.engine);
   const none = (): Planning => ({
     planned: null,
     work: work.done(false, think.budget.elapsed() - started),
@@ -121,9 +123,10 @@ export function choosePlan(
   if (sample === undefined || sample.pending?.kind !== 'priority' || sample.pending.seat !== me) {
     return none();
   }
-  // Today's choice may have used the search share already (its own vetting on the sample): no planning then.
-  if (think.budget.expired()) {
-    work.stop('clock');
+  // Today's choice may have used the budget already (its own vetting on the sample): no planning then.
+  const late = think.budget.search().expired(0);
+  if (late !== null) {
+    work.stop(late);
     return none();
   }
   const weights = think.weights;
@@ -133,21 +136,20 @@ export function choosePlan(
   const scenarios = view.seats.length > 2 ? all.slice(0, 2) : all;
   const ctx = { agents, budget: think.budget, weights, work };
   const scored: { index: number; value: number; steps: readonly PlanStep[] }[] = [];
+  // Today's line is always played; each later play-out only when it fits in what is left of the decision's
+  // budget at the average cost of the play-outs so far.
+  const search = think.budget.search();
   outer: for (const [i, line] of lines.entries()) {
     const scores: number[] = [];
     let steps: readonly PlanStep[] = [];
     for (const [j, s] of scenarios.entries()) {
       if (i > 0) {
-        if (think.budget.expired(work.playOuts)) {
-          work.stop('clock');
+        const why = search.expired(work.playOuts);
+        if (why !== null) {
+          work.stop(why);
           break outer;
         }
         if (work.playOuts >= MAX_PLAY_OUTS) {
-          work.stop('work');
-          break outer;
-        }
-        // The next line is started only when it can finish at the average cost of the ones so far.
-        if (work.steps + work.steps / work.playOuts > MAX_PLAN_STEPS) {
           work.stop('work');
           break outer;
         }
@@ -160,8 +162,9 @@ export function choosePlan(
     }
     if (scores.length < scenarios.length) {
       if (i === 0) break;
-      if (think.budget.over()) {
-        work.stop('clock');
+      const why = think.budget.over();
+      if (why !== null) {
+        work.stop(why);
         break;
       }
       continue;
