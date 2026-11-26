@@ -170,6 +170,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeFromPlayer',
     // Orcish Spy (CR 401.2, 701.20e): "Look at the top three cards of target player's library" (`lookAtTop` with `take.max` 0).
     'lookTakeNothing',
+    // Cruelclaw's Heist (CR 701.20a, 402.3, 608.2d): "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (`ChooseSelector.revealHand`).
+    'chooseRevealedHand',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -2242,6 +2244,8 @@ export const ABILITY_FEATURES = [
   'lookTakeFromPlayer',
   /** "Look at the top three cards of target player's library" (Orcish Spy, CR 401.2, 701.20e): the engine's `lookAtTop` with nothing taken (`take.max` 0, `rest` `top`). */
   'lookTakeNothing',
+  /** "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3): the engine's `ChooseSelector.revealHand` with `fromHandOf`. */
+  'chooseRevealedHand',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -3469,6 +3473,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeKinds: true,
   lookTakeFromPlayer: true,
   lookTakeNothing: true,
+  chooseRevealedHand: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   chooseFromExileOwnedBy: true,

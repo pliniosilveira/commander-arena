@@ -576,8 +576,68 @@ export const EFFECT_EXILE_UNTIL_CAST_BY_DISCARDING = defineRule<Clauses>({
   },
 });
 
+const REVEAL_ID = 'effect.reveal-hand-choose-exile';
+
+/**
+ * `effect.reveal-hand-choose-exile`: "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist; CR 701.20a, 402.3, 608.2d, 701.13): the
+ * three sentences are one instruction that `splitSentences` keeps together. The hand is revealed to every player, the controller (not the player whose hand it is) chooses a nonland card of
+ * it, and that card is exiled (nothing is chosen when the hand holds none). The card exiled is what "that card" names afterwards. The engine's `moveToZone` of a `choose` selector from the
+ * hand of the target player (`fromHandOf`, `revealHand`). Not read: "each opponent", your own hand, another kind of card, "discards", "looks at", a trailing instruction.
+ */
+export const EFFECT_REVEAL_HAND_CHOOSE_EXILE = defineRule<Clauses>({
+  id: REVEAL_ID,
+  family: 'effect',
+  leading: ['target'],
+  cites: [
+    'CR 701.20 (Reveal)',
+    'CR 402.3 (Hand)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 701.13 (Exile)',
+  ],
+  examples: [
+    'target opponent reveals their hand. You choose a nonland card from it. Exile that card',
+    'target player reveals their hand. You choose a nonland card from it. Exile that card',
+  ],
+  rejects: [
+    'target opponent reveals their hand',
+    'target opponent reveals their hand. You choose a nonland card from it',
+    'target opponent reveals their hand. You choose a nonland card from it. That player discards that card',
+    'each opponent reveals their hand. You choose a nonland card from it. Exile that card',
+    'target opponent reveals their hand. You choose a creature card from it. Exile that card',
+    'target opponent reveals their hand. You choose a nonland card from it. Exile that card and draw a card',
+    'you reveal your hand. You choose a nonland card from it. Exile that card',
+  ],
+  parse: (ctx, pos) => {
+    const who = satisfy(
+      family<IrNoun>('noun', { only: ['noun.player'] }),
+      (n) => n.det === 'target' && n.anyNumber !== true,
+    )(ctx, pos);
+    if (!who.ok) return who;
+    const tail = pattern(
+      /\s+reveals their hand\. you choose a nonland card from it\. exile that card(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu,
+    )(ctx, who.pos);
+    if (!tail.ok) return tail;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          REVEAL_ID,
+          'revealHandChooseExile',
+          { player: who.value },
+          {
+            start: pos,
+            end: tail.pos,
+          },
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
 /** Tried first: "if ..." and "mana ..." are the first words of the plain rules. */
 export const FLINT_RIDER_EFFECT_RULES = [
+  EFFECT_REVEAL_HAND_CHOOSE_EXILE,
   EFFECT_EXILE_UNTIL_CAST_BY_DISCARDING,
   EFFECT_LOOK_AT_TOP_OF_TARGET_LIBRARY,
   EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND,

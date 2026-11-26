@@ -5218,17 +5218,21 @@ function checkChooseMove(
       sel.filter?.zone !== 'hand' ||
       sel.fromMoved === true ||
       sel.alsoGraveyard !== undefined ||
-      sel.optional !== true
+      // Zara's choice is optional ("you may put"); Cruelclaw's Heist's is not ("You choose a nonland card from it"), and then the hand is revealed.
+      (sel.optional !== true && sel.revealHand !== true)
     ) {
       issue(
         out,
         `${path}.fromHandOf`,
-        'a choice from the hand of another player names the hand as its zone, is optional and is not a choice among moved cards or from the graveyard',
+        'a choice from the hand of another player names the hand as its zone, is optional (or reveals the hand) and is not a choice among moved cards or from the graveyard',
       );
     }
-    if (sel.fromHandOf.kind !== 'defendingPlayer') {
+    if (sel.fromHandOf.kind !== 'defendingPlayer' && sel.revealHand !== true) {
       issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
     }
+  }
+  if (sel.revealHand !== undefined && (sel.revealHand !== true || sel.fromHandOf === undefined)) {
+    issue(out, `${path}.revealHand`, 'revealHand is true and needs fromHandOf');
   }
   // Oblivion Sower: "land cards that player owns from exile": the cards in exile of one named player, the chooser choosing.
   if (sel.fromExileOf !== undefined) {
@@ -8114,11 +8118,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
         }
-        if ((e.objects as ChooseSelector).fromHandOf !== undefined && e.to !== 'battlefield') {
+        if (
+          (e.objects as ChooseSelector).fromHandOf !== undefined &&
+          e.to !== 'battlefield' &&
+          !((e.objects as ChooseSelector).revealHand === true && e.to === 'exile')
+        ) {
           issue(
             out,
             `${path}.to`,
-            "a card chosen from another player's hand is put onto the battlefield",
+            "a card chosen from another player's hand is put onto the battlefield (or, with the hand revealed, into exile)",
           );
         }
         if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {

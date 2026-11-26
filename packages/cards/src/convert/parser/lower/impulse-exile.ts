@@ -114,7 +114,41 @@ export const LOOK_ONLY: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist; CR 701.20a, 402.3, 608.2d, 701.13): the engine's `moveToZone` to exile of a
+ * `choose` selector over the nonland cards in the hand of the player the noun names, the hand revealed first (`fromHandOf`, `revealHand`). The card exiled is what `moved` names afterwards.
+ */
+export const REVEAL_HAND_CHOOSE_EXILE: Lowering<IrClause, Effects> = {
+  head: 'revealHandChooseExile',
+  id: 'lower.reveal-hand-choose-exile',
+  needs: ['effect:moveToZone', 'ability:chooseRevealedHand', 'selector:target'],
+  lower(clause, ctx) {
+    const owner = arg(clause, 'player');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    ctx.exiled = 'cards';
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: {
+            kind: 'choose',
+            filter: { zone: 'hand', notTypes: ['land'], controller: 'you', card: true },
+            fromHandOf: from.value,
+            revealHand: true,
+          },
+          to: 'exile',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const IMPULSE_EXILE_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  REVEAL_HAND_CHOOSE_EXILE,
   LOOK_ONLY,
   LOOK_EXILE_FACE_DOWN_ONE,
   LOOK_EXILE_FACE_DOWN_MANY,

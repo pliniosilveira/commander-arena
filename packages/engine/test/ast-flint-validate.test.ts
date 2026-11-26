@@ -40,3 +40,53 @@ describe('Condition.manaSpentFromSubtype', () => {
     ]);
   });
 });
+
+// Effects added for the Flint deck (issue 685): validateCard accepts the shapes the cards use and refuses the combinations the engine does not run.
+import type { Effect } from '../src/ast/types';
+
+function spellWith(effect: Effect): CardDefinition {
+  return singleFace({
+    name: 'SYNTHETIC Flint Spell',
+    manaCost: ['1'],
+    types: ['sorcery'],
+    subtypes: [],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'test',
+    abilities: [],
+    spell: { targets: [], effect },
+  });
+}
+const problems = (e: Effect) => validateCard(spellWith(e)).map((i) => i.message);
+
+describe('castFree.payInstead (The Infamous Cruelclaw)', () => {
+  const base = { kind: 'castFree', objects: { kind: 'moved' } } as const;
+  const refused = (e: Effect) => problems(e).some((m) => m.includes('payInstead'));
+  test('one discard of one card is valid, anything else is refused', () => {
+    expect(refused({ ...base, payInstead: [{ kind: 'discard', count: 1 }] })).toBe(false);
+    expect(refused({ ...base, payInstead: [{ kind: 'discard', count: 2 }] })).toBe(true);
+    expect(refused({ ...base, payInstead: [{ kind: 'payLife', amount: 2 }] as never })).toBe(true);
+    expect(
+      refused({
+        ...base,
+        objects: { kind: 'linkedExile' },
+        payInstead: [{ kind: 'discard', count: 1 }],
+      }),
+    ).toBe(true);
+  });
+});
+
+describe('lookAtTop with nothing taken (Orcish Spy)', () => {
+  test('max 0 with the rest on top, of another player’s library, is valid; max 0 with a destination is not', () => {
+    const look = {
+      kind: 'lookAtTop',
+      count: 3,
+      from: { kind: 'you' },
+      take: { filter: {}, max: 0 },
+      rest: 'top',
+    } as const;
+    expect(problems(look)).toEqual([]);
+    expect(problems({ ...look, take: { filter: {}, max: 0, to: 'hand' } })).not.toEqual([]);
+    expect(problems({ ...look, rest: 'bottomRandom' })).not.toEqual([]);
+  });
+});

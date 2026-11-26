@@ -2602,6 +2602,11 @@ export interface ChooseSelector {
    */
   readonly fromHandOf?: PlayerSelector;
   /**
+   * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3, 608.2d): with `fromHandOf`, the hand is revealed to every
+   * player (one public `cardsRevealed` event) before the choice. Only with `fromHandOf`.
+   */
+  readonly revealHand?: true;
+  /**
    * "You may put any number of land cards that player owns from exile onto the battlefield under your control" (Oblivion Sower, CR 608.2d, 108.3, 406.3): the candidates are the matching
    * cards in exile that the player this selector names owns, whoever exiled them and whenever (not only the cards an earlier effect moved); the chooser still makes the choice. Only for
    * `moveToZone` onto the battlefield, with `filter.zone` `exile` and no `fromMoved`, `fromHandOf` or `alsoGraveyard`.

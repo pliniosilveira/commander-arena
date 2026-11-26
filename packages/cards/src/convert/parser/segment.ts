@@ -1139,6 +1139,13 @@ const CAST_THIS_WAY_PAY_LIFE =
 const PLAYER_EXILES_UNTIL_CAST =
   /^(?:target (?:opponent|player) exiles cards from the top of their library until they exile|exile cards from the top of your library until you exile) [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
+/**
+ * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, issue 685, CR 701.20a, 402.3, 608.2d): "it" is the hand the first sentence
+ * reveals and "that card" the one the second chooses, so the three sentences are one instruction (`effect.reveal-hand-choose-exile`).
+ */
+const REVEALS_THEIR_HAND = /^target (?:opponent|player) reveals their hand\.$/i;
+const YOU_CHOOSE_NONLAND_FROM_IT = /^you choose a nonland card from it\.$/i;
+const EXILE_THAT_CARD = /^exile that card\.$/i;
 /** The Infamous Cruelclaw (issue 685): the cast of the card found, with a card discarded rather than the mana cost paid. */
 const MAY_CAST_THAT_CARD_DISCARD =
   /^you may cast that card by discarding a card rather than paying its mana cost\.$/i;
@@ -1261,6 +1268,19 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
+      continue;
+    }
+    // Cruelclaw's Heist (issue 685): the hand revealed, the card chosen from it and its exile are one instruction.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      c !== undefined &&
+      said(a, REVEALS_THEIR_HAND) &&
+      said(b, YOU_CHOOSE_NONLAND_FROM_IT) &&
+      said(c, EXILE_THAT_CARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
       continue;
     }
     // Strago and Relm (issue 97): the exile until a card is found, the free cast of it and, when there is one, what a creature spell gains.
