@@ -223,6 +223,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         issue(out, `${path}.count`, 'hideaway looks at a positive number of cards');
       }
       return true;
+    case 'vanishing':
+      // CR 702.63a, 702.63b: N is the number of time counters the permanent enters with, a positive whole number; left out for "Vanishing" with no number.
+      if (k.count !== undefined && (!Number.isSafeInteger(k.count) || k.count < 1)) {
+        issue(out, `${path}.count`, 'vanishing enters with a positive number of time counters');
+      }
+      return true;
     case 'encore':
       // CR 702.141a (D-185): the encore cost is paid like an activation cost from the graveyard: mana, no X.
       checkCosts(k.cost, `${path}.cost`, out);

@@ -2439,6 +2439,7 @@ function runEffect(
     case 'loseLife': {
       const everyone = amountOf(state, effect.amount, ctx, targets);
       let lost = 0;
+      let gainedAny = false;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
         const amount = lifeAmountFor(
@@ -2459,6 +2460,7 @@ function runEffect(
         if ('kind' in r && r.kind === 'gained') {
           next = r.state;
           events.push(...r.events);
+          if (r.events.length > 0) gainedAny = true;
           continue;
         }
         next = r.state;
@@ -2471,6 +2473,8 @@ function runEffect(
         ...done(next, events),
         ...(lost > 0 ? { lifeLost: lost } : {}),
         ...(effect.kind === 'loseLife' && lost > 0 ? { performed: 1 } : {}),
+        // Skyfisher Spider (CR 608.2c, 119.3): "you may gain 1 life for each ... If you do, ...": life was gained when the gain happened.
+        ...(effect.kind === 'gainLife' && gainedAny ? { performed: 1 } : {}),
       };
     }
 

@@ -708,6 +708,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'lastCounterRemoved':
+      // CR 702.63a (Vanishing): the last counter of a kind comes off this permanent.
+      return `When the last ${trigger.counter} counter is removed from this permanent`;
     case 'unblockedAttackBatch':
       // CR 509.1h, 508.1b: the creatures of an opponent that attack you and have no blocker.
       return "Whenever one or more creatures an opponent controls attack you and aren't blocked";

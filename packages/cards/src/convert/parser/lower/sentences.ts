@@ -975,6 +975,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'removeCounters',
   // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, ...": done when some life was lost.
   'loseLife',
+  // Skyfisher Spider (CR 608.2c, 119.3): "you may gain 1 life for each creature card in your graveyard. If you do, ...": done when some life was gained.
+  'gainLife',
 ]);
 
 /** "Those creatures get +4/+4 until end of turn." as the first instruction of an attack batch trigger: the engine's `modifyPt` of the `triggerAttackers`. */

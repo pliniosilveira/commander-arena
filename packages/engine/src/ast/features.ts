@@ -613,6 +613,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 119.3, 603.2: "whenever you lose life [for the first time each turn]".
     'lifeLost',
     'countersAdded',
+    // CR 702.63a (Vanishing): "When the last time counter is removed from this permanent".
+    'lastCounterRemoved',
     'attackBatch',
     // CR 509.1h: "Whenever one or more creatures an opponent controls attack you and aren't blocked".
     'unblockedAttackBatch',
@@ -819,6 +821,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-145: Escalate (CR 702.120) and Hideaway (CR 702.75).
     'escalate',
     'hideaway',
+    // CR 702.63 (Vanishing).
+    'vanishing',
     // D-151: Read ahead (CR 702.155), Dethrone (CR 702.105), Myriad (CR 702.116).
     'readAhead',
     'dethrone',
@@ -3266,6 +3270,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeGained: true,
   lifeLost: true,
   countersAdded: true,
+  lastCounterRemoved: true,
   attackBatch: true,
   unblockedAttackBatch: true,
   playerAttacksOpponent: true,
@@ -3403,6 +3408,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   jobSelect: true,
   escalate: true,
   hideaway: true,
+  vanishing: true,
   readAhead: true,
   dethrone: true,
   melee: true,

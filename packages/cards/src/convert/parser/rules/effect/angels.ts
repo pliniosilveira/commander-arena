@@ -103,6 +103,8 @@ export function perOpponentNoun(
   verb: 'exile' | 'destroy' | 'tap',
   at: number,
   id: string,
+  // "for any number of opponents, destroy target ...": nobody has to be chosen and the count is not written, so the text has no "up to one" to point at.
+  anyNumberOfOpponents = false,
 ) {
   const phrase = spanned(
     satisfy(
@@ -114,13 +116,20 @@ export function perOpponentNoun(
   const that = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'))(ctx, phrase.pos);
   if (!that.ok) return that;
   const filter: IrFilter = { ...phrase.value.value, zone: 'battlefield', controller: 'opponent' };
-  const nounAt = from + `for each opponent, ${verb} `.length;
-  const oneAt = nounAt + 'up to '.length;
+  const nounAt =
+    from +
+    (anyNumberOfOpponents ? `for any number of opponents, ${verb} ` : `for each opponent, ${verb} `)
+      .length;
+  const oneAt = anyNumberOfOpponents ? nounAt : nounAt + 'up to '.length;
   const noun: IrNoun = {
     kind: 'noun',
     det: 'target',
     filter,
-    count: { kind: 'number', value: 1, span: { start: oneAt, end: oneAt + 'one'.length } },
+    count: {
+      kind: 'number',
+      value: 1,
+      span: { start: oneAt, end: oneAt + (anyNumberOfOpponents ? 0 : 'one'.length) },
+    },
     upTo: true,
     plural: false,
     other: false,
@@ -235,6 +244,50 @@ export const EFFECT_DESTROY_PER_OPPONENT = defineRule<Clauses>({
     const head = literal('for each opponent, destroy up to one target ')(ctx, pos);
     if (!head.ok) return head;
     const noun = perOpponentNoun(ctx, pos, 'destroy', head.pos, id);
+    if (!noun.ok) return noun;
+    const span = { start: pos, end: noun.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'destroy', { objects: noun.value }, span)],
+      pos: noun.pos,
+    };
+  },
+});
+
+/**
+ * `effect.destroy-any-number-of-opponents`: "for any number of opponents, destroy target nonland permanent that player controls" (Windgrace's Judgment; CR 115.1, 601.2c: one target for
+ * each opponent the controller chooses, none for the rest; CR 701.8a: destroy). The same slot as "for each opponent, destroy up to one target ... that player controls" (the engine's
+ * `onePerOpponent`: at most one target controlled by each opponent still in the game, and none at all is allowed), read for the words that say the choice of opponents is the
+ * caster's. The permanent is whatever phrase of the permanent family names no controller ("that player controls" is the controller). Not read: another verb, a count, "each opponent",
+ * "any number of players", a stated controller.
+ */
+export const EFFECT_DESTROY_ANY_NUMBER_OF_OPPONENTS = defineRule<Clauses>({
+  id: 'effect.destroy-any-number-of-opponents',
+  family: 'effect',
+  leading: ['for'],
+  cites: ['CR 115.1 (Targets)', 'CR 601.2c (Casting Spells)', 'CR 701.8a (Destroy)'],
+  examples: [
+    'for any number of opponents, destroy target nonland permanent that player controls',
+    'for any number of opponents, destroy target creature that player controls',
+    'for any number of opponents, destroy target artifact or enchantment that player controls',
+  ],
+  rejects: [
+    'for any number of opponents, destroy up to one target creature that player controls',
+    'for any number of opponents, destroy target nonland permanent',
+    'for any number of opponents, destroy target nonland permanent you control',
+    'for any number of opponents, destroy target nonland permanent an opponent controls',
+    'for any number of players, destroy target nonland permanent that player controls',
+    'for any number of opponents, exile target nonland permanent that player controls',
+    'for any number of opponents, destroy two target creatures that player controls',
+    'for each opponent, destroy target nonland permanent that player controls',
+    'for any number of opponents, destroy target nonland permanent that player controls and draw a card',
+    'destroy target nonland permanent that player controls',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.destroy-any-number-of-opponents';
+    const head = literal('for any number of opponents, destroy target ')(ctx, pos);
+    if (!head.ok) return head;
+    const noun = perOpponentNoun(ctx, pos, 'destroy', head.pos, id, true);
     if (!noun.ok) return noun;
     const span = { start: pos, end: noun.pos };
     return {
@@ -481,6 +534,7 @@ export const ANGEL_EFFECT_RULES = [
   EFFECT_PROLIFERATE_TIMES,
   EFFECT_EXILE_PER_OPPONENT,
   EFFECT_DESTROY_PER_OPPONENT,
+  EFFECT_DESTROY_ANY_NUMBER_OF_OPPONENTS,
   EFFECT_ONCE_EACH_TURN,
   EFFECT_SPEND_ONLY,
 ].map(quietly);
