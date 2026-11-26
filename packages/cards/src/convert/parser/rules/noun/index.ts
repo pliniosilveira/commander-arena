@@ -85,6 +85,7 @@ import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
+import { withSubtypeClause } from './subtype-clause';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -882,8 +883,14 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
     // Oran-Rief, the Vastwood: the permanents that entered the battlefield this turn (CR 400.7, 110.1).
     'each green creature that entered this turn',
     'each creature you control that entered this turn',
+    // Swarmyard Massacre (CR 205.3d): the creatures with none of the creature types named.
+    "each creature that isn't an Insect, Rat, Spider, or Squirrel",
+    "each creature that isn't a Rat",
   ],
   rejects: [
+    "each creature that isn't an Insect, Rat, Spider, or Rat",
+    "each creature that's a Rat or Squirrel",
+    "each creature that isn't an Insects",
     'each creatures',
     'all creatures',
     'each opponent',
@@ -902,7 +909,7 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
           map(literal('other '), () => true),
           false,
         ),
-        permanentPhrase(false, 'all'),
+        withSubtypeClause(permanentPhrase(false, 'all'), 'hasNot'),
         // "that entered this turn" (CR 400.7): the permanents that entered the battlefield during this turn.
         optional(
           map(literal(' that entered this turn'), () => true),

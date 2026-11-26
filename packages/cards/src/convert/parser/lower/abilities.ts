@@ -451,6 +451,7 @@ function lowerNumbered(
     | 'fabricate'
     | 'bushido'
     | 'hideaway'
+    | 'vanishing'
     | 'devour'
     | 'backup',
 ): LowerResult<readonly Ability[]> {
@@ -611,6 +612,7 @@ export function lowerKeyword(
     ability.name === 'fabricate' ||
     ability.name === 'bushido' ||
     ability.name === 'hideaway' ||
+    ability.name === 'vanishing' ||
     ability.name === 'devour' ||
     ability.name === 'backup'
   ) {
@@ -1302,6 +1304,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:canBeCommander',
   'keyword:startYourEngines',
   'keyword:hideaway',
+  'keyword:vanishing',
   'keyword:escalate',
   'keyword:replicate',
   'keyword:buyback',

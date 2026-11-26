@@ -112,6 +112,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // The Dinosaurs slice (D-145): the cost or number rides in the chip (`PARAMETERIZED`), the reminder in the tooltip.
   escalate: ['Esc', 'Escalate'],
   hideaway: ['Hid', 'Hideaway'],
+  // Vanishing (CR 702.63a): the number rides in the chip (`PARAMETERIZED`).
+  vanishing: ['Van', 'Vanishing'],
   // The Dragons slice (D-151): the reminder text (CR 702.155a, 702.105a, 702.116a) rides in the tooltip.
   readAhead: ['RA', `Read ahead (${READ_AHEAD_REMINDER})`],
   dethrone: ['Dth', `Dethrone (${DETHRONE_REMINDER})`],
@@ -154,6 +156,8 @@ const PARAMETERIZED: Readonly<
   // "Fabricate 2": one chip per instance (CR 702.123b).
   fabricate: (text) => numbered(text, 'Fabricate', 'Fab'),
   backup: (text) => numbered(text, 'Backup', 'Bkp'),
+  // "Vanishing 3": one chip per instance (CR 702.63c: each works separately).
+  vanishing: (text) => numbered(text, 'Vanishing', 'Van'),
   toxic: (text) => numbered(text, 'Toxic', 'Tox'),
   // "Bushido 1": one chip per instance (CR 702.45b: each triggers).
   bushido: (text) => numbered(text, 'Bushido', 'Bus'),

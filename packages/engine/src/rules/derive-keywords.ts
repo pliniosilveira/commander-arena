@@ -852,6 +852,28 @@ function hideawayAbility(count: number): Ability {
   };
 }
 
+/**
+ * CR 702.63a, 702.63b (Vanishing): "At the beginning of your upkeep, if this permanent has a time counter on it, remove a time counter from it." The counters it enters with are put by
+ * `rules/enters.ts`. The condition is checked as the ability triggers and again as it resolves (CR 603.4).
+ */
+const VANISHING_UPKEEP_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'upkeep', whose: 'you' },
+  interveningIf: {
+    kind: 'amountIs',
+    amount: { kind: 'countersOn', of: { kind: 'this' }, counter: 'time' },
+    compare: { cmp: 'atLeast', value: 1 },
+  },
+  effect: { kind: 'removeCounters', objects: { kind: 'this' }, counter: 'time', count: 1 },
+};
+
+/** CR 702.63a: "When the last time counter is removed from this permanent, sacrifice it." It triggers on any removal of the last one, not only the upkeep's. */
+const VANISHING_SACRIFICE_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'lastCounterRemoved', what: { kind: 'this' }, counter: 'time' },
+  effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+};
+
 const HERO_TOKEN: TokenDefinition = {
   name: 'Hero',
   manaCost: null,
@@ -986,6 +1008,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [JOB_SELECT_ABILITY];
     case 'hideaway':
       return [hideawayAbility(ability.keyword.count)];
+    case 'vanishing':
+      return [VANISHING_UPKEEP_ABILITY, VANISHING_SACRIFICE_ABILITY];
     case 'dethrone':
       return [DETHRONE_ABILITY];
     case 'melee':

@@ -5759,6 +5759,15 @@ export type Trigger =
       readonly each?: true;
     }
   /**
+   * "When the last time counter is removed from this permanent" (CR 702.63a, Vanishing, 603.2): once each time an instance of removing counters takes the last counter of kind `counter` off
+   * the permanent the ability belongs to (it had some, and has none now). The ability of the keyword that has it (`rules/derive-keywords.ts`); a permanent that left the battlefield has no ability to trigger.
+   */
+  | {
+      readonly kind: 'lastCounterRemoved';
+      readonly what: { readonly kind: 'this' };
+      readonly counter: string;
+    }
+  /**
    * "Whenever you attack" (`atLeast` 1, D-187), "Whenever you attack with two or more creatures", "whenever another player attacks with two or more creatures" (CR 508.1, 603.2, D-149):
    * once when a player declares attackers and at least `atLeast` of the creatures declared match `what` (all of them when it is left
    * out). `who` is the attacking player, relative to the controller of this ability: `you` or `opponent` ("another player"). The creatures
@@ -6470,6 +6479,13 @@ export type Keyword =
    * (CR 702.75b: older cards have it as its own ability). `count` is N, a positive whole number.
    */
   | { readonly kind: 'hideaway'; readonly count: number }
+  /**
+   * CR 702.63a, 702.63b (Vanishing): "Vanishing N" means "This permanent enters with N time counters on it", "At the beginning of your upkeep, if this permanent has a time counter on it,
+   * remove a time counter from it" and "When the last time counter is removed from this permanent, sacrifice it". Vanishing with no number (`count` left out) is the last two. The counters
+   * are put as the permanent enters (`rules/enters.ts`); the other two abilities are written by `derive` (`rules/derive-keywords.ts`), and each instance works separately (CR 702.63c).
+   * `count` is a positive whole number.
+   */
+  | { readonly kind: 'vanishing'; readonly count?: number }
   /**
    * CR 702.105a (Dethrone, D-151): "Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on
    * it." A triggered ability that `derive` writes (`rules/derive-keywords.ts`), with the condition `attackingMostLife` as part of the trigger.

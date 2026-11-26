@@ -494,6 +494,8 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
     'destroy target permanent you own',
+    // Maelstrom Pulse (CR 201.2, 608.2c): the target and the other permanents with the same name.
+    'destroy target nonland permanent and all other permanents with the same name as that permanent',
   ],
   rejects: [
     'destroy it',
@@ -506,7 +508,12 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       literal('destroy '),
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
-        [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+        [
+          // Maelstrom Pulse (CR 201.2, 608.2c): the target and every other permanent with its name.
+          'noun.target-permanent-and-same-name-permanents',
+          ...SELF_OR_PERMANENT_OPERANDS,
+          'noun.target-permanent-of-that-player',
+        ],
         'effect.destroy',
       ),
     ),
@@ -539,6 +546,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile it',
     'exile that card',
     'exile that card from your graveyard',
+    'exile this card from your graveyard',
     'exile that creature',
     // D-407: the permanent an Aura or Equipment is attached to.
     'exile enchanted creature',
@@ -605,6 +613,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.it',
             // Stage P49 (D-206): "you may exile that card from your graveyard" (the card a trigger is about, CR 701.9a).
             'noun.that-card',
+            // Skyfisher Spider (CR 400.7, 603.10a): "exile this card from your graveyard" (the card the source became).
+            'noun.this-card',
             // Stage P63 (D-216): "If you control three or more artifacts, exile that creature." (the target of the sentence before, CR 608.2c).
             'noun.that-object',
             // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).

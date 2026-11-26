@@ -523,7 +523,8 @@ export function matchesFilterWith(
   // CR 201.2, 608.2c (Echoing Return): "with the same name as that card": the name of the object the effect names.
   if (filter.sameNameAs !== undefined) {
     const name = ctx.nameLimit;
-    if (name === null || name === undefined || d.name !== name) return false;
+    // CR 708.2a: a face-down permanent has no name, so it has no name that is the same as any other object's name.
+    if (name === null || name === undefined || name === '' || d.name !== name) return false;
   }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {

@@ -124,6 +124,12 @@ export function entersWithCounters(
   kicks = 0,
 ): Record<string, number> {
   let counters: Record<string, number> = { ...base };
+  // CR 702.63a (Vanishing): "This permanent enters with N time counters on it"; each instance works separately (CR 702.63c).
+  for (const a of abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'vanishing' && a.keyword.count !== undefined) {
+      counters = { ...counters, time: (counters.time ?? 0) + a.keyword.count };
+    }
+  }
   for (const r of replacementsOf(abilities)) {
     if (r.kind === 'entersWithCounters') {
       if (r.ifEscaped === true && !escaped) continue;

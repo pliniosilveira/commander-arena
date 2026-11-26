@@ -24,6 +24,7 @@ const EXECUTABLE_KEYWORDS = [
   'haste', // scenario-xx-combat-attack-restrictions
   'hexproof', // scenario-xx-hexproof-shroud
   'hideaway', // scenario-xx-hideaway
+  'vanishing', // convert-grammar-engine-squirreled-away-g3 (CR 702.63a, Vanishing 3 on the real card)
   'indestructible', // scenario-xx-combat-deathtouch
   'kicker', // scenario-xx-kicker
   'lifelink', // scenario-xx-combat-lifelink
@@ -233,6 +234,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   jobSelect: { kind: 'jobSelect' },
   escalate: { kind: 'escalate', cost: [{ kind: 'mana', symbols: ['1'] }] },
   hideaway: { kind: 'hideaway', count: 3 },
+  vanishing: { kind: 'vanishing', count: 3 },
   dethrone: { kind: 'dethrone' },
   melee: { kind: 'melee' },
   readAhead: { kind: 'readAhead' },
@@ -386,6 +388,7 @@ describe('supported feature gate', () => {
         'exerted',
         'exiledFromLibraryOrGraveyard',
         'landfall',
+        'lastCounterRemoved',
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
