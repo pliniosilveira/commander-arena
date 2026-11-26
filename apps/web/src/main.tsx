@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { autostartAi } from './game/autostart';
 import { createWorkerClient } from './game/client';
+import { overrideFromParams } from './game/play-out-pool';
 import { autostartAiDelay, withSlowOpponent } from './game/slow-opponent';
 import { createImportEnvironment } from './import';
 import { animationGate } from './policy/animation-gate';
@@ -28,7 +29,7 @@ if (!container) throw new Error('Missing #root element');
 // `&aidelay=<ms>` (with `?autostart`, test seam of D-174) holds back the answers in which the AI acted.
 const params = new URLSearchParams(window.location.search);
 const aiDelay = params.get('autostart') === null ? null : autostartAiDelay(params);
-const worker = createWorkerClient();
+const worker = createWorkerClient(overrideFromParams(params));
 const client = aiDelay === null ? worker : withSlowOpponent(worker, aiDelay);
 const store = createAppStore({ client, autoPassDelayMs: 160, animationGate });
 const importEnvironment = createImportEnvironment();
