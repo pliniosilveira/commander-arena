@@ -140,6 +140,19 @@ describe('formatSearches', () => {
     expect(formatSearches('heuristic', [search()])).not.toContain('combat look-ahead');
   });
 
+  test('reports the response and removal target look-ahead apart from the combat one', () => {
+    const searches = [
+      search({ kind: 'priority', look: { playOuts: 2, changed: true } }),
+      search({ kind: 'targets', look: { playOuts: 3, changed: false } }),
+      search({ kind: 'declareBlockers', look: { playOuts: 2, changed: false } }),
+    ];
+    const text = formatSearches('heuristic', searches);
+    expect(text).toContain(
+      'response look-ahead 2 times (2.5 play-outs each), 50.0% of them changed the choice',
+    );
+    expect(text).toContain('combat look-ahead 1 times (2.0 play-outs each), 0.0%');
+  });
+
   test('says nothing for an agent that never searched', () => {
     expect(formatSearches('greedy', [])).toBeNull();
   });
