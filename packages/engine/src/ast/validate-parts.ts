@@ -1090,8 +1090,8 @@ export function declareTargets(
   out: Out,
   /** D-145: only the targets of a spell's own text, an activated ability or a triggered ability (not a mode, not a reflexive ability) can divide something among them (CR 601.2d). */
   divideAllowed = false,
-  /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
-  thatManyAllowed = false,
+  /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12); `'discarded'`: after a discard, in a reflexive ability that counts the cards discarded (`ifThisWay`). */
+  thatManyAllowed: boolean | 'discarded' = false,
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
@@ -1336,9 +1336,15 @@ export function declareTargets(
     }
     if (spec.upToThatMany !== undefined) {
       // D-187, CR 603.12: "up to that many target creatures" after "you may sacrifice one or more ...".
-      if (spec.upToThatMany !== true) {
-        issue(out, `${p}.upToThatMany`, 'upToThatMany must be true when present');
-      } else if (!thatManyAllowed) {
+      if (spec.upToThatMany !== true && spec.upToThatMany !== 'discarded') {
+        issue(out, `${p}.upToThatMany`, "upToThatMany must be true or 'discarded' when present");
+      } else if (spec.upToThatMany === 'discarded' && thatManyAllowed !== 'discarded') {
+        issue(
+          out,
+          `${p}.upToThatMany`,
+          'only a slot of a reflexive ability that counts the cards discarded (ifThisWay discarded) takes up to as many targets as were discarded',
+        );
+      } else if (spec.upToThatMany === true && thatManyAllowed !== true) {
         issue(
           out,
           `${p}.upToThatMany`,
@@ -9878,7 +9884,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         `${path}.targets`,
         out,
         false,
-        scope.sacrificedEarlier === true,
+        scope.sacrificedEarlier === true ? true : e.ifThisWay === 'discarded' ? 'discarded' : false,
       );
       // Issue 89 (CR 603.12, 400.7j): "Create a token. When you do, return ... attached to that token": the ability carries the objects the resolution before it made.
       if (e.carriesMoved !== undefined) {

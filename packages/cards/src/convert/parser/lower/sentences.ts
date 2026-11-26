@@ -1919,6 +1919,10 @@ function lowerReflexive(next: IrSentence, ctx: LowerContext): LowerResult<Effect
       kind: 'reflexive',
       ...(own.length > 0 ? { targets: own } : {}),
       effect: ownSource(oneEffect(after.value), ctx),
+      // Loamcrafter Faun (CR 603.12, 701.9): "up to that many target ..." after a discard counts the cards discarded, so the ability is created only when there was one.
+      ...(own.some((t) => t.upToThatMany === 'discarded')
+        ? { ifThisWay: 'discarded' as const }
+        : {}),
     },
     rule: next.clauses[0]?.rule ?? next.rule,
   };
@@ -3858,7 +3862,17 @@ export function withoutAnyNumberOffer(sentences: readonly IrSentence[]): readonl
     c.optional && c.verb === 'discard' && c.args.anyNumber !== undefined;
   return sentences.map((s) =>
     s.clauses.some(offer)
-      ? { ...s, clauses: s.clauses.map((c) => (offer(c) ? { ...c, optional: false } : c)) }
+      ? {
+          ...s,
+          clauses: s.clauses.map((c) => {
+            if (!offer(c)) return c;
+            // Loamcrafter Faun: "you may discard one or more land cards" is read as the same offer (the player chooses, and may choose none); "one or more" with no "you may" is a
+            // discard of at least one, which that choice does not say, so such a clause keeps its argument and the lowering refuses it.
+            const { oneOrMore: _one, ...args } = c.args;
+            void _one;
+            return { ...c, args, optional: false };
+          }),
+        }
       : s,
   );
 }

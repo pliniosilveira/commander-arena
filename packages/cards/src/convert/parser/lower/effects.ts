@@ -1046,12 +1046,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       if (
         everyGraveyard.kind !== 'flag' ||
         !everyGraveyard.value ||
-        optional ||
         limit !== undefined ||
         arg(clause, 'alsoGraveyard') !== undefined ||
         arg(clause, 'count') !== undefined ||
         to.attacking === true ||
-        to.tapped === true ||
         filter.value.zone !== 'graveyard' ||
         filter.value.controller !== undefined
       ) {
@@ -1063,8 +1061,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
           kind: 'choose',
           filter: { ...filter.value, controller: 'you' },
           fromAnyGraveyard: true,
+          ...(optional ? { optional: true as const } : {}),
         },
         to: 'battlefield',
+        ...(to.tapped === true ? { tapped: true } : {}),
       };
       ctx.searched = named.ref ?? null;
       return { ok: true, value: [move], rule: clause.rule };
@@ -1580,6 +1580,8 @@ function playerVerb(
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
+        // "Discard one or more land cards" with no "you may" in front: at least one must be discarded, which the engine's choice of none to all does not say.
+        if (arg(clause, 'oneOrMore') !== undefined) return failure(clause);
         // CR 701.9 (Nantuko Cultivator): "discard any number of land cards": only the cards of that kind may be chosen.
         const kind = arg(clause, 'cards');
         let cards: ObjectFilter | undefined;

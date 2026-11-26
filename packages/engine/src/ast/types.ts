@@ -1828,8 +1828,11 @@ export interface TargetSpec {
    * resolution that created this reflexive ability sacrificed permanents (none to that many); the number is fixed as the ability is created, and
    * the engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a `reflexive` ability after a
    * `sacrifice`, with `min` and `max` left out.
+   * `'discarded'` (Loamcrafter Faun, "you may discard one or more land cards. When you do, return up to that many target nonland permanent cards from your graveyard to your hand";
+   * CR 603.12, 601.2c, 701.9): as many targets as the cards the resolution that created the reflexive ability discarded (`thisWay` `discarded`); only a slot of a `reflexive` ability with
+   * `ifThisWay` `discarded`, which is created only when at least one was.
    */
-  readonly upToThatMany?: true;
+  readonly upToThatMany?: true | 'discarded';
   /**
    * "Tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (CR 603.3d, 701.22, D-513): the slot takes up to as many targets as
    * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry, or the X announced for the cycling cost of "When you cycle this card", CR 702.29a), none to that many; the number is fixed as the ability is put on the stack, and the

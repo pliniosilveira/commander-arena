@@ -3,7 +3,7 @@
  * target: the controller chooses any card of the kind in any player's graveyard as the instruction runs (a card the effect before it put there counts, CR 608.2c). The engine's `moveToZone`
  * of a `choose` selector that reads every graveyard (`fromAnyGraveyard`).
  */
-import { literal, pattern, quiet, satisfy, sequence } from '../../combinators';
+import { pattern, quiet, satisfy, sequence } from '../../combinators';
 import type { IrFlag, IrNoun, IrZoneSpec } from '../../ir/types';
 import { graveyardPhrase } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
@@ -14,7 +14,7 @@ const ID = 'effect.put-any-graveyard';
 export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
   id: ID,
   family: 'effect',
-  leading: ['you'],
+  leading: ['you', 'put'],
   cites: [
     'CR 404.1 (Graveyard)',
     'CR 608.2d (Resolving Spells and Abilities)',
@@ -23,6 +23,10 @@ export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
   examples: [
     'you put a creature card from a graveyard onto the battlefield under your control',
     'you put a permanent card from a graveyard onto the battlefield under your control',
+    // Soul of Windgrace (CR 608.2d, 110.2a, 404.1): optional, and tapped.
+    'you may put a land card from a graveyard onto the battlefield tapped under your control',
+    'you may put a creature card from a graveyard onto the battlefield under your control',
+    'you put a land card from a graveyard onto the battlefield tapped under your control',
   ],
   rejects: [
     'you put a creature card from your graveyard onto the battlefield under your control',
@@ -32,7 +36,8 @@ export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
     'you put a creature card from a graveyard onto the battlefield under its owner’s control',
     'you put a creature card from a graveyard into your hand',
     'you put target creature card from a graveyard onto the battlefield under your control',
-    'you may put a creature card from a graveyard onto the battlefield under your control',
+    'you may put a creature card from a graveyard onto the battlefield under control',
+    'you may put a land card from a graveyard onto the battlefield under your control tapped',
   ],
   parse: single(
     ID,
@@ -40,7 +45,7 @@ export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
       // Quiet: a line that starts "You put ..." and is something else stops where it always did.
       const head = quiet(
         sequence(
-          literal('you put '),
+          pattern(/(?:you (may )?)?put /iu),
           spanned(
             sequence(
               pattern(/an? /iu),
@@ -50,11 +55,11 @@ export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
               ),
             ),
           ),
-          spanned(literal(' onto the battlefield under your control')),
+          spanned(pattern(/ onto the battlefield( tapped)? under your control/iu)),
         ),
       )(ctx, pos);
       if (!head.ok) return head;
-      const [, card, placed] = head.value;
+      const [lead, card, placed] = head.value;
       const [, filter] = card.value;
       const objects: IrNoun = {
         kind: 'noun',
@@ -70,6 +75,7 @@ export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
         kind: 'zoneSpec',
         zone: 'battlefield',
         whose: 'you',
+        ...(placed.value[1] === undefined ? {} : { tapped: true }),
         span: placed.span,
         rule: ID,
       };
@@ -79,7 +85,11 @@ export const EFFECT_PUT_ANY_GRAVEYARD = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: ID,
       });
-      return { ok: true, value: { objects, to, may: flag(false), any: flag(true) }, pos: head.pos };
+      return {
+        ok: true,
+        value: { objects, to, may: flag(lead[1] !== undefined), any: flag(true) },
+        pos: head.pos,
+      };
     },
     ({ objects, to, may, any }) => ({
       verb: 'putFromZone',
