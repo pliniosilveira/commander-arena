@@ -643,6 +643,7 @@ class Binder {
       case 'colorsOf':
       case 'toughnessOf':
       case 'countersOn':
+      case 'countersOnGroup':
       case 'aggregate':
       case 'colorsAmong':
       case 'cardTypesAmong':

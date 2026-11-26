@@ -159,6 +159,7 @@ export interface IrNoun extends IrNode {
     | 'eachPlayerControllingMore' // "the number of players who control more lands than you" (CR 102.1): the other players with more battlefield permanents like `of` than the controller
     | 'eachPlayerControlling' // "each player who controls a creature with power 4 or greater" (CR 102.1): the players with a battlefield permanent like `of`
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
+    | 'selfAndGroup' // "~ and land creatures you control" (Sylvan Advocate, CR 611.3a): the permanent itself and the group the filter names
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'graveyardedThisWay' // "each permanent put into a graveyard this way" (Terastodon, CR 608.2c): what the destroy effects before it put into graveyards
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
@@ -679,6 +680,13 @@ export type IrAmount =
       readonly counter?: string;
       /** "for each kind of counter on it" (Blitzball Stadium, CR 122.1): the number of different kinds of counter, not of counters. Never with `counter`. */
       readonly kinds?: true;
+      readonly span: Span;
+    }
+  // "the number of +1/+1 counters on lands you control" (Toph, the Blind Bandit, CR 122.1): the counters of one kind on the permanents of a group, added together
+  | {
+      readonly kind: 'countersOnGroup';
+      readonly of: IrNoun;
+      readonly counter: string;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"
@@ -2739,6 +2747,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'cardsToGraveyardThisTurn',
   'toughnessOf',
   'countersOn',
+  'countersOnGroup',
   'aggregate',
   'attackersGreatestPower',
   'devotion',
@@ -2787,6 +2796,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'manaValueOf':
     case 'toughnessOf':
     case 'countersOn':
+    case 'countersOnGroup':
     case 'aggregate':
     case 'colorsAmong':
     case 'cardTypesAmong':

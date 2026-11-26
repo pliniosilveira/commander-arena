@@ -1929,6 +1929,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
     'greatestPowerAmong',
+    // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control" (a characteristic-defining ability's amount).
+    'countersAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // Issue 121: "the number of different mana values among instant and sorcery cards in your graveyard" (Eris).
@@ -3304,6 +3306,8 @@ export const AMOUNT_KINDS = [
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
   'greatestPowerAmong',
+  /** "The number of +1/+1 counters on lands you control" (CR 122.1, 604.3): the engine's `countersAmong`, a characteristic-defining ability's amount. */
+  'countersAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "The number of different mana values among instant and sorcery cards in your graveyard" (CR 202.3, issue 121): the engine's `differentManaValuesAmong`. */

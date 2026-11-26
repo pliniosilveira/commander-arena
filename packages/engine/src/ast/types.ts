@@ -760,6 +760,12 @@ export type DefinedPtAmount =
    * actions, and a characteristic-defining ability sets the number as it is).
    */
   | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
+  /**
+   * "~'s power is equal to the number of +1/+1 counters on lands you control" (Toph, the Blind Bandit; CR 122.1, 604.3, 208.2a): the counters of the kind `counter` (every kind when it is
+   * left out) on the battlefield permanents `filter` matches, added together, read each time the characteristics are worked out. The filter reads no power, toughness, combat, source power
+   * or keyword, and the permanents it matches are those after layers 1, 4 and 5 (counters belong to no layer, CR 613.8, so the count cannot loop). A characteristic-defining ability only.
+   */
+  | { readonly kind: 'countersAmong'; readonly filter: ObjectFilter; readonly counter?: string }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly (CountAmount | StaticPtSumPart)[] };
 
@@ -8956,7 +8962,16 @@ export type StaticSubject =
        */
       readonly andThis?: true;
     }
-  | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean }
+  | {
+      readonly kind: 'filter';
+      readonly filter: ObjectFilter;
+      readonly other?: boolean;
+      /**
+       * "This creature and land creatures you control get +2/+2" (Sylvan Advocate, CR 611.3a, 613.4c): the permanent the ability belongs to as well as the group, whether or not
+       * the filter matches it. Only for a modification of power and toughness or a granted keyword (`validateCard` refuses the rest).
+       */
+      readonly andThis?: true;
+    }
   /**
    * "Each of those creatures", "both creatures" of a soulbond card (CR 702.95b, 611.3a, D-286): the permanent the ability belongs to and the creature it is
    * paired with, whatever the pair is at any moment (`rules/pairing.ts`, `partnerOf`): none while it is unpaired. Only for a modification of power and

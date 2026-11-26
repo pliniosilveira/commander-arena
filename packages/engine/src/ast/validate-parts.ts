@@ -3432,7 +3432,12 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' | 'cardTypesAmong' = 'countOf',
+  kind:
+    | 'countOf'
+    | 'colorsAmong'
+    | 'greatestPowerAmong'
+    | 'cardTypesAmong'
+    | 'countersAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -3581,6 +3586,18 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not colors');
     }
     checkCountOnly(amount, path, out, 'colorsAmong', false);
+    return;
+  }
+  // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control": a characteristic-defining ability only.
+  if (amount?.kind === 'countersAmong') {
+    if (plain) {
+      issue(out, path, 'a count of counters is the amount of a characteristic-defining ability');
+    }
+    const counter = (amount as { counter?: unknown }).counter;
+    if (counter !== undefined && (typeof counter !== 'string' || counter === '')) {
+      issue(out, `${path}.counter`, 'counter is the name of a kind of counter');
+    }
+    checkCountOnly(amount, path, out, 'countersAmong', false);
     return;
   }
   // CR 613.4c: "the greatest power among creature cards in your graveyard": plain (+X/+X) only, of cards outside the battlefield.
