@@ -1249,6 +1249,8 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'a player sacrifices a creature',
     'an opponent sacrifices a permanent',
     'an opponent sacrifices a nontoken permanent',
+    'you sacrifice another nontoken permanent during your turn',
+    'you sacrifice a creature during your turn',
   ],
   rejects: [
     'you sacrifice ~',
@@ -1260,6 +1262,9 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
     'a player sacrifices ~',
     'a player sacrifices a creature you control',
     'an opponent sacrifices a creature you control',
+    'you sacrifice a permanent during your turns',
+    'you sacrifice a permanent during their turn',
+    'you sacrifice a permanent during your turn or',
     'an opponent sacrifice a permanent',
     'a player sacrifice a permanent',
   ],
@@ -1285,9 +1290,11 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
         ),
       ),
       satisfy(objectSubject('trigger.sacrifice'), (n) => n.filter.controller !== 'opponent'),
+      // Szarel (CR 603.2): "during your turn", the active player is the controller of this ability.
+      optional(pattern(/ during your turn(?![\p{L}\p{N}])(?!\s+or(?![\p{L}\p{N}]))/iu), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, subject] = r.value;
+    const [actor, subject, during] = r.value;
     // Whoever sacrifices, the permanent is theirs, so "a player sacrifices a creature you control"
     // says something else.
     if (actor.det !== 'you' && subject.filter.controller !== undefined) return fail(ctx, pos);
@@ -1296,6 +1303,7 @@ export const TRIGGER_SACRIFICE = defineRule<IrTrigger>({
       value: trigger('trigger.sacrifice', { start: pos, end: r.pos }, 'sacrifice', {
         subject,
         actor,
+        ...(during === null ? {} : { duringTurn: 'you' as const }),
       }),
       pos: r.pos,
     };

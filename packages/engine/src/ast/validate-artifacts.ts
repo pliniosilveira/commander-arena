@@ -133,6 +133,8 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
     (a) =>
       (a?.kind === 'static' &&
         (a.static?.kind === 'takeFromLinkedExile' ||
+          // Evendo Brushrazer (CR 607.2a): "you may play cards exiled with this creature".
+          a.static?.kind === 'playFromLinkedExile' ||
           // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~".
           a.static?.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
       // Shelob, Dread Weaver (CR 607.2a): "Put a creature card exiled with ~ into its owner's graveyard" as a cost reads the cards the permanent exiled.

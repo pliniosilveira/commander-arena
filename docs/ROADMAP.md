@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- "Discard a card or sacrifice a permanent" (Eumidian Wastewaker) is asked as a yes/no question (yes discards, no sacrifices) and the AI answers it like any "may"; the two options are not named.
 - Outlaw (CR 700.12): the singular noun alone ("an outlaw you control", "target outlaw") is not read, only "outlaw" before a type or card word and the plural "outlaws"; "Outlaw" is no subtype.
 - Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
 - Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
@@ -621,3 +622,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Undercity is the only dungeon: no other dungeon card, no choice of dungeon for "venture into the dungeon", and the parser reads neither "venture into Undercity" nor "if you have the initiative" (the engine runs both).
 - A room ability of a dungeon with no legal target is removed with no `abilityRemoved` event, so the log shows only the venture. The casual agent values rooms from a fixed table, with no look-ahead.
 - Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.
+- Graveyard permissions with a sacrifice (Exploration Broodship): when several permanents give a card a permission to be cast from the graveyard, the first in battlefield order is used; the caster cannot pick the one with the cheaper additional cost.
