@@ -346,6 +346,48 @@ export const EFFECT_LOOK_EXILE_N_FACE_DOWN = defineRule<Clauses>({
   },
 });
 
+const LOOK_ONLY_ID = 'effect.look-at-top-of-target-library';
+
+/**
+ * `effect.look-at-top-of-target-library`: "look at the top three cards of target player's library" (Orcish Spy; CR 401.2, 701.20e): the controller looks at the cards and nothing more happens
+ * to them, they stay on top in the order they were in. The engine's `lookAtTop` of the library of the target player with nothing taken (`take.max` 0, `rest` `top`). Not read: your own library,
+ * "each opponent", one card, "and ...", "then ...", a following instruction in the same clause.
+ */
+export const EFFECT_LOOK_AT_TOP_OF_TARGET_LIBRARY = defineRule<Clauses>({
+  id: LOOK_ONLY_ID,
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 701.20 (Reveal)'],
+  examples: [
+    "look at the top three cards of target player's library",
+    'look at the top two cards of target opponent’s library',
+  ],
+  rejects: [
+    'look at the top three cards of your library',
+    "look at the top three cards of each opponent's library",
+    "look at the top card of target player's library",
+    "look at the top three cards of target player's library and exile those cards face down",
+    "look at the top three cards of target player's library, then put one on the bottom",
+    "look at the top three cards of target player's library. you may exile one",
+    "look at the top three cards of target player's graveyard",
+  ],
+  parse: (ctx, pos) => {
+    const head = TOP_OF_TARGET_LIBRARY(ctx, pos);
+    if (!head.ok) return head;
+    const [, count, , from] = head.value;
+    const tail = pattern(/['’]s library(?![\p{L}\p{N}])(?!,| and\b| then\b)(?!\.\s)/iu)(
+      ctx,
+      head.pos,
+    );
+    if (!tail.ok) return tail;
+    return {
+      ok: true,
+      value: [makeClause(LOOK_ONLY_ID, 'lookOnly', { count, from }, { start: pos, end: tail.pos })],
+      pos: tail.pos,
+    };
+  },
+});
+
 const LOOK_ALL_ID = 'effect.look-and-exile-those-face-down';
 
 /**
@@ -469,6 +511,7 @@ export const EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND = defineRule<Cla
 
 /** Tried first: "if ..." and "mana ..." are the first words of the plain rules. */
 export const FLINT_RIDER_EFFECT_RULES = [
+  EFFECT_LOOK_AT_TOP_OF_TARGET_LIBRARY,
   EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND,
   EFFECT_LOOK_EXILE_N_FACE_DOWN,
   EFFECT_LOOK_AND_EXILE_THOSE_FACE_DOWN,

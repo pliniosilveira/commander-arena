@@ -5388,6 +5388,7 @@ export type Effect =
       readonly revealAll?: true;
       readonly take: {
         readonly filter: ObjectFilter;
+        /** The most cards taken. 0 with `rest` `top` (Orcish Spy, "Look at the top three cards of target player's library"): the cards are looked at and none may be taken; `from` may then name any player. */
         readonly max: number;
         /**
          * Where the cards taken go (D-145): into the hand (the default), or onto the battlefield under the controller's control,

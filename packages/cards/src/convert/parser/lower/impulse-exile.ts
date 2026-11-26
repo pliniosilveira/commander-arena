@@ -83,7 +83,39 @@ export const LOOK_EXILE_FACE_DOWN_MANY: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Look at the top three cards of target player's library" (Orcish Spy; CR 401.2, 701.20e): the engine's `lookAtTop` of the library of the player the noun names with nothing taken
+ * (`take.max` 0, `rest` `top`): the cards stay where they are. Nothing is exiled, so no later sentence may name "those cards".
+ */
+export const LOOK_ONLY: Lowering<IrClause, Effects> = {
+  head: 'lookOnly',
+  id: 'lower.look-only',
+  needs: ['effect:lookAtTop', 'ability:lookTakeFromPlayer', 'ability:lookTakeNothing'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    const owner = arg(clause, 'from');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          from: from.value,
+          take: { filter: {}, max: 0 },
+          rest: 'top',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const IMPULSE_EXILE_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  LOOK_ONLY,
   LOOK_EXILE_FACE_DOWN_ONE,
   LOOK_EXILE_FACE_DOWN_MANY,
 ];
