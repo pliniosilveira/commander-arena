@@ -6874,6 +6874,11 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'any';
       readonly firstEachTurn?: true;
       /**
+       * "Whenever an opponent loses life for the first time during each of their turns" (Valgavoth, Harrower of Souls; CR 119.3, 603.2): only a loss that happens during a turn of the
+       * player who loses the life, and with `firstEachTurn` the first loss of that player in that turn. Not with `batch`.
+       */
+      readonly duringTheirTurn?: true;
+      /**
        * "Whenever one or more opponents lose life" (CR 603.2c, 119.3): one trigger for the whole run of events in which any player `who` names lost life, however many players
        * lost it and however many times, not one for each player. `triggerPlayer` is the first of them. Not with `firstEachTurn`, and not with `who` "you" (one player is one event).
        */

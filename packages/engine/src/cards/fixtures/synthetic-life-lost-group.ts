@@ -176,4 +176,21 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       effect: { kind: 'loseLife', player: T1, amount: 1 },
     },
   }),
+  // "Whenever an opponent loses life for the first time during each of their turns, you draw a card."
+  singleFace({
+    name: 'SYNTHETIC Patient Tormentor',
+    manaCost: ['1', 'B'],
+    types: ['enchantment'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'Whenever an opponent loses life for the first time during each of their turns, you draw a card.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'lifeLost', who: 'opponent', firstEachTurn: true, duringTheirTurn: true },
+        effect: { kind: 'draw', player: YOU, count: 1 },
+      },
+    ],
+  }),
 ];

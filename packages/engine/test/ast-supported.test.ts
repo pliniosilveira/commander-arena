@@ -493,6 +493,7 @@ describe('supported feature gate', () => {
       'countersAddedEach',
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
+      'lifeLostDuringTheirTurn',
       'stepMonarch',
       'dealtDamageNoncombat',
       'dealtDamageExcess',

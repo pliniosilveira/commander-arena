@@ -1213,6 +1213,8 @@ function matches(
     case 'lifeLost':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 603.2: "during each of their turns" is a loss in a turn of the player who lost the life.
+      if (trigger.duringTheirTurn === true && state.turn.activeSeat !== occ.seat) return false;
       return trigger.firstEachTurn !== true || occ.firstLoss === true;
     case 'countersAdded':
       if (trigger.counter !== undefined && occ.counter !== trigger.counter) return false;

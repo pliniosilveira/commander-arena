@@ -1921,6 +1921,8 @@ export interface IrTrigger extends IrNode {
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.
    */
   readonly firstEachTurn?: true;
+  /** 'lifeLost' "for the first time during each of their turns" (Valgavoth; CR 119.3, 603.2): only a loss in a turn of the player who lost the life; with `firstEachTurn`. */
+  readonly duringTheirTurn?: true;
   /**
    * 'countersAdded': the kind of counter ("+1/+1", "page"), none for "counters" of any kind (stage P33, D-150, CR 122.6); `by` is who put
    * them: `you` ("Whenever you put one or more +1/+1 counters on ~") or `any` ("Whenever one or more +1/+1 counters are put on ~").

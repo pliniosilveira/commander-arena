@@ -830,6 +830,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
     'lifeLostBatch',
+    // "Whenever an opponent loses life for the first time during each of their turns" (`lifeLost` with `duringTheirTurn`).
+    'lifeLostDuringTheirTurn',
     // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
     'stepMonarch',
     // "Whenever a creature is dealt noncombat damage" (`dealtDamage` with `noncombat`).
@@ -2456,6 +2458,8 @@ export const TRIGGER_FEATURES = [
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
   'lifeLostBatch',
+  /** "Whenever an opponent loses life for the first time during each of their turns" (CR 119.3, 603.2): the engine's `lifeLost` with `duringTheirTurn`. */
+  'lifeLostDuringTheirTurn',
   /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
   'stepMonarch',
   /** "Whenever a creature is dealt noncombat damage" (CR 120.2b, 603.2): the engine's `dealtDamage` with `noncombat`. */
@@ -3935,6 +3939,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  lifeLostDuringTheirTurn: true,
   votingFinished: true,
   stepMonarch: true,
   dealtDamageNoncombat: true,
