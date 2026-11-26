@@ -1928,7 +1928,7 @@ describe('meta test 3: every rule is reached by the full pipeline', () => {
       }
     }
     expect(RULES.map((r) => r.id).filter((id) => !seen.has(id))).toEqual([]);
-  });
+  }, 60_000); // runs the examples of every rule; about 4 s alone, so a loaded CI runner needs room
 });
 
 describe('the segmenter and the rules agree on what a line is', () => {
