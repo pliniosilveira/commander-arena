@@ -482,7 +482,7 @@ const manifestAction: Action = (subject, you, rule) => {
 };
 
 /** "mills two cards", "mill X cards", "mills cards equal to ..." (CR 701.17: the top cards of the library go to the graveyard). */
-const millAction: Action = (subject, you, rule) =>
+export const millAction: Action = (subject, you, rule) =>
   map(spanned(cardsAmount(verbWord('mill', you))), ({ value: amount, span }) =>
     actionClause(rule, 'mill', { player: subject, amount }, span),
   );
@@ -673,6 +673,8 @@ export const PLAYER_SUBJECTS = [
   // Oft-Nabbed Goat: "its owner draws that many cards".
   'noun.its-owner',
   'noun.each-exiled-controller',
+  // Terastodon: "for each permanent put into a graveyard this way, its controller creates a 3/3 green Elephant creature token".
+  'noun.each-graveyarded-controller',
   'noun.that-player',
   // D-648: "that attacking player draws a card" (the player of a trigger about a player attacking one of your opponents).
   'noun.that-attacking-player',

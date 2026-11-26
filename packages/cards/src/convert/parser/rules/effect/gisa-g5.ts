@@ -6,7 +6,7 @@ import { chain, literal, map, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, family } from '../registry';
 import type { Clauses } from './operands';
-import { lifeAction } from './player';
+import { lifeAction, millAction } from './player';
 
 /**
  * `effect.have-player-life`: "have target player lose life equal to the number of Zombies on the battlefield", "have each opponent lose 2 life", "have target opponent gain 3
@@ -51,4 +51,43 @@ export const EFFECT_HAVE_PLAYER_LIFE = defineRule<Clauses>({
   ),
 });
 
-export const GISA_G5_EFFECT_RULES = [EFFECT_HAVE_PLAYER_LIFE];
+/**
+ * `effect.have-player-mill`: "have target player mill two cards" (Extractor Demon), "have each opponent mill X cards" (CR 701.17a, 608.2d): the mill instruction of a player
+ * that another player's ability makes them follow, read like the life instruction of `effect.have-player-life`; the "you may" before it is the sentence's. One player noun other
+ * than "you", one mill in the base form, nothing else of "have".
+ */
+export const EFFECT_HAVE_PLAYER_MILL = defineRule<Clauses>({
+  id: 'effect.have-player-mill',
+  family: 'effect',
+  leading: ['have'],
+  cites: ['CR 701.17 (Mill)', 'CR 608.2d (Resolving Spells and Abilities)', 'CR 115.1 (Targets)'],
+  examples: [
+    'have target player mill two cards',
+    'have target opponent mill three cards',
+    'have each opponent mill a card',
+    'have target player mill X cards',
+  ],
+  rejects: [
+    'have target player mills two cards',
+    'have target player mill',
+    'have target player mill cards',
+    'have you mill two cards',
+    'have target creature mill two cards',
+    'have mill two cards',
+    'target player mill two cards',
+    'have target player draw a card',
+  ],
+  parse: map(
+    chain(
+      sequence(
+        literal('have '),
+        satisfy(family<IrNoun>('noun', { only: ['noun.player'] }), (noun) => noun.det !== 'you'),
+        literal(' '),
+      ),
+      ([, subject]) => millAction(subject, true, 'effect.have-player-mill'),
+    ),
+    (clause): Clauses => [clause],
+  ),
+});
+
+export const GISA_G5_EFFECT_RULES = [EFFECT_HAVE_PLAYER_LIFE, EFFECT_HAVE_PLAYER_MILL];
