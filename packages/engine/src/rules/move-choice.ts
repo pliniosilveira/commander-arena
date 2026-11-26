@@ -32,7 +32,7 @@ export function isCardZoneChoice(filter: ObjectFilter): boolean {
 }
 
 /** The cards `seat` owns in the zone the filter names that match it (`source` is what "another" excludes). */
-function cardCandidates(
+export function cardCandidates(
   state: GameState,
   seat: SeatId,
   source: ObjectId | null,

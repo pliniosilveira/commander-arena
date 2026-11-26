@@ -143,6 +143,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
         power: lki.power,
         toughness: lki.toughness,
         basePower: lki.basePower ?? null,
+        baseToughness: lki.baseToughness ?? null,
         // Only a filter that names a keyword reads them.
         get keywords() {
           return keywordKindsOf(lki.abilities);
@@ -169,6 +170,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     power: d.power,
     toughness: d.toughness,
     basePower: d.basePower,
+    baseToughness: d.baseToughness,
     // Quandrix Unlimited group E: only a filter that says "with {X} in its mana cost" reads it.
     get manaCost() {
       return d.manaCost;

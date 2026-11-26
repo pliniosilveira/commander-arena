@@ -1361,6 +1361,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
+  // Squirreled Away deck, group 4 (Garruk, Cursed Huntsman).
+  'noun.each-planeswalker-type': spell((e) => `Put a loyalty counter on ${e}.`),
   // D-270: a target of two zones, read by `exile`.
   'noun.target-creatures-battlefield-or-graveyard': spell((e) => `Exile ${e}.`),
   'amount.for-each-own-nontoken-destroyed': spell(

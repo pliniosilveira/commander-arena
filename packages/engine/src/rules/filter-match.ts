@@ -32,6 +32,8 @@ export interface FilterSubject {
   readonly toughness?: number | null;
   /** The base power (CR 208.4b), read by `powerAboveBase` (D-431); left out where the caller does not know it, which fails that test closed. */
   readonly basePower?: number | null;
+  /** The base toughness (CR 208.4b), read by `basePowerOrToughnessIs`; left out where the caller does not know it, which fails that test closed. */
+  readonly baseToughness?: number | null;
   readonly manaValue?: number;
   /** The mana cost symbols, read by `xInManaCost`; left out where the caller does not know it, which fails that test closed. */
   readonly manaCost?: readonly string[] | null;
@@ -538,6 +540,15 @@ export function matchesFilterWith(
   if (filter.basePowerIs !== undefined) {
     const base = d.basePower;
     if (base === null || base === undefined || base !== filter.basePowerIs) return false;
+  }
+  // CR 208.4b: "with base power or toughness 1": either base value is the number.
+  if (filter.basePowerOrToughnessIs !== undefined) {
+    if (
+      d.basePower !== filter.basePowerOrToughnessIs &&
+      d.baseToughness !== filter.basePowerOrToughnessIs
+    ) {
+      return false;
+    }
   }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
   // CR 101.4 (Harsh Mercy): "each player chooses a creature type" chose several; "of a type chosen this way" is any of them, "aren't of a type chosen this way" none.

@@ -135,6 +135,9 @@ export const STATIC_PT_COUNT = defineRule<IrStatic>({
     "Enchanted creature gets +1/+1 for each Aura you control that's attached to a creature.",
     'Enchanted creature gets +1/+1 for each enchantment you control and has first strike.',
     'Creatures you control get +1/+1 for each artifact you control and have flying.',
+    // CR 208.4b (Sword of the Squeak): the count names a base power or toughness, which the engine reads without the counted objects' counters and "+N/+N" effects.
+    'Equipped creature gets +1/+1 for each creature you control with base power or toughness 1.',
+    '~ gets +1/+1 for each creature you control with base power 1.',
   ],
   rejects: [
     '~ gets +1/+1 for each artifact you control',
@@ -147,6 +150,8 @@ export const STATIC_PT_COUNT = defineRule<IrStatic>({
     '~ gets +1/+1 until end of turn for each artifact you control.',
     '~ gets +1/+1 for each artifact you control and has flying and.',
     '~ gets +1/+1 for each artifact you control and have flying.',
+    'Equipped creature gets +1/+1 for each creature you control with base power or toughness X.',
+    'Equipped creature gets +1/+1 for each creature you control with base toughness 1.',
     'Creatures you control get +1/+1 for each artifact you control and has flying.',
     '~ gets +1/+1 for each artifact you control and has flying until end of turn.',
     '~ gets +1/+1 for each artifact you control and gains flying.',

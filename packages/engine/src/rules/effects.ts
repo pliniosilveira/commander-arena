@@ -131,7 +131,7 @@ import { successorsOf } from './melded';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
-import { isCardZoneChoice, runChooseMove } from './move-choice';
+import { cardCandidates, isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { runMyriad } from './myriad';
 import { nextMainStep } from './next-main';
@@ -518,6 +518,28 @@ export function runInstruction(
       offered.to !== 'battlefield' &&
       !isCardZoneChoice(offered.objects.filter) &&
       controlledCandidates(state, res.controller, res.source, offered.objects.filter).length === 0
+    ) {
+      return done(state);
+    }
+    // CR 608.2d (Insatiable Frugivore): "you may exile three cards from your graveyard" with fewer than three there: the player can't do it, so there is nothing to say yes to, nothing is asked
+    // and it was not done (the "if you do" that follows reads that). One card is the choice of none or one, which has always asked.
+    if (
+      offered.kind === 'moveToZone' &&
+      offered.objects.kind === 'choose' &&
+      offered.objects.filter.zone === 'graveyard' &&
+      offered.objects.optional === undefined &&
+      offered.objects.anyNumber === undefined &&
+      offered.objects.minCardTypes === undefined &&
+      offered.objects.alsoGraveyard === undefined &&
+      offered.objects.fromMoved === undefined &&
+      offered.objects.fromAnyGraveyard === undefined &&
+      offered.objects.chosenBy === undefined &&
+      offered.objects.eachGraveyard === undefined &&
+      offered.objects.exceptSacrificed === undefined &&
+      typeof offered.objects.count === 'number' &&
+      offered.objects.count >= 2 &&
+      cardCandidates(state, res.controller, res.source, offered.objects.filter).length <
+        offered.objects.count
     ) {
       return done(state);
     }

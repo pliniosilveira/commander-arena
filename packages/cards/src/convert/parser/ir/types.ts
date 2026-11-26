@@ -487,6 +487,8 @@ export interface IrFilter {
   readonly powerAboveBase?: true;
   /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
   readonly basePowerIs?: number;
+  /** "with base power or toughness 1" (CR 208.4b): the engine's `basePowerOrToughnessIs`. */
+  readonly basePowerOrToughnessIs?: number;
   /**
    * "any number of target creature cards with total power 10 or less from your graveyard" (Reunion of the House, CR 115.1, 208.1): the powers of the targets of the slot add up to at
    * most this number; the engine's `TargetSpec.totalPowerAtMost`. Read only by the target slot of a noun of any number of targets (`declareTarget`).

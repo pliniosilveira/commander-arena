@@ -429,6 +429,10 @@ export function checkFilter(
   if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
     issue(out, `${path}.basePowerIs`, 'basePowerIs must be a whole number');
   }
+  // CR 208.4b: "with base power or toughness 1" is a whole number.
+  if (f.basePowerOrToughnessIs !== undefined && !Number.isInteger(f.basePowerOrToughnessIs)) {
+    issue(out, `${path}.basePowerOrToughnessIs`, 'basePowerOrToughnessIs must be a whole number');
+  }
   // D-131, CR 508.1b: "attacking you" is a flag; 'orPlaneswalkers' is "attacking you or a planeswalker you control".
   if (
     f.attackingYou !== undefined &&
@@ -898,6 +902,15 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out, scope?: Scope): 
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
   readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
 
+/**
+ * `readsCombatOrSource` without `basePowerOrToughnessIs`: the count of a "+N/+N" static ability reads the base power and toughness of what it counts (`derive-count.ts`),
+ * which is the one thing of this kind `derive` can match without a loop.
+ */
+export const readsCombatOrSourceBesidesBasePt = (f: ObjectFilter): boolean => {
+  const { basePowerOrToughnessIs: _base, ...rest } = f;
+  return readsCombatOrSource(rest);
+};
+
 /** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
 export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attacking !== undefined ||
@@ -910,6 +923,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.powerGreaterThanSource === true ||
   f.powerAboveBase === true ||
   f.basePowerIs !== undefined ||
+  f.basePowerOrToughnessIs !== undefined ||
   f.powerGreaterThan !== undefined ||
   f.sameNameAs !== undefined ||
   f.manaValueX !== undefined ||
@@ -2996,11 +3010,19 @@ function checkCountOnly(
       'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
-  if (filterSome(amount.filter, readsCombatOrSource)) {
+  if (filterSome(amount.filter, readsCombatOrSourceBesidesBasePt)) {
     issue(
       out,
       `${path}.filter`,
       'a count in a static ability cannot read the combat or the source power (D-120)',
+    );
+  }
+  // CR 208.4b, 613.8: the base power or toughness of the objects counted is read without their own static abilities, in a "+N/+N" count (layer 7c) only.
+  if (!allowKeywords && filterSome(amount.filter, (f) => f.basePowerOrToughnessIs !== undefined)) {
+    issue(
+      out,
+      `${path}.filter`,
+      'a count in a characteristic-defining ability cannot read a base power or toughness: it would depend on layer 7a itself (CR 613.8)',
     );
   }
   if (!allowKeywords && filterSome(amount.filter, readsKeywords)) {
@@ -3018,6 +3040,13 @@ function checkCountOnly(
     );
   }
 }
+
+/** The effects that may come before the offer that ends a repeated process: none of them puts a card into a graveyard (`repeatWhile`). */
+const REPEATABLE_BEFORE_OFFER: readonly (string | undefined)[] = [
+  'createToken',
+  'gainLife',
+  'draw',
+];
 
 /**
  * The power or toughness amount of a static ability (D-115, `plain`: "+N/+N", an integer, negative
@@ -5951,7 +5980,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       const clashes =
         e.effects[e.effects.length - 1]?.kind === 'clash' &&
         e.effects.some((child) => child?.kind === 'draw');
-      if (e.effects[e.effects.length - 1]?.kind !== 'mill' && !clashes) {
+      // CR 608.2c, 608.2d (Insatiable Frugivore): or a process that ends with "you may exile three cards from your graveyard", repeated while the player did: each pass takes a fixed number of
+      // cards out of the graveyard, and what comes before it (a token, life, cards drawn) puts none into it, so the repeat ends when the graveyard has too few cards (the offer is not made).
+      const last = e.effects[e.effects.length - 1];
+      const exileOffer =
+        last?.kind === 'may' &&
+        last.effect?.kind === 'moveToZone' &&
+        last.effect.to === 'exile' &&
+        last.effect.objects?.kind === 'choose' &&
+        last.effect.objects.filter?.zone === 'graveyard' &&
+        last.effect.objects.filter.controller === 'you' &&
+        last.effect.objects.anyNumber === undefined &&
+        last.effect.objects.optional === undefined &&
+        typeof last.effect.objects.count === 'number' &&
+        last.effect.objects.count >= 1 &&
+        e.effects.slice(0, -1).every((child) => REPEATABLE_BEFORE_OFFER.includes(child?.kind));
+      if (last?.kind !== 'mill' && !clashes && !exileOffer) {
         issue(
           out,
           `${path}.effects`,
@@ -5959,9 +6003,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkEffect({ kind: 'sequence', effects: e.effects }, `${path}.effects`, scope, out);
-      const after = { ...scope, movedAvailable: true, ...(clashes ? { clashed: true } : {}) };
+      const after = {
+        ...scope,
+        movedAvailable: true,
+        ...(clashes ? { clashed: true } : {}),
+        ...(exileOffer ? { mayAvailable: true } : {}),
+      };
       checkEffectCondition(e.condition, `${path}.condition`, after, out);
-      if (clashes) {
+      if (exileOffer) {
+        if (e.condition?.kind !== 'didPrevious') {
+          issue(
+            out,
+            `${path}.condition`,
+            'the test of a repeated offer reads whether the offer was taken (didPrevious)',
+          );
+        }
+      } else if (clashes) {
         if (e.condition?.kind !== 'clashWon') {
           issue(
             out,

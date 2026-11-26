@@ -101,13 +101,14 @@ export const STATIC_TOP_CARD_ABILITIES = defineRule<IrStatic>({
 
 /**
  * `static.linked-exile-abilities`: "Creatures you control have all activated abilities of all land cards exiled with ~." (issue 102, Steward of the Harvest; CR 613.1f, 607.2a: the abilities
- * of the cards the permanent exiled with its linked ability are given in layer 6; CR 113.6: the ability works as long as the permanent is on the battlefield). The engine's
- * `grantActivatedAbilitiesOfLinkedExile`. Not read: another subject, "all abilities", another kind of card than "land cards" or "cards", "that card", another permanent than `~`.
+ * of the cards the permanent exiled with its linked ability are given in layer 6; CR 113.6: the ability works as long as the permanent is on the battlefield) and "Foods you control have
+ * all activated abilities of all creature cards exiled with ~." (Hazel's Brewmaster). The engine's `grantActivatedAbilitiesOfLinkedExile`. Not read: another subject, "all abilities", another
+ * kind of card than "land cards", "creature cards" or "cards", "that card", another permanent than `~`.
  */
 export const STATIC_LINKED_EXILE_ABILITIES = defineRule<IrStatic>({
   id: 'static.linked-exile-abilities',
   family: 'static',
-  leading: ['creatures'],
+  leading: ['creatures', 'foods'],
   cites: [
     'CR 613.1f (Interaction of Continuous Effects)',
     'CR 607.2a (Linked Abilities)',
@@ -116,34 +117,45 @@ export const STATIC_LINKED_EXILE_ABILITIES = defineRule<IrStatic>({
   examples: [
     'Creatures you control have all activated abilities of all land cards exiled with ~.',
     'Creatures you control have all activated abilities of all cards exiled with ~.',
+    // Hazel's Brewmaster: the Foods of the controller, the creature cards the permanent exiled.
+    'Foods you control have all activated abilities of all creature cards exiled with ~.',
+    'Creatures you control have all activated abilities of all creature cards exiled with ~.',
   ],
   rejects: [
     'Creatures you control have all activated abilities of all land cards exiled with ~',
     'Creatures you control have all abilities of all land cards exiled with ~.',
-    'Creatures you control have all activated abilities of all creature cards exiled with ~.',
     'Creatures you control have all activated abilities of all land cards exiled with this creature and flying.',
     'Creatures you control have all activated abilities of that card.',
     'Lands you control have all activated abilities of all land cards exiled with ~.',
     'Creatures you control have the activated abilities of all land cards exiled with ~.',
+    'Foods you control have all activated abilities of all creature cards exiled with ~',
+    'Foods you control have all abilities of all creature cards exiled with ~.',
+    'Foods you control have all activated abilities of all artifact cards exiled with ~.',
+    'Foods have all activated abilities of all creature cards exiled with ~.',
+    'Foods you control have all activated abilities of all creature cards exiled with this creature and flying.',
   ],
   parse: (ctx, pos) => {
     const id = 'static.linked-exile-abilities';
     const r = sequence(
-      spanned(literal('creatures you control')),
-      pattern(/ have all activated abilities of all (land )?cards exiled with ~\./iu),
+      spanned(choice(literal('creatures you control'), literal('Foods you control'))),
+      pattern(/ have all activated abilities of all (land |creature )?cards exiled with ~\./u),
     )(ctx, pos);
     if (!r.ok) return r;
     const [who, tail] = r.value;
+    const foods = who.value.toLowerCase().startsWith('foods');
     const subject: IrNoun = {
       kind: 'noun',
       det: 'each',
-      filter: { types: ['creature'], controller: 'you', raw: 'creatures you control' },
+      filter: foods
+        ? { subtypes: ['Food'], controller: 'you', raw: 'Foods you control' }
+        : { types: ['creature'], controller: 'you', raw: 'creatures you control' },
       upTo: false,
       plural: true,
       other: false,
       span: who.span,
       rule: id,
     };
+    const kind = tail[1]?.trim();
     return {
       ok: true,
       value: {
@@ -152,7 +164,7 @@ export const STATIC_LINKED_EXILE_ABILITIES = defineRule<IrStatic>({
         effects: [
           {
             kind: 'grantActivatedAbilitiesOfLinkedExile',
-            from: { ...(tail[1] === undefined ? {} : { types: ['land'] }), raw: 'cards' },
+            from: { ...(kind === undefined ? {} : { types: [kind] }), raw: 'cards' },
           },
         ],
         span: { start: pos, end: r.pos },
