@@ -50,6 +50,24 @@ describe('playMatch', () => {
     expect(first.log.map((g) => g.deck)).toEqual([0, 0, 1, 1]);
   });
 
+  test(
+    'an agent against a copy of itself plays the same game twice: the agent seed goes with the seat',
+    async () => {
+      const copy: AgentFactory = { label: 'copy', create: (seed) => random.create(seed) };
+      const r = await playMatch({ a: random, b: copy, decks: ARENA_DECKS, games: 4, baseSeed: 11 });
+      for (let pair = 0; pair < 2; pair += 1) {
+        const [one, two] = [r.log[2 * pair], r.log[2 * pair + 1]];
+        if (one === undefined || two === undefined) throw new Error('two games a pair');
+        expect([two.turns, two.end, two.drew]).toEqual([one.turns, one.end, one.drew]);
+        // The same seat wins both games, so each side wins one: the pair is even.
+        const other = one.winner === 'a' ? 'b' : one.winner === 'b' ? 'a' : null;
+        expect(two.winner).toBe(other);
+      }
+      expect(r.wins.a).toBe(r.wins.b);
+    },
+    TIMEOUT_MS,
+  );
+
   test('records the reasons of agents that explain themselves, per agent', () => {
     expect(first.a).toBe('greedy');
     expect(first.b).toBe('random');

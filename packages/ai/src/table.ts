@@ -2,7 +2,8 @@
  * The table harness (issue 482): the match harness of `arena.ts` for three or four seats. One agent factory for each seat of the first game; every seed is played once for each
  * rotation of the agents, so each agent sits in every seat on the same shuffles (the two-seat harness swaps; a table rotates). With the same deck in every seat (a mirror), the
  * rotation balances seats and deals, as the swap does. Deterministic as `playMatch` is: the game seed of seed `i` is `baseSeed + i`, the deck is `decks[i % decks.length]` and the
- * seed of agent `k` is derived from the game seed and `k`, the same for every rotation of a seed. A game that ends without a result is `unfinished`, not a draw.
+ * agent seed of each seat is derived from the game seed and the seat, whichever agent sits there, so copies of one agent play the same game in every rotation (common random numbers, as in
+ * `playMatch`). A game that ends without a result is `unfinished`, not a draw.
  */
 import type { DeckConfig, SeatId } from '@commander-arena/engine';
 import type { Agent } from './agent';
@@ -116,7 +117,10 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
     const entry = options.decks[deckIndex] as TableDeck;
     const decks = decksOf(entry, seats);
     for (let rotation = 0; rotation < seats; rotation += 1) {
-      const made = options.agents.map((factory, k) => factory.create(seats * seed + k + 1));
+      // The seed goes with the seat of agent k, not with the agent (see the header).
+      const made = options.agents.map((factory, k) =>
+        factory.create(seats * seed + ((k + rotation) % seats) + 1),
+      );
       // Agent k sits in seat (k + rotation) % seats.
       const bySeatAgent = Array.from({ length: seats }, (_, seat) => {
         const k = (seat - rotation + seats) % seats;
