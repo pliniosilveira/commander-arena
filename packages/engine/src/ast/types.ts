@@ -3639,6 +3639,18 @@ export type Effect =
       readonly gains: Extract<Keyword, { readonly kind: 'enchant' }>;
     }
   /**
+   * "When this enchantment enters, if it's on the battlefield, it becomes an Aura with \"enchant creature put onto the battlefield with this enchantment.\"" (CR 303.4, 702.5a, 613.1d,
+   * 613.1f, 205.3h; Necromancy): the permanent `objects` names (`this`) is an Aura, with the enchant ability `enchant`, from now on, for as long as it stays on the battlefield (two continuous
+   * effects of its own, layer 4 and layer 6; the permanent that leaves and returns is a new object, CR 400.7). It keeps the card types it has (CR 205.1b: an Aura is an enchantment). What it
+   * may be attached to, and what state-based actions check (CR 704.5m), is read from the abilities it has now, so with this an `attach` of the permanent to what the enchant ability allows
+   * works. Nothing happens when the permanent is not on the battlefield. Only in an ability of a permanent that is not an Aura already.
+   */
+  | {
+      readonly kind: 'becomeAura';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'this' }>;
+      readonly enchant: Extract<Keyword, { readonly kind: 'enchant' }>;
+    }
+  /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an
    * effect of the same sequence that put the creature onto the battlefield (`moveToZone` with `tapped`): each creature `objects` names ('moved') that
    * is on the battlefield and is not attacking now starts attacking. It attacks the player the source of this ability attacks (or the first
@@ -6476,6 +6488,12 @@ export type Trigger =
     }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }
+  /**
+   * "At the beginning of the next cleanup step" (CR 514.3a, 603.7, 603.2b; Necromancy): the engine's own trigger of a delayed triggered ability it creates itself (the sacrifice of a
+   * permanent whose spell was cast at instant speed with `castAsThoughFlash.sacrificeIfCastAtInstantSpeed`); `validateCard` refuses it in card data. It triggers as a cleanup step
+   * begins, whoever's turn it is, and the players then get priority in it (CR 514.3a).
+   */
+  | { readonly kind: 'cleanupStep' }
   /**
    * "At the beginning of [your | each | each opponent's] [step or phase]" (CR 503 to 514, 603.2, D-111):
    * triggers as the step begins (`stepBegan`, CR 500.2), the turn's active player being the player
@@ -9995,6 +10013,13 @@ export type StaticEffect =
       readonly kind: 'castAsThoughFlash';
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
       readonly anyPlayer?: true;
+      /**
+       * "If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step." (CR 307.1, 601.3b,
+       * 603.7, 514.3a; Necromancy): the spell's own rider. When the spell is cast at a time a sorcery could not have been (it is not its caster's main phase with an empty stack), the
+       * permanent it becomes has a delayed triggered ability (created as the spell resolves, CR 603.7a) that has its controller then sacrifice it at the beginning of the next cleanup
+       * step; a spell that is countered, or cast when a sorcery could have been, has none. Only with `spells: { kind: 'this' }`, and only in a face with no condition on the permission.
+       */
+      readonly sacrificeIfCastAtInstantSpeed?: true;
     }
   /**
    * "Your opponents can't cast spells during your turn." (CR 101.2, 601.2, 604.1, D-179): while the permanent has the ability (and its `condition`

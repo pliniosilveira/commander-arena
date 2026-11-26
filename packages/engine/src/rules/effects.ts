@@ -43,6 +43,7 @@ import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject, unattach } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
+import { runBecomeAura } from './become-aura';
 import { runBehold } from './behold';
 import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
@@ -4874,6 +4875,10 @@ function runEffect(
     case 'replaceEnchant':
       // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
       return runReplaceEnchant(state, effect, ctx, targets);
+
+    case 'becomeAura':
+      // CR 303.4, 613.1d, 613.1f: "it becomes an Aura with \"enchant ...\"" (rules/become-aura.ts).
+      return runBecomeAura(state, effect, ctx, targets);
 
     case 'revealTopBranches':
       // CR 701.20a, 608.2c: reveal the top card once and do each branch it matches (rules/reveal-top-branches.ts).

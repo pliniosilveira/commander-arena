@@ -437,6 +437,12 @@ export interface StackData {
   /** The zone the spell was cast from (CR 601.2a, D-206): "if this spell was cast from a graveyard". Absent for an ability and for a copy. */
   readonly castFrom?: Zone;
   /**
+   * Present (true) on a spell cast at a time a sorcery could not have been cast (CR 307.1) whose own flash permission has the rider `sacrificeIfCastAtInstantSpeed` (Necromancy): the
+   * permanent it becomes gets a delayed triggered ability, as the spell resolves, that has its controller sacrifice it at the beginning of the next cleanup step (CR 603.7, 514.3a).
+   * Absent otherwise.
+   */
+  readonly sacrificeAtCleanup?: true;
+  /**
    * The number an `asCast` amount of the spell's text worked out as the spell was cast (CR 601.2i: "the greatest power among creatures you controlled as you cast this spell"),
    * written when the spell becomes cast (`rules/cast-amount.ts`). Absent for a spell with no such amount, for an ability and for a spell put on the stack without being cast.
    */

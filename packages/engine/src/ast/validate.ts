@@ -1783,6 +1783,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;
+    case 'cleanupStep':
+      // CR 514.3a: the engine's own delayed trigger (`castAsThoughFlash.sacrificeIfCastAtInstantSpeed`); no card has it as a trigger of its own.
+      issue(
+        out,
+        path,
+        "cleanupStep is the engine's own trigger, written by the rider of a flash permission",
+      );
+      break;
     case 'step':
       if (!isOneOf(t.step, TRIGGER_STEPS)) {
         issue(out, `${path}.step`, `unknown step ${String(t.step)}`);

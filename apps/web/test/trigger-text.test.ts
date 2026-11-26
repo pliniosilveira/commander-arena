@@ -256,6 +256,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   votingFinished: { kind: 'votingFinished' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
+  cleanupStep: { kind: 'cleanupStep' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },
   drawn: { kind: 'drawn', who: 'you' },
   dealsCombatDamage: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },

@@ -80,7 +80,11 @@ const STEP_OF: Readonly<Record<TriggerStep, StepId>> = {
   main2: 'postcombatMain',
   endStep: 'end',
 };
-const TRIGGER_STEP_IDS: ReadonlySet<StepId> = new Set(Object.values(STEP_OF));
+// CR 514.3a (Necromancy): the cleanup step too, for the engine's own delayed trigger at the beginning of the next one (`cleanupStep`).
+const TRIGGER_STEP_IDS: ReadonlySet<StepId> = new Set<StepId>([
+  ...Object.values(STEP_OF),
+  'cleanup',
+]);
 
 /** Who caused the trigger event: an object, a seat, or both. */
 interface Occurrence {
@@ -897,6 +901,11 @@ function occurrences(
       return event.kind === 'votesRevealed'
         ? [{ subject: null, seat: null, votes: event.cast }]
         : [];
+    case 'cleanupStep':
+      // CR 514.3a, 603.2b (Necromancy): at the beginning of a cleanup step, whoever's turn it is.
+      return event.kind === 'stepBegan' && event.step === 'cleanup'
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -1490,6 +1499,8 @@ function matches(
     case 'removesCounterWhileExiled':
       return false; // CR 113.6b: found from exile by `findLaterTriggers`, never matched on the battlefield
     case 'votingFinished':
+      return true;
+    case 'cleanupStep':
       return true;
     default: {
       const unreachable: never = trigger;

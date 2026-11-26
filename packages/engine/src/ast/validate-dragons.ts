@@ -377,6 +377,23 @@ export function checkDragonsEffect(
         }
       }
       return true;
+    case 'becomeAura': {
+      // CR 303.4, 702.5a (Necromancy): the permanent the ability belongs to is an Aura from now on, with an enchant ability of permanents.
+      if (e.objects?.kind !== 'this' || scope.owner !== 'ability') {
+        issue(
+          out,
+          `${path}.objects`,
+          'a becomeAura is about the permanent the ability belongs to: this',
+        );
+      }
+      const k = e.enchant;
+      if (k?.kind !== 'enchant' || k.player !== undefined) {
+        issue(out, `${path}.enchant`, 'enchant is an enchant ability of permanents');
+      } else {
+        checkFilter(k.filter, `${path}.enchant.filter`, out);
+      }
+      return true;
+    }
     case 'revealTopCard':
       // CR 701.20a: the players who reveal the top card of their own library.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);

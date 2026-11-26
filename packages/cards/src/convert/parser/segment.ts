@@ -1931,7 +1931,8 @@ export function splitSentences(text: string, start: number, end: number): Span[]
         ) ||
           // Issue 81 (White Sun's Twilight): a token's quoted ability ends with its period and the next sentence is the condition on X: `... "This token can't block." If X is 5 or more, ...`.
           /^\s+if x is\b/iu.test(text.slice(i + 1, end)) ||
-          (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&
+          // The same after "it becomes an Aura with "enchant creature put onto the battlefield with ~."" (Necromancy, CR 303.4, 702.5a).
+          (/\s(?:gains|becomes an aura with) "enchant [^"]*$/iu.test(text.slice(from, i)) &&
             /^\s+\S/u.test(text.slice(i + 1, end))))
       ) {
         const span = trimmed(text, from, i + 1);

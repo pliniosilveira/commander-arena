@@ -1423,6 +1423,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? UNSAID
         : `This ${self} loses "enchant ${lost}" and gains "enchant ${gained}"`;
     }
+    case 'becomeAura': {
+      // CR 303.4, 702.5a (Necromancy): "It becomes an Aura with "enchant creature put onto the battlefield with this enchantment"".
+      const gained = enchantWords(effect.enchant.filter);
+      return gained === null
+        ? UNSAID
+        : `It becomes an Aura with "enchant ${gained.replace('this Aura', `this ${self}`)}"`;
+    }
     case 'may': {
       // CR 608.2c (D-135): "You may discard a card", "You may exile it".
       const inner = effectText(effect.effect, ability, self, defs);

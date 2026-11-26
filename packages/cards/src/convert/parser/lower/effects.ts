@@ -2254,7 +2254,9 @@ const ATTACH: Lowering<IrClause, Effects> = {
     ) {
       return failure(clause);
     }
-    const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
+    // CR 400.7, 701.3 (Necromancy): "Put target creature card from a graveyard onto the battlefield under your control and attach ~ to it": "it" is the object that instruction put onto the
+    // battlefield, the engine's `moved`.
+    const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true, moved: true });
     if (!onto.ok) return onto;
     // A permanent is not attached to itself (CR 701.3b): "attach ~ to it" where "it" is `~` is no instruction the game can follow.
     if (what.value.kind === 'this' && onto.value.kind === 'this') return failure(clause);

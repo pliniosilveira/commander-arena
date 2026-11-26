@@ -2252,6 +2252,11 @@ export type IrStaticEffect =
     }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter; readonly anyPlayer?: true }
+  /**
+   * "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next
+   * cleanup step." (Necromancy, CR 601.3b, 307.1, 603.7, 514.3a): the spell's own permission with its rider, one whole line. The subject is `~`.
+   */
+  | { readonly kind: 'selfFlashSacrificeAtCleanup' }
   /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**

@@ -1337,6 +1337,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Danitha deck, group 5 (D-407, D-408): the blight cost of an ordinary ability, and the spell's own permission to be cast as though it had flash (a line of its own).
   'cost.blight': permanent((e) => `{1}, ${e}: Draw a card.`),
   'static.cast-self-as-though-flash': asIs,
+  'static.cast-self-flash-sacrifice-at-cleanup': asIs,
   // Group 9 of the Hashaton deck (D-390 to D-395): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
   'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
   'trigger.source-deals-damage': whenever,
@@ -1783,6 +1784,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
+  'effect.it-becomes-aura-with-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
   'condition.and': permanent((e) => `At the beginning of your end step, if ${e}, draw a card.`),

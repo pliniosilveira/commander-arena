@@ -291,6 +291,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedReturnAttached',
     // CR 400.7, 303.4: "Return enchanted creature card to the battlefield ..., attach this Aura to it" (Animate Dead): `moveToZone.putWithSource`, the permanent remembers the Aura.
     'putWithSource',
+    // CR 307.1, 603.7, 514.3a: "If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step" (Necromancy).
+    'flashSacrificeRider',
   ],
   effectKinds: [
     'sequence',
@@ -680,6 +682,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTopBranches',
     // CR 702.5a, 613.1f: "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (Animate Dead).
     'replaceEnchant',
+    // CR 303.4, 613.1d, 613.1f: "it becomes an Aura with \"enchant creature put onto the battlefield with this enchantment\"" (Necromancy).
+    'becomeAura',
     // D-151: "you may behold a Dragon" (CR 701.4).
     'behold',
     // D-151: "you may pay any amount of {R}. When you do, ..." (CR 603.12).
@@ -695,6 +699,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playsCard',
     'upkeep',
     'endStep',
+    // CR 514.3a: the engine's own delayed trigger at the beginning of the next cleanup step (Necromancy).
+    'cleanupStep',
     'permanentSacrificed',
     'becomesTapped',
     'becomesUntapped',
@@ -2430,6 +2436,8 @@ export const ABILITY_FEATURES = [
   'delayedReturnAttached',
   /** "Return enchanted creature card to the battlefield ... attach this Aura to it" (CR 400.7, 303.4, Animate Dead): `moveToZone` with `putWithSource`. */
   'putWithSource',
+  /** "If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step" (Necromancy): `castAsThoughFlash.sacrificeIfCastAtInstantSpeed`. */
+  'flashSacrificeRider',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -3644,6 +3652,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   attachedToMoved: true,
   delayedReturnAttached: true,
   putWithSource: true,
+  flashSacrificeRider: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -3880,6 +3889,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   revealTopCard: true,
   revealTopBranches: true,
   replaceEnchant: true,
+  becomeAura: true,
   behold: true,
   payAnyAmount: true,
 };
@@ -3891,6 +3901,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   landfall: true,
   upkeep: true,
   endStep: true,
+  cleanupStep: true,
   permanentSacrificed: true,
   becomesTapped: true,
   becomesUntapped: true,

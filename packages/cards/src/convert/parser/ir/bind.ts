@@ -456,6 +456,12 @@ class Binder {
                 compatible(a.noun.filter, pronoun.type),
             ) ?? found;
         }
+        // Necromancy (CR 701.3, 400.7): "Put target creature card from a graveyard onto the battlefield under your control and attach ~ to it": where the instruction before named a target,
+        // "it" of an attach is that target (the lowering reads it as the object the instruction put onto the battlefield).
+        if (found === undefined && noun.itWord === true && this.clauseVerb === 'attach') {
+          const [latest] = recent;
+          if (latest?.kind === 'object' && /^t\d+$/u.test(latest.noun.ref ?? '')) found = latest;
+        }
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
         if (found === undefined && noun.itWord === true) {
           found = recent.find(
