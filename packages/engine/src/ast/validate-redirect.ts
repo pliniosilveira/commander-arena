@@ -21,6 +21,13 @@ function checkDamageBonus(
     issue(out, `${path}.sources`, 'sources is a filter of the sources of the damage');
     return;
   }
+  if (r.kind === 'damageBonus') {
+    for (const flag of ['noncombatOnly', 'opponentPlayersOnly'] as const) {
+      if (r[flag] !== undefined && r[flag] !== true) {
+        issue(out, `${path}.${flag}`, `${flag} must be true when present`);
+      }
+    }
+  }
   checkFilter(r.sources, `${path}.sources`, out);
   if (r.sources.controller !== 'you') {
     issue(

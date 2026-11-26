@@ -8924,7 +8924,15 @@ export type Replacement =
    * `rules/damage-order.ts`): damage that is all prevented is no longer replaced. Damage a spell divides or a creature assigns is divided before this applies
    * (CR 120.3: each amount is its own event). It is the ability of the permanent (lost with "loses all abilities").
    */
-  | { readonly kind: 'damageBonus'; readonly sources: ObjectFilter; readonly amount: number }
+  | {
+      readonly kind: 'damageBonus';
+      readonly sources: ObjectFilter;
+      readonly amount: number;
+      /** "If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead" (Spiked Corridor, CR 120.2b): only damage that is not combat damage. */
+      readonly noncombatOnly?: true;
+      /** The same card: only damage dealt to an opponent of the controller, not to a permanent an opponent controls (CR 102.2). */
+      readonly opponentPlayersOnly?: true;
+    }
   /**
    * "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead." (Angrath's Marauders, CR 614.1a, 120.3):
    * a replacement effect of a permanent on the battlefield for every damage event, combat or not, whose source `sources` matches (read as for `damageBonus`, `controller: 'you'`

@@ -864,6 +864,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
+  'replacement.damage-bonus-noncombat': asIs,
   'replacement.damage-double': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,
