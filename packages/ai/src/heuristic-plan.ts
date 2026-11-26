@@ -28,7 +28,7 @@ import {
   type Window,
 } from './heuristic-plan-sim';
 import { PlanCounter, type PlanWork } from './heuristic-plan-work';
-import { scenariosOf } from './heuristic-threats';
+import { baseScenarioOf, scenariosOf } from './heuristic-threats';
 
 /**
  * The most play-outs of one planning (a bound of the search, not a weight): how many lines are scored on how
@@ -210,6 +210,10 @@ export function choosePlan(
           weights,
           work,
           perPlayOut: (think.budget.used() - usedAtStart) / Math.max(1, work.playOuts),
+          second: () => {
+            const other = think.resample?.();
+            return other === undefined ? undefined : baseScenarioOf(view, other, see);
+          },
         })
       : null;
   let deepChanged = false;

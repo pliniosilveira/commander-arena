@@ -242,6 +242,8 @@ export class HeuristicAgent implements ExplainingAgent {
   private think(ctx: DecideContext | undefined): Think {
     let sample: GameState | undefined;
     let built = false;
+    let second: GameState | undefined;
+    let builtSecond = false;
     const budget = ctx === undefined ? NO_BUDGET : startBudget(ctx);
     if (ctx !== undefined) this.budget = budget;
     return {
@@ -254,6 +256,13 @@ export class HeuristicAgent implements ExplainingAgent {
           sample = ctx?.sample?.(this.draw(0x7fffffff));
         }
         return sample;
+      },
+      resample: () => {
+        if (!builtSecond) {
+          builtSecond = true;
+          second = ctx?.sample?.(this.draw(0x7fffffff));
+        }
+        return second;
       },
     };
   }

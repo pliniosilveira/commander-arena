@@ -47,6 +47,12 @@ export interface Think {
   readonly draw: (n: number) => number;
   /** The determinized sample of this decision, or undefined when the host gives none. */
   readonly sample: () => GameState | undefined;
+  /**
+   * A second determinized sample, dealt again from the agent's own PRNG and built on demand (undefined when the
+   * host gives no samples, or in a test that builds a `Think` by hand): the planner's deepening plays the base
+   * scenario of it too (`heuristic-plan-deep.ts`).
+   */
+  readonly resample?: () => GameState | undefined;
 }
 
 /**

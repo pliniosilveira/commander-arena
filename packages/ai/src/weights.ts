@@ -151,6 +151,12 @@ export interface PlanWeights {
    * v1 the value to the next turn and v2 the value to the turn after. 0 turns the deepening off.
    */
   readonly deepBlend: number;
+  /**
+   * The share of the base scenario's weight that the deeper values give to a second sample (`heuristic-plan-deep.ts`):
+   * the agent's own library and the opponents' hidden cards dealt again. The deeper play-outs go through the agent's
+   * next draw, which the first sample fixed. 0 turns it off.
+   */
+  readonly deepSecond: number;
 }
 
 export interface RemovalWeights {
@@ -296,6 +302,7 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     riskAversion: 0.25,
     deepMargin: 1.5,
     deepBlend: 0.5,
+    deepSecond: 0.5,
   },
   removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6, lookMargin: 4 },
   threat: { commander: 2, lethal: 20 },

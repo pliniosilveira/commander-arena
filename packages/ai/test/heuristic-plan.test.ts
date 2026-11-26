@@ -96,7 +96,8 @@ describe('following a plan', () => {
     const agent = new HeuristicAgent({ seed: 1 });
     const log = await drive(g, agent, (_, l) => casts(l).length >= 2);
     const [first, second] = casts(log);
-    expect(first?.samples).toBe(1);
+    // The sample of the decision and the second one of the deepening (`heuristic-plan-deep.ts`).
+    expect(first?.samples).toBe(2);
     expect(second?.reason).toBe('plan');
     expect(second?.samples).toBe(0);
     expect(agent.plans).toHaveLength(1);

@@ -12,6 +12,13 @@
  * value of a survivor is its scenarios' value the same way as at horizon 1 (`lineValue`); a line's value is
  * `(1 - plan.deepBlend) * v1 + plan.deepBlend * v2`.
  *
+ * The second sample (step 7). The horizon 1 play-outs end where the agent's next turn starts, before its next
+ * draw, but the deeper ones play that turn with a card the first sample dealt: one draw, a lucky or unlucky
+ * one, could decide between lines. So the base scenario is played on a second sample of the agent's library
+ * (and of the opponents' hidden cards) too, with `plan.deepSecond` of its weight, right after the first
+ * sample's, so the first halving already ranks the lines on both draws and only the lines still alive pay
+ * for the rest.
+ *
  * It runs only when the work left covers one deep play-out (`DEEP_COST` times what a play-out of the
  * planning cost so far on average), on the stretched bounds of the deepening phase (`Budget.deep`), and
  * gives up with nothing (the planning keeps its horizon 1 choice) when any play-out of today's line is cut
@@ -82,6 +89,30 @@ export interface Deepening {
   readonly work: PlanCounter;
   /** The work units a play-out of the planning cost so far, on average. */
   readonly perPlayOut: number;
+  /**
+   * The base scenario of a second sample (`baseScenarioOf`), asked for only when the deepening runs and
+   * `plan.deepSecond` is above 0; undefined when there is none.
+   */
+  readonly second?: () => Scenario | undefined;
+}
+
+/**
+ * The scenarios of the deeper phase: those of the planning, with the base scenario's weight shared between
+ * the first sample's base (`1 - share`) and the second sample's (`share`), the second right after the first
+ * so that the first halving already ranks the lines on both draws. Without a second scenario, the same.
+ */
+export function deepScenarios(
+  scenarios: readonly Scenario[],
+  second: Scenario | undefined,
+  share: number,
+): Scenario[] {
+  const [base, ...rest] = scenarios;
+  if (base === undefined || second === undefined || share <= 0) return [...scenarios];
+  return [
+    { ...base, weight: base.weight * (1 - share) },
+    { ...second, weight: base.weight * share },
+    ...rest,
+  ];
 }
 
 /** The lines to play deeper: today's and those within `plan.deepMargin` of the best, best first. */
@@ -107,12 +138,17 @@ export function deepen(d: Deepening): Map<number, number> | null {
   // The work left must cover one deep play-out; if it does not the planning stays as it is.
   if (d.budget.left() < DEEP_COST * d.perPlayOut) return null;
   const startUnits = d.budget.used();
+  const deepScens = deepScenarios(
+    scenarios,
+    weights.plan.deepSecond > 0 ? d.second?.() : undefined,
+    weights.plan.deepSecond,
+  );
   const ctx: PlayContext = { ...d.ctx, budget: d.budget };
   const search = d.budget.search();
   const open = new Map<number, number[]>(cands.map((c) => [c.index, []]));
   let alive = cands.map((c) => c.index);
   try {
-    for (const [j, s] of scenarios.entries()) {
+    for (const [j, s] of deepScens.entries()) {
       for (const index of [...alive]) {
         const why = search.expired(work.deepPlayOuts);
         if (why !== null || work.deepPlayOuts >= MAX_DEEP_PLAY_OUTS) {
@@ -131,7 +167,7 @@ export function deepen(d: Deepening): Map<number, number> | null {
         }
         open.get(index)?.push(evaluate(work.view(played.end, d.me), d.me, weights).score);
       }
-      if (j < scenarios.length - 1) alive = halve(alive, open, scenarios);
+      if (j < deepScens.length - 1) alive = halve(alive, open, deepScens);
     }
   } finally {
     work.deepUnits += d.budget.used() - startUnits;
@@ -139,8 +175,8 @@ export function deepen(d: Deepening): Map<number, number> | null {
   const out = new Map<number, number>();
   for (const c of cands) {
     const scores = open.get(c.index);
-    if (scores === undefined || scores.length < scenarios.length) continue;
-    const deeper = lineValue(scores, scenarios, weights.plan.riskAversion);
+    if (scores === undefined || scores.length < deepScens.length) continue;
+    const deeper = lineValue(scores, deepScens, weights.plan.riskAversion);
     out.set(c.index, (1 - weights.plan.deepBlend) * c.value + weights.plan.deepBlend * deeper);
   }
   return out.has(0) ? out : null;

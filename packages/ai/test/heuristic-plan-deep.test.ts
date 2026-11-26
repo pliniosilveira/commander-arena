@@ -5,6 +5,7 @@ import {
   type Action,
   createRng,
   determinize,
+  type GameState,
   type GameView,
   handleDecision,
   type PendingDecision,
@@ -34,7 +35,7 @@ import {
 import { mainLines } from '../src/heuristic-plan-lines';
 import { type Line, playLine, type SimAgents } from '../src/heuristic-plan-sim';
 import { PlanCounter } from '../src/heuristic-plan-work';
-import { scenariosOf } from '../src/heuristic-threats';
+import { type Scenario, scenariosOf } from '../src/heuristic-threats';
 import { HeuristicAgent } from '../src/index';
 import { type AgentWeights, DEFAULT_WEIGHTS, withWeights } from '../src/weights';
 
@@ -70,7 +71,12 @@ const agents: SimAgents = {
 };
 
 /** The planner on the first main phase of seat 0, with `weights` and a budget of `bounds`. */
-function plan(g: ScenarioGame, weights: AgentWeights, bounds: WorkBounds = UNBOUNDED) {
+function plan(
+  g: ScenarioGame,
+  weights: AgentWeights,
+  bounds: WorkBounds = UNBOUNDED,
+  again = false,
+) {
   const view = g.view(0);
   const d = view.pending as PriorityDecision;
   const sample = determinize(g.state, 0, createRng(1));
@@ -78,7 +84,8 @@ function plan(g: ScenarioGame, weights: AgentWeights, bounds: WorkBounds = UNBOU
   const answer = (v: GameView, pending: PendingDecision): Action =>
     handleDecision(pending, helper.decisionHandlers(v));
   const budget = startBudget({ budgetMs: 5000, now: () => 0 }, bounds);
-  const think = { budget, weights, draw: () => 0, sample: () => sample };
+  const resample = again ? { resample: () => determinize(g.state, 0, createRng(2)) } : {};
+  const think = { budget, weights, draw: () => 0, sample: () => sample, ...resample };
   const today = choosePriorityHeuristic(view, d, think, new Set(), answer);
   const lines = mainLines(view, d, 'main1', today, new Set(), weights);
   const planning = choosePlan(view, 'main1', lines, think, agents);
@@ -91,6 +98,12 @@ describe('the weights of the deepening', () => {
     expect(DEFAULT_WEIGHTS.plan.deepBlend).toBeGreaterThan(0);
     expect(DEFAULT_WEIGHTS.plan.deepBlend).toBeLessThanOrEqual(1);
     expect(withWeights({ plan: { deepBlend: 0 } }).plan.deepBlend).toBe(0);
+  });
+
+  test('the share of the second sample is in [0, 1], and 0 turns it off', () => {
+    expect(DEFAULT_WEIGHTS.plan.deepSecond).toBeGreaterThanOrEqual(0);
+    expect(DEFAULT_WEIGHTS.plan.deepSecond).toBeLessThanOrEqual(1);
+    expect(withWeights({ plan: { deepSecond: 0 } }).plan.deepSecond).toBe(0);
   });
 });
 
@@ -185,6 +198,17 @@ describe('a planning that deepens', () => {
     expect(on.budget.used()).toBeGreaterThan(off.budget.used());
   });
 
+  test('plays the second sample of the draws too when the host gives one, and a share of 0 turns it off', () => {
+    const one = plan(position(), DEFAULT_WEIGHTS).planning.work;
+    const two = plan(position(), DEFAULT_WEIGHTS, UNBOUNDED, true).planning.work;
+    const off = plan(position(), withWeights({ plan: { deepSecond: 0 } }), UNBOUNDED, true).planning
+      .work;
+    // The horizon 1 search is the same; only the deeper phase plays more.
+    expect(two.playOuts).toBe(one.playOuts);
+    expect(two.deepPlayOuts).toBeGreaterThan(one.deepPlayOuts);
+    expect(off.deepPlayOuts).toBe(one.deepPlayOuts);
+  });
+
   test('is skipped with more than two seats', () => {
     const { planning } = plan(position(3), DEFAULT_WEIGHTS);
     expect(planning.planned?.record.deepLines).toBe(0);
@@ -262,6 +286,74 @@ describe('the deeper value of a line', () => {
     const p = pieces(DEFAULT_WEIGHTS, { budget: 1, limit: 1 });
     expect(deepen({ ...p, budget: p.budget.deep(), me: 0, perPlayOut: 0 })).toBeNull();
     expect(p.work.deepPlayOuts).toBe(1);
+  });
+
+  describe("with a second sample of the agent's draws", () => {
+    /** The base scenario of another determinization of the same position (the agent's library dealt again). */
+    const secondOf = (weights: AgentWeights) => {
+      const g = position();
+      const view = g.view(0);
+      const other = determinize(g.state, 0, createRng(2));
+      const [base] = scenariosOf(view, other, weights, DIRECT.view);
+      return base as NonNullable<typeof base>;
+    };
+
+    test('the base scenario is split between the two samples and the line is played on both', () => {
+      const weights = withWeights({ plan: { deepBlend: 1, deepMargin: 1000, deepSecond: 0.25 } });
+      const p = pieces(weights);
+      const second = secondOf(weights);
+      const out = deepen({
+        ...p,
+        budget: p.budget.deep(),
+        me: 0,
+        perPlayOut: 1,
+        second: () => second,
+      });
+      if (out === null) throw new Error('the deepening did not run');
+      // One scenario in the quiet position: the first sample's base (0.75) and the second sample's (0.25).
+      const ctx = { agents, budget: NO_BUDGET, weights, work: new PlanCounter(DIRECT) };
+      const score = (state: GameState, line: Line): number => {
+        const played = playLine(state, 0, line, ctx, false, 2);
+        if (played === null) throw new Error('the play-out was dropped');
+        return evaluate(DIRECT.view(played.end, 0), 0, weights).score;
+      };
+      for (const [index, value] of out) {
+        const line = p.lines[index] as Line;
+        const a = score((p.scenarios[0] as Scenario).state, line);
+        const b = score(second.state, line);
+        const expected = lineValue(
+          [a, b],
+          [
+            { ...(p.scenarios[0] as Scenario), weight: 0.75 },
+            { ...second, weight: 0.25 },
+          ],
+          weights.plan.riskAversion,
+        );
+        expect(value).toBeCloseTo(expected, 8);
+      }
+      // Every candidate was played on the first sample, the better half of them on the second as well.
+      expect(p.work.deepPlayOuts).toBe(deepCandidates(p.scored, weights).length + out.size);
+    });
+
+    test('is not asked for, and costs nothing, with a share of 0 or when it is not given', () => {
+      const off = pieces(withWeights({ plan: { deepSecond: 0, deepMargin: 1000 } }));
+      let asked = 0;
+      const out = deepen({
+        ...off,
+        budget: off.budget.deep(),
+        me: 0,
+        perPlayOut: 1,
+        second: () => {
+          asked += 1;
+          return undefined;
+        },
+      });
+      expect(asked).toBe(0);
+      expect(off.work.deepPlayOuts).toBe(out?.size);
+      const on = pieces(withWeights({ plan: { deepSecond: 0.5, deepMargin: 1000 } }));
+      const same = deepen({ ...on, budget: on.budget.deep(), me: 0, perPlayOut: 1 });
+      expect(on.work.deepPlayOuts).toBe(same?.size);
+    });
   });
 
   test('does not run with a blend of 0', () => {

@@ -308,11 +308,7 @@ export function scenariosOf(
   see: ViewOf = getView,
 ): Scenario[] {
   const known = opponentsOf(view, sample, see);
-  const kinds = new Map<SeatId, Map<CardId, ThreatKind | null>>();
-  for (const [seat, pool] of known.pools) {
-    const hasteOnBoard = known.profiles.get(seat)?.hasteOnBoard ?? false;
-    kinds.set(seat, new Map(pool.map((c) => [c.card, kindOf(c.view, c.traits, { hasteOnBoard })])));
-  }
+  const kinds = kindsOf(known);
   const top = threatsOf(view, sample, weights, known).slice(0, MAX_THREATS);
   let none = 1;
   for (const seat of view.seats) {
@@ -340,6 +336,29 @@ export function scenariosOf(
       state: arrange(sample, kinds, { seat: t.seat, card: t.card }),
     })),
   ];
+}
+
+/** The category of each card of each opponent's pool. */
+function kindsOf(known: Opponents): Map<SeatId, Map<CardId, ThreatKind | null>> {
+  const kinds = new Map<SeatId, Map<CardId, ThreatKind | null>>();
+  for (const [seat, pool] of known.pools) {
+    const hasteOnBoard = known.profiles.get(seat)?.hasteOnBoard ?? false;
+    kinds.set(seat, new Map(pool.map((c) => [c.card, kindOf(c.view, c.traits, { hasteOnBoard })])));
+  }
+  return kinds;
+}
+
+/**
+ * The base scenario ("nothing relevant" in any opponent's hand) of another sample: the second sample of the
+ * deepening (`heuristic-plan-deep.ts`), which deals the agent's own library and the opponents' hidden slots
+ * again. Its weight is the caller's to set.
+ */
+export function baseScenarioOf(view: GameView, sample: GameState, see: ViewOf = getView): Scenario {
+  return {
+    label: 'base#2',
+    weight: 1,
+    state: arrange(sample, kindsOf(opponentsOf(view, sample, see)), null),
+  };
 }
 
 /** A creature an opponent may cast and attack with before the agent's next turn, and how likely it holds one. */
