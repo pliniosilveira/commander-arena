@@ -3559,10 +3559,14 @@ function lowerPlayersMay(
     const declinedAfter =
       next?.condition?.test.kind === 'declined' &&
       next.condition.rule !== 'condition.each-opponent-declines';
+    // Rakdos, Patron of Chaos (issue 685): after "target opponent may ...", one player asked, "If they don't, you draw two cards." is what the controller does for the player who declined
+    // (`otherwise` is run by the controller, never as the player asked: rules/effects.ts, `declinedBy`), so its "you" is the controller's. After a sentence that asks several players the
+    // words stay refused (which "you" is meant is not told).
+    const oneAsked = by.who.det === 'target';
     const spans = [
       ...(afterOffer ? [] : [sentence]),
       ...sentence.clauses,
-      ...(declinedAfter && next !== undefined ? [next, ...next.clauses] : []),
+      ...(declinedAfter && !oneAsked && next !== undefined ? [next, ...next.clauses] : []),
     ];
     const start = Math.min(...spans.map((n) => n.span.start));
     const end = Math.max(...spans.map((n) => n.span.end));
