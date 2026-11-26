@@ -89,7 +89,7 @@ import { initiativeAfterLoss } from './rules/initiative';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
-import { activateManaAbility } from './rules/mana-engine';
+import { activateManaAbility, namesUnlistedCombination } from './rules/mana-engine';
 import { sameCombination } from './rules/mana-outcomes';
 import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
@@ -883,7 +883,13 @@ function resumeResolution(result: Result): Result {
 function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Action): Result {
   switch (d.kind) {
     case 'priority': {
-      if (!isOffered(d.options, action)) {
+      if (
+        !isOffered(d.options, action) &&
+        !(
+          action.kind === 'activateAbility' &&
+          namesUnlistedCombination(state, action.source, action.abilityIndex, action.combination)
+        )
+      ) {
         // An activation that is not on offer says why (a cost it cannot pay, the wrong timing).
         if (action.kind === 'activate') {
           const obj = state.objects[action.object];
