@@ -10153,7 +10153,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       // CR 603.4: the intervening "if" of the reflexive ability, read as it is created and as it resolves, about its source.
-      if (e.interveningIf !== undefined) checkCondition(e.interveningIf, `${path}.interveningIf`, out);
+      if (e.interveningIf !== undefined)
+        checkCondition(e.interveningIf, `${path}.interveningIf`, out);
       const own = declareTargets(
         e.targets,
         `${path}.targets`,

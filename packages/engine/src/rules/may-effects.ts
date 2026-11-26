@@ -57,7 +57,10 @@ export function runReflexive(
   // CR 603.4 (Earthbender Ascension): the intervening "if" of the reflexive ability decides whether it is created at all, then is read again as it resolves.
   if (
     effect.interveningIf !== undefined &&
-    !evaluateCondition(state, effect.interveningIf, { controller: res.controller, source: res.source })
+    !evaluateCondition(state, effect.interveningIf, {
+      controller: res.controller,
+      source: res.source,
+    })
   ) {
     return done(state);
   }
