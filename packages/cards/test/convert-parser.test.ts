@@ -909,6 +909,8 @@ describe('unmatched abilities', () => {
       'effect.cast-chosen-graveyard-spell-free',
       'effect.put-exiled-into-your-graveyard',
       'effect.exile-top-of-that-player',
+      'effect.cast-graveyard-spell-free-value-of-that-spell',
+      'effect.choose-graveyard-card-may-cast-it',
       'effect.cast-own-graveyard-card',
       'effect.extra-beginning-phase',
       'effect.amass',
