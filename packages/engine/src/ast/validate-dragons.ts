@@ -46,12 +46,17 @@ export function checkDragonsEffect(
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
           owner !== 'triggerDamagedPlayers' &&
-          owner !== 'eachOpponent'
+          owner !== 'eachOpponent' &&
+          // Mind's Dilation (CR 608.2h): "that player exiles the top card of their library" in a cast trigger: the controller of the spell that was cast, from last-known information.
+          !(
+            e.from.kind === 'controllerOf' &&
+            kindOf((e.from as { of: unknown }).of as never) === 'triggerSubject'
+          )
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer'), the controller of the spell that caused the trigger or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -142,6 +147,33 @@ export function checkDragonsEffect(
         if (e.undaunted !== true)
           issue(out, `${path}.undaunted`, 'undaunted must be true when present');
         if (e.free === true) issue(out, `${path}.undaunted`, 'a free play has no cost to reduce');
+      }
+      // Nashi, Moon Sage's Scion (CR 118.9, 601.2): "pay life equal to its mana value rather than paying its mana cost" and "play one of those cards".
+      if (e.lifeForMana !== undefined) {
+        if (
+          e.lifeForMana !== true ||
+          e.free !== undefined ||
+          e.lessGeneric !== undefined ||
+          e.undaunted !== undefined ||
+          e.anyManaColor !== undefined ||
+          e.anyManaType !== undefined ||
+          kindOf(e.objects) !== 'moved'
+        ) {
+          issue(
+            out,
+            `${path}.lifeForMana`,
+            "lifeForMana is true, on the cards an effect before moved ('moved'), with no free, lessGeneric, undaunted, anyManaColor or anyManaType (a spell paid for with life has no mana cost to change)",
+          );
+        }
+      }
+      if (e.oneOf !== undefined) {
+        if (e.oneOf !== true || kindOf(e.objects) !== 'moved' || e.lasts !== 'endOfTurn') {
+          issue(
+            out,
+            `${path}.oneOf`,
+            "oneOf is true, on the cards an effect before moved ('moved'), for a permission that lasts until end of turn",
+          );
+        }
       }
       if (e.creatureSpellsOnly !== undefined) {
         if (e.creatureSpellsOnly !== true || e.castOnly !== true) {
@@ -963,7 +995,11 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
     filterSome(
       r.what,
       (f) =>
-        (f.zone !== undefined && !(r.fromGraveyard === true && f.zone === 'graveyard')) ||
+        (f.zone !== undefined &&
+          !(
+            (r.fromGraveyard === true || r.exileTwoFromGraveyards !== undefined) &&
+            f.zone === 'graveyard'
+          )) ||
         f.stackKind !== undefined ||
         f.attacking !== undefined ||
         f.attackingYou !== undefined ||
@@ -982,6 +1018,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
   }
   if (r.fromGraveyard === true && r.what?.zone !== 'graveyard') {
     issue(out, `${path}.what`, 'what names the zone graveyard when the copy is of a card there');
+  }
+  // The Mimeoplasm (CR 614.12, 707.9b, 122.6): "exile two creature cards from graveyards ... a copy of one of those cards with additional +1/+1 counters equal to the power of the other".
+  if (r.exileTwoFromGraveyards !== undefined) {
+    const x = r.exileTwoFromGraveyards;
+    if (typeof x !== 'object' || x === null || typeof x.counter !== 'string' || x.counter === '') {
+      issue(
+        out,
+        `${path}.exileTwoFromGraveyards.counter`,
+        'exileTwoFromGraveyards names a counter',
+      );
+    }
+    if (r.what?.zone !== 'graveyard' || r.fromGraveyard !== undefined) {
+      issue(
+        out,
+        `${path}.what`,
+        'the cards exiled from graveyards are in the zone graveyard, and the copy is not of one in the graveyard of the controller (fromGraveyard)',
+      );
+    }
+    if (r.optional !== true || r.duration !== 'permanent') {
+      issue(out, `${path}`, 'exiling two cards is a "may" and the copy lasts for good');
+    }
   }
   if (r.keepName !== undefined && r.keepName !== true) {
     issue(out, `${path}.keepName`, 'keepName is true when present');

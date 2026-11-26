@@ -153,6 +153,7 @@ export function isNamedAlternative(
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
     alternative === 'payLife' ||
+    alternative === 'payMana' ||
     alternative === 'impending' ||
     alternative === 'blitz'
   );
@@ -414,7 +415,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ? (grantedEvokeOf(state, seat, spell, zone)?.cost ?? null)
             : null))
         : null;
-  const perX = spellXCost(face, alternative);
+  // CR 702.33a, 107.3a ("Kicker {X}"): a kicked spell announces the X of its kicker cost too.
+  const perX = spellXCost(face, alternative, (request.kicks ?? (request.kicked ? 1 : 0)) > 0);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
@@ -456,7 +458,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const kicks = request.kicks ?? (request.kicked ? 1 : 0);
   const kicker = kicks > 0 ? kickerLikeCostOf(face) : null;
   // CR 702.33c: a multikicker cost is paid once for each time the spell is kicked.
-  if (kicker !== null) for (let i = 0; i < kicks; i += 1) symbols.push(...manaSymbolsOf(kicker));
+  // CR 107.3a: the {X} of a kicker cost is the X announced (`withX`).
+  if (kicker !== null) {
+    for (let i = 0; i < kicks; i += 1) symbols.push(...withX(manaSymbolsOf(kicker), x));
+  }
   // CR 702.56a: a replicate cost is an additional cost, paid once for each time the caster chose (mana only).
   const replicate = (request.replicas ?? 0) > 0 ? replicateCostFor(state, spell, face) : null;
   if (replicate !== null) {
@@ -663,7 +668,8 @@ export function spellXCostOf(
   spell: GameObject,
   alternative: CastAlternative | undefined,
 ): XCost {
-  return spellXCost(faceOfSpell(state, spell), alternative);
+  // CR 702.33a: the {X} of the kicker cost counts once the spell is kicked (`StackData.kicked`).
+  return spellXCost(faceOfSpell(state, spell), alternative, spell.stack?.kicked === true);
 }
 
 /**

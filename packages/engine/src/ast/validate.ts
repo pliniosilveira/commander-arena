@@ -241,7 +241,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       break;
     case 'kicker':
       // CR 702.33a: an additional cost, paid as the spell is cast.
-      checkKickerCost(k.cost, `${path}.cost`, out);
+      checkKickerCost(k.cost, `${path}.cost`, out, { xNotZero: k.xNotZero });
       break;
     case 'flashback':
       // CR 702.34a: an alternative cost, paid instead of the mana cost from the graveyard.
@@ -969,6 +969,12 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'abilityCostReduction':
       checkAbilityCostReduction(s, path, out);
+      break;
+    case 'plotCostReduction':
+      // CR 702.170a (Doc Aurlock, Grizzled Genius): the generic mana taken off a plot cost, a positive whole number.
+      if (!isCount(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'a plot cost reduction must be a positive integer');
+      }
       break;
     case 'castFromGraveyard':
       // D-133: the face-level checks say where it may stand. D-656: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
@@ -2351,6 +2357,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this',
         // CR 701.37c: the becomes monstrous trigger of the permanent itself may take up to as many targets as the X of its monstrosity.
         a.trigger?.kind === 'becomesMonstrous' && kindOf(a.trigger.what) === 'this',
+        // CR 603.3d (Bladegriff Prototype): the player the event is about may choose the target.
+        triggerHasPlayer(a.trigger) && a.modes === undefined && a.chooseModes === undefined,
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -3305,7 +3313,14 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         JSON.stringify(a.targets ?? null).includes('"enteredX"') ||
         (a.trigger?.kind === 'entersBattlefield' &&
           JSON.stringify(a.effect ?? null).includes('"xAtLeast"'))) &&
-      !(face.manaCost ?? []).includes('X')
+      !(face.manaCost ?? []).includes('X') &&
+      // Thieving Skydiver (CR 702.33a, 107.3m): the X of the kicker cost is the X the permanent remembers too.
+      !face.abilities.some(
+        (k) =>
+          k?.kind === 'keyword' &&
+          k.keyword?.kind === 'kicker' &&
+          k.keyword.cost?.some((c) => c?.kind === 'mana' && c.symbols?.includes('X')),
+      )
     ) {
       issue(
         out,

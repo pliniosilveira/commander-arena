@@ -69,8 +69,7 @@ describe('Sketch and Lore: exile until a card is found, cast it for free (CR 701
   });
 
   test.each([
-    // The cast must be an offer without a cost: no "you may", a cost paid, or no cast at all.
-    `{T}: ${EXILE}`,
+    // The cast must be an offer without a cost: no "you may" or a cost paid. (With no cast at all the exile alone is read, since Stolen Goods: `effect.player-exiles-until-found`.)
     `{T}: ${EXILE} You may cast that card.`,
     `{T}: ${EXILE} Cast that card without paying its mana cost.`,
     // Another player, another library.

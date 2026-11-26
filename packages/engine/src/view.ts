@@ -632,6 +632,7 @@ export interface GameView {
       | 'separate'
       | 'pile'
       | 'opponentChoice'
+      | 'handChoice'
       | 'behold'
       | 'additionalExile'
       | 'reveal'

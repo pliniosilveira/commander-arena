@@ -672,6 +672,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           trigger.by === 'you' ? 'you cast your' : `${BY_WORDS[trigger.by]} casts their`;
         return `Whenever ${caster} first spell with {X} in its mana cost each turn`;
       }
+      // CR 601.2i, 603.2 (Ghostly Pilferer): "casts a spell from anywhere other than their hand" says nothing else about the spell; with more words it cannot be said here.
+      if (trigger.filter.notCastFromHand === true) {
+        const { notCastFromHand: _notHand, ...rest } = trigger.filter;
+        if (!Object.keys(rest).every((k) => k === 'stackKind') || trigger.nth !== undefined) {
+          return null;
+        }
+        const caster = trigger.by === 'you' ? 'you cast' : `${BY_WORDS[trigger.by]} casts`;
+        return `Whenever ${caster} a spell from anywhere other than ${trigger.by === 'you' ? 'your' : 'their'} hand`;
+      }
       const spell = filterPhrase(trigger.filter, 'spell', ctx.self);
       if (spell === null) return null;
       // D-218 (CR 707.10): Magecraft's "cast or copy".

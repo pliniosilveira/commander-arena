@@ -104,6 +104,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
+import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
 import { EXILE_UNTIL_CAST_EFFECT_RULES } from './exile-until-cast';
@@ -135,6 +136,8 @@ import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GOAD_DRACONIC_EFFECT_RULES } from './goad-draconic';
+import { GRAND_LARCENY_B_EFFECT_RULES } from './grand-larceny-b';
+import { GRAND_LARCENY_C_EFFECT_RULES } from './grand-larceny-c';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVECAST_EFFECT_RULES } from './gravecast';
 import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
@@ -155,6 +158,7 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { IMPULSE_EXILE_EFFECT_RULES } from './impulse-exile';
 import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
@@ -602,7 +606,12 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       literal('destroy '),
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
-        [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+        [
+          ...SELF_OR_PERMANENT_OPERANDS,
+          'noun.target-permanent-of-that-player',
+          // "destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d).
+          'noun.target-permanent-of-that-players-choice',
+        ],
         'effect.destroy',
       ),
     ),
@@ -1374,6 +1383,10 @@ export const EFFECT_UNTAP = tapRule('untap');
 export const EFFECT_RULES = [
   // Finale of Promise (issue 121): the four sentences of its one instruction start like a plain "you may cast", and are tried first.
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
+  // Grand Larceny deck, group A: "look at the top card of that player's library, then exile it face down" and "you may play that card for as long as it remains exiled, and ..." start like the plain look, exile and may-play rules, and are tried first.
+  ...IMPULSE_EXILE_EFFECT_RULES,
+  // Grand Larceny deck, group B: "that player exiles the top card of their library", "target opponent chooses X cards from their hand", "look at that player's hand" and the rest start like the plain player, look and may rules, and are tried first.
+  ...GRAND_LARCENY_B_EFFECT_RULES,
   // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
   ...F144_FIRST_EFFECT_RULES,
   // Ahoy Mateys deck, group 2 (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): "you may cast that card ..., and mana of any type can be spent" and "you may exile a card from each graveyard" start like the plain may-play and exile rules, and are tried first.
@@ -1470,6 +1483,7 @@ export const EFFECT_RULES = [
   ...CAST_AMONG_EXILED_EFFECT_RULES,
   ...LEAD_GAIN_NEXT_TURN_EFFECT_RULES,
   ...CHOOSE_OPPONENT_EFFECT_RULES,
+  ...GRAND_LARCENY_C_EFFECT_RULES,
   // Abzan Armor deck, group C (Expel the Interlopers): "Choose a number between 0 and 10."
   ...ABZAN_SPELLS_EFFECT_RULES,
   ...KEEPS_UP_TO_EFFECT_RULES,
@@ -1659,6 +1673,8 @@ export const EFFECT_RULES = [
   ...FLICKER_RULES,
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
+  // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
+  ...EXILE_SPELL_RULES,
   EFFECT_EXILE,
   // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
   ...WITHERBLOOM_C_EARLY_EFFECT_RULES,

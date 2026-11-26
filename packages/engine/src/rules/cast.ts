@@ -60,6 +60,7 @@ import {
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
+  kickerXNotZero,
   manaSymbolsOf,
   multikickerCostOf,
   namedAlternativeCostOf,
@@ -140,6 +141,7 @@ import {
   playPermissionExiles,
 } from './play-permission-color';
 import { playPermissionLess } from './play-permission-cost';
+import { endOneOfPermissions } from './play-permission-one';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -185,6 +187,8 @@ export function beginCast(
     readonly payInstead?: readonly Cost[];
     /** Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...", kept for the permanent the spell becomes. */
     readonly creatureGains?: readonly Ability[];
+    /** Silent-Blade Oni, Extract Brain (CR 608.2g, 402.3): the card is cast from a hand that is not the caster's (`castFree.fromHand`). */
+    readonly fromHand?: boolean;
   } = {},
   /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
   permanentType?: CardType,
@@ -207,6 +211,7 @@ export function beginCast(
                 : 'free',
           riders.anyManaType === true,
           riders.payInstead,
+          riders.fromHand === true,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -369,6 +374,8 @@ export function beginCast(
       continuousEffects: next.continuousEffects.filter((e) => e.id !== freeUse.id),
     };
   }
+  // Nashi (CR 601.2): "you may play one of those cards": casting one of them from exile ends the permissions for the others (a cancelled cast restores the state before it, CR 733).
+  if (zone === 'exile' && !resolving) next = endOneOfPermissions(next, seat, objectId);
   // CR 601.2 (`mayCastOneMilled`): "you may cast a spell from among those cards" is one spell for all the cards, so casting one of them from the graveyard uses up the permissions
   // the effect made for the others.
   if (zone === 'graveyard' && !resolving && alternative === undefined) {
@@ -559,8 +566,11 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
     modeSet: stack.chosenModes,
   } as const;
   const kickerCost = kickerCostOf(faceOf(before, spell));
+  // CR 702.33a, 107.3a ("Kicker {X}. X can't be 0."): the kicker is offered only when it can be paid with X at 1, the least a kicked spell announces.
+  const kickedX = kickerXNotZero(faceOf(before, spell)) ? ({ x: 1 } as const) : {};
   let asksKicker =
-    kickerCost !== null && canPayRequest(before, seat, spell, { ...request, kicked: true });
+    kickerCost !== null &&
+    canPayRequest(before, seat, spell, { ...request, kicked: true, ...kickedX });
   // CR 702.33g, 601.2c (D-181): a spell with targets that depend on the kicker is cast the way it has what it needs: the kicked way needs its
   // targets and its total cost, the unkicked way its own targets. With both possible the caster is asked; with one the cast goes that way.
   if (kickerCost !== null && hasKickedTargets(faceOf(before, spell))) {
@@ -983,7 +993,12 @@ function toX(state: GameState, events: GameEvent[]): Result {
     (spec) =>
       spec.what.kind === 'object' && JSON.stringify(spec.what.filter).includes('"manaValueX"'),
   );
-  const least = Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max);
+  // CR 702.33a, 107.3a: "Kicker {X}. X can't be 0." a kicked spell announces at least 1.
+  const leastKicked =
+    stack.kicked === true && kickerXNotZero(faceOf(state, spell))
+      ? Math.max(1, leastAllowedX(state, casting.seat, spell, true) ?? 1)
+      : (leastAllowedX(state, casting.seat, spell, true) ?? 0);
+  const least = Math.min(leastKicked, max);
   const targetable = (x: number): boolean => {
     const aimed = patchObject(state, casting.object, { stack: { ...stack, x } });
     return specs.every((spec) =>

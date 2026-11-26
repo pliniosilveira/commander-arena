@@ -66,6 +66,7 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
       ...(a.head.anyManaType === true ? { anyManaType: true } : {}),
       ...(a.head.payInstead === undefined ? {} : { payInstead: a.head.payInstead }),
       ...(a.head.creatureGains === undefined ? {} : { creatureGains: a.head.creatureGains }),
+      ...(a.head.fromHand === true ? { fromHand: true } : {}),
     },
   );
   if (!begun.ok) return begun;

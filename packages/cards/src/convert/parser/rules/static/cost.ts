@@ -486,6 +486,8 @@ const CAST_HEAD: Parser<{
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
   readonly ownGraveyard?: true;
+  readonly graveyardOrExile?: true;
+  readonly notOwned?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
   readonly aimed?: IrFilter;
@@ -531,6 +533,18 @@ const CAST_HEAD: Parser<{
     chosen: undefined,
     compared: undefined,
     ownGraveyard: true as const,
+  })),
+  // Doc Aurlock, Grizzled Genius (CR 601.2a, 404.1, 406.1): "Spells you cast from your graveyard or from exile cost {2} less to cast".
+  map(literal(' you cast from your graveyard or from exile cost '), () => ({
+    chosen: undefined,
+    compared: undefined,
+    graveyardOrExile: true as const,
+  })),
+  // Gonti, Canny Acquisitor (CR 108.3, 601.2f): "Spells you cast but don't own cost {1} less to cast": the owner of the card is not the caster.
+  map(pattern(/ you cast but (?:don't|don’t) own cost /iu), () => ({
+    chosen: undefined,
+    compared: undefined,
+    notOwned: true as const,
   })),
   // Stage P32 (D-147): "Creature spells you cast with power 4 or greater cost {2} less to cast": a spell on the stack has the power,
   // toughness and mana value of its card (CR 202.3, 208.1), which the engine compares as the cost is determined.
@@ -592,6 +606,12 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells without flying you cast cost {1} less to cast.',
     // Stage P75 (D-235): spells cast from anywhere other than the hand.
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
+    // Doc Aurlock, Grizzled Genius: spells cast from the caster's own graveyard or from exile.
+    'Spells you cast from your graveyard or from exile cost {2} less to cast.',
+    'Creature spells you cast from your graveyard or from exile cost {1} less to cast.',
+    // Gonti, Canny Acquisitor: spells the caster does not own.
+    "Spells you cast but don't own cost {1} less to cast.",
+    "Noncreature spells you cast but don't own cost {1} less to cast.",
     // Emet-Selch of the Third Seat: spells cast from the caster's own graveyard.
     'Spells you cast from your graveyard cost {2} less to cast.',
     'Instant and sorcery spells you cast from your graveyard cost {1} less to cast.',
@@ -633,6 +653,13 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from anywhere other than your graveyard cost {2} less to cast.',
     'Spells you cast from a graveyard cost {2} less to cast.',
     'Spells you cast from your graveyard cost {2} less to cast',
+    'Spells you cast from your graveyard or from exile cost {2} less to cast',
+    'Spells you cast from your graveyard or exile cost {2} less to cast.',
+    'Spells you cast from exile or from your graveyard cost {2} less to cast.',
+    "Spells you cast but don't own cost {1} less to cast",
+    "Spells you cast and don't own cost {1} less to cast.",
+    "Spells you don't own cost {1} less to cast.",
+    "Spells your opponents cast but don't own cost {1} less to cast.",
     'Spells you cast from your graveyard cost {W} less to cast.',
     'Spells your opponents cast from your graveyard cost {2} less to cast.',
     'Spells you cast from your hand cost {2} less to cast.',
@@ -650,7 +677,20 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
     const [
-      [filter, { chosen, compared, notHand, ownGraveyard, anyCaster, targetsHost, aimed }],
+      [
+        filter,
+        {
+          chosen,
+          compared,
+          notHand,
+          ownGraveyard,
+          graveyardOrExile,
+          notOwned,
+          anyCaster,
+          targetsHost,
+          aimed,
+        },
+      ],
       amount,
     ] = r.value;
     const subjectEnd = pos + filter.raw.length;
@@ -664,6 +704,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(ownGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+          ...(graveyardOrExile === true ? { castFromOwnGraveyardOrExile: true as const } : {}),
+          ...(notOwned === true ? { notOwnedByYou: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
           // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
           ...(aimed === undefined ? {} : { castTargets: aimed }),

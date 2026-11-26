@@ -184,6 +184,11 @@ export interface IrNoun extends IrNode {
    */
   readonly sameControllerAsPrevious?: true;
   /**
+   * "target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d): the player the event of the trigger is about chooses the target
+   * (the engine's `TargetSpec.chosenBy` 'triggerPlayer').
+   */
+  readonly chosenByTriggerPlayer?: true;
+  /**
    * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
    * this one, not only the slot just before it.
    */
@@ -471,6 +476,8 @@ export interface IrFilter {
   readonly castFromExile?: true;
   /** "from your graveyard" (Emet-Selch of the Third Seat, CR 601.2a, 404.1): a spell its caster cast from their own graveyard (the engine's `castFromOwnGraveyard`). */
   readonly castFromOwnGraveyard?: true;
+  /** "from your graveyard or from exile" (Doc Aurlock, Grizzled Genius, CR 601.2a, 404.1, 406.1): a spell cast from exile or from its caster's own graveyard (the engine's `castFromOwnGraveyardOrExile`). */
+  readonly castFromOwnGraveyardOrExile?: true;
   /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
   readonly chosenByOpponent?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
@@ -888,6 +895,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "~ was foretold" (CR 702.143a): the spell was cast for its foretell cost
     | { readonly kind: 'foretold' }
+    // "the {1}{B} cost was paid" (Baleful Mastery, CR 118.9): the spell was cast for its alternative cost of mana `cost`
+    | { readonly kind: 'altCostPaid'; readonly cost: readonly string[] }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
     | { readonly kind: 'additionalCostPaid' }
@@ -1218,6 +1227,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'exile'; readonly what: IrNoun }
     // "Put a creature card exiled with ~ into its owner's graveyard" (Shelob, Dread Weaver, CR 607.2a, 118.3): one card of the kind `what` names that the permanent exiled with its linked ability
     | { readonly kind: 'putLinkedExile'; readonly what: IrNoun }
+    // "Put a card an opponent owns from exile into that player's graveyard" (Void Attendant, CR 108.3, 118.3): one face-up card in exile of the kind `what` names that an opponent owns
+    | { readonly kind: 'putOpponentExile'; readonly what: IrNoun }
     | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
@@ -1845,6 +1856,8 @@ export interface IrTrigger extends IrNode {
   readonly attackedEnchantedPlayer?: true;
   /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
   readonly attackedYou?: true;
+  /** 'attackBatch' "Whenever an opponent attacks you and/or one or more planeswalkers you control" (Cunning Rhetoric, CR 508.1b, 508.6): the controller of the ability or a planeswalker they control was declared as attacked. */
+  readonly attackedYouOrPlaneswalkers?: true;
   /** 'attackBatch' "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b): the player who has the initiative was declared as attacked as a player. */
   readonly attackedInitiativeHolder?: true;
   /** 'exerted' "If ~ hasn't been exerted this turn, you may exert it as it attacks" (Combat Celebrant, CR 701.43b): the exert is offered only to a creature not yet exerted this turn. */
@@ -2047,6 +2060,8 @@ export type IrStaticEffect =
   | { readonly kind: 'abilityCostReduction'; readonly amount: number; readonly targetsSelf?: true }
   // "The first activated ability you activate during your turn that targets a creature you control costs {2} less to activate." (Limit Break deck, Professor Hojo, CR 601.2f, 602.2b)
   | { readonly kind: 'firstTargetingAbilityCostReduction'; readonly amount: number }
+  /** "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a): the engine's `plotCostReduction`, generic mana only. */
+  | { readonly kind: 'plotCostReduction'; readonly amount: number }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
   | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
@@ -2095,6 +2110,11 @@ export type IrStaticEffect =
    * when the `condition` (read for the caster as the spell is cast) holds. The subject is `~`.
    */
   | { readonly kind: 'lifeAlternative'; readonly life: number; readonly condition?: IrCondition }
+  /**
+   * "You may pay {1}{B} rather than pay ~'s mana cost." (Baleful Mastery, CR 118.9, 601.2b): an alternative cost of the face that pays the mana `cost` (symbols without braces) instead of the
+   * mana cost. The subject is `~`.
+   */
+  | { readonly kind: 'manaAlternative'; readonly cost: readonly string[] }
   /**
    * "You may play an additional land on each of your turns." and the forms with a number ("two additional lands")
    * and with "Each player ... on each of their turns" (stage P24, D-125, CR 305.2). The statement's subject is the
@@ -2281,6 +2301,8 @@ export type IrStaticEffect =
       readonly cause?: IrNoun;
       /** Issue 81 (Windcrag Siege): "If a creature attacking causes a triggered ability ... to trigger". */
       readonly causeAttacks?: true;
+      /** Felix Five-Boots: "If a creature you control dealing combat damage to a player causes a triggered ability ... to trigger". */
+      readonly causeCombatDamage?: true;
       /** Yarok, the Desecrated: "If a permanent entering causes a triggered ability ... to trigger". */
       readonly causeEnters?: true;
       /** Issue 105 (Panharmonicon): with `causeEnters`, only a permanent that is one of these card types as it enters. */
@@ -2531,6 +2553,8 @@ export interface IrKeyword extends IrNode {
   readonly gift?: 'card' | 'tappedFish';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
+  /** "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): the kicker cost is {X}, announced as at least 1. */
+  readonly xNotZero?: true;
   /** "Equip—Pay {3} or remove a counter from ~" (Gavel of the Righteous, CR 702.6a, 118.3): the other way to pay the equip ability, which `cost` is the first of. */
   readonly orCost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */

@@ -101,6 +101,28 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
         );
       }
+      if (t.attackedYouOrPlaneswalkers !== undefined && t.attackedYouOrPlaneswalkers !== true) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is true when present',
+        );
+      }
+      if (
+        t.attackedYouOrPlaneswalkers === true &&
+        (t.attackedYou === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackedInitiativeHolder === true ||
+          t.eachAttackedPlayer === true ||
+          t.eachAttackedOpponent === true ||
+          t.who === 'you')
+      ) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is about the attackers of another player and does not go with attackedYou, attackedEnchantedPlayer, attackedInitiativeHolder, eachAttackedPlayer or eachAttackedOpponent',
+        );
+      }
       if (t.attackedInitiativeHolder !== undefined && t.attackedInitiativeHolder !== true) {
         issue(
           out,
@@ -510,7 +532,11 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) === 'creatureAttacks' || kindOf(s.cause) === 'permanentEnters') {
+        if (
+          kindOf(s.cause) === 'creatureAttacks' ||
+          kindOf(s.cause) === 'creatureDealsCombatDamageToPlayer' ||
+          kindOf(s.cause) === 'permanentEnters'
+        ) {
           // Issue 81 (CR 603.2d): a creature attacking, no parameter. Issue 105: the entering permanent may be limited to card types.
           const entering = (s.cause as { entering?: unknown }).entering;
           if (
@@ -526,7 +552,7 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
           issue(
             out,
             `${path}.cause`,
-            'the cause of an additional trigger is castOrCopySpell, creatureAttacks or permanentEnters',
+            'the cause of an additional trigger is castOrCopySpell, creatureAttacks, creatureDealsCombatDamageToPlayer or permanentEnters',
           );
         } else {
           const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;

@@ -144,7 +144,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     const zonesArg = arg(clause, 'zones');
     let zones: readonly ('graveyard' | 'hand' | 'library')[] | undefined;
     if (zonesArg !== undefined) {
-      if (zonesArg.kind !== 'destinations' || reveal.value || shuffle.value) return failure(clause);
+      if (zonesArg.kind !== 'destinations' || shuffle.value) return failure(clause);
       const needs = missingFeatures(['selector:searchZones']);
       if (needs.length > 0) return { ok: false, needs, at: zonesArg.span, rule: zonesArg.rule };
       const names: ('graveyard' | 'hand' | 'library')[] = [];

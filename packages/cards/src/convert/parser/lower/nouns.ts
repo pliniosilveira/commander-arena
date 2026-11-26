@@ -123,6 +123,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:sharesColorWith',
   // Breaking of the Fellowship: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
   'selector:sameControllerAs',
+  // Bladegriff Prototype: "target nonland permanent of that player's choice" (`TargetSpec.chosenBy`).
+  'selector:targetChosenBy',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
@@ -379,6 +381,11 @@ function lowerFilterAt(
   if (filter.castFromOwnGraveyard === true) {
     if (inner) return bad([]);
     parts.push('selector:castFromOwnGraveyard');
+  }
+  // Doc Aurlock, Grizzled Genius: "spells you cast from your graveyard or from exile" (CR 601.2a, 404.1, 406.1), a spell on the stack.
+  if (filter.castFromOwnGraveyardOrExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromOwnGraveyardOrExile');
   }
   // Alisaie Leveilleur: "the second spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.nthSpellThisTurn !== undefined) {
@@ -701,6 +708,9 @@ function lowerFilterAt(
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
     ...(filter.castFromExile === true ? { castFromExile: true as const } : {}),
     ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+    ...(filter.castFromOwnGraveyardOrExile === true
+      ? { castFromOwnGraveyardOrExile: true as const }
+      : {}),
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
@@ -1200,6 +1210,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
       }
+      // Bladegriff Prototype (CR 603.3d): "target nonland permanent of that player's choice": the player of the event chooses the target.
+      if (noun.chosenByTriggerPlayer === true) {
+        const blocked = missingFeatures(['selector:targetChosenBy']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
       if (noun.differentControllers === true) {
         const blocked = missingFeatures(['selector:differentControllers']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -1274,6 +1289,9 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                         : {}),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
                       ...(sameController === undefined ? {} : { sameControllerAs: sameController }),
+                      ...(noun.chosenByTriggerPlayer === true
+                        ? { chosenBy: 'triggerPlayer' as const }
+                        : {}),
                       // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
                       ...(apart === undefined ||
                       noun.otherTargetAll !== true ||

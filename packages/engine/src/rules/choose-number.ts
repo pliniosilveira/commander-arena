@@ -19,7 +19,8 @@ export function runChooseNumber(
   if (ins.amount !== null) {
     if (ins.manaSplit === undefined) return done(state);
     // CR 106.1b, 605.3b (Xenagos): the mana of the combination goes to the pool of the player who chose it, in the colors chosen.
-    const [first, second] = ins.manaSplit;
+    const [first, ...others] = ins.manaSplit;
+    if (first === undefined) return done(state);
     const source = res.source;
     const live = source === null ? undefined : state.objects[source];
     const sourceTypes =
@@ -28,9 +29,13 @@ export function runChooseNumber(
         : live !== undefined
           ? derive(state, live).types
           : (state.lki[source]?.characteristics.types ?? []);
+    const left = ins.max - ins.amount;
+    // The last color takes what is left; with more colors after this one the player is asked how many of the next (CR 106.1b, 608.2d).
+    const [second] = others;
+    const more = others.length > 1 && left > 0;
     const made = [
       ...Array.from({ length: ins.amount }, () => first),
-      ...Array.from({ length: ins.max - ins.amount }, () => second),
+      ...(more || second === undefined ? [] : Array.from({ length: left }, () => second)),
     ].map((color) => ({
       color,
       snow: false,
@@ -38,12 +43,17 @@ export function runChooseNumber(
       restriction: null,
       ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
     }));
-    if (made.length === 0) return done(state);
+    const next: Instruction[] = more
+      ? [{ ...ins, min: 0, max: left, amount: null, manaSplit: others }]
+      : [];
+    if (made.length === 0) return done(state, [], next);
     const seat = getSeat(state, ins.seat);
     return {
-      ...done(setSeat(state, { ...seat, manaPool: [...seat.manaPool, ...made] }), [
-        { kind: 'manaAdded', seat: ins.seat, count: made.length },
-      ]),
+      ...done(
+        setSeat(state, { ...seat, manaPool: [...seat.manaPool, ...made] }),
+        [{ kind: 'manaAdded', seat: ins.seat, count: made.length }],
+        next,
+      ),
       performed: 1,
     };
   }
@@ -61,6 +71,7 @@ export function runChooseNumber(
       purpose: 'chooseNumber',
       min: ins.min,
       max: ins.max,
+      ...(ins.manaSplit?.[0] === undefined ? {} : { manaColor: ins.manaSplit[0] }),
       perX: { mana: 0, life: 0 },
     },
   };

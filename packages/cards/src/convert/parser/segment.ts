@@ -105,6 +105,12 @@ const LOYALTY_PREFIX = /^\[?(?:[+]\d+|[\u2212\u2013-](?:\d+|X)|0)\]?\s*:/;
  */
 const ACTIVATED_MAY_CAST_RIDER =
   /^(?:[^:.]+: )?you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\. if that spell would be put into your graveyard, exile it instead\./i;
+/**
+ * "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost. If that spell would be put into their graveyard, exile it instead." (Arcane Heist,
+ * CR 614.1a): a spell whose permission carries the rider, read before the replacement test below, which "would ... instead" would take.
+ */
+const OPPONENT_GRAVEYARD_CAST_RIDER =
+  /^you may cast target [^.,]* cards? from an opponent['’]s graveyard without paying its mana cost\. if that spell would be put into their graveyard, exile it instead\.$/i;
 
 /**
  * "{1}{R}{W}, {T}, Sacrifice a Spirit: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on
@@ -366,9 +372,17 @@ const DISCARD_AND_SACRIFICE_SAME_WAY =
  * (`effect.look-exile-cast-any-type`).
  */
 const LOOK_EXILE_ONE_FACE_DOWN =
-  /(?:^|, )look at the top [^.]* cards of [^.]* library, exile one of them face down, then put the rest [^.]*\.$/i;
+  /(?:^|, )look at the top [^.]* cards of [^.]* library, exile one of them face down, then put the rest on the bottom of [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_ANY_TYPE =
   /^you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell\.$/i;
+/**
+ * "Look at the top two cards of target opponent's library. Exile one of them face down and put the other on the bottom of that library." (Siphon Insight, CR 401.2, 406.3): the second
+ * sentence says what is done with the cards the first one looks at, so the two are one instruction (`effect.look-exile-face-down-one`).
+ */
+const LOOK_TOP_TWO_TARGET_OPPONENT =
+  /^look at the top two cards of target opponent['’]s library\.$/i;
+const EXILE_ONE_FACE_DOWN_OTHER_BOTTOM =
+  /^exile one of them face down and put the other on the bottom of that library\.$/i;
 /**
  * "For each player, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield under your control." (issue 102, Afterlife from the Loam,
  * CR 115.1, 608.2c): the second sentence says what is done with the cards the first one targets, so the two are one instruction (`effect.put-one-per-graveyard`).
@@ -827,6 +841,15 @@ const EXILE_THAT_SPELL_INSTEAD =
   /^if that spell would be put into a graveyard, exile it instead\.$/i;
 
 /**
+ * "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost. If that spell would be put into their graveyard, exile it instead." (Arcane Heist, CR 614.1a):
+ * the second sentence is a rider of the cast the first one allows (`effect.cast-opponent-graveyard-card-free`), so the two are read as one instruction.
+ */
+const CAST_FROM_OPPONENT_GRAVEYARD_FREE =
+  /(?:^|, )you may cast target [^.,]* cards? from an opponent['’]s graveyard without paying its mana cost\.$/i;
+const EXILE_THAT_SPELL_INSTEAD_THEIR =
+  /^if that spell would be put into their graveyard, exile it instead\.$/i;
+
+/**
  * "For each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost. If a spell cast this way would be put into a
  * graveyard, exile it instead." (First Flight deck, CR 614.1a): "a spell cast this way" is each spell the first sentence cast, so the second sentence is a rider of the first and the
  * two are read as one instruction (`effect.cast-per-opponent-graveyard-free`; the first may follow the comma of a trigger).
@@ -1102,6 +1125,13 @@ const PLAYER_REVEALS_UNTIL =
 const YOU_PUT_AND_LOSE_LIFE =
   /^you put that card onto the battlefield under your control and lose life equal to that permanent['’]s mana value\.$/i;
 /**
+ * "Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost." (Nashi, Moon Sage's Scion, CR 118.9,
+ * 601.2): the second sentence says how a spell cast with the permission of the first is paid for, so the two are one instruction (`effect.may-play-one-pay-life`).
+ */
+const MAY_PLAY_ONE_OF_THOSE = /^until end of turn, you may play one of those cards\.$/i;
+const CAST_THIS_WAY_PAY_LIFE =
+  /^if you cast a spell this way, pay life equal to its mana value rather than paying its mana cost\.$/i;
+/**
  * "Target opponent exiles cards from the top of their library until they exile an instant, sorcery, or creature card. You may cast that card without paying its mana cost. If you cast a
  * creature spell this way, it gains haste and "At the beginning of the end step, sacrifice this creature."" (Strago and Relm, issue 97, CR 701.13, 608.2g): "that card" is the card the
  * first sentence exiles and "this way" the cast of the second, so the two or three sentences are one instruction (`effect.player-exiles-until-cast`).
@@ -1217,6 +1247,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
+      continue;
+    }
+    // Nashi, Moon Sage's Scion: the permission to play one of the cards exiled and how a spell cast with it is paid for.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, MAY_PLAY_ONE_OF_THOSE) &&
+      said(b, CAST_THIS_WAY_PAY_LIFE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
       continue;
     }
     // Strago and Relm (issue 97): the exile until a card is found, the free cast of it and, when there is one, what a creature spell gains.
@@ -1544,6 +1585,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
+        (said(a, CAST_FROM_OPPONENT_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_THEIR)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, CAST_FROM_YOUR_GRAVEYARD_PAID) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
@@ -1621,6 +1663,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, LOOK_EXILE_ONE_FACE_DOWN) &&
       said(b, MAY_CAST_THAT_CARD_ANY_TYPE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, LOOK_TOP_TWO_TARGET_OPPONENT) &&
+      said(b, EXILE_ONE_FACE_DOWN_OTHER_BOTTOM)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -2123,6 +2173,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     const colon = costColon(text);
     if (colon > 0) return activatedSkeleton(text, colon, base);
     // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  if (OPPONENT_GRAVEYARD_CAST_RIDER.test(text)) {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 

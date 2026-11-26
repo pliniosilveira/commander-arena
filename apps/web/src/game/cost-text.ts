@@ -213,6 +213,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'putLinkedExileInGraveyard':
       // CR 607.2a (Shelob, Dread Weaver): a card the permanent exiled with its linked ability.
       return 'Put a card exiled with this permanent into its owner’s graveyard';
+    case 'putOpponentExileInGraveyard':
+      // CR 108.3 (Void Attendant): a face-up card in exile that an opponent owns.
+      return 'Put a card an opponent owns from exile into its owner’s graveyard';
     case 'exileFromHand': {
       const colorNames: Readonly<Record<string, string>> = {
         W: 'white',

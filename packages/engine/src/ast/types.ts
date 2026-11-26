@@ -867,6 +867,12 @@ export interface ObjectFilter {
    */
   readonly castFromOwnGraveyard?: true;
   /**
+   * "Spells you cast from your graveyard or from exile" (Doc Aurlock, Grizzled Genius, CR 601.2a, 404.1, 406.1, 108.3): the spell on the stack was cast from exile, or from a graveyard
+   * the card's owner is the caster of (as `castFromOwnGraveyard`). Read from the spell itself as it is cast (the zone it came from, `castFrom`), so only a spell is matched; in a cost
+   * reduction (`costReduction.spells`) it is read as the cost is determined. Not with `notCastFromHand`, `castFromHand`, `castFromGraveyard`, `castFromExile` or `castFromOwnGraveyard`.
+   */
+  readonly castFromOwnGraveyardOrExile?: true;
+  /**
    * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
    * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -1777,6 +1783,13 @@ export interface TargetSpec {
    */
   readonly sameControllerAs?: string;
   /**
+   * "Destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 115.1, 603.3d, 109.4, ruling 2020-11-10): the player the event of the
+   * trigger is about (`triggerPlayer`: the player dealt the combat damage) chooses the target of this slot as the ability is put on the stack, among the legal targets (the filter is read for the
+   * controller of the ability, "your opponents"); the controller of the ability stays its controller (hexproof, ward, and who "you" is). If that player has left the game, the first opponent of the
+   * controller in turn order who is still in the game chooses. Only a triggered ability with no modes whose event is about a player, and it is the only target slot.
+   */
+  readonly chosenBy?: 'triggerPlayer';
+  /**
    * "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature" (CR 115.3): also none of the
    * targets of these earlier slots of the same ability (`differentFrom` names the nearest one; a third target differs from both). Only with `differentFrom`.
    */
@@ -2016,6 +2029,14 @@ export type Cost =
    * `forCost` (the engine takes the card when only one can be chosen), and with no such card the ability cannot be activated (CR 118.3). Only the cost of an ordinary activated ability.
    */
   | { readonly kind: 'putLinkedExileInGraveyard'; readonly filter: ObjectFilter }
+  /**
+   * "Put a card an opponent owns from exile into that player's graveyard" (Void Attendant; CR 108.3, 118.3, 602.2b, 400.7, 404.1): as the cost of an activated ability, the player chooses
+   * a face-up card in exile that an opponent of theirs owns and that `filter` matches (a filter of cards in exile: card types, subtypes, colors, mana value; no zone, controller or
+   * owner) and puts it into its owner's graveyard. The player chooses with a `chooseCards` decision of purpose `exile` and `forCost` (the engine takes the card when only one can be
+   * chosen), and with no such card the ability cannot be activated (CR 118.3). A card exiled face down cannot be chosen (`docs/ROADMAP.md`). Only the cost of an ordinary activated
+   * ability of a permanent.
+   */
+  | { readonly kind: 'putOpponentExileInGraveyard'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'removeCounters';
       /**
@@ -2124,6 +2145,7 @@ export type NamedAlternativeKind =
   | 'sacrificeFromGraveyard'
   | 'sacrificePermanents'
   | 'payLife'
+  | 'payMana'
   | 'impending'
   | 'blitz';
 
@@ -2235,6 +2257,10 @@ export type AlternativeCost =
         | 'impending'
         | 'blitz'
       >;
+      /**
+       * `payMana` is "You may pay {1}{B} rather than pay this spell's mana cost" (Baleful Mastery, CR 118.9, 601.2b, 601.2f): the mana `cost` is paid in place of the mana cost, with no
+       * other effect on the spell; a condition on the alternative cost paid is `castForAlternative`.
+       */
       readonly cost: readonly Cost[];
       /**
        * `evoke` only (CR 702.74a, 118.9, 601.2b, 601.2h: "Evoke—Exile a red card from your hand"): besides the `cost` (mana, {0} when it has none) the caster exiles one other card
@@ -2536,6 +2562,12 @@ export interface ChooseSelector {
    */
   readonly fromHandOf?: PlayerSelector;
   /**
+   * "You may put any number of land cards that player owns from exile onto the battlefield under your control" (Oblivion Sower, CR 608.2d, 108.3, 406.3): the candidates are the matching
+   * cards in exile that the player this selector names owns, whoever exiled them and whenever (not only the cards an earlier effect moved); the chooser still makes the choice. Only for
+   * `moveToZone` onto the battlefield, with `filter.zone` `exile` and no `fromMoved`, `fromHandOf` or `alsoGraveyard`.
+   */
+  readonly fromExileOf?: PlayerSelector;
+  /**
    * "Then you may exile a creature or planeswalker card from each graveyard" (King Narfi's Betrayal, CR 608.2d, 404.1): one choice for each graveyard, in turn order from the controller,
    * each among the cards in that player's graveyard that the filter matches (the controller chooses in all of them: the cards are not theirs). With `optional`, one card or none from
    * each, with `count` 1. Only for `moveToZone` to exile, with `filter.zone` `graveyard` and no `fromMoved`.
@@ -2659,10 +2691,12 @@ export type Effect =
    * "Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control." (Xenagos, the Reveler, CR 106.1b, 608.2d, 107.3c): an effect (not a mana ability: it
    * uses the stack) that adds `amount` mana, read as the effect runs, each of the first or the second color: the controller chooses how many of the first (a whole number from 0 to the amount,
    * a `chooseX` decision of purpose `chooseNumber`), the rest are the second. The two colors are different. Nothing is asked, and nothing added, for an amount of 0 or less.
+   * With more colors (Plasm Capture, "Add X mana in any combination of colors": all five, CR 106.1b, 105.1) the controller chooses how many of each in turn, in the order listed, and the last
+   * color takes what is left (nothing is asked for it); a number of mana that is all taken by the colors before it asks no more.
    */
   | {
       readonly kind: 'addManaCombination';
-      readonly colors: readonly [ManaColor, ManaColor];
+      readonly colors: readonly ManaColor[];
       readonly amount: Amount;
     }
   /**
@@ -3553,6 +3587,17 @@ export type Effect =
        * creature card (a card of any other kind stays where it is). Needs `castOnly`.
        */
       readonly creatureSpellsOnly?: true;
+      /**
+       * "You may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost." (Nashi, Moon Sage's Scion; CR 118.9, 119.4, 601.2f):
+       * a spell cast with this permission is cast by the alternative cost `lifeForMana` (no mana cost, life equal to its mana value, an {X} counting as the X announced) and not paying its
+       * mana cost; a land card is played as usual. Not with `free`, `lessGeneric`, `undaunted`, `anyManaColor` or `anyManaType` (there is no mana cost to change).
+       */
+      readonly lifeForMana?: true;
+      /**
+       * "Until end of turn, you may play one of those cards" (Nashi, CR 601.2, 305.1): the permission is for one card among all the cards `objects` names: casting or playing one of them ends
+       * the permissions of the others (`rules/play-permission-one.ts`).
+       */
+      readonly oneOf?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -3657,6 +3702,13 @@ export type Effect =
        */
       readonly restToBottom?: true;
     }
+  /**
+   * "Target opponent chooses X cards from their hand. Look at those cards." and "Look at that player's hand." (Extract Brain, Silent-Blade Oni; CR 608.2d, 402.3): `player` names one
+   * player (a target, the player of a trigger). With `count` that player chooses that many cards of their own hand, as many as they can when it holds fewer (a `chooseCards` decision of
+   * purpose `handChoice`; the cards stay hidden from the other players); without it every card of the hand is named. The cards named stay in the hand and are what `moved` names afterwards;
+   * the controller looks at them as the `castFree` with `fromHand` after it asks which one to cast. Nothing is moved.
+   */
+  | { readonly kind: 'handCards'; readonly player: PlayerSelector; readonly count?: Amount }
   /**
    * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-660, Plargg and Nassari): an opponent of the controller (the first one in turn order who is still in
    * the game: with more than two players the controller does not choose which, as for `revealAndSeparate`) chooses one of the cards `moved` names that `filter` matches, among the
@@ -5240,7 +5292,7 @@ export type Effect =
        * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, Lord of Luxury,
        * CR 401.2, 406.3, 608.2d): whose library is looked at, a selector that names exactly one player (a target or an opponent); left out, the controller's own. The controller looks at
        * the cards and chooses; the cards belong to the owner of the library, which is where the rest go (the bottom). Only with `take.to` `exileFaceDownUnlinked`, `hand`... (see
-       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom`.
+       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom` (Thief of Sanity: `graveyard`, "then put the rest into their graveyard").
        */
       readonly from?: PlayerSelector;
       /**
@@ -5441,6 +5493,12 @@ export type Effect =
       readonly paying?: true;
       /** "... and mana of any type can be spent to cast that spell" (CR 609.4b): the spell cast with `paying` can be paid with any mana for any symbol of its cost. Needs `paying`. */
       readonly anyManaType?: true;
+      /**
+       * "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain; CR 608.2g, 118.9, 402.3): the cards
+       * `moved` names (`handCards`) are in a hand, whoever's it is; the controller looks at them and casts one from there, as the cast of CR 608.2g says. The spell is the controller's
+       * and its card stays its owner's. Only with `objects` a `moved` reference, and with no `play`, `max`, `perOwner`, `player`, `remember`, `paying` or `creatureGains`.
+       */
+      readonly fromHand?: true;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -6650,6 +6708,12 @@ export type Trigger =
        */
       readonly attackedYou?: true;
       /**
+       * "Whenever an opponent attacks you and/or one or more planeswalkers you control" (Cunning Rhetoric, CR 508.1b, 508.6, 603.2c): only when at least one creature of the declaration was
+       * declared as attacking the controller of this ability as a player or a planeswalker they control (an attack on a battle is neither); it triggers once for the declaration, however
+       * many creatures attack. `triggerPlayer` is the attacking player. Not with `attackedYou`, `attackedEnchantedPlayer`, `attackedInitiativeHolder` or `eachAttackedPlayer`.
+       */
+      readonly attackedYouOrPlaneswalkers?: true;
+      /**
        * "Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1, 508.1b, 603.2c): only when at least one creature of the declaration was declared as attacking
        * the player who has the initiative as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many
        * creatures attack. Not with `attackedYou`, `attackedEnchantedPlayer` or `eachAttackedPlayer`.
@@ -6888,7 +6952,12 @@ export type Keyword =
    * card: two kicker costs (CR 702.33b) are not supported; Multikicker (CR 702.33c) is its own keyword. Only `mana` and `payLife` costs.
    * What a kicked spell does is written with the `kicked` condition.
    */
-  | { readonly kind: 'kicker'; readonly cost: readonly Cost[] }
+  /**
+   * An {X} in the mana kicker cost ("Kicker {X}. X can't be 0.", Thieving Skydiver, CR 702.33a, 107.3a, 601.2b): the X is announced when the spell is kicked (not at all when it is not, X is
+   * then 0), after the kicker question and before the targets, and the kicker costs that much generic mana (every {X} of the mana cost and of the kicker is the same X). It is the X the
+   * permanent remembers (`enteredX`, CR 107.3m). `xNotZero` ("X can't be 0"): a kicked spell announces an X of at least 1, so the kicker is offered only when it can be paid with X 1.
+   */
+  | { readonly kind: 'kicker'; readonly cost: readonly Cost[]; readonly xNotZero?: true }
   /**
    * CR 702.27a (Buyback): "Buyback [cost]" means "You may pay an additional [cost] as you cast this spell" and "If the buyback cost was paid, put this spell into its owner's hand
    * instead of into that player's graveyard as it resolves." An instant or a sorcery; the caster is asked while casting (CR 601.2b, after the kicker questions and before X and the
@@ -7280,6 +7349,13 @@ export type Keyword =
    */
   | { readonly kind: 'rebound' }
   /**
+   * CR 702.99 (Cipher; the number as the task gave it, unverified): "Then you may exile this spell card encoded on a creature you control. Whenever that creature deals combat damage to a
+   * player, its controller may cast a copy of the encoded card without paying its mana cost." A static ability of an instant or a sorcery that works while the spell is on the stack: as it
+   * resolves, after its other effects, its controller may choose a creature they control and the card is exiled, encoded on it, instead of going to the graveyard (`rules/cipher.ts`).
+   * A copy of the spell is not a card and is not encoded. Multiple instances are redundant.
+   */
+  | { readonly kind: 'cipher' }
+  /**
    * CR 702.56a (Replicate, D-129): "Replicate [cost]" means "As an additional cost to cast this spell, you may pay
    * [cost] any number of times" and "When you cast this spell, if a replicate cost was paid for it, copy it for each
    * time its replicate cost was paid. If the spell has any targets, you may choose new targets for any of the
@@ -7491,6 +7567,12 @@ export type Condition =
    * Needs a replicate ability on the card.
    */
   | { readonly kind: 'replicated' }
+  /**
+   * "If the {1}{B} cost was paid" (Baleful Mastery, CR 118.9, 601.2b, 608.2c): the spell that is resolving was cast for the alternative cost `alternative` names (`payMana`: the face's
+   * "You may pay {1}{B} rather than pay this spell's mana cost"). Read from the spell, or from its last-known information once it has left (CR 113.7a); a copy of the spell was cast the
+   * same way (CR 707.10c). Only on a face that lists that alternative cost.
+   */
+  | { readonly kind: 'castForAlternative'; readonly alternative: 'payMana' }
   /**
    * "If this spell was foretold" (CR 702.143a, 702.143c: a spell is foretold when it is cast from exile for its foretell cost): the spell that is resolving was cast for its
    * foretell cost. Read from the spell, or from its last-known information once it has left (CR 113.7a). Only on a face that lists a foretell cost.
@@ -8404,6 +8486,14 @@ export type Replacement =
        */
       readonly fromGraveyard?: true;
       /**
+       * "As The Mimeoplasm enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1 counters on it equal
+       * to the power of the other card." (CR 614.12, 707.9b, 122.6, 707.2): what is copied is a card in ANY graveyard (`what` names the zone `graveyard` and the cards the filter matches, with
+       * no `fromGraveyard`); the controller chooses the card to copy (none is an answer, and with fewer than two such cards nothing is asked) and then the other card, and both are exiled as
+       * the permanent enters. The permanent enters as a copy of the first with the values it had in the graveyard, and with as many counters of `counter` as the power of the other card
+       * (0 for a card whose power is not a number, CR 208.3). Needs `optional` and `duration` `permanent`. Only the ability of a card: a token that is a copy of one asks nothing (`docs/ROADMAP.md`).
+       */
+      readonly exileTwoFromGraveyards?: { readonly counter: string };
+      /**
        * "..., except her name is ~" (CR 707.9a): the permanent that enters keeps the name it has as a card, every other copiable value is the original's. Only `true`.
        */
       readonly keepName?: true;
@@ -9068,6 +9158,12 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
+   * "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a, 118.7): a static ability of a permanent on the battlefield that takes
+   * `amount` generic mana off the generic part of the plot cost of each card its controller plots from their hand. Plotting is a special action, not a spell or an ability, so
+   * this is no `costReduction`; it never takes the cost below zero and changes no colored mana, and every instance applies.
+   */
+  | { readonly kind: 'plotCostReduction'; readonly amount: number }
+  /**
    * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-461, CR 601.2f, 602.2b, 118.7, 113.6b): a static ability of a permanent on the
    * battlefield that takes `amount` generic mana off the generic part of the first mana cost of every activated ability (not a mana ability) of an object `objects` describes, whoever
    * activates it. The object is a card in the graveyard (`zone` is `graveyard`, `controller: 'you'` is "your graveyard", relative to the controller of the permanent with this ability)
@@ -9364,6 +9460,8 @@ export type StaticEffect =
         | { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter }
         // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
         | { readonly kind: 'creatureAttacks' }
+        // Felix Five-Boots (CR 603.2d, 510.2): "If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature the doubler's controller controls dealing combat damage to a player (`dealsCombatDamage` to a player, or a `combatDamageBatch` of creatures you control) counts.
+        | { readonly kind: 'creatureDealsCombatDamageToPlayer' }
         // Yarok, the Desecrated (CR 603.2d, 603.6a): "If a permanent entering causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a permanent entering the battlefield, under any player's control (`entersBattlefield`, `entersBatch`, `landfall`) counts.
         | {
             readonly kind: 'permanentEnters';
@@ -9863,6 +9961,12 @@ export interface ManaAbility {
      * `monocoloredChosen`.
      */
     readonly fromGraveyard?: true;
+    /**
+     * "Spend this mana only to cast spells you don't own." (Thieving Varmint; CR 106.6, 108.3): the mana can pay for a spell whose owner is not the player who casts it, never for
+     * a spell of their own and never for an ability. Alone: no `types`, `subtypes`, `chosenType`, `qualities`, `alsoAbilities`, `xCost`, `abilitiesOnly`, `monocoloredChosen`,
+     * `notGeneric` or `fromGraveyard`.
+     */
+    readonly notOwned?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

@@ -439,7 +439,65 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.triggers-additional-time-combat-damage` (Felix Five-Boots): "If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to
+ * trigger, that ability triggers an additional time." (CR 603.2d, 510.2: the cause is a creature of the controller dealing combat damage to a player; the abilities that trigger on that damage
+ * trigger once more). Not read: another player's creatures, another kind of damage, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_COMBAT_DAMAGE = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-combat-damage',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 510.2 (Combat Damage Step)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If a creature dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If a creature you control dealing damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-combat-damage';
+    const r = sequence(
+      literal(
+        'if a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        subject,
+        [{ kind: 'doubleTriggers', causeCombatDamage: true }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const EDHREC_STATIC_RULES = [
+  STATIC_TRIGGERS_ADDITIONAL_TIME_COMBAT_DAMAGE,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_TYPES,

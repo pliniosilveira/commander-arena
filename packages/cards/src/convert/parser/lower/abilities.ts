@@ -268,10 +268,12 @@ function lowerCostedKeyword(
           ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
           : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
+  // "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): only the kicker keyword, and only with that sentence.
+  if (ability.xNotZero === true && name !== 'kicker') return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
     only,
-    name === 'cycling'
+    name === 'cycling' || (name === 'kicker' && ability.xNotZero === true)
       ? { x: true }
       : name === 'ward'
         ? { ward: true }
@@ -287,6 +289,7 @@ function lowerCostedKeyword(
     ...(name === 'escalate' && cost.value.kind === 'tapPermanents'
       ? (['ability:escalateTapCost'] as const)
       : []),
+    ...(ability.xNotZero === true ? (['ability:kickerX'] as const) : []),
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
@@ -329,6 +332,7 @@ function lowerCostedKeyword(
           ...(ability.legendaryOnly === true
             ? { restriction: { types: ['creature'], supertypes: ['legendary'] } }
             : {}),
+          ...(ability.xNotZero === true ? { xNotZero: true } : {}),
         } as Keyword,
       },
     ],
@@ -978,6 +982,7 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       ...(event.args.fromGraveyard === undefined
         ? []
         : (['ability:copyEntersFromGraveyard'] as const)),
+      ...(event.args.exileTwo === undefined ? [] : (['ability:copyEntersExilesTwo'] as const)),
       ...(event.args.addTypes === undefined ? [] : (['ability:copyEntersAddsTypes'] as const)),
       ...(event.args.addStatic === undefined ? [] : (['ability:copyEntersAddsStatics'] as const)),
     ]);
@@ -987,11 +992,17 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the filter keeps its zone, the graveyard.
     const fromGraveyard =
       event.args.fromGraveyard?.kind === 'flag' && event.args.fromGraveyard.value;
+    // CR 614.12, 707.9b (The Mimeoplasm): "exile two creature cards from graveyards": the creature cards of every graveyard, which the filter says by its zone.
+    const exileTwo = event.args.exileTwo?.kind === 'flag' && event.args.exileTwo.value;
     const { zone, ...unzoned } = filter.value;
-    if (fromGraveyard ? zone !== 'graveyard' : zone !== undefined && zone !== 'battlefield') {
+    if (
+      fromGraveyard || exileTwo
+        ? zone !== 'graveyard'
+        : zone !== undefined && zone !== 'battlefield'
+    ) {
       return failure(ability);
     }
-    const kind = fromGraveyard ? filter.value : unzoned;
+    const kind = fromGraveyard || exileTwo ? filter.value : unzoned;
     const gains: Keyword[] = [];
     for (const name of gained?.kind === 'keywordList' ? gained.names : []) {
       const word = keywordKind(name);
@@ -1043,6 +1054,8 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
       ...(fromGraveyard ? { fromGraveyard: true as const } : {}),
+      // CR 614.12, 707.9b, 122.6: "... a number of additional +1/+1 counters on it equal to the power of the other card".
+      ...(exileTwo ? { exileTwoFromGraveyards: { counter: '+1/+1' } } : {}),
       // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types".
       ...(event.args.keepName?.kind === 'flag' && event.args.keepName.value
         ? { keepName: true as const }

@@ -125,7 +125,46 @@ export const EFFECT_SPEND_ONLY_FROM_GRAVEYARD = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.spend-only-not-owned`: "Spend this mana only to cast spells you don't own." (Thieving Varmint; CR 106.6, 108.3): the mana can pay for a spell whose owner is another
+ * player than the one casting it. It says something about the mana ability before it; the lowering gives the engine its `spendOnly.notOwned`. Not read: a spell type or quality, "a
+ * spell" in the singular, "you own", another player's name, an ability, a trailing word.
+ */
+export const EFFECT_SPEND_ONLY_NOT_OWNED = defineRule<Clauses>({
+  id: 'effect.spend-only-not-owned',
+  family: 'effect',
+  leading: ['spend'],
+  cites: ['CR 106.6 (Mana)', 'CR 108.3 (Owner)', 'CR 605.1a (Mana Abilities)'],
+  examples: [
+    "spend this mana only to cast spells you don't own",
+    'spend this mana only to cast spells you don’t own',
+  ],
+  rejects: [
+    "spend this mana only to cast a spell you don't own",
+    "spend this mana only to cast creature spells you don't own",
+    'spend this mana only to cast spells you own',
+    "spend this mana only to cast spells your opponents don't own",
+    "spend this mana only to cast spells you don't own and draw a card",
+    "spend this mana only to activate abilities you don't own",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/spend this mana only to cast spells you don['’]t own(?![\p{L}\p{N}'’])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const id = 'effect.spend-only-not-owned';
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'spendOnly', { notOwned: flag(id, span) }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 export const SPEND_QUALITIES_EFFECT_RULES = [
   EFFECT_SPEND_ONLY_QUALITIES,
   EFFECT_SPEND_ONLY_FROM_GRAVEYARD,
+  EFFECT_SPEND_ONLY_NOT_OWNED,
 ].map(quietly);

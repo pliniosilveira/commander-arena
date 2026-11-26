@@ -20,6 +20,7 @@ import {
 import type { Agent, DecideContext, FallbackRecord } from './agent';
 import { chooseAmassArmy } from './casual-amass';
 import { chooseCardsToLose, chooseMulligan, chooseTargets } from './casual-choices';
+import { chooseForController } from './casual-chooser';
 import { chooseAttackers, chooseBlockers } from './casual-combat';
 import { upkeepAnswer, wardDiscardAnswer } from './casual-costs';
 import { chooseAuraHost, chooseProliferate } from './casual-counters';
@@ -95,6 +96,8 @@ export function createCasualHandlers(
     targets: (d) => {
       // No legal target for a slot that needs one: the cast is cancelled (it is not chosen again, `casual-no-target.ts`).
       if (hasNoTargetToChoose(d)) return { kind: 'cancel' };
+      // The target of another player's triggered ability that this agent chooses (CR 603.3d, "of that player's choice"): what costs it least.
+      if (d.forController !== undefined) return chooseForController(view, d);
       // The new target of a spell or ability whose target a resolving effect changes (D-181, CR 115.7a).
       const redirected = chooseNewTarget(view, d);
       if (redirected !== null) return redirected;
@@ -131,8 +134,10 @@ export function createCasualHandlers(
                     ? chooseLegendToKeep(view, d)
                     : d.purpose === 'conniveOrder'
                       ? { kind: 'choosePermanents', objects: d.legal.slice(0, 1) } // CR 701.50c, D-223: every permanent connives; the first listed goes first
-                      : d.purpose === 'entersCopy'
-                        ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of
+                      : d.purpose === 'entersCopy' ||
+                          d.purpose === 'entersCopyOther' ||
+                          d.purpose === 'cipher'
+                        ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of; The Mimeoplasm (CR 707.9b): the best creature card, then the next best for the counters; Cipher (CR 702.99): the strongest creature carries the card
                         : d.purpose === 'entersRemoveCounters'
                           ? chooseCountersToRemove(view, d) // CR 614.12, 122.1, Sin: the opponents' counters come off, the agent's own only when they hurt it
                           : d.purpose === 'devour'

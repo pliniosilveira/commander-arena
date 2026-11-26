@@ -21,6 +21,7 @@ import { DRAW_REDIRECT_REPLACEMENT_RULES } from './draw-redirect';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
+import { EXILE_PAIR_COPY_REPLACEMENT_RULES } from './exile-pair-copy';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KEEP_ONE_LOYALTY_REPLACEMENT_RULES } from './keep-one-loyalty';
@@ -423,6 +424,8 @@ export const REPLACEMENT_RULES = [
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
   ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
+  // Grand Larceny deck (issue 119), The Mimeoplasm: "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards ...".
+  ...EXILE_PAIR_COPY_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."

@@ -117,6 +117,8 @@ import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
+import { GRAND_LARCENY_B_LOWERINGS } from './grand-larceny-b';
+import { GRAND_LARCENY_C_LOWERINGS } from './grand-larceny-c';
 import { GAIN_ACTIVATED_ABILITIES, GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
@@ -137,6 +139,7 @@ import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
+import { IMPULSE_EXILE_LOWERINGS } from './impulse-exile';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KEEP_DESTROY_REST_LOWERINGS } from './keep-destroy-rest';
@@ -1671,7 +1674,19 @@ const MANIFEST: Lowering<IrClause, Effects> = {
     if (who?.kind !== 'noun') return failure(clause);
     const player = playerSelectorOf(who, ctx);
     if (!player.ok) return player;
-    return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+    // CR 701.40a: "the top card of that player's library" is the library of another player (the player of the trigger).
+    const owner = arg(clause, 'from');
+    if (owner === undefined) {
+      return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+    }
+    if (owner.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    return {
+      ok: true,
+      value: [{ kind: 'manifest', player: player.value, fromLibraryOf: from.value }],
+      rule: clause.rule,
+    };
   },
 };
 
@@ -3088,6 +3103,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
   ...DEATH_TOLL_WINTER_LOWERINGS,
   ...PARTY_TIME_LIBRARY_LOWERINGS,
+  ...IMPULSE_EXILE_LOWERINGS,
+  ...GRAND_LARCENY_B_LOWERINGS,
   ...DURNAN_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
@@ -3137,6 +3154,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DAWNBREAK_LOWERINGS,
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,
+  ...GRAND_LARCENY_C_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
@@ -3306,7 +3324,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                                 ? 'subjectControlledByYou'
                                 : test === 'thatPlayersTurn'
                                   ? 'triggerPlayerTurn'
-                                  : test;
+                                  : test === 'altCostPaid'
+                                    ? 'castForAlternative'
+                                    : test;
     return failure(
       clause,
       kind === 'raw' ||

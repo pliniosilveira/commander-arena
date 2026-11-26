@@ -767,6 +767,9 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
         ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
+        ...(t.attackedYouOrPlaneswalkers === true
+          ? { attackedYouOrPlaneswalkers: true as const }
+          : {}),
         ...(t.attackedInitiativeHolder === true ? { attackedInitiativeHolder: true as const } : {}),
         ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
         ...(t.eachAttackedOpponent === true ? { eachAttackedOpponent: true as const } : {}),

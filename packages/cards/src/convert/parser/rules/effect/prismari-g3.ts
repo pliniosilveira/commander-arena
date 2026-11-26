@@ -106,6 +106,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'You may cast an instant or sorcery spell with mana value X or less from among them without paying its mana cost',
     'you may cast up to two spells from among the other cards exiled this way without paying their mana costs',
     'you may cast any number of spells from among those cards without paying their mana costs',
+    // Villainous Wealth (CR 608.2g, 202.3): any number of spells, whatever their types, with mana value X or less.
+    'you may cast any number of spells with mana value X or less from among them without paying their mana costs',
     'you may cast any number of spells from among cards exiled this way without paying their mana costs',
     'You may cast a spell from among them without paying its mana cost',
     'cast up to two spells from among the other cards exiled this way without paying their mana costs',
@@ -116,6 +118,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast up to three spells from among them without paying their mana costs',
     'you may cast a spell from among them without paying their mana costs',
     'you may cast any number of spells from among them without paying its mana cost',
+    'you may cast any number of spells with mana value Y or less from among them without paying their mana costs',
+    'you may cast any number of spells with mana value X or less from among them without paying its mana cost',
     'you may cast up to two spells from among them without paying its mana cost',
     'you may cast a spell from among them',
     'you may cast a spell from among them this turn without paying its mana cost',
@@ -163,7 +167,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
       };
     }
     const head = pattern(
-      /(you may )?cast (a spell|an instant or sorcery spell with mana value X or less|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~|cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
+      /(you may )?cast (a spell|an instant or sorcery spell with mana value X or less|up to two spells|any number of spells(?: with mana value X or less)?|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~|cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!head.ok) return head;
     const [, may = '', count = '', from = '', cost = ''] = head.value;
@@ -185,6 +189,11 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     const lower = count.toLowerCase();
     if (lower === 'up to two spells') args.max = number(2, span);
     if (lower === 'any number of spells') args.any = flag(id, true, span);
+    // Villainous Wealth (CR 608.2g, 202.3, 107.3a): any number of spells, of any type, with a mana value no more than the X of the spell.
+    if (lower === 'any number of spells with mana value x or less') {
+      args.any = flag(id, true, span);
+      args.limitX = flag(id, true, span);
+    }
     // Epic Experiment (issue 121): "instant and sorcery spells with mana value X or less": any number of them, of those types, with a mana value no more than the X of the spell.
     // Summons of Saruman: one spell, an instant or a sorcery, with a mana value no more than the X of the spell.
     if (lower.startsWith('an instant or sorcery spell')) {

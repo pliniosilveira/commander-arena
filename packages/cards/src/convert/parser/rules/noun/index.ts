@@ -30,6 +30,7 @@ import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
+import { CHOSEN_BY_PLAYER_NOUN_RULES } from './chosen-by-player';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
 import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
@@ -345,6 +346,9 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'target spell with mana value 1',
     "target spell you don't control",
     "target creature spell you don't control",
+    // Smirking Spelljacker (CR 109.4, 405.1): "an opponent controls" says the same of a spell as "you don't control".
+    'target spell an opponent controls',
+    'target creature spell an opponent controls',
     'target creature spell with mana value 3 or less',
     // Frontline Medic (CR 107.3, 202.1): a spell whose mana cost has an {X}.
     'target spell with {X} in its mana cost',
@@ -365,6 +369,9 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
     'two target spells',
     'target nonland spell you control',
     "target spell you don't control with mana value 1",
+    'target spell an opponent control',
+    'target spell an opponents controls',
+    'target spell an opponent controls with mana value 1',
     'target',
   ],
   parse: node<IrFilter, IrNoun>(
@@ -373,7 +380,10 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
       const head0 = sequence(literal('target '), spellPhrase())(ctx, pos);
       if (!head0.ok) return head0;
       // "target spell you don't control" (CR 109.4, 405.1: the controller of a spell is the player who cast it).
-      const notMine = literal(" you don't control")(ctx, head0.pos);
+      const notMine = choice(literal(" you don't control"), literal(' an opponent controls'))(
+        ctx,
+        head0.pos,
+      );
       const head = notMine.ok
         ? {
             ...head0,
@@ -1172,6 +1182,8 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARDS,
   // D-521 (Hylda deck, group 2): "target creature that player controls", whose first words are those of `noun.target-permanent`.
   ...HYLDA_G2_TARGET_NOUN_RULES,
+  // Bladegriff Prototype: "target nonland permanent of that player's choice that one of your opponents controls", whose first words are those of `noun.target-permanent`.
+  ...CHOSEN_BY_PLAYER_NOUN_RULES,
   // Breaking of the Fellowship: "another target creature that player controls", whose first words are those of `noun.target-permanent`.
   ...SAME_CONTROLLER_TARGET_NOUN_RULES,
   // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.

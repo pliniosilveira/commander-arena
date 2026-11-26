@@ -73,8 +73,21 @@ function checkSoulbondFace(face: CardFace, path: string, out: AstIssue[]): void 
 function choosesFromExile(e: unknown): boolean {
   if (Array.isArray(e)) return e.some(choosesFromExile);
   if (typeof e !== 'object' || e === null) return false;
-  const o = e as { kind?: unknown; filter?: { zone?: unknown }; fromMoved?: unknown };
-  if (o.kind === 'choose' && o.filter?.zone === 'exile' && o.fromMoved !== true) return true;
+  const o = e as {
+    kind?: unknown;
+    filter?: { zone?: unknown };
+    fromMoved?: unknown;
+    fromExileOf?: unknown;
+  };
+  // Oblivion Sower: the cards of one player in exile (`fromExileOf`), whoever exiled them, read no linked exile either.
+  if (
+    o.kind === 'choose' &&
+    o.filter?.zone === 'exile' &&
+    o.fromMoved !== true &&
+    o.fromExileOf === undefined
+  ) {
+    return true;
+  }
   return Object.values(e).some(choosesFromExile);
 }
 

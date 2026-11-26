@@ -50,8 +50,8 @@ const SELF: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: "~ can't be blocked except by creatures with flying.",
-    expect: no('except by creatures with flying.', 'static.self'),
+    text: "~ can't be blocked except by two or more creatures.",
+    expect: no('except by two or more creatures.', 'static.self'),
     note: 'SYNTHETIC; an exception is not "can\'t be blocked"',
   },
   {

@@ -32,6 +32,7 @@ import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
+import { ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES } from './attacks-you-or-walkers';
 import { BRAINSTEALER_G9_TRIGGER_RULES } from './brainstealer-g9';
 import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
@@ -69,6 +70,7 @@ import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { MILL_TRIGGER_RULES } from './mill';
 import { MIND_FLAYARRRS_G8_TRIGGER_RULES } from './mind-flayarrrs-g8';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
+import { NOT_OWNED_DIES_TRIGGER_RULES } from './not-owned-dies';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
 import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
@@ -1528,6 +1530,8 @@ export const TRIGGER_ENTERS_AND_UPKEEP = quietly(
 export const TRIGGER_RULES = [
   // Brainstealer Dragon: "a nonland permanent an opponent owns enters under your control" starts like `trigger.enters`, which cannot read the subject, so it comes first.
   ...BRAINSTEALER_G9_TRIGGER_RULES,
+  // Thieving Amalgam: "a creature you control but don't own dies".
+  ...NOT_OWNED_DIES_TRIGGER_RULES,
   TRIGGER_ENTERS_AND_CAST,
   TRIGGER_ENTERS_AND_UPKEEP,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
@@ -1578,6 +1582,7 @@ export const TRIGGER_RULES = [
   // Mirkwood Trapper: "a player attacks you" and "a player attacks".
   ...PLAYER_ATTACKS_TRIGGER_RULES,
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
+  ...ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES,
   ...LOOT_DISPUTE_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
