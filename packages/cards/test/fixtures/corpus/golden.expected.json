@@ -1,5 +1,5 @@
 {
-  "parserVersion": 214,
+  "parserVersion": 215,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -961,6 +961,14 @@
       "reasons": [],
       "ast": "e4c6db57"
     },
+    "0e09aaba-5c32-4a45-8a07-b69e873510ef": {
+      "name": "Trail of Mystery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "98d11001"
+    },
     "0e3246ef-e0b4-49bc-a715-b69c4b6be461": {
       "name": "Skola Grovedancer",
       "group": "acceptance",
@@ -1665,6 +1673,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "450e80d6"
+    },
+    "1b8870fd-2d8a-42af-8173-b747d8d4c04f": {
+      "name": "They Came from the Pipes",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1deb6ca7"
     },
     "1b99c32d-1d02-410e-84bf-9db2ca05f576": {
       "name": "Healing Technique",
@@ -4850,6 +4866,14 @@
       "reasons": [],
       "ast": "8b811e1b"
     },
+    "5146b291-1170-481f-a4b9-709dd5c4b09c": {
+      "name": "Overgrown Zealot",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1c00b26a"
+    },
     "515c522f-51d5-4f6d-b9b1-ea3c7f6a378e": {
       "name": "Rousing Refrain",
       "group": "acceptance",
@@ -6593,6 +6617,14 @@
       "reasons": [],
       "ast": "40fb9d8c"
     },
+    "6cf8a502-6620-460f-8fab-b4ede28beb11": {
+      "name": "Curator Beastie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3fdbff14"
+    },
     "6d42e81a-84d3-4c90-9c69-c0d562c66cac": {
       "name": "Kimahri, Valiant Guardian",
       "group": "acceptance",
@@ -7122,6 +7154,14 @@
       "reasons": [],
       "ast": "ea3c947c"
     },
+    "75bf0f27-9df1-4ab4-97a8-94bb3223bdf9": {
+      "name": "Zimone, Mystery Unraveler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b3d84478"
+    },
     "75e4448b-5bd7-4ed4-8db8-820cd6d04c12": {
       "name": "Boar Umbra",
       "group": "acceptance",
@@ -7433,6 +7473,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "00685848"
+    },
+    "7aa34ef4-5e11-491b-8dbe-6ef80e0ad26c": {
+      "name": "Disorienting Choice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1e98d180"
     },
     "7ad97dd9-1342-4ed4-bea9-1bb21d748e04": {
       "name": "Witch of the Moors",
@@ -7783,6 +7831,22 @@
       "reasons": [],
       "ast": "e090b618"
     },
+    "7fc6a5c1-f0da-42f6-93d0-6d94467e2ac0": {
+      "name": "Body of Knowledge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a1804aef"
+    },
+    "7fc9e800-da66-4dda-a56d-79daec9e943e": {
+      "name": "Kianne, Corrupted Memory",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6b987683"
+    },
     "7fca595e-1902-40fd-a359-622caa612b6a": {
       "name": "Liliana, Death's Majesty",
       "group": "acceptance",
@@ -7950,6 +8014,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cc592c04"
+    },
+    "83734824-1cad-4649-87ae-a5c338771c4c": {
+      "name": "Skaab Ruinator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bfe75a77"
     },
     "837c5d0e-0a33-4f9d-ae25-68a687bdf640": {
       "name": "Chrome Host Seedshark",
@@ -8230,6 +8302,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e76f4b95"
+    },
+    "8869df0c-fe84-4964-8d38-a8ecefa9c252": {
+      "name": "Experimental Lab // Staff Room",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "43e37f7d"
     },
     "888e711a-1251-4704-8ef1-b4b98ec54b5a": {
       "name": "Nahiri's Lithoforming",
@@ -8633,6 +8713,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "02a4f7d2"
+    },
+    "8ec7c7ce-23a5-4ba7-8cfd-4caf8601a9c8": {
+      "name": "Whisperwood Elemental",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6f752a1f"
     },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
@@ -9586,6 +9674,14 @@
       "reasons": [],
       "ast": "9d0f8610"
     },
+    "9e774188-caa1-4b62-b9cc-547f8e444b7f": {
+      "name": "Augur of Autumn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88548185"
+    },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
       "group": "acceptance",
@@ -10179,6 +10275,14 @@
       "reasons": [],
       "ast": "cafe2ebe"
     },
+    "a7d4f5aa-26d4-4363-aa5a-a26d6f791b82": {
+      "name": "Deathmist Raptor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9e50c7de"
+    },
     "a800bec4-bacc-43f9-a773-dd795959935b": {
       "name": "Locke, Treasure Hunter",
       "group": "acceptance",
@@ -10306,6 +10410,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4604dc38"
+    },
+    "aa1d8bfa-729a-4e10-8069-57a1d4f4392b": {
+      "name": "Growing Dread",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d04635c9"
     },
     "aa219936-661b-4ccb-8741-78b70cff2b1a": {
       "name": "Feather, the Redeemed",
@@ -10755,6 +10867,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c93b85e3"
+    },
+    "afc9e1d3-b012-49e9-8d22-89abbee03c22": {
+      "name": "Primordial Mist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d6aa997d"
     },
     "afcb21bb-aeb3-4024-9ce1-68ba7fb64b2d": {
       "name": "Witch-king, Bringer of Ruin",
@@ -11536,6 +11656,14 @@
       "reasons": [],
       "ast": "1a720655"
     },
+    "c01411e0-77b2-4e65-a369-5dbe13745769": {
+      "name": "Kheru Spellsnatcher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a66cd367"
+    },
     "c01aafb8-3da5-4eb1-8731-2a223e747d63": {
       "name": "Champion's Helm",
       "group": "acceptance",
@@ -11591,6 +11719,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "66b1e534"
+    },
+    "c15c13d2-8db9-4801-a1f0-f087f2551c92": {
+      "name": "Scroll of Fate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ba78faf8"
     },
     "c1909d70-d8f4-4c54-8587-0a910f123238": {
       "name": "Shelter",
@@ -12209,6 +12345,22 @@
       "reasons": [],
       "ast": "92120909"
     },
+    "caeb39ee-f0bb-4305-9e8b-b30ba0a74c78": {
+      "name": "Arixmethes, Slumbering Isle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e2435ec1"
+    },
+    "caf626a8-7abc-496b-9d3a-23194ce70e01": {
+      "name": "Kefnet the Mindful",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "02619b29"
+    },
     "cb027150-848c-4a66-88ad-e20222304dd8": {
       "name": "Scalding Tarn",
       "group": "training",
@@ -12457,6 +12609,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "84f6e9ec"
+    },
+    "cf2c507a-41b4-457b-bbe8-edcdfcc681ac": {
+      "name": "Glitch Interpreter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6849ff15"
     },
     "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
       "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
@@ -15143,6 +15303,14 @@
       "reasons": [],
       "ast": "82dbd195"
     },
+    "fb683e18-50b8-4821-9a1a-86c6dea63ac9": {
+      "name": "Temur War Shaman",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5152c10a"
+    },
     "fb69bc57-f05a-41c2-9b7b-9a9761ef0cd3": {
       "name": "Sacred Peaks",
       "group": "acceptance",
@@ -15363,8 +15531,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1618,
-      "total": 1634
+      "supported": 1639,
+      "total": 1655
     }
   }
 }
