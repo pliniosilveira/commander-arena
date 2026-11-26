@@ -242,10 +242,14 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
   parse: single(
     'effect.fight',
     choice(
-      sequence(
-        satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOneOrUpToOne),
-        literal(' fights '),
-        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+      satisfy(
+        sequence(
+          satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOneOrUpToOne),
+          literal(' fights '),
+          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+        ),
+        // Only one of the two creatures may be an "up to one" target: with neither chosen nothing would be said.
+        ([fighter, , against]) => !(fighter.upTo && against.upTo),
       ),
       // "have it fight target creature": the causative form, with the bare verb.
       map(

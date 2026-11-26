@@ -25,7 +25,7 @@ describe('earthbend N', () => {
   test('a spell: one earthbend, then another with its own target, then life', () => {
     const spell = readAll('Earthbend 3, then earthbend 3. You gain 3 life.', 'sorcery').spell;
     expect(spell?.targets).toHaveLength(2);
-    expect(spell?.effect.kind).toBe('sequence');
+    expect(spell?.effect?.kind).toBe('sequence');
   });
 
   test('X is the count the sentence defines', () => {

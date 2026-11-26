@@ -1348,6 +1348,8 @@ describe('unmatched abilities', () => {
       'effect.double-player-counters',
       'effect.add-counters-number-of',
       'effect.add-counters-kinds',
+      'effect.earthbend',
+      'effect.earthbend-additional',
       'effect.create-three-tokens',
       'effect.create-two-tokens',
       'effect.create-token',

@@ -33,7 +33,7 @@ export const EFFECT_EARTHBEND = defineRule<Clauses>({
     const land: IrNoun = {
       kind: 'noun',
       det: 'target',
-      filter: { types: ['land'], controller: 'you' },
+      filter: { raw: 'target land you control', types: ['land'], controller: 'you' },
       upTo: false,
       plural: false,
       other: false,
