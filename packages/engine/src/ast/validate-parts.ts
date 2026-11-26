@@ -2449,6 +2449,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsAttackedThisCombat':
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
+    case 'opponentsLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -2917,6 +2918,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
+    case 'opponentsLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');

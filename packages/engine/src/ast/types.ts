@@ -181,6 +181,11 @@ export type Amount =
    */
   | { readonly kind: 'controllerLifeLostThisTurn' }
   /**
+   * "Each 1 life your opponents have lost this turn" (Bloodsoaked Insight, CR 119.3, 102.2): the total of the life that the controller's opponents who are still in the game have lost this
+   * turn (`SeatState.lifeLostThisTurn` of each: damage, life loss and life paid), read as the amount is counted. Valid anywhere an amount is.
+   */
+  | { readonly kind: 'opponentsLifeLostThisTurn' }
+  /**
    * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
    * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
    */

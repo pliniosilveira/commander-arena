@@ -108,6 +108,8 @@ function reduction(): Parser<IrAmount> {
           'amount.for-each-party-creature',
           // Valiant Changeling (CR 205.3m): "costs {1} less to cast for each creature type among creatures you control".
           'amount.for-each-creature-type',
+          // Bloodsoaked Insight (issue 685): "costs {1} less to cast for each 1 life your opponents have lost this turn".
+          'amount.for-each-opponents-life-lost',
         ],
       }),
     ),

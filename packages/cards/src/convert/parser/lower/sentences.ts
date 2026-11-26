@@ -26,6 +26,7 @@ import { lowerCost } from './costs';
 import { lowerClause } from './effects';
 import { noteExiledOwnGraveyards } from './exile-own-graveyards';
 import { type FeatureRef, missingFeatures } from './features';
+import { lowerMayPlayRider } from './flint-riders';
 import { lowerFilter, playerSelectorOf } from './nouns';
 import { lowerThoseRestriction } from './riders-b';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
@@ -3232,6 +3233,13 @@ function lowerStep(
     if (!anyColor.ok) return stop(anyColor);
     steps.pop();
     steps.push({ effects: anyColor.value, replaceable: false });
+    return { last: i };
+  }
+  const mayPlayRider = lowerMayPlayRider(sentence, steps[steps.length - 1], refuse);
+  if (mayPlayRider !== null) {
+    if (!mayPlayRider.ok) return stop(mayPlayRider);
+    steps.pop();
+    steps.push({ effects: mayPlayRider.value, replaceable: false });
     return { last: i };
   }
   const regenerated = lowerCantBeRegenerated(sentence, sentences[i - 1], steps[steps.length - 1]);

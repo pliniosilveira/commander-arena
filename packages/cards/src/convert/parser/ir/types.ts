@@ -618,6 +618,7 @@ export type IrAmount =
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
   // "the amount of life you lost this turn" (Betor, CR 119.3): the controller's own, valid anywhere an amount is
   | { readonly kind: 'controllerLifeLostThisTurn'; readonly span: Span }
+  | { readonly kind: 'opponentsLifeLostThisTurn'; readonly span: Span }
   | { readonly kind: 'lifeGainedOrLostThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
@@ -2700,6 +2701,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
   'controllerLifeLostThisTurn',
+  'opponentsLifeLostThisTurn',
   'lifeGainedOrLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',

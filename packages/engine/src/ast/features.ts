@@ -1866,6 +1866,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
     'controllerLifeLostThisTurn',
+    'opponentsLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
     // CR 601.2i (Lifestream's Blessing): "... as you cast this spell", worked out when the spell is cast.
     'asCast',
@@ -3208,6 +3209,8 @@ export const AMOUNT_KINDS = [
   'lifeGainedThisTurn',
   /** "The amount of life you lost this turn" (Betor, CR 119.3): the engine's `controllerLifeLostThisTurn`, the controller's own life lost, valid anywhere an amount is. */
   'controllerLifeLostThisTurn',
+  /** "Each 1 life your opponents have lost this turn" (Bloodsoaked Insight, CR 119.3): the engine's `opponentsLifeLostThisTurn`, the total the controller's opponents lost. */
+  'opponentsLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
   /** "The greatest power among creatures you controlled as you cast this spell" (CR 601.2i): the engine's `asCast`, worked out when the spell is cast. */

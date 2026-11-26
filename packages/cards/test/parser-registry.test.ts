@@ -267,6 +267,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
+  // Flint deck (issue 685): the count of the spell's own cost reduction.
+  'amount.for-each-opponents-life-lost': spell((e) => `~ costs {1} less to cast ${e}.`),
   // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
   'amount.for-each-scried': permanent(
     (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
