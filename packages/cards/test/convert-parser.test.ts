@@ -895,6 +895,7 @@ describe('unmatched abilities', () => {
       'effect.assign-control-to-opponents',
       'effect.exile-top-play-until-another',
       'effect.for-each-opponent-choose-destroy',
+      'effect.choose-per-opponent-controllers-may-exile',
       'effect.creatures-cant-attack-you-unless-pay',
       'effect.each-opponent-chooses-return',
       'effect.put-two-kinds-from-hand',
