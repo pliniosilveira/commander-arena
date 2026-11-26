@@ -4,14 +4,16 @@
  * order (`heuristic-plan-trace.ts`), so what the planning decides and what it costs are the single thread's.
  *
  * The planning asks for its play-outs one at a time and in a fixed order (line by line, scenario by scenario);
- * the pool is asked a little ahead of it, so the workers are busy while the planner settles an answer. The
- * play-outs asked ahead that the budget then stops are never settled: the workers' work on them is lost, and
- * nothing else. A play-out the pool fails to answer is played on this thread with the same runner, so a
+ * the pool is asked for all of them the planning can use at once, in that order, and each carries a GROUP
+ * (the same scenario, and lines that start with the same action), so the pool can keep a group on one worker
+ * and use what that worker's memo kept: a planning shares much of its work between lines, and workers that
+ * played the lines in turn would each do it again. The play-outs asked ahead that the budget then stops are
+ * never settled: the workers' work on them is lost, and nothing else. A play-out the pool fails to answer is played on this thread with the same runner, so a
  * pool that crashes slows the planning down and never changes it.
  */
 import type { GameView } from '@commander-arena/engine';
 import type { Think } from './heuristic-budget';
-import { type Planning, planning } from './heuristic-plan';
+import { MAX_PLAY_OUTS, type Planning, planning } from './heuristic-plan';
 import { PlanRunner } from './heuristic-plan-runner';
 import type { SimAgents } from './heuristic-plan-sim';
 import { settle, TraceNode } from './heuristic-plan-trace';
@@ -25,8 +27,17 @@ import type {
 } from './heuristic-plan-types';
 import { PlanCounter } from './heuristic-plan-work';
 
-/** How many play-outs are asked of the pool ahead of the one the planner settles, per worker. */
-const AHEAD_PER_WORKER = 2;
+/** The windows of a turn in the order they come. */
+const WINDOWS: readonly Window[] = ['main1', 'attack', 'afterBlocks', 'main2', 'theirEnd'];
+
+/** What lines that start alike have in common: the first action they take (the planning's memo shares the rest). */
+function familyOf(line: Line): string {
+  for (const w of WINDOWS) {
+    const first = line.acts[w]?.[0];
+    if (first !== undefined) return JSON.stringify(first);
+  }
+  return '';
+}
 
 /** Plans like `choosePlan`, with the play-outs run by `pool`. */
 export async function choosePlanOn(
@@ -46,6 +57,14 @@ export async function choosePlanOn(
   let roots: TraceNode[] = [];
   let width = 1;
   const asked = new Map<number, Promise<PlayOutTrace>>();
+  // The groups of play-outs that share a worker's memo: a scenario, and the lines that start with one action.
+  const families = new Map<string, number>();
+  const groupOf = (line: number, scenario: number): number => {
+    const family = familyOf(lines[line] as Line);
+    const id = families.get(family) ?? families.size;
+    families.set(family, id);
+    return id * width + scenario;
+  };
   const ownRunner = (): PlanRunner => {
     if (spec === null) throw new Error('no planning is open');
     local ??= new PlanRunner(spec, agents);
@@ -61,7 +80,9 @@ export async function choosePlanOn(
     let answer: Promise<PlayOutTrace>;
     try {
       answer =
-        job === null ? Promise.resolve().then(own) : job.run(line, scenario, record).catch(own);
+        job === null
+          ? Promise.resolve().then(own)
+          : job.run(line, scenario, record, groupOf(line, scenario)).catch(own);
     } catch {
       answer = Promise.resolve().then(own);
     }
@@ -86,10 +107,11 @@ export async function choosePlanOn(
         step = gen.next();
         continue;
       }
-      const k = request.line * width + request.scenario;
-      const total = lines.length * width;
-      for (let a = k; a <= k + pool.size * AHEAD_PER_WORKER && a < total; a += 1) ask(a);
-      const trace = await ask(k);
+      // The pool is asked for every play-out the planning can use at once, in the planner's order: a worker
+      // works through its group while the planner settles the first answers.
+      const total = Math.min(lines.length * width, MAX_PLAY_OUTS);
+      for (let a = 0; a < total; a += 1) ask(a);
+      const trace = await ask(request.line * width + request.scenario);
       step = gen.next(settle(work, think.budget, me, roots[request.scenario] as TraceNode, trace));
     }
     return step.value;

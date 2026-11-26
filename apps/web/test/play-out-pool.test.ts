@@ -140,7 +140,7 @@ describe('the pool', () => {
     const alone = new PlanService(simAgentsOf);
     alone.open(1, spec);
     const ids = lines.map((_, i) => i);
-    const traces = await Promise.all(ids.map((i) => job.run(i, 0, i === 0)));
+    const traces = await Promise.all(ids.map((i) => job.run(i, 0, i === 0, i)));
     for (const i of ids)
       expect(traces[i]).toEqual(JSON.parse(JSON.stringify(alone.run(1, i, 0, i === 0))));
     expect(workers).toHaveLength(3);
@@ -161,6 +161,37 @@ describe('the pool', () => {
     expect(workers).toHaveLength(2);
   });
 
+  test('a group of play-outs stays on one worker while the other has work of its own', async () => {
+    const { spec } = await planningOf();
+    const workers: FakeWorker[] = [];
+    const pool = new WorkerPlayOutPool({ size: 2, spawn: spawnOf(workers, 3) });
+    const job = pool.open(spec);
+    // Eight play-outs of two groups, interleaved the way a planning asks for them (the line says the group here).
+    const groups = [0, 0, 1, 1, 0, 1, 0, 1];
+    await Promise.all(groups.map((g, i) => job.run(g, 0, i === 0, g)));
+    const linesOf = (w: FakeWorker) =>
+      new Set(w.received.flatMap((m) => (m.t === 'run' ? [m.line] : [])));
+    const [a, b] = workers as [FakeWorker, FakeWorker];
+    expect([...linesOf(a)]).toHaveLength(1);
+    expect([...linesOf(b)]).toHaveLength(1);
+    expect(linesOf(a)).not.toEqual(linesOf(b));
+    // Each worker was sent four play-outs: they did not take the other's group to be busy.
+    expect(a.received.filter((m) => m.t === 'run')).toHaveLength(4);
+    expect(b.received.filter((m) => m.t === 'run')).toHaveLength(4);
+  });
+
+  test('a worker with nothing of its own takes the oldest play-out of another group rather than wait', async () => {
+    const { spec } = await planningOf();
+    const workers: FakeWorker[] = [];
+    const pool = new WorkerPlayOutPool({ size: 2, spawn: spawnOf(workers, 3) });
+    const job = pool.open(spec);
+    // One group only: the second worker must help.
+    await Promise.all([0, 0, 0, 0, 0, 0].map((g, i) => job.run(g, 0, i === 0, g)));
+    const [a, b] = workers as [FakeWorker, FakeWorker];
+    expect(a.received.filter((m) => m.t === 'run').length).toBeGreaterThan(0);
+    expect(b.received.filter((m) => m.t === 'run').length).toBeGreaterThan(0);
+  });
+
   test('closing a planning drops what has not started and never answers what was running', async () => {
     const { spec, lines } = await planningOf();
     const workers: FakeWorker[] = [];
@@ -168,7 +199,7 @@ describe('the pool', () => {
     const job = pool.open(spec);
     let settled = 0;
     for (let i = 0; i < 8; i += 1) {
-      void job.run(i % lines.length, 0, false).then(
+      void job.run(i % lines.length, 0, false, i % lines.length).then(
         () => {
           settled += 1;
         },
@@ -177,6 +208,8 @@ describe('the pool', () => {
         },
       );
     }
+    // The pool deals the queue out in a microtask: two requests are running when the planning is closed.
+    await Promise.resolve();
     job.close();
     await new Promise((r) => setTimeout(r, 40));
     // Two were running; the other six never started; none of the eight was answered.
@@ -185,7 +218,7 @@ describe('the pool', () => {
     expect(settled).toBe(0);
     // The pool is free for the next planning.
     const next = pool.open(spec);
-    expect((await next.run(0, 0, true)).outcome).toBe('end');
+    expect((await next.run(0, 0, true, 0)).outcome).toBe('end');
   });
 
   test('a play-out a worker fails is rejected for the planner to play itself, and the worker goes on', async () => {
@@ -194,9 +227,9 @@ describe('the pool', () => {
     const pool = new WorkerPlayOutPool({ size: 2, spawn: spawnOf(workers) });
     const job = pool.open(spec);
     for (const w of workers) w.mode = 'throw';
-    await expect(job.run(0, 0, true)).rejects.toThrow('engine threw');
+    await expect(job.run(0, 0, true, 0)).rejects.toThrow('engine threw');
     for (const w of workers) w.mode = 'ok';
-    expect((await job.run(0, 0, true)).outcome).toBe('end');
+    expect((await job.run(0, 0, true, 0)).outcome).toBe('end');
   });
 
   test('a worker that crashes or goes silent is given up; with none left the pool refuses new planning', async () => {
@@ -207,10 +240,10 @@ describe('the pool', () => {
     const [a, b] = workers as [FakeWorker, FakeWorker];
     a.mode = 'crash';
     b.mode = 'silent';
-    await expect(job.run(0, 0, true)).rejects.toThrow();
-    await expect(job.run(1, 0, false)).rejects.toThrow();
+    await expect(job.run(0, 0, true, 0)).rejects.toThrow();
+    await expect(job.run(1, 0, false, 1)).rejects.toThrow();
     // Both are gone: queued and later requests are rejected, and a new planning cannot open.
-    await expect(job.run(2, 0, false)).rejects.toThrow();
+    await expect(job.run(2, 0, false, 2)).rejects.toThrow();
     expect(a.terminated && b.terminated).toBe(true);
     expect(() => pool.open(spec)).toThrow();
   });

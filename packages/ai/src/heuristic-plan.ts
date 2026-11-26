@@ -34,7 +34,7 @@ import { scenariosOf } from './heuristic-threats';
  * The most play-outs of one planning (a bound of the search, not a weight): how many lines are scored on how
  * many scenarios. What they may cost is the decision's work budget (`heuristic-budget.ts`).
  */
-const MAX_PLAY_OUTS = 40;
+export const MAX_PLAY_OUTS = 40;
 
 export interface TurnPlan {
   /** The turn the plan was made in. */

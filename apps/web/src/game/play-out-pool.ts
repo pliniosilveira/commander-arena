@@ -9,9 +9,9 @@
  *
  * - A planning is a JOB: its plain data (the scenarios' start states, the lines, the weights) goes to a worker
  *   once, the first time that worker is given one of its play-outs, and the worker keeps it until the job is
- *   closed. Requests go out one at a time to each idle worker, oldest first; a worker that has just played a
- *   scenario takes another line of the same scenario when one is waiting, because lines that start alike
- *   share what the worker's memo kept.
+ *   closed. Requests go out one at a time to each idle worker, oldest first, and a request carries a GROUP
+ *   (`PlayOutJob.run`): a worker takes the waiting requests of its groups before those of others, because
+ *   play-outs of one group share what the worker's memo kept (see `pump`).
  * - Closing a job drops the requests not started and ignores the answers of those running (they are never
  *   resolved: nothing waits for them). A worker finishes the play-out it is on first.
  * - A worker that fails (it cannot start, throws out of its script, or does not answer within `timeoutMs`) is
@@ -101,6 +101,7 @@ interface Pending {
   readonly line: number;
   readonly scenario: number;
   readonly record: boolean;
+  readonly group: number;
   readonly resolve: (trace: PlayOutTrace) => void;
   readonly reject: (error: Error) => void;
 }
@@ -111,14 +112,14 @@ interface Slot {
   running: Pending | null;
   /** The jobs this worker has been sent. */
   readonly opened: Set<number>;
-  /** The scenario of its last request: the next one prefers the same. */
-  last: number;
   timer: ReturnType<typeof setTimeout> | null;
 }
 
 interface Job extends PlayOutJob {
   readonly id: number;
   closed: boolean;
+  /** The worker each group of play-outs belongs to (see `pump`). */
+  readonly owners: Map<number, Slot>;
 }
 
 export class WorkerPlayOutPool implements PlayOutPool {
@@ -130,6 +131,7 @@ export class WorkerPlayOutPool implements PlayOutPool {
   private readonly specs = new Map<number, PlanJobSpec>();
   private nextJob = 0;
   private nextRequest = 0;
+  private scheduled = false;
 
   constructor(options: PoolOptions) {
     this.size = options.size;
@@ -158,7 +160,6 @@ export class WorkerPlayOutPool implements PlayOutPool {
       alive: true,
       running: null,
       opened: new Set(),
-      last: -1,
       timer: null,
     };
     worker.onmessage = (event) => this.reply(slot, event.data);
@@ -176,7 +177,8 @@ export class WorkerPlayOutPool implements PlayOutPool {
     const job: Job = {
       id,
       closed: false,
-      run: (line, scenario, record) =>
+      owners: new Map(),
+      run: (line, scenario, record, group) =>
         new Promise<PlayOutTrace>((resolve, reject) => {
           if (job.closed) return;
           if (!(this.slots ?? []).some((slot) => slot.alive)) {
@@ -184,8 +186,17 @@ export class WorkerPlayOutPool implements PlayOutPool {
             return;
           }
           this.nextRequest += 1;
-          this.queue.push({ id: this.nextRequest, job, line, scenario, record, resolve, reject });
-          this.pump();
+          this.queue.push({
+            id: this.nextRequest,
+            job,
+            line,
+            scenario,
+            record,
+            group,
+            resolve,
+            reject,
+          });
+          this.soon();
         }),
       close: () => this.close(job),
     };
@@ -205,13 +216,35 @@ export class WorkerPlayOutPool implements PlayOutPool {
     }
   }
 
-  /** Gives each idle worker the request it should take next. */
+  /** Deals the queue out once the caller has queued all it has at the moment, so the groups are all seen. */
+  private soon(): void {
+    if (this.scheduled) return;
+    this.scheduled = true;
+    queueMicrotask(() => {
+      this.scheduled = false;
+      this.pump();
+    });
+  }
+
+  /**
+   * Gives each idle worker the request it should take next, oldest first within these rules: a request of a
+   * group the worker owns; else one of a group nobody owns, which the worker then owns (so a worker works
+   * through its groups, and what its memo kept is used); else, when every waiting group is owned by another
+   * worker, the oldest request, for the worker would only wait (it plays it cold, and owns nothing new).
+   */
   private pump(): void {
     for (const slot of this.slots ?? []) {
       if (!slot.alive || slot.running !== null) continue;
-      const at = this.queue.findIndex((p) => p.scenario === slot.last);
+      const ownedBy = (p: Pending): Slot | undefined => {
+        const owner = p.job.owners.get(p.group);
+        return owner?.alive === true ? owner : undefined;
+      };
+      let at = this.queue.findIndex((p) => ownedBy(p) === slot);
+      if (at < 0) at = this.queue.findIndex((p) => ownedBy(p) === undefined);
+      const claim = at >= 0;
       const [next] = this.queue.splice(at < 0 ? 0 : at, 1);
       if (next === undefined) return;
+      if (claim) next.job.owners.set(next.group, slot);
       this.send(slot, next);
     }
   }
@@ -226,7 +259,6 @@ export class WorkerPlayOutPool implements PlayOutPool {
         slot.opened.add(job.id);
       }
       slot.running = request;
-      slot.last = request.scenario;
       slot.timer = setTimeout(() => this.fail(slot, 'a play-out took too long'), this.timeoutMs);
       slot.worker.postMessage({
         t: 'run',

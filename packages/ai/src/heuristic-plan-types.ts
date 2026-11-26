@@ -76,7 +76,11 @@ export interface PlanJobSpec {
 
 /** One planning's play-outs on a pool: `run` plays one line on one scenario and answers its trace. */
 export interface PlayOutJob {
-  run(line: number, scenario: number, record: boolean): Promise<PlayOutTrace>;
+  /**
+   * `group` says which play-outs share what a worker keeps of them (the same scenario and lines that start
+   * with the same action): the pool gives a group to one worker while it can, so that worker's memo is used.
+   */
+  run(line: number, scenario: number, record: boolean, group: number): Promise<PlayOutTrace>;
   /** The planning is over: play-outs not started are dropped and the workers' copies of the states freed. */
   close(): void;
 }
