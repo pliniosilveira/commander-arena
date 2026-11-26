@@ -361,4 +361,39 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "{T}: Add {B}{B}. Spend this mana only to cast instant, sorcery, Demon, and Spirit spells."
+  singleFace({
+    name: 'SYNTHETIC Soul Urn',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      '{T}: Add {B}{B}. Spend this mana only to cast instant, sorcery, Demon, and Spirit spells.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'fixed', mana: ['B', 'B'] },
+        spendOnly: {
+          types: ['instant', 'sorcery'],
+          subtypes: ['Demon', 'Spirit'],
+          typesOrSubtypes: true,
+        },
+      },
+    ],
+  }),
+  // A black Spirit creature spell for the Urn to pay for: not an instant or a sorcery, so only its creature type lets the mana pay.
+  singleFace({
+    name: 'SYNTHETIC Wisp Spirit',
+    manaCost: ['B', 'B'],
+    types: ['creature'],
+    subtypes: ['Spirit'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 1,
+    toughness: 1,
+    oracleText: '',
+    abilities: [],
+  }),
 ];

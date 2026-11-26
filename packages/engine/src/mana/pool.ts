@@ -133,6 +133,13 @@ export function restrictionAllows(
     }
     // CR 106.6, 205.2a: "a noncreature spell": the spell has none of the card types named.
     if (restriction.notTypes?.some((t) => target.types.includes(t)) === true) return false;
+    // CR 106.6 (Séance Board): "instant, sorcery, Demon, and Spirit spells": a spell of one of the card types or of one of the creature types.
+    if (restriction.typesOrSubtypes === true) {
+      return (
+        target.types.some((t) => restriction.types?.includes(t) === true) ||
+        subtypes.some((t) => restriction.subtypes?.includes(t) === true)
+      );
+    }
     return (
       (restriction.types === undefined ||
         target.types.some((t) => restriction.types?.includes(t) === true)) &&

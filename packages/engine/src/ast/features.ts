@@ -124,6 +124,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyMonocolored',
     // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs." (`ManaAbility.spendOnly.notGeneric`)
     'manaSpendOnlyNotGeneric',
+    // Séance Board: "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells" (`spendOnly` with `typesOrSubtypes`).
+    'manaSpendOnlyTypesOrSubtypes',
     // Issue 102 (Lord of the Forsaken): "Spend this mana only to cast a spell from your graveyard." (`ManaAbility.spendOnly.fromGraveyard`)
     'manaSpendOnlyFromGraveyard',
     // Thieving Varmint: "Spend this mana only to cast spells you don't own." (`ManaAbility.spendOnly.notOwned`)
@@ -2242,6 +2244,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyMonocolored',
   /** "This mana can't be spent to pay generic mana costs" (CR 106.6): `ManaAbility.spendOnly.notGeneric`. */
   'manaSpendOnlyNotGeneric',
+  /** "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells" (CR 106.6): the engine's `spendOnly` with `typesOrSubtypes`, a spell of one of the card types or of one of the creature types. */
+  'manaSpendOnlyTypesOrSubtypes',
   /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): `ManaAbility.spendOnly.fromGraveyard`. */
   'manaSpendOnlyFromGraveyard',
   /** "Spend this mana only to cast spells you don't own" (CR 106.6, 108.3, Thieving Varmint): `ManaAbility.spendOnly.notOwned`. */
@@ -3530,6 +3534,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyAbilities: true,
   manaSpendOnlyMonocolored: true,
   manaSpendOnlyNotGeneric: true,
+  manaSpendOnlyTypesOrSubtypes: true,
   manaSpendOnlyFromGraveyard: true,
   manaSpendOnlyNotOwned: true,
   manaSpendOnlyTurnFaceUp: true,

@@ -131,7 +131,7 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   }
   const spells = clause.args.spells;
   if (spells?.kind !== 'noun' || !plainClause(clause)) return null;
-  const kinds = spellKindsOf(spells.filter);
+  const kinds = spellKindsOf(spells.filter, true);
   if (kinds === null) return null;
   // "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (stage P34, D-152): the abilities of the permanents that
   // are of the kinds the spells are (the engine's `alsoAbilities`), which the text says by naming the same kind.
@@ -149,7 +149,8 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
  */
 function spellKindsOf(
   filter: IrFilter,
-): { types?: CardType[]; subtypes?: string[]; chosenType?: true } | null {
+  allowMix = false,
+): { types?: CardType[]; subtypes?: string[]; chosenType?: true; typesOrSubtypes?: true } | null {
   const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw', 'chosen']);
   // CR 700.12 (Discreet Retreat): "outlaw spells" are the spells of at least one of the five outlaw creature types, which is the engine's list of creature types.
   if (filter.outlaw === true) {
@@ -176,8 +177,10 @@ function spellKindsOf(
   const members = filter.anyOf ?? [];
   const memberTypes = members.filter((m) => m.types !== undefined);
   const memberSubtypes = members.filter((m) => m.subtypes !== undefined);
-  // A choice of types or a choice of creature types, never a mix of the two: "artifact or Angel spells" is neither of the engine's two lists.
-  if (memberTypes.length > 0 && memberSubtypes.length > 0) return null;
+  // A choice of types or a choice of creature types, never a mix of the two ("artifact or Angel spells" is neither of the engine's two lists), unless the caller reads a mix as the
+  // engine's `typesOrSubtypes` (Séance Board, CR 106.6: a spell of one of the card types or of one of the creature types).
+  const mixed = memberTypes.length > 0 && memberSubtypes.length > 0;
+  if (mixed && !allowMix) return null;
   for (const member of members) {
     if (Object.keys(member).some((key) => !['types', 'subtypes', 'raw'].includes(key))) return null;
     types.push(...(member.types ?? []));
@@ -188,6 +191,7 @@ function spellKindsOf(
   return {
     ...(types.length > 0 ? { types: types as CardType[] } : {}),
     ...(subtypes.length > 0 ? { subtypes } : {}),
+    ...(mixed ? { typesOrSubtypes: true as const } : {}),
   };
 }
 
@@ -440,6 +444,9 @@ function lowerManaAbility(
     ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
     ...(spendOnly?.abilitiesOnly === true ? (['ability:manaSpendOnlyAbilities'] as const) : []),
     ...(spendOnly?.notGeneric === true ? (['ability:manaSpendOnlyNotGeneric'] as const) : []),
+    ...(spendOnly?.typesOrSubtypes === true
+      ? (['ability:manaSpendOnlyTypesOrSubtypes'] as const)
+      : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
@@ -1217,6 +1224,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaCost:exert',
   'ability:manaSpendOnlyMonocolored',
   'ability:manaSpendOnlyNotGeneric',
+  'ability:manaSpendOnlyTypesOrSubtypes',
   'ability:manaSpendOnlyFromGraveyard',
   'ability:manaSpendOnlyNotOwned',
   'ability:manaSpendOnlyTurnFaceUp',

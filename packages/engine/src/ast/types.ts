@@ -10237,6 +10237,11 @@ export interface ManaAbility {
     readonly notTypes?: readonly CardType[];
     readonly subtypes?: readonly Subtype[];
     /**
+     * "Spend this mana only to cast instant, sorcery, Demon, and Spirit spells." (Séance Board; CR 106.6, 205.2a, 205.3m): with both `types` and `subtypes`, the spell is of one of the
+     * card types OR of one of the creature types, not of both as it is without this flag. Needs both lists. Not with `notTypes`, `chosenType`, `qualities` or `alsoAbilities`.
+     */
+    readonly typesOrSubtypes?: true;
+    /**
      * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of
      * these qualities, as it is cast: `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
      * least the number; `hasX` there is an {X} in its mana cost, whatever X is. With `types` or `subtypes`, the spell is of those as well. Not with `chosenType`.
