@@ -1470,6 +1470,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,
   ),
   'trigger.self-put-into-graveyard': whenever,
+  'trigger.put-with-self-dies': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   // CR 603.2: a spell cast in a named turn, and two events of one sentence.

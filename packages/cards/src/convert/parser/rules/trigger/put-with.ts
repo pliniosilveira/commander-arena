@@ -5,7 +5,7 @@
  */
 import { literal, map, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrTrigger } from '../../ir/types';
-import { defineRule, spanned } from '../registry';
+import { defineRule, quietly, spanned } from '../registry';
 import { makeNoun } from './subjects';
 
 const ID = 'trigger.put-with-self-dies';
@@ -78,4 +78,5 @@ export const TRIGGER_PUT_WITH_SELF_DIES = defineRule<IrTrigger>({
   },
 });
 
-export const PUT_WITH_TRIGGER_RULES = [TRIGGER_PUT_WITH_SELF_DIES];
+/** Quiet: the rule tries wherever "the" stands and must not move the point where another line stops (the diagnostics of the golden corpus). */
+export const PUT_WITH_TRIGGER_RULES = [TRIGGER_PUT_WITH_SELF_DIES].map(quietly);

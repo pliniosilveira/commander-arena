@@ -65,6 +65,8 @@ export function linkPutWith(abilities: readonly Ability[]): {
     battlefieldMoves(a.effect, moves);
     return moves.length === 0 ? [] : [{ index: i, moves }];
   });
+  // No ability puts anything onto the battlefield: the readers stay as they are, and the engine's own check says what is missing (`validateCard`).
+  if (makers.length === 0) return { abilities: [...abilities], refused: [] };
   const [maker] = makers;
   const [move] = maker?.moves ?? [];
   const linkable =
