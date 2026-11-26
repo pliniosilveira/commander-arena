@@ -119,6 +119,7 @@ import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
+import { GYCAST_EFFECT_RULES } from './gycast';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -1402,6 +1403,8 @@ export const EFFECT_RULES = [
   ...REVIVAL_TRANCE_EFFECT_RULES,
   // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
   ...F144_EFFECT_RULES,
+  // Revenant Recon deck (Counterpoint): "cast a creature, instant, sorcery, or planeswalker spell from your graveyard with mana value less than or equal to that spell's mana value without paying its mana cost".
+  ...GYCAST_EFFECT_RULES,
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
   ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,

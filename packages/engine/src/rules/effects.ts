@@ -2318,6 +2318,29 @@ function runEffect(
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);
     case 'mayCast':
+      // CR 608.2d, 601.2, 611.2a (Mission Briefing): "choose an instant or sorcery card in your graveyard. You may cast it this turn": the controller chooses the card as the effect
+      // resolves (nothing is asked with one candidate, nothing happens with none), and the permission is then given to the card chosen, as it would be to a target.
+      if (effect.objects.kind === 'choose') {
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'chooseMove' as const,
+              filter: effect.objects.filter,
+              count: 1,
+              to: 'graveyard' as const,
+              position: 'top' as const,
+              permit: {
+                cast: {
+                  ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
+                },
+              },
+              chosen: null,
+            },
+          ],
+        );
+      }
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);
 
@@ -3487,6 +3510,24 @@ function runEffect(
           ],
         );
       }
+      // CR 202.3, 608.2c, 608.2h (Counterpoint): "with mana value less than or equal to that spell's mana value": the mana value of the target spell (as it last was, now that it was
+      // countered) is worked out as the effect starts and the filter carries the number, because the question about the cards is asked and answered after this effect has ended.
+      const limit =
+        effect.objects.kind === 'choose' ? effect.objects.filter.manaValueAtMost : undefined;
+      const chosenFrom: typeof effect.objects =
+        effect.objects.kind === 'choose' &&
+        limit !== undefined &&
+        typeof limit === 'object' &&
+        limit.kind === 'manaValueOf' &&
+        limit.of.kind === 'target'
+          ? {
+              ...effect.objects,
+              filter: {
+                ...effect.objects.filter,
+                manaValueAtMost: Math.max(0, amountOf(state, limit, ctx, targets)),
+              },
+            }
+          : effect.objects;
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
       // Issue 97 (Kefka): "any number of spells from among cards exiled this way", remembering each spell: the cards offered are fixed as the effect begins, because `moved` then grows with the spells cast.
       const fixed =
@@ -3506,7 +3547,7 @@ function runEffect(
         [
           {
             kind: 'castFree',
-            objects: effect.objects,
+            objects: chosenFrom,
             play: effect.play === true,
             ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
             ...(caster === undefined ? {} : { seat: caster }),

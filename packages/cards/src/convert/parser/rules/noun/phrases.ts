@@ -417,6 +417,12 @@ const MANA_VALUE_X: Parser<boolean> = map(
   () => true,
 );
 
+/** " with power less than ~'s" (Mirko, CR 208.1): the power of the object the ability belongs to; a card outside the battlefield has its printed power. */
+const POWER_LESS_THAN_SOURCE: Parser<boolean> = map(
+  pattern(new RegExp(` with power less than ~['’]s${BOUNDARY}`, 'u')),
+  () => true,
+);
+
 /** " with total power 10 or less" (Reunion of the House, CR 208.1): the cards chosen together have power adding up to at most the number. */
 const TOTAL_POWER_OR_LESS: Parser<number> = map(
   pattern(new RegExp(` with total power (\\d{1,3}) or less${BOUNDARY}`, 'u')),
@@ -1105,6 +1111,8 @@ export function graveyardPhrase(
   allowTotalPower = false,
   // "all instant and sorcery cards": only the "all" form reads a list joined by "and" as a choice of kinds; "target creature and planeswalker cards" stays unread.
   andList = false,
+  // Mirko, Obsessive Theorist (CR 208.1, 603.4): "target creature card with power less than ~'s from your graveyard", read only where the caller asks for it.
+  allowPowerLessThanSource = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | 'defendingPlayer' | undefined> =
     preposition === 'fromTheirs'
@@ -1392,6 +1400,8 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X), false),
       // Reunion of the House (CR 208.1): "creature cards with total power 10 or less from your graveyard".
       optional(allowTotalPower ? quiet(TOTAL_POWER_OR_LESS) : fail, undefined),
+      // Mirko (CR 208.1): "creature card with power less than ~'s from your graveyard": less than the power of the permanent with the ability (the engine's `powerLessThanSource`).
+      optional(allowPowerLessThanSource ? quiet(POWER_LESS_THAN_SOURCE) : fail, false),
       optional(
         quiet(
           amountLimit === undefined
@@ -1438,6 +1448,7 @@ export function graveyardPhrase(
       atMostX,
       equalsX,
       totalPower,
+      lessThanSource,
       limitAmount,
       byOpponent,
       controller,
@@ -1475,6 +1486,7 @@ export function graveyardPhrase(
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
           ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
+          ...(lessThanSource ? { powerLessThanSource: true as const } : {}),
           ...(limitAmount === undefined
             ? {}
             : {

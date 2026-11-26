@@ -150,7 +150,11 @@ function walkEffect(
       return;
     case 'mayCast': {
       // D-135: the permission is for a card in the graveyard (`runMayCast` skips any other).
-      const filter = selectedFilter(effect.objects, targets);
+      // Mission Briefing (CR 608.2d, 601.2): "choose an instant or sorcery card in your graveyard. You may cast it this turn": a card chosen as the effect resolves, not targeted.
+      const filter =
+        effect.objects.kind === 'choose'
+          ? effect.objects.filter
+          : selectedFilter(effect.objects, targets);
       // Lorehold group 2 (CR 607.2a): `from: 'exile'` is for a card the permanent exiled with its linked ability, which only `exiledWithSource` names.
       if (effect.from === 'exile') {
         if (filter?.zone !== 'exile' || filter.exiledWithSource !== true) {

@@ -185,12 +185,23 @@ export function runChooseMove(
           [
             {
               kind: 'effect' as const,
-              effect: {
-                kind: 'mayPlay' as const,
-                objects: { kind: 'moved' as const },
-                lasts: 'endOfTurn' as const,
-                ...(instruction.permit.free === true ? { free: true as const } : {}),
-              },
+              effect:
+                instruction.permit.cast !== undefined
+                  ? {
+                      // CR 601.2, 611.2a (Mission Briefing): the card stays in the graveyard, and may be cast from there this turn.
+                      kind: 'mayCast' as const,
+                      objects: { kind: 'moved' as const },
+                      duration: 'untilEndOfTurn' as const,
+                      ...(instruction.permit.cast.exileInstead === true
+                        ? { exileInstead: true as const }
+                        : {}),
+                    }
+                  : {
+                      kind: 'mayPlay' as const,
+                      objects: { kind: 'moved' as const },
+                      lasts: 'endOfTurn' as const,
+                      ...(instruction.permit.free === true ? { free: true as const } : {}),
+                    },
             },
           ],
         ),
@@ -345,7 +356,9 @@ export function runChooseMove(
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
         prompt:
           instruction.permit !== undefined
-            ? 'Choose an exiled card to play this turn'
+            ? instruction.permit.cast !== undefined
+              ? 'Choose a card from your graveyard to cast this turn'
+              : 'Choose an exiled card to play this turn'
             : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
               decider !== chooser
               ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[

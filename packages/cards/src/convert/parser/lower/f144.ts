@@ -1,9 +1,11 @@
 /**
  * Clause lowerings of deck support issue 144. Same contract as effects.ts: each declares the engine features it needs and is checked before it runs.
  */
-import type { IrClause } from '../ir/types';
-import { arg, type Effects, failure } from './clauses';
-import type { Lowering } from './types';
+import { CARD_TYPES, type CardType } from '@commander-arena/engine';
+import type { IrArg, IrClause } from '../ir/types';
+import { amountArg, arg, type Effects, failure } from './clauses';
+import { missingFeatures } from './features';
+import type { LowerContext, Lowering, LowerResult } from './types';
 
 /**
  * "If any of those cards remain exiled, put them into your graveyard." (Glimpse the Impossible; CR 400.7, 404.1, 608.2c): the engine's `moveToZone` of the cards the `exileTop` before it
@@ -23,6 +25,52 @@ export const PUT_EXILED_INTO_GRAVEYARD: Lowering<IrClause, Effects> = {
   },
 };
 
+/** The `castFree` of the Counterpoint reading of `CAST_CHOSEN_GRAVEYARD_SPELL`: the types the spell may have and the mana value of the target spell as the limit. */
+function lowerByValueOfThatSpell(
+  clause: IrClause,
+  spells: IrArg,
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const limit = amountArg(clause, 'valueLimit', ctx);
+  if (!limit.ok) return limit;
+  const blocked = missingFeatures(['ability:castFreeManaValueOfTarget']);
+  if (blocked.length > 0) return failure(clause, blocked);
+  // Only the target spell of an earlier sentence is "that spell" here: the limit must read a target.
+  if (
+    typeof limit.value !== 'object' ||
+    limit.value.kind !== 'manaValueOf' ||
+    limit.value.of.kind !== 'target'
+  ) {
+    return failure(clause);
+  }
+  if (spells.kind !== 'noun') return failure(clause);
+  const types = (spells.filter.anyOf ?? []).flatMap((member) => member.types ?? []);
+  if (
+    types.length < 2 ||
+    types.length !== (spells.filter.anyOf ?? []).length ||
+    !types.every((t): t is CardType => (CARD_TYPES as readonly string[]).includes(t))
+  ) {
+    return failure(clause);
+  }
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'castFree',
+        objects: {
+          kind: 'choose',
+          filter: {
+            zone: 'graveyard',
+            anyOf: types.map((t) => ({ types: [t] })),
+            manaValueAtMost: limit.value,
+          },
+        },
+      },
+    ],
+    rule: clause.rule,
+  };
+}
+
 /**
  * "You may cast an instant or sorcery spell from your graveyard with mana value 4 or less without paying its mana cost. If that spell would be put into your graveyard, exile it instead."
  * (Diviner of Mist, issue 102; CR 608.2g, 118.9, 614.1a): the engine's `castFree` of a choice from the controller's graveyard, with `exileInstead` for the rider. The engine asks the
@@ -33,7 +81,11 @@ export const CAST_CHOSEN_GRAVEYARD_SPELL: Lowering<IrClause, Effects> = {
   id: 'lower.cast-chosen-graveyard-spell',
   needs: ['effect:castFree', 'ability:castFreeFromGraveyard'],
   acceptsOptional: true,
-  lower(clause) {
+  lower(clause, ctx) {
+    // Counterpoint (CR 608.2g, 202.3, 608.2h): "cast a creature, instant, sorcery, or planeswalker spell from your graveyard with mana value less than or equal to that spell's mana value
+    // without paying its mana cost": the limit is the mana value of the target spell an earlier sentence named, read by the engine as the effect starts.
+    const spells = arg(clause, 'spells');
+    if (spells !== undefined) return lowerByValueOfThatSpell(clause, spells, ctx);
     const limit = arg(clause, 'limit');
     if (limit?.kind !== 'number') return failure(clause);
     const rider = arg(clause, 'exileInstead');

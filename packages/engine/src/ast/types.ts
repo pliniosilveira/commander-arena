@@ -2659,6 +2659,8 @@ export type Effect =
    * this effect from there, at the timing of its type, paying its ordinary cost (no alternative cost, no commander tax) and
    * with no other change (it is not exiled afterwards). The permission names the card as it is now: if it leaves the
    * graveyard it is a new object (CR 400.7) and the permission is gone. `duration` is `untilEndOfTurn`.
+   * Mission Briefing (CR 608.2d, 601.2, 611.2a): `objects` may be a `choose` selector of the controller's graveyard (the filter says zone `graveyard`, no count): the controller chooses one
+   * card the filter matches as the effect resolves, nothing is asked with one candidate and nothing happens with none, and the chosen card is the one given the permission. Not a target.
    * `exileInstead` (D-359, CR 614.1a, "If that spell would be put into your graveyard, exile it instead"): the spell cast with this permission is exiled instead
    * of going to a graveyard when it would leave the stack for one (resolved, countered, fizzled); it is written onto the permission and read as the spell is cast.
    * Lorehold group 2 (Quintorius, Loremaster; CR 601.2, 118.9, 614.1a, 400.7): `from: 'exile'` is the same permission for a card in exile that the target names ("Choose target card
@@ -2674,7 +2676,7 @@ export type Effect =
        * A target card of a graveyard; or (Hildibrand Manderville, issue 98) the card the permanent with the ability became in its owner's graveyard: `thisCard` in an ability of
        * a permanent that dies, `triggerCard` in a trigger about a permanent that died. Only with `adventure`.
        */
-      readonly objects: ObjectSelector;
+      readonly objects: ObjectSelector | ChooseSelector;
       /**
        * `untilEndOfTurn`, or `untilEndOfNextTurn` ("until the end of your next turn", CR 611.2a, 500.1, 514.2): it ends as the next turn of the controller of this effect that
        * begins after the effect resolves ends, this turn not counted even when it is theirs. Only with `adventure`.
