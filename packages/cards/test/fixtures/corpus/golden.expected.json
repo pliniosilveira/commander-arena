@@ -1,5 +1,5 @@
 {
-  "parserVersion": 215,
+  "parserVersion": 216,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -928,6 +928,14 @@
       "reasons": [],
       "ast": "250cc6db"
     },
+    "0d058991-3751-4afe-80c9-79f0c6e10282": {
+      "name": "Orcish Spy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "df95a94c"
+    },
     "0d2fa39a-9cac-4a1f-bb1e-b6162e6d5169": {
       "name": "Lazotep Quarry",
       "group": "acceptance",
@@ -1642,6 +1650,14 @@
       "reasons": [],
       "ast": "a191ecb5"
     },
+    "1b3e841e-0f8f-467d-9983-f9b8d081a67f": {
+      "name": "Mahadi, Emporium Master",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "963af456"
+    },
     "1b5e6560-ff2e-4475-96cb-63f64c8a86db": {
       "name": "Soul-Guide Lantern",
       "group": "training",
@@ -1850,6 +1866,14 @@
       "reasons": [],
       "ast": "db1d116e"
     },
+    "1e9b0fd6-5aae-401a-8df5-d94ce6442696": {
+      "name": "Prosper, Tome-Bound",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1e972519"
+    },
     "1ea3ba2d-e88f-4879-92f2-681637094b45": {
       "name": "Nazgûl Battle-Mace",
       "group": "acceptance",
@@ -1945,6 +1969,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e5dcaa3a"
+    },
+    "20535126-f811-4386-bdce-d73f30691724": {
+      "name": "Smaug, Wicked Worm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2dffbc49"
     },
     "20a6d576-a5b2-43b4-8be9-75be001e567d": {
       "name": "Treasure Nabber",
@@ -2377,6 +2409,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b8610b7f"
+    },
+    "283054ed-5fbd-4202-bc02-294079aaff03": {
+      "name": "The Ruinous Powers",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your upkeep, choose an opponent at random. Exile the top card of that player's library. Until end of turn, you may play that card and you may spend mana as though it were mana of any color to cast it. When you cast a spell this way, its owner loses life equal to its mana value.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.choose-target-dies-return"
+        }
+      ],
+      "reasons": [],
+      "ast": "f1d3aaf4"
     },
     "2837be10-23ad-49d2-943e-b1e00edbbbd9": {
       "name": "Sam, Loyal Attendant",
@@ -3523,7 +3572,7 @@
           "text": "At the beginning of your end step, each opponent may sacrifice a nontoken creature of their choice. Each opponent who doesn't loses 2 life for each instant and sorcery card in your graveyard.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "noun.a-permanent"
+          "closestRule": "effect.player"
         }
       ],
       "reasons": [],
@@ -4257,6 +4306,14 @@
       "reasons": [],
       "ast": "3c5fa0b9"
     },
+    "467c526a-02a7-405d-98de-c632ea83519b": {
+      "name": "You Find Some Prisoners",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56841a84"
+    },
     "467c9fe6-d1d3-4242-bc0c-e522b4f21d56": {
       "name": "Landroval, Horizon Witness",
       "group": "acceptance",
@@ -4738,6 +4795,14 @@
       "reasons": [],
       "ast": "ed624f70"
     },
+    "4dab6a96-4376-4aea-983d-406167993214": {
+      "name": "Anje Falkenrath",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b943ab1c"
+    },
     "4dabba8c-0490-41ec-a03e-f7d0c9f0edb6": {
       "name": "Zenith Festival",
       "group": "acceptance",
@@ -5163,6 +5228,23 @@
       "reasons": [],
       "ast": "c9a171b3"
     },
+    "5513a221-dfff-4e02-8037-dcff3d0381d7": {
+      "name": "Petty Larceny",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Freerunning {1}{B}",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "e995a27a"
+    },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
       "group": "acceptance",
@@ -5550,6 +5632,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "86440ff8"
+    },
+    "5b194438-6946-45dd-8d77-c9de8c115d09": {
+      "name": "Outrageous Robbery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "38c7b486"
     },
     "5b29c26f-c0f0-4703-83db-3a249ebc5792": {
       "name": "Mirkwood Elk",
@@ -6288,6 +6378,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "41a89e88"
+    },
+    "66961bcb-f588-47a7-b3f3-12f4ac674477": {
+      "name": "Inside Information",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3442238d"
     },
     "66a22b35-3dc0-4a74-8474-e73293403de6": {
       "name": "Solitary Cell",
@@ -7489,6 +7587,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "99c241ce"
+    },
+    "7a0bc265-6b40-48d6-a588-c9624df7d1bc": {
+      "name": "Cruelclaw's Heist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Target opponent reveals their hand. You choose a nonland card from it. Exile that card. If the gift was promised, you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast it.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "fa532fd4"
     },
     "7a2484a9-04fd-41a0-8224-610c1c07ed10": {
       "name": "Blasphemous Act",
@@ -10235,6 +10350,14 @@
       "reasons": [],
       "ast": "a92e282b"
     },
+    "a66d8dc6-ced4-4b24-b0c2-3557b2a851be": {
+      "name": "Vial Smasher, Gleeful Grenadier",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d9f803f0"
+    },
     "a66f8b44-0163-4456-b152-4acefab896a4": {
       "name": "Malcolm, Keen-Eyed Navigator",
       "group": "acceptance",
@@ -11559,6 +11682,14 @@
       "reasons": [],
       "ast": "231bc7c5"
     },
+    "bd7c5a8b-cf62-41e1-a664-b16e3e5d142b": {
+      "name": "Laughing Jasper Flint",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8197e235"
+    },
     "bd92cacd-c7d8-43a2-a261-ea4754fefdc5": {
       "name": "Sage's Reverie",
       "group": "acceptance",
@@ -11574,6 +11705,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5209f0eb"
+    },
+    "bddb2064-afdb-4184-ae4a-633745e64a3c": {
+      "name": "At Knifepoint",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "85c7d885"
     },
     "bdeb440d-a714-40e8-9038-f651e6ae45fb": {
       "name": "Springleaf Drum",
@@ -11975,6 +12114,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dc095baf"
+    },
+    "c52fc8a1-43c6-41f8-b010-03be7c89ef1d": {
+      "name": "Bloodsoaked Insight // Sanguine Morass",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e1823893"
     },
     "c53ba31a-ba27-4e17-9a92-311acb1cab29": {
       "name": "Myr Battlesphere",
@@ -12713,6 +12860,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fbdbede5"
+    },
+    "d08ce18a-0fd9-47ac-ad2f-6934b60070f1": {
+      "name": "Rakdos, Patron of Chaos",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b173cd8a"
     },
     "d0dd425b-fdba-41b4-b9e6-f5161610bd7e": {
       "name": "Ezuri's Predation",
@@ -13547,6 +13702,14 @@
       "reasons": [],
       "ast": "9f2ff0a2"
     },
+    "ddf34404-39dd-4dcf-a706-ec78d47167e9": {
+      "name": "Rakish Crew",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef3b396a"
+    },
     "de41081e-713c-4005-90f7-65d9426208f1": {
       "name": "Everlasting Torment",
       "group": "acceptance",
@@ -13747,6 +13910,23 @@
       "reasons": [],
       "ast": "4a691c90"
     },
+    "e229d55c-9513-437d-bd67-015ac46aaa18": {
+      "name": "The Infamous Cruelclaw",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever ~ deals combat damage to a player, exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana cost.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.exile-until-put-rest-bottom"
+        }
+      ],
+      "reasons": [],
+      "ast": "7cf8cfc9"
+    },
     "e233cb5b-7237-4271-8157-9179cc897b6c": {
       "name": "Killian, Ink Duelist",
       "group": "acceptance",
@@ -13794,6 +13974,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "65970ffc"
+    },
+    "e2c141af-925e-42bd-8d83-e1a71f4c9794": {
+      "name": "Rakdos, the Muscle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "60069749"
     },
     "e2f98813-4f39-4135-b05b-407e9eb797f6": {
       "name": "Jaspera Sentinel",
@@ -14951,6 +15139,14 @@
       "reasons": [],
       "ast": "621f96b2"
     },
+    "f5cdb413-2b72-4dc6-b93d-2532ac2ae568": {
+      "name": "Black Cat, Cunning Thief",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4c1d547"
+    },
     "f5d1bd3c-0e65-4999-a810-881b2389b40e": {
       "name": "Conspicuous Snoop",
       "group": "acceptance",
@@ -15571,8 +15767,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1644,
-      "total": 1660
+      "supported": 1660,
+      "total": 1680
     }
   }
 }
