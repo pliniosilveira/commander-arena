@@ -89,4 +89,81 @@ export const CONDITION_YOU_HAVE_FEW_CARDS_IN_HAND = defineRule<IrCondition>({
   },
 });
 
-export const AHOY_G10_CONDITION_RULES = [CONDITION_YOU_HAVE_FEW_CARDS_IN_HAND];
+/** "seven or more": the comparison of a number of cards that is at least two ("one or more cards in hand" is another thing to say). */
+const OR_MORE: Parser<IrComparison> = (ctx, pos) => {
+  const n = quantity(ctx, pos);
+  if (!n.ok) return n;
+  if (n.value < 2) return fail(ctx, pos);
+  const tail = pattern(/ or more(?= cards in hand(?![\p{L}\p{N}]))/iu)(ctx, n.pos);
+  if (!tail.ok) return tail;
+  return { ok: true, value: { cmp: 'atLeast', value: n.value }, pos: tail.pos };
+};
+
+/**
+ * `condition.you-have-many-cards-in-hand`: "you have seven or more cards in hand" (Kefnet the Mindful: "~ can't attack or block unless you have seven or more cards in hand."; CR 402.1, 508.1a,
+ * 509.1a: the cards in the controller's own hand, read as the attack or the block is declared). The engine's `amountIs` of a `countOf` cards in your hand. Not read: another player, "or
+ * fewer" (`condition.you-have-few-cards-in-hand`), a number below two, "in your hand", "no cards".
+ */
+export const CONDITION_YOU_HAVE_MANY_CARDS_IN_HAND = defineRule<IrCondition>({
+  id: 'condition.you-have-many-cards-in-hand',
+  family: 'condition',
+  leading: ['you'],
+  cites: [
+    'CR 402.1 (Hand)',
+    'CR 508.1a (Declare Attackers Step)',
+    'CR 509.1a (Declare Blockers Step)',
+  ],
+  examples: [
+    'you have seven or more cards in hand',
+    'you have 4 or more cards in hand',
+    'you have two or more cards in hand',
+  ],
+  rejects: [
+    'you have one or more cards in hand',
+    'you have seven or fewer cards in hand',
+    'you have seven or more cards',
+    'you have seven or more cards in your hand',
+    'you have seven or more cards in hand.',
+    'an opponent has seven or more cards in hand',
+    'a player has seven or more cards in hand',
+    'you control seven or more cards in hand',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      pattern(/you have /iu),
+      OR_MORE,
+      pattern(new RegExp(` cards in hand${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'countOf',
+      of: {
+        kind: 'noun',
+        det: 'each',
+        filter: { zone: 'hand', controller: 'you', card: true, raw: ctx.text.slice(pos, r.pos) },
+        upTo: false,
+        plural: true,
+        other: false,
+        span,
+        rule: 'condition.you-have-many-cards-in-hand',
+      },
+      span,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'amountIs', amount, compare: r.value[1] },
+        span,
+        rule: 'condition.you-have-many-cards-in-hand',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const AHOY_G10_CONDITION_RULES = [
+  CONDITION_YOU_HAVE_FEW_CARDS_IN_HAND,
+  CONDITION_YOU_HAVE_MANY_CARDS_IN_HAND,
+];

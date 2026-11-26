@@ -34,6 +34,7 @@ import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
 import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
 import { ANY_NUMBER_OPPONENTS_RULES } from './any-number-opponents';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -59,6 +60,7 @@ import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
+import { CONTROLLERS_MAY_EXILE_EFFECT_RULES } from './controllers-may-exile';
 import { COPY_CAST_PAYING_EFFECT_RULES } from './copy-cast-paying';
 import { COPY_CHOSEN_TOKEN_EFFECT_RULES } from './copy-chosen-token';
 import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
@@ -70,6 +72,7 @@ import { COUNTER_BLITZ_C_EFFECT_RULES } from './counter-blitz-c';
 import { COUNTER_BLITZ_E_EFFECT_RULES } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_EFFECT_RULES } from './counter-blitz-g';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
+import { COUNTER_EXILE_CAST_WHILE_EXILED_EFFECT_RULES } from './counter-exile-cast-while-exiled';
 import { COUNTER_GROUP_A_EFFECT_RULES } from './counter-group-a';
 import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_EFFECT_RULES } from './counter-intelligence-g3';
@@ -99,6 +102,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { DURNAN_EFFECT_RULES } from './durnan';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { EARTHBEND_RULES } from './earthbend';
 import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
 import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
@@ -123,6 +127,7 @@ import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
+import { FLINT_RIDER_EFFECT_RULES } from './flint-riders';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
@@ -191,6 +196,8 @@ import {
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
+import { MANIFEST_COUNTERS_EFFECT_RULES } from './manifest-counters';
+import { MANIFEST_DREAD_EFFECT_RULES } from './manifest-dread';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
 import { MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES } from './may-play-this-way-free';
@@ -289,6 +296,7 @@ import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
+import { THEN_MAY_RETURN_EFFECT_RULES } from './then-may-return';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
@@ -670,6 +678,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     "exile target creature that's attacking you or a planeswalker you control",
     // Legions to Ashes (CR 201.2, 608.2c): the target and the tokens with its name that its controller controls.
     'exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent',
+    // Sever the Bloodline (CR 201.2, 608.2c): the target and every other creature with its name.
+    'exile target creature and all other creatures with the same name as that creature',
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -711,6 +721,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.target-creatures-battlefield-or-graveyard',
             // Legions to Ashes (CR 201.2, 608.2c): "exile target nonland permanent an opponent controls and all tokens that player controls with the same name as that permanent".
             'noun.target-permanent-and-same-name-tokens',
+            // Sever the Bloodline (CR 201.2, 608.2c): "exile target creature and all other creatures with the same name as that creature".
+            'noun.target-permanent-and-same-name-others',
             ...SELF_OR_PERMANENT_OPERANDS,
             // Stage P30 (D-135): "you may exile it" (the card a permanent became when it died, or a target of the text).
             'noun.it',
@@ -1404,6 +1416,7 @@ export const EFFECT_RULES = [
   ...AHOY_G1B_EFFECT_RULES,
   // Brainstealer Dragon: "exile the top card of each opponent's library" and the any-color rider sentence start like the plain exile and "if" rules, and are tried first.
   ...BRAINSTEALER_G9_EFFECT_RULES,
+  ...FLINT_RIDER_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
   ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
@@ -1473,6 +1486,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
+  // Issue 692 (Embodiment of Fury, Sylvan Awakening): lands that become creatures for a while.
+  ...ANIMATE_LANDS_EFFECT_RULES,
   // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
   // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
   ...GALADRIEL_G3_EFFECT_RULES,
@@ -1530,6 +1545,7 @@ export const EFFECT_RULES = [
   ...DACK_EFFECT_RULES,
   ...EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES,
   ...CHOOSE_PER_OPPONENT_EFFECT_RULES,
+  ...CONTROLLERS_MAY_EXILE_EFFECT_RULES,
   ...COUNTER_BLITZ_C_EFFECT_RULES,
   ...COUNTER_BLITZ_E_EFFECT_RULES,
   ...REVEAL_CHOSEN_TYPE_EFFECT_RULES,
@@ -1556,8 +1572,11 @@ export const EFFECT_RULES = [
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
   // Planeswalker Party deck (Chandra, Awakened Inferno): the damage and the exile of what dies, before the plain damage, which would read the first sentence and leave the rest.
   ...PLANESWALKER_PARTY_EFFECT_RULES,
+  ...THEN_MAY_RETURN_EFFECT_RULES,
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
   ...DURNAN_EFFECT_RULES,
+  ...MANIFEST_DREAD_EFFECT_RULES,
+  ...MANIFEST_COUNTERS_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,
@@ -1573,6 +1592,8 @@ export const EFFECT_RULES = [
   ...UP_TO_THAT_MANY_EFFECT_RULES,
   // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
   ...JESKAI_CASTFREE_EFFECT_RULES,
+  // "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard. You may cast that card ... for as long as it remains exiled": starts like the plain counter.
+  ...COUNTER_EXILE_CAST_WHILE_EXILED_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
@@ -1815,6 +1836,7 @@ export const EFFECT_RULES = [
   // Abzan Armor deck, group A: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
   ...COMBAT_RULE_EFFECT_RULES,
   ...COUNTER_RULES,
+  ...EARTHBEND_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,
   ...GAIN_RULES,

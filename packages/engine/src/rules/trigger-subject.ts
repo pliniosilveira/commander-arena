@@ -37,7 +37,9 @@ export function readsTriggerSubject(ability: Ability): boolean {
   if (effects.includes('"triggerSpellX"')) return true;
   // CR 601.2h, 608.2c: "If five or more mana was spent to cast that spell, ... instead" is a condition of the effect, read as the effect resolves from the spell that
   // caused the trigger, so the subject stays on the stack as it does for the intervening "if" below.
-  if (effects.includes('"manaSpentAtLeast"')) return true;
+  if (effects.includes('"manaSpentAtLeast"') || effects.includes('"manaSpentFromSubtype"')) {
+    return true;
+  }
   // D-196: the Ring's sacrifice at end of combat is about the creature that blocked the Ring-bearer.
   if (ability.effect.kind === 'delayedSacrifice' && ability.effect.of !== 'this') return true;
   // CR 702.100a (D-120): the intervening "if" of Evolve compares the creature that entered with the source,
@@ -56,6 +58,7 @@ export function readsTriggerSubject(ability: Ability): boolean {
     // Galadriel group 1: the creature the Ring tempted its controller to choose, read again as the ability resolves.
     condition.includes('"ringBearerChosen"') ||
     condition.includes('"manaSpentAtLeast"') ||
+    condition.includes('"manaSpentFromSubtype"') ||
     condition.includes('"subjectControllerHasMore"')
   );
 }

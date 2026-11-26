@@ -521,6 +521,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     // Silhana Ledgewalker (CR 509.1b, 702.9b): the blockers are the creatures that do not have flying.
     "Slivers can't be blocked except by creatures with flying.",
     'Creatures you control are Zombies in addition to their other creature types.',
+    "Creatures you control but don't own are Mercenaries in addition to their other types.",
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
     // CR 702.101b (Extort): a keyword whose instances each trigger, given to a group.
@@ -591,6 +592,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.subtype-token-permanents',
       // Dancer's Chakrams (CR 903.3): "Other commanders you control get +2/+2 and have lifelink." (the ability that card gives, read as its own).
       'noun.other-commanders-you-control',
+      // Laughing Jasper Flint (issue 685): "Creatures you control but don't own are Mercenaries in addition to their other types."
+      'noun.creatures-you-control-but-dont-own',
     ],
     'plural',
   ),

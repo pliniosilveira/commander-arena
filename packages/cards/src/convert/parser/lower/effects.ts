@@ -64,6 +64,7 @@ import {
 } from './continuous';
 import { EXCHANGE_CONTROL_OF_ALL, GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
+import { CONTROLLERS_MAY_EXILE_LOWERINGS } from './controllers-may-exile';
 import { lowerCopyToken } from './copies';
 import { COPY_CAST_PAYING_LOWERINGS } from './copy-cast-paying';
 import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
@@ -76,6 +77,7 @@ import { COUNTER_BLITZ_C_LOWERINGS } from './counter-blitz-c';
 import { COUNTER_BLITZ_E_LOWERINGS } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_LOWERINGS } from './counter-blitz-g';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
+import { COUNTER_EXILE_CAST_WHILE_EXILED_LOWERINGS } from './counter-exile-cast-while-exiled';
 import { COUNTER_GROUP_A_LOWERINGS } from './counter-group-a';
 import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
@@ -93,6 +95,7 @@ import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { DURNAN_LOWERINGS } from './durnan';
+import { EARTHBEND_LOWERINGS } from './earthbend';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
@@ -155,6 +158,8 @@ import { LOCKE_LOWERINGS } from './locke';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
+import { MANIFEST_COUNTERS_LOWERINGS } from './manifest-counters';
+import { MANIFEST_DREAD_LOWERINGS } from './manifest-dread';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
 import { MAY_PLAY_THIS_WAY_FREE_LOWERINGS } from './may-play-this-way-free';
 import { MELD_LOWERINGS } from './meld';
@@ -209,6 +214,7 @@ import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
+import { THEN_MAY_RETURN_LOWERINGS } from './then-may-return';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -666,6 +672,35 @@ function lowerReturnSelf(
           ...(attachTo === undefined ? {} : { attachTo }),
         }
       : { kind: 'moveToZone', objects: { kind: 'this' }, to: 'hand' };
+  // CR 708.2a, 708.3 (Deathmist Raptor): "... to the battlefield face up or face down": the controller chooses as the effect resolves (`chooseOne`); face down it is a 2/2 that morph can
+  // turn up (`faceDownAs` `morph`). Only the plain return: no tapped, attacking, counters or attachment beside it.
+  if (to.faceChoice === true) {
+    if (
+      effect.kind !== 'moveToZone' ||
+      to.zone !== 'battlefield' ||
+      to.tapped === true ||
+      to.attacking === true ||
+      to.counters !== undefined ||
+      attachTo !== undefined
+    ) {
+      return failure(clause);
+    }
+    const faceBlocked = missingFeatures(['effect:chooseOne', 'ability:moveFaceDownMorph']);
+    if (faceBlocked.length > 0) return failure(clause, faceBlocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'chooseOne',
+          options: [
+            { label: 'face up', effect },
+            { label: 'face down', effect: { ...effect, faceDownAs: 'morph' } },
+          ],
+        },
+      ],
+      rule: clause.rule,
+    };
+  }
   if (to.attacking === true) {
     const attacking = missingFeatures(['effect:enterAttacking']);
     if (attacking.length > 0) return failure(clause, attacking);
@@ -871,6 +906,22 @@ const PUT_LIBRARY: Lowering<IrClause, Effects> = {
     const to = zoneOf(clause);
     if (to?.zone !== 'library' || to.position === undefined) return failure(clause);
     const position = to.position;
+    // "Put this card from your graveyard on top of your library" (CR 113.6b, 401.3): an ability of the card itself that works from the graveyard, which only an ordinary activated
+    // ability can be (`ctx.graveyardSource`, as for "Return this card from your graveyard to your hand"); the card goes to its owner's library, on top or on the bottom.
+    if (to.from === 'graveyard') {
+      const what = operand(clause, 'objects');
+      if (what?.kind !== 'noun' || what.det !== 'self' || !ctx.graveyardSource) {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['selector:this']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      ctx.usedGraveyardSource = true;
+      return {
+        ok: true,
+        value: [{ kind: 'moveToZone', objects: { kind: 'this' }, to: 'library', position }],
+        rule: clause.rule,
+      };
+    }
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     // "Put it into its owner's library third from the top" (stage P30, D-135, CR 401.7): "it" may be the card the permanent became.
@@ -2223,7 +2274,8 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.rule === 'noun.that-object' &&
-      (ctx.itIsSelf || ctx.owner === 'spell')
+      (ctx.itIsSelf || ctx.owner === 'spell') &&
+      !ctx.manifestedCreature
     ) {
       return failure(clause);
     }
@@ -3082,6 +3134,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
+  ...COUNTER_EXILE_CAST_WHILE_EXILED_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
@@ -3109,6 +3162,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...IMPULSE_EXILE_LOWERINGS,
   ...GRAND_LARCENY_B_LOWERINGS,
   ...DURNAN_LOWERINGS,
+  ...MANIFEST_DREAD_LOWERINGS,
+  ...MANIFEST_COUNTERS_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
@@ -3196,10 +3251,12 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KENRITH_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
+  ...EARTHBEND_LOWERINGS,
   ...KEFKA_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
+  ...CONTROLLERS_MAY_EXILE_LOWERINGS,
   ...COUNTER_BLITZ_C_LOWERINGS,
   ...COUNTER_BLITZ_E_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,
@@ -3251,6 +3308,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
+  ...THEN_MAY_RETURN_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...WIN_GAME_LOWERINGS,
   ...MELD_LOWERINGS,
@@ -3340,10 +3398,12 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'declined' ||
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
+        kind === 'youCant' ||
         kind === 'notDeclaredAttacker' ||
         kind === 'youAreDefendingPlayer' ||
         kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
+        kind === 'discardedCardHasKeyword' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
         kind === 'diesThisWay' ||

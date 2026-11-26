@@ -80,7 +80,8 @@ describe('texts that are not Voice of the Blessed are dropped, never half run (S
     'As long as ~ has four or more +1/+1 counters on it, you draw a card.',
     'As long as ~ has four +1/+1 counters on it, it has flying.',
     'As long as ~ has four or more counters on it, you draw a card.',
-    'As long as ~ has one or more +1/+1 counters on it, it has flying.',
+    // "One or more counters, it has flying" is read now (a counter condition on a static); a draw is not a static.
+    'As long as ~ has a +1/+1 counter on it, you draw a card.',
   ];
   for (const text of lines) {
     test(text, () => {

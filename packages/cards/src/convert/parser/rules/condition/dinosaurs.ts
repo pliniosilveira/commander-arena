@@ -155,4 +155,6 @@ export const UNLESS_CONDITIONS = [
   'condition.control-your-commander',
   'condition.life-total',
   'condition.total-stat',
+  // Kefnet the Mindful: "~ can't attack or block unless you have seven or more cards in hand."
+  'condition.you-have-many-cards-in-hand',
 ] as const;

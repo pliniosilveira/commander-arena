@@ -34,6 +34,7 @@ const LOOK_TAKE_WORDS = {
   exileFaceDown: ' to exile face down',
   exile: ' to exile',
   top: ' to put on top of your library',
+  manifest: ' to manifest', // CR 701.62a, manifest dread
 } as const;
 
 /**

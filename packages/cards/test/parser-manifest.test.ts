@@ -113,8 +113,8 @@ describe('what stays unread (never guessed)', () => {
     expect(parsed.spell?.effect ?? null, text).toBeNull();
   };
 
-  test('manifest dread (CR 701.62) and cloak (CR 701.58) are other instructions', () => {
-    unread('Manifest dread.');
+  // Manifest dread (CR 701.62) is read now (parser-manifest-dread.test.ts); cloak is not.
+  test('cloak (CR 701.58) is another instruction', () => {
     unread('Cloak the top card of your library.');
   });
 

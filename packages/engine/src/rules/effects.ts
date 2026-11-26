@@ -214,6 +214,7 @@ import { TIME_COUNTER } from './time-counter';
 import { makeSettled } from './token-batch';
 import type { TokenBatch } from './token-replacement';
 import { runTransform } from './transform';
+import { runTurnFaceUp } from './turn-face-up';
 import { untapPermanent } from './untap';
 import { runVote } from './vote';
 import { winTheGame } from './win-game';
@@ -677,7 +678,10 @@ export function runInstruction(
         : result.alsoNewObject === undefined
           ? [result.newObject]
           : [result.newObject, result.alsoNewObject];
-    const lastMoved = [...(res.lastMoved ?? []), ...movedObjects];
+    const lastMoved =
+      instruction.notMoved === true
+        ? (res.lastMoved ?? [])
+        : [...(res.lastMoved ?? []), ...movedObjects];
     // CR 702.84a, 603.7 (D-124): unearth also creates the delayed triggered ability that exiles the permanent it
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
@@ -1220,6 +1224,8 @@ function runEffect(
         performed: destroyed.size > 0 ? 1 : 0,
         thisWay: {
           destroyed: destroyed.size,
+          // CR 608.2c, 400.7: the old ids of what was destroyed, for "for each permanent put into a graveyard this way" (`ObjectRef` `putIntoGraveyardThisWay`); left out when nothing was.
+          ...(destroyed.size === 0 ? {} : { destroyedObjects: [...destroyed] }),
           // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way": each as it last existed on the battlefield (before it moved); a token has the value its copiable
           // mana cost gives it (a token that is no copy has none: 0).
           destroyedValue: [...destroyed].reduce((total, id) => {
@@ -1543,13 +1549,35 @@ function runEffect(
         if (choosers !== undefined && choosers.length === 0)
           return { ...done(state), lastMoved: [] };
         const [firstChooser, ...laterChoosers] = choosers ?? [];
+        // Cruelclaw's Heist (CR 701.20a, 402.3): "Target opponent reveals their hand": every card of that hand is shown to all players before the choice.
+        const revealEvents: GameEvent[] = [];
+        if (sel.revealHand === true && sel.fromHandOf !== undefined) {
+          const [owner] = resolvePlayers(state, sel.fromHandOf, ctx, targets);
+          const shown = (owner === undefined ? [] : (state.seats[owner]?.hand ?? [])).flatMap(
+            (id) => {
+              const card = state.objects[id];
+              return card?.card == null
+                ? []
+                : [{ card: card.card, name: derive(state, card).name }];
+            },
+          );
+          if (owner !== undefined && shown.length > 0) {
+            revealEvents.push({
+              kind: 'cardsRevealed',
+              seat: owner,
+              cards: shown.map((c) => c.card),
+              names: shown.map((c) => c.name),
+              from: 'hand',
+            });
+          }
+        }
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
         return {
           ...done(
             state,
-            [],
+            revealEvents,
             graveyards.map((graveyard) => ({
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
@@ -1575,6 +1603,7 @@ function runEffect(
               count: amountOf(state, sel.count ?? 1, ctx, targets),
               to: effect.to,
               position: effect.position ?? 'top',
+              ...(effect.faceDownAs === 'manifest' ? { entersFaceDown: 'manifest' as const } : {}),
               ...(sel.optional === true ? { optional: true as const } : {}),
               ...(sel.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
               // "Put a creature card from defending player's hand": the hand of the one player the selector names (nothing to choose when it names none).
@@ -2073,6 +2102,79 @@ function runEffect(
           })),
         ],
       });
+    case 'earthbend': {
+      // Earthbend N (Avatar: The Last Airbender, rulings 2025-10-02): the land becomes a 0/0 land creature with haste, for good, in addition to its other types; N +1/+1 counters go on it;
+      // and when it dies or is exiled it returns to the battlefield tapped under the controller's control. The target is fixed as the effect resolves (CR 608.2b: a land that is gone, or
+      // no longer a land, is not affected). The counters are read once, now (CR 608.2h).
+      const lands = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
+        const obj = state.objects[id];
+        return obj?.zone === 'battlefield' && derive(state, obj).types.includes('land');
+      });
+      if (lands.length === 0) return done(state);
+      const counters = Math.max(0, amountOf(state, effect.count, ctx, targets));
+      return done(
+        {
+          ...state,
+          // CR 603.7c, 603.7e: one delayed ability of the controller for each land, about that permanent only; it has no end but the event, once.
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            ...lands.map((watched) => ({
+              source: res.source,
+              controller: res.controller,
+              watched,
+              ability: {
+                kind: 'triggered' as const,
+                trigger: {
+                  kind: 'leavesBattlefield' as const,
+                  what: {},
+                  to: ['graveyard', 'exile'] as const,
+                },
+                effect: {
+                  kind: 'moveToZone' as const,
+                  objects: { kind: 'triggerCard' as const, zones: ['graveyard', 'exile'] as const },
+                  to: 'battlefield' as const,
+                  tapped: true,
+                  controller: 'you' as const,
+                },
+              },
+            })),
+          ],
+        },
+        [],
+        [
+          {
+            kind: 'effect',
+            effect: {
+              kind: 'setTypes',
+              objects: effect.objects,
+              types: ['creature'],
+              additive: true,
+              basePt: { power: 0, toughness: 0 },
+              duration: 'permanent',
+            },
+          },
+          {
+            kind: 'effect',
+            effect: {
+              kind: 'grantKeyword',
+              objects: effect.objects,
+              keyword: { kind: 'haste' },
+              duration: 'permanent',
+            },
+          },
+          {
+            kind: 'effect',
+            effect: {
+              kind: 'addCounters',
+              objects: effect.objects,
+              counter: '+1/+1',
+              count: counters,
+            },
+          },
+        ],
+      );
+    }
+
     case 'delayedDies':
       // CR 603.7, 603.7c, 603.10a, 514.2 (Together Forever): "When that creature dies this turn, return that card to its owner's hand": one delayed ability of the controller for each
       // permanent the effect names as it resolves, about that object only (`watched`), once, ended with the turn. A permanent that is not on the battlefield as it resolves makes none.
@@ -3110,6 +3212,10 @@ function runEffect(
     case 'manifest':
       // CR 701.40a (D-309): the top card of a library goes onto the battlefield face down as a 2/2 creature.
       return runManifest(state, effect, ctx, targets);
+
+    case 'turnFaceUp':
+      // CR 701.40g, 708.8: a face-down permanent is turned face up by the effect, at no cost.
+      return runTurnFaceUp(state, effect, ctx, targets);
 
     case 'gainLife':
     case 'loseLife': {
@@ -4248,6 +4354,7 @@ function runEffect(
             ...(fixed === undefined ? {} : { cards: fixed, cardsZone: 'exile' as const }),
             ...(effect.creatureGains === undefined ? {} : { creatureGains: effect.creatureGains }),
             ...(effect.fromHand === true ? { fromHand: true as const } : {}),
+            ...(effect.payInstead === undefined ? {} : { payInstead: effect.payInstead }),
             chosen: null,
           },
         ],
@@ -4566,6 +4673,37 @@ function runEffect(
           },
         ],
       );
+
+    case 'controllersMayExile': {
+      // CR 608.2d, 101.4 (Disorienting Choice): each permanent of the slot that is still a legal target and on the battlefield is offered to the player who controls it, in turn order from the
+      // controller of the effect; the ones they pick are exiled together at the end (rules/choose-each.ts). The permanents are remembered for "the chosen permanents ... still on the battlefield".
+      const chosen = resolveObjects(state, effect.objects, ctx, targets).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
+      const controllers = new Set(
+        chosen.flatMap((id) => {
+          const obj = state.objects[id];
+          return obj === undefined ? [] : [controllerOf(state, obj)];
+        }),
+      );
+      return {
+        ...done(
+          state,
+          [],
+          [
+            {
+              kind: 'chooseEach',
+              filter: {},
+              mayExile: chosen,
+              seats: seatsInOrder(state, res.controller).filter((seat) => controllers.has(seat)),
+              picked: [],
+              chosen: null,
+            },
+          ],
+        ),
+        thisWay: { chosenPermanents: chosen },
+      };
+    }
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).

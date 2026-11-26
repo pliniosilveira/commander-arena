@@ -164,6 +164,34 @@ export const AMOUNT_FOR_EACH_COUNTER_KIND = defineRule<IrAmount>({
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
   countAmount(rule, choice(literal('the number of '), literal('the total number of ')), true);
 
+/**
+ * "the number of +1/+1 counters on lands you control" (Toph, the Blind Bandit; CR 122.1): the counters of one kind on the permanents of a plural group, added together. The group is a
+ * plural phrase with a controller, as in a count of objects; a counter of no kind ("counters") and an object that is `~`, "it" or a pronoun are the other counts of counters.
+ */
+const NUMBER_OF_COUNTERS_ON_GROUP = (rule: string): Parser<IrAmount> => {
+  const group = counted(rule, true);
+  return (ctx, pos) => {
+    const head = spanned(
+      sequence(literal('the number of '), COUNTER_NAME, literal(' counters on ')),
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const name = head.value.value[1][0];
+    if (!/^[+-]\d+\/[+-]\d+$/.test(name)) return fail(ctx, pos);
+    const of = group(ctx, head.pos);
+    if (!of.ok) return of;
+    return {
+      ok: true,
+      value: {
+        kind: 'countersOnGroup',
+        of: of.value,
+        counter: name,
+        span: { start: pos, end: of.pos },
+      },
+      pos: of.pos,
+    };
+  };
+};
+
 /** "the number of +1/+1 counters on ~". Exported for the rules of effects that read it as a limit (Galadriel deck, group 1: "mana value less than or equal to the number of loyalty counters on ~"). */
 export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
   countersOn(rule, literal('the number of '), true);
@@ -639,6 +667,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     COLORS_AMONG_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
     NUMBER_OF_COUNTERS(rule),
+    NUMBER_OF_COUNTERS_ON_GROUP(rule),
     // Scions & Spellcraft deck, group A: "the number of your opponents who were dealt combat damage by ~ this turn", before the count of objects.
     NUMBER_OF_PLAYERS_WHO,
     COUNTERS_REMOVED_THIS_WAY,
@@ -904,6 +933,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the mana value of the sacrificed creature',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
+    // Toph, the Blind Bandit (CR 122.1): the counters of a kind on the permanents of a group.
+    'equal to the number of +1/+1 counters on lands you control',
     // CR 608.2c: the creature cards an exile before it exiled (Grey Host Reinforcements).
     'equal to the number of creature cards exiled this way',
     // Stage P44 (D-195, CR 701.38a): the votes for one option of the vote earlier in the text.
@@ -920,6 +951,10 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is smaller',
     'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater and',
     'equal to the number of Zombies you control, whichever is greater',
+    'equal to the number of +1/+1 counters on lands',
+    'equal to the number of +1/+1 counters on land you control',
+    'equal to the number of counters on lands you control',
+    'equal to the number of lands counters on lands you control',
     'equal to the number of lands you control',
     'equal to the number of opponents',
     'equal to the number of opponents you control',

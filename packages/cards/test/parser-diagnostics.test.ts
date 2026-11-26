@@ -183,7 +183,7 @@ describe('reason: unrecognised', () => {
     expect(second).toMatchObject({
       reason: 'unrecognised',
       slot: 'cost',
-      stoppedAt: 'Exile a card from your hand: Add {G}.',
+      stoppedAt: 'card from your hand: Add {G}.',
       recognised: ['cost.tap'],
     });
   });

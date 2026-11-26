@@ -523,6 +523,7 @@ export type GameEvent =
         | 'effect'
         | 'tap'
         | 'bounce'
+        | 'exileCost'
         | 'fight'
         | 'blight'
         | 'untapCost'

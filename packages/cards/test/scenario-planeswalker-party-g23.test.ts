@@ -45,7 +45,7 @@ describe('Sparkshaper Visionary', () => {
     g.expect.derived('one', {
       types: ['creature'],
       colors: ['U'],
-      subtypes: ['Bird', 'Nahiri'],
+      subtypes: ['Bird'],
       keywords: ['flying', 'hexproof'],
     });
     g.expect.pt('one', 3, 3);

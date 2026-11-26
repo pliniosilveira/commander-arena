@@ -26,6 +26,7 @@ import { lowerCost } from './costs';
 import { lowerClause } from './effects';
 import { noteExiledOwnGraveyards } from './exile-own-graveyards';
 import { type FeatureRef, missingFeatures } from './features';
+import { lowerMayPlayRider } from './flint-riders';
 import { lowerFilter, playerSelectorOf } from './nouns';
 import { lowerThoseRestriction } from './riders-b';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
@@ -264,6 +265,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (lowered.value.some((e) => e.kind === 'choosePlayer')) ctx.choseAPlayer = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
+    // CR 701.62a: "that creature" after manifest dread is the manifested one, and stays so through the counters and the turning face up that follow.
+    ctx.manifestedCreature = lowered.value.some((e) =>
+      e.kind === 'lookAtTop' && e.take.to === 'manifest'
+        ? true
+        : ctx.manifestedCreature && (e.kind === 'addCounters' || e.kind === 'turnFaceUp'),
+    );
     noteTokensMade(lowered.value, ctx);
     noteMoved(lowered.value, ctx);
     noteExiledOwnGraveyards(clause, lowered.value, ctx);
@@ -1866,6 +1873,60 @@ function lowerYouDont(
 }
 
 /**
+ * "Sacrifice a creature. If you can't, sacrifice ~." (Eldrazi Monument, CR 608.2c, 701.21a): the sentence after a sacrifice the controller chooses says what is done when that
+ * sacrifice sacrificed nothing: they controlled no such permanent, or an effect forbids sacrificing it (CR 701.21a, 101.2). It is a `conditional` on "not at least one permanent
+ * sacrificed this way" (`thisWayAtLeast`), read when the instruction runs. Null when the sentence is not "If you can't"; one that does not follow such a sacrifice is refused,
+ * never guessed.
+ */
+function lowerYouCant(
+  sentence: IrSentence,
+  previous: Step | undefined,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  if (sentence.condition?.test.kind !== 'youCant') return null;
+  const last = previous?.effects[previous.effects.length - 1];
+  const afterSacrifice =
+    previous?.effects.length === 1 &&
+    last?.kind === 'sacrifice' &&
+    last.objects.kind === 'choose' &&
+    last.player === undefined &&
+    last.exploit === undefined;
+  if (
+    !afterSacrifice ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional)
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures([
+    'condition:thisWayAtLeast',
+    'effect:conditional',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const after = lowerClauses(sentence.clauses, ctx);
+  if (!after.ok) return after;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'conditional',
+        condition: {
+          kind: 'not',
+          term: { kind: 'thisWayAtLeast', what: 'sacrificed', count: 1 },
+        },
+        effect: oneEffect(after.value),
+      },
+    ],
+    rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
+}
+
+/**
  * "If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn." (issue 100, CR 608.2c, 611.2a): the sentence after the
  * "If you don't" conditional that makes a token and says what the token gains. The tokens exist only inside that conditional, so what they gain is done there (the engine's `moved`
  * means the tokens made). Null when the sentence is not such a rider; one that does not fit is refused, never guessed.
@@ -2122,6 +2183,70 @@ function lowerAfterReveal(
 }
 
 /**
+ * "Put a quest counter on ~. When you do, if it has four or more quest counters on it, put a +1/+1 counter on target creature you control. It gains trample until end of turn."
+ * (Earthbender Ascension; CR 603.12, 603.4, 122.1): the engine's `reflexive` ability with `ifThisWay` of `countersPut` (created when the counter was really put) and the intervening "if" as
+ * `sourceHasCounter`, read as the ability is created and again as it resolves. The sentences after it are part of the same ability. It follows an `addCounters` of that kind on the source
+ * and is the end of the text; any other shape is refused, never guessed.
+ */
+function lowerAfterCounters(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const refused = (needs?: readonly FeatureRef[]): StepResult => ({
+    stopped: needs === undefined ? refuse(sentence) : { ...refuse(sentence), needs },
+  });
+  const lead = sentence.afterCounters;
+  const [{ reflexive: _reflexive, afterCounters: _lead, ...plain }, ...rest] = [
+    sentence,
+    ...sentences.slice(i + 1),
+  ] as [IrSentence, ...IrSentence[]];
+  void _reflexive;
+  void _lead;
+  if (
+    lead === undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refused();
+  }
+  const previous = steps[steps.length - 1]?.effects ?? [];
+  const put = previous[previous.length - 1];
+  if (
+    put?.kind !== 'addCounters' ||
+    put.objects.kind !== 'this' ||
+    put.counter !== lead.counter ||
+    put.perController === true ||
+    put.perObject === true
+  ) {
+    return refused();
+  }
+  const blocked = missingFeatures(['effect:reflexive', 'condition:sourceHasCounter']);
+  if (blocked.length > 0) return refused(blocked);
+  const body = lowerReflexiveBody({ ...plain }, rest, ctx);
+  if (!body.ok) return { stopped: body };
+  if (body.value.kind !== 'reflexive') return refused();
+  steps.push({
+    effects: [
+      {
+        ...body.value,
+        ifThisWay: 'countersPut',
+        interveningIf: { kind: 'sourceHasCounter', counter: lead.counter, atLeast: lead.atLeast },
+      },
+    ],
+    replaceable: false,
+  });
+  return { last: sentences.length - 1 };
+}
+
+/**
  * "When this land enters, sacrifice it. When you do, search your library for a basic Forest card, put it onto the battlefield tapped, then
  * shuffle and you gain 1 life." (stage P36, D-178, CR 603.12): the reflexive ability of an instruction that is not an offer. The first sentence is one
  * plain instruction of a kind the engine can tell was done (`sacrifice`, a move, a draw, ...), the first of its body so that nothing earlier is
@@ -2171,7 +2296,8 @@ function lowerDoneReflexive(
   // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
   const madeToken = only?.kind === 'createToken';
   // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done.
-  const putCounter = only?.kind === 'addCounters';
+  // Earth Rumble: "Earthbend 2. When you do, ...": the land bent and the counters put on it are something done.
+  const putCounter = only?.kind === 'addCounters' || only?.kind === 'earthbend';
   if (
     only === undefined ||
     rest.length > 0 ||
@@ -3052,6 +3178,9 @@ function lowerStep(
     return lowerAfterDiscard(sentence, sentences, i, steps, ctx);
   // "When you exile a card this way, ..." (Cait Sith, Fortune Teller, CR 603.12): the reflexive ability of the exile of the top card before it.
   if (sentence.afterExile === true) return lowerAfterExile(sentence, sentences, i, steps, ctx);
+  // "When you do, if it has four or more quest counters on it, ..." (Earthbender Ascension, CR 603.12, 603.4): the reflexive ability of the counter put before it.
+  if (sentence.afterCounters !== undefined)
+    return lowerAfterCounters(sentence, sentences, i, steps, ctx);
   // "When you reveal a creature card this way, ..." (Yuna's Whistle, CR 603.12): the reflexive ability of the reveal before it.
   if (sentence.afterReveal !== undefined)
     return lowerAfterReveal(sentence, sentences, i, steps, ctx);
@@ -3245,6 +3374,13 @@ function lowerStep(
     steps.push({ effects: anyColor.value, replaceable: false });
     return { last: i };
   }
+  const mayPlayRider = lowerMayPlayRider(sentence, steps[steps.length - 1], refuse);
+  if (mayPlayRider !== null) {
+    if (!mayPlayRider.ok) return stop(mayPlayRider);
+    steps.pop();
+    steps.push({ effects: mayPlayRider.value, replaceable: false });
+    return { last: i };
+  }
   const regenerated = lowerCantBeRegenerated(sentence, sentences[i - 1], steps[steps.length - 1]);
   if (regenerated !== null) {
     if (!regenerated.ok) return stop(regenerated);
@@ -3301,6 +3437,13 @@ function lowerStep(
   if (notTaken !== null) {
     if (!notTaken.ok) return stop(notTaken);
     steps.push({ effects: notTaken.value, replaceable: false });
+    return { last: i };
+  }
+  // "Sacrifice a creature. If you can't, sacrifice ~." (Eldrazi Monument, CR 608.2c, 701.21a).
+  const cantSacrifice = lowerYouCant(sentence, steps[steps.length - 1], ctx);
+  if (cantSacrifice !== null) {
+    if (!cantSacrifice.ok) return stop(cantSacrifice);
+    steps.push({ effects: cantSacrifice.value, replaceable: false });
     return { last: i };
   }
   // "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-642).
@@ -3562,10 +3705,14 @@ function lowerPlayersMay(
     const declinedAfter =
       next?.condition?.test.kind === 'declined' &&
       next.condition.rule !== 'condition.each-opponent-declines';
+    // Rakdos, Patron of Chaos (issue 685): after "target opponent may ...", one player asked, "If they don't, you draw two cards." is what the controller does for the player who declined
+    // (`otherwise` is run by the controller, never as the player asked: rules/effects.ts, `declinedBy`), so its "you" is the controller's. After a sentence that asks several players the
+    // words stay refused (which "you" is meant is not told).
+    const oneAsked = by.who.det === 'target';
     const spans = [
       ...(afterOffer ? [] : [sentence]),
       ...sentence.clauses,
-      ...(declinedAfter && next !== undefined ? [next, ...next.clauses] : []),
+      ...(declinedAfter && !oneAsked && next !== undefined ? [next, ...next.clauses] : []),
     ];
     const start = Math.min(...spans.map((n) => n.span.start));
     const end = Math.max(...spans.map((n) => n.span.end));

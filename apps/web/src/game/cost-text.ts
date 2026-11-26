@@ -179,6 +179,11 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'untapPermanents':
       // CR 701.26b: "Untap two tapped creatures you control".
       return `Untap ${untapWhat(cost.filter, cost.count)}`;
+    case 'exilePermanent': {
+      // Primordial Mist (CR 118.3, 406.3, 708.9): "Exile a face-down permanent you control face up".
+      const down = cost.filter.facing === 'down';
+      return `Exile ${down ? 'a face-down permanent' : sacrificeWhat(cost.filter)} you control face up`;
+    }
     case 'blight':
       // D-407 (CR 701.68a): "Blight 1".
       return `Blight ${cost.count}`;
