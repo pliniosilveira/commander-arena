@@ -1,5 +1,5 @@
 {
-  "parserVersion": 220,
+  "parserVersion": 221,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -15831,6 +15831,14 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
+    "f8966fd5-2926-4ba0-b7d6-cfea40cd4e05": {
+      "name": "Earthbender Ascension",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4124b863"
+    },
     "f8bf3d91-cb50-48ce-88c6-cdcb37b64b57": {
       "name": "Kazuul, Tyrant of the Cliffs",
       "group": "acceptance",
@@ -16259,8 +16267,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1730,
-      "total": 1746
+      "supported": 1731,
+      "total": 1747
     }
   }
 }
