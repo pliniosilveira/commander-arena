@@ -978,6 +978,7 @@ describe('unmatched abilities', () => {
       'effect.add-counters-counted-kinds',
       'effect.turn-face-up-or-counter',
       'effect.turn-face-up',
+      'effect.turn-face-up-chosen',
       'effect.damage',
       'effect.damage-itself',
       'effect.damage-count',

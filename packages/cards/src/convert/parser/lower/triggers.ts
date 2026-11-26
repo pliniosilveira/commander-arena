@@ -2067,6 +2067,8 @@ function lowerTriggeredAbility(
       c.verb === 'putFromAmong' ||
       // Journey to the Lost City: "you may put a land card from among those cards onto the battlefield": the engine's choice of none or one exiled card is the offer.
       c.verb === 'putFromAmongExiled' ||
+      // Zimone, Mystery Unraveler: "Otherwise, you may turn a permanent you control face up": the engine's choice of none or one face-down permanent is the offer.
+      c.verb === 'turnFaceUpChosen' ||
       // Kimahri, Valiant Guardian (CR 707.9b): "Then you may have ~ become a copy of that creature, except ...": the lowering wraps the copy in the engine's `may`.
       c.verb === 'becomeCopyKeepingAbility' ||
       // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
