@@ -345,22 +345,26 @@ const SPELLS = pattern(new RegExp(`spells${BOUNDARY}`, 'iu'));
 export const SPELL = pattern(new RegExp(`spell${BOUNDARY}`, 'iu'));
 
 /** Modifiers a reduction's subject may carry: colors and "non<type>" words (no tapped, no supertype). */
-const SUBJECT_MODIFIERS = satisfy(
-  map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
-  // The filter below keeps only the colors and the "non<type>" words: any other modifier is refused, never dropped (D-230: "historic" would read as every spell).
-  (parts) =>
-    parts.tapped === undefined &&
-    parts.supertypes.length === 0 &&
-    parts.notSupertypes.length === 0 &&
-    parts.token === undefined &&
-    !parts.colorless &&
-    parts.notColors.length === 0 &&
-    !parts.attacking &&
-    !parts.attackingOrBlocking &&
-    !parts.blocking &&
-    !parts.historic &&
-    parts.colorCount === undefined,
-);
+const subjectModifiers = (supertypes: boolean) =>
+  satisfy(
+    map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
+    // The filter below keeps only the colors and the "non<type>" words (and the supertypes, where the rule reads them): any other modifier is refused, never dropped (D-230: "historic" would read as every spell).
+    (parts) =>
+      parts.tapped === undefined &&
+      (supertypes || parts.supertypes.length === 0) &&
+      parts.notSupertypes.length === 0 &&
+      parts.token === undefined &&
+      !parts.colorless &&
+      parts.notColors.length === 0 &&
+      !parts.attacking &&
+      !parts.attackingOrBlocking &&
+      !parts.blocking &&
+      !parts.historic &&
+      parts.outlaw === undefined &&
+      parts.colorCount === undefined,
+  );
+const SUBJECT_MODIFIERS = subjectModifiers(false);
+const SUBJECT_MODIFIERS_WITH_SUPERTYPES = subjectModifiers(true);
 
 /**
  * The subtypes a spell can be named by: the creature types and the three non-creature ones the
@@ -377,7 +381,12 @@ const isSpellSubtype = (word: string): boolean =>
  * spells", "Aura and Equipment spells", "Blue spells and red spells". A list of types, subtypes or colors is joined with "and" and takes
  * no modifier, as a list of permanent types does for a target (CR 205.2a, 205.3).
  */
-export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
+export function spellSubject(
+  word: Parser<unknown> = SPELLS,
+  options: { readonly supertypes?: boolean } = {},
+): Parser<IrFilter> {
+  const modifiers =
+    options.supertypes === true ? SUBJECT_MODIFIERS_WITH_SUPERTYPES : SUBJECT_MODIFIERS;
   const typeList: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typeChoice(CARD_TYPES, false, 'and'), literal(' '), word)(ctx, pos);
     if (!r.ok) return r;
@@ -396,7 +405,7 @@ export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
   };
   const plain: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
-      SUBJECT_MODIFIERS,
+      modifiers,
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([words]) => words),
         [] as string[],
@@ -416,6 +425,7 @@ export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
           : { notKeywords: [keyword.keyword] }),
       ...(parts.notTypes.length > 0 ? { notTypes: parts.notTypes } : {}),
       ...(parts.colors.length > 0 ? { colors: parts.colors } : {}),
+      ...(parts.supertypes.length > 0 ? { supertypes: parts.supertypes } : {}),
       raw: ctx.text.slice(pos, r.pos),
     };
     return { ok: true, value: filter, pos: r.pos };
@@ -486,6 +496,8 @@ const CAST_HEAD: Parser<{
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
   readonly ownGraveyard?: true;
+  readonly graveyardOrExile?: true;
+  readonly notOwned?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
   readonly aimed?: IrFilter;
@@ -531,6 +543,18 @@ const CAST_HEAD: Parser<{
     chosen: undefined,
     compared: undefined,
     ownGraveyard: true as const,
+  })),
+  // Doc Aurlock, Grizzled Genius (CR 601.2a, 404.1, 406.1): "Spells you cast from your graveyard or from exile cost {2} less to cast".
+  map(literal(' you cast from your graveyard or from exile cost '), () => ({
+    chosen: undefined,
+    compared: undefined,
+    graveyardOrExile: true as const,
+  })),
+  // Gonti, Canny Acquisitor (CR 108.3, 601.2f): "Spells you cast but don't own cost {1} less to cast": the owner of the card is not the caster.
+  map(pattern(/ you cast but (?:don't|don’t) own cost /iu), () => ({
+    chosen: undefined,
+    compared: undefined,
+    notOwned: true as const,
   })),
   // Stage P32 (D-147): "Creature spells you cast with power 4 or greater cost {2} less to cast": a spell on the stack has the power,
   // toughness and mana value of its card (CR 202.3, 208.1), which the engine compares as the cost is determined.
@@ -592,6 +616,12 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells without flying you cast cost {1} less to cast.',
     // Stage P75 (D-235): spells cast from anywhere other than the hand.
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
+    // Doc Aurlock, Grizzled Genius: spells cast from the caster's own graveyard or from exile.
+    'Spells you cast from your graveyard or from exile cost {2} less to cast.',
+    'Creature spells you cast from your graveyard or from exile cost {1} less to cast.',
+    // Gonti, Canny Acquisitor: spells the caster does not own.
+    "Spells you cast but don't own cost {1} less to cast.",
+    "Noncreature spells you cast but don't own cost {1} less to cast.",
     // Emet-Selch of the Third Seat: spells cast from the caster's own graveyard.
     'Spells you cast from your graveyard cost {2} less to cast.',
     'Instant and sorcery spells you cast from your graveyard cost {1} less to cast.',
@@ -633,6 +663,13 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from anywhere other than your graveyard cost {2} less to cast.',
     'Spells you cast from a graveyard cost {2} less to cast.',
     'Spells you cast from your graveyard cost {2} less to cast',
+    'Spells you cast from your graveyard or from exile cost {2} less to cast',
+    'Spells you cast from your graveyard or exile cost {2} less to cast.',
+    'Spells you cast from exile or from your graveyard cost {2} less to cast.',
+    "Spells you cast but don't own cost {1} less to cast",
+    "Spells you cast and don't own cost {1} less to cast.",
+    "Spells you don't own cost {1} less to cast.",
+    "Spells your opponents cast but don't own cost {1} less to cast.",
     'Spells you cast from your graveyard cost {W} less to cast.',
     'Spells your opponents cast from your graveyard cost {2} less to cast.',
     'Spells you cast from your hand cost {2} less to cast.',
@@ -650,7 +687,20 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
     const [
-      [filter, { chosen, compared, notHand, ownGraveyard, anyCaster, targetsHost, aimed }],
+      [
+        filter,
+        {
+          chosen,
+          compared,
+          notHand,
+          ownGraveyard,
+          graveyardOrExile,
+          notOwned,
+          anyCaster,
+          targetsHost,
+          aimed,
+        },
+      ],
       amount,
     ] = r.value;
     const subjectEnd = pos + filter.raw.length;
@@ -664,6 +714,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(ownGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+          ...(graveyardOrExile === true ? { castFromOwnGraveyardOrExile: true as const } : {}),
+          ...(notOwned === true ? { notOwnedByYou: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
           // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
           ...(aimed === undefined ? {} : { castTargets: aimed }),

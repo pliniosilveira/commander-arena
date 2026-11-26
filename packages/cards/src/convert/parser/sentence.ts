@@ -80,6 +80,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.foretold',
   // Burning Curiosity (CR 118.8, 701.68a): "If this spell's additional cost was paid, exile the top three cards instead."
   'condition.additional-cost-paid',
+  // Baleful Mastery (CR 118.9): "If the {1}{B} cost was paid, an opponent draws a card."
+  'condition.alt-cost-paid',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
@@ -468,6 +470,11 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
         whose: 'you' as const,
       }),
     ),
+    // Massacre Girl (CR 603.7, 603.10a, 700.4): the creatures that die, any player's, for the rest of the turn.
+    map(literal('whenever a creature dies this turn, '), () => ({
+      step: 'creatureDies' as const,
+      whose: 'you' as const,
+    })),
     // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
     EACH_CAST_LEAD,

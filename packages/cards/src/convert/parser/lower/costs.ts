@@ -360,6 +360,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       const filter = lowerFilter(cost.what);
       return filter.ok ? ok({ kind: 'putLinkedExileInGraveyard', filter: filter.value }) : filter;
     }
+    case 'putOpponentExile': {
+      // "Put a card an opponent owns from exile into that player's graveyard" (CR 108.3, 118.3): the engine's `putOpponentExileInGraveyard`, the cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const blocked = missingFeatures(['cost:putOpponentExileInGraveyard']);
+      if (blocked.length > 0) return failure(cost, blocked);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'putOpponentExileInGraveyard', filter: filter.value }) : filter;
+    }
     case 'exileFromHand': {
       if (options.additional !== true || cost.what.anyNumber !== true) return failure(cost);
       const filter = lowerFilter({
@@ -390,6 +398,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:discard',
   'cost:exileFromGraveyard',
   'cost:putLinkedExileInGraveyard',
+  'cost:putOpponentExileInGraveyard',
   'cost:exileFromHand',
   'cost:removeCounters',
   'cost:energy',

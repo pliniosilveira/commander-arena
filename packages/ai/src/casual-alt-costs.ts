@@ -120,6 +120,8 @@ export function chooseNamedAlternative(
     const life = card.alternativeCosts?.find((a) => a.kind === 'payLife')?.life ?? 0;
     if (ownLife(view) - life > PAY_LIFE_ABOVE) return 'payLife';
   }
+  // CR 118.9 (Baleful Mastery): "You may pay {1}{B} rather than pay this spell's mana cost", chosen when the ordinary cast cannot be paid (the ordinary cast is the one without a drawback).
+  if (offered.has('payMana') && !ordinary) return 'payMana';
   // CR 702.37c (Morph): a face-down 2/2 for {3} when the ordinary cast cannot be paid; it is turned face up later for its morph cost (`casual-face-down.ts`).
   if (offered.has('morph') && !ordinary) return 'morph';
   return undefined;

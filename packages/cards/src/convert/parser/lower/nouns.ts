@@ -105,6 +105,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:token',
   'selector:nontoken',
   'selector:notSubtypes',
+  'selector:outlaw',
   'selector:notSupertypes',
   'selector:colorless',
   'selector:notColors',
@@ -123,6 +124,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:sharesColorWith',
   // Breaking of the Fellowship: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
   'selector:sameControllerAs',
+  // Bladegriff Prototype: "target nonland permanent of that player's choice" (`TargetSpec.chosenBy`).
+  'selector:targetChosenBy',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
@@ -291,6 +294,8 @@ function lowerFilterAt(
   const parts: FeatureRef[] = [];
   if (filter.token !== undefined) parts.push(filter.token ? 'selector:token' : 'selector:nontoken');
   if (filter.notSubtypes !== undefined) parts.push('selector:notSubtypes');
+  // CR 700.12: "outlaw" and "non-outlaw", the engine's `outlaw`.
+  if (filter.outlaw !== undefined) parts.push('selector:outlaw');
   // D-135 (stage P30): "nonbasic land" (CR 205.4), the engine's `notSupertypes`.
   if (filter.notSupertypes !== undefined) parts.push('selector:notSupertypes');
   if (filter.colorless === true) parts.push('selector:colorless');
@@ -380,6 +385,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castFromOwnGraveyard');
   }
+  // Doc Aurlock, Grizzled Genius: "spells you cast from your graveyard or from exile" (CR 601.2a, 404.1, 406.1), a spell on the stack.
+  if (filter.castFromOwnGraveyardOrExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromOwnGraveyardOrExile');
+  }
   // Alisaie Leveilleur: "the second spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.nthSpellThisTurn !== undefined) {
     if (inner) return bad([]);
@@ -398,6 +408,15 @@ function lowerFilterAt(
   if (filter.firstCastFromExileThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:firstCastFromExileThisTurn');
+  }
+  // Rain of Riches: "the first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2h, 601.2i), a spell on the stack.
+  if (filter.manaSpentFromSubtype !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:manaSpentFromSubtype');
+  }
+  if (filter.firstManaSpentFromSubtypeThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstManaSpentFromSubtypeThisTurn');
   }
   // Artifact Class: "the first artifact spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.firstOfTypeThisTurn === true) {
@@ -654,6 +673,7 @@ function lowerFilterAt(
     ...(filter.notSubtypes !== undefined && filter.notSubtypes.length > 0
       ? { notSubtypes: [...filter.notSubtypes] }
       : {}),
+    ...(filter.outlaw !== undefined ? { outlaw: filter.outlaw } : {}),
     ...(filter.colorless === true ? { colorless: true as const } : {}),
     ...(filter.token !== undefined ? { token: filter.token } : {}),
     ...(keywords.length > 0 ? { keywords } : {}),
@@ -701,11 +721,20 @@ function lowerFilterAt(
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
     ...(filter.castFromExile === true ? { castFromExile: true as const } : {}),
     ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+    ...(filter.castFromOwnGraveyardOrExile === true
+      ? { castFromOwnGraveyardOrExile: true as const }
+      : {}),
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.firstCastFromExileThisTurn === true
       ? { firstCastFromExileThisTurn: true as const }
+      : {}),
+    ...(filter.manaSpentFromSubtype === undefined
+      ? {}
+      : { manaSpentFromSubtype: filter.manaSpentFromSubtype }),
+    ...(filter.firstManaSpentFromSubtypeThisTurn === true
+      ? { firstManaSpentFromSubtypeThisTurn: true as const }
       : {}),
     ...(filter.firstOfTypeThisTurn === true ? { firstOfTypeThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
@@ -1200,6 +1229,11 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
       }
+      // Bladegriff Prototype (CR 603.3d): "target nonland permanent of that player's choice": the player of the event chooses the target.
+      if (noun.chosenByTriggerPlayer === true) {
+        const blocked = missingFeatures(['selector:targetChosenBy']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
       if (noun.differentControllers === true) {
         const blocked = missingFeatures(['selector:differentControllers']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -1274,6 +1308,9 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                         : {}),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
                       ...(sameController === undefined ? {} : { sameControllerAs: sameController }),
+                      ...(noun.chosenByTriggerPlayer === true
+                        ? { chosenBy: 'triggerPlayer' as const }
+                        : {}),
                       // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
                       ...(apart === undefined ||
                       noun.otherTargetAll !== true ||

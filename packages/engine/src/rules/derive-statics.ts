@@ -192,6 +192,12 @@ export interface HasteActivationSource {
   readonly creatures: ObjectFilter;
 }
 
+/** A static ability of a permanent that takes generic mana off the plot cost of the cards its controller plots (`plotCostReduction`, CR 702.170a). */
+export interface PlotReductionSource {
+  readonly object: GameObject;
+  readonly amount: number;
+}
+
 /** A static ability of a permanent that raises the number of times a turn the loyalty abilities of some planeswalkers may be activated (`loyaltyActivationLimit`, CR 606.3). */
 export interface LoyaltyLimitSource {
   readonly object: GameObject;
@@ -314,6 +320,8 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
   readonly hasteActivations: readonly HasteActivationSource[];
+  /** Permanents with a `plotCostReduction` static ability, in battlefield order. */
+  readonly plotReductions: readonly PlotReductionSource[];
   /** Permanents with a `loyaltyActivationLimit` static ability, in battlefield order (CR 606.3). */
   readonly loyaltyLimits: readonly LoyaltyLimitSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
@@ -643,6 +651,7 @@ function buildIndex(state: GameState): BoardIndex {
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const hasteActivations: HasteActivationSource[] = [];
+  const plotReductions: PlotReductionSource[] = [];
   const loyaltyLimits: LoyaltyLimitSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
@@ -669,6 +678,9 @@ function buildIndex(state: GameState): BoardIndex {
     for (const a of printed) {
       if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
         hasteActivations.push({ object, creatures: a.static.creatures });
+      }
+      if (a.kind === 'static' && a.static.kind === 'plotCostReduction') {
+        plotReductions.push({ object, amount: a.static.amount });
       }
       if (a.kind === 'static' && a.static.kind === 'loyaltyActivationLimit') {
         loyaltyLimits.push({
@@ -770,6 +782,7 @@ function buildIndex(state: GameState): BoardIndex {
     flashes,
     libraryCasts,
     hasteActivations,
+    plotReductions,
     loyaltyLimits,
     graveyardPlays,
     handGrants,
@@ -842,6 +855,11 @@ export function abilityReductionSources(state: GameState): readonly AbilityReduc
 /** The permanents whose static ability raises the loyalty activation limit of some planeswalkers (CR 606.3). */
 export function loyaltyLimitSources(state: GameState): readonly LoyaltyLimitSource[] {
   return indexOf(state).loyaltyLimits;
+}
+
+/** The permanents whose static ability takes generic mana off the plot cost of the cards their controller plots (CR 702.170a). */
+export function plotReductionSources(state: GameState): readonly PlotReductionSource[] {
+  return indexOf(state).plotReductions;
 }
 
 /** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */

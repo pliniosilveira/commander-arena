@@ -27,6 +27,8 @@ export type SpendTarget =
       readonly colors?: readonly string[];
       /** The zone the spell is cast from (CR 601.2a); read by a `fromGraveyard` restriction (issue 102, CR 106.6). */
       readonly castFrom?: string;
+      /** Whether the spell's owner is not the player who casts it (CR 108.3); read by a `notOwned` restriction (Thieving Varmint, CR 106.6). */
+      readonly notOwnedByCaster?: boolean;
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
@@ -103,6 +105,13 @@ export function restrictionAllows(
     if (
       restriction.fromGraveyard === true &&
       !('castFrom' in target && target.castFrom === 'graveyard')
+    ) {
+      return false;
+    }
+    // CR 106.6, 108.3: "only to cast spells you don't own": the spell's owner is not the player casting it.
+    if (
+      restriction.notOwned === true &&
+      !('notOwnedByCaster' in target && target.notOwnedByCaster === true)
     ) {
       return false;
     }

@@ -425,12 +425,13 @@ const shuffleAction: Action = (subject, you, rule) =>
   );
 
 /**
- * "manifests the top card of their library", "manifest the top card of your library" (CR 701.40a, D-314): the player puts the top card of their own library onto the
- * battlefield face down as a 2/2 creature. The words are the whole phrase: another library ("of target opponent's library"), several cards and "manifest dread" are other
- * instructions that the engine does not run through this effect, so they do not read.
+ * "manifests the top card of their library", "manifest the top card of your library", "you manifest the top card of that player's library" (CR 701.40a, D-314): the player puts
+ * the top card of a library onto the battlefield face down as a 2/2 creature, under their control (CR 110.2a): their own, or, said of "you", the one of the player an earlier part
+ * of the text named ("that player": the player of the trigger). Several cards, "target opponent's library" and "manifest dread" are other instructions that the engine does not
+ * run through this effect, so they do not read.
  */
-const manifestAction: Action = (subject, you, rule) =>
-  map(
+const manifestAction: Action = (subject, you, rule) => {
+  const own = map(
     spanned(
       sequence(
         verbWord('manifest', you),
@@ -443,6 +444,42 @@ const manifestAction: Action = (subject, you, rule) =>
     ),
     ({ span }) => actionClause(rule, 'manifest', { player: subject }, span),
   );
+  if (!(you && subject.det === 'you')) return own;
+  // Thieving Amalgam, Orochi Soul-Reaver: "you manifest the top card of that player's library".
+  return choice(
+    own,
+    map(
+      spanned(
+        sequence(
+          verbWord('manifest', you),
+          literal('the top card of '),
+          spanned(pattern(/that player/iu)),
+          pattern(/['’]s library(?![\p{L}\p{N}])/iu),
+        ),
+      ),
+      ({ value, span }) =>
+        actionClause(
+          rule,
+          'manifest',
+          {
+            // The library's player is read before "you": "that player" is never the subject of the sentence.
+            from: {
+              kind: 'noun',
+              det: 'anaphor',
+              filter: { raw: 'that player' },
+              upTo: false,
+              plural: false,
+              other: false,
+              span: value[2].span,
+              rule,
+            },
+            player: subject,
+          },
+          span,
+        ),
+    ),
+  );
+};
 
 /** "mills two cards", "mill X cards", "mills cards equal to ..." (CR 701.17: the top cards of the library go to the graveyard). */
 const millAction: Action = (subject, you, rule) =>
@@ -629,6 +666,8 @@ export const PLAYER_SUBJECTS = [
   'noun.each-other-player',
   // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
   'noun.each-player-other-than-its-controller',
+  // Bounty Board: "each of its controller's opponents draws a card and gains 2 life".
+  'noun.each-of-its-controllers-opponents',
   'noun.defending-player',
   'noun.player-to-your-right',
   'noun.player',
@@ -691,6 +730,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'target player shuffles their library',
     'its controller manifests the top card of their library',
     'you manifest the top card of your library',
+    "you manifest the top card of that player's library",
     'target player manifests the top card of their library',
     'each player manifests the top card of their library',
     'you draw two cards, then lose 2 life',
@@ -1214,10 +1254,15 @@ export const EFFECT_MANIFEST = defineRule<Clauses>({
   family: 'effect',
   leading: ['manifest'],
   cites: ['CR 701.40a (Manifest)', 'CR 701.40b (Manifest)'],
-  examples: ['manifest the top card of your library', 'Manifest the top card of your library'],
+  examples: [
+    'manifest the top card of your library',
+    'Manifest the top card of your library',
+    "manifest the top card of that player's library",
+  ],
   rejects: [
     'manifests the top card of your library',
     'manifest the top card',
+    "manifest the top card of that player's libraryy",
     'manifest the top card of their library',
     "manifest the top card of target opponent's library",
     'manifest the top two cards of your library',
@@ -1228,16 +1273,48 @@ export const EFFECT_MANIFEST = defineRule<Clauses>({
     'cloak the top card of your library',
   ],
   parse: (ctx, pos) =>
-    map(
-      spanned(pattern(/[Mm]anifest the top card of your library(?![\p{L}\p{N}])/u)),
-      ({ span }): Clauses => [
-        makeClause(
-          'effect.manifest',
-          'manifest',
-          { player: impliedYou('effect.manifest', pos) },
-          span,
+    choice(
+      map(
+        spanned(pattern(/[Mm]anifest the top card of your library(?![\p{L}\p{N}])/u)),
+        ({ span }): Clauses => [
+          makeClause(
+            'effect.manifest',
+            'manifest',
+            { player: impliedYou('effect.manifest', pos) },
+            span,
+          ),
+        ],
+      ),
+      // Orochi Soul-Reaver: "manifest the top card of that player's library" (the player of the trigger).
+      map(
+        spanned(
+          sequence(
+            pattern(/[Mm]anifest the top card of /u),
+            spanned(pattern(/that player/iu)),
+            pattern(/['’]s library(?![\p{L}\p{N}])/iu),
+          ),
         ),
-      ],
+        ({ value, span }): Clauses => [
+          makeClause(
+            'effect.manifest',
+            'manifest',
+            {
+              player: impliedYou('effect.manifest', pos),
+              from: {
+                kind: 'noun',
+                det: 'anaphor',
+                filter: { raw: 'that player' },
+                upTo: false,
+                plural: false,
+                other: false,
+                span: value[1].span,
+                rule: 'effect.manifest',
+              },
+            },
+            span,
+          ),
+        ],
+      ),
     )(ctx, pos),
 });
 

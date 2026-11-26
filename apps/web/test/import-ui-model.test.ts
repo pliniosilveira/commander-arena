@@ -229,7 +229,7 @@ describe('diagnostics v2 in words', () => {
   test('each reason has its own plain statement', () => {
     expect(reasonStatement(first(SEER))).toBe('The grammar does not read this wording yet.');
     expect(reasonStatement(first(ENGINE_GAP))).toMatch(
-      /^The grammar reads this, but the engine cannot run it yet: needs token: Blood\.$/,
+      /^The grammar reads this, but the engine cannot run it yet: needs manaCost: discard\.$/,
     );
     expect(reasonStatement(first(UNBOUND))).toBe(
       "The grammar could not tell what 'those cards' refers to.",

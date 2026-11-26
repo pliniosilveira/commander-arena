@@ -25,6 +25,7 @@ import { giftEffectOf } from './cast-gift';
 import { runChangeTarget } from './change-target';
 import { DECLINE_OPTION } from './choose-one';
 import { asksWhichOpponent } from './choose-opponent';
+import { cipherCandidates, ciphers, encodeOn } from './cipher';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
@@ -414,7 +415,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 ...res.chosenObjects,
                 // CR 701.38a (`perVote`): the choices of every vote are one set, a permanent chosen for several votes once.
                 [head.id]:
-                  head.asVoter === undefined || head.asVoter.first
+                  (head.asVoter === undefined || head.asVoter.first) &&
+                  (head.ofPlayer === undefined || head.ofPlayer.first)
                     ? head.chosen
                     : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],
               },
@@ -437,9 +439,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     }
     if (
       (head.kind === 'move' || head.kind === 'enterToken') &&
-      state.resolution?.entersCopy !== undefined
+      (state.resolution?.entersCopy !== undefined ||
+        state.resolution?.entersCopyOther !== undefined)
     ) {
-      const { entersCopy: _answered, ...rest } = state.resolution;
+      const { entersCopy: _answered, entersCopyOther: _other, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // The opponent chosen belongs to the one effect that asked for it (rules/choose-opponent.ts): once that effect has started, the next one asks again.
@@ -598,12 +601,38 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       permanent,
       elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen,
     });
+    // CR 702.99 (Cipher): after its other effects, the controller of the spell may choose a creature they control to encode the card on; the card is then exiled instead of
+    // going to the graveyard. Asked once, with a creature to choose; a spell that another effect or keyword already places keeps that place.
+    const cipherable = ciphers(faceOf(next, obj), obj, {
+      permanent,
+      elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen || rebound,
+    });
+    if (cipherable && res.cipherOn === undefined) {
+      const legal = cipherCandidates(next, obj);
+      if (legal.length > 0) {
+        return {
+          state: setPending(collectTriggers(state, events), {
+            kind: 'choosePermanent',
+            seat: controllerOf(state, obj),
+            source: res.object,
+            subject: res.object,
+            purpose: 'cipher',
+            min: 0,
+            max: 1,
+            legal,
+          }),
+          events,
+          paused: true,
+        };
+      }
+    }
+    const encodedOn = cipherable && res.cipherOn != null ? res.cipherOn : null;
     const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled || timeCounters !== null || rebound
+        : adventure || exiled || timeCounters !== null || rebound || encodedOn !== null
           ? 'exile'
           : boughtBack
             ? 'hand'
@@ -616,6 +645,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
+      ...(res.entersCopyOther === undefined ? {} : { entersCopyOther: res.entersCopyOther }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
@@ -700,6 +730,14 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
             reboundTrigger(moved.newObject, controllerOf(state, obj)),
           ],
         };
+      }
+      // CR 702.99 (Cipher): the card exiled as it resolved is encoded on the creature, which has the ability to copy it and cast the copy for as long as it stays on the battlefield.
+      if (
+        encodedOn !== null &&
+        moved.newObject !== null &&
+        next.objects[encodedOn]?.zone === 'battlefield'
+      ) {
+        next = encodeOn(next, moved.newObject, encodedOn);
       }
       // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {
@@ -878,6 +916,7 @@ export function answerResolutionCards(
       head.kind !== 'lookSplit' &&
       head.kind !== 'pileSeparate' &&
       head.kind !== 'opponentChoosesCard' &&
+      head.kind !== 'handCards' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
@@ -1224,7 +1263,13 @@ export function answerResolutionEntersCopy(
 ): ResolveOutcome | null {
   const res = state.resolution;
   const d = state.pending;
-  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'entersCopy') return null;
+  if (
+    !res ||
+    d?.kind !== 'choosePermanent' ||
+    (d.purpose !== 'entersCopy' && d.purpose !== 'entersCopyOther')
+  ) {
+    return null;
+  }
   const head = res.queue[0];
   // A token that is a copy of a permanent that may enter as a copy asks about the spell or ability that creates it (D-225).
   const entering =
@@ -1236,8 +1281,30 @@ export function answerResolutionEntersCopy(
           ? res.object
           : null;
   if (entering !== d.source) return null;
+  // The Mimeoplasm (CR 707.9b): the second question of "exile two creature cards from graveyards" names the other card, whose power gives the counters.
+  const answered =
+    d.purpose === 'entersCopyOther'
+      ? chosen[0] === undefined
+        ? res
+        : { ...res, entersCopyOther: chosen[0] }
+      : { ...res, entersCopy: chosen[0] ?? null };
+  return continueResolution({ ...state, pending: null, resolution: answered }, []);
+}
+
+/**
+ * Records the creature the controller of a resolving spell with Cipher chose to encode the card on (CR 702.99; none is a legal answer), then continues: the spell is then put into exile
+ * or the graveyard. Null when no such question waits.
+ */
+export function answerResolutionCipher(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'cipher') return null;
+  if (d.source !== res.object) return null;
   return continueResolution(
-    { ...state, pending: null, resolution: { ...res, entersCopy: chosen[0] ?? null } },
+    { ...state, pending: null, resolution: { ...res, cipherOn: chosen[0] ?? null } },
     [],
   );
 }

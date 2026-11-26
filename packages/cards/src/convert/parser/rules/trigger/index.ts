@@ -32,6 +32,7 @@ import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
+import { ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES } from './attacks-you-or-walkers';
 import { BRAINSTEALER_G9_TRIGGER_RULES } from './brainstealer-g9';
 import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
@@ -69,6 +70,7 @@ import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { MILL_TRIGGER_RULES } from './mill';
 import { MIND_FLAYARRRS_G8_TRIGGER_RULES } from './mind-flayarrrs-g8';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
+import { NOT_OWNED_DIES_TRIGGER_RULES } from './not-owned-dies';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { OPPONENT_ATTACKS_YOU_TRIGGER_RULES } from './opponent-attacks-you';
 import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
@@ -108,6 +110,8 @@ type EventName =
   | 'becomesUnblocked'
   // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
   | 'leavesBattlefield'
+  // Misfortune Teller (CR 510.2, 603.2c): "deals combat damage to a player", for the alternatives of `trigger.or` only.
+  | 'dealsCombatDamageToPlayer'
   // Stage P36 (D-178): "becomes the target of a spell", for the alternatives of `trigger.or` only.
   | 'becomesTargetSpell'
   // Exit from Exile deck (Tectonic Giant): "becomes the target of a spell an opponent controls", for the alternatives of `trigger.or` only.
@@ -158,6 +162,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
     pattern(/ leaves the battlefield(?![\p{L}\p{N}])/iu),
     (): EventName => 'leavesBattlefield',
   ),
+  // CR 120.2a, 510.2: "deals combat damage to a player" (the engine's `dealsCombatDamage` to a player), one event of an "or" list.
+  dealsCombatDamageToPlayer: map(
+    pattern(/ deals combat damage to a player(?![\p{L}\p{N}])(?! or)/iu),
+    (): EventName => 'dealsCombatDamageToPlayer',
+  ),
   // CR 603.2, 601.2c: "becomes the target of a spell" (a spell, not an ability: the engine's `becomesTarget` with `spellOnly`).
   becomesTargetSpell: map(
     pattern(/ becomes the target of a spell(?![\p{L}\p{N}])(?! or ability)/iu),
@@ -189,6 +198,7 @@ const OR_EVENT = choice(
   EVENT_WORDS.becomesTargetSpellOpponent,
   EVENT_WORDS.becomesTargetSpell,
   EVENT_WORDS.becomesMonstrous,
+  EVENT_WORDS.dealsCombatDamageToPlayer,
 );
 
 function trigger(
@@ -206,6 +216,18 @@ function trigger(
       args: {},
       ...parts,
       actor: makeNoun(rule, span, 'eachOpponent', { raw: 'an opponent' }),
+      span,
+      rule,
+    };
+  }
+  // CR 120.2a, 510.2: "deals combat damage to a player" is the event `dealsCombatDamage` to a player.
+  if (event === 'dealsCombatDamageToPlayer') {
+    return {
+      kind: 'trigger',
+      event: 'dealsCombatDamage',
+      damaged: 'player',
+      args: {},
+      ...parts,
       span,
       rule,
     };
@@ -643,8 +665,14 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     'another creature you control attacks, blocks, or dies',
     // CR 701.37a (Monstrosity), 603.2: the monstrosity action is an event like any other of the subject.
     '~ enters or becomes monstrous',
+    // CR 510.2, 603.2c: Misfortune Teller.
+    '~ enters or deals combat damage to a player',
+    '~ attacks or deals combat damage to a player',
   ],
   rejects: [
+    '~ deals combat damage to a player or enters',
+    '~ enters or deals combat damage to a player or planeswalker',
+    '~ enters or deals combat damage to a creature',
     '~ becomes monstrous or becomes monstrous',
     '~ attacks or becomes the target of a spell or ability',
     '~ becomes the target of a spell or becomes the target of a spell',
@@ -1528,6 +1556,8 @@ export const TRIGGER_ENTERS_AND_UPKEEP = quietly(
 export const TRIGGER_RULES = [
   // Brainstealer Dragon: "a nonland permanent an opponent owns enters under your control" starts like `trigger.enters`, which cannot read the subject, so it comes first.
   ...BRAINSTEALER_G9_TRIGGER_RULES,
+  // Thieving Amalgam: "a creature you control but don't own dies".
+  ...NOT_OWNED_DIES_TRIGGER_RULES,
   TRIGGER_ENTERS_AND_CAST,
   TRIGGER_ENTERS_AND_UPKEEP,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
@@ -1578,6 +1608,7 @@ export const TRIGGER_RULES = [
   // Mirkwood Trapper: "a player attacks you" and "a player attacks".
   ...PLAYER_ATTACKS_TRIGGER_RULES,
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
+  ...ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES,
   ...LOOT_DISPUTE_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".

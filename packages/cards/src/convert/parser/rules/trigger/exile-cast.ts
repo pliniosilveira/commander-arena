@@ -192,7 +192,66 @@ export const TRIGGER_CAST_WITH_KEYWORD = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.cast-not-from-hand`: "an opponent casts a spell from anywhere other than their hand" (Ghostly Pilferer; CR 601.2a, 601.2i, 603.2: the spell is cast from where the card was, and the
+ * ability triggers as it becomes cast). The spell `trigger.cast` reads, and the zone words (the engine's `notCastFromHand`). The possessive agrees with the caster: "your" for "you", "their"
+ * for an opponent or a player. Not read: another zone word, a possessive that does not agree, "anywhere" with nothing before it, a second event after "or".
+ */
+export const TRIGGER_CAST_NOT_FROM_HAND = defineRule<IrTrigger>({
+  id: 'trigger.cast-not-from-hand',
+  family: 'trigger',
+  leading: ['you', 'a', 'an'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 603.2 (Handling Triggered Abilities)',
+  ],
+  examples: [
+    'an opponent casts a spell from anywhere other than their hand',
+    'an opponent casts a creature spell from anywhere other than their hand',
+    'you cast a spell from anywhere other than your hand',
+    'a player casts a spell from anywhere other than their hand',
+  ],
+  rejects: [
+    'an opponent casts a spell from anywhere other than your hand',
+    'you cast a spell from anywhere other than their hand',
+    'an opponent casts a spell from anywhere other than a hand',
+    'an opponent casts a spell from anywhere other than their library',
+    'an opponent casts a spell from anywhere other than their hand or',
+    'an opponent casts a spell from their hand',
+    'an opponent casts from anywhere other than their hand',
+    'an opponent casts a spell',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrTrigger>('trigger', { only: ['trigger.cast'] }),
+      spanned(
+        pattern(
+          new RegExp(` from anywhere other than (your|their) hand${NOT_IN_WORD}(?! or\\b)`, 'iu'),
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [cast, tail] = r.value;
+    const subject = cast.subject;
+    if (subject === undefined || cast.actor === undefined) return fail(ctx, pos);
+    const yours = cast.actor.det === 'you';
+    if (tail.value[1]?.toLowerCase() !== (yours ? 'your' : 'their')) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: {
+        ...cast,
+        span: { start: pos, end: tail.span.end },
+        rule: 'trigger.cast-not-from-hand',
+        subject: { ...subject, filter: { ...subject.filter, notCastFromHand: true } },
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const EXILE_CAST_TRIGGER_RULES = [
+  TRIGGER_CAST_NOT_FROM_HAND,
   TRIGGER_CAST_WITH_KEYWORD,
   TRIGGER_CAST_FROM_EXILE,
   TRIGGER_CAST_OR_LAND_ENTERS_FROM_EXILE,

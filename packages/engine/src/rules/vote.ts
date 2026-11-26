@@ -93,14 +93,13 @@ export function runVote(
   const voted = new Set(instruction.cast.map((c) => c.seat));
   const { options, labels } = choicesOf(state, res, instruction);
   // CR 701.38a: starting with the player named (the controller) and proceeding in turn order. With no choice to vote for (no permanent matches) nobody votes.
-  const next =
-    options.length === 0
-      ? undefined
-      : seatsInOrder(state, res.controller).find((seat) => !voted.has(seat));
+  // `eachPlayerChooses` (CR 101.4): the players the effect named, in the order it gave; not a vote (CR 701.38c).
+  const voters = instruction.voters ?? seatsInOrder(state, res.controller);
+  const next = options.length === 0 ? undefined : voters.find((seat) => !voted.has(seat));
   if (next === undefined) {
     const cast = instruction.cast;
     const revealed =
-      cast.length === 0
+      cast.length === 0 || instruction.voters !== undefined
         ? []
         : [
             {
@@ -134,6 +133,7 @@ export function runVote(
         controller: res.controller,
         // CR 701.38a ("secretly"): a later voter is not told what the earlier ones chose.
         cast: instruction.secret === true ? [] : instruction.cast,
+        ...(instruction.voters === undefined ? {} : { choice: true as const }),
         ...(instruction.secret === true ? { secret: true as const } : {}),
         ...(labels === undefined ? {} : { choices: labels }),
       },

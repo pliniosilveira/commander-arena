@@ -13,6 +13,7 @@ import type { GameObject, GameState } from '../state/types';
 import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { manaValueOfCost } from './mana-value';
 import { ringBearerSeat } from './ring-bearer';
 
 /** The colors a source has: the object as it is, or as it last existed. Empty for a source the engine knows nothing about. */
@@ -32,6 +33,18 @@ export function sourceTypes(state: GameState, source: ObjectId | null): readonly
   const live = state.objects[source];
   if (live !== undefined) return derive(state, live).types;
   return state.lki[source]?.characteristics.types ?? [];
+}
+
+/**
+ * The mana value of a source (CR 202.3): the object as it is, or as it last existed (CR 113.7a). A spell on the stack counts the X it was cast with (CR 202.3e), an
+ * ability's source is the permanent (or its last-known information), a token has none (0). 0 for a source the engine knows nothing about.
+ */
+export function sourceManaValue(state: GameState, source: ObjectId | null): number {
+  if (source === null) return 0;
+  const live = state.objects[source];
+  if (live !== undefined) return manaValueOfCost(derive(state, live).manaCost, live);
+  const last = state.lki[source];
+  return last === undefined ? 0 : manaValueOfCost(last.characteristics.manaCost, last.object);
 }
 
 /** The colors `obj` has protection from, as it has them now. Empty for a permanent with none, or an object that is not on the battlefield. */
@@ -98,7 +111,22 @@ export function hasProtectionFrom(
         a.keyword.kind === 'protection' &&
         a.keyword.from === 'multicolored',
     );
-  if (colors.length === 0 && types.length === 0 && !fromRingBearer && !fromMulticolored) {
+  // CR 702.16a, 202.3: protection from sources with a stated mana value.
+  const manaValues =
+    obj.zone !== 'battlefield'
+      ? []
+      : derive(state, obj).abilities.flatMap((a) =>
+          a.kind === 'keyword' && a.keyword.kind === 'protection' && a.keyword.from === 'manaValue'
+            ? [a.keyword]
+            : [],
+        );
+  if (
+    colors.length === 0 &&
+    types.length === 0 &&
+    !fromRingBearer &&
+    !fromMulticolored &&
+    manaValues.length === 0
+  ) {
     return false;
   }
   const sourceObject = source === null ? undefined : state.objects[source];
@@ -106,6 +134,15 @@ export function hasProtectionFrom(
     (colors.length > 0 && sourceColors(state, source).some((c) => colors.includes(c))) ||
     (types.length > 0 && sourceTypes(state, source).some((t) => types.includes(t))) ||
     (fromMulticolored && sourceColors(state, source).length >= 2) ||
+    (source !== null &&
+      manaValues.some((m) => {
+        const mv = sourceManaValue(state, source);
+        return m.cmp === 'atLeast'
+          ? mv >= m.value
+          : m.cmp === 'atMost'
+            ? mv <= m.value
+            : mv === m.value;
+      })) ||
     (fromRingBearer && sourceObject !== undefined && ringBearerSeat(state, sourceObject) !== null)
   );
 }
