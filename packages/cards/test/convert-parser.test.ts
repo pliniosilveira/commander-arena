@@ -419,6 +419,7 @@ describe('unmatched abilities', () => {
       'cost.put-counters',
       'cost.return-to-hand',
       'cost.loyalty',
+      'cost.tap-permanents-x',
       'cost.untap-permanents',
       'cost.remove-counters-among',
       'cost.remove-any-counters',
