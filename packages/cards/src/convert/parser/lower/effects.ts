@@ -37,6 +37,7 @@ import { lowerAuraToken } from './aura-token';
 import { BECOME_COPY_GRAVEYARD_LOWERINGS } from './become-copy-graveyard';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
+import { CASE_LOWERINGS } from './case-solved';
 import { CHANGE_TARGET } from './change-target';
 import { CHOOSE_ONE_OF_THEM_LOWERINGS } from './choose-one-of-them';
 import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
@@ -3155,6 +3156,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...BECOME_COPY_GRAVEYARD_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...CASE_LOWERINGS,
   ...ENDURING_LOWERINGS,
   // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
   ...WITHERBLOOM_C_LOWERINGS,

@@ -154,6 +154,37 @@ function classStructureIssues(def: CardDefinition, out: AstIssue[]): void {
   });
 }
 
+/**
+ * CR 719.1-719.3 (Case): a Case is an enchantment with the subtype Case, one face; only it has "Solved" abilities (the `solved` abilities), and the effect `solve` and the condition
+ * `thisSolved` are only its own.
+ */
+function caseStructureIssues(def: CardDefinition, out: AstIssue[]): void {
+  def.faces.forEach((face, i) => {
+    const isCase = def.layout === 'case';
+    if (isCase && i === 0 && !face.subtypes.includes('Case')) {
+      out.push({
+        path: `faces[${i}].subtypes`,
+        message: 'layout case needs a face with the subtype Case (CR 719.1)',
+      });
+    }
+    if (isCase && i === 0 && !face.types.includes('enchantment')) {
+      out.push({ path: `faces[${i}].types`, message: 'a Case is an enchantment (CR 719.1)' });
+    }
+    const text = JSON.stringify(face.abilities);
+    if (
+      !isCase &&
+      (face.abilities.some((a) => a.kind === 'solved') ||
+        text.includes('"kind":"solve"') ||
+        text.includes('"kind":"thisSolved"'))
+    ) {
+      out.push({
+        path: `faces[${i}].abilities`,
+        message: 'only a Case (layout case) can be solved (CR 719.3)',
+      });
+    }
+  });
+}
+
 /** The meld effects among the effects a face's abilities have, anywhere in them (the effect nodes are the only ones of the kind `meld`). */
 function meldEffectCount(face: CardFace): number {
   return JSON.stringify(face.abilities).split('"kind":"meld"').length - 1;
@@ -322,6 +353,7 @@ export function layoutStructureIssues(def: CardDefinition): AstIssue[] {
   sagaStructureIssues(def, out);
   meldStructureIssues(def, out);
   classStructureIssues(def, out);
+  caseStructureIssues(def, out);
   roomStructureIssues(def, out);
   dayNightStructureIssues(def, out);
   // CR 715.2: the Adventure is an instant or sorcery card face; it resolves to exile, never onto

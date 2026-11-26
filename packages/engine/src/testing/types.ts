@@ -167,6 +167,8 @@ export interface PermanentOptions extends PlaceOptions {
   readonly ringBearer?: true;
   /** The level of a Class on the battlefield (CR 716.2, D-235). */
   readonly level?: number;
+  /** The Case on the battlefield is solved (CR 719.3b). Unsolved by default. */
+  readonly solved?: true;
   /** The unlocked halves of a Room on the battlefield (CR 709.5c): 0 the left half, 1 the right half. Neither by default. */
   readonly unlocked?: readonly number[];
 }

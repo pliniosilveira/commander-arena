@@ -7,6 +7,7 @@ import type {
   SpellText,
 } from '@commander-arena/engine';
 import type { UnparsedAbility } from '../../types';
+import { caseLine, solvedAbility, toSolveTrigger } from './case-labels';
 import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
 import { linkPutWith } from './link-put-with';
@@ -166,7 +167,10 @@ export function parseFaceText(
     // is read without it and is marked `exhaust` below, so that it can be activated once, never read as an unlimited one.
     const exhaustWord = /^Exhaust\s+[—–-]\s+(?=[{\p{Lu}])/u.exec(body)?.[0];
     const exhaust = exhaustWord !== undefined;
-    const reading = exhaust ? body.slice(exhaustWord.length) : body;
+    // CR 719.3, 702.169 (Case): "To solve — [condition]" and "Solved — [ability]" are read as what they stand for; a line with either word on a card that is not a Case is read as written.
+    const caseText = faceSubtypes.includes('Case') && !maxSpeedLine ? caseLine(body) : null;
+    const reading =
+      caseText !== null ? caseText.text : exhaust ? body.slice(exhaustWord.length) : body;
     const asWritten = compileLine(reading, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not
     // read as written, and the line is read again without it. A line that reads today never changes; a wrong strip can only turn an unread
@@ -179,6 +183,31 @@ export function parseFaceText(
     const result = bare === reading ? asWritten : compileLine(bare, lineOptions);
     if (!result.ok) {
       unparsed.push(unparsedAbility(faceIndex, index, text, result.failure));
+    } else if (caseText !== null) {
+      // CR 719.3a: the trigger of "To solve" with "and this Case is not solved"; CR 702.169: the abilities of "Solved" are gated on the designation. Anything else is refused whole.
+      const built =
+        result.kind !== 'abilities' || result.abilities.length === 0
+          ? null
+          : caseText.kind === 'toSolve'
+            ? toSolveTrigger(result.abilities)
+            : solvedAbility(result.abilities);
+      const blocked = missingFeatures(
+        caseText.kind === 'toSolve' ? ['ability:triggered'] : ['ability:solved'],
+      );
+      if (built === null || blocked.length > 0) {
+        unparsed.push(
+          unparsedAbility(faceIndex, index, text, {
+            reason: 'notRunnable',
+            stoppedAt: text,
+            closestRule: result.ruleId,
+            recognised: [],
+            ...(blocked.length > 0 ? { needs: blocked } : {}),
+          }),
+        );
+        continue;
+      }
+      abilities.push(built);
+      lineOf.push({ index, text, ruleId: result.ruleId });
     } else if (maxSpeedLine) {
       // The engine has the condition for an activated, a mana and a static ability only; any other line with the label is refused as a whole, never half run.
       const gated =

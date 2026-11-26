@@ -1203,6 +1203,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
+    case 'solve':
+      // CR 719.3a: the trigger of "To solve"; it is not a cost, so the label has nothing to show.
+      return '';
     case 'monstrosity':
       // CR 701.37a (D-445): "Monstrosity 5"; a count the game reads has no short word, so the label shows the cost only.
       return typeof effect.count === 'number' ? `Monstrosity ${effect.count}` : '';

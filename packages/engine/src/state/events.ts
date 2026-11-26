@@ -454,6 +454,8 @@ export type GameEvent =
     }
   /** CR 701.37a (D-445): the permanent became monstrous (the monstrosity action; the `counterAdded` event of its counters comes first). */
   | { readonly kind: 'becameMonstrous'; readonly object: ObjectId }
+  /** CR 719.3a, 719.3b: a Case became solved (the designation was set). */
+  | { readonly kind: 'becameSolved'; readonly object: ObjectId }
   | {
       readonly kind: 'counterRemoved';
       readonly object: ObjectId;

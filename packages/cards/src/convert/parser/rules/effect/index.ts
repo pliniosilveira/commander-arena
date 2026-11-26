@@ -49,6 +49,7 @@ import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRAINSTEALER_G9_EFFECT_RULES } from './brainstealer-g9';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CASE_EFFECT_RULES } from './case-solved';
 import { CAST_AMONG_EXILED_EFFECT_RULES } from './cast-among-exiled';
 import { CAST_FREE_HAND_VALUE_EFFECT_RULES } from './cast-free-hand-value';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
@@ -1772,6 +1773,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // CR 719.3a (Case cards): "~ becomes solved", the effect of "To solve".
+  ...CASE_EFFECT_RULES,
   // Deck support issue 578 (Enduring Tenacity): "It's an enchantment." after the return of a card.
   ...ENDURING_EFFECT_RULES,
   // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".

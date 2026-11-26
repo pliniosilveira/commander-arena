@@ -747,6 +747,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
     }
+    case 'thisSolved': {
+      // CR 719.3a, 719.3b, 400.7: the permanent itself is on the battlefield with the solved designation; read live, a permanent that left is a new object.
+      const permanent = ctx.source === null ? undefined : state.objects[ctx.source];
+      return permanent?.zone === 'battlefield' && permanent.solved === true;
+    }
     case 'thisSuspended': {
       // CR 702.62b, 603.4, 400.7: the card itself is in exile, has Suspend and a time counter; read live, a card that left exile is another object.
       const card = ctx.source === null ? undefined : state.objects[ctx.source];

@@ -175,6 +175,7 @@ export function assemble(
       ...(o.onAdventure === true ? { onAdventure: true as const } : {}),
       ...(onBattlefield && o.ringBearer === true ? { ringBearer: controller } : {}),
       ...(onBattlefield && o.level !== undefined ? { level: o.level } : {}),
+      ...(onBattlefield && o.solved === true ? { solved: true as const } : {}),
       ...(onBattlefield && o.unlocked !== undefined && o.unlocked.length > 0
         ? { unlockedDoors: [...o.unlocked].sort((a, b) => a - b) }
         : {}),

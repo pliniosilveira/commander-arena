@@ -51,6 +51,8 @@ export type CardLayout =
   | 'saga'
   // CR 716 (D-235): a Class enchantment, one face, its class level bars among its abilities.
   | 'class'
+  // CR 719 (Case): an enchantment with the subtype Case, one face; its "To solve" and "Solved" abilities use the solved designation.
+  | 'case'
   // CR 722 (D-214): faces[0] is the card, faces[1] its prepare spell, which is never cast from the card.
   | 'prepare'
   // CR 701.42, 712.4 (D-277): a meld card. faces[0] is the front face (the only face outside the battlefield, CR 712.4b, 712.8a, 712.8b), faces[1] the combined
