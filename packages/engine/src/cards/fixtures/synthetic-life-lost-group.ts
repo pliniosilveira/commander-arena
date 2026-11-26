@@ -657,4 +657,31 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Whenever a player taps a land for mana, if this creature is tapped, that player adds one mana of any type that land produced. Then that land deals 1 damage to that player."
+  singleFace({
+    name: 'SYNTHETIC Spiteful Gremlin',
+    manaCost: ['3', 'R'],
+    types: ['creature'],
+    subtypes: ['Gremlin'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 2,
+    toughness: 2,
+    oracleText:
+      'Whenever a player taps a land for mana, if this creature is tapped, that player adds one mana of any type that land produced. Then that land deals 1 damage to that player.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'tappedForMana', what: { types: ['land'] }, by: 'tapper' },
+        interveningIf: { kind: 'thisMatches', filter: { tapped: true } },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'addMana', mana: { kind: 'producedType' } },
+            { kind: 'dealDamage', amount: 1, to: { kind: 'triggerPlayer' } },
+          ],
+        },
+      },
+    ],
+  }),
 ];

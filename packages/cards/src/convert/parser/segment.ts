@@ -1240,6 +1240,14 @@ const EACH_PLAYER_CHOOSES_CREATURE_YOU_DONT_CONTROL =
   /^starting with the next opponent in turn order, each player chooses a creature you don['’]t control\.$/i;
 const DESTROY_THE_CHOSEN_CREATURES = /^destroy the chosen creatures\.$/i;
 
+/**
+ * "..., that player adds one mana of any type that land produced. Then that land deals 1 damage to that player." (Barbflare Gremlin, CR 605.1b, 605.4a): two sentences, one instruction
+ * (`effect.tapper-adds-produced-type-then-land-damages`).
+ */
+const THAT_PLAYER_ADDS_PRODUCED_TYPE =
+  /(?:^|, )that player adds one mana of any type that land produced\.$/i;
+const THEN_THAT_LAND_DEALS_DAMAGE = /^then that land deals \d+ damage to that player\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
@@ -1259,6 +1267,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: e.end });
       i += 4;
+      continue;
+    }
+    // Barbflare Gremlin: the mana the player who tapped the land adds, and the damage the land deals to them.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, THAT_PLAYER_ADDS_PRODUCED_TYPE) &&
+      said(b, THEN_THAT_LAND_DEALS_DAMAGE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
       continue;
     }
     // Sadistic Shell Game: each player's choice and the destruction of the creatures chosen.

@@ -8,9 +8,10 @@
  * trigger's filter, belong to the controller of the triggered ability (`by` is "you"), and, when the trigger names a type of mana, the
  * mana ability must have produced that type. Several abilities each add their own mana.
  */
-import type { ManaAbility, Trigger } from '../ast/types';
+import type { Condition, Effect, ManaAbility, ManaProduction, Trigger } from '../ast/types';
 import type { ManaColor } from '../mana/types';
 import type { GameObject, GameState } from '../state/types';
+import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { matchesFilter } from './select';
@@ -28,6 +29,31 @@ interface Source {
   readonly object: GameObject;
   readonly trigger: ManaTrigger;
   readonly extra: Extra;
+  /** Barbflare Gremlin: "if this creature is tapped", read for the permanent with the ability when the mana ability is activated (CR 603.4). */
+  readonly condition?: Condition;
+  /** Barbflare Gremlin: "Then that land deals 1 damage to that player": the damage the tapped permanent deals to the player who tapped it, with the mana (CR 605.4a). */
+  readonly damage: number;
+}
+
+/**
+ * The mana and the damage a triggered mana ability does: "add one mana of any type that land produced" alone, or (Barbflare Gremlin, CR 605.1b, 605.4a) followed by "that land deals 1
+ * damage to that player", a `dealDamage` of a whole number to the `triggerPlayer`. Null for any other effect.
+ */
+function triggeredManaShape(
+  effect: Effect,
+): { readonly mana: ManaProduction; readonly damage: number } | null {
+  if (effect.kind === 'addMana') return { mana: effect.mana, damage: 0 };
+  if (effect.kind !== 'sequence') return null;
+  const [first, ...rest] = effect.effects;
+  if (first?.kind !== 'addMana' || rest.length === 0) return null;
+  let damage = 0;
+  for (const e of rest) {
+    if (e.kind !== 'dealDamage' || typeof e.amount !== 'number' || e.to.kind !== 'triggerPlayer') {
+      return null;
+    }
+    damage += e.amount;
+  }
+  return { mana: first.mana, damage };
 }
 
 /** The colors "one mana of any color" can be: colorless is not a color (CR 105.1, 106.1b). */
@@ -48,23 +74,21 @@ function scan(state: GameState): Index {
     const object = state.objects[id];
     if (object === undefined) continue;
     for (const a of derive(state, object).abilities) {
-      if (
-        a.kind !== 'triggered' ||
-        a.trigger.kind !== 'tappedForMana' ||
-        a.effect.kind !== 'addMana'
-      ) {
-        continue;
-      }
-      if (a.effect.mana.kind === 'fixed') {
-        sources.push({
-          object,
-          trigger: a.trigger,
-          extra: { kind: 'fixed', mana: a.effect.mana.mana },
-        });
-      } else if (a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) {
-        sources.push({ object, trigger: a.trigger, extra: { kind: 'anyColor' } });
-      } else if (a.effect.mana.kind === 'producedType') {
-        sources.push({ object, trigger: a.trigger, extra: { kind: 'produced' } });
+      if (a.kind !== 'triggered' || a.trigger.kind !== 'tappedForMana') continue;
+      const shape = triggeredManaShape(a.effect);
+      if (shape === null) continue;
+      const base = {
+        object,
+        trigger: a.trigger,
+        damage: shape.damage,
+        ...(a.interveningIf === undefined ? {} : { condition: a.interveningIf }),
+      };
+      if (shape.mana.kind === 'fixed') {
+        sources.push({ ...base, extra: { kind: 'fixed', mana: shape.mana.mana } });
+      } else if (shape.mana.kind === 'anyColor' && (shape.mana.count ?? 1) === 1) {
+        sources.push({ ...base, extra: { kind: 'anyColor' } });
+      } else if (shape.mana.kind === 'producedType') {
+        sources.push({ ...base, extra: { kind: 'produced' } });
       }
     }
   }
@@ -91,6 +115,53 @@ function sourcesOf(state: GameState): readonly Source[] {
   return fresh.sources;
 }
 
+/** Whether the triggered mana ability `src` triggers when `tapped` is tapped for `produced`: whose permanent it is (`by`), the type of mana, the filter and the "if" (CR 106.12, 605.1b, 603.4). */
+function triggerApplies(
+  state: GameState,
+  src: Source,
+  tapped: GameObject,
+  produced: readonly ManaColor[],
+): boolean {
+  // CR 106.12, 605.1b: `you` taps it for the controller of the ability; `tapper` is whoever controls the permanent that was tapped (only they can tap it, CR 605.2).
+  if (src.trigger.by === 'you' && controllerOf(state, src.object) !== controllerOf(state, tapped)) {
+    return false;
+  }
+  if (src.trigger.mana !== undefined && !produced.includes(src.trigger.mana)) return false;
+  const filter = { ...src.trigger.what, zone: 'battlefield' as const };
+  if (
+    !matchesFilter(state, tapped, filter, {
+      controller: controllerOf(state, src.object),
+      source: src.object.id,
+    })
+  ) {
+    return false;
+  }
+  // CR 603.4 (Barbflare Gremlin): "if this creature is tapped": the permanent with the ability, as it is when the mana ability is activated.
+  return (
+    src.condition === undefined ||
+    evaluateCondition(state, src.condition, {
+      controller: controllerOf(state, src.object),
+      source: src.object.id,
+    })
+  );
+}
+
+/**
+ * The damage the triggered mana abilities deal to the player who taps `tapped` for mana (Barbflare Gremlin, CR 605.1b, 605.4a: "Then that land deals 1 damage to that player"), one amount
+ * for each ability that triggers.
+ */
+export function triggeredManaDamage(
+  state: GameState,
+  tapped: GameObject,
+  ability: ManaAbility,
+  produced: readonly ManaColor[],
+): number[] {
+  if (produced.length === 0 || !ability.cost.some((c) => c.kind === 'tap')) return [];
+  return sourcesOf(state)
+    .filter((src) => src.damage > 0 && triggerApplies(state, src, tapped, produced))
+    .map((src) => src.damage);
+}
+
 /**
  * The mana the triggered mana abilities add when `tapped` is tapped for `produced` by `ability`, as the alternatives the player may choose among: one list of mana when
  * nothing is left to choose (nothing at all for an ability without {T} in its cost or one that makes no mana: `[[]]`), several when an ability adds one mana of any color (one
@@ -108,22 +179,7 @@ export function additionalManaOptions(
   let options: ManaColor[][] = [[]];
   for (const src of sources) {
     // CR 106.12, 605.1b: `you` taps it for the controller of the ability; `tapper` is whoever controls the permanent that was tapped (only they can tap it, CR 605.2).
-    if (
-      src.trigger.by === 'you' &&
-      controllerOf(state, src.object) !== controllerOf(state, tapped)
-    ) {
-      continue;
-    }
-    if (src.trigger.mana !== undefined && !produced.includes(src.trigger.mana)) continue;
-    const filter = { ...src.trigger.what, zone: 'battlefield' as const };
-    if (
-      !matchesFilter(state, tapped, filter, {
-        controller: controllerOf(state, src.object),
-        source: src.object.id,
-      })
-    ) {
-      continue;
-    }
+    if (!triggerApplies(state, src, tapped, produced)) continue;
     // CR 106.12a: the mana the ability produced, not what other triggered mana abilities add to it; one alternative for each type it made.
     const adds: ManaColor[][] =
       src.extra.kind === 'fixed'

@@ -1885,6 +1885,11 @@ function lowerTriggeredAbility(
   if (triggers.some((t) => t.kind === 'tappedForMana')) {
     return lowerTappedForMana(ability, triggers, interveningIf);
   }
+  // Barbflare Gremlin: "Whenever a player taps a land for mana, if ~ is tapped, that player adds one mana of any type that land produced. Then that land deals 1 damage to that player."
+  if (triggers.some((t) => t.kind === 'tapsForMana')) {
+    const tapper = lowerTapperAddsMana(ability, triggers, interveningIf);
+    if (tapper !== null) return tapper;
+  }
   const needs: FeatureRef[] = [
     'ability:triggered',
     ...triggers.map((t): FeatureRef => `trigger:${t.kind}`),
@@ -2398,6 +2403,70 @@ function lowerTappedForMana(
   return {
     ok: true,
     value: [{ kind: 'triggered', trigger, effect: { kind: 'addMana', mana } }],
+    rule: ability.trigger.rule,
+  };
+}
+
+/**
+ * "Whenever a player taps a land for mana, [if ~ is tapped,] that player adds one mana of any type that land produced. Then that land deals 1 damage to that player." (Barbflare
+ * Gremlin; CR 605.1b, 605.4a, 106.12a, 603.4): a triggered mana ability about whoever taps the land (`tappedForMana` by the `tapper`), whose effect is the mana and the damage, with the
+ * "if" only about the permanent itself (the engine reads it when the mana ability is activated). Null when the body is not that one instruction (the ordinary lowering takes the ability).
+ */
+function lowerTapperAddsMana(
+  ability: Triggered,
+  triggers: readonly Trigger[],
+  interveningIf: Condition | undefined,
+): LowerResult<readonly Ability[]> | null {
+  const [sentence, ...more] = ability.body.sentences;
+  const [clause, ...others] = sentence?.clauses ?? [];
+  if (clause?.verb !== 'tapperAddsProducedTypeThenDamage') return null;
+  const amount = clause.args.amount;
+  const [trigger] = triggers;
+  if (
+    triggers.length !== 1 ||
+    trigger?.kind !== 'tapsForMana' ||
+    trigger.who !== 'any' ||
+    more.length > 0 ||
+    others.length > 0 ||
+    ability.modal !== undefined ||
+    clause.optional ||
+    clause.condition !== undefined ||
+    amount?.kind !== 'number' ||
+    (interveningIf !== undefined &&
+      !(
+        interveningIf.kind === 'thisMatches' &&
+        Object.keys(interveningIf.filter).every((k) => k === 'tapped' || k === 'raw')
+      )) ||
+    sentence === undefined ||
+    sentence.where !== undefined
+  ) {
+    return failure(ability);
+  }
+  const blocked = missingFeatures([
+    'ability:triggered',
+    'trigger:tappedForMana',
+    'effect:addMana',
+    'effect:dealDamage',
+    'manaProduction:producedType',
+    ...(interveningIf === undefined ? [] : (['trigger:interveningIf'] as const)),
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'tappedForMana', what: trigger.what, by: 'tapper' },
+        ...(interveningIf === undefined ? {} : { interveningIf }),
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'addMana', mana: { kind: 'producedType' } },
+            { kind: 'dealDamage', amount: amount.value, to: { kind: 'triggerPlayer' } },
+          ],
+        },
+      },
+    ],
     rule: ability.trigger.rule,
   };
 }

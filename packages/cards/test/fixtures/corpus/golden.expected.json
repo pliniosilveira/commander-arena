@@ -12138,19 +12138,10 @@
     "bd7accec-ca8a-49c7-9ae4-fe97d99b4a34": {
       "name": "Barbflare Gremlin",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever a player taps a land for mana, if ~ is tapped, that player adds one mana of any type that land produced. Then that land deals 1 damage to that player.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e2b0db08"
+      "ast": "f4a59a20"
     },
     "bd7c5a8b-cf62-41e1-a664-b16e3e5d142b": {
       "name": "Laughing Jasper Flint",
@@ -16460,7 +16451,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1753,
+      "supported": 1754,
       "total": 1770
     }
   }
