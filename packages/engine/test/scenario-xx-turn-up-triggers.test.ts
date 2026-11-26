@@ -16,6 +16,8 @@ const FIGHTER = 'SYNTHETIC Turn-Up Fighter'; // a permanent you control turned f
 const PUMPER = 'SYNTHETIC Turn-Up Pumper'; // a permanent you control turned face up, if a creature, +2/+2 until end of turn
 const GAIN = 'SYNTHETIC Turn-Up Gain'; // whenever a permanent is turned face up (any player's), you gain 1 life
 const DRAW = 'SYNTHETIC Face-Down Draw'; // whenever a face-down creature you control enters, draw a card
+const SNATCHER = 'SYNTHETIC Turn-Up Snatcher'; // morph {1}{U}; when turned face up, counter target spell, exile it, may cast it free while it remains exiled
+const BOLT = 'Lightning Bolt';
 const SELF_UP = 'SYNTHETIC Turn-Up Self'; // {2}{G} 3/3, when this creature is turned face up, you gain 3 life
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
 
@@ -45,7 +47,7 @@ const forests = (b: Builder, count: number) => b.battlefield('Forest', { count }
 
 describe('the cards and the trigger are known to the engine', () => {
   test('the SYNTHETIC cards are valid and the trigger and the filter are supported features', () => {
-    for (const name of [GROWER, FIGHTER, PUMPER, GAIN, DRAW, SELF_UP]) {
+    for (const name of [GROWER, FIGHTER, PUMPER, GAIN, DRAW, SELF_UP, SNATCHER]) {
       expect(validateCard(syntheticCard(name)), name).toEqual([]);
     }
     expect(isFeatureSupported('trigger:turnedFaceUp')).toBe(true);
@@ -239,5 +241,49 @@ describe('a creature card that cannot be turned face up triggers nothing', () =>
     );
     g.expect.illegal(0, { turnFaceUp: COSTLESS });
     g.expect.stack([]);
+  });
+});
+
+describe('"When this creature is turned face up, counter target spell. ... exile it ... You may cast that card without paying its mana cost for as long as it remains exiled."', () => {
+  /** Seat 1 casts the Bolt at seat 0; seat 0 holds the face-down creature and two Islands for its morph cost. */
+  const respond = () => {
+    const g = game(
+      (b) =>
+        b
+          .seat(0)
+          .battlefield(SNATCHER, { faceDown: 'morph' })
+          .battlefield('Island', { count: 2 })
+          .seat(0),
+      (b) => b.seat(1).hand(BOLT).battlefield('Mountain'),
+      { active: 1, turn: 4 },
+    );
+    g.act(1).cast(BOLT, { targets: [{ player: 0 }], pay: true });
+    g.act(1).pass();
+    return g;
+  };
+
+  test('turning it face up in response counters the spell, which is exiled instead of going to its owner graveyard', () => {
+    const g = respond();
+    g.act(0).turnFaceUp(SNATCHER, { pay: true });
+    g.expect.stack([BOLT, `${SNATCHER} (ability)`].reverse());
+    g.passAll();
+    g.expect.zone(BOLT, 'exile', { seat: 1 });
+    g.expect.life(0, 20);
+    g.expect.noObject(BOLT, { zone: 'graveyard' });
+  });
+
+  test('its controller may cast the exiled card for no mana, for as long as it remains exiled', () => {
+    const g = respond();
+    g.act(0).turnFaceUp(SNATCHER, { pay: true });
+    g.passAll();
+    // The active player has priority again after the trigger resolved; it is seat 0 who may cast the card once seat 1 passes.
+    g.act(1).pass();
+    const exiled = { name: BOLT, zone: 'exile', seat: 1 } as const;
+    g.expect.illegal(0, { cast: exiled });
+    g.expect.legal(0, { cast: exiled, alternative: 'free' });
+    g.act(0).cast(exiled, { alternative: 'free', targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.life(1, 17);
+    g.expect.tapped('Island[0]', true);
   });
 });

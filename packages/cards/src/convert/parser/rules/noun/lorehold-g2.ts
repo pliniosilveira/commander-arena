@@ -68,6 +68,7 @@ export const NOUN_TARGET_NONMATCHING_GRAVEYARD_CARD = defineRule<IrNoun>({
       !parts.historic &&
       !parts.modified &&
       !parts.equipped &&
+      !parts.faceDown &&
       !parts.commander &&
       parts.colorCount === undefined;
     if (!plain) return fail(ctx, pos);

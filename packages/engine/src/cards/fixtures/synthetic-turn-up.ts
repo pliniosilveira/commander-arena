@@ -8,6 +8,8 @@
  *   you may have it fight target creature you don't control.", "... it gets +2/+2 until end of turn.", "Whenever a permanent is turned face up, you gain 1 life." (any player's),
  *   "Whenever a face-down creature you control enters, draw a card.".
  * - A creature with an ability of its own for the moment it is turned face up: "When this creature is turned face up, you gain 3 life."
+ * - A creature with morph whose turned-face-up ability counters a spell: "When this creature is turned face up, counter target spell. If that spell is countered this way, exile
+ *   it instead of putting it into its owner's graveyard. You may cast that card without paying its mana cost for as long as it remains exiled."
  */
 import type { Ability, Effect, ObjectFilter } from '../../ast/types';
 import type { CardDefinition } from '../definition';
@@ -112,6 +114,41 @@ export const SYNTHETIC_TURN_UP_LIST: readonly CardDefinition[] = [
         kind: 'triggered',
         trigger: { kind: 'turnedFaceUp', what: { kind: 'this' } },
         effect: { kind: 'gainLife', player: YOU, amount: 3 },
+      },
+    ],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Turn-Up Snatcher',
+    manaCost: ['3', 'U', 'U'],
+    types: ['creature'],
+    subtypes: ['Wizard'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      "Morph {1}{U}. When this creature is turned face up, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard. You may cast that card without paying its mana cost for as long as it remains exiled.",
+    alternativeCosts: [{ kind: 'morph', cost: [{ kind: 'mana', symbols: ['1', 'U'] }] }],
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'turnedFaceUp', what: { kind: 'this' } },
+        targets: [
+          { id: 't1', what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } } },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'counter', objects: { kind: 'target', id: 't1' }, exileInstead: true },
+            {
+              kind: 'mayPlay',
+              objects: { kind: 'moved' },
+              free: true,
+              castOnly: true,
+              lasts: 'whileExiled',
+            },
+          ],
+        },
       },
     ],
   }),

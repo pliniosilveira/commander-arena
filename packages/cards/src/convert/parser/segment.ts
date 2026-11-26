@@ -414,6 +414,14 @@ const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
 /** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
 const EXILE_COUNTERED_THEN_CAST =
   /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard, then you may cast it without paying its mana cost\.$/i;
+/**
+ * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard. You may cast that card without paying its mana cost for as long as
+ * it remains exiled." (Kheru Spellsnatcher, CR 701.6a, 614.1a, 611.2b): three sentences that are one instruction (`effect.counter-exile-cast-while-exiled`).
+ */
+const EXILE_COUNTERED_INSTEAD =
+  /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard\.$/i;
+const MAY_CAST_FREE_WHILE_EXILED =
+  /^you may cast that card without paying its mana cost for as long as it remains exiled\.$/i;
 const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
@@ -1629,6 +1637,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, COUNTER_TARGET_SPELL) &&
+      said(b, EXILE_COUNTERED_INSTEAD) &&
+      said(c, MAY_CAST_FREE_WHILE_EXILED)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

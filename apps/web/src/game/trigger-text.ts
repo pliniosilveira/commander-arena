@@ -103,6 +103,8 @@ const SAYABLE: ReadonlySet<string> = new Set([
   // D-145: "a commander", "a creature with a counter on it".
   'commander',
   'hasCounter',
+  // CR 708.2: "a face-down creature you control".
+  'isFaceDown',
 ]);
 
 /** The noun of a filter with its adjectives and no article: "nonland permanent", "red Goblin creature". */
@@ -131,6 +133,7 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
   const adjectives = [
     filter.tapped === true ? 'tapped' : filter.tapped === false ? 'untapped' : '',
     filter.attacking === true ? 'attacking' : '',
+    filter.isFaceDown === true ? 'face-down' : '',
     filter.token === false ? 'nontoken' : '',
     (filter.notTypes ?? []).map((t) => `non${t}`).join(' '),
     // D-135 (CR 205.4): "a nonbasic land".
@@ -516,6 +519,14 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       // CR 701.37a, 701.37b: "Whenever this creature becomes monstrous".
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes monstrous`;
+    }
+    case 'turnedFaceUp': {
+      // CR 701.40b, 708.8: "Whenever this creature is turned face up", "Whenever you turn a permanent face up".
+      const what = subjectPhrase(trigger.what, ctx);
+      if (what === null) return null;
+      return trigger.by === 'you'
+        ? `Whenever you turn ${what} face up`
+        : `Whenever ${what} is turned face up`;
     }
     case 'milled': {
       // CR 701.17a, 603.2c: "Whenever a player mills one or more creature cards"; a filter the words do not cover leaves the trigger unsaid.
