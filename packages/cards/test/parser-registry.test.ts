@@ -531,6 +531,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.completed-dungeon': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.amount-count-are': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
   'condition.opponent-cards-in-graveyard': permanent(
     (e) => `When ~ enters, if ${e}, you gain 1 life.`,
@@ -1476,6 +1477,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.put-into-graveyard': whenever,
   // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
   'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.put-into-any-graveyard': whenever,
   'trigger.this-exploits': whenever,
   'condition.this-suspended': permanent(
     (e) =>

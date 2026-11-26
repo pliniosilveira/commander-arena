@@ -899,7 +899,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         kind: 'putIntoGraveyard',
         // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
         who:
-          t.fromNotBattlefield === true ? 'any' : t.opponentGraveyard === true ? 'opponent' : 'you',
+          t.fromNotBattlefield === true || t.anyGraveyard === true
+            ? 'any'
+            : t.opponentGraveyard === true
+              ? 'opponent'
+              : 'you',
         from:
           t.fromNotBattlefield === true
             ? 'notBattlefield'
