@@ -1626,6 +1626,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'delayedCombatDamageTurn':
       // CR 603.7, 510.3a (D-663): a delayed ability for the turn.
       return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
+    case 'delayedDiesTurn': {
+      // CR 603.7, 603.10a: a delayed ability for the turn, for each creature that dies.
+      const inner = effectText(effect.effect, ability, self, defs);
+      return inner === '' ? UNSAID : `Whenever a creature dies this turn, ${lower(inner)}`;
+    }
     case 'delayedCombatDamageBatchTurn': {
       // CR 603.7, 603.2c: a delayed ability for the turn, for combat damage to players by one or more creatures.
       const inner = effectText(effect.effect, ability, self, defs);

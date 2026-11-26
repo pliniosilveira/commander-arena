@@ -3773,6 +3773,18 @@ export type Effect =
       readonly effect: Effect;
     }
   /**
+   * "Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn." (CR 603.7, 603.7c, 603.10a, 700.4, 514.2, Massacre Girl): a delayed triggered ability of
+   * the controller of the spell or ability, created as it resolves (a creature that dies before, while the ability that makes it is still on the stack, does not trigger it), that
+   * triggers each time a permanent `filter` names dies (is put into a graveyard from the battlefield, as it was on the battlefield, controllers of any player) until the end of the turn,
+   * once for each such permanent that dies, however many die at once (CR 603.2c), and ends with the turn (CR 514.2). Its source is the source of the spell or ability that made it, which
+   * may be gone. `effect` runs each time, with the controller of the spell or ability as "you"; it names no target and reads nothing of the spell.
+   */
+  | {
+      readonly kind: 'delayedDiesTurn';
+      readonly filter: ObjectFilter;
+      readonly effect: Effect;
+    }
+  /**
    * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (CR 603.7, 603.7c, 510.3a, 514.2, issue 144,
    * Great Train Heist): a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the
    * controller controls, as it is when the damage is dealt) deals combat damage to the one player `player` names, until the end of the turn (CR 514.2), once for each such creature

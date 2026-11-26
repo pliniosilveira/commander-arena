@@ -134,10 +134,15 @@ export function hasProtectionFrom(
     (colors.length > 0 && sourceColors(state, source).some((c) => colors.includes(c))) ||
     (types.length > 0 && sourceTypes(state, source).some((t) => types.includes(t))) ||
     (fromMulticolored && sourceColors(state, source).length >= 2) ||
-    (source !== null && manaValues.some((m) => {
-      const mv = sourceManaValue(state, source);
-      return m.cmp === 'atLeast' ? mv >= m.value : m.cmp === 'atMost' ? mv <= m.value : mv === m.value;
-    })) ||
+    (source !== null &&
+      manaValues.some((m) => {
+        const mv = sourceManaValue(state, source);
+        return m.cmp === 'atLeast'
+          ? mv >= m.value
+          : m.cmp === 'atMost'
+            ? mv <= m.value
+            : mv === m.value;
+      })) ||
     (fromRingBearer && sourceObject !== undefined && ringBearerSeat(state, sourceObject) !== null)
   );
 }

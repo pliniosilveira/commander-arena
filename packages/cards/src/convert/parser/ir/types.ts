@@ -1696,12 +1696,17 @@ export interface IrSentence extends IrNode {
       | 'thatCombat'
       | 'nextCast'
       | 'combatDamageToThatPlayer'
-      | 'combatDamageBatch';
+      | 'combatDamageBatch'
+      | 'creatureDies';
     /**
      * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
      * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
      */
     readonly whose: 'you' | 'each';
+    /**
+     * `creatureDies` (Massacre Girl, CR 603.7, 603.10a, 700.4): "Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn": a delayed ability for the
+     * turn that triggers for each creature that dies.
+     */
     /**
      * `combatDamageBatch` (Forth Eorlingas!, CR 603.7, 603.2c, 510.2): "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become
      * the monarch": a delayed ability for the turn that triggers once for the creatures that dealt the damage of one combat damage event.

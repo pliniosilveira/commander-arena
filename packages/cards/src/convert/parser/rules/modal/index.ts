@@ -72,7 +72,10 @@ export const MODAL_CHOOSE = defineRule<IrModeHeader>({
     'Choose one or both or more —',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/choose (one or both|one or more|up to one|any number|one|two) —$/i)(ctx, pos);
+    const r = pattern(/choose (one or both|one or more|up to one|any number|one|two) —$/i)(
+      ctx,
+      pos,
+    );
     if (!r.ok) return r;
     const choose = CHOICES.get((r.value[1] ?? '').toLowerCase());
     if (choose === undefined) return { ok: false };

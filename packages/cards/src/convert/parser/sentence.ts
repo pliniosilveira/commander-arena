@@ -470,6 +470,11 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
         whose: 'you' as const,
       }),
     ),
+    // Massacre Girl (CR 603.7, 603.10a, 700.4): the creatures that die, any player's, for the rest of the turn.
+    map(literal('whenever a creature dies this turn, '), () => ({
+      step: 'creatureDies' as const,
+      whose: 'you' as const,
+    })),
     // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
     EACH_CAST_LEAD,

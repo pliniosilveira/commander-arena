@@ -504,6 +504,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedCombatDamageToPlayer',
     // Forth Eorlingas!: "whenever one or more creatures you control deal combat damage to one or more players this turn, ..." (CR 603.7, 603.2c).
     'delayedCombatDamageBatchTurn',
+    // Massacre Girl: "whenever a creature dies this turn, ..." (CR 603.7, 603.10a).
+    'delayedDiesTurn',
     'delayedCombatDamage',
     // Together Forever (CR 603.7, 603.7c): "When that creature dies this turn, return that card to its owner's hand."
     'delayedDies',
@@ -3629,6 +3631,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamageTurn: true,
   delayedCombatDamageToPlayer: true,
   delayedCombatDamageBatchTurn: true,
+  delayedDiesTurn: true,
   delayedCombatDamage: true,
   delayedDies: true,
   forEachPlayer: true,

@@ -4,7 +4,7 @@
 import type { GameState, ObjectId } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { parseOnly, parsed, spellCard } from './convert-grammar-helpers';
+import { parsed, parseOnly, spellCard } from './convert-grammar-helpers';
 
 const SKULK = parsed(
   'SYNTHETIC Mistmeadow Skulk',
@@ -331,6 +331,57 @@ describe('Misfortune Teller: enters or deals combat damage to a player, exile a 
     g.passAll();
     g.expect.zone('Grizzly Bears', 'exile');
     expect(tokens(g)).toEqual(['Rogue']);
+    g.expect.invariants();
+  });
+});
+
+const GIRL = parsed(
+  'SYNTHETIC Massacre Girl',
+  'Creature — Human Assassin',
+  'When ~ enters, each other creature gets -1/-1 until end of turn. Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn.',
+  { manaCost: '{3}{B}{B}', power: '4', toughness: '4', colors: ['B'] },
+);
+
+describe('Massacre Girl: each other creature gets -1/-1, and again for each creature that dies this turn', () => {
+  test('reads as an enters trigger whose second sentence makes a delayed trigger for the turn (CR 603.7)', () => {
+    const trigger = (GIRL.faces[0]?.abilities ?? []).find((a) => a.kind === 'triggered');
+    if (trigger?.kind !== 'triggered' || trigger.effect.kind !== 'sequence') {
+      throw new Error('expected a triggered sequence');
+    }
+    expect(trigger.effect.effects.map((e) => e.kind)).toEqual(['modifyPt', 'delayedDiesTurn']);
+  });
+
+  const board = () =>
+    scenario()
+      .define(GIRL)
+      .seat(0)
+      .hand(GIRL.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .battlefield('Llanowar Elves', 'Grizzly Bears')
+      .seat(1)
+      .battlefield('Giant Spider', 'Serra Angel')
+      .at('precombatMain');
+
+  test('every creature but Massacre Girl gets -1/-1; the deaths it causes trigger the delayed ability, which chains (CR 603.7, 603.2c)', () => {
+    const g = board().build();
+    g.act(0).cast(GIRL.name, { pay: true });
+    g.passAll();
+    // Elves (1/1) die to the first -1/-1; that triggers one more -1/-1 for every other creature, which kills Bears (2/2); that death triggers one more.
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.pt(GIRL.name, 4, 4);
+    g.expect.pt('Giant Spider', -1, 1);
+    g.expect.pt('Serra Angel', 1, 1);
+    g.expect.invariants();
+  });
+
+  test('the delayed ability is still waiting after the first deaths, and ends with the turn (CR 514.2)', () => {
+    const g = board().build();
+    g.act(0).cast(GIRL.name, { pay: true });
+    g.passAll();
+    expect(g.state.delayedTriggers.length).toBe(1);
+    g.advanceTo('upkeep', { turn: 4 });
+    expect(g.state.delayedTriggers.length).toBe(0);
     g.expect.invariants();
   });
 });
