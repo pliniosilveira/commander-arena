@@ -8738,19 +8738,10 @@
     "88c3fc46-f2f5-440c-80a6-fed5b42cd340": {
       "name": "Sadistic Shell Game",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Starting with the next opponent in turn order, each player chooses a creature you don't control. Destroy the chosen creatures.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3eff01c2"
+      "ast": "623a10d5"
     },
     "88d0a394-79e2-42ac-9a37-1a7b78231941": {
       "name": "Thunderclap Drake",
@@ -16469,7 +16460,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1752,
+      "supported": 1753,
       "total": 1770
     }
   }

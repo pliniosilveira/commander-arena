@@ -1449,6 +1449,7 @@ describe('unmatched abilities', () => {
       'effect.pay-energy-any',
       'effect.choose-opponent-at-random',
       'effect.look-lost-life-exile-one-play',
+      'effect.each-player-chooses-destroy-chosen',
       'duration.until-end-of-turn',
       'restriction.sorcery',
       'restriction.opponents-only',

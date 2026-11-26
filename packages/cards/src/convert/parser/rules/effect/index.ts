@@ -293,6 +293,7 @@ import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
 import { SECRET_VOTES_EFFECT_RULES } from './secret-votes';
 import { SEEK_OUT_EFFECT_RULES } from './seek-out';
+import { SHELL_GAME_EFFECT_RULES } from './shell-game';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
@@ -1872,4 +1873,6 @@ export const EFFECT_RULES = [
   ...RANDOM_OPPONENT_EFFECT_RULES,
   // Florian, Voldaren Scion: the look at the top cards by the life the opponents lost, one exiled and played this turn.
   ...FLORIAN_EFFECT_RULES,
+  // Sadistic Shell Game: each player chooses a creature the controller doesn't control, then those creatures are destroyed.
+  ...SHELL_GAME_EFFECT_RULES,
 ];

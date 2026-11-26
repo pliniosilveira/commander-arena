@@ -213,6 +213,7 @@ import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { RIDERS_B_LOWERINGS } from './riders-b';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SECRET_VOTES_LOWERINGS } from './secret-votes';
+import { SHELL_GAME_LOWERINGS } from './shell-game';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -3292,6 +3293,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   ...RANDOM_OPPONENT_LOWERINGS,
   ...FLORIAN_LOWERINGS,
+  ...SHELL_GAME_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,

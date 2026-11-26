@@ -631,4 +631,30 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Starting with the next opponent in turn order, each player chooses a creature you don't control. Destroy the chosen creatures."
+  singleFace({
+    name: 'SYNTHETIC Shell Game',
+    manaCost: ['3', 'B', 'R'],
+    types: ['sorcery'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    oracleText:
+      "Starting with the next opponent in turn order, each player chooses a creature you don't control. Destroy the chosen creatures.",
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'chooseObjects',
+            id: 'shellGame',
+            filter: { types: ['creature'], controller: 'opponent' },
+            count: 1,
+            exactly: true,
+            perPlayer: true,
+          },
+          { kind: 'destroy', objects: { kind: 'chosen', id: 'shellGame' } },
+        ],
+      },
+    },
+  }),
 ];

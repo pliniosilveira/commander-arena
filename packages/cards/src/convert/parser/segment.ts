@@ -1232,6 +1232,14 @@ const EXILE_ONE_REST_BOTTOM_RANDOM =
   /^exile one of those cards and put the rest on the bottom of your library in a random order\.$/i;
 const PLAY_THE_EXILED_CARD_THIS_TURN = /^you may play the exiled card this turn\.$/i;
 
+/**
+ * "Starting with the next opponent in turn order, each player chooses a creature you don't control. Destroy the chosen creatures." (Sadistic Shell Game, CR 101.4, 608.2d, 701.8): two
+ * sentences, one instruction (`effect.each-player-chooses-destroy-chosen`).
+ */
+const EACH_PLAYER_CHOOSES_CREATURE_YOU_DONT_CONTROL =
+  /^starting with the next opponent in turn order, each player chooses a creature you don['’]t control\.$/i;
+const DESTROY_THE_CHOSEN_CREATURES = /^destroy the chosen creatures\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
@@ -1251,6 +1259,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: e.end });
       i += 4;
+      continue;
+    }
+    // Sadistic Shell Game: each player's choice and the destruction of the creatures chosen.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EACH_PLAYER_CHOOSES_CREATURE_YOU_DONT_CONTROL) &&
+      said(b, DESTROY_THE_CHOSEN_CREATURES)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
       continue;
     }
     // Florian, Voldaren Scion: the look by the life the opponents lost, the card exiled with the rest on the bottom, and the permission to play it this turn.
