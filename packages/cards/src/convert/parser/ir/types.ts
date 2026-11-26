@@ -1387,6 +1387,8 @@ export interface IrZoneSpec extends IrNode {
    */
   readonly whose?: 'you' | 'owner';
   readonly tapped?: boolean;
+  /** "to the battlefield face up or face down" (Deathmist Raptor, CR 708.2a, 708.3): the controller chooses as the effect resolves whether the card enters face up or face down. */
+  readonly faceChoice?: true;
   /** "onto the battlefield tapped and attacking" (stage P34, D-152, CR 508.4): the permanent enters attacking, never declared as an attacker. */
   readonly attacking?: true;
   /** `top`, `bottom`, or "third from the top" as 3 (stage P30, CR 401.7): a number of 2 or more. */

@@ -157,6 +157,7 @@ import { SYNTHETIC_MANA_TRIGGERS_LIST } from './synthetic-mana-triggers';
 import { SYNTHETIC_MANIFEST_LIST } from './synthetic-manifest';
 import { SYNTHETIC_MANIFEST_B_LIST } from './synthetic-manifest-b';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
+import { SYNTHETIC_MEGAMORPH_LIST } from './synthetic-megamorph';
 import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
@@ -441,6 +442,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_ROOM_LIST,
   ...SYNTHETIC_MANIFEST_LIST,
+  ...SYNTHETIC_MEGAMORPH_LIST,
   ...SYNTHETIC_TURN_UP_LIST,
   ...SYNTHETIC_MANIFEST_B_LIST,
   ...SYNTHETIC_MORPH_LIST,
