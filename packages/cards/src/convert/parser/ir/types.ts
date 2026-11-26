@@ -377,6 +377,8 @@ export interface IrFilter {
   readonly modified?: true;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds (the engine's `goaded`). */
   readonly goaded?: true;
+  /** "face-down" or "face-up" (CR 708.2): the status the permanent has now (the engine's `facing`). */
+  readonly facing?: 'down' | 'up';
   /** "with the same name as ~" (Mocking Doppelganger, CR 201.2): the creature has the name of the permanent with the static ability (the engine's `sameNameAsSource`), read in the subject of a static ability only. */
   readonly sameNameAsSource?: true;
   /**

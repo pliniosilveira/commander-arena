@@ -187,6 +187,7 @@ import {
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
 import { MANA_NOT_GENERIC_EFFECT_RULES } from './mana-not-generic';
+import { MANIFEST_COUNTERS_EFFECT_RULES } from './manifest-counters';
 import { MANIFEST_DREAD_EFFECT_RULES } from './manifest-dread';
 import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
@@ -1550,6 +1551,7 @@ export const EFFECT_RULES = [
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
   ...DURNAN_EFFECT_RULES,
   ...MANIFEST_DREAD_EFFECT_RULES,
+  ...MANIFEST_COUNTERS_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_ITSELF,
   EFFECT_DAMAGE_COUNT,

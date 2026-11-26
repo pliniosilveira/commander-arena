@@ -65,7 +65,7 @@ export const SYNTHETIC_MANIFEST_B_LIST: readonly CardDefinition[] = [
           kind: 'not',
           term: {
             kind: 'controlsAtLeast',
-            filter: { zone: 'battlefield', facing: 'down' },
+            filter: { facing: 'down' },
             count: 1,
           },
         },

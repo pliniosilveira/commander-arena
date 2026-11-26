@@ -920,6 +920,24 @@ class Binder {
         },
       });
     }
+    // Experimental Lab (CR 701.62a, 400.7j): "Manifest dread, then put two +1/+1 counters ... on that creature": "that creature" is the creature manifest dread manifested, which the
+    // engine names `moved`. Pushed after the clause's own nouns, so that it is the most recent object of the text.
+    if (clause.verb === 'manifestDread' || clause.verb === 'manifestDreadTwice') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'creature', types: ['creature'] },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
     if (clause.verb === 'exileChosenCard') {
       this.antecedents.push({
         kind: 'object',
