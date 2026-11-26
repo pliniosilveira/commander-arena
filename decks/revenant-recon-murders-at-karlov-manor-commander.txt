@@ -85,5 +85,3 @@ Mainboard
 1x Whispering Snitch
 9x Island
 9x Swamp
-
----
