@@ -4224,6 +4224,7 @@ function runEffect(
             ...(fixed === undefined ? {} : { cards: fixed, cardsZone: 'exile' as const }),
             ...(effect.creatureGains === undefined ? {} : { creatureGains: effect.creatureGains }),
             ...(effect.fromHand === true ? { fromHand: true as const } : {}),
+            ...(effect.payInstead === undefined ? {} : { payInstead: effect.payInstead }),
             chosen: null,
           },
         ],

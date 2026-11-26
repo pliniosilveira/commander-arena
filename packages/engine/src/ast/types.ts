@@ -5584,6 +5584,13 @@ export type Effect =
        * and its card stays its owner's. Only with `objects` a `moved` reference, and with no `play`, `max`, `perOwner`, `player`, `remember`, `paying` or `creatureGains`.
        */
       readonly fromHand?: true;
+      /**
+       * "You may cast that card by discarding a card rather than paying its mana cost" (The Infamous Cruelclaw, CR 118.9, 601.2b, 601.2h, 701.9a): the spell is cast as this resolves, with the
+       * alternative cost named instead of its mana cost: here one `discard` cost of 1, a card of the hand the caster chooses (the spell cast is in exile, never in the hand). A card is
+       * offered only when the caster has a card to discard. Only with `objects` a `moved` reference, and with no `play`, `max`, `perOwner`, `player`, `remember`, `paying`, `fromHand`
+       * or `creatureGains`.
+       */
+      readonly payInstead?: readonly Cost[];
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it

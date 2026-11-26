@@ -8812,6 +8812,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // The Infamous Cruelclaw (CR 118.9, 701.9a): "by discarding a card rather than paying its mana cost": one discard of one card, for the card an effect before moved.
+      if (e.payInstead !== undefined) {
+        const only = e.payInstead;
+        if (
+          !Array.isArray(only) ||
+          only.length !== 1 ||
+          only[0]?.kind !== 'discard' ||
+          only[0].count !== 1 ||
+          only[0].filter !== undefined ||
+          kindOf(objects) !== 'moved' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.player !== undefined ||
+          e.remember !== undefined ||
+          e.paying !== undefined ||
+          e.fromHand !== undefined ||
+          e.creatureGains !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.payInstead`,
+            "payInstead is one discard of one card, on the cards an effect before moved ('moved'), with no play, max, perOwner, player, remember, paying, fromHand or creatureGains",
+          );
+        }
+      }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
       if (e.filter !== undefined) {
         if (kindOf(objects) === 'choose') {

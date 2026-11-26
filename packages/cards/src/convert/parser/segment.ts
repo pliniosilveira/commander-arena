@@ -1139,6 +1139,9 @@ const CAST_THIS_WAY_PAY_LIFE =
 const PLAYER_EXILES_UNTIL_CAST =
   /^(?:target (?:opponent|player) exiles cards from the top of their library until they exile|exile cards from the top of your library until you exile) [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
+/** The Infamous Cruelclaw (issue 685): the cast of the card found, with a card discarded rather than the mana cost paid. */
+const MAY_CAST_THAT_CARD_DISCARD =
+  /^you may cast that card by discarding a card rather than paying its mana cost\.$/i;
 const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
 /** Chaos Wand (CR 401.4): "Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." closes the three sentences of the exile of a target player. */
 const THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY =
@@ -1265,7 +1268,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       a !== undefined &&
       b !== undefined &&
       said(a, PLAYER_EXILES_UNTIL_CAST) &&
-      said(b, MAY_CAST_THAT_CARD_FREE)
+      (said(b, MAY_CAST_THAT_CARD_FREE) || said(b, MAY_CAST_THAT_CARD_DISCARD))
     ) {
       const last =
         c !== undefined &&

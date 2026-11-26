@@ -188,6 +188,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeFromGraveyard',
     // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
     'castFreeCreatureGains',
+    // The Infamous Cruelclaw (CR 118.9, 701.9a): "You may cast that card by discarding a card rather than paying its mana cost" (`castFree.payInstead`).
+    'castFreeDiscardInstead',
     // Grand Larceny deck, group B (Nashi, Moon Sage's Scion): "you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (`mayPlay.oneOf`, `mayPlay.lifeForMana`).
     'mayPlayOneLifeForMana',
     // Grand Larceny deck, group B (Silent-Blade Oni, Extract Brain): "You may cast a spell from among those cards without paying its mana cost" after looking at a hand (`castFree.fromHand`).
@@ -2258,6 +2260,8 @@ export const ABILITY_FEATURES = [
   'castFreeFromGraveyard',
   /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
   'castFreeCreatureGains',
+  /** "You may cast that card by discarding a card rather than paying its mana cost" (The Infamous Cruelclaw, CR 118.9): the engine's `castFree` with `payInstead` one discard. */
+  'castFreeDiscardInstead',
   /** "Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (Nashi, Moon Sage's Scion, CR 118.9, 601.2): the engine's `mayPlay.oneOf` and `mayPlay.lifeForMana`. */
   'mayPlayOneLifeForMana',
   /** "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain, CR 608.2g, 402.3): the engine's `castFree.fromHand`. */
@@ -3474,6 +3478,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
+  castFreeDiscardInstead: true,
   castFreeFromHand: true,
   mayPlayOneLifeForMana: true,
   copySpellPermanentGains: true,

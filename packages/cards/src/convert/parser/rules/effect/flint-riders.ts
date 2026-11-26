@@ -509,8 +509,76 @@ export const EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND = defineRule<Cla
   },
 });
 
+const UNTIL_DISCARD_ID = 'effect.exile-until-cast-by-discarding';
+
+/**
+ * `effect.exile-until-cast-by-discarding`: "Exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana
+ * cost." (The Infamous Cruelclaw; CR 701.13, 608.2g, 118.9, 701.9a): the cards before the one found stay exiled. The two sentences are one instruction that `splitSentences` keeps together.
+ * The engine's `exileUntilFound` of the controller's library, then the `castFree` of the card found with `payInstead` one discard. Not read: another player, another place, "without paying",
+ * "by paying", more cards discarded, "it", a rider.
+ */
+export const EFFECT_EXILE_UNTIL_CAST_BY_DISCARDING = defineRule<Clauses>({
+  id: UNTIL_DISCARD_ID,
+  family: 'effect',
+  leading: ['exile'],
+  cites: [
+    'CR 701.13 (Exile)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 701.9 (Discard)',
+  ],
+  examples: [
+    'exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana cost',
+  ],
+  rejects: [
+    'exile cards from the top of your library until you exile a nonland card',
+    'exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost',
+    'exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding two cards rather than paying its mana cost',
+    "exile cards from the top of target player's library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana cost",
+    'exile cards from the top of your library until you exile a nonland card. You may cast it by discarding a card rather than paying its mana cost',
+    'exile cards from the top of your library until you exile a nonland card. You may cast that card by discarding a card rather than paying its mana cost and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(/exile cards from the top of your library until you exile /iu)(ctx, pos);
+    if (!head.ok) return head;
+    const card = family<IrNoun>('noun', { only: ['noun.library-card'] })(ctx, head.pos);
+    if (!card.ok) return card;
+    const tail = pattern(
+      /\. you may cast that card by discarding a card rather than paying its mana cost(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu,
+    )(ctx, card.pos);
+    if (!tail.ok) return tail;
+    const span = { start: pos, end: tail.pos };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          UNTIL_DISCARD_ID,
+          'exileUntilCastFree',
+          {
+            player: {
+              kind: 'noun',
+              det: 'you',
+              filter: { raw: 'you' },
+              upTo: false,
+              plural: false,
+              other: false,
+              span: { start: 0, end: 0 },
+              rule: UNTIL_DISCARD_ID,
+            } satisfies IrNoun,
+            card: { ...card.value, upTo: false, plural: false },
+            discardInstead: flag(UNTIL_DISCARD_ID, true, span),
+          },
+          span,
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
 /** Tried first: "if ..." and "mana ..." are the first words of the plain rules. */
 export const FLINT_RIDER_EFFECT_RULES = [
+  EFFECT_EXILE_UNTIL_CAST_BY_DISCARDING,
   EFFECT_LOOK_AT_TOP_OF_TARGET_LIBRARY,
   EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND,
   EFFECT_LOOK_EXILE_N_FACE_DOWN,
