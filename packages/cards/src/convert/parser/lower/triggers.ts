@@ -1340,6 +1340,8 @@ function eventAmountThatMany(ability: Triggered): Triggered {
     (e) =>
       e.event === 'lifeGained' ||
       (e.event === 'lifeLost' && e.batch !== true) ||
+      // CR 122.6 (Earth Kingdom General): "Whenever you put one or more +1/+1 counters on a creature, you gain that much life": the counters put on.
+      e.event === 'countersAdded' ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
       e.event === 'damageToPlayerPrevented' ||

@@ -1929,6 +1929,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'lifeGained' ||
     // CR 119.3: "Whenever an opponent loses life, ... that many": the life that event lost. A batch spans several events, so it has no one amount.
     (t?.kind === 'lifeLost' && t.batch !== true) ||
+    // CR 122.6: "Whenever you put one or more +1/+1 counters on a creature, you gain that much life": the counters this instance of putting put on.
+    t?.kind === 'countersAdded' ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||
     t?.kind === 'surveils'
