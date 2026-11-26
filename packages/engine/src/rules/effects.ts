@@ -1519,7 +1519,13 @@ function runEffect(
       const { [TIME_COUNTER]: _removed, ...others } = card.counters;
       const counters = time > 1 ? { ...others, [TIME_COUNTER]: time - 1 } : others;
       next = patchObject(next, card.id, { counters });
-      events.push({ kind: 'counterRemoved', object: card.id, counter: TIME_COUNTER, count: 1 });
+      events.push({
+        kind: 'counterRemoved',
+        object: card.id,
+        counter: TIME_COUNTER,
+        count: 1,
+        by: res.controller,
+      });
       return done(next, events);
     }
 

@@ -742,6 +742,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:unspentManaStays'];
     case 'unspentManaBecomesColorless':
       return ['static:unspentManaBecomesColorless'];
+    case 'surveilLookAdditional':
+      return ['static:surveilLookAdditional'];
+    case 'playSurveiledFromGraveyard':
+      return ['static:playSurveiledFromGraveyard'];
     case 'castFromTop':
       return ['static:castFromTopOfLibrary'];
     case 'graveyardPlay':

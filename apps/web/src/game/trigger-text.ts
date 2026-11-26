@@ -489,7 +489,10 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return `Whenever ${trigger.who === 'you' ? 'you scry' : `${BY_WORDS[trigger.who]} scries`}`;
     case 'surveils':
       // CR 701.25 (Galadriel group 1): once each time the player surveils.
-      return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
+      return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
+    case 'removesCounterWhileExiled':
+      // CR 122.1, 702.62a (Watcher of Hours): the card's own ability, from exile.
+      return `Whenever you remove a ${trigger.counter} counter from this card while it's exiled`;
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): once each time the player wins a coin flip.
       return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;

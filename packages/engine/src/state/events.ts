@@ -422,6 +422,11 @@ export type GameEvent =
       readonly object: ObjectId;
       readonly counter: string;
       readonly count: number;
+      /**
+       * The player who removed the counters, when the event says (Watcher of Hours: "Whenever you remove a time counter from this card while it's exiled", CR 122.1, 702.62a): set by
+       * the removal of a time counter by Suspend's upkeep ability, which its owner controls. Absent for any other removal, which a trigger that reads who removed it does not count.
+       */
+      readonly by?: SeatId;
     }
   | { readonly kind: 'died'; readonly object: ObjectId; readonly card: CardId | null }
   /**

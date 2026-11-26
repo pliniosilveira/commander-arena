@@ -1212,6 +1212,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.bearerChosen`, 'must be true when present');
       }
       break;
+    case 'removesCounterWhileExiled':
+      // CR 122.1, 702.62a (Watcher of Hours): the kind of counter the owner removes from the card in exile.
+      if (typeof t.counter !== 'string' || t.counter.trim() === '') {
+        issue(out, `${path}.counter`, 'the kind of counter removed needs its name');
+      }
+      break;
     case 'classLevel':
       if (!isCount(t.level) || t.level < 2) {
         issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
@@ -1227,6 +1233,16 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      // Whispering Snitch (CR 603.2): "for the first time each turn" counts the surveils of the controller of the ability.
+      if (t.kind === 'surveils' && t.firstEachTurn !== undefined) {
+        if (t.firstEachTurn !== true || t.who !== 'you') {
+          issue(
+            out,
+            `${path}.firstEachTurn`,
+            'firstEachTurn must be true, and it goes with who "you"',
+          );
+        }
       }
       if (t.kind === 'activatesAbility') {
         for (const flag of ['xCost', 'anySource'] as const) {

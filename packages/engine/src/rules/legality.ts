@@ -584,6 +584,13 @@ export function castZone(
     if (state.turn.number <= obj.foretoldTurn) return null;
     return alternativeOf(faceOf(state, obj), 'foretell') === null ? null : 'exile';
   }
+  // CR 118.9, 601.2a (Eye of Duskmantle): a spell cast from the graveyard by paying life equal to its mana value rather than its mana cost, which the permission of a permanent says.
+  if (alternative === 'lifeForMana' && obj.zone === 'graveyard') {
+    return faceIndex === 0 &&
+      graveyardPlayPermission(state, seat, obj, false, undefined, true) !== null
+      ? 'graveyard'
+      : null;
+  }
   // The other alternatives are never cast from a graveyard (D-121); an Adventure card is cast from exile.
   if (obj.zone === 'exile' && obj.onAdventure === true) return faceIndex === 0 ? 'exile' : null;
   // CR 113.6b (D-133): "You may cast this card from your graveyard [as long as ...]": the card's own static ability.
@@ -824,7 +831,14 @@ export function canCast(
     return false;
   }
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
-  if (alternative === 'lifeForMana' && !mayPayLifeForMana(state, seat)) return false;
+  // CR 118.9 (Eye of Duskmantle): or a permanent's permission to cast a card of the graveyard for life (`castZone` has checked it).
+  if (
+    alternative === 'lifeForMana' &&
+    !mayPayLifeForMana(state, seat) &&
+    !(zone === 'graveyard' && obj.zone === 'graveyard')
+  ) {
+    return false;
+  }
   // CR 118.9, 107.14 (issue 105, Nissa): only while a permanent of the caster gives it for this spell.
   if (
     alternative === 'energyGrant' &&
@@ -1108,6 +1122,14 @@ export function alternativeCastObjects(
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'command', seat),
     ...onAdventure,
+    // CR 118.9 (Eye of Duskmantle): the cards of the graveyard a permanent lets the seat cast for life.
+    ...(kind === 'lifeForMana'
+      ? zoneList(state, 'graveyard', seat).filter(
+          (id) =>
+            graveyardPlayPermission(state, seat, getObject(state, id), false, undefined, true) !==
+            null,
+        )
+      : []),
     ...freeFromExile,
     // CR 702.170d: the plotted cards of the seat in exile.
     ...(kind === 'free'

@@ -658,6 +658,12 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
     case 'unspentManaBecomesColorless':
       // CR 106.4, 614.1a (issue 81, Omnath): no parameters; the permanent's own ability.
       return true;
+    case 'surveilLookAdditional':
+      // CR 701.25a (Enhanced Surveillance): a positive whole number of cards more.
+      if (!Number.isSafeInteger(s.count) || s.count < 1) {
+        issue(out, `${path}.count`, 'count must be a whole number of at least 1');
+      }
+      return true;
     case 'unspentManaStays':
       // CR 500.5, 106.4 (D-151): "You don't lose unspent red mana as steps and phases end": the colors of mana that stay.
       if (!Array.isArray(s.colors) || s.colors.length === 0) {
@@ -782,6 +788,9 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       }
       return true;
     case 'playFromGraveyardEachType':
+      return true;
+    case 'playSurveiledFromGraveyard':
+      // CR 701.25a (Eye of Duskmantle): no parameters; the permanent's own ability.
       return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.

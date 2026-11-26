@@ -396,6 +396,8 @@ describe('supported feature gate', () => {
         'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".
         'playerAttacksOpponent',
+        // Watcher of Hours: "Whenever you remove a time counter from this card while it's exiled".
+        'removesCounterWhileExiled',
         'ringTempted',
         // Galadriel group 3: "Whenever you roll a die's highest natural result".
         'rollsHighest',
@@ -471,6 +473,8 @@ describe('supported feature gate', () => {
       'countersAddedEach',
       // "Whenever one or more opponents lose life".
       'lifeLostBatch',
+      // Whispering Snitch: "Whenever you surveil for the first time each turn".
+      'surveilsFirstEachTurn',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

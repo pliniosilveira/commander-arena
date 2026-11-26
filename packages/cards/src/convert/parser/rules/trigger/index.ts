@@ -45,8 +45,10 @@ import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { ENCHANTED_MANA_TRIGGER_RULES } from './enchanted-mana';
 import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
+import { ENTERS_AND_UPKEEP_TRIGGER_RULES } from './enters-and-upkeep';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
+import { EXILE_COUNTER_TRIGGER_RULES } from './exile-counter';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
@@ -1336,6 +1338,10 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
+  // Unshakable Tail: "~ enters and at the beginning of your upkeep".
+  ...ENTERS_AND_UPKEEP_TRIGGER_RULES,
+  // Watcher of Hours: "you remove a time counter from this card while it's exiled" starts like no other trigger rule reads.
+  ...EXILE_COUNTER_TRIGGER_RULES,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
   ...CAST_DURING_TURN_TRIGGER_RULES,
   // Astrologian's Planisphere: "you cast a noncreature spell and whenever you draw your third card each turn" starts like `trigger.cast`, which stops before the rest.

@@ -275,8 +275,30 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you scry or surveil" (Galadriel deck, group 1, CR 701.25): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      const blocked = missingFeatures(['trigger:surveils']);
-      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
+      // Whispering Snitch: "Whenever you surveil for the first time each turn" (CR 603.2): the controller's own first surveil of the turn only.
+      if (t.firstEachTurn === true && who !== 'you') return failure(t);
+      const blocked = missingFeatures([
+        'trigger:surveils',
+        ...(t.firstEachTurn === true ? (['trigger:surveilsFirstEachTurn'] as const) : []),
+      ]);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({
+            kind: 'surveils',
+            who,
+            ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+          });
+    }
+    case 'countersRemoved': {
+      // "Whenever you remove a time counter from this card while it's exiled" (Watcher of Hours, CR 122.1, 702.62a): the owner removes it from the card itself, in exile.
+      if (t.whileExiled !== true || t.counter === undefined || whoOf(t.actor) !== 'you') {
+        return failure(t);
+      }
+      if (t.subject?.det !== 'self') return failure(t);
+      const blocked = missingFeatures(['trigger:removesCounterWhileExiled']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'removesCounterWhileExiled', counter: t.counter });
     }
     case 'rollsHighest': {
       // "Whenever you roll a die's highest natural result" (Galadriel deck, group 3, CR 706.1a, 706.2): the player is relative to the controller of the ability.
@@ -2039,6 +2061,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersBattlefieldFromYourGraveyard',
   'trigger:scries',
   'trigger:surveils',
+  'trigger:surveilsFirstEachTurn',
+  'trigger:removesCounterWhileExiled',
   'trigger:rollsHighest',
   'trigger:winsCoinFlip',
   'ability:oncePerTurn',

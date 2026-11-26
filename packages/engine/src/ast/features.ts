@@ -639,6 +639,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'rollsHighest',
     // CR 705.2 (Setzer): "Whenever you win a coin flip".
     'winsCoinFlip',
+    // Watcher of Hours: "Whenever you remove a time counter from this card while it's exiled" (CR 702.62a).
+    'removesCounterWhileExiled',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -683,6 +685,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countersAddedEach',
     // "Whenever one or more opponents lose life" (`lifeLost` with `batch`).
     'lifeLostBatch',
+    // Whispering Snitch: "Whenever you surveil for the first time each turn" (`surveils` with `firstEachTurn`).
+    'surveilsFirstEachTurn',
   ],
   keywordKinds: [
     'flying',
@@ -1542,10 +1546,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'unspentManaStays',
     // Issue 81 (Omnath, Locus of the Void): "If you would lose unspent mana, that mana becomes colorless instead."
     'unspentManaBecomesColorless',
+    // Enhanced Surveillance: "You may look at an additional two cards each time you surveil."
+    'surveilLookAdditional',
     // D-151: "You may cast creature spells with power 4 or greater from the top of your library."
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
     'playFromGraveyardOnceEachTurn',
+    // Eye of Duskmantle: "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. ... you pay life equal to its mana value".
+    'playSurveiledFromGraveyard',
     // CR 601.2a, 305.1: "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard."
     'playFromGraveyardEachType',
     // CR 305.1: "You may play Forests from your graveyard."
@@ -2054,6 +2062,8 @@ export const TRIGGER_FEATURES = [
   'countersAddedEach',
   /** "Whenever one or more opponents lose life" (CR 603.2c, 119.3): the engine's `lifeLost` with `batch`, once for the simultaneous losses of several players. */
   'lifeLostBatch',
+  /** "Whenever you surveil for the first time each turn" (CR 701.25, 603.2): the engine's `surveils` with `firstEachTurn`, only the first surveil of the player in the turn. */
+  'surveilsFirstEachTurn',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -2678,10 +2688,14 @@ export const STATIC_KINDS = [
   'unspentManaStays',
   /** "If you would lose unspent mana, that mana becomes colorless instead" (CR 106.4, 614.1a, issue 81): `unspentManaBecomesColorless`. */
   'unspentManaBecomesColorless',
+  /** "You may look at an additional two cards each time you surveil" (CR 701.25a, Enhanced Surveillance): `surveilLookAdditional`. */
+  'surveilLookAdditional',
   /** "You may cast creature spells with power 4 or greater from the top of your library" (CR 601.3, D-151): `castFromTopOfLibrary`. */
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
   'playFromGraveyardOnceEachTurn',
+  /** "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn ... you pay life equal to its mana value" (CR 701.25a, 601.2a, 118.9, Eye of Duskmantle): `playSurveiledFromGraveyard`. */
+  'playSurveiledFromGraveyard',
   /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard" (CR 601.2a, 305.1): `playFromGraveyardEachType`. */
   'playFromGraveyardEachType',
   /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
@@ -3281,6 +3295,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   surveils: true,
   rollsHighest: true,
   winsCoinFlip: true,
+  removesCounterWhileExiled: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -3304,6 +3319,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   activatesAbilityOfSource: true,
   countersAddedEach: true,
   lifeLostBatch: true,
+  surveilsFirstEachTurn: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,
