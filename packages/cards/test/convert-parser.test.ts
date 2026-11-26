@@ -1383,6 +1383,7 @@ describe('unmatched abilities', () => {
       'effect.put-from-hand',
       'effect.put-up-to-x-from-hand-graveyard',
       'effect.put-any-graveyard',
+      'effect.destroy-any-number-opponents',
       'effect.put-library-nth',
       'effect.may-cast',
       'effect.may-cast-spells',
