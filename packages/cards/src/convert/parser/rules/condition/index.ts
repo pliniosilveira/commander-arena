@@ -49,6 +49,7 @@ import { EXACT_PT_CONDITION_RULES } from './exact-pt';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
+import { FLINT_CONDITION_RULES } from './flint';
 import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
@@ -619,6 +620,7 @@ export const CONDITION_RULES = [
   ...PLAYED_LAND_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
+  ...FLINT_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".
   ...PRISMARI_G2_CONDITION_RULES,
   // Prismari deck, group 3 (issue 87, D-661): "the total mana value of the cards exiled this way is 13 or less".

@@ -8104,6 +8104,12 @@ export type Condition =
    */
   | { readonly kind: 'manaSpentAtLeast'; readonly count: number }
   /**
+   * "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h, 603.4, 205.3i): the spell that caused a cast trigger (its `triggerSubject`) was paid, in part, with
+   * mana that a source with the subtype `subtype` made (`StackData.manaSpent.fromSubtypes`, as the filter `manaSpentFromSubtype` reads it). A copy of a spell was not cast and has none
+   * (CR 707.10). Only in the intervening "if" of a `castSpell` trigger, or "if" of its effect, like `manaSpentAtLeast`.
+   */
+  | { readonly kind: 'manaSpentFromSubtype'; readonly subtype: string }
+  /**
    * "If this spell was cast from a graveyard" (CR 601.2, 603.4, D-206): the source, a spell on the stack (or what it was as it left it), was cast from
    * `zone`: a card cast with Flashback or any other permission from its owner's graveyard is cast from the graveyard.
    */

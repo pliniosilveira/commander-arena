@@ -1211,6 +1211,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),
+  // Flint deck (issue 685): the intervening "if" of a trigger about a spell that was cast.
+  'condition.treasure-mana-spent': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, you gain 1 life.`,
+  ),
   // Prismari deck, group 2 (D-646): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spell-mana-value-or-more': permanent(
     (e) =>

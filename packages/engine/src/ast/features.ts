@@ -1580,6 +1580,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'descendedThisTurn',
     'playedLandThisTurn',
     'manaSpentAtLeast',
+    'manaSpentFromSubtype',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
     'wasCast',
@@ -2869,6 +2870,8 @@ export const CONDITION_KINDS = [
   'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
+  /** "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h): the engine's `manaSpentFromSubtype`. */
+  'manaSpentFromSubtype',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
   'castFromZone',
   /** "When this creature enters, if you cast it" (CR 603.4): the engine's `wasCast`. */

@@ -4302,6 +4302,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.count`, 'the mana spent is a whole number of 1 or more');
       }
       break;
+    case 'manaSpentFromSubtype':
+      // CR 601.2h (Smaug, Wicked Worm): the mana of a source of this subtype spent on the spell that caused a cast trigger.
+      if (typeof c.subtype !== 'string' || c.subtype === '') {
+        issue(
+          out,
+          `${path}.subtype`,
+          'the subtype of the source of the mana must be a non-empty string',
+        );
+      }
+      break;
     case 'spellTargets':
       // D-207: a filter of the objects the spell targets (battlefield permanents).
       checkFilter(c.filter, `${path}.filter`, out);

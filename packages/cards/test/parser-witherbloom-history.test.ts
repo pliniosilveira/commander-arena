@@ -47,11 +47,21 @@ describe('Witherbloom event-history grammar', () => {
       },
     });
   });
+  test('"for each creature that died this turn" counts the creatures of every player, tokens too (CR 700.4; Mahadi, Emporium Master)', () => {
+    const p = readAll(
+      'At the beginning of your end step, create a Treasure token for each creature that died this turn.',
+      'creature',
+    );
+    expect(p.abilities[0]).toMatchObject({
+      kind: 'triggered',
+      effect: { count: { kind: 'diedThisTurn', types: ['creature'], controller: 'any' } },
+    });
+    expect(p.abilities[0]).not.toMatchObject({ effect: { count: { token: false } } });
+  });
   test.each([
     'At the beginning of your end step, each opponent loses X life, where X is the amount of life an opponent gained this turn.',
     'At the beginning of your end step, each opponent loses X life, where X is the amount of life you gained last turn.',
     'At the beginning of your end step, create a number of Food tokens equal to the number of nontoken creatures you had enter the battlefield under your control last turn.',
-    'Nontoken creatures you control enter with an additional +1/+1 counter on them for each creature that died this turn.',
     'Nontoken creatures you control enter with an additional +1/+1 counter on them for each creature card that died under your control this turn.',
     'Nontoken creatures you control enter with an additional +1/+1 counter on them for each creature that died under your control this game.',
   ])('refuses nearby unsupported history: %s', (text) => {
