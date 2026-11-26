@@ -38,9 +38,7 @@ describe("Council's Judgment", () => {
         .seat(seat)
         .life(20)
         .hand(...(seat === 0 ? [JUDGMENT.name] : []))
-        .battlefield(
-          ...(seat === 0 ? ['Plains', 'Plains', 'Plains'] : [BEAR, 'Forest']),
-        )
+        .battlefield(...(seat === 0 ? ['Plains', 'Plains', 'Plains'] : [BEAR, 'Forest']))
         .library(...FILLER);
     }
     return b.at('precombatMain', { active: 0 }).build();

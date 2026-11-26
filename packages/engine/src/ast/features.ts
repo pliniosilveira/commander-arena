@@ -547,6 +547,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'vote',
     // CR 701.38a, 701.38b: "each player votes for a player", "secretly votes for a creature you don't control" (Círdan the Shipwright, Trap the Trespassers).
     'voteFor',
+    // CR 101.4, 608.2d: "each opponent chooses fame or fortune" (Seize the Spotlight).
+    'eachPlayerChooses',
     // D-196: "The Ring tempts you" (CR 701.54a), and the engine's own sacrifice at end of combat of the Ring's third ability.
     'ringTempts',
     // D-286: "you may pair this creature with another unpaired creature you control" (CR 702.95a): the engine's effect of the two abilities soulbond stands for.
@@ -1400,6 +1402,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mostVotedObjects',
     'eachPlayerWithoutVotes',
     'eachOpponentWhoVoted',
+    // CR 101.4: "for each player who chose fame" (Seize the Spotlight).
+    'eachPlayerWhoChose',
     // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
     'ringBearer',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
@@ -2669,6 +2673,8 @@ export const SELECTOR_KINDS = [
   'eachPlayerWithoutVotes',
   /** "Each opponent who voted for a choice you voted for" (CR 701.38a, Erestor of the Council): the engine's `eachOpponentWhoVoted`. */
   'eachOpponentWhoVoted',
+  /** "For each player who chose fame" (CR 101.4, Seize the Spotlight): the engine's `eachPlayerWhoChose`. */
+  'eachPlayerWhoChose',
   /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
   'ringBearer',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
@@ -3676,6 +3682,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   addManaCombination: true,
   vote: true,
   voteFor: true,
+  eachPlayerChooses: true,
   ringTempts: true,
   pair: true,
   empowerJace: true,

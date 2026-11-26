@@ -1277,6 +1277,16 @@ export function resolvePlayers(
         ),
       );
     }
+    case 'eachPlayerWhoChose': {
+      // CR 101.4, 608.2d (Seize the Spotlight): the players still in the game who chose the option in the latest `eachPlayerChooses` of this resolution.
+      const cast = ctx.voteCast ?? [];
+      return apnapOrder(
+        state,
+        cast
+          .filter((c) => c.option === selector.option && !getSeat(state, c.seat).hasLost)
+          .map((c) => c.seat),
+      );
+    }
     case 'eachOpponentWhoVoted': {
       // CR 701.38a, 701.38d, 101.4 (Erestor of the Council): an opponent who voted for a choice the controller voted for (`same`), or for one the controller did not vote for
       // (`different`); with several votes one player may be both.

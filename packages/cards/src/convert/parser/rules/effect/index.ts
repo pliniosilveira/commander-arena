@@ -235,6 +235,7 @@ import {
   EFFECT_PLAYER_PROTECTION,
   EFFECT_SHUFFLE,
 } from './player';
+import { PLAYER_CHOICES_EFFECT_RULES } from './player-choices';
 import { PLAYER_CHOOSES_ATTACKER_EFFECT_RULES } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { POPULATE_EFFECT_RULES } from './populate';
@@ -1661,6 +1662,8 @@ export const EFFECT_RULES = [
   ...SECRET_VOTES_EFFECT_RULES,
   // Council's Judgment: a vote for permanents and the exile of those with the most votes.
   ...VOTE_PERMANENTS_EFFECT_RULES,
+  // Seize the Spotlight: each opponent chooses a word, then a reward for each player who chose it.
+  ...PLAYER_CHOICES_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
   // CR 726 (From the Catacombs): "You take the initiative."

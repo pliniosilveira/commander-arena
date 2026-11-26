@@ -5,8 +5,8 @@
  */
 import { pattern } from '../../combinators';
 import { defineRule } from '../registry';
-import { single } from './operands';
 import type { Clauses } from './operands';
+import { single } from './operands';
 
 const WORD_END = '(?![\\p{L}\\p{N}-])';
 
@@ -28,7 +28,7 @@ export const EFFECT_VOTE_FOR_NONLAND_PERMANENT = defineRule<Clauses>({
   examples: ["starting with you, each player votes for a nonland permanent you don't control"],
   rejects: [
     "starting with you, each player votes for a permanent you don't control",
-    "starting with you, each player votes for a nonland permanent an opponent controls",
+    'starting with you, each player votes for a nonland permanent an opponent controls',
     'starting with you, each player votes for a nonland permanent',
     "starting with the player to your left, each player votes for a nonland permanent you don't control",
     "starting with you, each player secretly votes for a nonland permanent you don't control",

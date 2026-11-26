@@ -65,10 +65,7 @@ const PROTECTED = singleFace({
 });
 const ALL: readonly CardDefinition[] = [JUDGE, BEAR_A, BEAR_B, BEAR_C, MINE, PROTECTED];
 
-function table(
-  seats: 2 | 3 | 4,
-  board: Readonly<Record<number, readonly string[]>>,
-): ScenarioGame {
+function table(seats: 2 | 3 | 4, board: Readonly<Record<number, readonly string[]>>): ScenarioGame {
   let b = scenario({ seats });
   for (const card of ALL) b = b.define(card);
   for (let seat = 0; seat < seats; seat += 1) {
@@ -107,9 +104,9 @@ describe('the card is valid', () => {
       });
     expect(validateCard(probe(exile)).length).toBeGreaterThan(0);
     const words: Effect = { kind: 'vote', options: ['a', 'b'], startingWith: 'you' };
-    expect(validateCard(probe({ kind: 'sequence', effects: [words, exile] })).length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      validateCard(probe({ kind: 'sequence', effects: [words, exile] })).length,
+    ).toBeGreaterThan(0);
   });
 });
 

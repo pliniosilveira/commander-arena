@@ -1531,6 +1531,11 @@ export type PlayerSelector =
    */
   | { readonly kind: 'eachPlayerWithoutVotes' }
   /**
+   * "For each player who chose fame" (CR 101.4, 608.2d, Seize the Spotlight): the players still in the game who chose `option` in the latest `eachPlayerChooses` of this resolution, in the order
+   * of CR 101.4. Valid only after such an effect in the same sequence that offers `option` (`validateCard`).
+   */
+  | { readonly kind: 'eachPlayerWhoChose'; readonly option: string }
+  /**
    * "Each opponent who voted for a choice you voted for" / "who voted for a choice you didn't vote for" (CR 701.38a, 701.38d, Erestor of the Council, Model of Unity): the opponents of the
    * controller still in the game who, in the vote of this resolution or the vote that triggered this ability (the record of who voted for what), voted for at least one choice the
    * controller voted for (`same`) or for at least one the controller did not vote for (`different`); with several votes a player may be both. In the order of CR 101.4. Valid only
@@ -2669,6 +2674,13 @@ export type Effect =
        */
       readonly perVote?: string;
       /**
+       * "For each player who chose fame, gain control of a creature that player controls" (CR 101.4, 608.2d, Seize the Spotlight): one choice of `count` permanents for each player who chose the
+       * option `perChoice` in the latest `eachPlayerChooses` of this resolution, made by the controller of the ability, among the permanents the filter matches that THAT player controls (the
+       * filter's own `controller` is left out). The choices are all remembered under `id`. Valid only after such an effect that offers the option; with `exactly` the controller must choose
+       * (when the player controls a match); not with `chooser` or `perVote`.
+       */
+      readonly perChoice?: string;
+      /**
        * "Proliferate, then choose any number of permanents you control that had a counter put on them this way" (Ripples of Potential, CR 608.2d, 701.34a): the controller chooses none, some
        * or all of the candidates, so `count` is not a limit (write 1). Not with `exactly`.
        */
@@ -3015,6 +3027,18 @@ export type Effect =
        * knowing them.
        */
       readonly secret?: true;
+    }
+  /**
+   * "Each opponent chooses fame or fortune" (CR 101.4, 608.2d, Seize the Spotlight): each player `players` names chooses one of the `options` (two to eight distinct words with no rules
+   * meaning, each connected to an instruction the rest of the text gives), in the order of CR 101.4 (the active player first); a later player sees the earlier choices. It is a choice, not a
+   * vote (CR 701.38c): nothing is revealed together and "whenever players finish voting" does not trigger. Each player is asked with a `chooseOption` decision (`purpose` 'vote', the
+   * question marked `choice`). What each chose is kept for the rest of this resolution: the selector `eachPlayerWhoChose` and `chooseObjects.perChoice` read it; a later `eachPlayerChooses`
+   * replaces it. A player who has left the game is not asked.
+   */
+  | {
+      readonly kind: 'eachPlayerChooses';
+      readonly players: PlayerSelector;
+      readonly options: readonly string[];
     }
   /**
    * "Each player votes for a player" / "each player secretly votes for a creature you don't control" (CR 701.38a, 701.38b, Círdan the Shipwright, Trap the Trespassers): a vote whose choices
