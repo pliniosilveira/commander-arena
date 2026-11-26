@@ -35,6 +35,14 @@ export function checkInvariants(state: GameState): string[] {
     const obj = state.objects[id];
     if (!obj) problems.push(`${id} is listed in ${where} but is not an object`);
   };
+  // CR 726.3, 726.4: the initiative is a seat of the game, and while the game goes on one still in it.
+  if (state.initiative !== undefined && state.initiative !== null) {
+    const holder = state.seats[state.initiative];
+    if (holder === undefined)
+      problems.push(`the initiative is held by seat ${state.initiative}, which does not exist`);
+    else if (holder.hasLost && state.result === null)
+      problems.push('the player with the initiative has left the game');
+  }
   // CR 725.3, 725.4 (D-127): the monarch is a seat of the game, and while the game goes on one still in it.
   if (state.monarch !== null) {
     const monarch = state.seats[state.monarch];
@@ -164,12 +172,15 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 601.2h (D-183): the mana spent to cast a spell belongs to a spell, is at least 1 when present, and no card type has more of it than there is.
     if (obj.stack?.manaSpent !== undefined) {
-      const { total, fromTypes, snow } = obj.stack.manaSpent;
+      const { total, fromTypes, fromSubtypes, snow } = obj.stack.manaSpent;
       if (
         obj.stack.kind !== 'spell' ||
         !Number.isSafeInteger(total) ||
         total < 1 ||
         Object.values(fromTypes).some((n) => !Number.isSafeInteger(n) || n < 1 || n > total) ||
+        Object.values(fromSubtypes ?? {}).some(
+          (n) => !Number.isSafeInteger(n) || n < 1 || n > total,
+        ) ||
         (snow !== undefined && (!Number.isSafeInteger(snow) || snow < 1 || snow > total))
       ) {
         problems.push(`${id} has mana spent that it cannot have`);
@@ -205,6 +216,7 @@ export function checkInvariants(state: GameState): string[] {
           ? spellXCost(
               face,
               obj.stack.flashback ? 'flashback' : obj.stack.free ? 'free' : undefined,
+              obj.stack.kicked === true,
             )
           : obj.stack.ability?.kind === 'activated'
             ? abilityXCost(obj.stack.ability.cost)
@@ -369,15 +381,17 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${id} is on an Adventure but is not a card in exile`);
     }
     // CR 614.12a, 400.7 (D-100): a choice made as a permanent entered belongs to a permanent whose card
-    // or token asks that question, and is one of its options; it is gone when the permanent leaves.
+    // or token asks that question, and is one of its options; it is gone when the permanent leaves (phasing out is
+    // no change of zone: a phased-out permanent keeps it, CR 702.26b).
     if (obj.chosen !== undefined) {
-      const { creatureType, color, cardType, planeswalkerType, lifePaid } = obj.chosen;
+      const { creatureType, color, cardType, planeswalkerType, lifePaid, player, cardName } =
+        obj.chosen;
       const kinds = new Set(
         (obj.token === null ? faces.map((f) => f.abilities) : [obj.token.abilities]).map(
           entersChoice,
         ),
       );
-      if (obj.zone !== 'battlefield') {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
         problems.push(`${id} has a choice but is not on the battlefield`);
       }
       if (
@@ -400,12 +414,32 @@ export function checkInvariants(state: GameState): string[] {
       ) {
         problems.push(`${id} chose planeswalker type ${planeswalkerType}, which it cannot have`);
       }
+      // CR 614.12a: a chosen player is a seat of the game, and only a card that asks to choose a player has one.
+      if (
+        player !== undefined &&
+        (!state.seats.some((s) => s.id === player) || !kinds.has('player'))
+      ) {
+        problems.push(`${id} chose player ${player}, which it cannot have`);
+      }
       // CR 119.4: the life paid as it entered is a whole number, and only a card that asks to pay life has one.
       if (
         lifePaid !== undefined &&
         (!Number.isInteger(lifePaid) || lifePaid < 0 || !kinds.has('lifePaid'))
       ) {
         problems.push(`${id} paid ${lifePaid} life as it entered, which it cannot have`);
+      }
+      // CR 614.12a: a chosen player is a seat of the game, and a chosen name is a one-line text; only a card that asks for them has one.
+      if (
+        player !== undefined &&
+        (!Number.isInteger(player) ||
+          player < 0 ||
+          player >= state.seats.length ||
+          !kinds.has('player'))
+      ) {
+        problems.push(`${id} chose player ${player}, which it cannot have`);
+      }
+      if (cardName !== undefined && (cardName.trim() === '' || !kinds.has('cardName'))) {
+        problems.push(`${id} chose card name "${cardName}", which it cannot have`);
       }
       // D-151: a named option is one of those its card offers.
       const { option } = obj.chosen;

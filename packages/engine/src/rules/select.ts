@@ -12,7 +12,7 @@ import type {
   PlayerSelector,
   TargetSpec,
 } from '../ast/types';
-import type { CardType, Subtype } from '../characteristics';
+import type { CardType, Color, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { VoteCast } from '../state/decisions';
 import {
@@ -224,6 +224,17 @@ export function matchesFilter(
       });
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
+  // CR 113.7a (Green Slime): "from an artifact or enchantment source": the ability's source, as it is or as it last was, is an object the inner filter matches.
+  if (filter.abilitySource !== undefined) {
+    const { abilitySource, ...rest } = filter;
+    const source = obj.stack?.kind === 'ability' ? obj.stack.source : null;
+    const from = source === null ? null : objectOrLki(state, source);
+    return (
+      from !== null &&
+      matchesFilter(state, from, abilitySource, ctx) &&
+      matchesFilter(state, obj, rest, ctx)
+    );
+  }
   // CR 115.1, 601.2c: "that targets a player": one of the spell's chosen targets is a player.
   if (filter.targetsPlayer !== undefined) {
     const { targetsPlayer: _aimedAtPlayer, ...rest } = filter;
@@ -318,6 +329,10 @@ export function matchesFilter(
     ...(filter.manaValueBelow !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
       : {}),
+    // CR 105.1, 109.4 (Ringsight): the colors of the permanents "a legendary creature you control" names, now.
+    ...(filter.sharesColorWith === undefined
+      ? {}
+      : { sharedColors: colorsOfMatching(state, filter.sharesColorWith, ctx) }),
     attackersOfYou: attackersOfPlayer(state, ctx.controller),
     ...(filter.attackingYou === 'orPlaneswalkers' ||
     (filter.anyOf?.some((m) => m.attackingYou === 'orPlaneswalkers') ?? false)
@@ -353,6 +368,9 @@ export function matchesFilter(
       : {}),
     ...(filter.discardedOrFromLibraryThisTurn === true
       ? { discardedOrFromLibrary: state.turnLog.discardedOrFromLibrary ?? [] }
+      : {}),
+    ...(filter.putFromLibraryThisTurn === true
+      ? { fromLibrary: state.turnLog.graveyardedFromLibrary ?? [] }
       : {}),
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
@@ -411,6 +429,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.controllerDealtCombatDamageByAtLeast !== undefined ||
     f.putFromBattlefieldThisTurn === true ||
     f.discardedOrFromLibraryThisTurn === true ||
+    f.putFromLibraryThisTurn === true ||
     f.enteredThisTurn === true ||
     f.dealtDamageThisTurn === true ||
     f.exiledWithSource === true ||
@@ -418,6 +437,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.powerAtMostMoved === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
+    f.sharesColorWith !== undefined ||
     f.notTriggerCard === true ||
     f.otherThanTriggerSubject === true ||
     f.controller === 'defendingPlayer' ||
@@ -446,6 +466,22 @@ function readsSacrificedType(f: ObjectFilter): boolean {
 /** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the source of the ability (Titan of Littjara). */
 function readsSourceType(f: ObjectFilter): boolean {
   return f.sharesCreatureTypeWith === 'source' || (f.anyOf?.some(readsSourceType) ?? false);
+}
+
+/** The colors of the permanents on the battlefield that match the filter (`sharesColorWith`, CR 105.1): each color once. */
+function colorsOfMatching(
+  state: GameState,
+  filter: ObjectFilter,
+  ctx: SelectContext,
+): readonly Color[] {
+  const colors = new Set<Color>();
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = getObject(state, id);
+    if (matchesFilter(state, obj, { ...filter, zone: 'battlefield' }, ctx)) {
+      for (const c of derive(state, obj).colors) colors.add(c);
+    }
+  }
+  return [...colors];
 }
 
 /** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */
@@ -778,6 +814,19 @@ function legalTargetsOf(state: GameState, spec: TargetSpec, ctx: SelectContext):
       matchesFilter(state, obj, filter, matchingContext) &&
       canBeTargetedBy(state, obj, ctx.controller, ctx.source)
     ) {
+      // CR 115.1, 109.4, 608.2b (Breaking of the Fellowship): "another target creature that player controls": once the targets are chosen, the target stays legal only while the
+      // controller of the target of the slot named still controls it (a target that left the battlefield leaves the rule nothing to compare: that one is illegal by itself).
+      if (spec.sameControllerAs !== undefined) {
+        const named = (ctx.targets ?? []).find(
+          (t) => t.kind === 'object' && t.specId === spec.sameControllerAs,
+        );
+        if (named?.kind === 'object') {
+          const first = state.objects[named.id];
+          if (first !== undefined && first.zone === 'battlefield') {
+            if (controllerOf(state, first) !== controllerOf(state, obj)) continue;
+          }
+        }
+      }
       // D-149: a slot with one target for each opponent says whose each target is.
       // Hylda group 3: "with different controllers" says whose each target is as well.
       // CR 115.1, 608.2b: cards "from their graveyard": the graveyard of the player an earlier slot names. Once the targets are chosen (as the spell or ability
@@ -884,6 +933,12 @@ export function resolveObjects(
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
+    case 'putCountersOn': {
+      // CR 608.2c: the objects the `addCounters` effects of this resolution put counters on (of the kind the text names, when it names one), each once.
+      const byKind = ctx.thisWay?.countersPutOn ?? {};
+      const kinds = selector.counter === undefined ? Object.keys(byKind) : [selector.counter];
+      return [...new Set(kinds.flatMap((kind) => byKind[kind] ?? []))];
+    }
     case 'triggerSubject':
       return ctx.triggerSubject === undefined ? [] : [ctx.triggerSubject];
     case 'sacrificed':
@@ -901,6 +956,18 @@ export function resolveObjects(
         }
       }
       return ids;
+    }
+    case 'mostVotedObjects': {
+      // CR 701.38a, 701.38b (Council's Judgment): the permanents with the most votes, every one of a tie; a permanent that left the battlefield meanwhile is not read.
+      const votes = new Map<ObjectId, number>();
+      for (const c of ctx.voteCast ?? []) {
+        const id = objectOfOption(c.option);
+        if (id !== null && state.objects[id]?.zone === 'battlefield') {
+          votes.set(id, (votes.get(id) ?? 0) + 1);
+        }
+      }
+      const most = Math.max(0, ...votes.values());
+      return [...votes].filter(([, n]) => n === most).map(([id]) => id);
     }
     case 'sacrificedCost':
       // D-133, CR 602.2c: the permanents sacrificed as the cost of the ability that is resolving (gone now: last-known
@@ -1100,6 +1167,26 @@ export function resolvePlayers(
         ),
       );
     }
+    case 'eachPlayerControllingMore': {
+      // CR 102.1, 109.4, 101.4 (Oreskos Explorer): the other players who control more battlefield permanents matching the filter than the controller of the effect.
+      const filter = {
+        ...selector.filter,
+        zone: 'battlefield' as const,
+        controller: 'you' as const,
+      };
+      const battlefield = objectsInZone(state, 'battlefield');
+      const count = (seat: SeatId): number =>
+        battlefield.filter((id) =>
+          matchesFilter(state, getObject(state, id), filter, { ...ctx, controller: seat }),
+        ).length;
+      const mine = count(ctx.controller);
+      return apnapOrder(
+        state,
+        seatsInOrder(state, ctx.controller).filter(
+          (seat) => seat !== ctx.controller && count(seat) > mine,
+        ),
+      );
+    }
     case 'all':
       // D-131: "you and target opponent": the players the members name, each once, in APNAP order (CR 101.4).
       return apnapOrder(
@@ -1120,6 +1207,11 @@ export function resolvePlayers(
       // CR 508.5: the player the source creature attacks (or attacked), D-110.
       const seat = defendingPlayerOfAbility(state, ctx);
       return seat === null ? [] : [seat];
+    }
+    case 'enteredChosenPlayer': {
+      // CR 614.12a, 607.2d (Stuffy Doll): the player the permanent chose as it entered, read from it or from its last-known information; nobody when it has left the game.
+      const seat = chosenOf(state, ctx.source)?.player;
+      return seat === undefined || getSeat(state, seat).hasLost ? [] : [seat];
     }
     case 'chosenPlayer':
       // The Black Gate: the player the `choosePlayer` before it chose; nobody when it has left the game.
@@ -1183,6 +1275,16 @@ export function resolvePlayers(
         seatsInOrder(state, ctx.controller).filter(
           (seat) => !cast.some((c) => seatOfOption(c.option) === seat),
         ),
+      );
+    }
+    case 'eachPlayerWhoChose': {
+      // CR 101.4, 608.2d (Seize the Spotlight): the players still in the game who chose the option in the latest `eachPlayerChooses` of this resolution.
+      const cast = ctx.voteCast ?? [];
+      return apnapOrder(
+        state,
+        cast
+          .filter((c) => c.option === selector.option && !getSeat(state, c.seat).hasLost)
+          .map((c) => c.seat),
       );
     }
     case 'eachOpponentWhoVoted': {
@@ -1292,12 +1394,14 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'eachOtherOpponent' ||
     sel.kind === 'eachPlayerExcept' ||
     sel.kind === 'eachPlayerControlling' ||
+    sel.kind === 'eachPlayerControllingMore' ||
     sel.kind === 'all' ||
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'playerToYourRight' ||
     sel.kind === 'chosenPlayer' ||
+    sel.kind === 'enteredChosenPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||

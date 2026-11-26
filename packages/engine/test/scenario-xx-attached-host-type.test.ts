@@ -191,6 +191,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'ward',
         // D-478: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.
         'decayed',
+        // CR 702.93: undying, granted to creatures; each instance triggers separately.
+        'undying',
       ].sort(),
     );
     for (const excluded of ['flash', 'protection', 'cycling', 'enchant', 'equip']) {

@@ -9,6 +9,7 @@ import type {
   ObjectRef,
   ObjectSelector,
   PlayerSelector,
+  PlayUntil,
   SpellMode,
   TargetSpec,
 } from '@commander-arena/engine';
@@ -31,6 +32,11 @@ export interface LowerContext {
    * permanent came from (the engine's `enteredX`), which `validateCard` checks against the {X} of the card's mana cost; it does not make the ability read an announced X.
    */
   entersX: boolean;
+  /**
+   * True in the body of "When ~ becomes monstrous, ..." (every event of the trigger is the permanent itself becoming monstrous, Death Kiss, CR 701.37c): an X there is the X of the
+   * monstrosity that made it monstrous (the engine's `monstrousX`), which `validateCard` checks against a "Monstrosity X" of the face; it does not make the ability read an announced X.
+   */
+  monstrousX: boolean;
   /**
    * True when the permanent the ability is on is gone by the time the effect runs: a "dies"
    * trigger of `~` itself, or an ability whose cost sacrifices `~` (CR 400.7: it is a new object
@@ -110,6 +116,8 @@ export interface LowerContext {
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
   /** The sentence of "If they don't" after a "may" sentence the asked player does themselves is being lowered: "they" and "that player" are the player who declined (`declinedPlayer`). */
   declinedPlayer: boolean;
+  /** The clauses of a sentence "each player may ..." that the player asked does as "you" (`runsAs: 'chooser'`) are being lowered: "a creature they control" is then the asked player's own (CR 101.4, 608.2d). */
+  askedActs: boolean;
   /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
   attackedPlayer: {
     readonly selector: PlayerSelector;
@@ -219,6 +227,21 @@ export interface LowerContext {
    */
   itIsCard: boolean;
   /**
+   * True in the body of "Whenever a permanent deals damage to you, return it to its owner's hand" (Dissipation Field, CR 120.3, 400.7): every event of the trigger is a
+   * permanent dealing damage, so "it" is that permanent (the engine's `triggerSubject`, read from last-known information once it has left, where nothing is moved).
+   */
+  itIsDamageSource: boolean;
+  /**
+   * True when every event of the trigger is a creature becoming blocked or unblocked (CR 509.1h, 509.3c): the permanent the trigger is about is still on the battlefield, in combat, when the
+   * ability resolves, so "it" in "return it to its owner's hand" names it (the engine's `triggerSubject`; a permanent that left meanwhile is a new object, CR 400.7, and nothing moves).
+   */
+  itStaysInCombat: boolean;
+  /**
+   * The one player the instruction being lowered is about, where "their" in a count names them ("defending player loses 1 life for each card in their graveyard", CR 108.3, 404.1): set only
+   * while the amount of a loss of life is lowered, for a player the engine can name as one (a target, the defending player, the player of the trigger); null anywhere else.
+   */
+  theirPlayer: PlayerSelector | null;
+  /**
    * True in the body of "When ~ is put into a graveyard from anywhere" (Troyan 2 deck, CR 603.6c, 400.7): "it" is the card of the ability itself, in the graveyard it is in as the
    * ability resolves, which the engine names `this` (the ability is found on that card).
    */
@@ -278,6 +301,10 @@ export interface LowerContext {
   exiled: 'top' | 'cast' | 'milled' | 'cards' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
+  /** True when the controller looked at the face-down card as it was exiled (Thief of Sanity, Gonti, Siphon Insight: `lookAtTop` then "exile it face down"): they may go on looking at it, CR 406.3. */
+  exiledLookedAt: boolean;
+  /** How long the last `mayPlay` of this text lasts (Ignite the Future: "you may play cards this way without paying their mana costs" lasts as the permission before it does), or null. */
+  mayPlayLasts: PlayUntil | null;
   /**
    * What "that many" counts (stage P34, D-152): the permanents the last instruction that sacrificed some sacrificed, or the cards the last
    * "discard any number of cards" discarded. The engine's `thisWay` names which.
@@ -289,6 +316,8 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** Every trigger of the ability is "is dealt excess damage" (CR 120.10): "that excess damage" is the amount of its event. */
+  excessDamageTrigger: boolean;
   /** True while the reflexive ability of a payment made any number of times is lowered (issue 121, CR 603.12): the number of times paid is the number its event carries. */
   payReflexive: boolean;
   /** True while the "If you do" sentence of "you may pay one or more {E}" is lowered (issue 105, CR 107.14, 608.2c): "that many" is the number of energy counters paid, the X of the payment. */
@@ -345,6 +374,11 @@ export interface LowerContext {
    * that player does the same" makes the same tokens for other players. Null after any other clause.
    */
   createdToken: Extract<Effect, { kind: 'createToken' }> | null;
+  /**
+   * The plain `draw` the clause before it lowered to, when it was the only effect and drew for the controller (Curse of Verbosity): "Each opponent attacking that player does the
+   * same" makes the other players draw. Null after any other clause.
+   */
+  drewCards: Extract<Effect, { kind: 'draw' }> | null;
   /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
@@ -451,6 +485,7 @@ export function newContext(
     targets: [],
     usesX: false,
     entersX: false,
+    monstrousX: false,
     selfGone: false,
     costSacrifice: null,
     staticSubjectIsSelf: false,
@@ -469,6 +504,7 @@ export function newContext(
     lowered: 0,
     thatPlayer: null,
     declinedPlayer: false,
+    askedActs: false,
     attackedPlayer: null,
     attackBatchPlayer: null,
     enchantedPlayerTrigger: false,
@@ -477,10 +513,13 @@ export function newContext(
     xDefined: false,
     exiled: null,
     exiledFaceDown: false,
+    exiledLookedAt: false,
+    mayPlayLasts: null,
     thisWay: 'sacrificed',
     discardedCardValue: false,
     lifeGainTrigger: false,
     scryTrigger: false,
+    excessDamageTrigger: false,
     payReflexive: false,
     payEnergyX: false,
     triggeredBody: false,
@@ -499,6 +538,7 @@ export function newContext(
     milledBefore: false,
     destroyed: false,
     createdToken: null,
+    drewCards: null,
     movedToHand: false,
     exiledAnyCardTypes: false,
     exiledOwnGraveyards: false,
@@ -532,6 +572,9 @@ export function newContext(
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,
+    itIsDamageSource: false,
+    itStaysInCombat: false,
+    theirPlayer: null,
     selfGraveyardEntry: false,
     auraDies: false,
     returnedDyingCard: false,
@@ -610,7 +653,7 @@ export interface FaceCosts {
   readonly additionalCosts: readonly Cost[];
   readonly alternativeCosts: readonly AlternativeCost[];
   /** "Sacrifice an artifact or creature or pay {4}" (stage P38, D-182): the face's `additionalCostChoice`. */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /** The abilities the line makes besides the cost (D-492): "When you do, copy ~ for each creature sacrificed this way" is a "When you cast this spell" ability of the card. */
   readonly abilities?: readonly Ability[];
 }

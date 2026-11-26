@@ -124,8 +124,8 @@ describe('static.additional-cost: "As an additional cost to cast ~, ..." (CR 118
       },
     ],
     [
-      'As an additional cost to cast this spell, discard a creature card.',
-      { stoppedAt: 'creature card.', closestRule: 'cost.discard', reason: 'unrecognised' },
+      'As an additional cost to cast this spell, discard a Goblin card.',
+      { stoppedAt: 'Goblin card.', closestRule: 'cost.discard', reason: 'unrecognised' },
     ],
     [
       'As an additional cost to cast this spell, you may sacrifice a creature.',

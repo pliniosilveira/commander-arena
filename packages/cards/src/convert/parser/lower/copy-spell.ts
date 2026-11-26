@@ -6,11 +6,12 @@
  * targets for the copy" is `newTargets: 'may'`, its absence `'no'`. Which spells can be copied from where is
  * `validateCard`'s refusal (a trigger that is not about a cast, a target slot the ability does not declare).
  */
-import type { Amount, Effect, ObjectFilter, ObjectRef } from '@commander-arena/engine';
+import type { Ability, Amount, Effect, ObjectFilter, ObjectRef } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
 import { missingFeatures } from './features';
 import { lowerFilter, objectRefOf } from './nouns';
+import { lowerTokenAbility } from './tokens';
 import type { Lowering } from './types';
 
 export const COPY_SPELL: Lowering<IrClause, Effects> = {
@@ -85,6 +86,20 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       if (missing.length > 0) return failure(clause, missing);
       newTarget = { kind: 'moved' };
     }
+    // "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 613.1f): what the token has.
+    let permanentGains: readonly Ability[] | undefined;
+    const quoted = arg(clause, 'quoted');
+    if (quoted !== undefined) {
+      if (quoted.kind !== 'quoted' || spell.kind !== 'triggerSubject' || count !== undefined) {
+        return failure(clause);
+      }
+      if (forEach !== undefined || newTarget !== undefined) return failure(clause);
+      const missing = missingFeatures(['effect:copySpell', 'ability:copySpellPermanentGains']);
+      if (missing.length > 0) return failure(clause, missing);
+      const ability = lowerTokenAbility(quoted, ['permanent'], [], ctx);
+      if (!ability.ok) return ability;
+      permanentGains = [{ kind: 'keyword', keyword: { kind: 'haste' } }, ability.value];
+    }
     // "..., then return it to its owner's hand" (Narset's Reversal, CR 400.3): after the copy the target spell leaves the stack for its owner's hand.
     const returnIt = arg(clause, 'returnIt');
     if (returnIt !== undefined && (spell.kind !== 'target' || count !== undefined)) {
@@ -143,6 +158,7 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
           ...(forEach === undefined ? {} : { forEach }),
           ...(copier === undefined ? {} : { copier }),
           ...(newTarget === undefined ? {} : { newTarget }),
+          ...(permanentGains === undefined ? {} : { permanentGains }),
         },
         ...(returnIt === undefined
           ? []

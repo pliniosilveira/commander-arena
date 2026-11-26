@@ -12,7 +12,6 @@ import {
   phaseLabel,
   playBlockers,
   progressFraction,
-  sampleOf,
   splitNameProblems,
   validationSummary,
 } from '../src/ui/import/model';
@@ -204,17 +203,6 @@ describe('name problems and play blockers', () => {
   });
 });
 
-describe('sample', () => {
-  test('is the real list of the first installed precon, and nothing when none is installed', () => {
-    expect(sampleOf([])).toBeNull();
-    const first = { name: 'SYNTHETIC one', decklist: 'Commander\n1 X\n' };
-    expect(sampleOf([first, { name: 'SYNTHETIC two', decklist: 'y' }])).toEqual({
-      name: 'SYNTHETIC one',
-      text: 'Commander\n1 X\n',
-    });
-  });
-});
-
 describe('entries', () => {
   test('entry helper keeps counts', () => {
     expect(entry(BEAR, 3).count).toBe(3);
@@ -241,7 +229,7 @@ describe('diagnostics v2 in words', () => {
   test('each reason has its own plain statement', () => {
     expect(reasonStatement(first(SEER))).toBe('The grammar does not read this wording yet.');
     expect(reasonStatement(first(ENGINE_GAP))).toMatch(
-      /^The grammar reads this, but the engine cannot run it yet: needs token: Blood\.$/,
+      /^The grammar reads this, but the engine cannot run it yet: needs manaCost: discard\.$/,
     );
     expect(reasonStatement(first(UNBOUND))).toBe(
       "The grammar could not tell what 'those cards' refers to.",

@@ -15,7 +15,15 @@ import { matchesFilter } from './select';
 
 type CopyRule = Extract<Replacement, { kind: 'entersAsCopy' }>;
 
-/** The permanents on the battlefield (or, with `fromGraveyard`, the cards of the controller's graveyard) the entering permanent may become a copy of (`source` is the object that enters or, for a token, what creates it). */
+/** Whether what is copied is a card in a graveyard rather than a permanent on the battlefield (Federation Fleet: the controller's own; The Mimeoplasm: any). */
+export function copiesFromGraveyard(rule: CopyRule): boolean {
+  return rule.fromGraveyard === true || rule.exileTwoFromGraveyards !== undefined;
+}
+
+/**
+ * The permanents on the battlefield (or, with `fromGraveyard`, the cards of the controller's graveyard; with `exileTwoFromGraveyards`, the cards of every graveyard, as long as there are
+ * two of them) the entering permanent may become a copy of (`source` is the object that enters or, for a token, what creates it).
+ */
 export function copyCandidates(
   state: GameState,
   seat: SeatId,
@@ -23,16 +31,34 @@ export function copyCandidates(
   source: ObjectId | null,
 ): ObjectId[] {
   // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the cards of the graveyard of the controller.
+  // CR 614.12, 707.9b (The Mimeoplasm): "exile two creature cards from graveyards": the cards of every graveyard, in turn order from the controller's.
   const pool =
-    rule.fromGraveyard === true ? (state.seats[seat]?.graveyard ?? []) : state.battlefield;
-  const zone = rule.fromGraveyard === true ? 'graveyard' : 'battlefield';
-  return pool.filter((id) => {
+    rule.exileTwoFromGraveyards !== undefined
+      ? state.seats.flatMap((_, i) => state.seats[(seat + i) % state.seats.length]?.graveyard ?? [])
+      : rule.fromGraveyard === true
+        ? (state.seats[seat]?.graveyard ?? [])
+        : state.battlefield;
+  const zone = copiesFromGraveyard(rule) ? 'graveyard' : 'battlefield';
+  const found = pool.filter((id) => {
     const candidate = state.objects[id];
     return (
       candidate !== undefined &&
       matchesFilter(state, candidate, { ...rule.what, zone }, { controller: seat, source })
     );
   });
+  // "You can't choose to exile just one creature card": with fewer than two such cards nothing is asked and the permanent enters as itself.
+  return rule.exileTwoFromGraveyards !== undefined && found.length < 2 ? [] : found;
+}
+
+/** The cards that may be the other one of The Mimeoplasm's two, once `copied` is the one it copies: every candidate but it. */
+export function copyPairOthers(
+  state: GameState,
+  seat: SeatId,
+  rule: CopyRule,
+  copied: ObjectId,
+  source: ObjectId | null,
+): ObjectId[] {
+  return copyCandidates(state, seat, rule, source).filter((id) => id !== copied);
 }
 
 /**
@@ -49,7 +75,7 @@ export function becomeCopyAsItEnters(
   embalmed = false,
 ): { state: GameState; events: GameEvent[]; counterEvents: GameEvent[] } {
   const original = state.objects[copied];
-  if (original?.zone !== (rule.fromGraveyard === true ? 'graveyard' : 'battlefield')) {
+  if (original?.zone !== (copiesFromGraveyard(rule) ? 'graveyard' : 'battlefield')) {
     return { state, events: [], counterEvents: [] };
   }
   // CR 707.9b, 702.128b: "except if this creature was embalmed, the token has no mana cost, it's white, ...": exceptions only an embalmed token has.
@@ -61,11 +87,13 @@ export function becomeCopyAsItEnters(
   // CR 707.9b (issue 103): "except it's a Dragon in addition to its other types": the creature types of the exception are part of the copiable values.
   // CR 707.9b, 205.1b (Phyrexian Metamorph): "except it's an artifact in addition to its other types": the card types of the exception are part of the copiable values too.
   const excepted =
-    rule.addSubtypes === undefined && rule.addTypes === undefined
+    rule.addSubtypes === undefined && rule.addTypes === undefined && rule.notLegendary !== true
       ? withEmbalm
       : withCopyExceptions(withEmbalm, {
           ...(rule.addSubtypes === undefined ? {} : { addSubtypes: rule.addSubtypes }),
           ...(rule.addTypes === undefined ? {} : { addTypes: rule.addTypes }),
+          // CR 707.9b, 205.4a (Spark Double): "except it isn't legendary".
+          ...(rule.notLegendary === true ? { notLegendary: true as const } : {}),
         });
   // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types": the name the card has itself, and the supertypes added.
   const own = rule.keepName === true ? state.objects[entering] : undefined;
@@ -102,6 +130,8 @@ export function becomeCopyAsItEnters(
             abilities: [
               ...values.abilities,
               ...(rule.gains ?? []).map((keyword) => ({ kind: 'keyword' as const, keyword })),
+              // CR 707.9b (Mocking Doppelganger): "except it has \"...\"": the abilities of the exception are copiable values too.
+              ...(rule.addStatics ?? []),
             ],
             ...(values.doors === undefined ? {} : { doors: values.doors }),
           },

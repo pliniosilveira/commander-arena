@@ -34,6 +34,7 @@ import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
 import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
+import { TIME_COUNTER } from './time-counter';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
 /** A prime number: a whole number of 2 or more with no divisor but 1 and itself (`amountIsPrime`); 0, 1 and negative numbers are not. */
@@ -190,6 +191,11 @@ export function evaluateCondition(
       if (ctx.costSacrificed !== undefined) return ctx.costSacrificed.length > 0;
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
+    }
+    case 'castForAlternative': {
+      // CR 118.9, 608.2c (Baleful Mastery): "If the {1}{B} cost was paid": the spell carries the alternative cost on the stack (a copy of it too); last-known information says once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && source.stack?.alt === condition.alternative;
     }
     case 'foretold': {
       // CR 702.143a (Foretell): a spell cast for its foretell cost carries the alternative cost on the stack; last-known information says once it has left (CR 113.7a).
@@ -489,6 +495,14 @@ export function evaluateCondition(
       );
       return named.some((seat) => holders.includes(seat));
     }
+    case 'completedDungeon':
+      // CR 309.7, 701.49c (Sarevok's Tome): a player who completed a dungeon at some time in the game.
+      return resolvePlayers(
+        state,
+        condition.player,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      ).some((seat) => (getSeat(state, seat).dungeonsCompleted ?? 0) > 0);
     case 'maxSpeed': {
       // CR 702.179e: speed is 4. (The validator lets a condition name only players that need neither a target nor the trigger subject.)
       return resolvePlayers(
@@ -551,6 +565,9 @@ export function evaluateCondition(
       return state.turnLog.graveyardEntries.some(
         (e) => e.seat === ctx.controller && e.types.some(isPermanentType),
       );
+    case 'playedLandThisTurn':
+      // CR 305.1, 305.2: the land plays of the controller this turn (a land put onto the battlefield by an effect is not played).
+      return getSeat(state, ctx.controller).landsPlayedThisTurn > 0;
     case 'manaSpentAtLeast': {
       // CR 601.2h (D-206): the spell that caused the cast trigger, as it is on the stack.
       const spell =
@@ -655,6 +672,11 @@ export function evaluateCondition(
         ? counts.every((n) => n === 0)
         : counts.some((n) => n >= (condition.atLeast ?? 1));
     }
+    case 'loyaltyAbilityActivatedThisTurn':
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, whatever happened to its permanent since.
+      return state.turnLog.activated.some(
+        (a) => a.loyalty === true && a.activator === ctx.controller,
+      );
     case 'attackedWithCreaturesThisTurn':
       // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
       return (
@@ -703,6 +725,18 @@ export function evaluateCondition(
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
     }
+    case 'thisSuspended': {
+      // CR 702.62b, 603.4, 400.7: the card itself is in exile, has Suspend and a time counter; read live, a card that left exile is another object.
+      const card = ctx.source === null ? undefined : state.objects[ctx.source];
+      return (
+        card !== undefined &&
+        card.zone === 'exile' &&
+        (card.counters[TIME_COUNTER] ?? 0) >= 1 &&
+        derive(state, card).abilities.some(
+          (a) => a.kind === 'keyword' && a.keyword.kind === 'suspend',
+        )
+      );
+    }
     case 'thisOnBattlefield': {
       // CR 603.4, 400.7 (Animate Dead): "if it's on the battlefield": the live object, which is a new one elsewhere once it has left.
       const from = ctx.source === null ? undefined : state.objects[ctx.source];
@@ -730,6 +764,13 @@ export function evaluateCondition(
         playerStatOf(state, ctx.controller, condition.stat)
       );
     }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): the creature the event is about was required to attack as this combat's attackers were declared.
+      if (ctx.triggerSubject === undefined) return false;
+      return (state.combat?.attackers ?? []).some(
+        (a) => a.object === ctx.triggerSubject && a.hadToAttack === true,
+      );
+    }
     case 'subjectControlledByYou': {
       // CR 603.10a, 608.2h, 109.4: "if you control that creature": the permanent the event is about, under the control it has now or had as it left.
       if (ctx.triggerSubject === undefined) return false;
@@ -755,6 +796,21 @@ export function evaluateCondition(
         if (theirs !== null && theirs >= mine) return false;
       }
       return true;
+    }
+    case 'subjectMatches': {
+      // CR 603.10a, 113.7a (Endless Evil): "if that creature was a Horror": the permanent the event is about, as it is or as it last was once it has left, against the filter in the
+      // zone it is in (a creature that died is read from its last-known information, with the types it had on the battlefield).
+      if (ctx.triggerSubject === undefined) return false;
+      const subject = objectOrLki(state, ctx.triggerSubject);
+      return (
+        subject !== null &&
+        matchesFilter(
+          state,
+          subject,
+          { ...condition.filter, zone: subject.zone },
+          { controller: ctx.controller, source: ctx.source },
+        )
+      );
     }
     case 'subjectStat': {
       // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.

@@ -89,6 +89,8 @@ const SAYABLE: ReadonlySet<string> = new Set([
   // D-133: nontoken, non-Zombie, colorless, with and without a keyword.
   'token',
   'notSubtypes',
+  // CR 700.12: "outlaw" and "non-outlaw".
+  'outlaw',
   'colorless',
   'notColors',
   'keywords',
@@ -136,6 +138,7 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
     // D-135 (CR 205.4): "a nonbasic land".
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
+    filter.outlaw === true ? 'outlaw' : filter.outlaw === false ? 'non-outlaw' : '',
     filter.colorless === true ? 'colorless' : '',
     (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),
     (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' and '),
@@ -435,7 +438,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
             : '';
       // D-151 (CR 500.8): "attacks for the first time each turn", not again in an additional combat phase.
       const first = trigger.firstTimeEachTurn === true ? ' for the first time each turn' : '';
-      return `Whenever ${what} attacks${aim}${trigger.alone ? ' alone' : ''}${first}`;
+      // CR 508.5: "..., if you're the defending player".
+      const defending = trigger.at === 'defendingYou' ? ", if you're the defending player" : '';
+      return `Whenever ${what} attacks${aim}${trigger.alone ? ' alone' : ''}${first}${defending}`;
     }
     case 'dealtDamage': {
       // D-133 (CR 120.3): once for each source that damages the permanent.
@@ -453,6 +458,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       // CR 509.1h (D-120): once for each attacking creature that has a blocker.
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes blocked`;
+    }
+    case 'becomesUnblocked': {
+      // CR 509.1h: each attacking creature that no creature blocks.
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} attacks and isn't blocked`;
     }
     case 'becomesBlockedBy': {
       // CR 509.3d, 702.25a (Flanking): once for each creature that blocks it; only the creature without flanking has words.
@@ -510,6 +520,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes monstrous`;
     }
+    case 'milled': {
+      // CR 701.17a, 603.2c: "Whenever a player mills one or more creature cards"; a filter the words do not cover leaves the trigger unsaid.
+      const who =
+        trigger.who === 'you' ? 'you' : trigger.who === 'opponent' ? 'an opponent' : 'a player';
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const said = base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards');
+      return `Whenever ${who} mill${trigger.who === 'you' ? '' : 's'} ${said}`;
+    }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =
@@ -536,6 +555,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'doorUnlocked':
       // CR 709.5h (Room): the half whose text has the ability.
       return 'When you unlock this door';
+    case 'exploits':
+      // CR 702.110b (Exploit): the creature with the ability.
+      return 'When this creature exploits a creature';
     case 'leftGraveyard': {
       // D-229 (CR 400.7, 603.2c): "one or more cards leave your graveyard", "a creature card leaves your graveyard".
       const base = trigger.filter === undefined ? 'a card' : discardedCardWords(trigger.filter);
@@ -642,6 +664,8 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
+      // CR 607.2d (Sewer Nemesis): "the chosen player" is a choice the card made as it entered; the card's own text says it.
+      if (trigger.by === 'chosenPlayer') return null;
       // Quandrix Unlimited group E (CR 601.2i): "your first spell with {X} in its mana cost each turn" says nothing else about the spell; with more words it cannot be said here.
       if (trigger.filter.firstXSpellThisTurn === true) {
         const { firstXSpellThisTurn: _first, ...rest } = trigger.filter;
@@ -650,6 +674,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         const caster =
           trigger.by === 'you' ? 'you cast your' : `${BY_WORDS[trigger.by]} casts their`;
         return `Whenever ${caster} first spell with {X} in its mana cost each turn`;
+      }
+      // CR 601.2i, 603.2 (Ghostly Pilferer): "casts a spell from anywhere other than their hand" says nothing else about the spell; with more words it cannot be said here.
+      if (trigger.filter.notCastFromHand === true) {
+        const { notCastFromHand: _notHand, ...rest } = trigger.filter;
+        if (!Object.keys(rest).every((k) => k === 'stackKind') || trigger.nth !== undefined) {
+          return null;
+        }
+        const caster = trigger.by === 'you' ? 'you cast' : `${BY_WORDS[trigger.by]} casts`;
+        return `Whenever ${caster} a spell from anywhere other than ${trigger.by === 'you' ? 'your' : 'their'} hand`;
       }
       const spell = filterPhrase(trigger.filter, 'spell', ctx.self);
       if (spell === null) return null;
@@ -676,6 +709,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'exerted':
       // CR 701.43d, 607.2h: "You may exert ~ as it attacks. When you do, ...": the creature was exerted.
       return 'When you exert this creature as it attacks';
+    case 'dungeonCompleted':
+      // CR 309.7, 701.49c: each time your dungeon is completed.
+      return 'Whenever you complete a dungeon';
     case 'ringTempted':
       // D-196 (CR 701.54d): each time the Ring tempts you, whatever you could choose.
       return 'Whenever the Ring tempts you';
@@ -685,6 +721,18 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
       return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
+    case 'entersCausesTrigger': {
+      // CR 603.2, 603.6a (Aboleth Spawn): the creature's own enters ability, as it triggers.
+      const what = filterPhrase(trigger.what);
+      if (what === null) return null;
+      const whose =
+        trigger.who === 'you'
+          ? 'your'
+          : trigger.who === 'opponent'
+            ? "an opponent's"
+            : "a player's";
+      return `Whenever ${what} entering under ${whose} control causes a triggered ability of that creature to trigger`;
+    }
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;
@@ -744,6 +792,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           if (trigger.who === 'any') return 'Whenever a player attacks you';
         }
         return null;
+      }
+      // Loot Dispute (CR 726.1, 508.1b): "Whenever you attack the player who has the initiative".
+      if (trigger.attackedInitiativeHolder === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever you attack the player who has the initiative'
+          : null;
       }
       // Frontline Medic (CR 508.1): "Whenever this creature and at least two other creatures attack".
       if (trigger.includesSource === true) {

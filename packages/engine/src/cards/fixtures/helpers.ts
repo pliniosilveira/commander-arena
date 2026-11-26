@@ -28,7 +28,7 @@ export interface SingleFaceInput {
   /** Additional costs to cast (CR 118.8, D-095). */
   readonly additionalCosts?: readonly Cost[];
   /** "Sacrifice an artifact or creature or pay {4}" (CR 118.8, D-181). */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /** Alternative costs (CR 118.9, D-095). */
   readonly alternativeCosts?: readonly AlternativeCost[];
 }

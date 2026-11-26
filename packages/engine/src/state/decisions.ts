@@ -131,6 +131,11 @@ export interface TargetsDecision extends DecisionBase {
    */
   readonly forTrigger?: true;
   /**
+   * With `forTrigger` (Bladegriff Prototype, CR 603.3d, `TargetSpec.chosenBy`): the seat that controls the triggered ability when another player (the decision's `seat`) chooses its target.
+   * Absent when the controller chooses.
+   */
+  readonly forController?: SeatId;
+  /**
    * True when `source` is a copy of a spell that was just put on the stack and its controller may choose new targets
    * for it (CR 707.10c, D-129). The copy has `current` targets; the answer is any set within the slots' bounds in which
    * each target is a legal one or is the target the copy has in that slot (the player may leave any number of targets
@@ -186,6 +191,8 @@ export interface TargetChoiceSpec {
   readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /** "Another target creature that player controls" (`TargetSpec.sameControllerAs`, CR 115.1, 109.4): every target of this slot has the controller (the `group` of the legal list) of the target chosen for the slot with this id. */
+  readonly sameControllerAs?: string;
   /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes, or, with `TargetSpec.alsoDifferentFrom`, more earlier slots of the ability: "a third target creature"). */
   readonly differentFromAll?: readonly string[];
   /**
@@ -344,6 +351,8 @@ export interface DeclareAttackersDecision extends DecisionBase {
    * that leaves one out is illegal. Always present, empty when nothing is required.
    */
   readonly mustAttack: readonly ObjectId[];
+  /** "No more than one creature can attack each combat" (CR 508.1c, Silent Arbiter): the most creatures that may be declared. Absent with no limit. */
+  readonly maxAttackers?: number;
   /**
    * What attacking costs (D-125, CR 508.1h), present only when some target is taxed ("Creatures can't attack you
    * unless their controller pays {2} for each creature they control that's attacking you"): for each taxed
@@ -377,6 +386,8 @@ export interface DeclareBlockersDecision extends DecisionBase {
     /** "Must be blocked if able" (D-206, CR 509.1c): a declaration that could block it and does not is refused. */
     readonly mustBeBlocked?: true;
   }[];
+  /** "No more than one creature can block each combat" (CR 509.1b, Silent Arbiter): the most creatures this declaration may block with (the limit less those already declared). Absent with no limit. */
+  readonly maxBlockers?: number;
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
@@ -453,6 +464,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'proliferate'
     | 'auraHost'
     | 'entersCopy'
+    | 'entersCopyOther'
+    | 'cipher'
     | 'devour'
     | 'entersRemoveCounters'
     | 'ringBearer'
@@ -476,6 +489,11 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'entersCopy'` (D-151, CR 707.9, 614.12: "As this artifact enters, you may have it become a copy of any creature on the battlefield"): `seat`, the
    * player the permanent `subject` enters under, chooses which permanent of `legal` it becomes a copy of; `min` is 0 when that is optional, `max` 1. The
    * permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'entersCopyOther'` (The Mimeoplasm, CR 614.12, 707.9b: "you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards with a number of additional +1/+1
+   * counters on it equal to the power of the other card"): asked after `'entersCopy'` chose the card to copy, `seat` chooses which of the other cards in `legal` (those of every graveyard that match) is the second one
+   * exiled, whose power is the number of counters; exactly one. The permanent has not entered yet: `source` and `subject` are the object it is now.
+   * For `'cipher'` (CR 702.99: "Then you may exile this spell card encoded on a creature you control"): `seat`, the controller of the resolving spell `subject` (= `source`), chooses which creature of
+   * `legal` (all they control) the card is encoded on; `min` is 0 (the "may") and `max` 1. Asked as the spell has done everything else, before the card is put into exile or the graveyard.
    * For `'entersRemoveCounters'` (Sin, Unending Cataclysm, CR 614.12, 122.1: "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments"): `seat`, the player the
    * permanent `subject` enters under, chooses which of the permanents in `legal` (those of every player that have a counter and match the filter) lose every counter; `min` is 0 and `max` is
    * `legal.length`, and the permanent enters with counters for the number removed. The permanent has not entered yet: `source` and `subject` are the object it is now, or, for a token, the spell or
@@ -584,7 +602,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
  * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-660)
  * the question is asked again after each spell cast. `'opponentChoice'` (D-660, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
- * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
+ * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1). `'handChoice'` (Extract Brain, CR 608.2d, 402.3, "Target opponent chooses X cards from their hand"):
+ * `seat` is the player who chooses, `legal` the cards of their own hand (`zone` 'hand'), and exactly `min` = `max` of them are chosen; the cards stay hidden (`reveal` false).
  */
 export interface ChooseCardsDecision extends DecisionBase {
   readonly kind: 'chooseCards';
@@ -606,7 +625,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'copy'
     | 'pair'
     | 'separate'
-    | 'opponentChoice';
+    | 'opponentChoice'
+    | 'handChoice';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile' | 'command';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;
@@ -810,6 +830,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'exileMore'
     | 'exert'
     | 'clash'
+    // CR 103.6: "If this card is in your opening hand, you may begin the game with it on the battlefield": `source` is the card in `seat`'s hand; accepting puts it onto the battlefield.
+    | 'openingHand'
     | 'searchPut';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
@@ -849,6 +871,12 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    */
   readonly otherCost?: readonly Cost[];
   /**
+   * For purpose `'costChoice'` with three ways ("sacrifice a creature, discard a card, or pay 4 life", D-181): `cost` is the first, `otherCost` the second and `moreCost` the third; declining the
+   * first asks again between the second and the third. `costWays` are the indexes of the ways in the face's `additionalCostChoice` that the question is about (two or three).
+   */
+  readonly moreCost?: readonly Cost[];
+  readonly costWays?: readonly number[];
+  /**
    * For purpose `'unlessPays'` when the question is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a) or
    * `'cumulativeUpkeep'` (CR 702.24a; `cost` is the whole payment, the cost of the keyword for each age counter
    * the source now has). Declining sacrifices the source. Absent for every other question.
@@ -887,6 +915,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'cardType'
     | 'planeswalkerType'
     | 'lifePaid'
+    // CR 614.12a, 607.2d: "As this enters, choose a player": the options are `seat:<n>`. `cardName`: "choose a nonland card name": `options` are suggestions (names the game shows), any non-empty name is an answer.
+    | 'player'
+    | 'cardName'
     | 'option'
     | 'attackTarget'
     | 'assignOpponent'
@@ -998,7 +1029,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly first: readonly ObjectId[];
     readonly second: readonly ObjectId[];
     readonly chosenTo: 'hand' | 'graveyard';
-    readonly otherTo: 'hand' | 'graveyard';
+    readonly otherTo: 'hand' | 'graveyard' | 'libraryBottom';
     readonly separator: SeatId;
     readonly receiver: SeatId;
     /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
@@ -1108,6 +1139,8 @@ export interface VoteQuestion {
   readonly cast: readonly VoteCast[];
   /** A secret vote: `cast` is left empty on purpose. */
   readonly secret?: true;
+  /** Not a vote but a choice every player named makes in turn (`eachPlayerChooses`, CR 101.4, 701.38c): `cast` holds the choices already made, which later players see. */
+  readonly choice?: true;
   /**
    * For a vote for players or permanents (`voteFor`, CR 701.38b): what each of `options` (`seat:<n>`, `object:<id>`) stands for, in the same order, so a player can be shown who or
    * what it is. Absent for a vote with words.
@@ -1242,6 +1275,8 @@ export interface ChooseXDecision extends DecisionBase {
     | 'chooseNumber';
   readonly min: number;
   readonly max: number;
+  /** `chooseNumber` of `addManaCombination` (CR 106.1b): the color of the mana being counted, "how many {W}". Absent for any other number. */
+  readonly manaColor?: ManaColor;
   /**
    * The values from `min` to `max` that leave the spell a legal target, for a spell whose target is "with mana value X" (CR 601.2b, 601.2c: X is announced before the
    * targets, and a spell with no legal target cannot be cast). Absent: every value is legal.

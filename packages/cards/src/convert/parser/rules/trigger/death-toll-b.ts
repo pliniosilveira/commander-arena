@@ -5,6 +5,7 @@
  */
 import { fail, pattern } from '../../combinators';
 import type { IrFilter, IrTrigger } from '../../ir/types';
+import { OTHER_SUBTYPES } from '../noun/subtypes';
 import { defineRule } from '../registry';
 import { makeNoun } from './subjects';
 
@@ -56,7 +57,7 @@ function trigger(
  * `trigger.put-into-graveyard`: "a land card is put into your graveyard from anywhere", "one or more land cards are put into your graveyard from anywhere for the first time each turn",
  * "one or more cards are put into your graveyard from your library" (CR 603.2: a card put into a graveyard from another zone; CR 603.2c: "one or more" is one trigger for the cards put
  * there together; CR 404.1: the graveyard of its owner; CR 400.7). The engine's `putIntoGraveyard`. A kind of card (a land card, a nonland card) is a filter on the card in the graveyard.
- * Not read: another player's graveyard, a zone other than "anywhere" or "your library", a card of two kinds, a number of cards, the past tense, "for the first time each turn" with one card.
+ * A land type (a Desert card) is read for one card at a time. Not read: another player's graveyard, a zone other than "anywhere" or "your library", a card of two kinds, a number of cards, the past tense, "for the first time each turn" with one card.
  */
 export const TRIGGER_PUT_INTO_GRAVEYARD = defineRule<IrTrigger>({
   id: 'trigger.put-into-graveyard',
@@ -74,6 +75,9 @@ export const TRIGGER_PUT_INTO_GRAVEYARD = defineRule<IrTrigger>({
     'an artifact card is put into your graveyard from anywhere',
     'a nonland card is put into your graveyard from anywhere',
     'a card is put into your graveyard from your library',
+    'a Desert card is put into your graveyard from anywhere',
+    'a Forest card is put into your graveyard from anywhere',
+    'an Aura card is put into your graveyard from anywhere',
     'one or more land cards are put into your graveyard from anywhere for the first time each turn',
     'one or more cards are put into your graveyard from your library',
     'one or more creature cards are put into your graveyard from anywhere',
@@ -83,6 +87,11 @@ export const TRIGGER_PUT_INTO_GRAVEYARD = defineRule<IrTrigger>({
     'a land card is put into a graveyard from anywhere',
     "a land card is put into an opponent's graveyard from anywhere",
     'a land card is put into your graveyard from your hand',
+    'a Desert card is put into your graveyard',
+    'an Desert card is put into your graveyard from anywhere',
+    'a Aura card is put into your graveyard from anywhere',
+    'a Banana card is put into your graveyard from anywhere',
+    'a Desert card is put into your graveyard from anywhere for the first time each turn',
     'a land card is put into your graveyard from anywhere for the first time each turn',
     'a land cards is put into your graveyard from anywhere',
     'a artifact card is put into your graveyard from anywhere',
@@ -111,6 +120,35 @@ export const TRIGGER_PUT_INTO_GRAVEYARD = defineRule<IrTrigger>({
         ok: true,
         value: trigger(pos, one.pos, filter, from ?? '', false, false),
         pos: one.pos,
+      };
+    }
+    // Yuma, Proud Protector (CR 205.3i, 603.2): "a Desert card is put into your graveyard from anywhere": a land type of the card as it is in the graveyard, for one card at a time.
+    const typed = pattern(
+      new RegExp(
+        `(an?) ([A-Z][a-z]+) card is put into your graveyard from anywhere${NOT_IN_WORD}(?!\\s+(?:and|or|for)\\b)`,
+        'u',
+      ),
+    )(ctx, pos);
+    if (typed.ok) {
+      const [, article, subtype] = typed.value;
+      if (
+        subtype === undefined ||
+        !OTHER_SUBTYPES.has(subtype) ||
+        (article === 'a') === /^[AEIOU]/u.test(subtype)
+      ) {
+        return fail(ctx, pos);
+      }
+      return {
+        ok: true,
+        value: trigger(
+          pos,
+          typed.pos,
+          { subtypes: [subtype], raw: `${subtype} card` },
+          '',
+          false,
+          false,
+        ),
+        pos: typed.pos,
       };
     }
     const many = pattern(

@@ -137,6 +137,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
+  // Grand Larceny deck, group D1 (Thieving Skydiver).
+  'keyword.kicker-x': asIs,
   'keyword.multikicker': asIs,
   'keyword.flashback': asIs,
   // Stage P22: the named alternative costs are lines of their own.
@@ -182,6 +184,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-654: "an enchanted creature dies".
   'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
+  'keyword.replicate-tap': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
   'keyword.station': asIs,
@@ -190,7 +193,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
+  // Endless Evil: a copy of the enchanted creature with a set power and toughness.
+  'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
   'token.copy-except-additive': permanent(
+    (e) => `Whenever you discard a creature card, create ${e}.`,
+  ),
+  'token.copies-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),
   'replacement.enters-with-counters-kicked': asIs,
@@ -209,7 +217,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.spells-cost-reduction': asIs,
   'static.first-x-spell-cost-reduction': asIs,
   'static.nth-spell-cost-reduction': asIs,
+  'static.first-typed-spell-cost-reduction': asIs,
   'static.pay-life-alt-cost': asIs,
+  'static.pay-mana-alt-cost': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -220,6 +230,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'static.self-and-enchanted-pt-count': asIs,
+  'static.self-and-enchanted-pt-amount': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
@@ -231,7 +242,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-spell-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'static.triggers-additional-time-entering-types': asIs,
+  'static.triggers-additional-time-entering-land': asIs,
   'static.pay-energy-alt-cost-permanents': asIs,
+  'static.pay-zero-alt-cost-creatures-from-exile': asIs,
   'effect.each-player-may-choose': permanent(
     (e) => `When ~ enters, ${e}. Destroy each permanent chosen this way.`,
   ),
@@ -304,6 +317,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'trigger.cast-from-hand': whenever,
   'trigger.cast-from-graveyard': whenever,
+  'trigger.cast-from-exile': whenever,
+  // Grand Larceny deck, group D1 (Ghostly Pilferer).
+  'trigger.cast-not-from-hand': whenever,
+  'trigger.cast-with-keyword': whenever,
+  'trigger.cast-or-land-enters-from-exile': whenever,
   'trigger.token-combat-damage-batch': whenever,
   'trigger.enters-and-token-damage': permanent((e) => `When ${e}, you gain 1 life.`),
   'effect.exile-instead-when-leaving': permanent(
@@ -367,8 +385,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attacks-alone': whenever,
   'trigger.blocks': whenever,
   'trigger.becomes-blocked': whenever,
+  'trigger.attacks-unblocked': whenever,
   'trigger.or': whenever,
   'trigger.landfall': whenever,
+  // Brainstealer Dragon.
+  'trigger.enters-under-your-control-opponent-owned': whenever,
+  'trigger.creature-not-owned-dies': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
   'trigger.enters-from-graveyard': whenever,
@@ -390,6 +412,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-at-most': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-a': permanent((e) => `~ enters tapped unless ${e}.`),
+  'condition.control-exact-pt-creature': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-land-type': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.opponents-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   // An intervening "if" (CR 603.4): the condition follows the trigger, after "if".
@@ -481,7 +504,32 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-opponent': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-this-way': spell((e) => `Draw a card ${e}.`),
+  'effect.put-from-among-those-cards-onto-battlefield': spell(
+    () =>
+      'Exile the top four cards of your library. You may put a land card from among those cards onto the battlefield.',
+  ),
+  'effect.put-any-number-from-among-them-onto-battlefield': spell(
+    () =>
+      'Exile the top four cards of your library. You may put any number of land cards from among them onto the battlefield.',
+  ),
+  'effect.exile-until-put-rest-bottom': spell((e) => `${cap(e)}.`),
+  'effect.may-play-this-way-free': spell(
+    (e) =>
+      `Exile the top three cards of your library. Until the end of your next turn, you may play those cards. If ~ was cast from a graveyard, ${e}.`,
+  ),
+  'effect.add-mana-combination-of-two-colors': spell(
+    () =>
+      'Add X mana in any combination of {R} and/or {G}, where X is the number of creatures you control.',
+  ),
+  'effect.put-all-permanent-cards-exiled-with-then-sacrifice': permanent(
+    () =>
+      'At the beginning of your upkeep, exile the top four cards of your library. Put all permanent cards exiled with ~ onto the battlefield, then sacrifice it.',
+  ),
+  'amount.for-each-creature-card-among-those-cards': spell(
+    (e) => `Exile the top four cards of your library. Draw a card ${e}.`,
+  ),
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.completed-dungeon': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
   'condition.opponent-cards-in-graveyard': permanent(
@@ -509,7 +557,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-player-other-than-its-controller': spell(
     (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
   ),
+  // Bounty Board: the opponents of the controller of the creature that died.
+  'noun.each-of-its-controllers-opponents': permanent(
+    (e) => `Whenever a creature dies, ${e} draws a card.`,
+  ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
+  'noun.entered-chosen-player': spell((e) => `~ deals 2 damage to ${e}.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
   // Stage P19: the header line of a modal spell, followed by two bullets.
@@ -561,6 +614,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.gift': asIs,
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
+  ),
+  // Sauron deck (Uglúk of the White Hand): the creature that died, said as one of two creature types.
+  'condition.that-was-either': permanent(
+    (e) =>
+      `Whenever another creature you control dies, put a +1/+1 counter on ~. If ${e}, put two +1/+1 counters on ~ instead.`,
   ),
   'condition.discarded-card-matches': permanent(
     (e) => `{T}, Discard a card: Draw a card. If ${e}, you gain 1 life.`,
@@ -630,6 +688,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-commander': spell((e) => `Destroy ${e}.`),
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
+  'noun.each-of-any-number-targets': spell((e) => `Put a +1/+1 counter on ${e}.`),
   // Prismari deck, group 2 (D-656, D-657): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
   'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
   // Issue 145 (Gruff Triplets): "each creature you control named ~" is the objects of a counters effect.
@@ -645,6 +704,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-attached': asIs,
   'static.prevent-damage-to-self': asIs,
+  'static.prevent-damage-around': asIs,
+  'static.draw-limit': asIs,
+  'static.combat-creature-limit': asIs,
+  'static.prevent-all-but': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
   'static.sacrifice-alt-cost': asIs,
@@ -663,6 +726,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.players-cant-gain-life': asIs,
   'static.damage-cant-be-prevented': asIs,
   'static.all-damage-as-though-wither': asIs,
+  // Phyrexian Revoker: the line stands alone.
+  'static.activated-abilities-of-chosen-name': asIs,
+  // Sludge Monster: the line stands alone.
+  'static.group-loses-abilities-base-pt': asIs,
   'static.opponent-search-top-only': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
@@ -699,6 +766,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, exile the top two cards of your library. ${cap(e)}.`,
   ),
   'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
+  // Draconic Dissent deck, group control (Reins of Power): "that opponent" is the player a sentence before it chose as a target.
+  'effect.exchange-control-of-all': spell((e) => `Target opponent loses 1 life. ${cap(e)}.`),
   'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
   'trigger.opponents-dealt-combat-damage': whenever,
   'condition.damage-dealt-by-type': permanent(
@@ -711,6 +780,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Lorwyn Eclipsed (Blight Curse deck): the conditions and the noun of the counter group.
   'condition.control-that-creature': permanent(
     (e) => `Whenever one or more -1/-1 counters are put on a creature, draw a card if ${e}.`,
+  ),
+  'condition.that-creature-had-to-attack': permanent(
+    (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
   ),
   'condition.its-stat-was': permanent(
     (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
@@ -740,6 +812,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
   ),
   'trigger.opponent-attacks-bare': whenever,
+  'condition.youre-defending-player': permanent(
+    (e) => `Whenever a creature an opponent controls attacks, if ${e}, draw a card.`,
+  ),
   'condition.they-attacked-you': permanent(
     (e) => `Whenever an opponent attacks, if ${e}, draw a card.`,
   ),
@@ -766,7 +841,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
+  'replacement.enters-as-copy-extra-counters': asIs,
+  'replacement.enters-as-copy-except-quoted': asIs,
   'replacement.enters-as-copy-graveyard': asIs,
+  'replacement.enters-as-copy-exile-two': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
   'replacement.redirect-damage': asIs,
@@ -810,10 +888,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // Stage P69 (D-271): the die roll and the card in the graveyard (Arden Angel).
   'effect.roll-die': spell((e) => `${cap(e)}.`),
+  'effect.each-player-rolls-bar-highest': permanent(
+    (e) => `At the beginning of combat on your turn, ${e}.`,
+  ),
   'condition.you-win-clash': spell(
     (e) => `You lose 1 life, then clash with an opponent. If ${e}, you gain 1 life.`,
   ),
   'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
+  'condition.die-result-range': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
   'condition.this-in-your-graveyard': permanent(
     (e) =>
       `At the beginning of your upkeep, if ${e}, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.`,
@@ -879,6 +961,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of combat on your turn, ${e}\n• Target player draws a card and loses 1 life.\n• Target player creates a 2/1 white and black Inkling creature token with flying.`,
   ),
   'noun.each-permanent-they-control': spell((e) => `Target player puts a +1/+1 counter on ${e}.`),
+  'noun.a-permanent-they-control': permanent(
+    (e) => `At the beginning of your end step, each player may put two +1/+1 counters on ${e}.`,
+  ),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
@@ -967,8 +1052,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.defined-pt': spell((e) => `Create ${e}.`),
   'token.noncreature-named': spell((e) => `Create ${e}.`),
   'static.creature-off-battlefield': asIs,
+  'static.begin-game-on-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
+  // Sauron deck (March from the Black Gate): one ability that two events cause.
+  'trigger.enters-and-attacks': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.enters-causes-trigger': permanent((e) => `Whenever ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
   // Stage P49 (D-206): the Vraska deck's triggers, conditions and statics. A trigger follows "Whenever"; a condition follows the trigger it conditions or
   // "Then if" in a spell; the static is a line of its own.
@@ -989,6 +1079,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
   'trigger.activate-ability-of-kinds': whenever,
+  'trigger.activate-any-ability': whenever,
   'trigger.targets-activated-batch': whenever,
   'condition.this-power': permanent((e) => `Whenever ~ attacks, draw a card if ${e}.`),
   'condition.first-combat-phase': spell((e) => `If ${e}, draw a card.`),
@@ -996,6 +1087,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ deals combat damage to a player, gain control of ${e}.`,
   ),
   'static.first-targeting-ability-cost-reduction': asIs,
+  'static.plot-cost-reduction': asIs,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
@@ -1011,6 +1103,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.each-player-draws-per-vote': spell((e) => `${cap(e)}.`),
   'effect.each-player-without-votes-may-put': spell((e) => `${cap(e)}.`),
   'effect.stun-voted-creatures': spell((e) => `${cap(e)}.`),
+  'effect.vote-for-nonland-permanent': spell((e) => `${cap(e)}.`),
+  'effect.exile-most-voted': spell((e) => `${cap(e)}.`),
+  'effect.each-player-chooses-words': spell((e) => `${cap(e)}.`),
+  'effect.gain-control-per-chooser': spell((e) => `${cap(e)}.`),
+  'effect.untap-chosen-gain-haste': spell((e) => `${cap(e)}.`),
+  'effect.per-chooser-draw-treasure': spell((e) => `${cap(e)}.`),
   'effect.voter-chooses-per-vote': spell((e) => `${cap(e)}.`),
   'effect.gain-control-chosen-cant-attack-owner': spell((e) => `${cap(e)}.`),
   'effect.then-for-each-vote-counters': spell((e) => `${cap(e)}.`),
@@ -1028,12 +1126,19 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'token.copy-not-legendary-adds-types': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
+  'noun.target-ability-from-source': spell((e) => `Counter ${e}.`),
+  'effect.destroy-countered-ability-source': spell(
+    () =>
+      "Counter target activated or triggered ability from an artifact source. If a permanent's ability is countered this way, destroy that permanent.",
+  ),
   'noun.up-to-one-target-spell': spell(
     (e) =>
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
+  'static.first-spell-from-exile-has-cascade': asIs,
+  'static.first-spell-with-treasure-mana-has-cascade': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
   'static.permanent-spells-from-hand-gain-evoke': asIs,
   'static.legend-rule-doesnt-apply': asIs,
@@ -1066,16 +1171,23 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
+  'condition.didnt-activate-loyalty': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you lose 2 life.`,
+  ),
   // Twilight Diviner: the intervening "if" of a trigger about one or more creatures entering.
   'condition.entered-from-graveyard': permanent(
     (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.permanents-and-cards-off-battlefield': permanent(
+    (e) => `${cap(e)} are Deserts in addition to their other types.`,
+  ),
   'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,
+  'trigger.milled': whenever,
   'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
@@ -1123,6 +1235,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.descended-this-turn': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
+  'condition.played-land-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
   'amount.for-each-nontoken-destroyed': spell(
     (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
   ),
@@ -1131,6 +1246,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (D-339): the line of its own, with the card's wording.
   'static.triggers-additional-time-cause': asIs,
   'static.triggers-additional-time-attacking': asIs,
+  // Grand Larceny deck, group D1 (Felix Five-Boots).
+  'static.triggers-additional-time-combat-damage': asIs,
   'static.triggers-additional-time-entering': asIs,
   'static.pt-unspent-mana': asIs,
   'static.unspent-mana-colorless': asIs,
@@ -1156,8 +1273,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
+  'replacement.tokens-each-of': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
+  'static.same-name-goaded': asIs,
+  'static.power-less-goaded': asIs,
   'trigger.noncombat-damage': whenever,
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,
@@ -1171,6 +1291,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a player attacks, ${e}. It gets +2/+0 until end of turn.`,
   ),
   'trigger.opponent-attacks-you': whenever,
+  'trigger.opponent-attacks-you-or-planeswalkers': whenever,
+  'trigger.you-attack-initiative-holder': whenever,
+  'trigger.you-complete-dungeon': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),
@@ -1185,6 +1308,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.creature-land-pair': spell((e) => `${cap(e)} gain indestructible until end of turn.`),
   'noun.that-sources-controller': permanent(
     (e) => `Whenever a source deals damage to ~, ${e} exiles a card from their hand at random.`,
+  ),
+  'noun.that-spells-controller': permanent(
+    (e) => `Whenever ~ becomes the target of a spell, ~ deals 2 damage to ${e}.`,
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
@@ -1253,6 +1379,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Burning Curiosity (CR 118.8, 701.68a): the optional blight of the additional cost is what the condition reads.
   // CR 702.143a: "If this spell was foretold, ... instead."
   'condition.foretold': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
+  'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
@@ -1266,6 +1393,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As long as ${e}, enchanted creature has hexproof.`,
   ),
   'noun.all-enchanted': spell((e) => `Destroy ${e}.`),
+  'noun.all-not-legendary': spell((e) => `Destroy ${e}.`),
   'static.equip-cost-reduction': asIs,
   // Stage P52 (D-210): the players an effect asks, and what the instructions before them did.
   // Issue 26 (the Danitha deck, D-403): the condition of the second sentence of an offer to put a card onto the battlefield.
@@ -1303,6 +1431,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  // Breaking of the Fellowship: a second target of the controller of the first.
+  'noun.another-target-of-same-controller': spell(
+    (e) => `Target creature an opponent controls deals damage equal to its power to ${e}.`,
+  ),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,
@@ -1342,6 +1474,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.graveyard-events': whenever,
   // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
   'trigger.put-into-graveyard': whenever,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
+  'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.this-exploits': whenever,
+  'condition.this-suspended': permanent(
+    (e) =>
+      `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,
+  ),
   'trigger.self-put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
@@ -1375,6 +1514,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'cost.put-linked-exile-graveyard': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.put-opponent-exile-graveyard': permanent((e) => `{1}, ${e}: Draw a card.`),
   'cost.exile-any-hand': spell(
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
@@ -1573,6 +1713,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
   ),
   'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Grand Larceny deck, group D1 (Smirking Spelljacker).
+  'condition.a-card-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  // Grand Larceny deck, group D1 (Bladegriff Prototype).
+  'noun.target-permanent-of-that-players-choice': permanent(
+    (e) => `Whenever ~ deals combat damage to a player, destroy ${e}.`,
+  ),
   'condition.cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
@@ -1616,6 +1764,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.player-exiles-until-cast': permanent(
     (e) => `When ~ enters, ${e}${e.endsWith('"') ? '' : '.'}`,
   ),
+  'effect.target-player-exiles-until-cast-bottom': permanent((e) => `When ~ enters, ${e}.`),
   'effect.controller-reveals-until-puts': spell(
     (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
   ),
@@ -1645,6 +1794,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-card-in-a-graveyard-this-turn': spell(
     (e) => `Choose ${e}. Put that card into its owner's hand.`,
+  ),
+  'noun.target-card-in-opponent-graveyard-from-library': spell(
+    (e) => `Choose ${e}. Put it onto the battlefield under your control.`,
   ),
   // Scions & Spellcraft deck, group A: the life lost and the combat damage dealt this turn, by the players of a group.
   'condition.a-player-lost-life-this-turn': permanent(
@@ -1679,6 +1831,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, you gain 1 life ${e}.`,
   ),
   'static.self-also-types': asIs,
+  'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

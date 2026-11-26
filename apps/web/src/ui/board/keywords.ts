@@ -75,6 +75,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // CR 702.25a (Flanking).
   flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
+  // Exploit (CR 702.110a).
+  exploit: ['Exp', 'Exploit (When this creature enters, you may sacrifice a creature.)'],
   affinity: ['Aff', 'Affinity'],
   undaunted: ['Und', 'Undaunted'],
   convoke: ['Cvk', 'Convoke'],
@@ -103,6 +105,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   replicate: ['Rep', 'Replicate'],
   // Rebound (CR 702.88a): on an instant or a sorcery.
   rebound: ['Rbd', 'Rebound'],
+  cipher: ['Cph', 'Cipher'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
   // Gift a card (D-135).

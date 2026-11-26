@@ -66,8 +66,12 @@ export type AngelStaticEffect = Extract<
       | 'cantGainLife'
       | 'damageCantBePrevented'
       | 'damageAsThoughWither'
+      | 'cantActivateChosenName'
       | 'opponentSearchTopOnly'
       | 'preventDamageToThis'
+      | 'preventDamageAround'
+      | 'drawLimit'
+      | 'combatCreatureLimit'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
   }
@@ -81,8 +85,12 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'cantGainLife' ||
     effect.kind === 'damageCantBePrevented' ||
     effect.kind === 'damageAsThoughWither' ||
+    effect.kind === 'cantActivateChosenName' ||
     effect.kind === 'opponentSearchTopOnly' ||
     effect.kind === 'preventDamageToThis' ||
+    effect.kind === 'preventDamageAround' ||
+    effect.kind === 'drawLimit' ||
+    effect.kind === 'combatCreatureLimit' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
   );
@@ -258,7 +266,8 @@ export function lowerAngelStatic(
         break;
       }
       case 'damageCantBePrevented':
-      case 'damageAsThoughWither': {
+      case 'damageAsThoughWither':
+      case 'cantActivateChosenName': {
         // CR 615.12, 702.80a: a rule of the game, whoever controls the permanent; the line is its own statement.
         if (effects.length !== 1) return failure(ability);
         const blocked = missingFeatures(['ability:static', `static:${effect.kind}`]);
@@ -282,6 +291,41 @@ export function lowerAngelStatic(
             subject: attached ? { kind: 'attached' } : { kind: 'this' },
             scope: effect.scope,
             ...(effect.removeCounter === undefined ? {} : { removeCounter: effect.removeCounter }),
+          },
+        });
+        break;
+      }
+      case 'combatCreatureLimit': {
+        if (subject.det !== 'self') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:combatCreatureLimit']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'combatCreatureLimit', what: effect.what, max: effect.max },
+        });
+        break;
+      }
+      case 'drawLimit': {
+        if (subject.det !== 'self') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:drawLimit']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: { kind: 'drawLimit', who: effect.who, max: effect.max },
+        });
+        break;
+      }
+      case 'preventDamageAround': {
+        if (subject.det !== 'self') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:preventDamageAround']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({
+          kind: 'static',
+          static: {
+            kind: 'preventDamageAround',
+            scope: effect.scope,
+            events: effect.events,
+            ...(effect.keep === undefined ? {} : { keep: effect.keep }),
           },
         });
         break;
@@ -319,8 +363,12 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:cantGainLife',
   'static:damageCantBePrevented',
   'static:damageAsThoughWither',
+  'static:cantActivateChosenName',
   'static:opponentSearchTopOnly',
   'static:preventDamageToThis',
+  'static:preventDamageAround',
+  'static:drawLimit',
+  'static:combatCreatureLimit',
   'static:cantCastThis',
   'condition:ownTurnNumber',
   'replacement:othersEnterWithCounters',

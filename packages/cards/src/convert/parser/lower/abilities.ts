@@ -13,6 +13,7 @@ import type {
   Cost,
   Keyword,
   ObjectFilter,
+  TokenPreset,
 } from '@commander-arena/engine';
 import { isNonCreatureSubtype } from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
@@ -26,6 +27,7 @@ import {
 import { lowerAmount } from './amounts';
 import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
+import { lowerQuotedCopyStatic } from './copy-statics';
 import { lowerCost } from './costs';
 import { lowerEntersRemoveCounters } from './counter-blitz-g';
 import { lowerClause } from './effects';
@@ -42,6 +44,11 @@ import {
 } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
+
+/** The predefined tokens a replacement of "one of each" is read for (the engine's `tokensInstead` in `eachOf` mode). */
+function isEachOfPreset(name: string): name is TokenPreset {
+  return name === 'Clue' || name === 'Food' || name === 'Treasure';
+}
 
 function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
   return { ok: false, needs, at: node.span, rule: node.rule };
@@ -255,26 +262,28 @@ function lowerCostedKeyword(
     name === 'embalm' ||
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
-    name === 'replicate' ||
     name === 'buyback' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
-      : // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
-        name === 'escalate'
+      : // CR 702.56a (Psionic Ritual): a replicate cost is mana or the tapping of an untapped permanent, paid once for each copy.
+        // CR 702.120a (Collective Effort): "Escalate—Tap an untapped creature you control." is paid once for each mode chosen beyond the first.
+        name === 'replicate' || name === 'escalate'
         ? ['mana', 'tapPermanents']
         : name === 'ward'
           ? ['mana', 'payLife', 'sacrifice', 'discard', 'blight']
           : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
+  // "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): only the kicker keyword, and only with that sentence.
+  if (ability.xNotZero === true && name !== 'kicker') return failure(ability);
   // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
   const cost = lowerCost(
     only,
-    name === 'cycling'
+    name === 'cycling' || (name === 'kicker' && ability.xNotZero === true)
       ? { x: true }
       : name === 'ward'
         ? { ward: true }
-        : name === 'escalate'
+        : (name === 'replicate' && only.kind === 'tapPermanents') || name === 'escalate'
           ? { ordinary: true }
           : {},
   );
@@ -286,6 +295,7 @@ function lowerCostedKeyword(
     ...(name === 'escalate' && cost.value.kind === 'tapPermanents'
       ? (['ability:escalateTapCost'] as const)
       : []),
+    ...(ability.xNotZero === true ? (['ability:kickerX'] as const) : []),
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
@@ -328,6 +338,7 @@ function lowerCostedKeyword(
           ...(ability.legendaryOnly === true
             ? { restriction: { types: ['creature'], supertypes: ['legendary'] } }
             : {}),
+          ...(ability.xNotZero === true ? { xNotZero: true } : {}),
         } as Keyword,
       },
     ],
@@ -592,6 +603,26 @@ function lowerProtection(ability: IrKeyword): LowerResult<readonly Ability[]> {
     return {
       ok: true,
       value: [{ kind: 'keyword', keyword: { kind: 'protection', from: 'multicolored' } }],
+      rule: 'keyword.line',
+    };
+  }
+  if (ability.manaValue !== undefined && ability.colors === undefined) {
+    // CR 702.16a, 202.3: protection from sources whose mana value compares as stated.
+    const blockedValue = gate(ability, ['ability:keyword', 'keyword:protection']);
+    if (blockedValue !== null) return blockedValue;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: {
+            kind: 'protection',
+            from: 'manaValue',
+            cmp: ability.manaValue.cmp,
+            value: ability.manaValue.value,
+          },
+        },
+      ],
       rule: 'keyword.line',
     };
   }
@@ -977,7 +1008,9 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       ...(event.args.fromGraveyard === undefined
         ? []
         : (['ability:copyEntersFromGraveyard'] as const)),
+      ...(event.args.exileTwo === undefined ? [] : (['ability:copyEntersExilesTwo'] as const)),
       ...(event.args.addTypes === undefined ? [] : (['ability:copyEntersAddsTypes'] as const)),
+      ...(event.args.addStatic === undefined ? [] : (['ability:copyEntersAddsStatics'] as const)),
     ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
@@ -985,11 +1018,17 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     // CR 614.12, 707.9, 700.4: "a copy of any creature card in your graveyard that was put there from the battlefield this turn": the filter keeps its zone, the graveyard.
     const fromGraveyard =
       event.args.fromGraveyard?.kind === 'flag' && event.args.fromGraveyard.value;
+    // CR 614.12, 707.9b (The Mimeoplasm): "exile two creature cards from graveyards": the creature cards of every graveyard, which the filter says by its zone.
+    const exileTwo = event.args.exileTwo?.kind === 'flag' && event.args.exileTwo.value;
     const { zone, ...unzoned } = filter.value;
-    if (fromGraveyard ? zone !== 'graveyard' : zone !== undefined && zone !== 'battlefield') {
+    if (
+      fromGraveyard || exileTwo
+        ? zone !== 'graveyard'
+        : zone !== undefined && zone !== 'battlefield'
+    ) {
       return failure(ability);
     }
-    const kind = fromGraveyard ? filter.value : unzoned;
+    const kind = fromGraveyard || exileTwo ? filter.value : unzoned;
     const gains: Keyword[] = [];
     for (const name of gained?.kind === 'keywordList' ? gained.names : []) {
       const word = keywordKind(name);
@@ -1021,23 +1060,46 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     ) {
       return failure(ability);
     }
+    // CR 707.9b (Mocking Doppelganger): "except it has \"<static ability>\"": the quoted static ability, lowered like the static ability of a card.
+    const addStatics: Ability[] = [];
+    const quotedStatic = event.args.addStatic;
+    if (quotedStatic !== undefined) {
+      const lowered = lowerQuotedCopyStatic(quotedStatic, ability, newContext('ability', [], []));
+      if (!lowered.ok) return lowered;
+      addStatics.push(...lowered.value);
+    }
     return built({
       kind: 'entersAsCopy',
       what: kind,
       optional: true,
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
+      ...(addStatics.length === 0 ? {} : { addStatics }),
       ...(addedTypes?.kind === 'typeList' && addedTypes.cardTypes !== undefined
         ? { addTypes: addedTypes.cardTypes as CardType[] }
         : {}),
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
       ...(fromGraveyard ? { fromGraveyard: true as const } : {}),
+      // CR 614.12, 707.9b, 122.6: "... a number of additional +1/+1 counters on it equal to the power of the other card".
+      ...(exileTwo ? { exileTwoFromGraveyards: { counter: '+1/+1' } } : {}),
       // CR 707.9a, 707.9b, 205.4a: "except her name is ~ and she's a legendary Trill in addition to her other types".
       ...(event.args.keepName?.kind === 'flag' && event.args.keepName.value
         ? { keepName: true as const }
         : {}),
       ...(event.args.addLegendary?.kind === 'flag' && event.args.addLegendary.value
         ? { addSupertypes: ['legendary' as const] }
+        : {}),
+      // CR 707.9b, 614.12, 205.4a (Spark Double): "... an additional +1/+1 counter if it's a creature, ... a loyalty counter if it's a planeswalker, and it isn't legendary".
+      ...(event.args.extraCounters?.kind === 'flag' && event.args.extraCounters.value
+        ? {
+            extraCounters: [
+              { type: 'creature' as const, counter: '+1/+1' },
+              { type: 'planeswalker' as const, counter: 'loyalty' },
+            ],
+          }
+        : {}),
+      ...(event.args.notLegendary?.kind === 'flag' && event.args.notLegendary.value
+        ? { notLegendary: true as const }
         : {}),
       // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
       ...(event.args.withX?.kind === 'flag' && event.args.withX.value
@@ -1073,6 +1135,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const blocked = gate(ability, ['ability:replacement', 'replacement:drawRedirect']);
     if (blocked !== null) return blocked;
     return built({ kind: 'drawRedirect', exceptFirstInDrawStep: true });
+  }
+  if (event.verb === 'tokensInstead' && event.args.eachOf !== undefined) {
+    // "If you would create a Clue, Food, or Treasure token, instead create one of each." (Most Wanted deck group 2, Academy Manufactor, CR 614.1a, 614.5): the engine's
+    // `tokensInstead` in `eachOf` mode, whose tokens are the predefined ones the members of the filter name.
+    const objects = event.args.what;
+    if (objects?.kind !== 'noun') return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:tokensInstead']);
+    if (blocked !== null) return blocked;
+    const what = lowerFilter(objects);
+    if (!what.ok) return what;
+    const { zone, ...filter } = what.value;
+    void zone;
+    const tokens = (filter.anyOf ?? []).flatMap((member) => member.subtypes ?? []);
+    if (!tokens.every(isEachOfPreset)) return failure(ability);
+    return built({ kind: 'tokensInstead', what: filter, mode: 'eachOf', tokens });
   }
   if (event.verb === 'tokensInstead' && event.args.double !== undefined) {
     // "If one or more tokens would be created under your control, twice that many of those tokens are created instead." (Hashaton deck group 3, D-378, CR 614.1a,

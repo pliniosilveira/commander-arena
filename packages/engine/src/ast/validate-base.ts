@@ -61,6 +61,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     // D-513: the player who scried.
     case 'scries':
     case 'surveils':
+    case 'milled':
     // CR 706.1a (Galadriel group 3): the player who rolled the die.
     case 'rollsHighest':
     case 'winsCoinFlip':

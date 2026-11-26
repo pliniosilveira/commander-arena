@@ -235,7 +235,11 @@ function costsWorthPaying(
       if (cheapest > worth) return false;
     } else if (cost.kind === 'discard') {
       // The spell itself is on the stack when the cost is paid: the hand without it.
-      const hand = ownHand(view).filter((o) => o.id !== spell.id);
+      // CR 118.8 ("discard a land card"): only the cards the cost's filter matches can be discarded.
+      const hand = ownHand(view).filter(
+        (o) => o.id !== spell.id && (cost.filter === undefined || viewMatches(o, cost.filter)),
+      );
+      if (hand.length < cost.count) return false;
       if (!expendable(view, hand, cost.count) && manaValueOf(spell) < 3) return false;
     } else if (cost.kind === 'discardX') {
       // D-386: "discard X cards" is worth it for a card the agent wants to lose anyway, and a spell that returns cards from the graveyard only when it has one to return.

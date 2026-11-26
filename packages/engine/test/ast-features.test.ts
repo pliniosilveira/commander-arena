@@ -79,6 +79,7 @@ describe('the dimensions', () => {
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
       'putLinkedExileInGraveyard',
+      'putOpponentExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -120,6 +121,8 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
+      'subjectHadToAttack',
+      'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',
       'counterPutOnThisThisTurn',
@@ -137,11 +140,13 @@ describe('the dimensions', () => {
       'escaped',
       // CR 702.143a: "if this spell was foretold".
       'foretold',
+      'castForAlternative',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',
       'playerHasDesignation',
       'maxSpeed',
+      'completedDungeon',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',
       'lifeTotal',
@@ -168,6 +173,7 @@ describe('the dimensions', () => {
       'yourTurn',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
+      'playedLandThisTurn',
       'manaSpentAtLeast',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
@@ -204,6 +210,7 @@ describe('the dimensions', () => {
       'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
+      'loyaltyAbilityActivatedThisTurn',
       'thisAttackedThisTurn',
       'dieResult',
       // CR 701.30d: "If you win" after a clash.
@@ -213,6 +220,7 @@ describe('the dimensions', () => {
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
+      'thisSuspended',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
@@ -282,19 +290,25 @@ describe('the dimensions', () => {
       // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
       'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
+      'beginGameOnBattlefield',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
+      // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated."
+      'cantActivateChosenName',
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',
+      'preventDamageAround',
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',
       'cantAttackItsOwner',
       'cantGainLife',
+      'drawLimit',
+      'combatCreatureLimit',
       'damageCantBePrevented',
       'damageAsThoughWither',
       'opponentSearchTopOnly',
@@ -315,6 +329,7 @@ describe('the dimensions', () => {
       'playLandsFromGraveyard',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
+      'plotCostReduction',
       // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
       'loyaltyActivationLimit',
       // D-179: "Your opponents can't cast spells during your turn."
@@ -328,6 +343,7 @@ describe('the dimensions', () => {
       // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
+      'giveTypesToCardsOffBattlefield',
       'grantEncoreToGraveyardCards',
       'grantUnearthToGraveyardCards',
     ]);
@@ -355,7 +371,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('searchDestination:hand')).toBe(true);
     expect(isFeatureSupported('searchDestination:graveyard')).toBe(true);
     expect(isFeatureSupported('searchDestination:library')).toBe(true);
-    expect(isFeatureSupported('searchDestination:exile')).toBe(false);
+    expect(isFeatureSupported('searchDestination:exile')).toBe(true);
     expect(isFeatureSupported('effect:modifyPt')).toBe(true);
     expect(isFeatureSupported('duration:untilEndOfTurn')).toBe(true);
     expect(isFeatureSupported('duration:permanent')).toBe(false);
@@ -410,7 +426,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('token:Food')).toBe(true);
     expect(isFeatureSupported('token:Clue')).toBe(true);
     expect(isFeatureSupported('token:Map')).toBe(true); // issue 81: the Map token and explore
-    expect(isFeatureSupported('token:Blood')).toBe(false);
+    expect(isFeatureSupported('token:Blood')).toBe(true); // CR 111.10g: the Blood token and its discard cost
     // The intervening "if" (CR 603.4) is a `trigger:` feature; the condition is a `condition:`.
     expect(isFeatureSupported('trigger:interveningIf')).toBe(true);
     expect(isFeatureSupported('condition:kicked')).toBe(true);

@@ -35,6 +35,7 @@ import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
 import { SYNTHETIC_CHOSEN_REVEAL_LIST } from './synthetic-chosen-reveal';
+import { SYNTHETIC_CHOSEN_SUBJECT_LIST } from './synthetic-chosen-subject';
 import { SYNTHETIC_CHOSEN_WALKER_LIST } from './synthetic-chosen-walker';
 import { SYNTHETIC_COIN_LIST } from './synthetic-coin';
 import { SYNTHETIC_COLOR_AMONG_MANA_LIST } from './synthetic-color-among-mana';
@@ -49,6 +50,7 @@ import { SYNTHETIC_COUNTER_DOUBLING_LIST } from './synthetic-counter-doubling';
 import { SYNTHETIC_COUNTERS_PLUS_LIST } from './synthetic-counters-plus';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_CURSE_LIST } from './synthetic-curse';
+import { SYNTHETIC_D1_LIST } from './synthetic-d1';
 import { SYNTHETIC_DAMAGE_BONUS_LIST } from './synthetic-damage-bonus';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DANITHA_G1A_LIST } from './synthetic-danitha-g1a';
@@ -86,10 +88,12 @@ import { SYNTHETIC_EXTRA_TURNS_LIST } from './synthetic-extra-turns';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
+import { SYNTHETIC_FELIX_LIST } from './synthetic-felix';
 import { SYNTHETIC_FETCH_GRANTS_LIST } from './synthetic-fetch-grants';
 import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
 import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
+import { SYNTHETIC_G8_LIST } from './synthetic-g8';
 import { SYNTHETIC_GALADRIEL_G1_LIST } from './synthetic-galadriel-g1';
 import { SYNTHETIC_GALADRIEL_G2_LIST } from './synthetic-galadriel-g2';
 import { SYNTHETIC_GALADRIEL_G3_LIST } from './synthetic-galadriel-g3';
@@ -195,8 +199,10 @@ import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_ROOM_LIST } from './synthetic-rooms';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
+import { SYNTHETIC_SAME_CONTROLLER_LIST } from './synthetic-same-controller';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
 import { SYNTHETIC_SEARCH_ZONES_LIST } from './synthetic-search-zones';
+import { SYNTHETIC_SHARES_COLOR_LIST } from './synthetic-shares-color';
 import { SYNTHETIC_SLIVER_B_LIST } from './synthetic-sliver-b';
 import { SYNTHETIC_SLIVER_C_LIST } from './synthetic-sliver-c';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
@@ -465,6 +471,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LOREHOLD_G3_LIST,
   ...SYNTHETIC_LOSE_GAME_LIST,
   ...SYNTHETIC_DICE_LIST,
+  ...SYNTHETIC_G8_LIST,
   ...SYNTHETIC_RANDOM_MODE_LIST,
   ...SYNTHETIC_COIN_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,
@@ -483,10 +490,13 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
   ...SYNTHETIC_YAROK_LIST,
+  ...SYNTHETIC_FELIX_LIST,
+  ...SYNTHETIC_D1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
   ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
   ...SYNTHETIC_CHOSEN_WALKER_LIST,
+  ...SYNTHETIC_CHOSEN_SUBJECT_LIST,
   ...SYNTHETIC_HASHATON_G5_LIST,
   ...SYNTHETIC_EMBALM_LIST,
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
@@ -586,6 +596,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_VOTE_LIST,
   ...SYNTHETIC_COUNCIL_LIST,
   ...SYNTHETIC_RING_LIST,
+  ...SYNTHETIC_SAME_CONTROLLER_LIST,
+  ...SYNTHETIC_SHARES_COLOR_LIST,
   ...SYNTHETIC_SNOW_LIST,
   ...SYNTHETIC_BRUNA_SEARCH_LIST,
   ...SYNTHETIC_HULK_SEARCH_LIST,

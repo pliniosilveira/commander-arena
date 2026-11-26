@@ -574,6 +574,69 @@ export const EFFECT_LOOK_PUT_TOTAL = defineRule<Clauses>({
 });
 
 /**
+ * `effect.look-put-up-to`: "look at the top seven cards of your library. put up to two planeswalker cards from among them onto the battlefield. put the rest on the bottom of your
+ * library in a random order" (Deploy the Gatewatch; CR 401.2, 701.20, 401.4: the controller looks, chooses up to that many cards of one card type, and they enter under the
+ * controller's control; the rest go to the bottom in a random order). Three sentences that `splitSentences` keeps together. The engine's `lookAtTop` with `take.max` and
+ * `to: battlefield`. Not read: a number of cards that is not "up to" two to four, a kind other than one card type, "any number", the hand, the graveyard, another player's library.
+ */
+export const EFFECT_LOOK_PUT_UP_TO = defineRule<Clauses>({
+  id: 'effect.look-put-up-to',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 701.20 (Reveal)', 'CR 401.4 (Library)'],
+  examples: [
+    'look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top five cards of your library. Put up to three creature cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield',
+    'look at the top seven cards of your library. Put up to two planeswalker cards from among them into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top seven cards of your library. Put any number of planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest into your graveyard',
+    'look at the top seven cards of your library. Put up to nine planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top card of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.look-put-up-to';
+    const r = pattern(
+      /look at the top (\w+|\d+) cards of your library\. put up to (two|three|four|\d+) (artifact|creature|enchantment|land|planeswalker|battle) cards from among them onto the battlefield\. put the rest on the bottom of your library in a random order(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const words = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+    const numberOf = (word: string): number =>
+      /^\d+$/.test(word) ? Number(word) : words.indexOf(word.toLowerCase()) + 2;
+    const looked = numberOf(r.value[1] ?? '');
+    const most = numberOf(r.value[2] ?? '');
+    if (!Number.isSafeInteger(looked) || looked < 2 || most < 2 || most > looked) {
+      return fail(ctx, pos);
+    }
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'lookPutUpTo',
+          {
+            count: { kind: 'number', value: looked, span },
+            most: { kind: 'number', value: most, span },
+            cardType: {
+              kind: 'keywordName',
+              name: (r.value[3] ?? '').toLowerCase(),
+              span,
+              rule: id,
+            },
+          },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.exiled-owner-creates-token`: "the exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card" (Skyclave
  * Apparition; CR 607.2a, 111.2, 111.4, 202.3: the player who owns the card the permanent exiled with its linked ability creates the token and controls it; its power and
  * toughness are the mana value of that card, read as the token is created). The engine's `createToken` of the owner of `linkedExile`, a custom token with `ptAmount`. Not read:
@@ -949,6 +1012,7 @@ export const HOFRI_EFFECT_RULES = [
   EFFECT_EACH_EXILES_THEN_COUNTERS,
   EFFECT_EXILED_OWNER_CREATES_TOKEN,
   EFFECT_LOOK_PUT_TOTAL,
+  EFFECT_LOOK_PUT_UP_TO,
   EFFECT_CREATE_COPY_SPIRIT,
   EFFECT_RETURN_EXILED_CARD,
   EFFECT_PLAYER_ADDS_MANA,

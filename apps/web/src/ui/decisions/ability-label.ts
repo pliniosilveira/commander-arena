@@ -391,6 +391,11 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'boundObjects':
       // D-639: the engine's own form of `moved` inside a delayed ability.
       return 'it';
+    case 'putCountersOn':
+      // Spectacular Showdown (CR 608.2c): the objects the counters of the instruction before it went on.
+      return what.counter === undefined
+        ? 'each creature that had counters put on it this way'
+        : `each creature that had a ${what.counter} counter put on it this way`;
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
       // permanent or creature the trigger is about (D-133): "put a +1/+1 counter on it".
@@ -398,7 +403,12 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
         return 'this spell';
       }
-      if (ability.trigger?.kind === 'activatesAbility') return 'that ability';
+      if (
+        ability.trigger?.kind === 'activatesAbility' ||
+        ability.trigger?.kind === 'entersCausesTrigger'
+      ) {
+        return 'that ability';
+      }
       return ability.trigger === undefined ||
         ability.trigger.kind === 'castSpell' ||
         ability.trigger.kind === 'becomesTarget'
@@ -434,6 +444,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'votedObjects':
       // CR 701.38a (Trap the Trespassers).
       return 'each creature with one or more votes';
+    case 'mostVotedObjects':
+      // CR 701.38a (Council's Judgment).
+      return 'each permanent with the most votes or tied for most votes';
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen).
       return 'your Ring-bearer';
@@ -535,6 +548,8 @@ function recipientText(
       return 'each other player';
     case 'eachPlayerControlling':
       return 'each player who controls one';
+    case 'eachPlayerControllingMore':
+      return 'each player who controls more of them than you';
     case 'controllerOf':
       return 'its controller';
     case 'ownerOf':
@@ -550,6 +565,8 @@ function recipientText(
       return 'the defending player';
     case 'playerToYourRight':
       return 'the player to your right';
+    case 'enteredChosenPlayer':
+      return 'the chosen player';
     case 'chosenPlayer':
       return 'that player';
     case 'attackedBy':
@@ -581,6 +598,9 @@ function recipientText(
       return "each player who can't";
     case 'eachPlayerWithoutVotes':
       return 'each player who received no votes';
+    case 'eachPlayerWhoChose':
+      // CR 101.4 (Seize the Spotlight).
+      return `each player who chose ${to.option}`;
     case 'eachOpponentWhoVoted':
       return to.choice === 'same'
         ? 'each opponent who voted for a choice you voted for'
@@ -602,6 +622,7 @@ function recipientText(
     case 'this':
     case 'thisSpell':
     case 'moved':
+    case 'putCountersOn':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -612,6 +633,7 @@ function recipientText(
     case 'putWithThis':
     case 'eachObject':
     case 'votedObjects':
+    case 'mostVotedObjects':
     case 'ringBearer':
     case 'each':
       return objectText(to, ability, self);
@@ -758,6 +780,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
     case 'eachPlayer':
       return { who: 'they', third: false };
     case 'controllerOf':
@@ -769,6 +792,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'playerToYourRight':
       return { who: 'the player to your right', third: true };
+    case 'enteredChosenPlayer':
+      return { who: 'the chosen player', third: true };
     case 'chosenPlayer':
       return { who: 'that player', third: true };
     case 'triggerPlayer':
@@ -787,6 +812,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'couldntSacrificeThisWay':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
+    case 'eachPlayerWhoChose':
     case 'attackedPlayers':
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
@@ -911,7 +937,12 @@ function moveText(
     const kind = nounOf(objects.filter);
     const kept = effect.withCounters;
     const withCounters =
-      kept === undefined ? '' : ` with ${quantity(kept.count, defs, counters(kept.counter))} on it`;
+      kept === undefined
+        ? ''
+        : ` with ${[kept]
+            .flat()
+            .map((c) => quantity(c.count, defs, counters(c.counter)))
+            .join(' and ')} on it`;
     const control =
       effect.controller === 'owner' ? " under its owner's control" : ' under your control';
     return `Put each ${kind} card exiled with this ${self} onto the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
@@ -950,7 +981,10 @@ function moveText(
       const withCounters =
         kept === undefined
           ? ''
-          : ` with ${quantity(kept.count, defs, counters(kept.counter))} on ${objects.kind === 'each' ? 'them' : 'it'}`;
+          : ` with ${[kept]
+              .flat()
+              .map((c) => quantity(c.count, defs, counters(c.counter)))
+              .join(' and ')} on ${objects.kind === 'each' ? 'them' : 'it'}`;
       // The card itself comes back to its owner's control anyway; a target or a group says it.
       const control =
         effect.controller === 'owner' && (objects.kind === 'target' || objects.kind === 'each')
@@ -1231,6 +1265,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `Choose one: ${choices}`
         : `Repeat this choice ${defs.say(effect.times, { self })} times (choose independently): ${choices}`;
     }
+    case 'switchPt':
+      // CR 613.4d: "Switch this creature's power and toughness until end of turn".
+      return `Switch ${object(effect.objects)}'s power and toughness${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'modifyPt':
     case 'setPt': {
       // D-145 (CR 701.10): "Double the power and toughness of each creature you control until end of turn".
@@ -1482,7 +1519,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
     case 'voteFor':
       // CR 701.38a, 701.38b: a vote for a player or for a creature.
-      return `Each player ${effect.secret === true ? 'secretly ' : ''}votes for ${effect.choices.kind === 'players' ? 'a player' : "a creature you don't control"}${effect.secret === true ? ', then those votes are revealed' : ''}`;
+      return `Each player ${effect.secret === true ? 'secretly ' : ''}votes for ${effect.choices.kind === 'players' ? 'a player' : effect.choices.filter.types?.includes('creature') === true ? "a creature you don't control" : "a nonland permanent you don't control"}${effect.secret === true ? ', then those votes are revealed' : ''}`;
+    case 'eachPlayerChooses':
+      // CR 101.4 (Seize the Spotlight): "Each opponent chooses fame or fortune".
+      return `${effect.players.kind === 'eachOpponent' ? 'Each opponent' : 'Each player'} chooses ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
     case 'pair':
       // D-286 (CR 702.95a): the effect of the two abilities soulbond stands for; the creature is chosen as it resolves.
       return effect.partner === 'choose'
@@ -1597,6 +1637,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'delayedCombatDamageTurn':
       // CR 603.7, 510.3a (D-663): a delayed ability for the turn.
       return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
+    case 'delayedDiesTurn': {
+      // CR 603.7, 603.10a: a delayed ability for the turn, for each creature that dies.
+      const inner = effectText(effect.effect, ability, self, defs);
+      return inner === '' ? UNSAID : `Whenever a creature dies this turn, ${lower(inner)}`;
+    }
     case 'delayedCombatDamageBatchTurn': {
       // CR 603.7, 603.2c: a delayed ability for the turn, for combat damage to players by one or more creatures.
       const inner = effectText(effect.effect, ability, self, defs);
@@ -1638,6 +1683,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'exchangeControl':
       // Galadriel group 3 (CR 701.12): "Exchange control of this enchantment and target nonland permanent".
       return `Exchange control of ${object(effect.first)} and ${object(effect.second)}`;
+    case 'exchangeControlOfAll':
+      // CR 701.12a: "You and that player each gain control of all creatures the other controls until end of turn".
+      return `Exchange control of ${object(effect.objects)} with ${playerOwner(effect.player, ability).replace(/'s$/u, '')}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'removeCounters':
       // Galadriel group 3 (CR 122.1): "Remove a number of loyalty counters equal to that card's mana value from this planeswalker".
       if (

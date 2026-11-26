@@ -101,8 +101,18 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
 /** The cards an earlier instruction exiled: "that card", "those cards", "it", "them". */
 // Stage P63 (D-216): "You may play the exiled card this turn." (Expressive Iteration: the card its own instruction exiled).
 const THOSE_CARDS = pattern(
-  new RegExp(`(?:that card|those cards|the exiled cards?|it|them)${BOUNDARY}`, 'iu'),
+  new RegExp(
+    `(?:that card|those cards|the exiled cards?|cards exiled this way|it|them)${BOUNDARY}`,
+    'iu',
+  ),
 );
+
+/** "spells from among those exiled cards" (Exit from Exile deck): the spells among the cards an earlier instruction exiled; with "cast" it is a permission to cast only. */
+const AMONG_SPELLS_TEXT = 'spells from among those exiled cards';
+const SPELLS_FROM_AMONG = pattern(new RegExp(`${AMONG_SPELLS_TEXT}${BOUNDARY}`, 'iu'));
+
+/** "without paying its mana cost", "without paying their mana costs" (CR 118.9): the engine's `free` of a play permission. */
+const FREE_TAIL = pattern(new RegExp(` without paying (?:its|their) mana costs?${BOUNDARY}`, 'iu'));
 
 /**
  * `effect.may-play`: "You may play that card this turn.", "Until the end of your next turn, you may play those cards.", "You may play those
@@ -130,10 +140,16 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'until end of turn, you may play that card',
     'you may play those cards until your next end step',
     'you may play those cards until the end of your next turn',
+    'you may play cards exiled this way until the end of your next turn',
     'you may cast it this turn',
     'you may cast that card this turn',
     'cast that card this turn',
     'until the end of your next turn, you may cast those cards',
+    'you may play cards exiled this way until the end of your next turn',
+    'you may cast spells from among those exiled cards this turn',
+    'until end of turn, you may cast spells from among those exiled cards',
+    'you may play it this turn without paying its mana cost',
+    'until the end of your next turn, you may play those cards without paying their mana costs',
   ],
   rejects: [
     'you may cast that card',
@@ -150,6 +166,9 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'you may play lands this turn',
     'until the end of your next turn, you may play that card until your next end step',
     'until your next turn, you may play those cards',
+    'you may play spells from among those exiled cards this turn',
+    'you may play it without paying its mana cost this turn without paying its mana cost',
+    'you may play it this turn without paying its mana cost and draw a card',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.may-play';
@@ -172,11 +191,15 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     const body = sequence(
       optional(literal('you may '), null),
       choice(literal('play '), literal('cast ')),
-      THOSE_CARDS,
+      choice(THOSE_CARDS, SPELLS_FROM_AMONG),
     )(ctx, lead.pos);
     if (!body.ok) return body;
-    // "cast" is a permission to cast only: a land card is not played (Lorehold group 1).
-    const castOnly = body.value[1] === 'cast ';
+    // "cast" is a permission to cast only: a land card is not played (Lorehold group 1). So is "cast spells from among those exiled cards" (Exit from Exile deck).
+    const among = body.value[2][0].toLowerCase() === AMONG_SPELLS_TEXT;
+    if (among && body.value[1] !== 'cast ') return fail(ctx, lead.pos);
+    const castOnly = body.value[1] === 'cast ' || among;
+    const free1 = spanned(optional(FREE_TAIL, null))(ctx, body.pos);
+    if (!free1.ok) return free1;
     const trail = spanned(
       optional(
         choice(
@@ -192,8 +215,14 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
         ),
         null,
       ),
-    )(ctx, body.pos);
+    )(ctx, free1.pos);
     if (!trail.ok) return trail;
+    const free2 = spanned(optional(FREE_TAIL, null))(ctx, trail.pos);
+    if (!free2.ok) return free2;
+    // "without paying its mana cost" once, before or after the duration (CR 118.9).
+    if (free1.value.value !== null && free2.value.value !== null) return fail(ctx, free2.pos);
+    const free = free1.value.value !== null || free2.value.value !== null;
+    const end = free2.pos;
     // Exactly one duration: said first or said last.
     const first = lead.value.value;
     const last = trail.value.value;
@@ -208,13 +237,16 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
           ...makeClause(
             id,
             'mayPlay',
-            castOnly ? { castOnly: flag(id, true, { start: pos, end: trail.pos }) } : {},
-            { start: pos, end: trail.pos },
+            {
+              ...(castOnly ? { castOnly: flag(id, true, { start: pos, end }) } : {}),
+              ...(free ? { free: flag(id, true, { start: pos, end }) } : {}),
+            },
+            { start: pos, end },
           ),
           duration: duration(scope, span),
         },
       ],
-      pos: trail.pos,
+      pos: end,
     };
   },
 });

@@ -20,7 +20,14 @@ export const NOUN_THAT_OBJECT = defineRule<IrNoun>({
   family: 'noun',
   leading: ['that'],
   cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 109.1 (Objects)'],
-  examples: ['that creature', 'That creature', 'that permanent', 'that land', 'that artifact'],
+  examples: [
+    'that creature',
+    'That creature',
+    'that permanent',
+    'that land',
+    'that artifact',
+    'that planeswalker',
+  ],
   rejects: [
     'that',
     'that creatures',
@@ -38,7 +45,10 @@ export const NOUN_THAT_OBJECT = defineRule<IrNoun>({
   parse: node<RegExpExecArray, IrNoun>(
     'noun.that-object',
     pattern(
-      new RegExp(`that (?:creature|permanent|land|artifact|enchantment)${BOUNDARY}(?!['’])`, 'iu'),
+      new RegExp(
+        `that (?:creature|permanent|land|artifact|enchantment|planeswalker)${BOUNDARY}(?!['’])`,
+        'iu',
+      ),
     ),
     (m): Bare => ({
       kind: 'noun',

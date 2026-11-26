@@ -55,10 +55,10 @@ function additional(cost: IrCost): LowerResult<Cost> {
 function lowerChoice(
   ability: Static,
   first: readonly IrCost[],
-  second: readonly IrCost[],
+  others: readonly (readonly IrCost[])[],
 ): LowerResult<FaceCosts> {
   const options: Cost[][] = [];
-  for (const way of [first, second]) {
+  for (const way of [first, ...others]) {
     const lowered: Cost[] = [];
     for (const ir of way) {
       const cost = additional(ir);
@@ -68,8 +68,8 @@ function lowerChoice(
     options.push(lowered);
   }
   const [one, other] = options;
-  if (one === undefined || other === undefined) return failure(ability);
-  const costs = [...one, ...other];
+  if (one === undefined || other === undefined || options.length > 3) return failure(ability);
+  const costs = options.flat();
   if (costs.some((c) => c.kind === 'payXLife' || c.kind === 'discardX')) return failure(ability);
   const missing = missingFeatures([
     ...costs.filter((c) => c.kind !== 'behold').map((c): FeatureRef => `cost:${c.kind}`),
@@ -77,12 +77,13 @@ function lowerChoice(
   ]);
   if (missing.length > 0) return failure(ability, missing);
   // Two ways that are the same kind of cost ("sacrifice a creature or sacrifice an artifact") are one cost of a wider description, not a choice.
-  if (one.length === 1 && other.length === 1 && one[0]?.kind === other[0]?.kind) {
+  const kinds = options.map((way) => (way.length === 1 ? way[0]?.kind : undefined));
+  if (kinds.every((k) => k !== undefined) && new Set(kinds).size !== kinds.length) {
     return failure(ability);
   }
   return {
     ok: true,
-    value: { ...NONE, additionalCostChoice: [one, other] },
+    value: { ...NONE, additionalCostChoice: options },
     rule: ability.rule,
   };
 }
@@ -111,7 +112,12 @@ function lowerAdditional(
       ? failure(ability, blocked)
       : { ok: true, value: { ...NONE, additionalCosts: [cost.value] }, rule: ability.rule };
   }
-  if (orCosts !== undefined) return lowerChoice(ability, costs, orCosts);
+  if (orCosts !== undefined)
+    return lowerChoice(
+      ability,
+      costs,
+      orCosts.map((c) => [c]),
+    );
   const lowered: Cost[] = [];
   for (const ir of costs) {
     const cost = additional(ir);
@@ -219,6 +225,26 @@ function lowerLifeAlternative(
     if (!lowered.ok) return lowered;
     entry = { ...entry, condition: lowered.value };
   }
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
+ * "You may pay {1}{B} rather than pay ~'s mana cost." (Baleful Mastery, CR 118.9, 601.2b, 601.2f): the engine's alternative cost `payMana`: the mana is paid in place of the mana cost, with
+ * no other effect on the spell. The mana is plain (no X, no hybrid), as for the named alternative costs.
+ */
+function lowerManaAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'manaAlternative';
+  },
+): LowerResult<FaceCosts> {
+  if (effect.cost.length === 0) return failure(ability);
+  const blocked = missingFeatures(['castAlternative:payMana', 'cost:mana']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'payMana',
+    cost: [{ kind: 'mana', symbols: [...effect.cost] }],
+  };
   return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
 }
 
@@ -356,6 +382,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
   if (effect.kind === 'lifeAlternative') return lowerLifeAlternative(ability, effect);
+  if (effect.kind === 'manaAlternative') return lowerManaAlternative(ability, effect);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
   if (effect.kind === 'graveyardSacrificeAlternative') {
     return lowerGraveyardSacrificeAlternative(ability, effect);

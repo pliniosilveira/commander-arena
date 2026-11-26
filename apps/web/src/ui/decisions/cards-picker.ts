@@ -131,7 +131,7 @@ export function lookTakeRevealed(
 }
 
 /** Where a looked-at card goes when taken (D-145): into the hand (the default), onto the battlefield, or into exile face down; or it stays on top of the library (Cream of the Crop). */
-export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'top';
+export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top';
 
 /**
  * Where the card taken from the top of the library goes, read from the `lookAtTop` of the ability on the stack; the hand
@@ -155,6 +155,55 @@ export function lookTakeDestination(
 export function castVerb(decision: Pick<ChooseCardsDecision, 'prompt'>): 'cast' | 'play' {
   return decision.prompt.startsWith('You may play ') ? 'play' : 'cast';
 }
+
+/** Where a card chosen by a question of purpose `move` goes (the engine's `ChooseMoveInstruction.to`). */
+export type MoveTo = 'exile' | 'hand' | 'graveyard' | 'library' | 'battlefield' | 'command';
+
+/**
+ * Where the cards of a `move` question go, read from the engine's own words: its prompt always ends "... to put into exile", "... to put
+ * into your hand", "... to put onto the battlefield" and so on (`runChooseMove`), and "no card in it can be put ..." for a hand looked at.
+ * Without a prompt, or with words it does not know, the card goes onto the battlefield, which is what the question was first made for.
+ */
+export function moveDestination(decision: Partial<Pick<ChooseCardsDecision, 'prompt'>>): MoveTo {
+  const words =
+    /\b(?:to put|can be put) (into exile|into (?:your|their) (hand|graveyard|library)|into the command zone|onto the battlefield)/u.exec(
+      decision.prompt ?? '',
+    );
+  if (words === null) return 'battlefield';
+  if (words[1] === 'into exile') return 'exile';
+  if (words[1] === 'into the command zone') return 'command';
+  if (words[2] === 'hand' || words[2] === 'graveyard' || words[2] === 'library') return words[2];
+  return 'battlefield';
+}
+
+/** The badge of a card chosen for a `move` question. */
+const MOVE_BADGE: Readonly<Record<MoveTo, string>> = {
+  exile: 'Exile',
+  hand: 'Hand',
+  graveyard: 'Graveyard',
+  library: 'Library',
+  battlefield: 'Put',
+  command: 'Command zone',
+};
+
+/** The title of the panel of a `move` question, before "for <the card or ability>". */
+const MOVE_TITLE: Readonly<Record<MoveTo, string>> = {
+  exile: 'Exile',
+  hand: 'Put into your hand',
+  graveyard: 'Put into your graveyard',
+  library: 'Put into your library',
+  battlefield: 'Put onto the battlefield',
+  command: 'Put into the command zone',
+};
+
+const MOVE_CONFIRM: Readonly<Record<MoveTo, string>> = {
+  exile: 'Exile',
+  hand: 'Put into hand',
+  graveyard: 'Put into graveyard',
+  library: 'Put into library',
+  battlefield: 'Put onto battlefield',
+  command: 'Put into command zone',
+};
 
 /** The label of the Confirm button: a search that finds nothing says so. */
 export function confirmLabel(
@@ -180,6 +229,8 @@ export function confirmLabel(
   if (decision.purpose === 'pair') return 'Choose';
   // D-303 (CR 700.3): the cards of pile 1; the others are pile 2, and either pile may be empty.
   if (decision.purpose === 'separate') return 'Make the piles';
+  // CR 608.2d (Extract Brain): the cards of the own hand another player looks at; the number is fixed, so there is no "none".
+  if (decision.purpose === 'handChoice') return 'Choose';
   // D-151 (CR 701.9): "Discard any number of cards": Confirm works with none.
   if (decision.purpose === 'discard' && chosen.length === 0 && (decision.min ?? 1) === 0) {
     return 'Discard none';
@@ -196,10 +247,15 @@ export function confirmLabel(
   if (decision.purpose === 'move' && decision.minCardTypes !== undefined) {
     return chosen.length === 0 ? 'Exile none' : 'Exile';
   }
-  if (decision.purpose === 'move') return chosen.length === 0 ? 'Put none' : 'Put onto battlefield';
+  if (decision.purpose === 'move') {
+    const to = moveDestination(decision);
+    return chosen.length === 0 ? (to === 'exile' ? 'Exile none' : 'Put none') : MOVE_CONFIRM[to];
+  }
   if (decision.purpose === 'lookTake') {
     // CR 702.75a: Hideaway exiles the card it must take; "put it onto the battlefield" may take none.
     if (to === 'exileFaceDown') return 'Exile face down';
+    // Durnan of the Yawning Portal: "You may exile a creature card from among them".
+    if (to === 'exile') return chosen.length === 0 ? 'Exile none' : 'Exile';
     if (to === 'top') return 'Put on top';
     if (to === 'battlefield') return chosen.length === 0 ? 'Put none' : 'Put onto battlefield';
     return chosen.length === 0 ? 'Take none' : 'Put into hand';
@@ -284,9 +340,13 @@ export function foundBadge(
   if (decision.purpose === 'copy') return 'Copy';
   if (decision.purpose === 'pair') return 'Chosen';
   if (decision.purpose === 'separate') return 'Pile 1';
+  if (decision.purpose === 'handChoice') return 'Chosen';
   if (decision.purpose === 'exile') return 'Exile';
   if (decision.purpose === 'move' && decision.minCardTypes !== undefined) return 'Exile';
-  if (decision.purpose === 'move') return 'Put';
+  if (decision.purpose === 'move') {
+    const to = moveDestination(decision);
+    return MOVE_BADGE[to];
+  }
   if (decision.purpose === 'lookTake') {
     return to === 'exileFaceDown' ? 'Exile' : to === 'battlefield' || to === 'top' ? 'Put' : 'Take';
   }
@@ -465,6 +525,8 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   pile: 'choosing one of two piles of cards',
   // CR 608.2d (D-660): an opponent chooses one of the cards exiled.
   opponentChoice: 'choosing one of the exiled cards',
+  // CR 608.2d, 402.3 (Extract Brain): cards of their own hand another player will look at and may cast.
+  handChoice: 'choosing cards from their hand',
 };
 
 /**
@@ -649,8 +711,9 @@ export function discardTitle(decision: ChooseCardsDecision, index: Index): strin
   if (decision.purpose === 'move' && decision.minCardTypes !== undefined) {
     return `Exile cards for ${nameOf(index, decision.source)}`;
   }
-  if (decision.purpose === 'move')
-    return `Put onto the battlefield for ${nameOf(index, decision.source)}`;
+  if (decision.purpose === 'move') {
+    return `${MOVE_TITLE[moveDestination(decision)]} for ${nameOf(index, decision.source)}`;
+  }
   // D-303 (CR 700.3): the cards revealed by Fact or Fiction and its kind.
   if (decision.purpose === 'separate') {
     return `Separate the revealed cards into two piles (${stackName(index, decision.source)})`;

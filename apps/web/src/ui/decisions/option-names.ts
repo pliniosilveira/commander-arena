@@ -5,7 +5,7 @@
  * (`OptionNamesDialog.tsx`) draws what these return, so the words are unit tested without a DOM.
  */
 import type { ChooseOptionDecision } from '@commander-arena/engine';
-import { colorName } from '../../game/chosen';
+import { colorName, optionText } from '../../game/chosen';
 import { destroyReplacementPrompt, destroyReplacementThen } from '../../game/danitha-g4-text';
 import { RIOT_ROWS, riotPrompt } from '../../game/keywords-text';
 import { romanNumeral } from '../../game/saga';
@@ -61,6 +61,11 @@ export function isCounterPickChoice(d: Asked): boolean {
 /** True for the choice of a Saga with read ahead (CR 702.155b): every option is a chapter number. */
 export function isChapterChoice(d: Asked): boolean {
   return d.purpose === 'option' && d.options.length > 0 && d.options.every((o) => /^\d+$/.test(o));
+}
+
+/** True for "As this creature enters, choose a player" (CR 614.12a, 607.2d): the options are `seat:<n>`, the players still in the game. */
+export function isPlayerChoice(d: Asked): boolean {
+  return d.purpose === 'player';
 }
 
 /** True for "As this creature enters, choose a card type" (CR 614.12a, 205.2a, D-376): the options are the card types of the engine. */
@@ -132,6 +137,7 @@ export function namedOptionPrompt(
       : `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
   }
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
+  if (isPlayerChoice(d)) return `As ${d.sourceName} enters, choose a player.`;
   // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
   if (isProtectionColorChoice(d)) {
     return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
@@ -156,9 +162,11 @@ export function votePrompt(
   seat?: number,
 ): string {
   // CR 701.38b: a vote for players or permanents has no words to list; CR 701.38a ("secretly"): nobody sees the votes until all are cast.
+  // CR 101.4, 701.38c ("Each opponent chooses fame or fortune"): a choice every player makes in turn, not a vote.
+  const choice = vote?.choice === true;
   const question =
     vote?.choices === undefined
-      ? `Vote for ${optionList(options)}.`
+      ? `${choice ? 'Choose' : 'Vote for'} ${optionList(options)}.`
       : vote.choices.some((c) => c.kind === 'object')
         ? 'Vote for a creature.'
         : 'Vote for a player.';
@@ -167,7 +175,7 @@ export function votePrompt(
   if (secret !== '') return `${question}${secret}`;
   if (cast.length === 0) return question;
   const who = (voter: number) => (voter === seat ? 'You' : 'Opponent');
-  return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
+  return `${question} ${cast.map((c) => `${who(c.seat)} ${choice ? 'chose' : 'voted for'} ${c.option}.`).join(' ')}`;
 }
 
 /** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-418). */
@@ -324,6 +332,13 @@ export function namedOptionRows(
   }
   if (isCounterPickChoice(d)) {
     return d.options.map((option) => ({ option, label: option, detail: null }));
+  }
+  if (isPlayerChoice(d)) {
+    return d.options.map((option) => ({
+      option,
+      label: optionText('player', option).replace(/^p/, 'P'),
+      detail: null,
+    }));
   }
   if (isProtectionColorChoice(d)) {
     return d.options.map((option) => ({ option, label: colorName(option), detail: null }));

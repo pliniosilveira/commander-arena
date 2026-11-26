@@ -42,6 +42,7 @@ export type SimpleKeyword = Extract<
   | 'flanking'
   | 'evolve'
   | 'extort'
+  | 'exploit'
   | 'convoke'
   | 'improvise'
   | 'delve'
@@ -51,8 +52,10 @@ export type SimpleKeyword = Extract<
   | 'demonstrate'
   | 'retrace'
   | 'jumpStart'
+  | 'undaunted'
   | 'aftermath'
   | 'rebound'
+  | 'cipher'
   | 'readAhead'
   | 'dethrone'
   | 'melee'
@@ -126,6 +129,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['flanking', 'flanking'],
   ['evolve', 'evolve'],
   ['extort', 'extort'],
+  // CR 702.110 (Exploit): a printed ability with no parameter, never granted; the engine expands it into "When this creature enters, you may sacrifice a creature".
+  ['exploit', 'exploit'],
   ['convoke', 'convoke'],
   ['improvise', 'improvise'],
   ['delve', 'delve'],
@@ -139,10 +144,14 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['retrace', 'retrace'],
   // CR 702.133a (Jump-start): a printed ability with no parameter, never granted.
   ['jump-start', 'jumpStart'],
+  // CR 702.125a (Undaunted): a printed ability with no parameter, never granted.
+  ['undaunted', 'undaunted'],
   // CR 702.127a (Aftermath): printed on the second half of a split card, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['aftermath', 'aftermath'],
   // CR 702.88a (Rebound): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['rebound', 'rebound'],
+  // CR 702.99 (Cipher): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
+  ['cipher', 'cipher'],
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],
@@ -198,6 +207,8 @@ export const LANDWALKS: readonly (readonly [string, string])[] = [
   ['swampwalk', 'Swamp'],
   ['mountainwalk', 'Mountain'],
   ['forestwalk', 'Forest'],
+  // CR 702.14a: the land type may be any land type; Desert is one (Hazezon, Shaper of Sand).
+  ['desertwalk', 'Desert'],
   ['nonbasic landwalk', 'nonbasic'],
 ];
 

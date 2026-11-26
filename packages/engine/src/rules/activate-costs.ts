@@ -22,7 +22,11 @@ import type { PaymentPlan } from '../mana';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
-import { exileCostCandidates, linkedExileCandidates } from './activation-exile';
+import {
+  exileCostCandidates,
+  linkedExileCandidates,
+  opponentExileCandidates,
+} from './activation-exile';
 import { blightCandidates } from './blight-candidates';
 import { controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
@@ -76,6 +80,8 @@ export interface CostBreakdown {
   readonly hasX: boolean;
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the mana of the cost is of the color the source chose as it entered. */
   readonly onlyChosenColor: boolean;
+  /** "You may spend blue mana as though it were mana of any color to activate those abilities" (Grell Philosopher, CR 609.4b): blue mana pays a symbol of any color of the cost. */
+  readonly blueAsAnyColor: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -94,6 +100,8 @@ export interface CostBreakdown {
   readonly exileCards: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a): the filter of the cards the permanent exiled that may be chosen, or null for no such cost. */
   readonly linkedExile: ObjectFilter | null;
+  /** "Put a card an opponent owns from exile into that player's graveyard" (Void Attendant, CR 108.3): `linkedExile` names the opponents' cards in exile, not the ones the permanent exiled. */
+  readonly linkedExileOpponents: boolean;
   /** The untapped permanents to tap (D-133, "Tap three untapped Zombies you control"), or null. */
   readonly tapPermanents: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The tapped permanents to untap (CR 701.26b, "Untap two tapped creatures you control"), or null. */
@@ -140,6 +148,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let exileCardsCosts = 0;
   let linkedExile: CostBreakdown['linkedExile'] = null;
   let linkedExileCosts = 0;
+  let linkedExileOpponents = false;
   let tapPermanents: CostBreakdown['tapPermanents'] = null;
   let tapPermanentsCosts = 0;
   let untapPermanents: CostBreakdown['untapPermanents'] = null;
@@ -151,6 +160,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let removeAmong: CostBreakdown['removeAmong'] = null;
   let removeAmongCosts = 0;
   let onlyChosenColor = false;
+  let blueAsAnyColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
   const mana: string[] = [];
@@ -235,6 +245,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'mana':
         mana.push(...withX(cost.symbols, x));
         if (cost.onlyChosenColor === true) onlyChosenColor = true;
+        if (cost.blueAsAnyColor === true) blueAsAnyColor = true;
         break;
       case 'sacrifice':
         sacrifices += 1;
@@ -253,6 +264,11 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'putLinkedExileInGraveyard':
         linkedExileCosts += 1;
         linkedExile = cost.filter;
+        break;
+      case 'putOpponentExileInGraveyard':
+        linkedExileCosts += 1;
+        linkedExile = cost.filter;
+        linkedExileOpponents = true;
         break;
       case 'tapPermanents':
         tapPermanentsCosts += 1;
@@ -315,6 +331,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     energy,
     hasX: hasX(abilityXCost(costs)),
     onlyChosenColor,
+    blueAsAnyColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -336,6 +353,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounceToLibraryBottom,
     exileCards,
     linkedExile,
+    linkedExileOpponents,
     tapPermanents,
     untapPermanents,
     tapCreatures,
@@ -351,9 +369,16 @@ export function sacrificeGroups(
   source: ObjectId,
   costs: Pick<CostBreakdown, 'sacrifice' | 'sacrificeAlongside'>,
 ): ObjectId[][] {
-  if (costs.sacrifice === null || costs.sacrifice === 'this') return [];
-  return [costs.sacrifice, ...costs.sacrificeAlongside].map((filter) =>
-    sacrificeCandidates(state, seat, source, filter),
+  if (costs.sacrifice === null) return [];
+  // "Sacrifice ~ and a legendary artifact" (Mount Doom, CR 701.21a): the source is the first part; the others are different permanents, never the source itself.
+  const parts =
+    costs.sacrifice === 'this'
+      ? costs.sacrificeAlongside
+      : [costs.sacrifice, ...costs.sacrificeAlongside];
+  return parts.map((filter) =>
+    sacrificeCandidates(state, seat, source, filter).filter(
+      (id) => costs.sacrifice !== 'this' || id !== source,
+    ),
   );
 }
 
@@ -549,13 +574,15 @@ export function planActivationMana(
   const x = costs.hasX ? ({ hasX: true } as const) : {};
   // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability": the color the source chose as it entered, or none.
   const only = costs.onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
+  // Grell Philosopher (CR 609.4b): blue mana may pay any color of the cost.
+  const blue = costs.blueAsAnyColor ? ({ blueAsAnyColor: true } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true, ...x, ...only }
-      : { ability: true, ...x, ...only, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x, ...only, ...blue }
+      : { ability: true, ...x, ...only, ...blue, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 
@@ -595,6 +622,13 @@ export function costRefusal(
     }
     // CR 701.21a, 101.2: a permanent that can't be sacrificed can't pay "Sacrifice this".
     if (cantBeSacrificed(state, source.id)) return "it can't be sacrificed";
+    // CR 701.21a, 118.3: "Sacrifice ~ and a legendary artifact" needs a different permanent for each other part.
+    if (
+      parts.sacrificeAlongside.length > 0 &&
+      !canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))
+    ) {
+      return 'you do not control permanents to sacrifice for every part of the cost';
+    }
   } else if (parts.sacrifice !== null && parts.sacrificeAlongside.length > 0) {
     // CR 701.21a, 118.3: each part of "Sacrifice a Swamp and a Forest" needs a permanent of its own.
     if (!canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))) {
@@ -664,8 +698,13 @@ export function costRefusal(
     }
   }
   if (parts.linkedExile !== null) {
-    // CR 118.3, 607.2a: a card the permanent exiled with its linked ability, still in exile, that the filter matches.
-    if (linkedExileCandidates(paid, source.id, parts.linkedExile).length === 0) {
+    if (parts.linkedExileOpponents) {
+      // CR 108.3, 118.3 (Void Attendant): a face-up card in exile that an opponent owns and the filter matches.
+      if (opponentExileCandidates(paid, seat, source.id, parts.linkedExile).length === 0) {
+        return 'no card an opponent owns is in exile for you to put into its owner’s graveyard';
+      }
+    } else if (linkedExileCandidates(paid, source.id, parts.linkedExile).length === 0) {
+      // CR 118.3, 607.2a: a card the permanent exiled with its linked ability, still in exile, that the filter matches.
       return 'there is no card exiled with it that you could put into a graveyard';
     }
   }

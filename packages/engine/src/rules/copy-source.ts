@@ -3,6 +3,7 @@
  * `rules/copy-spell.ts` so that the interpreter (`rules/effects.ts`) can make the instruction without importing the
  * legality code that file needs (the interpreter cannot import the mana engine, which runs effects).
  */
+import type { Ability } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState, Instruction } from '../state/types';
 import { objectOrLki } from './source-info';
@@ -33,6 +34,8 @@ export function copyInstructions(
   newTargets: 'may' | 'no',
   /** D-665: the player the copies belong to, when it is not the controller of the effect ("That player copies the spell", Demonstrate). */
   controller?: SeatId,
+  /** Nalfeshnee: what the permanent a copy becomes has. */
+  gains?: readonly Ability[],
 ): CopySpellInstruction[] {
   return count > 0
     ? [
@@ -44,6 +47,7 @@ export function copyInstructions(
           stage: 'make',
           copy: null,
           ...(controller === undefined ? {} : { controller }),
+          ...(gains === undefined ? {} : { gains }),
         },
       ]
     : [];

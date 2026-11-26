@@ -17,8 +17,9 @@ import type {
   GameState,
   ResolutionContext,
 } from '../state/types';
+import { derive } from './derive';
 import { amountOf, moveInstructions, moving } from './effect-support';
-import { resolveObjects, resolvePlayers, type SelectContext } from './select';
+import { matchesFilter, resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** The steps of a turn that come before its end step (CR 500.1): "your next end step" is this turn's while one of them is current. */
@@ -64,7 +65,13 @@ export function runExileTop(
     effect.from === undefined ? [res.controller] : resolvePlayers(state, effect.from, ctx, targets);
   if (owners.length === 0) return moving(state, []);
   const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
-  const moves = moveInstructions(top, 'exile');
+  // CR 608.2c (Journey to the Lost City): a creature card that really goes to exile counts, "for each creature card among those cards" (a card in a library is never a token).
+  const moves = moveInstructions(top, 'exile').map((m) => {
+    const card = m.kind === 'move' ? state.objects[m.object] : undefined;
+    return card !== undefined && derive(state, card).types.includes('creature')
+      ? { ...m, countsCreatureCard: true as const }
+      : m;
+  });
   // CR 607.2a, 611.2a (Furious Rise): "until you exile another card with this enchantment": exiling another card with the permanent's linked ability ends the permission to play the one before.
   const exiling =
     effect.linked === true && res.source !== null && top.length > 0 ? res.source : null;
@@ -121,11 +128,32 @@ export function runMayPlay(
       : (res.lastMoved ?? []);
   const cards = named.filter((id) => {
     const card = state.objects[id];
-    return card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller);
+    if (
+      !(card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller))
+    ) {
+      return false;
+    }
+    // Narset, Enlightened Master: only the cards the filter describes get the permission.
+    return (
+      effect.cards === undefined ||
+      matchesFilter(
+        state,
+        card,
+        { ...effect.cards, zone: card.zone },
+        { controller: res.controller, source: res.source },
+      )
+    );
   });
   const until = playEnd(state, res.controller, effect.lasts);
   let next = state;
   const created: ContinuousEffect[] = [];
+  // Nashi, Moon Sage's Scion: "you may play one of those cards": the permissions of this effect share a key, which the card played ends the others by.
+  let oneOf: string | undefined;
+  if (effect.oneOf === true && cards.length > 0) {
+    const [stamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    oneOf = `one${stamp}`;
+  }
   for (const id of cards) {
     // CR 406.3 (D-187): "you may look at and play those cards": the controller may look at each card that is face down, until it leaves exile.
     if (effect.lookAt === true && next.objects[id]?.exiledFaceDown === true) {
@@ -159,6 +187,13 @@ export function runMayPlay(
         ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
         // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast".
         ...(effect.lessGeneric === undefined ? {} : { lessGeneric: effect.lessGeneric }),
+        // Durnan of the Yawning Portal (CR 702.125a): "That spell has undaunted".
+        ...(effect.undaunted === true ? { undaunted: true as const } : {}),
+        // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell".
+        ...(effect.creatureSpellsOnly === true ? { creatureSpellsOnly: true as const } : {}),
+        // Nashi, Moon Sage's Scion (CR 118.9): "pay life equal to its mana value rather than paying its mana cost", and "play one of those cards".
+        ...(effect.lifeForMana === true ? { lifeForMana: true as const } : {}),
+        ...(oneOf === undefined ? {} : { oneOf }),
         // Furious Rise (CR 607.2a): "until you exile another card with this enchantment".
         ...(effect.lasts === 'untilSourceExilesAnother' && res.source !== null
           ? { endsWhenExilesAnother: res.source }

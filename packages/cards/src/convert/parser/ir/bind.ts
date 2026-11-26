@@ -128,6 +128,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'defendingPlayer',
   // "the player to your right": one player the text names, so a later "that player" is bound to it.
   'playerToRight',
+  // "the chosen player": one player the permanent chose as it entered.
+  'enteredChosenPlayer',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
   // "each of those opponents" of a damage batch trigger: several players, as above.
@@ -139,6 +141,7 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'combatDamagedThisTurn',
   // "each player who controls a creature with power 4 or greater": several players, as above.
   'eachPlayerControlling',
+  'eachPlayerControllingMore',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {
@@ -158,6 +161,8 @@ function classify(raw: string): Pronoun | null {
   }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
+  // Exit from Exile deck (Bonecrusher Giant): "that spell's controller", the player a trigger about a spell that targeted names.
+  if (/^that spell['’]s controller$/u.test(word)) return { kind: 'player' };
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
   if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
@@ -346,8 +351,15 @@ class Binder {
 
   /** A sentence of this body asked a player ("target opponent may have you ..."): "that player" then never means "you". */
   private playerAsked = false;
+  /**
+   * The sentence being bound offers to cast "it" for free ("If it's a nonland card, you may cast it without paying its mana cost", Mind's Dilation): "it" is then the one card the exile of
+   * the top card before it took (`thatCardOnly` otherwise keeps "it" away from that card), which the engine names `moved`.
+   */
+  private sentenceCastsIt = false;
 
   private resolveAnaphor(noun: IrNoun): IrNoun {
+    // "for each card in their graveyard" (Guiltfeeder): "their" is the player of the instruction, which the lowering of that instruction names; the binding pass has nothing to say of it.
+    if (noun.rule === 'noun.their-zone') return noun;
     const pronoun = classify(noun.filter.raw);
     const recent = [...this.antecedents].reverse();
     let found: Antecedent | undefined;
@@ -376,6 +388,8 @@ class Binder {
             // player, "that player" is that player and never the "you" of the sentence.
             !(
               (this.playerAsked ||
+                // Thieving Amalgam (CR 701.40a): "you manifest the top card of that player's library": the library is another player's, never the subject's.
+                this.clauseVerb === 'manifest' ||
                 (this.inAmount && this.antecedents.some((x) => x.noun.ref === 'trigActor'))) &&
               a.noun.det === 'you' &&
               /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
@@ -413,13 +427,33 @@ class Binder {
                   this.clauseVerb === 'grantKeyword' &&
                   /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
-            (a.thatCardOnly !== true || /^that card$/iu.test(noun.filter.raw.trim())) &&
+            (a.thatCardOnly !== true ||
+              /^that card$/iu.test(noun.filter.raw.trim()) ||
+              (this.sentenceCastsIt &&
+                a.noun.ref === 'moved' &&
+                /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             a.groupLine !== true &&
             !a.noun.plural &&
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
         );
+        // Uglúk of the White Hand (CR 608.2c, 603.10a): "Whenever another creature you control dies, put a +1/+1 counter on ~. If that creature was a Goblin or Orc, ...": the
+        // source is named by "~", never by "that creature", which is the object the trigger is about (the creature that died), even when "~" was mentioned after it.
+        if (
+          found?.noun.ref === 'self' &&
+          /^that (?:creature|permanent)$/iu.test(noun.filter.raw.trim())
+        ) {
+          found =
+            recent.find(
+              (a) =>
+                a.kind === 'object' &&
+                a.token !== true &&
+                a.noun.ref === 'trig' &&
+                !a.noun.plural &&
+                compatible(a.noun.filter, pronoun.type),
+            ) ?? found;
+        }
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
         if (found === undefined && noun.itWord === true) {
           found = recent.find(
@@ -464,6 +498,30 @@ class Binder {
     if (antecedent.ref === 'trigActor') return { ...noun, det: 'triggerActor', ref: 'trigActor' };
     const ref = pronoun?.kind === 'other' ? `${antecedent.ref ?? ''}.2` : antecedent.ref;
     return ref === undefined ? { ...noun } : { ...noun, ref };
+  }
+
+  /**
+   * "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil, CR 603.4, 603.10a, 113.7a): the intervening "if" of a trigger that says "it" or "that creature"
+   * of an object (`objectMatches`) is about what the trigger is about. For a death or leaves-the-battlefield trigger of an Aura's or Equipment's host that is the permanent as it last
+   * was (`triggerSubject`, last-known information), not the host read from the attachment, which is gone once the permanent has left.
+   */
+  interveningObject(
+    trigger: IrTrigger,
+    condition: IrCondition | undefined,
+  ): IrCondition | undefined {
+    const test = condition?.test;
+    if (condition === undefined || test?.kind !== 'objectMatches') return condition;
+    // "When ~ dies, if it was a creature, ..." (Enduring Tenacity): "it" is the card itself, which the lowering reads as `thisMatches`, not a permanent the event is about.
+    if (trigger.subject?.det === 'self') return condition;
+    const who = this.noun(test.who);
+    const hostLeft =
+      (trigger.event === 'dies' || trigger.event === 'leavesBattlefield') &&
+      (trigger.subject?.det === 'enchanted' || trigger.subject?.det === 'equipped');
+    const bound: IrNoun =
+      hostLeft && (who.det === 'enchanted' || who.det === 'equipped')
+        ? { ...who, det: 'triggerSubject', ref: 'trig' }
+        : who;
+    return { ...condition, test: { ...test, who: bound } };
   }
 
   noun(noun: IrNoun): IrNoun {
@@ -845,6 +903,23 @@ class Binder {
     }
     // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": "that card" is the card the exile moved, which the engine
     // names `moved`. Pushed after the clause's own noun, so that it is the most recent object of the text.
+    // Chandra, Legacy of Fire: "Exile that many cards from the top of your library. You may play them this turn": "them" are the cards the exile moved (the engine's `moved`).
+    if (clause.verb === 'exileTopThatMany') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'cards' },
+          upTo: false,
+          plural: true,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
     if (clause.verb === 'exileChosenCard') {
       this.antecedents.push({
         kind: 'object',
@@ -883,11 +958,13 @@ class Binder {
     // CR 701.9, 603.12 (Summon: Kujata): "Discard a card, then draw two cards. When you discard a card this way, ~ deals damage equal to that card's mana value": "that card" is the one card the
     // discard made the player discard, which the engine's `thisWay` `discardedValue` counts (`ref` 'discarded': only the lowering of the reflexive ability reads it).
     if (
-      clause.verb === 'discard' &&
-      clause.args.amount?.kind === 'number' &&
-      clause.args.amount.value === 1 &&
-      clause.args.random === undefined &&
-      clause.args.unless === undefined
+      // Narset of the Ancient Way: "then you may discard a card" is the same one discard, offered.
+      clause.verb === 'discardMayOne' ||
+      (clause.verb === 'discard' &&
+        clause.args.amount?.kind === 'number' &&
+        clause.args.amount.value === 1 &&
+        clause.args.random === undefined &&
+        clause.args.unless === undefined)
     ) {
       this.antecedents.push({
         kind: 'object',
@@ -929,6 +1006,7 @@ class Binder {
     const bound = {
       ...body,
       sentences: body.sentences.map((s) => {
+        this.sentenceCastsIt = s.clauses.some((c) => c.verb === 'castMovedFree');
         // "If it's a Zombie card, ...": the pronoun of the condition (stage P30) comes before the clauses of its sentence.
         const test = s.condition?.test;
         const condition =
@@ -1008,6 +1086,7 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',
+  'becomesUnblocked',
   // The source deals the damage on the battlefield (stage P18, D-111).
   'dealsCombatDamage',
   'dealsDamage',
@@ -1055,6 +1134,19 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   if (source.event === 'attackBatch' && source.attackingYourOpponents === true) {
     binder.seedAttackers(source);
   }
+  // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked.
+  if (source.event === 'attackBatch' && source.eachAttackedOpponent === true) {
+    binder.seedControllerOfSubject({
+      kind: 'noun',
+      det: 'a',
+      filter: { raw: '' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: source.span,
+      rule: source.rule,
+    });
+  }
   const subject = binder.seed(source.subject, 'triggerSubject', aboutSelf(source));
   const actor = binder.seed(source.actor, 'triggerActor');
   // The player a creature dealt combat damage to is the antecedent of "that player" (stage P18).
@@ -1068,6 +1160,15 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
     source.alternatives === undefined &&
     subject !== undefined &&
     subject.det !== 'self' &&
+    actor === undefined
+  ) {
+    binder.seedControllerOfSubject(subject);
+  }
+  // Exit from Exile deck (Bonecrusher Giant, CR 603.2): "that spell's controller" of "Whenever ~ becomes the target of a spell": the player of the event, the controller of the spell or ability that targeted.
+  if (
+    source.event === 'becomesTarget' &&
+    source.alternatives === undefined &&
+    subject !== undefined &&
     actor === undefined
   ) {
     binder.seedControllerOfSubject(subject);
@@ -1153,6 +1254,7 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
       binder.seedSelfCondition(ability.trigger, ability.interveningIf);
+      const interveningIf = binder.interveningObject(ability.trigger, ability.interveningIf);
       // "At the beginning of your upkeep, if ~ has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it." (Quandrix Unlimited deck, group G): the
       // permanent the intervening "if" names is what "it" means in the body, when the trigger has no subject of its own.
       const tested = ability.interveningIf;
@@ -1189,7 +1291,12 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
           targets: [...binder.targets, ...modal.targets],
         };
       }
-      return done({ ...ability, trigger, body: binder.body(ability.body) });
+      return done({
+        ...ability,
+        trigger,
+        ...(interveningIf === undefined ? {} : { interveningIf }),
+        body: binder.body(ability.body),
+      });
     }
     case 'modal': {
       const modal = bindModes(ability, scope, verbs, () => undefined);

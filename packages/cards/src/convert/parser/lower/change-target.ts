@@ -19,6 +19,16 @@ export const CHANGE_TARGET: Lowering<IrClause, Effects> = {
     const ref = objectRefOf(noun, ctx);
     if (!ref.ok) return ref;
     if (ref.value.kind !== 'target') return failure(clause);
+    const toNoun = arg(clause, 'to');
+    if (toNoun !== undefined) {
+      // "Change a target of target spell or ability to ~" (CR 115.7b): the new target is the permanent with the ability.
+      if (toNoun.kind !== 'noun' || toNoun.det !== 'self') return failure(clause);
+      return {
+        ok: true,
+        value: [{ kind: 'changeTarget', object: ref.value, to: { kind: 'this' } }],
+        rule: clause.rule,
+      };
+    }
     return {
       ok: true,
       value: [{ kind: 'changeTarget', object: ref.value }],

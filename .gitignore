@@ -18,3 +18,5 @@ docs/rules/*.tmp
 # Generated reports (docs/CORPUS.md): only templates.json, coverage-baseline.json and the README are committed
 reports/*.md
 !reports/README.md
+# The baseline agent code of the AI benchmark (tools/ai/baseline.ts)
+tools/ai/.baseline/

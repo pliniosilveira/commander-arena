@@ -31,7 +31,7 @@ const sacrifice: Cost = { kind: 'sacrifice', what: { types: ['creature'] } };
 const discard: Cost = { kind: 'discard', count: 1 };
 
 const withChoice = (
-  choice: readonly [readonly Cost[], readonly Cost[]],
+  choice: readonly (readonly Cost[])[],
   more: Partial<{
     additionalCosts: readonly Cost[];
     types: CardDefinition['faces'][number]['types'];
@@ -79,15 +79,22 @@ describe('a choice between two additional costs (CR 118.8, 601.2b)', () => {
     expect(messages(withChoice([[sacrifice], [mana('2')]], { types: ['creature'] }))).toEqual([]);
   });
 
-  test('exactly two ways, none empty, not the same', () => {
+  test('two or three ways, none empty, not the same', () => {
     expect(
       structure(withChoice([[sacrifice]] as unknown as [readonly Cost[], readonly Cost[]])),
-    ).toEqual(['additionalCostChoice has exactly two ways to pay']);
+    ).toEqual(['additionalCostChoice has two or three ways to pay']);
     expect(structure(withChoice([[], [mana('2')]]))).toEqual([
       'a way to pay is a non-empty list of costs',
     ]);
     expect(structure(withChoice([[mana('2')], [mana('2')]]))).toEqual([
-      'the two ways to pay are the same',
+      'two ways to pay are the same',
+    ]);
+  });
+
+  test('three ways are allowed, four are not', () => {
+    expect(messages(withChoice([[sacrifice], [discard], [mana('2')]]))).toEqual([]);
+    expect(structure(withChoice([[sacrifice], [discard], [mana('2')], [mana('3')]]))).toEqual([
+      'additionalCostChoice has two or three ways to pay',
     ]);
   });
 

@@ -47,9 +47,15 @@ function designationWords(
   if (player.kind === 'all') return null;
   // The city's blessing (CR 702.131c, D-264) is had, not "been": "you have the city's blessing".
   const blessing = designation === 'citysBlessing';
+  // The initiative (CR 726.1) is had too: "you have the initiative".
+  const had = blessing
+    ? "the city's blessing"
+    : designation === 'initiative'
+      ? 'the initiative'
+      : null;
   if (player.kind === 'you') {
-    return blessing
-      ? `you ${negate ? "don't have" : 'have'} the city's blessing`
+    return had !== null
+      ? `you ${negate ? "don't have" : 'have'} ${had}`
       : `you're ${negate ? 'not ' : ''}the ${designation}`;
   }
   // "if an opponent is the monarch": a condition about the opponents asks whether any of them is.
@@ -59,8 +65,8 @@ function designationWords(
       : player.kind === 'eachPlayer'
         ? 'a player'
         : playerSubject(player).text;
-  return blessing
-    ? `${who} ${negate ? "doesn't have" : 'has'} the city's blessing`
+  return had !== null
+    ? `${who} ${negate ? "doesn't have" : 'has'} ${had}`
     : `${who} ${negate ? 'is not' : 'is'} the ${designation}`;
 }
 

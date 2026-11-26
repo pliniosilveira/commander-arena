@@ -100,7 +100,7 @@ export const UNTIL_SOURCE_LEAVES = pattern(
 export function perOpponentNoun(
   ctx: ParseContext,
   from: number,
-  verb: 'exile' | 'destroy' | 'tap' | 'gain control of',
+  verb: 'exile' | 'destroy' | 'tap' | 'gain control of' | 'return',
   at: number,
   id: string,
 ) {
@@ -311,6 +311,9 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // Flamebraider, Primal Beyond: the sources of the spells' creature type, in the plural or with an article.
     'spend this mana only to cast Elemental spells or activate abilities of Elemental sources',
     'spend this mana only to cast an Elemental spell or activate an ability of an Elemental',
+    // Discreet Retreat (CR 700.12, 106.6): the outlaws, the five creature types.
+    'spend this mana only to cast outlaw spells or activate abilities of outlaw sources',
+    'spend this mana only to cast an outlaw spell',
   ],
   rejects: [
     'spend this mana only to cast instant and sorcery spell',
@@ -339,6 +342,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Elemental spells or activate abilities of Dragon sources',
     'spend this mana only to cast an Elemental spell or activate an ability of a Dragon',
     'spend this mana only to cast an Elemental spell or activate an ability of an Elemental you control',
+    'spend this mana only to cast outlaw spells or activate abilities of Dragon sources',
+    'spend this mana only to cast non-outlaw spells',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.spend-only';
@@ -355,7 +360,12 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // A spell is named by its card types or its creature types: a color, a quality or a count says more than the engine's restriction.
     const filter: IrFilter = phrase.value.value;
     // "spells" with no type says nothing a restriction could use.
-    if (filter.types === undefined && filter.subtypes === undefined && filter.anyOf === undefined) {
+    if (
+      filter.types === undefined &&
+      filter.subtypes === undefined &&
+      filter.anyOf === undefined &&
+      filter.outlaw !== true
+    ) {
       return fail(ctx, pos);
     }
     // Stage P34 (D-152): "... or activate abilities of Dragons", the abilities of the permanents of the same kind as the spells (CR 106.6).
@@ -395,6 +405,13 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // "... or activate abilities of Elemental sources", "... an Elemental spell or activate an ability of an Elemental" (CR 106.6, Flamebraider, Primal Beyond): the
     // sources of the one creature type the spells are of, said as "<Type> sources" or, with an article, "an ability of a <Type>".
     const sourcesEnd = (() => {
+      // Discreet Retreat (CR 700.12, 106.6): "outlaw spells or activate abilities of outlaw sources", the sources that are outlaws.
+      if (filter.outlaw === true) {
+        const o = pattern(
+          /(?: or activate abilities of outlaw sources| or activate an ability of an outlaw source)(?![\p{L}\p{N}])/iu,
+        )(ctx, phrase.pos);
+        return o.ok ? o.pos : null;
+      }
       const only = filter.subtypes;
       if (filter.types !== undefined || only === undefined || only.length !== 1) return null;
       const m = pattern(

@@ -11,6 +11,7 @@
 import type { StaticEffect } from '../ast/types';
 import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
+import { getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -116,6 +117,31 @@ export function cannotWinGame(state: GameState, seat: SeatId): boolean {
       )
     ) {
       return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * CR 121.2b, 604.1 (Narset, Parter of Veils): whether `seat` has drawn as many cards this turn as an effect lets them: a permanent an opponent of `seat` controls has `drawLimit` for
+ * `opponents` ("Each opponent can't draw more than one card each turn"), or any permanent has it for `players`. The least `max` of the effects that apply is the limit. Every draw
+ * goes through `drawCard`, which asks here, so a draw past the limit does not happen.
+ */
+export function drawLimitReached(state: GameState, seat: SeatId): boolean {
+  const drawn = getSeat(state, seat).cardsDrawnThisTurn;
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || !mayHaveStatic(state, obj, 'drawLimit')) continue;
+    const controller = controllerOf(state, obj);
+    for (const a of derive(state, obj).abilities) {
+      if (
+        a.kind === 'static' &&
+        a.static.kind === 'drawLimit' &&
+        (a.static.who === 'players' || controller !== seat) &&
+        drawn >= a.static.max
+      ) {
+        return true;
+      }
     }
   }
   return false;

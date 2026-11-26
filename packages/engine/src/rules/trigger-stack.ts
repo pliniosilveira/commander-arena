@@ -27,12 +27,13 @@
  * The two-part process of CR 603.3b (abilities whose condition is "another ability triggers" go
  * first) is not needed until such an ability exists.
  */
+import type { TargetSpec } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { nextInt } from '../rng';
 import type { ChosenTarget } from '../state/chosen';
 import type { NewDecision, TargetChoiceSpec, TriggerChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getSeat, patchObject, removeFromZone, seatsInOrder } from '../state/ops';
+import { getSeat, opponentsOf, patchObject, removeFromZone, seatsInOrder } from '../state/ops';
 import type { GameState, PendingTrigger } from '../state/types';
 import { pushAbilityObject } from './ability-object';
 import { becameTargetEvents } from './becomes-target';
@@ -163,19 +164,32 @@ function pushTrigger(
     trigger.source === null
       ? next
       : withModesChosen(next, trigger.source, modes, modal?.choose.notRepeatedBySource === true);
+  // CR 603.6a, 603.2 (Aboleth Spawn): the ability of a permanent that triggered as that permanent entered says so, for "a creature entering causes a triggered ability of that
+  // creature to trigger".
+  const entered =
+    trigger.source !== null &&
+    trigger.ability.trigger.kind === 'entersBattlefield' &&
+    'kind' in trigger.ability.trigger.what &&
+    trigger.ability.trigger.what.kind === 'this'
+      ? trigger.source
+      : undefined;
+  const event: GameEvent = {
+    kind: 'abilityTriggered',
+    seat: trigger.controller,
+    // An ability with no source (the monarch's, CR 725.2) names its own stack object, as `StackData` reads it.
+    source: trigger.source ?? id,
+    abilityIndex: trigger.abilityIndex,
+    stackObject: id,
+    ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
+    ...(entered === undefined ? {} : { entered }),
+  };
+  // What that triggers waits for the next round, as what a target chosen triggers does (CR 603.3b).
+  const settled = entered === undefined ? logged : collectDeferred(logged, [event]);
   return {
     // A new object on the stack: earlier passes in succession no longer count (CR 117.4).
-    state: { ...logged, turn: { ...logged.turn, passedInSuccession: [] } },
+    state: { ...settled, turn: { ...settled.turn, passedInSuccession: [] } },
     id,
-    event: {
-      kind: 'abilityTriggered',
-      seat: trigger.controller,
-      // An ability with no source (the monarch's, CR 725.2) names its own stack object, as `StackData` reads it.
-      source: trigger.source ?? id,
-      abilityIndex: trigger.abilityIndex,
-      stackObject: id,
-      ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
-    },
+    event,
   };
 }
 
@@ -194,16 +208,18 @@ function targetsChosen(
     ...becameTargetEvents(state, stackObject, seat),
     ...crimeEvents(state, stackObject, seat),
   ];
+  return { state: collectDeferred(state, events), events };
+}
+
+/** The triggers `events` cause, noted at once but waiting for the next round (CR 603.3b). */
+function collectDeferred(state: GameState, events: readonly GameEvent[]): GameState {
   const before = state.pendingTriggers.length;
   const collected = collectTriggers(state, events);
   return {
-    state: {
-      ...collected,
-      pendingTriggers: collected.pendingTriggers.map((t, i) =>
-        i < before ? t : { ...t, deferred: true as const },
-      ),
-    },
-    events,
+    ...collected,
+    pendingTriggers: collected.pendingTriggers.map((t, i) =>
+      i < before ? t : { ...t, deferred: true as const },
+    ),
   };
 }
 
@@ -364,19 +380,37 @@ function runQueue(input: GameState): PutResult {
       ...pushed.state,
       triggering: { seat: trigger.controller, queue: waiting?.queue ?? [], awaiting: pushed.id },
     };
+    // CR 603.3d (Bladegriff Prototype, `TargetSpec.chosenBy`): "target ... of that player's choice": another player chooses the target; the controller of the ability stays the same.
+    const chooser = targetChooserOf(state, trigger, specs);
     return {
       state,
       events,
       decision: {
         kind: 'targets',
-        seat: trigger.controller,
+        seat: chooser,
         source: pushed.id,
         specs: choices,
         forTrigger: true,
+        ...(chooser === trigger.controller ? {} : { forController: trigger.controller }),
       },
     };
   }
   return { state: { ...state, triggering: null }, events, decision: null };
+}
+
+/**
+ * The player who chooses the targets of `trigger` as it goes on the stack (CR 603.3d): its controller, or with a slot `chosenBy` "triggerPlayer" ("of that player's choice") the player the event
+ * is about, while they are still in the game; otherwise the first opponent of the controller in turn order who is (the controller's choice among several, as for `opponentChoosesCard`).
+ */
+function targetChooserOf(
+  state: GameState,
+  trigger: PendingTrigger,
+  specs: readonly TargetSpec[],
+): SeatId {
+  if (!specs.some((s) => s.chosenBy === 'triggerPlayer')) return trigger.controller;
+  const named = trigger.player;
+  if (named !== undefined && !getSeat(state, named).hasLost) return named;
+  return opponentsOf(state, trigger.controller)[0] ?? trigger.controller;
 }
 
 /** Takes `ordered` off the waiting list and puts them on the stack in that order (CR 603.3b, 603.3d). */
@@ -631,7 +665,8 @@ export function answerTriggerTargets(
   const named = targetsChosen(
     { ...answered, triggering: { ...ctx, awaiting: null } },
     stackObject,
-    pending.seat,
+    // The controller of the ability targets, whoever chose (`forController`, Bladegriff Prototype).
+    pending.forController ?? pending.seat,
   );
   const rest = putTriggersOnStack(named.state);
   return {

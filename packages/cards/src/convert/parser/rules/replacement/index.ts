@@ -9,6 +9,7 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COPY_EXCEPT_QUOTED_REPLACEMENT_RULES } from './copy-except-quoted';
 import { COUNTER_BLITZ_G_REPLACEMENT_RULES } from './counter-blitz-g';
 import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
@@ -20,6 +21,7 @@ import { DRAW_REDIRECT_REPLACEMENT_RULES } from './draw-redirect';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
+import { EXILE_PAIR_COPY_REPLACEMENT_RULES } from './exile-pair-copy';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KEEP_ONE_LOYALTY_REPLACEMENT_RULES } from './keep-one-loyalty';
@@ -28,6 +30,7 @@ import { PAY_LIFE_REPLACEMENT_RULES } from './pay-life';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
 import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
+import { TOKEN_EACH_OF_REPLACEMENT_RULES } from './token-each-of';
 import { UNLESS_RULES } from './unless';
 
 /**
@@ -146,9 +149,15 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters the battlefield, choose a card type.',
     // Issue 184 (Thriving Isle): a color other than one.
     'As ~ enters, choose a color other than blue.',
+    // Sewer Nemesis and Phyrexian Revoker (CR 614.12a, 607.2d): a player, a nonland card name.
+    'As ~ enters, choose a player.',
+    'As ~ enters, choose a nonland card name.',
     // Cloud Key (CR 205.2a): some of the card types.
     'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery.',
     'As ~ enters, choose creature or artifact.',
+    // Stuffy Doll (CR 614.12a, 607.2d): a player.
+    'As ~ enters, choose a player.',
+    'As ~ enters the battlefield, choose a player.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -164,8 +173,16 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose two colors.',
     'As ~ enters, choose a basic land type.',
     'As ~ enters, choose a card name.',
+    'As ~ enters, choose a land card name.',
     'As ~ enters, choose a number.',
+    'As ~ enters, choose a player',
+    'As ~ enters, choose two players.',
+    'As ~ enters, choose a nonland card name',
+    'As ~ enters, choose a nonland card.',
     'As ~ enters, choose an opponent.',
+    'As ~ enters, choose two players.',
+    'As ~ enters, you may choose a player.',
+    'As ~ enters, choose a player other than you.',
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
     'As ~ enters, choose a card type',
@@ -194,7 +211,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(ENTERS, literal('it enters the battlefield'), literal('it enters')),
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
-        pattern(/, choose a (creature type|color|card type|planeswalker type)\./i),
+        pattern(
+          /, choose a (creature type|color|card type|planeswalker type|player|nonland card name)\./i,
+        ),
         // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
         pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
@@ -212,7 +231,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       kind === 'color' ||
       kind === 'creature type' ||
       kind === 'card type' ||
-      kind === 'planeswalker type';
+      kind === 'planeswalker type' ||
+      kind === 'player' ||
+      kind === 'nonland card name';
     // Cloud Key: a choice among card types listed in lowercase (the capitalized names of Khans or Dragons are the card's own).
     const types = plain ? null : cardTypeNames(tail[1] ?? '');
     const names = plain || types !== null ? null : optionNames(tail[1] ?? '');
@@ -231,7 +252,11 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
                     ? 'cardType'
                     : kind === 'planeswalker type'
                       ? 'planeswalkerType'
-                      : 'creatureType',
+                      : kind === 'player'
+                        ? 'player'
+                        : kind === 'nonland card name'
+                          ? 'cardName'
+                          : 'creatureType',
               ...(excluded === undefined ? {} : { except: excluded }),
               span,
               rule: id,
@@ -399,6 +424,9 @@ export const REPLACEMENT_RULES = [
   ...ENTERS_AS_COPY_COUNTERS_RULES,
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
+  ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
+  // Grand Larceny deck (issue 119), The Mimeoplasm: "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards ...".
+  ...EXILE_PAIR_COPY_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
@@ -409,6 +437,8 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  // Most Wanted deck, group 2: "If you would create a Clue, Food, or Treasure token, instead create one of each."
+  ...TOKEN_EACH_OF_REPLACEMENT_RULES,
   ...DRAW_REDIRECT_REPLACEMENT_RULES,
   // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,

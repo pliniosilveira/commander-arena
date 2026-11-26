@@ -145,6 +145,12 @@ export function lowerCopyToken(
     }
     exceptions = { ...exceptions, setTypes: types };
   }
+  // "..., except the token is 1/1" (Endless Evil, CR 707.9b, 707.9d): only the power and the toughness of the copy are given.
+  if (token.copySetPt !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    exceptions = { ...exceptions, setPt: { ...token.copySetPt } };
+  }
   // "..., except their power is half that creature's power and their toughness is half ... Round up each time" (Saw in Half, CR 707.9b, 107.1a).
   if (token.copyHalfPt === true) {
     const missing = missingFeatures(['token:copyExceptions']);

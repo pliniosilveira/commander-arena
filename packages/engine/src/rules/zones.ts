@@ -19,7 +19,7 @@
  *   enters, whatever put it there (a resolving spell, an effect, a land played from the hand); the
  *   caller asks and calls again with `entersChosen` set, and the answer is stored on the new object.
  */
-import type { Ability, EnteringCounters, Zone } from '../ast/types';
+import type { Ability, EntryCounter, Zone } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type {
@@ -62,6 +62,7 @@ import { quietFlow } from './damage-order';
 import { entersTransformed } from './day-night';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
+import { characteristicPtOf } from './derive-count';
 import { dieReplacementFor } from './die-replacement';
 import {
   entersAsSaga,
@@ -75,7 +76,12 @@ import {
   entersWithCounters,
   lifeOf,
 } from './enters';
-import { becomeCopyAsItEnters, copyCandidates } from './enters-copy';
+import {
+  becomeCopyAsItEnters,
+  copiesFromGraveyard,
+  copyCandidates,
+  copyPairOthers,
+} from './enters-copy';
 import {
   addCounterMaps,
   enteredTappedByEffect,
@@ -142,6 +148,8 @@ export interface MoveRequest {
    * copies, or null for none. Absent means "not asked yet". Ignored for a permanent that asks nothing.
    */
   readonly entersCopy?: ObjectId | null;
+  /** The answer to the second question of `entersAsCopy.exileTwoFromGraveyards` (The Mimeoplasm): the other card exiled, whose power is the number of counters. Absent means "not asked yet". */
+  readonly entersCopyOther?: ObjectId;
   /**
    * The controller's answer to "its controller chooses a player to be its protector" as a battle enters (CR 310.9a), once asked. Absent means "not asked yet". Ignored for a permanent
    * that is not a battle, and for a battle with one legal protector, which asks nothing.
@@ -175,7 +183,7 @@ export interface MoveRequest {
    * The permanent enters with counters on it (CR 122.6, 614.1c): "return it to the battlefield with a -1/-1
    * counter on it" (Persist). Only for a move to the battlefield; the counters are on it as it enters.
    */
-  readonly withCounters?: EnteringCounters;
+  readonly withCounters?: EntryCounter | readonly EntryCounter[];
   /**
    * The face the new object has up, when it is not simply carried over: the face being cast when a
    * card moves to the stack (CR 709.3, 712.11b, 715.3), the face of a modal double-faced card played
@@ -501,6 +509,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 614.1a, 614.6 (Chandra, Awakened Inferno): "If a permanent dealt damage this way would die this turn, exile it instead": the permanent the effect marked this turn.
+  if (
+    old.zone === 'battlefield' &&
+    to === 'graveyard' &&
+    old.exileIfDiesTurn !== undefined &&
+    old.exileIfDiesTurn === state.turn.number
+  ) {
+    to = 'exile';
+    toSeat = null;
+  }
   // CR 122.1h (D-230): "If this permanent would be put into a graveyard from the battlefield, exile it instead": the replacement effect that one or more
   // finality counters create (Excava, the Risen Past). It belongs to the object, not to an ability, so it holds when the permanent lost its abilities.
   if (old.zone === 'battlefield' && to === 'graveyard' && (old.counters.finality ?? 0) > 0) {
@@ -681,6 +699,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           entering === null ? undefined : entersColorExcept(entering.abilities),
           // CR 119.4, 119.8: a player whose life total cannot change can pay only 0.
           lifeTotalIsLocked(before, enterController) ? 0 : getSeat(before, enterController).life,
+          { state: before, seat: enterController },
         ),
         source: old.id,
         sourceName: info?.name ?? '',
@@ -715,6 +734,31 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           min: copyRule.optional === true ? 0 : 1,
           max: 1,
           legal,
+        },
+      };
+    }
+  }
+
+  // CR 614.12, 707.9b (The Mimeoplasm): "you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards": after the card to copy, the other one,
+  // whose power gives the counters. Asked only when more than one card is left to choose (with one left it is that one). Nothing has moved yet.
+  if (
+    copyRule?.exileTwoFromGraveyards !== undefined &&
+    request.entersCopy != null &&
+    request.entersCopyOther === undefined
+  ) {
+    const others = copyPairOthers(before, enterController, copyRule, request.entersCopy, old.id);
+    if (others.length > 1) {
+      return {
+        kind: 'needsDecision',
+        decision: {
+          kind: 'choosePermanent',
+          seat: enterController,
+          source: old.id,
+          subject: old.id,
+          purpose: 'entersCopyOther',
+          min: 1,
+          max: 1,
+          legal: others,
         },
       };
     }
@@ -906,12 +950,20 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       request.entersChosen ?? null,
     );
     if (request.withCounters !== undefined) {
-      const { counter, count, also } = request.withCounters;
-      for (const entering of [{ counter, count }, ...(also ?? [])]) {
-        counters = {
-          ...counters,
-          [entering.counter]: (counters[entering.counter] ?? 0) + entering.count,
-        };
+      // Semester's End: an entry with `ifType` counts only when the permanent has the type as it enters (its card's types: a copy or an effect is not on it yet).
+      const entering = definitionOf(state, old.card ?? ('' as never)).faces[faceIndex];
+      const arrived = new Set(entering?.types ?? []);
+      for (const entry of Array.isArray(request.withCounters)
+        ? request.withCounters
+        : [request.withCounters as EntryCounter]) {
+        if (entry.ifType !== undefined && !arrived.has(entry.ifType)) continue;
+        // Gilraen (CR 122.6): `also` are more kinds of counter it enters with.
+        for (const each of [
+          { counter: entry.counter, count: entry.count },
+          ...(entry.also ?? []),
+        ]) {
+          counters = { ...counters, [each.counter]: (counters[each.counter] ?? 0) + each.count };
+        }
       }
     }
     // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
@@ -1168,12 +1220,47 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   if (
     to === 'battlefield' &&
     copyRule !== null &&
-    copiedObject?.zone === (copyRule.fromGraveyard === true ? 'graveyard' : 'battlefield')
+    copiedObject?.zone === (copiesFromGraveyard(copyRule) ? 'graveyard' : 'battlefield')
   ) {
+    // CR 707.2, 707.9b: the values of the card are taken as it is in the graveyard, before the cards are exiled.
+    const pairOther =
+      copyRule.exileTwoFromGraveyards === undefined
+        ? undefined
+        : (request.entersCopyOther ??
+          copyPairOthers(before, controller, copyRule, copiedObject.id, old.id)[0]);
+    // CR 208.2, 604.3: the power of the card in the graveyard: the printed one, or what its characteristic-defining ability gives a `*` (it works in every zone).
+    const otherValues =
+      pairOther === undefined ? undefined : copiableValues(next, getObject(next, pairOther));
+    const printedPower = otherValues?.characteristics.power ?? 0;
+    let otherPower = 0;
+    if (printedPower !== '*') otherPower = printedPower;
+    else if (pairOther !== undefined && otherValues !== undefined) {
+      otherPower =
+        characteristicPtOf(next, getObject(next, pairOther), otherValues.abilities)?.power ?? 0;
+    }
     const became = becomeCopyAsItEnters(next, newId, copyRule, copiedObject.id, controller);
     next = became.state;
     events.push(...became.events);
     copyEvents.push(...became.counterEvents);
+    // CR 614.12, 707.9b, 122.6 (The Mimeoplasm): both cards are exiled as it enters, and it enters with as many counters as the power of the other one.
+    if (copyRule.exileTwoFromGraveyards !== undefined && pairOther !== undefined) {
+      for (const card of [copiedObject.id, pairOther]) {
+        if (next.objects[card]?.zone !== 'graveyard') continue;
+        const exiled = moveObject(next, { object: card, to: 'exile', commanderChoice: false });
+        if (exiled.kind !== 'done') continue;
+        next = exiled.state;
+        events.push(...exiled.events);
+      }
+      if (otherPower > 0) {
+        const kind = copyRule.exileTwoFromGraveyards.counter;
+        counters = { ...counters, [kind]: (counters[kind] ?? 0) + otherPower };
+        const copy = getObject(next, newId);
+        next = setObject(next, {
+          ...copy,
+          counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + otherPower },
+        });
+      }
+    }
     // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters": the X of the spell it came from, 0 for a permanent that was not cast.
     if (copyRule.withX !== undefined) {
       const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
@@ -1186,6 +1273,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + castX },
         });
       }
+    }
+  }
+  // CR 707.9b, 614.12, 122.6 (Spark Double): "except it enters with an additional +1/+1 counter on it if it's a creature, ... an additional loyalty counter on it if it's a planeswalker".
+  if (to === 'battlefield' && copyRule?.extraCounters !== undefined && copiedObject !== undefined) {
+    const types = derive(next, getObject(next, newId)).types;
+    for (const extra of copyRule.extraCounters) {
+      if (!types.includes(extra.type)) continue;
+      counters = { ...counters, [extra.counter]: (counters[extra.counter] ?? 0) + 1 };
+      const copy = getObject(next, newId);
+      next = setObject(next, {
+        ...copy,
+        counters: { ...copy.counters, [extra.counter]: (copy.counters[extra.counter] ?? 0) + 1 },
+      });
     }
   }
   if (to === 'battlefield') {
@@ -1245,6 +1345,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     derive(state, old).types.includes('creature')
   ) {
     next = applyCreatureGains(next, newId, old.stack.creatureGains);
+  }
+  // Nalfeshnee (CR 707.10f, 613.1f): the token a copy of a permanent spell becomes has the abilities the copy carried.
+  if (to === 'battlefield' && old.zone === 'stack' && old.stack?.permanentGains !== undefined) {
+    next = applyCreatureGains(next, newId, old.stack.permanentGains);
   }
   // D-232: "If you cast a spell this way, that artifact enters tapped" / "If you do, it gains ...": what the permission of a permanent gives the permanent.
   if (to === 'battlefield' && old.zone === 'stack' && old.stack?.graveyardPlay !== undefined) {
@@ -1359,6 +1463,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: {
         ...next.turnLog,
         discardedOrFromLibrary: [...(next.turnLog.discardedOrFromLibrary ?? []), newId],
+        graveyardedFromLibrary: [...(next.turnLog.graveyardedFromLibrary ?? []), newId],
       },
     };
   }

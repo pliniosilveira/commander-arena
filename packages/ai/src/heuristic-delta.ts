@@ -16,16 +16,13 @@ import { applyOrNull, playOut } from './heuristic-sim';
 
 export type Answer = (view: GameView, pending: PendingDecision) => Action;
 
-/** A play whose delta is below minus this is not made (score points; a card in hand is worth 1.2). */
-export const DELTA_FLOOR = 0.5;
-
 /** Casts `play` on the sample and plays the follow-up questions and the rest of the turn out; the score or null. */
 export function scoreCast(
   sample: ReturnType<Think['sample']>,
   me: number,
   play: Action | null,
   answer: Answer,
-  budget: Think['budget'],
+  think: Pick<Think, 'budget' | 'weights'>,
 ): number | null {
   if (sample === undefined) return null;
   let state = sample;
@@ -52,16 +49,16 @@ export function scoreCast(
   const end = playOut(
     state,
     me,
-    { abort: budget.over },
+    { abort: think.budget.over },
     (s) => s.result !== null || s.turn.number > turn,
     200,
   );
-  return end === null ? null : evaluate(getView(end, me), me).score;
+  return end === null ? null : evaluate(getView(end, me), me, think.weights).score;
 }
 
 /**
  * The plays of `ordered` (best first) that do not leave the board clearly worse than passing. A play is
- * dropped only when its delta is below `-DELTA_FLOOR`: `evaluate` does not count mana or what a card
+ * dropped only when its delta is below `-main.deltaFloor` (`weights.ts`): `evaluate` does not count mana or what a card
  * draws later, so a play that is slightly negative on the board is kept. With no sample, no budget left
  * or a candidate the engine refuses, the play is kept as the plan made it.
  */
@@ -74,7 +71,7 @@ export function vetPlays(
 ): Play[] {
   const sample = think.sample();
   if (sample === undefined || sample.pending?.kind !== 'priority') return [...ordered];
-  const base = scoreCast(sample, view.viewer, null, answer, think.budget);
+  const base = scoreCast(sample, view.viewer, null, answer, think);
   if (base === null) return [...ordered];
   const kept: Play[] = [];
   for (const [i, play] of ordered.entries()) {
@@ -82,8 +79,8 @@ export function vetPlays(
       kept.push(...ordered.slice(i));
       break;
     }
-    const score = scoreCast(sample, view.viewer, castAction(play), answer, think.budget);
-    if (score === null || score - base >= -DELTA_FLOOR) kept.push(play);
+    const score = scoreCast(sample, view.viewer, castAction(play), answer, think);
+    if (score === null || score - base >= -think.weights.main.deltaFloor) kept.push(play);
   }
   return kept;
 }

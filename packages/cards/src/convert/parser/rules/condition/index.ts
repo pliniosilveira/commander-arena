@@ -45,6 +45,7 @@ import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
+import { EXACT_PT_CONDITION_RULES } from './exact-pt';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
@@ -52,6 +53,7 @@ import { CONDITION_FORETOLD } from './foretold';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
+import { GRAND_LARCENY_C_CONDITION_RULES } from './grand-larceny-c';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
@@ -67,9 +69,11 @@ import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MANA_VALUE_AT_LEAST_CONDITION_RULES } from './mana-value-at-least';
 import { MARDU_SURGE_CONDITION_RULES } from './mardu-surge';
 import { MELD_CONDITION_RULES } from './meld';
+import { MIND_FLAYARRRS_G8_CONDITION_RULES } from './mind-flayarrrs-g8';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
 import { PARTY_CONDITION_RULES } from './party';
+import { PLAYED_LAND_CONDITION_RULES } from './played-land';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
@@ -84,6 +88,7 @@ import {
   CONDITION_THAT_OBJECT_POWER,
 } from './that-object-power';
 import { THAT_PLAYERS_TURN_CONDITION_RULES } from './that-players-turn';
+import { THAT_WAS_EITHER_CONDITION_RULES } from './that-was-either';
 import { THE_PLAYER_CONDITION_RULES } from './the-player';
 import { THEY_ARENT_ATTACKING_YOU_CONDITION_RULES } from './they-arent-attacking-you';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
@@ -559,12 +564,15 @@ export const CONDITION_RULES = [
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
   ...THEY_ATTACKED_YOU_CONDITION_RULES,
+  // Kazuul: "you're the defending player", the intervening "if" of an attack trigger.
   ...THEY_ARENT_ATTACKING_YOU_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
   // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Mind Flayarrrs deck, group 8 (Nihilith): "this card is suspended".
+  ...MIND_FLAYARRRS_G8_CONDITION_RULES,
   // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
   ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Valakut Exploration: "there are cards exiled with ~", before the plain count whose phrase ("there are") is a prefix of it.
@@ -588,6 +596,8 @@ export const CONDITION_RULES = [
   ...SELF_STATE_CONDITION_RULES,
   ...NO_COUNTERS_CONDITION_RULES,
   ...COUNTER_COUNT_CONDITION_RULES,
+  // Sauron deck (Uglúk of the White Hand): "that creature was a Goblin or Orc", before `condition.it-matches`, which would stop after "a Goblin".
+  ...THAT_WAS_EITHER_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
   // Revolt (CR 207.2c): "a permanent left the battlefield under your control this turn".
   ...REVOLT_CONDITION_RULES,
@@ -597,6 +607,7 @@ export const CONDITION_RULES = [
   ...ARTIFACT_CONDITION_RULES,
   // Stage P32 (D-147): "you don't control another Dinosaur", "the creature you control has trample".
   ...DINOSAUR_CONDITION_RULES,
+  ...EXACT_PT_CONDITION_RULES,
   // Jeskai free-cast cards (issue 100): "you cast it".
   ...JESKAI_CASTFREE_CONDITION_RULES,
   // Stage P34 (D-152): the most life, the total power of the attackers, the damage and the permanents of the turn.
@@ -605,6 +616,7 @@ export const CONDITION_RULES = [
   ...KORVOLD_CONDITION_RULES,
   // Stage P49 (D-206): "at least four mana was spent to cast it", "a card left your graveyard this turn", "~ was cast from a graveyard".
   ...VRASKA_CONDITION_RULES,
+  ...PLAYED_LAND_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".
@@ -668,6 +680,7 @@ export const CONDITION_RULES = [
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_FORETOLD,
+  ...GRAND_LARCENY_C_CONDITION_RULES,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_ADDITIONAL_COST_PAID,
   CONDITION_X_AT_LEAST,

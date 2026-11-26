@@ -49,7 +49,7 @@ function numberCompare(wide = false): Parser<IrComparison> {
 }
 
 const DESIGNATION =
-  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing|(there is no) monarch)(?![\p{L}\p{N}])/iu;
+  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing|(you have|you don['’]t have|an opponent has|a player has) the initiative|(there is no) monarch)(?![\p{L}\p{N}])/iu;
 
 /**
  * `condition.designation`: "you're the monarch", "you are the monarch", "an opponent is the monarch", "a player is
@@ -86,6 +86,10 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     'you don’t have the city’s blessing',
     "an opponent has the city's blessing",
     "a player has the city's blessing",
+    // Sarevok's Tome (CR 726.1): the initiative.
+    'you have the initiative',
+    'an opponent has the initiative',
+    "you don't have the initiative",
     // Archivist of Gondor, Crown of Gondor (CR 725.1, 603.4): nobody is the monarch, the negation of "a player is the monarch".
     'there is no monarch',
   ],
@@ -109,12 +113,22 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     "an opponent doesn't have the city's blessing",
     "each opponent has the city's blessing",
     'you have the blessing',
+    'you have initiative',
+    'the initiative',
   ],
   parse: (ctx, pos) => {
     const r = spanned(pattern(DESIGNATION))(ctx, pos);
     if (!r.ok) return r;
     const blessing = r.value.value[2] !== undefined;
-    const words = (r.value.value[1] ?? r.value.value[2] ?? r.value.value[3] ?? '').toLowerCase();
+    // Sarevok's Tome (CR 726.1): "you have the initiative", the designation of at most one player.
+    const initiative = r.value.value[3] !== undefined;
+    const words = (
+      r.value.value[1] ??
+      r.value.value[2] ??
+      r.value.value[3] ??
+      r.value.value[4] ??
+      ''
+    ).toLowerCase();
     const det = words.startsWith('you')
       ? 'you'
       : words.startsWith('an opponent')
@@ -134,7 +148,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     const has = condition('condition.designation', pos, r.pos, {
       kind: 'designation',
       who,
-      designation: blessing ? 'citysBlessing' : 'monarch',
+      designation: blessing ? 'citysBlessing' : initiative ? 'initiative' : 'monarch',
     });
     const negative = /(?: not|aren['’]t|don['’]t have|there is no)$/.test(words);
     return {
@@ -403,7 +417,58 @@ export const CONDITION_OPPONENT_CARDS_IN_GRAVEYARD = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.completed-dungeon`: "you've completed a dungeon", "you have completed a dungeon" (CR 309.7, 701.49c): the player has completed a dungeon at some time in the game. The
+ * engine's `completedDungeon`. Not read: another player, "a dungeon" counted ("two dungeons"), a named dungeon, "this turn".
+ */
+export const CONDITION_COMPLETED_DUNGEON = defineRule<IrCondition>({
+  id: 'condition.completed-dungeon',
+  family: 'condition',
+  leading: ['you', 'you’ve', "you've"],
+  cites: ['CR 309.7 (Dungeons)', 'CR 701.49c (Venture)'],
+  examples: [
+    "you've completed a dungeon",
+    'you’ve completed a dungeon',
+    'you have completed a dungeon',
+  ],
+  rejects: [
+    "you've completed two dungeons",
+    "you've completed a dungeon this turn",
+    "an opponent's completed a dungeon",
+    "you've completed Undercity",
+    "you've not completed a dungeon",
+    'you completed a dungeon',
+    'completed a dungeon',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/you(?:['’]ve| have) completed a dungeon(?![\p{L}\p{N}])(?! this turn)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const who: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: 'condition.completed-dungeon',
+    };
+    return {
+      ok: true,
+      value: condition('condition.completed-dungeon', pos, r.pos, {
+        kind: 'completedDungeon',
+        who,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const GAME_STATE_CONDITION_RULES = [
+  CONDITION_COMPLETED_DUNGEON,
   CONDITION_DESIGNATION,
   CONDITION_AMOUNT_COUNT,
   CONDITION_OPPONENT_CARDS_IN_GRAVEYARD,

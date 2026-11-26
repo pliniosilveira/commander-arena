@@ -5,19 +5,22 @@
  * casts it with the one that helps most, so the largest reduction counts (two of them never add up: the spell is cast with one permission).
  */
 import type { ObjectId, SeatId } from '../ids';
+import { opponentsOf } from '../state/ops';
 import type { GameState } from '../state/types';
 
 export function playPermissionLess(state: GameState, seat: SeatId, object: ObjectId): number {
   let best = 0;
   for (const e of state.continuousEffects) {
     if (
-      e.change.kind === 'playPermission' &&
-      e.change.seat === seat &&
-      e.change.lessGeneric !== undefined &&
-      e.objects.includes(object)
+      e.change.kind !== 'playPermission' ||
+      e.change.seat !== seat ||
+      !e.objects.includes(object)
     ) {
-      best = Math.max(best, e.change.lessGeneric);
+      continue;
     }
+    if (e.change.lessGeneric !== undefined) best = Math.max(best, e.change.lessGeneric);
+    // CR 702.125a, 702.125b (Durnan): undaunted is one less for each opponent of the caster still in the game, counted now, as the cost is determined (CR 601.2f).
+    if (e.change.undaunted === true) best = Math.max(best, opponentsOf(state, seat).length);
   }
   return best;
 }

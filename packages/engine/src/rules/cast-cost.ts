@@ -72,6 +72,7 @@ import { playPermissionLess } from './play-permission-cost';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
+import { playerSpellDiscount } from './spell-discount';
 import { spellSpendTarget } from './spend-target';
 import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
 
@@ -152,6 +153,7 @@ export function isNamedAlternative(
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
     alternative === 'payLife' ||
+    alternative === 'payMana' ||
     alternative === 'impending' ||
     alternative === 'blitz'
   );
@@ -270,6 +272,8 @@ function reductionFor(
   }
   // Issue 121: "The next instant or sorcery spell you cast this turn costs {X} less to cast" (`nextSpellModifier`).
   total += nextSpellReduction(state, seat, spell);
+  // Will Kenrith (CR 601.2f): "Until your next turn, ... spells that player casts cost {2} less to cast" (`playerSpellsCostLess`).
+  total += playerSpellDiscount(state, seat, spell);
   // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": the permission a card in exile is cast with, or what the spell on the stack took from it.
   total +=
     spell.stack?.lessGeneric ??
@@ -316,7 +320,7 @@ export interface CostRequest {
    * Which way the caster pays the face's additional cost choice (`CardFace.additionalCostChoice`, D-181): left out, the one the spell on the stack
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
-  readonly costOption?: 0 | 1;
+  readonly costOption?: number;
   /**
    * The creature a harmonize cost taps (CR 702.180a), or null for none: left out, what the spell on the stack says (`StackData.harmonizeTap`) and, while nothing is
    * chosen yet, the most any creature could take off when `optimistic`.
@@ -353,9 +357,11 @@ export function replicateCostFor(
   return null;
 }
 
-/** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
-function costOptionsOf(face: CardFace | null): readonly (0 | 1 | undefined)[] {
-  return face?.additionalCostChoice === undefined ? [undefined] : [0, 1];
+/** The ways the caster could pay the additional cost choice of the face: all of them, or `undefined` once for a face with no choice (D-181). */
+function costOptionsOf(face: CardFace | null): readonly (number | undefined)[] {
+  return face?.additionalCostChoice === undefined
+    ? [undefined]
+    : face.additionalCostChoice.map((_, way) => way);
 }
 
 /**
@@ -409,7 +415,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ? (grantedEvokeOf(state, seat, spell, zone)?.cost ?? null)
             : null))
         : null;
-  const perX = spellXCost(face, alternative);
+  // CR 702.33a, 107.3a ("Kicker {X}"): a kicked spell announces the X of its kicker cost too.
+  const perX = spellXCost(face, alternative, (request.kicks ?? (request.kicked ? 1 : 0)) > 0);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
@@ -451,7 +458,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const kicks = request.kicks ?? (request.kicked ? 1 : 0);
   const kicker = kicks > 0 ? kickerLikeCostOf(face) : null;
   // CR 702.33c: a multikicker cost is paid once for each time the spell is kicked.
-  if (kicker !== null) for (let i = 0; i < kicks; i += 1) symbols.push(...manaSymbolsOf(kicker));
+  // CR 107.3a: the {X} of a kicker cost is the X announced (`withX`).
+  if (kicker !== null) {
+    for (let i = 0; i < kicks; i += 1) symbols.push(...withX(manaSymbolsOf(kicker), x));
+  }
   // CR 702.56a: a replicate cost is an additional cost, paid once for each time the caster chose (mana only).
   const replicate = (request.replicas ?? 0) > 0 ? replicateCostFor(state, spell, face) : null;
   if (replicate !== null) {
@@ -496,6 +506,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let sacrificeAny: ObjectFilter | null = null;
   let sacrificeCount = 1;
   let discard = 0;
+  // CR 118.8, 701.9: "discard a land card" as an additional cost: the cards that may be discarded are those the filter matches.
+  let additionalDiscardFilter: ObjectFilter | undefined;
   let behold: ObjectFilter | null = null;
   let exileFromHand: ObjectFilter | null = null;
   let blight = 0;
@@ -507,8 +519,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         sacrificeCount = c.countX === true ? x : 1;
         if (sacrificeCount > 0) sacrifice = c.what;
       }
-    } else if (c.kind === 'discard') discard += c.count;
-    else if (c.kind === 'behold') behold = c.filter;
+    } else if (c.kind === 'discard') {
+      discard += c.count;
+      if (c.filter !== undefined) additionalDiscardFilter = c.filter;
+    } else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
     // CR 118.8, 701.68a: "you may blight 1" is no requirement for casting the spell: it is asked as the cost is paid.
     else if (c.kind === 'blight') blight = c.count;
@@ -574,12 +588,17 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps that many permanents once for each mode chosen beyond the first.
   const escalateTap = escalate?.find((c) => c.kind === 'tapPermanents');
   const escalatedModes = escalateTap === undefined ? 0 : Math.max(0, modes - 1);
+  // CR 702.56a (Psionic Ritual, "Replicate—Tap an untapped Horror you control"): a replicate cost that taps permanents is paid once for each time the caster chose, so that many are tapped;
+  // `validateCard` refuses a face that also has a `tapPermanents` alternative cost.
+  const replicaTap = replicate?.find((c) => c.kind === 'tapPermanents');
   const tap =
     tapAlt !== null
       ? { filter: tapAlt.filter, count: tapAlt.count }
       : escalateTap?.kind === 'tapPermanents' && escalatedModes > 0
         ? { filter: escalateTap.filter, count: escalateTap.count * escalatedModes }
-        : null;
+        : replicaTap?.kind === 'tapPermanents'
+          ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
+          : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
     alternative === 'sacrificeFromGraveyard'
@@ -626,7 +645,11 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
-    ...(alternative === 'retrace' ? { discardFilter: RETRACE_DISCARD } : {}),
+    ...(alternative === 'retrace'
+      ? { discardFilter: RETRACE_DISCARD }
+      : additionalDiscardFilter === undefined
+        ? {}
+        : { discardFilter: additionalDiscardFilter }),
     behold,
     exile,
     exileFromHand,
@@ -645,7 +668,8 @@ export function spellXCostOf(
   spell: GameObject,
   alternative: CastAlternative | undefined,
 ): XCost {
-  return spellXCost(faceOfSpell(state, spell), alternative);
+  // CR 702.33a: the {X} of the kicker cost counts once the spell is kicked (`StackData.kicked`).
+  return spellXCost(faceOfSpell(state, spell), alternative, spell.stack?.kicked === true);
 }
 
 /**

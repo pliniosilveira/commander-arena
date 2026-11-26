@@ -409,8 +409,9 @@ describe('"Whenever an opponent casts ..." (CR 601.2i; D-111: by an opponent)', 
 
   test.each([
     [
-      'Whenever an opponent casts their first spell each turn, you gain 1 life.',
-      'their first spell each turn, you gain 1 life.',
+      // Mind's Dilation reads "their first spell each turn"; a kind of spell in it is another trigger.
+      'Whenever an opponent casts their first creature spell each turn, you gain 1 life.',
+      'their first creature spell each turn, you gain 1 life.',
     ],
     [
       'Whenever an opponent cast a spell, you gain 1 life.',
@@ -765,7 +766,7 @@ describe('"unless that player pays {1}" (CR 118.12a)', () => {
     ],
     [
       'Whenever an opponent casts a spell, draw a card and lose 1 life unless that player pays {1}.',
-      'unless that player pays {1}.',
+      'that player pays {1}.',
       'ability.triggered',
     ],
     [

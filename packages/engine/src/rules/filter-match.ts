@@ -9,6 +9,7 @@
 import type { AttachedTo, Keyword, NumberComparison, ObjectFilter } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
+import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
@@ -130,6 +131,8 @@ export interface FilterContext {
   readonly chosenNumber?: number;
   /** The name of the object `sameNameAs` names, read by the caller as the effect resolves (CR 201.2); null when it names nothing. Absent fails the filter closed. */
   readonly nameLimit?: string | null;
+  /** The name of the permanent whose static ability the filter is the subject of, for `sameNameAsSource` (CR 201.2); absent fails the filter closed. */
+  readonly sourceName?: string;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
   /**
@@ -152,6 +155,8 @@ export interface FilterContext {
   readonly graveyarded?: readonly ObjectId[];
   /** The cards put into a graveyard this turn by being discarded or from a library (`discardedOrFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
   readonly discardedOrFromLibrary?: readonly ObjectId[];
+  /** The cards put into a graveyard this turn from a library (`putFromLibraryThisTurn`): the turn log, read by the caller; absent fails the flag closed. */
+  readonly fromLibrary?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
   /** The permanents dealt damage this turn (`dealtDamageThisTurn`, CR 120.3): the turn log, read by the caller; absent fails the flag closed. */
@@ -166,6 +171,8 @@ export interface FilterContext {
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
+  /** The colors of the permanents `sharesColorWith` names (CR 105.1), read from the battlefield by the caller; absent fails the flag closed. */
+  readonly sharedColors?: readonly Color[];
   /** The card types of the spell the trigger is about (`sharesCardTypeWith`, CR 205.2a): read by the caller; absent fails the flag closed. */
   readonly subjectTypes?: readonly CardType[];
   /**
@@ -260,6 +267,13 @@ export function matchesFilterWith(
   // CR 508.5 (D-151): "creature defending player controls": the player the source is attacking; nothing matches when it is not attacking.
   if (filter.controller === 'defendingPlayer' && controllerOf(state, obj) !== ctx.defendingPlayer)
     return false;
+  // CR 607.2d (Sewer Nemesis): "cards in the chosen player's graveyard": the controller (the owner of a card in a graveyard) is the player the source chose as it entered; nothing when none was chosen.
+  if (
+    filter.controller === 'chosenPlayer' &&
+    (ctx.sourceChosen?.player === undefined || controllerOf(state, obj) !== ctx.sourceChosen.player)
+  ) {
+    return false;
+  }
   // CR 725.1 (monarch): "creatures the monarch controls": the controller is the monarch now; with no monarch nothing matches.
   if (filter.controller === 'monarch' && controllerOf(state, obj) !== state.monarch) return false;
   // CR 108.3: the owner of a card is the player who started the game with it in their deck.
@@ -353,6 +367,8 @@ export function matchesFilterWith(
   if (filter.notSupertypes?.some((t) => d.supertypes.includes(t))) return false;
   if (filter.subtypes && !filter.subtypes.every((t) => d.subtypes.includes(t))) return false;
   if (filter.notSubtypes?.some((t) => d.subtypes.includes(t))) return false;
+  // CR 700.12 (outlaw): at least one of the Assassin, Mercenary, Pirate, Rogue and Warlock creature types; `false` is "non-outlaw".
+  if (filter.outlaw !== undefined && isOutlaw(d.subtypes) !== filter.outlaw) return false;
   if (filter.colorless === true && d.colors.length > 0) return false;
   // CR 105.2c: a colorless object has no color, so it is "nonblack" like any object that lacks black.
   if (filter.notColors?.some((c) => d.colors.includes(c))) return false;
@@ -435,6 +451,10 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 404.1, 701.17 (Captain N'ghathrod): "that was put there from their library this turn".
+  if (filter.putFromLibraryThisTurn === true && !(ctx.fromLibrary ?? []).includes(obj.id)) {
+    return false;
+  }
   // CR 601.2a (D-235): "Spells you cast from anywhere other than your hand": a spell on the stack that was cast from another zone.
   if (filter.notCastFromHand === true) {
     const from =
@@ -456,12 +476,27 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'graveyard') return false;
   }
+  // CR 601.2a, 406.1 (Exit from Exile deck): "a spell cast from exile": a spell on the stack that was cast from exile.
+  if (filter.castFromExile === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'exile') return false;
+  }
   // CR 601.2a, 404.1 (Emet-Selch of the Third Seat): "spells you cast from your graveyard": cast from a graveyard, the card owned by the caster (a graveyard is its owner's, CR 404.1).
   if (filter.castFromOwnGraveyard === true) {
     const from =
       ctx.castFrom ??
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'graveyard' || obj.owner !== controllerOf(state, obj)) return false;
+  }
+  // CR 601.2a, 404.1, 406.1 (Doc Aurlock, Grizzled Genius): "spells you cast from your graveyard or from exile": cast from exile, or from a graveyard of the caster's own.
+  if (filter.castFromOwnGraveyardOrExile === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    const ownGraveyard = from === 'graveyard' && obj.owner === controllerOf(state, obj);
+    if (from !== 'exile' && !ownGraveyard) return false;
   }
   // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
   if (
@@ -478,6 +513,39 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 601.2i (Wild-Magic Sorcerer): "the first spell you cast from exile each turn": no other spell the caster cast from exile this turn so far.
+  if (
+    filter.firstCastFromExileThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) => e.fromExile === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
+  // CR 601.2h (Rain of Riches): "a spell that mana from a Treasure was spent to cast": a spell on the stack that was paid, in part, with mana a source of the subtype made.
+  if (
+    filter.manaSpentFromSubtype !== undefined &&
+    !(
+      obj.zone === 'stack' &&
+      obj.stack?.kind === 'spell' &&
+      (obj.stack.manaSpent?.fromSubtypes?.[filter.manaSpentFromSubtype] ?? 0) > 0
+    )
+  ) {
+    return false;
+  }
+  // CR 601.2i (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast": no other spell the caster cast this turn so far was paid so.
+  if (
+    filter.firstManaSpentFromSubtypeThisTurn === true &&
+    filter.manaSpentFromSubtype !== undefined &&
+    state.turnLog.castSpells.some(
+      (e) =>
+        e.manaSubtypes?.includes(filter.manaSpentFromSubtype ?? '') === true &&
+        e.seat === controllerOf(state, obj) &&
+        e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
   // CR 601.2i (Alisaie Leveilleur): "the second spell you cast each turn": exactly one other spell cast by the caster this turn so far (a copy is not cast, CR 707.10).
   if (
     filter.nthSpellThisTurn !== undefined &&
@@ -485,6 +553,18 @@ export function matchesFilterWith(
       (e) => e.seat === controllerOf(state, obj) && e.object !== obj.id,
     ).length !==
       filter.nthSpellThisTurn - 1
+  ) {
+    return false;
+  }
+  // CR 601.2i (Artifact Class): "the first artifact spell you cast each turn": no other spell cast by the caster this turn so far has one of the card types (a copy is not cast, CR 707.10).
+  if (
+    filter.firstOfTypeThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) =>
+        e.seat === controllerOf(state, obj) &&
+        e.object !== obj.id &&
+        e.types.some((t) => filter.types?.includes(t) === true),
+    )
   ) {
     return false;
   }
@@ -539,6 +619,11 @@ export function matchesFilterWith(
   if (filter.sameNameAs !== undefined) {
     const name = ctx.nameLimit;
     if (name === null || name === undefined || d.name !== name) return false;
+  }
+  // CR 201.2 (Mocking Doppelganger): "with the same name as this creature": the name of the permanent with the static ability.
+  if (filter.sameNameAsSource === true) {
+    const name = ctx.sourceName;
+    if (name === undefined || d.name === undefined || d.name !== name) return false;
   }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {
@@ -595,6 +680,11 @@ export function matchesFilterWith(
   if (filter.sharesCardTypeWith !== undefined) {
     const theirs = ctx.subjectTypes;
     if (theirs === undefined || !d.types.some((t) => theirs.includes(t))) return false;
+  }
+  // CR 105.1, 105.2c (Ringsight): "shares a color with a legendary creature you control": a color that both have; a colorless object has none to share.
+  if (filter.sharesColorWith !== undefined) {
+    const theirs = ctx.sharedColors;
+    if (theirs === undefined || !d.colors.some((c) => theirs.includes(c))) return false;
   }
   if (filter.anyOf !== undefined) {
     // A disjunction (CR 115.1: "artifact or enchantment" names one set of legal targets). The

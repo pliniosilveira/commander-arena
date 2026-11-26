@@ -123,6 +123,13 @@ export function checkDelayedTrigger(
     }
     return;
   }
+  // Vronos, Masked Inquisitor (CR 603.7c, 702.26a): "... phase out at the beginning of the next end step", about the targets of the ability as they are when it is created.
+  if (kind === 'phaseOut') {
+    if (kindOf((inner as Extract<Effect, { kind: 'phaseOut' }>).objects) !== 'target') {
+      issue(out, `${path}.effect.objects`, 'a delayed phase out names the targets of the ability');
+    }
+    return;
+  }
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
     // Issue 103 (CR 903.9, 603.7c, 400.7j): "Return it to the command zone at the beginning of the next end step", about the commander an earlier effect of the same
@@ -196,6 +203,27 @@ export function checkDelayedTrigger(
     }
     if (e.at?.step !== 'nextMain' && e.at?.whose !== 'you') {
       issue(out, `${path}.at`, "a delayed mana effect is added in the controller's own turn");
+    }
+    return;
+  }
+  // Plasm Capture (CR 603.7c, 106.1b, 202.3): "At the beginning of your next first main phase, add X mana in any combination of colors, where X is that spell's mana value": the mana value
+  // of the spell the ability targets, fixed as the ability is created; the controller chooses the colors as it resolves.
+  if (kind === 'addManaCombination') {
+    const amount = (inner as Extract<Effect, { kind: 'addManaCombination' }>).amount;
+    const ofTarget =
+      typeof amount === 'object' &&
+      amount !== null &&
+      amount.kind === 'manaValueOf' &&
+      kindOf(amount.of) === 'target';
+    if (!ofTarget) {
+      issue(
+        out,
+        `${path}.effect.amount`,
+        'a delayed mana combination adds as many mana as the mana value of the spell it targets',
+      );
+    }
+    if (e.at?.whose !== 'you') {
+      issue(out, `${path}.at`, "a delayed mana combination is added in the controller's own turn");
     }
     return;
   }

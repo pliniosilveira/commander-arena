@@ -19,17 +19,6 @@ export function ProgressBar({ progress }: { progress: ImportProgress | null }) {
   );
 }
 
-/** The editor is open on a precon the app ships (issue 93, D-215). */
-export interface EditingPrecon {
-  readonly name: string;
-  /** The player already saved a version of it. */
-  readonly edited: boolean;
-  /** Forget the saved version and show the shipped list again. */
-  readonly onReset: () => void;
-  /** Leave the precon: the editor becomes a plain import again. */
-  readonly onStop: () => void;
-}
-
 export function InputPanel({
   text,
   name,
@@ -39,8 +28,8 @@ export function InputPanel({
   onText,
   onName,
   onImport,
-  onExample,
-  precon = null,
+  niceArt,
+  onNiceArt,
 }: {
   text: string;
   name: string;
@@ -50,10 +39,9 @@ export function InputPanel({
   onText: (text: string) => void;
   onName: (name: string) => void;
   onImport: () => void;
-  /** Fills in the list of an installed precon; null when none is installed (no button then). */
-  onExample: (() => void) | null;
-  /** Set while a precon is being edited: the name is fixed and Import keeps your version of it. */
-  precon?: EditingPrecon | null;
+  /** The option "special-frame commander art" (`nice-art.ts`); no checkbox when `onNiceArt` is not given. */
+  niceArt?: boolean;
+  onNiceArt?: (on: boolean) => void;
 }) {
   const empty = text.trim() === '';
   return (
@@ -64,31 +52,10 @@ export function InputPanel({
         looked up before are kept in this browser. Offline? Go back to the menu and use{' '}
         <strong>Quick start</strong> with the precon, which needs no connection.
       </p>
-      {precon !== null && (
-        <div className="imp-editing" data-testid="editing-precon">
-          <p className="scr-help">
-            <strong>Editing the built-in deck "{precon.name}".</strong>{' '}
-            {precon.edited
-              ? 'You saved a version of it; that is the one the menu uses.'
-              : 'It is still the list that came with the app.'}{' '}
-            Change the list and press Import: it is checked and your version is kept in this browser
-            only. The built-in deck is never changed.
-          </p>
-          <div className="imp-buttons">
-            <button type="button" className="scr-btn" disabled={running} onClick={precon.onReset}>
-              Reset to default
-            </button>
-            <button type="button" className="scr-btn" onClick={precon.onStop}>
-              Stop editing this precon
-            </button>
-          </div>
-        </div>
-      )}
       <label className="imp-field">
         <span>Deck name</span>
         <input
           className="scr-input"
-          readOnly={precon !== null}
           value={name}
           maxLength={80}
           placeholder="My Commander deck"
@@ -106,6 +73,23 @@ export function InputPanel({
           onChange={(e) => onText(e.target.value)}
         />
       </label>
+      {onNiceArt !== undefined && (
+        <label className="imp-check">
+          <input
+            type="checkbox"
+            checked={niceArt === true}
+            onChange={(e) => onNiceArt(e.target.checked)}
+          />
+          <span>
+            Use a special-frame art for my commander
+            <span className="scr-help">
+              {' '}
+              (borderless, showcase or extended art) when the list names no printing for it. The
+              printing is written on the commander's line, so you can change it on the deck screen.
+            </span>
+          </span>
+        </label>
+      )}
       <div className="imp-buttons">
         <button
           type="button"
@@ -115,11 +99,6 @@ export function InputPanel({
         >
           {running ? 'Importing…' : 'Import'}
         </button>
-        {onExample !== null && (
-          <button type="button" className="scr-btn" disabled={running} onClick={onExample}>
-            Fill in an example
-          </button>
-        )}
         <span role="status" aria-live="polite" className="scr-help">
           {saveMessage}
         </span>

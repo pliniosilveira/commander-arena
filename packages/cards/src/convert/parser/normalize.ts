@@ -333,6 +333,17 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
     const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'gu');
     out = out.replace(re, '~');
   }
+  // A planeswalker "<Name> of <Title>" may be called by its first word ("Narset deals damage ..."), except as the type of a permanent ("a Narset planeswalker").
+  const walker = options.legendary
+    ? /^(\p{Lu}[\p{L}'’-]{2,}) of (?:the )?\p{Lu}/u.exec(options.name)?.[1]
+    : undefined;
+  if (walker !== undefined && PLANESWALKER_TYPES.includes(walker)) {
+    const re = new RegExp(
+      `(?<![\\p{L}\\p{N}])${escapeRegExp(walker)}(?![\\p{L}\\p{N}'’])(?! planeswalker)`,
+      'gu',
+    );
+    out = out.replace(re, '~');
+  }
   out = out.replace(SELF_NOUN_RE, '~');
   out = tokenSelfInQuotes(out);
   let spree = false;
@@ -384,12 +395,30 @@ const FLASHBACK_THEN_LESS =
  * line above it, so "Choose one —" stays together with its modes; the bullets of a choice among
  * named options are lines of their own (`segment` reads the name).
  */
+/** A row of a die results table (CR 706.3a): "1—9 | text", "20 | text". */
+const RESULTS_ROW = /^(\d+)(?:[—–-](\d+))? \| (.+)$/u;
+
 export function splitAbilities(normalized: string): string[] {
   const abilities: string[] = [];
   let optionBullets = false;
+  let inTable = false;
   for (const line of splitLinkedLeaves(normalized).split('\n')) {
     if (line === '') continue;
     const last = abilities.length - 1;
+    // CR 706.3a (Journey to the Lost City): a row of a results table, "1—9 | You may ...", is a sentence of the ability above it: "If the result is 1 to 9, you may ...". A line of nothing but "Roll a d20." keeps its rows as they are (Hylda's table, `sentence.ts`).
+    const row = RESULTS_ROW.exec(line);
+    if (
+      row !== null &&
+      last >= 0 &&
+      (inTable || /^(?!roll an? d\d+\.?$).+\broll(?:s)? an? d\d+\.?$/iu.test(abilities[last] ?? ''))
+    ) {
+      inTable = true;
+      const effect = `${(row[3] ?? '').charAt(0).toLowerCase()}${(row[3] ?? '').slice(1)}`;
+      const range = row[2] === undefined ? row[1] : `${row[1]} to ${row[2]}`;
+      abilities[last] = `${abilities[last]} If the result is ${range}, ${effect}`;
+      continue;
+    }
+    inTable = false;
     if (line.startsWith('•') && last >= 0 && !optionBullets) {
       abilities[last] = `${abilities[last]}\n${line}`;
     } else {

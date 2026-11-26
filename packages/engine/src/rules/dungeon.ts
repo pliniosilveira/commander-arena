@@ -61,7 +61,8 @@ export function roomOfInherent(inherent: InherentAbility): UndercityRoom | null 
 /** `seat` has no dungeon: the dungeon card is removed from the game (CR 309.7); the field is left out rather than set to undefined. */
 function withoutDungeon(state: GameState, seat: SeatId): GameState {
   const { dungeon: _removed, ...rest } = getSeat(state, seat);
-  return setSeat(state, rest);
+  // CR 309.7: the dungeon is completed as it is removed from the game; the player remembers how many.
+  return setSeat(state, { ...rest, dungeonsCompleted: (rest.dungeonsCompleted ?? 0) + 1 });
 }
 
 /** The room with this name (the option of the question), or null. */

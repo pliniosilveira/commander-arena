@@ -5,10 +5,18 @@
  * validated and then checked by the one shared rule for starting a game (`checkPlayable`). A precon
  * that is not valid and fully supported is never startable: the answer is the reason, not a deck.
  */
-import type { PreconSnapshot, ScryfallClient } from '@commander-arena/cards';
+import {
+  type PreconSnapshot,
+  type ReplayDeck,
+  replayCard,
+  type ScryfallClient,
+  type SnapshotCard,
+  type StoredCard,
+  toSnapshotCard,
+} from '@commander-arena/cards';
 import type { DeckConfig } from '@commander-arena/engine';
 import { checkPlayable } from '../import/deck';
-import type { DeckStoreApi, ImportService, SavedDeck } from '../import/types';
+import type { DeckStoreApi, ImportReport, ImportService, SavedDeck } from '../import/types';
 import { commanderNameOf, savedDeckChoiceId, savedDeckIdOf } from './choices';
 import { layeredClient } from './layered-client';
 import { snapshotClient } from './snapshot-client';
@@ -19,8 +27,21 @@ export type PreconDeck =
       readonly ok: true;
       readonly info: PreconInfo;
       readonly deck: DeckConfig;
+      /** How the deck was built, for the replay of an AI report (issue 627). */
+      readonly replay: ReplayDeck;
+      /** The stored cards of the deck, whose pictures the board draws from their own links (`deck-images.ts`). */
+      readonly images: readonly StoredCard[];
     }
   | { readonly ok: false; readonly info: PreconInfo | null; readonly reason: string };
+
+/** The stored cards a resolved list holds: the cards of its sections, its commanders and its companion. */
+function storedCardsOf(report: ImportReport): readonly StoredCard[] {
+  return [
+    ...report.entries.map((entry) => entry.card.stored),
+    ...report.commanders.map((card) => card.stored),
+    ...(report.companion?.card == null ? [] : [report.companion.card.stored]),
+  ];
+}
 
 /** Makes the import service of the app, resolving names through the given client. */
 export type ServiceFor = (client: ScryfallClient) => ImportService;
@@ -43,11 +64,42 @@ export async function buildPreconDeck(
         reason: `"${snapshot.name}" cannot be played: ${check.reason}.`,
       };
     }
-    return { ok: true, info, deck: check.deck };
+    const replay = { name: snapshot.name, precon: snapshot.id, decklist: snapshot.decklist };
+    return { ok: true, info, deck: check.deck, replay, images: storedCardsOf(report) };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, info, reason: `"${snapshot.name}" could not be prepared: ${message}` };
   }
+}
+
+/**
+ * The replay record of a deck built from a list (issue 627): the list, and the card data of every card the import resolved that the
+ * precon's snapshot (when the list edits a precon) does not hold, without images.
+ */
+function replayOf(
+  name: string,
+  text: string,
+  report: ImportReport,
+  base?: PreconSnapshot,
+): ReplayDeck {
+  const known = new Set((base?.cards ?? []).map((c) => c.oracleId));
+  const cards = new Map<string, SnapshotCard>();
+  const stored = [
+    ...report.entries.map((e) => e.card.stored),
+    ...(report.companion?.card === null || report.companion === null
+      ? []
+      : [report.companion.card.stored]),
+    ...(report.meldFaces ?? []),
+  ];
+  for (const card of stored) {
+    if (!known.has(card.oracleId)) cards.set(card.oracleId, replayCard(toSnapshotCard(card)));
+  }
+  return {
+    name,
+    decklist: text,
+    ...(base === undefined ? {} : { precon: base.id }),
+    ...(cards.size === 0 ? {} : { cards: [...cards.values()] }),
+  };
 }
 
 export interface Precons {
@@ -77,6 +129,7 @@ async function buildFromText(
   info: PreconInfo,
   text: string,
   service: ImportService,
+  base?: PreconSnapshot,
 ): Promise<PreconDeck> {
   try {
     const report = await service.run({ text, deckName: info.name });
@@ -84,7 +137,13 @@ async function buildFromText(
     if (!check.ok) {
       return { ok: false, info, reason: `"${info.name}" cannot be played: ${check.reason}.` };
     }
-    return { ok: true, info, deck: check.deck };
+    return {
+      ok: true,
+      info,
+      deck: check.deck,
+      replay: replayOf(info.name, text, report, base),
+      images: storedCardsOf(report),
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, info, reason: `"${info.name}" could not be prepared: ${message}` };
@@ -131,7 +190,7 @@ export function createPrecons(
       commander: commanderNameOf(override.text) || infoOf(snapshot).commander,
       decklist: override.text,
     };
-    const result = buildFromText(info, override.text, editor(snapshot));
+    const result = buildFromText(info, override.text, editor(snapshot), snapshot);
     prepared.set(key, result);
     // A refusal can be a lost connection: do not keep it, the next try asks again.
     void result.then((deck) => {

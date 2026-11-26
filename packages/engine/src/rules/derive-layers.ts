@@ -224,6 +224,8 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability; CR 702.56a: a Replicate given to a spell, with its trigger). */
 const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = [
   'decayed',
+  // CR 702.93a (Undying): a granted undying is the triggered ability the keyword stands for.
+  'undying',
   'cycling',
   'replicate',
   'encore',
@@ -395,5 +397,8 @@ export function applyPtLayers(
     addPower += e.change.power;
     addToughness += e.change.toughness;
   }
-  return { power: power + addPower, toughness: toughness + addToughness };
+  const sums = { power: power + addPower, toughness: toughness + addToughness };
+  // CR 613.4d (layer 7d): switching power and toughness applies after every other effect, whatever the timestamps; each switch switches again.
+  const switches = ofKind(effects, 'switchPt').length;
+  return switches % 2 === 1 ? { power: sums.toughness, toughness: sums.power } : sums;
 }

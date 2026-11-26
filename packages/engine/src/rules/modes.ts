@@ -226,6 +226,9 @@ function instanceSpec(mode: SpellMode, spec: TargetSpec, occurrence: number): Ta
           ),
         }
       : {}),
+    ...(spec.sameControllerAs !== undefined && sameMode.has(spec.sameControllerAs)
+      ? { sameControllerAs: instanceId(spec.sameControllerAs, occurrence) }
+      : {}),
     ...(spec.ownedByTarget !== undefined && sameMode.has(spec.ownedByTarget)
       ? { ownedByTarget: instanceId(spec.ownedByTarget, occurrence) }
       : {}),

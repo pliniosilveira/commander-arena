@@ -338,6 +338,11 @@
   overscroll-behavior-x: contain;
 }
 
+.board-field-rows-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
 .board-field-rows::-webkit-scrollbar {
   display: none;
 }
@@ -1684,6 +1689,27 @@
   font-size: calc(11px * var(--text-scale));
 }
 
+.board-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.board-preview-flip {
+  font: inherit;
+  padding: 1px 8px;
+  border: 1px solid var(--border, #3a4256);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.board-preview-flip:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .board-preview-empty {
   display: flex;
   flex-direction: column;
@@ -2289,6 +2315,12 @@
 .board-top-card {
   cursor: help;
   max-width: 170px;
+}
+
+/* The hand is drawn over the strip (z-index 9), and in a window about 1280px wide its first card starts on the chips of the
+   player's strip: the chips (commander, top card) rise above the hand, so only their own boxes take the pointer. */
+.board-strip-me .board-cmdr {
+  z-index: 10;
 }
 
 /* ---- The land row: one line, equal basic lands overlapped sideways (LandRow.tsx, lands.ts) ---- */

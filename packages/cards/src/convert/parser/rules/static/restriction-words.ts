@@ -87,6 +87,22 @@ const BLOCKED_EXCEPT_BY: Parser<IrStaticEffect> = map(
 );
 
 /**
+ * "can't be blocked except by creatures with flying" (Silhana Ledgewalker, CR 509.1b, 702.9b): no creature without flying can block the subject, the engine's `cantBeBlockedBy` of the
+ * creatures that do not have flying (`notKeywords`, read as the blockers are declared). Reach is not flying. Only those words.
+ */
+const BLOCKED_EXCEPT_BY_FLYING: Parser<IrStaticEffect> = map(
+  pattern(new RegExp(`can['’]t be blocked except by creatures with flying${END}`, 'iu')),
+  (match): IrStaticEffect => ({
+    kind: 'cantBeBlockedBy',
+    blockers: {
+      types: ['creature'],
+      notKeywords: ['flying'],
+      raw: match[0].replace(/^can['’]t be blocked except by /iu, ''),
+    },
+  }),
+);
+
+/**
  * "can't be blocked by creatures the monarch controls" (Azure Fleet Admiral, CR 509.1b, 725.1): no creature the monarch controls (as it is when the blockers are declared) can block
  * the subject, the engine's `cantBeBlockedBy` of the creatures with `controller: 'monarch'`. Only those words.
  */
@@ -178,6 +194,7 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
       "can['’]t be blocked except by three or more creatures",
       'cantBeBlockedExceptByThreeOrMore',
     ),
+    BLOCKED_EXCEPT_BY_FLYING,
     BLOCKED_EXCEPT_BY,
     BLOCKED_BY_MONARCH,
     BLOCKED_BY_GREATER_POWER,

@@ -43,6 +43,7 @@ export function stackWording(
   // What set a triggered ability off, and what it does: "At the beginning of combat on your turn,
   // you gain 1 life". A shape the words do not know shows nothing (the source's name is above).
   const source = item.abilitySource === undefined ? undefined : index.get(item.abilitySource);
+  // The initiative's and the dungeon's carry their words in the object (their trigger is never read).
   const monarchWords =
     inherent && item.ability !== undefined
       ? showsRuleText(item.name)

@@ -129,6 +129,25 @@ export const NOUN_DEFENDING_PLAYER = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.entered-chosen-player`: "the chosen player" (CR 614.12a, 607.2d; Stuffy Doll): the player the permanent chose as it entered, by the linked "As ~ enters, choose a
+ * player". The engine's `PlayerSelector` `enteredChosenPlayer`; a face without that choice refuses it (`validateCard`). Not read: "the chosen creature type" or any other
+ * chosen thing, "chosen player" without "the", the plural.
+ */
+export const NOUN_ENTERED_CHOSEN_PLAYER = defineRule<IrNoun>({
+  id: 'noun.entered-chosen-player',
+  family: 'noun',
+  leading: ['the'],
+  cites: ['CR 614.12a (Replacement Effects)', 'CR 607.2d (Linked Abilities)'],
+  examples: ['the chosen player', 'The chosen player'],
+  rejects: ['the chosen players', 'chosen player', 'the chosen player’s', 'the chosen color'],
+  parse: phrase(
+    'noun.entered-chosen-player',
+    new RegExp(`the chosen player(?!['’]|s)${END}`, 'iu'),
+    (raw) => bare('enteredChosenPlayer', raw),
+  ),
+});
+
+/**
  * `noun.player-to-your-right`: "the player to your right" (Hithlain Rope): the player before you in turn order among the players still in the game, the
  * opponent in a two-player game. The engine's `PlayerSelector` `playerToYourRight`. Not read: "the player to your left", "players to your right", a
  * player "on your right".
@@ -264,12 +283,57 @@ export const NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER = defineRule<IrNoun>({
   },
 });
 
+/**
+ * `noun.each-of-its-controllers-opponents`: "each of its controller's opponents" (Bounty Board: "Whenever a creature with a bounty counter on it dies, each of its controller's opponents draws a
+ * card and gains 2 life."; CR 102.2, 109.4, 608.2h): the opponents of the controller of an object an earlier part of the text named, read from its last-known information when it has left. In a
+ * game of free-for-all Commander every player but that controller is their opponent, so the lowering names the engine's `eachPlayerExcept` of that controller, as it does for "each player
+ * other than its controller". Not read: "each of your opponents" (`you`), "each of its owner's opponents", "each of its controllers' opponents", "each of its controller's opponent", "each of
+ * that creature's controller's opponents", a missing "of".
+ */
+export const NOUN_EACH_OF_ITS_CONTROLLERS_OPPONENTS = defineRule<IrNoun>({
+  id: 'noun.each-of-its-controllers-opponents',
+  family: 'noun',
+  leading: ['each'],
+  cites: ['CR 102.2 (Players)', 'CR 109.4 (Objects)', 'CR 608.2h (Resolving Spells and Abilities)'],
+  examples: ["each of its controller's opponents", 'Each of its controller’s opponents'],
+  rejects: [
+    'each of your opponents',
+    "each of its owner's opponents",
+    "each of its controllers' opponents",
+    "each of its controller's opponent",
+    "each of that creature's controller's opponents",
+    "its controller's opponents",
+    "each of its controller's",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/each of its controller['’]s opponents(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    const text = ctx.text.slice(pos, r.pos);
+    const itsStart = pos + 'each of '.length;
+    const controller: IrNoun = {
+      ...bare('controllerOf', "its controller's", {
+        of: possessedNoun('noun.each-of-its-controllers-opponents', 'its', itsStart),
+      }),
+      span: { start: itsStart, end: r.pos },
+      rule: 'noun.each-of-its-controllers-opponents',
+    };
+    const noun: IrNoun = {
+      ...bare('eachPlayer', text, { of: controller }),
+      span: { start: pos, end: r.pos },
+      rule: 'noun.each-of-its-controllers-opponents',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
 export const PLAYER_NOUN_RULES = [
   NOUN_YOU_AND_PLAYER,
   NOUN_EACH_OTHER_PLAYER,
   NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER,
+  NOUN_EACH_OF_ITS_CONTROLLERS_OPPONENTS,
   NOUN_DEFENDING_PLAYER,
   NOUN_PLAYER_TO_YOUR_RIGHT,
+  NOUN_ENTERED_CHOSEN_PLAYER,
   NOUN_THAT_PLAYER,
   NOUN_THAT_ATTACKING_PLAYER,
   NOUN_THEY,

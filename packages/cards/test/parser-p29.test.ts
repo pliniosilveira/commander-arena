@@ -1694,8 +1694,8 @@ describe('subjects of triggers and the player an event is about (CR 603.2, 508.1
       'is dealt damage by a creature, draw a card.',
     ],
     [
-      'Whenever ~ is dealt noncombat damage, draw a card.',
-      'is dealt noncombat damage, draw a card.',
+      'Whenever ~ is dealt noncombat damage by a creature, draw a card.',
+      'is dealt noncombat damage by a creature, draw a card.',
     ],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(drop(text)).toMatchObject({ reason: 'unrecognised', stoppedAt });

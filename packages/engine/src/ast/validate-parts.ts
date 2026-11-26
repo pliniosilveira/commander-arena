@@ -4,7 +4,13 @@
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
 import { TOKEN_PRESETS } from '../cards/tokens';
-import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import {
+  CARD_TYPES,
+  COLORS,
+  isNonCreatureSubtype,
+  LAND_TYPES,
+  SUPERTYPES,
+} from '../characteristics';
 import { FILTERABLE_KEYWORDS } from './features';
 import type {
   Ability,
@@ -15,6 +21,7 @@ import type {
   Condition,
   Cost,
   Effect,
+  EntryCounter,
   ModeChoice,
   ObjectFilter,
   ObjectRef,
@@ -69,6 +76,7 @@ export interface Scope {
         kind:
           | 'modifyPt'
           | 'setPt'
+          | 'switchPt'
           | 'loseAllAbilities'
           | 'loseHexproofShroud'
           | 'setTypes'
@@ -114,6 +122,8 @@ export interface Scope {
   readonly voteOptions?: readonly string[];
   /** What the latest vote earlier in the same sequence is for (CR 701.38b): `players` or `objects` for a `voteFor`, `words` for a `vote`. The votes of players and of permanents are read only after the matching one. */
   readonly voteChoices?: 'words' | 'players' | 'objects';
+  /** The options of the latest `eachPlayerChooses` earlier in the same sequence: `eachPlayerWhoChose` and `chooseObjects.perChoice` read who chose one of them (CR 101.4). */
+  readonly choiceOptions?: readonly string[];
   /** True in an ability whose trigger is `votingFinished`: it reads the record of the vote that finished (CR 701.38a), whatever the vote was for. */
   readonly voteTrigger?: boolean;
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
@@ -154,6 +164,8 @@ export interface Scope {
   readonly chosenNumber?: boolean;
   /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
   readonly entersX?: boolean;
+  /** True in the effect (and the target counts) of the triggered ability "When this permanent becomes monstrous": `monstrousX` reads the X of its monstrosity (CR 701.37c). */
+  readonly monstrousX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
@@ -329,6 +341,13 @@ export function checkFilter(
   if (f.colorless !== undefined && f.colorless !== true) {
     issue(out, `${path}.colorless`, 'colorless must be true');
   }
+  if (f.outlaw !== undefined && typeof f.outlaw !== 'boolean') {
+    issue(
+      out,
+      `${path}.outlaw`,
+      'outlaw must be a boolean (true: outlaws only, false: non-outlaws only)',
+    );
+  }
   if (f.token !== undefined && typeof f.token !== 'boolean') {
     issue(
       out,
@@ -347,6 +366,7 @@ export function checkFilter(
       'triggerPlayer',
       'defendingPlayer',
       'monarch',
+      'chosenPlayer',
     ])
   ) {
     issue(out, `${path}.controller`, `unknown controller filter ${JSON.stringify(f.controller)}`);
@@ -410,12 +430,18 @@ export function checkFilter(
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'discardedOrFromLibraryThisTurn',
+    'putFromLibraryThisTurn',
     'notCastFromHand',
     'castFromHand',
     'castFromGraveyard',
+    'castFromExile',
     'castFromOwnGraveyard',
+    'castFromOwnGraveyardOrExile',
     'xInManaCost',
     'firstXSpellThisTurn',
+    'firstCastFromExileThisTurn',
+    'firstManaSpentFromSubtypeThisTurn',
+    'firstOfTypeThisTurn',
     'enteredThisTurn',
     'dealtDamageThisTurn',
     'exiledWithSource',
@@ -435,6 +461,24 @@ export function checkFilter(
     (!Number.isInteger(f.nthSpellThisTurn) || f.nthSpellThisTurn < 2)
   ) {
     issue(out, `${path}.nthSpellThisTurn`, 'nthSpellThisTurn must be a whole number of 2 or more');
+  }
+  // CR 601.2h (Rain of Riches): "a spell that mana from a Treasure was spent to cast" names a subtype; "the first such spell each turn" needs it.
+  if (
+    f.manaSpentFromSubtype !== undefined &&
+    (typeof f.manaSpentFromSubtype !== 'string' || f.manaSpentFromSubtype === '')
+  ) {
+    issue(out, `${path}.manaSpentFromSubtype`, 'manaSpentFromSubtype must be a subtype name');
+  }
+  if (f.firstManaSpentFromSubtypeThisTurn === true && f.manaSpentFromSubtype === undefined) {
+    issue(
+      out,
+      `${path}.firstManaSpentFromSubtypeThisTurn`,
+      'firstManaSpentFromSubtypeThisTurn needs manaSpentFromSubtype',
+    );
+  }
+  // CR 601.2i: "the first artifact spell you cast each turn" is the first of the card types the filter names.
+  if (f.firstOfTypeThisTurn === true && (f.types?.length ?? 0) === 0) {
+    issue(out, `${path}.firstOfTypeThisTurn`, 'firstOfTypeThisTurn needs types');
   }
   // CR 208.4b: "with base power 0" is a whole number of power.
   if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
@@ -598,6 +642,13 @@ export function checkFilter(
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
     );
   }
+  if (f.putFromLibraryThisTurn === true && f.zone !== 'graveyard') {
+    issue(
+      out,
+      `${path}.putFromLibraryThisTurn`,
+      "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
   // CR 607.2a (Lorehold group 2): "card exiled with this creature" is a card in exile.
   if (f.exiledWithSource === true && f.zone !== 'exile') {
     issue(
@@ -690,6 +741,27 @@ export function checkFilter(
       issue(out, `${path}.targetsOnly`, 'targetsObject and targetsOnly are not read together');
     }
     checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
+  }
+  // CR 113.7a (Green Slime): "from an artifact or enchantment source": an ability on the stack, whose source is a permanent the inner filter describes.
+  if (f.abilitySource !== undefined) {
+    if (f.stackKind === undefined || f.stackKind === 'spell') {
+      issue(
+        out,
+        `${path}.abilitySource`,
+        'the source of an ability is read for a filter with a stackKind of an ability',
+      );
+    }
+    if (
+      filterSome(f.abilitySource, (m) => m.zone !== undefined && m.zone !== 'battlefield') ||
+      filterSome(f.abilitySource, (m) => m.stackKind !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.abilitySource`,
+        'the source of an ability is a permanent on the battlefield: no zone or stackKind',
+      );
+    }
+    checkFilter(f.abilitySource, `${path}.abilitySource`, out);
   }
   // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
   if (f.targetsPlayer !== undefined) {
@@ -792,6 +864,24 @@ export function checkFilter(
       "sharesCardTypeWith 'sacrificed' is read in the filter of a sacrifice that follows another sacrifice (or the offer of one) in the same sequence",
     );
   }
+  // CR 105.1 (Ringsight): "shares a color with a legendary creature you control": a filter of permanents on the battlefield, with no such filter of its own.
+  if (f.sharesColorWith !== undefined) {
+    const inner = f.sharesColorWith;
+    if (
+      typeof inner !== 'object' ||
+      inner === null ||
+      (inner.zone !== undefined && inner.zone !== 'battlefield') ||
+      inner.sharesColorWith !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.sharesColorWith`,
+        'sharesColorWith is a filter of permanents on the battlefield without a sharesColorWith of its own',
+      );
+    } else {
+      checkFilter(inner, `${path}.sharesColorWith`, out);
+    }
+  }
   if (f.manaValueExact === true && f.manaValueAtMost === undefined) {
     issue(out, `${path}.manaValueExact`, 'manaValueExact needs the manaValueAtMost it makes exact');
   }
@@ -859,6 +949,7 @@ const HOST_FILTER_KEYS: readonly string[] = [
   'notSupertypes',
   'subtypes',
   'notSubtypes',
+  'outlaw',
   'colors',
   'notColors',
   'colorless',
@@ -938,6 +1029,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtCombatDamageByAtLeast !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.discardedOrFromLibraryThisTurn !== undefined ||
+  f.putFromLibraryThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.dealtDamageThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
@@ -949,6 +1041,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.goaded !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined ||
+  f.abilitySource !== undefined ||
   f.targetsPlayer !== undefined;
 
 /**
@@ -968,6 +1061,7 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'x',
   'enteredX',
+  'monstrousX',
   'lifePaidAsEntered',
   'powerOf',
   'manaValueOf',
@@ -1011,11 +1105,29 @@ export function declareTargets(
   xFilterAllowed = false,
   /** CR 107.3m (Blitzball Stadium: "When this artifact enters, support X"): the enters trigger of the permanent itself can take up to as many targets as the X of the spell it came from. */
   upToEntersX = false,
+  /** CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures"): the becomes monstrous trigger of the permanent itself can take up to as many targets as the X of its monstrosity. */
+  upToMonstrousX = false,
+  /** Bladegriff Prototype (CR 603.3d): only the one target slot of a triggered ability with no modes whose event is about a player can be chosen by that player. */
+  chosenByAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
   specs.forEach((spec, i) => {
     const p = `${path}[${i}]`;
+    if (spec.chosenBy !== undefined) {
+      if (
+        spec.chosenBy !== 'triggerPlayer' ||
+        !chosenByAllowed ||
+        specs.length !== 1 ||
+        spec.what?.kind !== 'object'
+      ) {
+        issue(
+          out,
+          `${p}.chosenBy`,
+          'chosenBy is "triggerPlayer", for the one object target of a triggered ability with no modes whose event is about a player',
+        );
+      }
+    }
     if (typeof spec.id !== 'string' || spec.id === '') {
       issue(out, `${p}.id`, 'target id must be a non-empty string');
     } else if (declared.has(spec.id)) {
@@ -1283,13 +1395,18 @@ export function declareTargets(
         checkAmount(
           spec.upToAmount,
           `${p}.upToAmount`,
-          upToEntersX ? { ...NO_SCOPE, entersX: true } : NO_SCOPE,
+          upToEntersX
+            ? { ...NO_SCOPE, entersX: true }
+            : upToMonstrousX
+              ? { ...NO_SCOPE, monstrousX: true }
+              : NO_SCOPE,
           out,
         );
         if (
           typeof spec.upToAmount === 'object' &&
           READS_NO_OBJECT.has(spec.upToAmount.kind) &&
-          !(upToEntersX && spec.upToAmount.kind === 'enteredX')
+          !(upToEntersX && spec.upToAmount.kind === 'enteredX') &&
+          !(upToMonstrousX && spec.upToAmount.kind === 'monstrousX')
         ) {
           issue(out, `${p}.upToAmount`, 'the number of targets reads the game, not an object');
         }
@@ -1439,6 +1556,15 @@ export function declareTargets(
         );
       }
     }
+    if (spec.everyController !== undefined) {
+      // CR 115.1, 601.2c (Guff Rewrites History): "for each player, choose target ... that player controls".
+      if (spec.everyController !== true) {
+        issue(out, `${p}.everyController`, 'everyController must be true when present');
+      }
+      if (spec.differentControllers !== true || spec.anyNumber !== true) {
+        issue(out, p, 'everyController goes with differentControllers and anyNumber');
+      }
+    }
     if (spec.differentFrom !== undefined) {
       // CR 115.3 (D-151): "other targets": an earlier slot of the ability, not this one.
       if (typeof spec.differentFrom !== 'string' || !declared.has(spec.differentFrom)) {
@@ -1446,6 +1572,20 @@ export function declareTargets(
           out,
           `${p}.differentFrom`,
           'differentFrom names an earlier target slot of the same ability',
+        );
+      }
+    }
+    if (spec.sameControllerAs !== undefined) {
+      // CR 115.1, 109.4: "another target creature that player controls": an earlier object slot of the ability, and permanents on the battlefield.
+      if (
+        typeof spec.sameControllerAs !== 'string' ||
+        declared.get(spec.sameControllerAs) !== 'object' ||
+        what?.kind !== 'object'
+      ) {
+        issue(
+          out,
+          `${p}.sameControllerAs`,
+          'sameControllerAs names an earlier object target slot of the same ability',
         );
       }
     }
@@ -1565,6 +1705,9 @@ export function checkRef(
         );
       }
       break;
+    case 'putCountersOn':
+      // CR 608.2c: the objects the `addCounters` effects before it in the resolution put counters on; empty when there were none.
+      break;
     case 'triggerSubject':
       // The engine reads it only where a node says so (`checkSubjectRef`), not in any selector.
       issue(
@@ -1622,6 +1765,18 @@ export function checkRef(
           out,
           path,
           "'votedObjects' needs a vote for permanents before it in the same sequence",
+        );
+      }
+      break;
+    case 'mostVotedObjects':
+      // CR 701.38a, 701.38b (Council's Judgment): the permanents with the most votes, after a vote for permanents in the same sequence.
+      if (expect === 'player')
+        issue(out, path, "'mostVotedObjects' is a set of permanents, not a player");
+      else if (scope.voteChoices !== 'objects') {
+        issue(
+          out,
+          path,
+          "'mostVotedObjects' needs a vote for permanents before it in the same sequence",
         );
       }
       break;
@@ -1762,6 +1917,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'eachOtherOpponent':
     case 'eachPlayerExcept':
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
     case 'attackedPlayers':
     case 'triggerDamagedPlayers':
     case 'combatDamagedByNamed':
@@ -1771,6 +1927,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'opponentsAttackingTriggerPlayer':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
+    case 'eachPlayerWhoChose':
     case 'all':
       return true;
     default:
@@ -1792,6 +1949,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'defendingPlayer':
     case 'playerToYourRight':
     case 'chosenPlayer':
+    case 'enteredChosenPlayer':
       break;
     case 'eachOtherOpponent':
       // D-151: "each other opponent": besides the player the event is about, so the trigger must have one.
@@ -1804,6 +1962,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
       }
       break;
     case 'eachPlayerControlling':
+    case 'eachPlayerControllingMore':
       // CR 102.1, 109.4 (Shatter the Sky): "each player who controls a creature with power 4 or greater": the filter reads battlefield permanents, each player as "you".
       checkFilter(sel.filter, `${path}.filter`, out);
       if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
@@ -1816,7 +1975,11 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           "'each player who controls' names the controller itself",
         );
       }
-      if (sel.opponentsOnly !== undefined && sel.opponentsOnly !== true) {
+      if (
+        sel.kind === 'eachPlayerControlling' &&
+        sel.opponentsOnly !== undefined &&
+        sel.opponentsOnly !== true
+      ) {
         issue(out, `${path}.opponentsOnly`, 'opponentsOnly is true or absent');
       }
       break;
@@ -1939,6 +2102,24 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerWhoChose':
+      // CR 101.4, 608.2d (Seize the Spotlight): who chose an option of an `eachPlayerChooses` earlier in the same sequence.
+      if (typeof sel.option !== 'string' || sel.option.trim() === '') {
+        issue(out, `${path}.option`, "'eachPlayerWhoChose' names the option that was chosen");
+      } else if (scope.choiceOptions === undefined) {
+        issue(
+          out,
+          path,
+          "'eachPlayerWhoChose' needs an eachPlayerChooses effect before it in the same sequence",
+        );
+      } else if (!scope.choiceOptions.includes(sel.option)) {
+        issue(
+          out,
+          `${path}.option`,
+          `"${sel.option}" is not an option of the choice (${scope.choiceOptions.join(', ')})`,
+        );
+      }
+      break;
     case 'eachOpponentWhoVoted':
       // CR 701.38a (Erestor of the Council): who voted for what, in a vote earlier in the same sequence or the one that triggered the ability.
       if (scope.voteChoices === undefined && scope.voteTrigger !== true) {
@@ -2011,12 +2192,14 @@ export const PLAYER_ONLY = [
   'eachOtherOpponent',
   'eachPlayerExcept',
   'eachPlayerControlling',
+  'eachPlayerControllingMore',
   'all',
   'controllerOf',
   'ownerOf',
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
   'triggerDamagedPlayers',
   'attackedPlayers',
@@ -2026,6 +2209,7 @@ export const PLAYER_ONLY = [
   'discardedThisWay',
   'eachPlayerWithoutVotes',
   'eachOpponentWhoVoted',
+  'eachPlayerWhoChose',
 ];
 
 export function checkDamageRecipient(
@@ -2087,6 +2271,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
   milledCreature: 'a mill effect',
+  milledLand: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
@@ -2096,7 +2281,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
   excessDamageDealt: 'a dealDamage effect',
-  countersRemoved: 'a removeAllCounters or removeChosenCounters effect',
+  countersRemoved: 'a removeAllCounters, removeChosenCounters or removeCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
@@ -2143,17 +2328,23 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedMost',
       'discardedTypeCount',
     ];
-  if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
+  if (e?.kind === 'mill') return ['milledValue', 'milledCreature', 'milledLand'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
   // Federation Fleet group D (CR 122.6, 608.2c): "If you put two or more +1/+1 counters on creatures this way".
   if (e?.kind === 'addCounters') return ['countersPut'];
   // "You may reveal the top card of your library. Draw a card if it's an artifact card": what the effect done for a card of the kind produced.
   if (e?.kind === 'revealTop' && e.onMatch !== undefined) return thisWayProduced(e.onMatch);
-  if (e?.kind === 'removeAllCounters' || e?.kind === 'removeChosenCounters') {
+  if (
+    e?.kind === 'removeAllCounters' ||
+    e?.kind === 'removeChosenCounters' ||
+    e?.kind === 'removeCounters'
+  ) {
     return ['countersRemoved'];
   }
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures', 'exiledCreatureCards'];
+  // Journey to the Lost City (CR 608.2c): the creature cards `exileTop` exiled from a library are "creature cards among those cards".
+  if (e?.kind === 'exileTop') return ['exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -2310,8 +2501,9 @@ export function checkManaSpentType(
   out: Out,
   snow?: unknown,
 ): void {
-  if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
-    issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
+  // Cataclysmic Prospecting (CR 205.3i): "for each mana from a Desert": or a land type, the source being that land.
+  if (type !== undefined && !isOneOf(type, CARD_TYPES) && !isOneOf(type, LAND_TYPES)) {
+    issue(out, path, `fromType is a card type or a land type, not ${JSON.stringify(type)}`);
   }
   // D-260: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
   if (snow !== undefined && (snow !== true || type !== undefined)) {
@@ -2368,6 +2560,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           "'enteredX' needs a triggered ability whose trigger is this permanent entering the battlefield",
+        );
+      }
+      break;
+    case 'monstrousX':
+      // CR 701.37c: only the becomes monstrous trigger of the permanent itself reads the X of its monstrosity (the face must have a `monstrosity` effect: checked with the face).
+      if (scope.monstrousX !== true) {
+        issue(
+          out,
+          path,
+          "'monstrousX' needs a triggered ability whose trigger is this permanent becoming monstrous",
         );
       }
       break;
@@ -3044,12 +3246,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'countOf needs a filter');
       } else if (
         a.filter.owner !== undefined &&
-        kindOf(a.filter.owner) === 'target' &&
+        (kindOf(a.filter.owner) === 'target' || kindOf(a.filter.owner) === 'defendingPlayer') &&
         a.filter.zone !== undefined &&
         a.filter.zone !== 'battlefield'
       ) {
         // D-649 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
-        // the amount is read, with the targets.
+        // the amount is read, with the targets. CR 508.5 (Guiltfeeder): "defending player loses 1 life for each card in their graveyard": the one player the attacking source attacks.
         const { owner, ...rest } = a.filter;
         checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
         if (rest.controller !== undefined || rest.controlledBy !== undefined) {
@@ -3066,7 +3268,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.filter.owner`,
-          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player owns",
+          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player or the defending player owns",
         );
         if (rest.controlledBy !== undefined) {
           issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
@@ -3399,6 +3601,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
         issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
       }
+      if (cost.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blueAsAnyColor is given by an effect to the abilities it grants, a card does not write it',
+        );
+      }
       break;
     case 'tap':
     case 'untap':
@@ -3531,8 +3740,8 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         if (!Array.isArray(cost.alongside) || cost.alongside.length < 1) {
           issue(out, `${path}.alongside`, 'alongside lists at least one more filter');
         } else {
+          // "Sacrifice ~ and a legendary artifact" (Mount Doom, CR 701.21a, 118.3): `this` is the first part and `alongside` names the others.
           if (
-            kindOf(cost.what) === 'this' ||
             cost.count !== undefined ||
             cost.countX !== undefined ||
             cost.anyNumber !== undefined
@@ -3540,7 +3749,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
             issue(
               out,
               `${path}.alongside`,
-              'a sacrifice of several different permanents names each by a filter: no this, count, X or any number',
+              'a sacrifice of several different permanents names each part by a filter (or the first by this): no count, X or any number',
             );
           }
           cost.alongside.forEach((filter, j) => {
@@ -3722,6 +3931,23 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         );
       }
       break;
+    case 'putOpponentExileInGraveyard':
+      // CR 108.3, 118.3 (Void Attendant): a card in exile an opponent owns, so the filter describes a card in exile with no zone, controller or owner of its own.
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (
+        cost.filter?.zone !== undefined ||
+        cost.filter?.controller !== undefined ||
+        cost.filter?.owner !== undefined ||
+        cost.filter?.ownedByYou !== undefined ||
+        cost.filter?.notOwnedByYou !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the card is one an opponent owns in exile: no zone, controller or owner',
+        );
+      }
+      break;
     case 'loyalty':
       // CR 606.4, 606.5 (D-200): [+N], [-N], [0] or [-X].
       if (cost.change !== 'x' && !Number.isSafeInteger(cost.change)) {
@@ -3883,6 +4109,7 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
     case 'defendingPlayer':
     case 'playerToYourRight':
     case 'chosenPlayer':
+    case 'enteredChosenPlayer':
       break;
     case 'all':
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -3965,6 +4192,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'cardLeftYourGraveyard':
     case 'descendedThisTurn':
+    case 'playedLandThisTurn':
     case 'yourMainPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
@@ -4159,7 +4387,20 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
       }
       break;
+    case 'subjectMatches':
+      // CR 603.10a (Endless Evil): the filter describes the permanent the event is about; where it may stand is checked with the trigger (validate.ts).
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (
+        c.filter !== undefined &&
+        (c.filter.zone !== undefined ||
+          c.filter.controller !== undefined ||
+          c.filter.owner !== undefined)
+      ) {
+        issue(out, `${path}.filter`, 'the filter names no zone, controller or owner');
+      }
+      break;
     case 'subjectControlledByYou':
+    case 'subjectHadToAttack':
       // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
       break;
     case 'subjectStat':
@@ -4329,6 +4570,8 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         }
       }
       break;
+    case 'loyaltyAbilityActivatedThisTurn':
+      break;
     case 'attackedWithCreaturesThisTurn':
       // Issue 279, CR 508.1: the different creatures the controller attacked with this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
@@ -4366,6 +4609,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'thisSuspended':
+      // CR 702.62b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
     case 'thisOnBattlefield':
       // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
       break;
@@ -4382,6 +4628,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
     case 'foretold': // CR 702.143a: the face must list a foretell cost (`checkCastFace`)
+      break;
+    case 'castForAlternative': // CR 118.9 (Baleful Mastery): the face must list the alternative cost (`checkCastFace`)
+      if (c.alternative !== 'payMana') {
+        issue(out, `${path}.alternative`, 'castForAlternative names the payMana alternative cost');
+      }
       break;
     case 'counterPutOnThisThisTurn': // Wakka (CR 122.6): the permanent with the ability; an optional kind of counter
       if (c.counter !== undefined && (typeof c.counter !== 'string' || c.counter === '')) {
@@ -4422,6 +4673,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'amountIsPrime':
       // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
+      break;
+    case 'completedDungeon':
+      // CR 309.7: whether one of the players the selector names has completed a dungeon.
+      checkConditionPlayers(c.player, `${path}.player`, out);
       break;
     case 'maxSpeed':
       // CR 702.179e: whether one of the players the selector names has speed 4. A condition has no targets and reads no trigger subject.
@@ -4478,8 +4733,11 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'moveToZone' ||
     // Call for Aid (CR 611.2c): "Untap those creatures. They gain haste": the permanents a `gainControl` took are "those creatures".
     e?.kind === 'gainControl' ||
+    // CR 701.12a: the permanents an `exchangeControlOfAll` exchanged are "those creatures".
+    e?.kind === 'exchangeControlOfAll' ||
     // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
-    (e?.kind === 'counter' && e.exileInstead === true) ||
+    // CR 113.7a (Green Slime): the permanents whose abilities a `counter` countered are "that permanent" ("If a permanent's ability is countered this way, destroy that permanent").
+    e?.kind === 'counter' ||
     e?.kind === 'createToken' ||
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
@@ -4493,7 +4751,8 @@ function movesObjects(e: Effect): boolean {
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
     e?.kind === 'exileTop' ||
     // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
-    (e?.kind === 'lookAtTop' && e.take?.to === 'exileFaceDownUnlinked') ||
+    (e?.kind === 'lookAtTop' &&
+      (e.take?.to === 'exileFaceDownUnlinked' || e.take?.to === 'exile')) ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -4508,6 +4767,7 @@ function movesObjects(e: Effect): boolean {
     // D-660, D-661, D-663: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
     e?.kind === 'exileUntilFound' ||
     e?.kind === 'opponentChoosesCard' ||
+    e?.kind === 'handCards' ||
     e?.kind === 'exileTopAnyNumber' ||
     e?.kind === 'exilePiles' ||
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
@@ -4540,6 +4800,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Lander',
   'Wicked Role',
   'Junk',
+  'Blood',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
@@ -4551,6 +4812,7 @@ const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
   'defendingPlayer',
   'playerToYourRight',
   'chosenPlayer',
+  'enteredChosenPlayer',
   'triggerPlayer',
 ];
 
@@ -4560,6 +4822,12 @@ function checkSacrificeSelector(
   scope: Scope,
   out: Out,
 ): void {
+  // CR 701.21a, 603.2c (Gorbag of Minas Morgul): "you may sacrifice it" in a trigger about a permanent: the engine sacrifices the permanent the event is about if its controller
+  // (the controller of the ability) still controls it.
+  if (kindOf(sel) === 'triggerSubject') {
+    checkSubjectRef(sel as ObjectRef, 'permanent', path, scope, out);
+    return;
+  }
   if (kindOf(sel) !== 'choose') {
     checkObjectSelector(sel as ObjectSelector, path, scope, out);
     return;
@@ -4779,8 +5047,11 @@ function checkChooseMove(
     sel.dealtCombatDamageToYou !== undefined ||
     // Glorious Protector (CR 608.2d, 610.3): "exile any number of ... creatures you control until ~ leaves the battlefield" is the one other place an `anyNumber` choice goes, among
     // the permanents on the battlefield (`moveToZone.until`, checked with the move).
+    // Xenagos, the Reveler (CR 608.2d): "put any number of creature and/or land cards from among them onto the battlefield": among the cards the effect before it moved (`fromMoved`).
     (sel.anyNumber !== undefined &&
       sel.minCardTypes === undefined &&
+      sel.fromMoved !== true &&
+      sel.fromExileOf === undefined &&
       (sel.filter?.zone ?? 'battlefield') !== 'battlefield')
   ) {
     issue(
@@ -4839,7 +5110,12 @@ function checkChooseMove(
     );
   }
   // D-207, CR 607.2a: "a card exiled with this artifact": the permanent's own linked exile, so an ability's.
-  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability' && sel.fromMoved !== true) {
+  if (
+    sel.filter?.zone === 'exile' &&
+    scope.owner !== 'ability' &&
+    sel.fromMoved !== true &&
+    sel.fromExileOf === undefined
+  ) {
     issue(
       out,
       `${path}.filter.zone`,
@@ -4937,6 +5213,23 @@ function checkChooseMove(
     }
     if (sel.fromHandOf.kind !== 'defendingPlayer') {
       issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
+    }
+  }
+  // Oblivion Sower: "land cards that player owns from exile": the cards in exile of one named player, the chooser choosing.
+  if (sel.fromExileOf !== undefined) {
+    checkPlayerSelector(sel.fromExileOf, `${path}.fromExileOf`, scope, out);
+    if (
+      sel.filter?.zone !== 'exile' ||
+      sel.fromMoved === true ||
+      sel.fromHandOf !== undefined ||
+      sel.alsoGraveyard !== undefined ||
+      sel.fromAnyGraveyard !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.fromExileOf`,
+        'a choice among the cards in exile of one player names exile as its zone and is not a choice among moved cards, from a hand or from a graveyard',
+      );
     }
   }
   if (sel.count !== undefined) {
@@ -5097,6 +5390,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
       break;
     case 'this':
     case 'target':
+      checkRef(ref, 'object', path, scope, out);
+      break;
+    case 'attached':
+      // CR 707.2, 303.4b (Endless Evil, Helm of the Host): "a token that's a copy of enchanted creature": the permanent the Aura or Equipment is attached to.
       checkRef(ref, 'object', path, scope, out);
       break;
     case 'chosen':
@@ -5317,7 +5614,7 @@ export function checkReplacementToken(spec: unknown, path: string, out: Out): vo
   }
 }
 
-const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard', 'library'];
+const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard', 'library', 'exile'];
 
 /** CR 701.23 (Search): the filter, the number of cards and where the cards found go. */
 function checkSearch(
@@ -5454,11 +5751,11 @@ function checkSearch(
         'zones are two or more different ones of graveyard, hand and library',
       );
     }
-    if (e.reveal === true || e.shuffle === true || e.sharedLandType !== undefined) {
+    if (e.shuffle === true || e.sharedLandType !== undefined) {
       issue(
         out,
         `${path}.zones`,
-        'a search of several zones has no reveal, shuffle or shared land type: shuffle with a "searched this way" condition',
+        'a search of several zones has no shuffle or shared land type: shuffle with a "searched this way" condition',
       );
     }
     if (e.maxAmount !== undefined) {
@@ -5502,6 +5799,31 @@ function checkSearch(
   if (!Array.isArray(e.destinations) || e.destinations.length === 0) {
     issue(out, `${path}.destinations`, 'a search needs at least one destination');
     return;
+  }
+  // CR 701.23a (Jace, Architect of Thought): the controller searches the library of each player named and exiles the cards found.
+  if (e.byController !== undefined) {
+    if (
+      e.byController !== true ||
+      e.optional !== undefined ||
+      e.zones !== undefined ||
+      e.mayPut !== undefined ||
+      e.reveal === true ||
+      e.destinations.some((d) => d?.zone !== 'exile') ||
+      e.max !== 1
+    ) {
+      issue(
+        out,
+        `${path}.byController`,
+        'byController is true, for one card exiled, with no optional, zones, mayPut or reveal',
+      );
+    }
+  }
+  if (e.destinations.some((d) => d?.zone === 'exile') && e.byController !== true) {
+    issue(
+      out,
+      `${path}.destinations`,
+      'a search exiles the card only when the controller searches (byController)',
+    );
   }
   let fixed = 0;
   let hasRest = false;
@@ -5590,6 +5912,8 @@ export const MAY_EFFECT_KINDS = [
   'revealTop',
   // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
   'removeCounters',
+  // Mari, the Killing Quill (CR 122.1, 608.2c): "you may remove a hit counter from a card that player owns in exile. If you do, ...": a removal that took a counter is something done.
+  'removeChosenCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
   // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
@@ -5734,6 +6058,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       );
       break;
     case 'subjectControlledByYou':
+    case 'subjectHadToAttack':
+    case 'subjectMatches':
     case 'subjectStat':
     case 'subjectPowerLessThanThis':
     case 'subjectGreaterThanEach':
@@ -6018,6 +6344,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // Zack Fair (CR 113.7a): "attach an Equipment that was attached to ~" is a forced choice among the objects that were attached to the sacrificed permanent, whoever controls them.
       if (
         e.chooser === undefined &&
+        e.perChoice === undefined &&
         e.filter.controller !== 'you' &&
         !(e.filter.controller === undefined && e.exactly !== true) &&
         !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
@@ -6029,6 +6356,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
+      // CR 101.4, 608.2d (Seize the Spotlight): "for each player who chose fame, gain control of a creature that player controls": the controller chooses among the permanents of each player who chose.
+      if (e.perChoice !== undefined) {
+        if (e.chooser !== undefined || e.perVote !== undefined) {
+          issue(out, `${path}.perChoice`, 'perChoice has no chooser and no perVote');
+        }
+        if (e.filter.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'perChoice reads the permanents of each player who chose: the filter names no controller',
+          );
+        }
+        if (typeof e.perChoice !== 'string' || e.perChoice.trim() === '') {
+          issue(out, `${path}.perChoice`, 'perChoice names the option whose choosers are read');
+        } else if (scope.choiceOptions === undefined) {
+          issue(
+            out,
+            `${path}.perChoice`,
+            'perChoice needs an eachPlayerChooses effect before it in the same sequence',
+          );
+        } else if (!scope.choiceOptions.includes(e.perChoice)) {
+          issue(
+            out,
+            `${path}.perChoice`,
+            `"${e.perChoice}" is not an option of the choice (${scope.choiceOptions.join(', ')})`,
+          );
+        }
+      }
       // CR 701.38a (Elrond of the White Council): "for each fellowship vote, the voter chooses": a vote for that option before it in the same sequence or the one that triggered the ability.
       if (e.perVote !== undefined) {
         if (e.chooser !== undefined) {
@@ -6052,6 +6407,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'chooseCreatureType':
       // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
       if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.planeswalker !== undefined && (e.planeswalker !== true || e.players !== undefined)) {
+        issue(out, `${path}.planeswalker`, 'planeswalker is true, and has no players');
+      }
+      break;
+    case 'addManaCombination':
+      // CR 106.1b (Xenagos): two different colors of the five, and an amount read as the effect runs.
+      if (
+        !Array.isArray(e.colors) ||
+        e.colors.length < 2 ||
+        e.colors.length > 5 ||
+        new Set(e.colors).size !== e.colors.length ||
+        e.colors.some((c) => !['W', 'U', 'B', 'R', 'G'].includes(c))
+      ) {
+        issue(
+          out,
+          `${path}.colors`,
+          'addManaCombination names two to five different colors of the five',
+        );
+      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'chooseNumber':
       // CR 608.2d (Expel the Interlopers): "Choose a number between 0 and 10": whole numbers, the least first.
@@ -6130,6 +6505,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
             after = { ...after, voteOptions: child.options, voteChoices: 'words' };
           }
+          // CR 101.4: after "each player chooses A or B", `eachPlayerWhoChose` and `perChoice` can read who chose which.
+          if (child?.kind === 'eachPlayerChooses' && Array.isArray(child.options)) {
+            after = { ...after, choiceOptions: child.options };
+          }
           // CR 701.38b: after a vote for players or permanents, the votes for each can be read; no option word is named.
           if (child?.kind === 'voteFor') {
             after = {
@@ -6179,6 +6558,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'trampleExcess is about the creatures the damage is dealt to: the recipient names permanents',
           );
         }
+      }
+      break;
+    case 'dealDamageFromEach':
+      // CR 120.3 (Sarkhan the Masterless): a group of sources, the object each deals damage to, and a positive whole number.
+      if (kindOf(e.sources) !== 'each') {
+        issue(out, `${path}.sources`, 'dealDamageFromEach names its sources as a group (each)');
+      } else {
+        checkObjectSelector(e.sources, `${path}.sources`, scope, out);
+      }
+      if (kindOf(e.to) === 'triggerSubject') {
+        checkSubjectRef(e.to as ObjectRef, 'permanent', `${path}.to`, scope, out);
+      } else {
+        checkObjectSelector(e.to, `${path}.to`, scope, out);
+      }
+      if (!isCount(e.amount) || e.amount < 1) {
+        issue(out, `${path}.amount`, 'dealDamageFromEach deals a positive whole number of damage');
       }
       break;
     case 'dealDamageToSelf':
@@ -6311,6 +6706,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'another player can sacrifice only permanents they choose: use a choose selector',
           );
         }
+      }
+      if (e.exploit !== undefined) {
+        // CR 702.110b: the sacrifice of the engine's own Exploit ability; a card writes the keyword.
+        issue(
+          out,
+          `${path}.exploit`,
+          "exploit is the sacrifice of the engine's Exploit ability (CR 702.110a); a card writes the keyword",
+        );
       }
       if (e.byController !== undefined) {
         // D-196: "its controller sacrifices it": a named permanent, sacrificed by whoever controls it; no player and no choice.
@@ -6580,6 +6983,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.duration !== 'untilEndOfTheirNextTurn') {
         issue(out, `${path}.duration`, "this lasts through the end of the player's next turn");
       }
+      if (e.anything !== undefined && e.anything !== true) {
+        issue(out, `${path}.anything`, 'anything is true when present');
+      }
       break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for the named permanents: a target, a group (`each`) or the permanent that caused the trigger.
@@ -6667,6 +7073,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'exchangeControlOfAll':
+      // CR 701.12a: a group of permanents and the one other player it is exchanged with.
+      if (kindOf(e.objects) !== 'each') {
+        issue(out, `${path}.objects`, 'exchangeControlOfAll names a group (each)');
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!isOneOf(e.duration, ['untilEndOfTurn', 'permanent'])) {
+        issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
+      }
+      break;
     case 'removeCounters':
       // CR 122.1 (Galadriel group 3): counters of one kind come off the permanents the selector names, a number read as the effect resolves.
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
@@ -6846,7 +7264,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         scope.thisWay?.includes('exiledCreatures') === true,
       );
       // Depthshaker Titan (CR 603.7c): the delayed sacrifice of the targets of the ability names a target slot the ability declares.
-      if (e.effect?.kind === 'sacrifice' && kindOf(e.effect.objects) === 'target') {
+      if (
+        (e.effect?.kind === 'sacrifice' || e.effect?.kind === 'phaseOut') &&
+        kindOf(e.effect.objects) === 'target'
+      ) {
         checkObjectSelector(
           e.effect.objects as Extract<ObjectSelector, { kind: 'target' }>,
           `${path}.effect.objects`,
@@ -6874,6 +7295,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-660 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      // Venture Forth (CR 701.13, 401.4): the card found goes onto the battlefield, the rest to the bottom of the library; the library is the controller's own.
+      if (e.outcome !== undefined) {
+        if (e.outcome.found !== 'battlefield' || e.outcome.rest !== 'bottomRandom') {
+          issue(
+            out,
+            `${path}.outcome`,
+            'then puts the card found onto the battlefield and the rest on the bottom in a random order',
+          );
+        }
+        if (kindOf(e.players) !== 'you') {
+          issue(
+            out,
+            `${path}.outcome`,
+            'outcome is for the controller of the effect: players is you',
+          );
+        }
+      }
       break;
     case 'opponentChoosesCard':
       // D-660 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
@@ -6887,6 +7325,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      if (e.byController !== undefined && e.byController !== true) {
+        issue(out, `${path}.byController`, 'byController must be true when present');
+      }
+      if (e.keepChosen !== undefined && e.keepChosen !== true) {
+        issue(out, `${path}.keepChosen`, 'keepChosen must be true when present');
+      }
+      if ((e.byController === true) !== (e.keepChosen === true)) {
+        issue(
+          out,
+          `${path}.byController`,
+          'byController and keepChosen are said together: the controller chooses the card that is kept',
+        );
+      }
+      break;
+    case 'handCards':
+      // Extract Brain, Silent-Blade Oni (CR 608.2d, 402.3): one player, and the number of cards that player chooses from their hand (the whole hand when it is left out).
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'exilePiles':
       // D-663 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
@@ -6933,6 +7389,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
+    case 'delayedDiesTurn': {
+      // CR 603.7c, 603.10a, 700.4 (Massacre Girl): the permanents that die are named by a filter of the battlefield (any controller); what the ability does names no target and reads
+      // nothing of the spell.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the permanents that die are read as they were on the battlefield: no zone',
+        );
+      }
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
+    }
     case 'delayedCombatDamageToPlayer': {
       // Issue 144 (CR 603.7c, 510.3a): the sources are creatures the controller controls; the player is a target of the spell or ability; what the ability does names no target and
       // reads nothing of the spell (nothing of it is left when the ability triggers).
@@ -6971,6 +7441,47 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'delayedCast':
       checkDelayedCast(e, path, scope, out);
       break;
+    case 'delayedAttackerPump':
+      // CR 603.7 (Jace, Architect of Thought): whole numbers for the change to the attacking creature.
+      if (!Number.isInteger(e.power) || !Number.isInteger(e.toughness)) {
+        issue(out, path, 'a delayed attacker change gives whole numbers of power and toughness');
+      }
+      break;
+    case 'delayedCopy': {
+      // CR 603.7, 707.10 (Jaya's Phoenix, Leori, Repeated Reverberation): the spells it waits for are cast spells; an activation, a loyalty one or one of a planeswalker of the chosen type.
+      const casts = e.casts ?? [];
+      if (casts.length === 0 && e.activation === undefined) {
+        issue(out, path, 'a delayed copy waits for a cast or an activation');
+      }
+      casts.forEach((filter, i) => {
+        checkFilter(filter, `${path}.casts[${i}]`, out);
+        if (filter?.stackKind !== 'spell') {
+          issue(out, `${path}.casts[${i}]`, 'a delayed copy waits for spells (stackKind "spell")');
+        }
+      });
+      if (e.activation !== undefined) {
+        if (
+          (e.activation.loyalty !== undefined && e.activation.loyalty !== true) ||
+          (e.activation.ofChosenType !== undefined && e.activation.ofChosenType !== true)
+        ) {
+          issue(out, `${path}.activation`, 'loyalty and ofChosenType are true when present');
+        }
+        if (e.activation.loyalty === true && e.activation.ofChosenType === true) {
+          issue(
+            out,
+            `${path}.activation`,
+            'a delayed copy names a loyalty ability or a type, not both',
+          );
+        }
+      }
+      if (e.count !== undefined && (!Number.isInteger(e.count) || e.count < 1)) {
+        issue(out, `${path}.count`, 'count is a whole number of 1 or more');
+      }
+      if (e.repeat !== undefined && e.repeat !== true) {
+        issue(out, `${path}.repeat`, 'repeat must be true when present');
+      }
+      break;
+    }
     case 'spellGainsKeyword':
       // CR 702.44a, 702.44d: the spell whose casting caused the trigger (a `castSpell` trigger or a `delayedCast`) gains Sunburst, and nothing else.
       if (kindOf(e.spell) === 'triggerSubject') {
@@ -7039,6 +7550,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkRef(e.object, 'object', `${path}.object`, scope, out);
       } else {
         issue(out, `${path}.object`, 'changeTarget names a target spell or ability');
+      }
+      // CR 115.7b: the named new target is the ability's source.
+      if (e.to !== undefined && kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'changeTarget changes a target to the source of the ability');
       }
       break;
     case 'copySpell':
@@ -7125,6 +7640,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             `${path}.newTarget`,
             'a copy that targets an object is one copy of the spell of the trigger (triggerSubject), newTargets "no", with no count, forEach or copier',
           );
+        }
+      }
+      // Nalfeshnee (CR 707.10f, 613.1f): what the token a copy of a permanent spell becomes has; one copy of the spell of the trigger.
+      if (e.permanentGains !== undefined) {
+        if (
+          !Array.isArray(e.permanentGains) ||
+          e.permanentGains.length === 0 ||
+          e.count !== undefined ||
+          e.forEach !== undefined ||
+          e.copier !== undefined ||
+          e.newTarget !== undefined ||
+          kindOf(e.spell) !== 'triggerSubject'
+        ) {
+          issue(
+            out,
+            `${path}.permanentGains`,
+            'permanentGains is a list of abilities of the one copy of the spell of the trigger (triggerSubject), with no count, forEach, copier or newTarget',
+          );
+        } else {
+          e.permanentGains.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.permanentGains[${i}]`, out);
+          });
         }
       }
       if (e.copier !== undefined && e.copier !== 'triggerPlayer' && e.copier !== 'opponent') {
@@ -7242,12 +7779,41 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.count`, 'blight puts a positive whole number of -1/-1 counters');
       }
       break;
+    case 'forgetLoyaltyActivations':
+      if (kindOf(e.objects) !== 'each') {
+        issue(out, `${path}.objects`, 'forgetLoyaltyActivations names a group (each)');
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      break;
+    case 'moveCounterFromThis':
+      // CR 122.1: a kind of counter, a positive whole number of them, and the permanent they go on.
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'moveCounterFromThis names a kind of counter');
+      }
+      if (!isCount(e.count) || e.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'moveCounterFromThis moves a positive whole number of counters',
+        );
+      }
+      // The permanent the counters go on: the one the trigger is about (the engine reads `triggerSubject` only where a node says so) or a target.
+      if (kindOf(e.to) === 'triggerSubject') {
+        checkSubjectRef(e.to as ObjectRef, 'permanent', `${path}.to`, scope, out);
+      } else {
+        checkObjectSelector(e.to, `${path}.to`, scope, out);
+      }
+      break;
     case 'moveCountersOnto':
       // CR 122.1 (issue 230): a kind of counter and the permanents it moves onto.
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'moveCountersOnto names a kind of counter');
       }
       checkFilter(e.to, `${path}.to`, out);
+      break;
+    case 'damageCantBePreventedThisTurn':
+      // CR 615.12: no parameters.
       break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
@@ -7273,6 +7839,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.subtype`,
           `${e.subtype} is not a creature type, which is all an Army can be`,
         );
+      }
+      break;
+    case 'exileIfDiesThisTurn':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.ifDamageDealt !== undefined && e.ifDamageDealt !== true) {
+        issue(out, `${path}.ifDamageDealt`, 'ifDamageDealt must be true when present');
       }
       break;
     case 'exileIfLeaves':
@@ -7384,11 +7956,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'moveCounter':
-      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
-      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`; the first may be several (`each`).
+      checkObjectSelector(e.from, `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
       if (e.anyNumber !== undefined && e.anyNumber !== true) {
         issue(out, `${path}.anyNumber`, 'anyNumber must be true');
+      }
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'moveCounter names a kind of counter');
       }
       break;
     case 'removeChosenCounters':
@@ -7396,6 +7971,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       if (e.upTo !== undefined && (!isCount(e.upTo) || e.upTo < 1)) {
         issue(out, `${path}.upTo`, 'upTo must be a positive integer');
+      }
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'removeChosenCounters names a kind of counter');
+      }
+      if (e.required !== undefined && (e.required !== true || e.upTo === undefined)) {
+        issue(out, `${path}.required`, 'required must be true, and needs upTo');
       }
       break;
     case 'moveAllCounters':
@@ -7437,6 +8018,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // D-230: "return that card to the battlefield" of a dies trigger.
         if (scope.triggerSubject !== 'permanent') {
           issue(out, `${path}.objects`, "'triggerCard' needs a trigger about a permanent");
+        }
+      } else if (kindOf(e.objects) === 'triggerSubject') {
+        // CR 603.2, 400.3 ("Whenever a creature you control becomes blocked, you may return it to its owner's hand"): the permanent the trigger is about, still on the battlefield,
+        // goes to a zone that is not the battlefield (a permanent put onto the battlefield would be a new object, CR 400.7).
+        checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
+        if (e.to === 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'the permanent a trigger is about is not put onto the battlefield',
+          );
         }
       } else if (kindOf(e.objects) === 'thisCard') {
         // D-110: the card the source became, in an ability; it can be put onto the battlefield only.
@@ -7492,7 +8084,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (
           zone === 'exile' &&
           e.to === 'battlefield' &&
-          (e.objects as ChooseSelector).fromMoved !== true
+          (e.objects as ChooseSelector).fromMoved !== true &&
+          (e.objects as ChooseSelector).fromExileOf === undefined
         ) {
           issue(
             out,
@@ -7573,33 +8166,40 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       if (e.withCounters !== undefined) {
-        const w = e.withCounters;
         if (e.to !== 'battlefield') {
           issue(out, `${path}.withCounters`, 'counters on entering are only for the battlefield');
         }
-        if (typeof w?.counter !== 'string' || w.counter === '') {
-          issue(out, `${path}.withCounters.counter`, 'counter name must be non-empty');
-        }
-        if (!isCount(w?.count) || w.count < 1) {
-          issue(out, `${path}.withCounters.count`, 'counter count must be a positive integer');
-        }
-        // Gilraen (CR 122.6): more kinds of counter it enters with, each named once and not the first kind.
-        const names = [w?.counter, ...(w?.also ?? []).map((a) => a?.counter)];
-        (w?.also ?? []).forEach((a, i) => {
-          if (typeof a?.counter !== 'string' || a.counter === '') {
-            issue(out, `${path}.withCounters.also[${i}].counter`, 'counter name must be non-empty');
+        const list: readonly EntryCounter[] = Array.isArray(e.withCounters)
+          ? e.withCounters
+          : [e.withCounters as EntryCounter];
+        if (list.length === 0) issue(out, `${path}.withCounters`, 'at least one kind of counter');
+        list.forEach((w, i) => {
+          const at = Array.isArray(e.withCounters)
+            ? `${path}.withCounters[${i}]`
+            : `${path}.withCounters`;
+          if (typeof w?.counter !== 'string' || w.counter === '') {
+            issue(out, `${at}.counter`, 'counter name must be non-empty');
           }
-          if (!isCount(a?.count) || a.count < 1) {
-            issue(
-              out,
-              `${path}.withCounters.also[${i}].count`,
-              'counter count must be a positive integer',
-            );
+          if (!isCount(w?.count) || w.count < 1) {
+            issue(out, `${at}.count`, 'counter count must be a positive integer');
+          }
+          if (w?.ifType !== undefined && !isOneOf(w.ifType, ['creature', 'planeswalker'])) {
+            issue(out, `${at}.ifType`, 'ifType is creature or planeswalker');
+          }
+          // Gilraen (CR 122.6): more kinds of counter it enters with, each named once and not the first kind.
+          const names = [w?.counter, ...(w?.also ?? []).map((a) => a?.counter)];
+          (w?.also ?? []).forEach((a, j) => {
+            if (typeof a?.counter !== 'string' || a.counter === '') {
+              issue(out, `${at}.also[${j}].counter`, 'counter name must be non-empty');
+            }
+            if (!isCount(a?.count) || a.count < 1) {
+              issue(out, `${at}.also[${j}].count`, 'counter count must be a positive integer');
+            }
+          });
+          if (new Set(names).size !== names.length) {
+            issue(out, `${at}.also`, 'each kind of counter is named once');
           }
         });
-        if (new Set(names).size !== names.length) {
-          issue(out, `${path}.withCounters.also`, 'each kind of counter is named once');
-        }
       }
       if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
         // Issue 103: 'command' is the return of a delayed trigger (`checkDelayedTrigger`), never a move of its own.
@@ -7761,11 +8361,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
       }
-      if ((e.from !== undefined) !== (e.take?.to === 'exileFaceDownUnlinked')) {
+      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked') {
         issue(
           out,
           `${path}.from`,
-          "from (another player's library) and take.to 'exileFaceDownUnlinked' go together",
+          "from (another player's library) needs take.to 'exileFaceDownUnlinked'",
         );
       }
       if (
@@ -7780,12 +8380,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           e.take.manaValueAtMost !== undefined ||
           e.take.elseAnyToHand !== undefined ||
           e.revealAll !== undefined ||
-          e.rest !== 'bottomRandom')
+          (e.rest !== 'bottomRandom' &&
+            // Thief of Sanity (CR 701.20, 404.1): "then put the rest into their graveyard": the cards looked at and not taken go to their owner's graveyard.
+            (e.rest !== 'graveyard' || e.from === undefined) &&
+            (e.from !== undefined || e.rest !== 'bottomChosen')))
       ) {
         issue(
           out,
           `${path}.take`,
-          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order",
+          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order (or into the graveyard)",
         );
       }
       // Harper Recruiter: one card for each of several kinds, put into the hand.
@@ -7825,6 +8428,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'battlefield',
           'exileFaceDown',
           'exileFaceDownUnlinked',
+          'exile',
           'castFree',
           'top',
         ])
@@ -8081,6 +8685,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      if (e.byOwner !== undefined && (e.byOwner !== true || e.perOwner !== true)) {
+        issue(out, `${path}.byOwner`, 'byOwner is true, only with perOwner');
+      }
       const objects = e.objects as ChooseSelector | ObjectRef;
       // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.
       if (e.player !== undefined) {
@@ -8147,6 +8754,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.paying`,
             "paying is true, on the cards exiled with this permanent ('linkedExile'), with no play, max, perOwner, player, remember or exileInstead; anyManaType needs paying",
+          );
+        }
+      }
+      // Silent-Blade Oni, Extract Brain (CR 608.2g, 402.3): the cards a `handCards` named, cast from the hand they are in.
+      if (e.fromHand !== undefined) {
+        if (
+          e.fromHand !== true ||
+          kindOf(objects) !== 'moved' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.player !== undefined ||
+          e.remember !== undefined ||
+          e.paying !== undefined ||
+          e.creatureGains !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.fromHand`,
+            "fromHand is true, on the cards an effect before moved ('moved'), with no play, max, perOwner, player, remember, paying or creatureGains",
           );
         }
       }
@@ -8241,8 +8868,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (scope.owner !== 'ability') {
           issue(out, `${path}.object`, 'casting this card is the effect of an ability');
         }
+      } else if (kindOf(e.object) === 'moved') {
+        // CR 608.2g (Chandra, Torch of Defiance): "Exile the top card of your library. You may cast that card": the card an earlier effect of the sequence exiled, cast as the effect resolves.
+        checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       } else if (kindOf(e.object) !== 'target') {
-        issue(out, `${path}.object`, 'the card to cast is a target or this card');
+        issue(
+          out,
+          `${path}.object`,
+          'the card to cast is a target, this card or the card an earlier effect moved',
+        );
       } else {
         checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       }
@@ -8587,6 +9221,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 701.9 (Nantuko Cultivator): "Discard any number of land cards": a filter of the cards in the hand, only for a discard of any number.
+      if (e.kind === 'discard' && e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.anyNumber !== true) {
+          issue(out, `${path}.cards`, 'the kind of card goes with anyNumber only');
+        }
+        if (
+          filterSome(
+            e.cards,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.cards`,
+            'the card described is one in the hand: no zone, controller, owner or stackKind',
+          );
+        }
+      }
       // CR 701.9, 107.1c: "Discard up to N cards": the player chooses how many, up to `count`, so no other way of choosing goes with it.
       if (e.kind === 'discard' && e.upTo !== undefined) {
         if (
@@ -8770,6 +9427,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.mana?.kind === 'fixed' && e.mana.times !== undefined) {
         checkAmount(e.mana.times, `${path}.mana.times`, scope, out);
       }
+      // Narset of the Ancient Way (CR 106.6, 205.2a): "Spend this mana only to cast a noncreature spell": the card types the spell must not have.
+      if (e.mana?.kind === 'fixed' && e.mana.spendOnly !== undefined) {
+        const only = e.mana.spendOnly;
+        if (
+          only.notTypes === undefined ||
+          Object.keys(only).some((k) => k !== 'notTypes') ||
+          !Array.isArray(only.notTypes) ||
+          only.notTypes.length === 0
+        ) {
+          issue(
+            out,
+            `${path}.mana.spendOnly`,
+            'an effect restricts its mana by the card types the spell must not have (notTypes)',
+          );
+        } else {
+          checkEnumList(
+            out,
+            `${path}.mana.spendOnly.notTypes`,
+            only.notTypes,
+            CARD_TYPES,
+            'card type',
+          );
+        }
+      }
       break;
     case 'addCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
@@ -8802,6 +9483,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'loseHexproofShroud':
     case 'setTypes':
@@ -8897,6 +9579,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.awayFromYou !== undefined && e.awayFromYou !== true) {
         issue(out, `${path}.awayFromYou`, 'awayFromYou is true when present');
+      }
+      break;
+    case 'attackOnlyNearestOpponent':
+      // CR 508.1a, 611.2a (Teyo, Geometric Tactician): a direction and the one duration.
+      if (e.direction !== 'left' && e.direction !== 'right') {
+        issue(out, `${path}.direction`, 'the direction is left or right');
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'attackOnlyNearestOpponent lasts until your next turn');
       }
       break;
     case 'creaturesCantAttackYou':
@@ -9070,6 +9761,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'eachPlayerChooses': {
+      // CR 101.4, 608.2d (Seize the Spotlight): each player the selector names chooses one of two to eight distinct words.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      const options = Array.isArray(e.options) ? e.options : [];
+      if (!Array.isArray(e.options) || options.length < 2 || options.length > 8) {
+        issue(out, `${path}.options`, 'a choice offers two to eight options');
+      }
+      const seen = new Set<string>();
+      options.forEach((option, i) => {
+        if (typeof option !== 'string' || option.trim() === '') {
+          issue(out, `${path}.options[${i}]`, 'a choice option needs its words');
+        } else if (seen.has(option)) {
+          issue(out, `${path}.options[${i}]`, `two options of the choice are both "${option}"`);
+        } else {
+          seen.add(option);
+        }
+      });
+      break;
+    }
     case 'voteFor': {
       // CR 701.38a, 701.38b: the choices are the players or the permanents a filter names; the voting starts with the controller.
       const choices = e.choices;
@@ -9195,7 +9905,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           ? {}
           : {
               thisWay:
-                e.ifThisWay === 'discarded' ? [e.ifThisWay, 'discardedValue'] : [e.ifThisWay],
+                e.ifThisWay === 'discarded' || e.ifThisWay === 'discardedNonland'
+                  ? [e.ifThisWay, 'discardedValue']
+                  : [e.ifThisWay],
             }),
         checkAbility: scope.checkAbility,
         checkContinuous: scope.checkContinuous,
@@ -9337,6 +10049,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'gainActivatedAbilitiesOf':
       // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (e.blueAsAnyColor !== undefined && e.blueAsAnyColor !== true) {
+        issue(out, `${path}.blueAsAnyColor`, 'blueAsAnyColor must be true when present');
+      }
+      if (kindOf(e.from) === 'target') {
+        // Grell Philosopher (CR 611.2c, 613.1f): "each Horror you control gains all activated abilities of target artifact": a group, fixed as the effect resolves, gets those of a target.
+        checkRef(e.from, 'object', `${path}.from`, scope, out);
+        if (kindOf(e.to) === 'each') {
+          checkObjectSelector(e.to, `${path}.to`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.to`,
+            'the abilities of a target go to a group (each) the effect names',
+          );
+        }
+        break;
+      }
       if (kindOf(e.to) !== 'this') {
         issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
       }
@@ -9344,6 +10073,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
       } else {
         checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.blueAsAnyColor !== undefined) {
+        issue(
+          out,
+          `${path}.blueAsAnyColor`,
+          'blue mana is spent as any color only for the abilities of a target',
+        );
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
@@ -9438,6 +10174,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
       if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
         issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
+      break;
+    case 'eachPlayerRollsBarHighest':
+      // CR 706.1a, 508.1a: a die of N sides; the creature of the ability, which is a permanent.
+      if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
+        issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
+      if (e.creature.kind !== 'this') {
+        issue(
+          out,
+          `${path}.creature`,
+          "'eachPlayerRollsBarHighest' names the creature of the ability ('this')",
+        );
+      }
+      if (scope.owner !== 'ability') {
+        issue(
+          out,
+          path,
+          "'eachPlayerRollsBarHighest' needs an ability of a permanent, not a spell",
+        );
       }
       break;
     case 'eachPlayerChoosesDestroy':
@@ -9581,9 +10337,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.separator`, 'the piles are separated by an opponent or by you');
       }
       for (const field of ['chosenTo', 'otherTo'] as const) {
-        if (e[field] !== 'hand' && e[field] !== 'graveyard') {
+        if (
+          e[field] !== 'hand' &&
+          e[field] !== 'graveyard' &&
+          !(field === 'otherTo' && e[field] === 'libraryBottom')
+        ) {
           issue(out, `${path}.${field}`, 'a pile goes into the hand or the graveyard');
         }
+      }
+      if (e.otherTo === 'libraryBottom' && e.chosenTo !== 'hand') {
+        issue(
+          out,
+          `${path}.otherTo`,
+          'the pile on the bottom of the library goes with a chosen pile in the hand',
+        );
       }
       if (e.chosenTo === e.otherTo) {
         issue(out, path, 'the two piles go to different places');

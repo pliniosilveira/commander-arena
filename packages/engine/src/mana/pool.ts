@@ -27,6 +27,8 @@ export type SpendTarget =
       readonly colors?: readonly string[];
       /** The zone the spell is cast from (CR 601.2a); read by a `fromGraveyard` restriction (issue 102, CR 106.6). */
       readonly castFrom?: string;
+      /** Whether the spell's owner is not the player who casts it (CR 108.3); read by a `notOwned` restriction (Thieving Varmint, CR 106.6). */
+      readonly notOwnedByCaster?: boolean;
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
@@ -38,6 +40,11 @@ export type SpendTarget =
        * Read by the payment planner (`mana/payment.ts`), which leaves out the pool mana and the source outcomes of any other color.
        */
       readonly onlyColor?: ManaColor | null;
+      /**
+       * "You may spend blue mana as though it were mana of any color to activate those abilities" (Grell Philosopher, CR 609.4b): blue mana pays a colored symbol of any color of the
+       * cost (not generic-only mana, and no other color or colorless mana). Read by the payment planner.
+       */
+      readonly blueAsAnyColor?: true;
       readonly source?: { readonly types: readonly string[]; readonly subtypes: readonly string[] };
     };
 
@@ -101,6 +108,13 @@ export function restrictionAllows(
     ) {
       return false;
     }
+    // CR 106.6, 108.3: "only to cast spells you don't own": the spell's owner is not the player casting it.
+    if (
+      restriction.notOwned === true &&
+      !('notOwnedByCaster' in target && target.notOwnedByCaster === true)
+    ) {
+      return false;
+    }
     // CR 105.2a, 106.6: "monocolored spells of that color": exactly one color, and it is the one named.
     if (restriction.monocolored !== undefined) {
       const colors = 'colors' in target ? (target.colors ?? []) : [];
@@ -109,6 +123,8 @@ export function restrictionAllows(
         return false;
       }
     }
+    // CR 106.6, 205.2a: "a noncreature spell": the spell has none of the card types named.
+    if (restriction.notTypes?.some((t) => target.types.includes(t)) === true) return false;
     return (
       (restriction.types === undefined ||
         target.types.some((t) => restriction.types?.includes(t) === true)) &&

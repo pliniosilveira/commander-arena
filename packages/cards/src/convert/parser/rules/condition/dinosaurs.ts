@@ -147,6 +147,7 @@ export const DINOSAUR_CONDITION_RULES = [CONDITION_DONT_CONTROL_A, CONDITION_OBJ
  */
 export const UNLESS_CONDITIONS = [
   'condition.control-a',
+  'condition.control-exact-pt-creature',
   'condition.dont-control-a',
   'condition.control-at-least',
   'condition.control-none',

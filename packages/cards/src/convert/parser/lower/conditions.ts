@@ -87,6 +87,13 @@ export function lowerCondition(
       if (ctx?.owner !== 'spell') return failure(c, []);
       return ok({ kind: 'foretold' });
     }
+    case 'altCostPaid': {
+      // CR 118.9, 608.2c (Baleful Mastery): the engine reads the alternative cost from the spell; the lowering of a spell's sentence only (`validateCard` checks the face lists a `payMana` cost).
+      const blocked = missingFeatures(['condition:castForAlternative']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      return ok({ kind: 'castForAlternative', alternative: 'payMana' });
+    }
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
       const blocked = missingFeatures(['condition:xAtLeast']);
@@ -259,6 +266,15 @@ export function lowerCondition(
       if (ctx?.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisInYourGraveyard' });
     }
+    case 'thisSuspended': {
+      // CR 702.62b, 603.4 (Nihilith): "if this card is suspended" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then makes it an ability that works
+      // from exile); anywhere else it is a test the engine does not run for that shape.
+      const blocked = missingFeatures(['condition:thisSuspended']);
+      if (blocked.length > 0) return failure(c, blocked);
+      // Greater Gargadon (CR 602.5b): or the "activate only if" of an activated ability, read with no context of a trigger (the lowering of the ability then makes it work from exile).
+      if (ctx !== undefined && ctx.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisSuspended' });
+    }
     case 'thisOnBattlefield': {
       // CR 603.4, 400.7 (issue 89, Animate Dead): "if it's on the battlefield" is read only as the intervening "if" of a trigger about the source itself, where "it" is the source.
       const blocked = missingFeatures(['condition:thisOnBattlefield']);
@@ -310,6 +326,13 @@ export function lowerCondition(
         stat: test.stat,
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
+    }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): "that creature had to attack this combat" is the intervening "if" of a trigger about a creature, read from the creature the trigger is about.
+      const blocked = missingFeatures(['condition:subjectHadToAttack']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectHadToAttack' });
     }
     case 'subjectGreaterThanEach': {
       // CR 603.10a, 208.1, 608.2c (Selvala, Heart of the Wilds): "its power is greater than each other creature's power" is read as the instruction comes up (a conditional effect, not the
@@ -552,6 +575,14 @@ export function lowerCondition(
         designation: test.designation,
       });
     }
+    case 'completedDungeon': {
+      // CR 309.7, 701.49c (Sarevok's Tome): the player has completed a dungeon at some time.
+      const blocked = missingFeatures(['condition:completedDungeon']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const player = playerSelectorOf(test.who, ctx ?? newContext('ability', []));
+      if (!player.ok) return player;
+      return ok({ kind: 'completedDungeon', player: player.value });
+    }
     case 'objectMatches': {
       // CR 608.2c, 113.7a (stage P30, D-135): "if it's a Zombie card" asks what a target of this text is, as it is or as it last
       // was; after an instruction that put the card onto the battlefield it is "the object that was moved" (`ctx.movedOnto`).
@@ -572,6 +603,13 @@ export function lowerCondition(
         if (subject.length > 0) return failure(c, subject);
         const matched = lowerFilter({ ...test.who, det: 'a', filter: test.filter });
         if (!matched.ok) return matched;
+        // "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil, CR 603.4, 603.10a): the intervening "if" asks what the permanent the event is about is,
+        // as it last was: the engine's `subjectMatches`, read as the ability triggers and again as it resolves.
+        if (ctx?.interveningCondition === true) {
+          const intervening = missingFeatures(['condition:subjectMatches']);
+          if (intervening.length > 0) return failure(c, intervening);
+          return ok({ kind: 'subjectMatches', filter: matched.value });
+        }
         return ok({ kind: 'objectMatches', of: { kind: 'triggerSubject' }, filter: matched.value });
       }
       // "When ~ dies, if it was a creature, ..." (Enduring Tenacity, CR 603.4, 603.10a, 113.7a): the intervening "if" of an ability about the source itself, whose "it" is the
@@ -749,6 +787,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'attackedHasMoreLifeThanOtherOpponent' });
     }
+    case 'loyaltyActivatedThisTurn': {
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:loyaltyAbilityActivatedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'loyaltyAbilityActivatedThisTurn' });
+    }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
       // anywhere else.
@@ -844,6 +889,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:descendedThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'descendedThisTurn' });
     }
+    case 'playedLandThisTurn': {
+      // CR 305.1, 305.2 (River of Tears): the land plays of the controller this turn.
+      const blocked = missingFeatures(['condition:playedLandThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'playedLandThisTurn' });
+    }
     case 'spellTargets': {
       // CR 601.2c, 601.2f (stage P50, D-207): a target the spell chose, read as the cost is determined.
       const blocked = missingFeatures(['condition:spellTargets']);
@@ -918,6 +968,7 @@ export function lowerCondition(
     }
     case 'costContainsX':
     case 'notDeclaredAttacker':
+    case 'youAreDefendingPlayer':
     case 'damageDealtByType':
     case 'enteredFromGraveyard':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
@@ -1037,7 +1088,9 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:aPlayerCardsInHand',
   'condition:subjectControllerHasMore',
   'condition:subjectControlledByYou',
+  'condition:subjectMatches',
   'condition:subjectStat',
+  'condition:subjectHadToAttack',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
   'condition:counterPutOnThisThisTurn',
@@ -1079,6 +1132,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
+  'condition:thisSuspended',
   'condition:thisOnBattlefield',
   'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',
@@ -1089,6 +1143,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:manaSpentAtLeast',
   'condition:cardLeftYourGraveyard',
   'condition:descendedThisTurn',
+  'condition:playedLandThisTurn',
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',

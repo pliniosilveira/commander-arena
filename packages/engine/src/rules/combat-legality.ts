@@ -18,6 +18,7 @@ import { withoutBannedTargets } from './attack-bans';
 import { attackTargets } from './attack-targets';
 import { payableAttackTax, untaxedTargets } from './attack-tax';
 import { payableBlockTax } from './block-tax';
+import { blockersLeft, combatCreatureLimit } from './combat-limits';
 import { controllerOf } from './control';
 import { attackerDefender } from './defending';
 import { derive } from './derive';
@@ -223,9 +224,17 @@ export function validateAttacks(
     seen.add(a.attacker);
     if (!candidate.targets.some((t) => sameTarget(t, a.target))) return 'That cannot be attacked';
   }
+  // CR 508.1c, 604.1 (Silent Arbiter): "No more than one creature can attack each combat" is a restriction on the declaration.
+  const limit = combatCreatureLimit(state, 'attack');
+  if (limit !== null && attacks.length > limit) {
+    return `No more than ${limit} creature${limit === 1 ? '' : 's'} can attack each combat`;
+  }
   // CR 508.1d: a requirement that could be obeyed must be: a creature that attacks each combat if
-  // able and is able to attack has to be declared.
-  if (requiredAttackers(state, candidates).some((id) => !seen.has(id))) {
+  // able and is able to attack has to be declared. With a limit on the attackers the requirements are obeyed as far as it lets them be: a full declaration leaves the others out.
+  if (
+    (limit === null || attacks.length < limit) &&
+    requiredAttackers(state, candidates).some((id) => !seen.has(id))
+  ) {
     return 'A creature that attacks each combat if able must attack';
   }
   // CR 508.1h: the cost of attacking ("can't attack you unless their controller pays") must be payable once the
@@ -495,6 +504,9 @@ export function validateBlocks(
     if (!candidate.canBlock.includes(b.attacker)) return 'That creature cannot block that attacker';
     perAttacker.set(b.attacker, (perAttacker.get(b.attacker) ?? 0) + 1);
   }
+  // CR 509.1b, 604.1 (Silent Arbiter): "No more than one creature can block each combat": the blockers of every defending player together.
+  const room = blockersLeft(state);
+  if (room !== null && seen.size > room) return 'Too many creatures would block this combat';
   // CR 509.1b (D-133): "can't be blocked by more than one creature".
   for (const [attacker, count] of perAttacker) {
     if (

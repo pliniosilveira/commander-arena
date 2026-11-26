@@ -5,7 +5,9 @@
  * (`game/precons.ts`) is passed on by id, which is the one deliberate exception.
  */
 
+import type { ReplayDeck } from '@commander-arena/cards';
 import type { AiKind, NewGameOptions, OpponentOptions } from '../game/protocol';
+import { setGameImages } from '../ui/board/deck-images';
 import { setGamePrintings } from '../ui/board/deck-printings';
 import type { PreconDeck, Precons } from './build';
 import { type ChallengeLevel, emblemsFor } from './challenges/levels';
@@ -47,6 +49,16 @@ async function resolveId(
 const listOf = (deck: PreconDeck | { readonly ok: true; readonly hidden: true }): string =>
   'info' in deck && deck.info !== null ? deck.info.decklist : '';
 
+/** The stored cards of a prepared deck, which the board draws from their own picture links; a hidden test deck has none. */
+const imagesOf = (deck: PreconDeck | { readonly ok: true; readonly hidden: true }) =>
+  'images' in deck ? deck.images : [];
+
+/** How a resolved deck was built, for the replay of an AI report (issue 627); a hidden test deck is rebuilt from its id. */
+const replayOf = (
+  deck: PreconDeck | { readonly ok: true; readonly hidden: true },
+  id: string,
+): ReplayDeck => ('replay' in deck ? deck.replay : { name: id, hidden: id });
+
 export async function startOptionsFor(
   precons: Precons,
   request: StartRequest,
@@ -57,6 +69,7 @@ export async function startOptionsFor(
   if (!ai.ok) return { ok: false, reason: ai.reason };
   // The board draws each seat in the printings its own deck lists: the human is seat 0, the opponent seat 1.
   setGamePrintings([listOf(human), listOf(ai)]);
+  setGameImages([imagesOf(human), imagesOf(ai)]);
   const aiPreconName = precons.list.find((info) => info.id === request.aiDeck)?.name;
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   const options: NewGameOptions = {
@@ -65,6 +78,7 @@ export async function startOptionsFor(
     aiDeck: request.aiDeck,
     ...('deck' in human ? { humanCards: human.deck } : {}),
     ...('deck' in ai ? { aiCards: ai.deck } : {}),
+    replayDecks: [replayOf(human, request.humanDeck), replayOf(ai, request.aiDeck)],
     ...(humanPreconName === undefined ? {} : { humanPreconName }),
     ...(aiPreconName === undefined ? {} : { aiPreconName }),
     ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
@@ -96,10 +110,14 @@ export async function startTableOptionsFor(
   if (!human.ok) return { ok: false, reason: human.reason };
   const opponents: OpponentOptions[] = [];
   const lists: string[] = [];
+  const pictures = [imagesOf(human)];
+  const replays: ReplayDeck[] = [replayOf(human, request.humanDeck)];
   for (const [index, id] of request.opponentDecks.entries()) {
     const resolved = await resolveId(precons, id, request.allowHidden);
     if (!resolved.ok) return { ok: false, reason: `Opponent ${index + 1}: ${resolved.reason}` };
     lists.push(listOf(resolved));
+    pictures.push(imagesOf(resolved));
+    replays.push(replayOf(resolved, id));
     const preconName = precons.list.find((info) => info.id === id)?.name;
     opponents.push({
       deck: id,
@@ -108,12 +126,14 @@ export async function startTableOptionsFor(
     });
   }
   setGamePrintings([listOf(human), ...lists]);
+  setGameImages(pictures);
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   const options: NewGameOptions = {
     seed: request.seed,
     humanDeck: request.humanDeck,
     aiDeck: request.opponentDecks[0] ?? '',
     opponents,
+    replayDecks: replays,
     ...('deck' in human ? { humanCards: human.deck } : {}),
     ...(humanPreconName === undefined ? {} : { humanPreconName }),
     ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
@@ -155,6 +175,7 @@ export async function startChallengeOptions(
     };
   }
   setGamePrintings([human.info.decklist, ai.info.decklist]);
+  setGameImages([imagesOf(human), imagesOf(ai)]);
   const humanPreconName = precons.list.find((info) => info.id === request.humanDeck)?.name;
   return {
     ok: true,
@@ -165,6 +186,7 @@ export async function startChallengeOptions(
       ...(emblems.length === 0 ? {} : { aiEmblems: emblems }),
       humanCards: human.deck,
       aiCards: ai.deck,
+      replayDecks: [human.replay, ai.replay],
       ...(humanPreconName === undefined ? {} : { humanPreconName }),
       aiPreconName: ai.info.name,
       ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),

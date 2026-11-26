@@ -508,8 +508,7 @@ describe('lines that are not read', () => {
     '+1: Create a 1/1 green Insect creature token. If you control three or more creatures, put a loyalty counter on ~ and repeat this process.',
     // "you" in the sentence of "if they don't" is the controller, which the engine would read as the player asked
     "+1: Each opponent may discard a card. If they don't, you lose 3 life.",
-    // an emblem for a player the effect does not name
-    '-1: Each opponent gets an emblem with "Creatures you control get +1/+1."',
+    // (an emblem for each opponent is read since the Planeswalker Party deck: Narset of the Ancient Way)
   ])('a loyalty ability is not supported: %s', (text) => {
     expect(walker(text)).not.toBe('supported');
   });

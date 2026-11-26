@@ -212,18 +212,22 @@ describe('budget', () => {
   // Per card and after one warm-up pass, so the guard does not tighten as the corpus grows and a
   // cold start does not count; still loose enough to catch only a pathological rule.
   test.skipIf(process.env.TEST_TIER === 'pr')(
-    'after a warm-up pass, the corpus parses 20 times in under 1.5 ms per card on average',
+    'after a warm-up pass, the corpus parses 20 times in under 3 ms per card on average',
     () => {
       for (const card of cards) analyse(card);
       // CPU time of this test's own process, not the clock: a shared CI runner that runs several test files at once makes the clock count the time spent waiting for a
-      // processor (the same code took 0.4 ms per card on a free machine and 1.8 ms on the runner), which says nothing about the parser. Each test file has a process of its own.
+      // processor, which says nothing about the parser. Each test file has a process of its own.
+      // Measured: about 0.5 ms per card on a laptop and 1.3 to 1.83 ms on the CI runner (the parser allocates a lot, and the runner is 3.5 times slower at that
+      // while only 1.2 times slower at plain arithmetic, so a loop timed beside it does not calibrate this). 1.5 ms failed the nightly at random; 3 ms is 6 times the laptop
+      // and still fails a rule that makes the parse 4 times slower on the runner.
       const start = process.cpuUsage();
       for (let i = 0; i < 20; i++) for (const card of cards) analyse(card);
       const used = process.cpuUsage(start);
       const perCard = (used.user + used.system) / 1000 / (20 * cards.length);
-      expect(perCard).toBeLessThan(1.5);
+      console.info(`parse budget: ${perCard.toFixed(3)} ms per card`);
+      expect(perCard).toBeLessThan(3);
       // The 20 passes outgrew the default timeout; the guard is the average per card.
     },
-    60_000,
+    120_000,
   );
 });

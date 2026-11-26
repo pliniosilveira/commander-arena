@@ -147,10 +147,12 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     "you cast your first spell during each opponent's turn",
     // "Your first spell each turn" is the caster's first spell of the turn (the engine's nth of 1).
     'you cast your first spell each turn',
-  ],
-  rejects: [
+    // Mind's Dilation (Grand Larceny deck, group B): the same count for another caster, each one's own first spell.
     'an opponent casts their first spell each turn',
     'a player casts their first spell each turn',
+  ],
+  rejects: [
+    "an opponent casts their first spell during each opponent's turn",
     'an opponent casts their second spell',
     'an opponent casts their second creature spell each turn',
     'an opponent casts your second spell each turn',
@@ -197,8 +199,8 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     }
     const n = ORDINALS[(ordinal[1] ?? '').toLowerCase()];
     if (n === undefined) return fail(ctx, pos);
-    if (n === 1 && actor.det !== 'you') return fail(ctx, pos);
-    if (n !== 1 && duringTurn !== undefined) return fail(ctx, pos);
+    // "During each opponent's turn" is read for the controller's own first spell only (the engine's `duringTurn: 'opponent'` goes with `by: 'you'` and `nth: 1`).
+    if (duringTurn !== undefined && !(n === 1 && actor.det === 'you')) return fail(ctx, pos);
     const subject = makeNoun(id, spell.span, 'a', filter);
     return {
       ok: true,

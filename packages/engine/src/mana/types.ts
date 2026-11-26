@@ -36,6 +36,8 @@ export type ManaRestriction =
   | {
       readonly kind: 'spellMatch';
       readonly types?: readonly string[];
+      /** "Spend this mana only to cast a noncreature spell" (CR 106.6): the spell has none of these card types. */
+      readonly notTypes?: readonly string[];
       readonly subtypes?: readonly string[];
       /**
        * D-151: "Spend this mana only to cast Dragon spells or activate abilities of Dragons": the mana may also pay for an activated ability of a permanent that
@@ -57,6 +59,8 @@ export type ManaRestriction =
       readonly monocolored?: readonly string[];
       /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): the spell is cast from a graveyard. Never with `alsoAbilities`. */
       readonly fromGraveyard?: true;
+      /** "Spend this mana only to cast spells you don't own" (Thieving Varmint, CR 106.6, 108.3): the spell's owner is not the player who casts it. Never with `alsoAbilities`. */
+      readonly notOwned?: true;
     };
 
 /**

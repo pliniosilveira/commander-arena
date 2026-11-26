@@ -77,7 +77,7 @@ describe('the lead line: how many modes are chosen (CR 700.2)', () => {
   test.each([
     'Choose three —\n• Draw a card.\n• You gain 3 life.\n• Scry 1.',
     'Choose up to two —\n• Draw a card.\n• You gain 3 life.',
-    'Choose any number —\n• Draw a card.\n• You gain 3 life.',
+    // "Choose any number —" is read now (a triggered ability may choose none, CR 700.2b); a spell with it is refused by the lowering (convert-grammar-engine-most-wanted-g4).
     'Choose X —\n• Draw a card.\n• You gain 3 life.',
     'Choose one\n• Draw a card.\n• You gain 3 life.',
     'Choose one -\n• Draw a card.\n• You gain 3 life.',

@@ -134,11 +134,17 @@ describe('the restrict effect', () => {
   );
 
   test('a duration the engine does not run is reported as unsupported, not run', () => {
-    const card = restrictSpell({ duration: 'permanent' });
+    const card = restrictSpell({ restriction: 'cantBlock', duration: 'permanent' });
     expect(issues(card)).toEqual([]);
     expect(full(card)).toEqual([
       expect.stringContaining('duration "permanent" is not implemented'),
     ]);
+  });
+
+  test("can't be blocked with no end is run (Vronos, Masked Inquisitor: \"gains ... 'This creature can't be blocked.'\")", () => {
+    const card = restrictSpell({ duration: 'permanent' });
+    expect(issues(card)).toEqual([]);
+    expect(full(card)).toEqual([]);
   });
 });
 

@@ -96,7 +96,7 @@ Rules the engine does not implement and no supported card reaches (refused): sta
 Everything here is read and refused, or unread, so the card stays unsupported and honest.
 
 - **"You may" outside a triggered ability body** (spells, activated abilities, modes), and "If you do" after an instruction the engine cannot tell was performed (gain life, create a token, put counters).
-- **Wordings with no real line yet:** "Cumulative upkeep: Pay 1 life", "Multikicker: Pay N life", "Choose three", "Choose any number", "Choose up to one", labels before a bullet, "at end of combat" steps, Entwine lines.
+- **Wordings with no real line yet:** "Cumulative upkeep: Pay 1 life", "Multikicker: Pay N life", "Choose three", "Choose up to one", labels before a bullet, "at end of combat" steps, Entwine lines.
 - **Phrase gaps by shape:** granted abilities with riders or a self reference (D-178: `~` in a group's quoted ability is read; a card that names itself in the quotation is not), restricted Equip ("Equip legendary creature {3}"), "enters with a charge counter for each time it was kicked", "that player" after a death or enters event, "equal to the sacrificed creature's power" in statics and in triggers other than a reflexive ability (D-177), a list of three spell kinds, "nonland card" without "permanent", "for each opponent" other than "up to one" exile, "it had counters" outside leave and dies triggers, "for the second time", counter triggers with "a counter" or counts of two or more, spend-only mana with colors, "can't cast ~ during your Nth turn" for other cards, block tax wordings other than the one in use, "unless an opponent controls ...", "or less" and creature-type attack totals, "the player with the most life" without "or tied", planeswalker type nouns as targets.
 - **The Korvold slice 1 (D-175, D-176) known limitations and deferred work.** A token with an ability in quotes that is a static ability or a keyword the engine cannot grant stays unread; a card that names itself in the quoted ability of a token it makes would be read as naming the token (the normalizer writes both as `~`; no card of the slice does it); "It has \"...\"" folds only into one described token (not a predefined one, not a copy); a sentence with a quotation followed by another sentence of the same text is not split after the quote's period; `chooseOne` is read for two predefined tokens of one ("create a Food token or a Treasure token") and not yet for other instructions ("draw a card or gain 1 life"), counts or described tokens; the casual agent chooses among offered instructions by their words (a Treasure, then a card, else the first listed); "that creature" at the start of a spell's line is bound to the last single target of the line before, no other pronoun crosses a line; "return it to its owner's hand" is for the card a permanent became or for `~` still on the battlefield; the log says "X dies." for a permanent that is not a creature, the CR's word. Slices 3 to 8 of `docs/proposals/korvold-deck-analysis.md` are not built.
 - **The Korvold slice 2 (D-177, D-178) known limitations and deferred work.** The `sacrificed` reference is read only in an amount and names the first permanent sacrificed, and the ids are not reset by a later `may`; a "When you do" after a plain instruction is read only when that instruction is the first of its body (the engine's `performed` counts what the whole resolution did, so anything before it would be counted as done by it); "that creature" is the sacrificed permanent only after a sacrifice of one chosen permanent, not after "sacrifice two creatures" or a sacrifice of `~`; "untap those lands" and "untap two lands" after a search are not read, and a pronoun after a search is `moved` only for `tap` and `untap`; a line of a spell that starts "If ..., instead" or ends "... instead." is joined to the line before it only when that line ends in a period, and replaces one instruction of it; an ability in quotes given to a group is read for `filter` subjects (not for an Aura's "Enchanted creature has ..."), and not at all when the card puts its own name inside a quotation; a rider or a restriction inside such quotes stays unread; "attacks or becomes the target of a spell or ability" and "becomes the target of an ability" alone are not read; a Treasure that has two mana abilities offers both, and the planner uses one (a source is tapped once). Slices 3 to 8 are not built.
@@ -139,11 +139,26 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Outlaw (CR 700.12): the singular noun alone ("an outlaw you control", "target outlaw") is not read, only "outlaw" before a type or card word and the plural "outlaws"; "Outlaw" is no subtype.
+- Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
+- Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
+- Void Attendant: a card exiled face down cannot be chosen for the cost "Put a card an opponent owns from exile into that player's graveyard" (the rules pick a pile, then a card at random).
+- Silent-Blade Oni and Extract Brain: looking at a hand shows the cards only in the question of which spell to cast, so a hand with no spell to cast shows nothing.
+- Vronos, Masked Inquisitor: "can't be blocked" given for good is a rules-modifying effect, not a granted ability, so "loses all abilities" does not remove it.
+- Jace, Architect of Thought: the +1 "until your next turn" ability does not end early when its controller leaves the game (CR 800.4m).
+- Sarkhan the Masterless and Sparkshaper Visionary: a planeswalker that becomes a creature keeps its planeswalker subtypes besides the creature types given.
+- The Mimeoplasm: a token that is a copy of it enters as itself and exiles nothing; a commander it exiles from a graveyard is not offered the command zone.
+- Cipher: a spell cast with flashback, jump-start, aftermath, harmonize or rebound is put where those say and not encoded; the encoded card is not shown on its creature.
+- A permanent that a group's "lose all abilities" strikes still applies its own static control effect ("The monarch controls enchanted creature"); that file cannot read groups without an import cycle.
+- A group's "lose all abilities" reads types and colors from the copiable values (layer 1): a layer 4 or 5 effect that changes them is not seen. "Choose a nonland card name" accepts any name, land or not, typed.
 - The AI's block heuristics read only the menace keyword as a minimum of blockers; an attacker that "can't be blocked except by three or more creatures" is judged by the decision's `minBlockers` alone.
 - "Whenever one or more creatures you control deal combat damage to one or more players this turn" (`delayedCombatDamageBatchTurn`) triggers once for each player damaged, not once for the event; harmless for "you become the monarch".
-- Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - Notion Thief's draw replacement goes before dredge and "draw two instead"; with thieves of different controllers on one draw the oldest applies first. The player who would draw is not asked the order (CR 616.1).
+- An additional cost "discard a land card" on a card cast with jump-start or blitz would apply its kind of card to the discard of that alternative cost too.
+- Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
+- A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
+- Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).
 - "That was dealt damage this turn" is read only in "costs {3} less to cast if it targets a creature that was dealt damage this turn"; as a target or group wording elsewhere it stays unread.
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
 - "That card's mana value" reads only the card of one earlier "reveal the top card" or "exile the top card" of your own library; other revealed or exiled sets, other libraries and "its mana value" there stay unread.
@@ -158,7 +173,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "If N or more cards have been exiled with ~" counts only the cards still in exile; a card that left exile is a new object (400.7). The Scryfall ruling counts every card exiled over the game (unverified).
 - Bringing the companion (116.2g) pays its {3} with the planner's choice of sources; the player cannot tap by hand.
 - `grantAlternativeCostToSpells` grants only a mana evoke cost, from the hand.
-- `anyCombinationAmount` lists every combination, C(X+4,4) of them: a large X slows the mana choice.
+- `anyCombinationAmount` lists every combination, C(X+4,4) of them, as actions and payment sources: a large X slows the mana choice. The planner tries only combinations that differ for the cost, and "could produce" lists none (issue 632).
+- The payment planner marks the mana of one outcome in 32-bit masks (`assignUnits`): past 31 mana in one outcome, the mana it reports spent and left over can be wrong.
 - "One or more Pirates deal damage to a player" fires once per player damaged; its official ruling is unverified.
 - `moveCounter` ignores "counters would be put" replacements. "A third target" differs from both earlier targets (ruling unverified).
 - Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
@@ -268,7 +284,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Simultaneous departures: the movers that record the last-known information of a batch were audited by search, not by proof; another batch mover that is found is a bug of the same kind.
 - `effect.restrict` does not read an exact count ("two target creatures can't block this turn") or "up to that many target creatures"; the "while you control ~" form takes one creature.
 - "Each of one or two targets" is read only as the recipient of damage; another verb with it, "each of one or two other targets" and "one or two targets" without "each of" are not read.
-- Repeatable modes, not read: "Choose one. You may choose the same mode more than once.", a number above ten, "Choose X" and "Choose any number" headers, and a triggered ability that may choose no mode ("up to").
+- Repeatable modes, not read: "Choose one. You may choose the same mode more than once.", a number above ten, "Choose X" headers, and a triggered ability that may choose no mode ("up to").
 - Repeatable modes, not read or run: a repeatable choice with the commander widening or with "that hasn't been chosen this turn", and more than 2000 multisets (8 modes and 10 choices); a repeatable Escalate card is untried.
 - Repeatable modes: the browser test of the mode counters is owed.
 - `modal.choose-widen` reads "you may choose two instead" only; "three instead" and a condition other than `condition.control-a` ("if an opponent controls ...", a count) are not read.
@@ -327,6 +343,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Choose a card type": the web shows no preview of what the choice protects from.
 - Copy exceptions that retain the copier's own values (CR 707.9c) and exceptions to the supertypes, loyalty or defense of a copy are not built.
 - `token.copy-except` reads one shape ("except it's a P/T <colors> <creature types>"), not "it has no mana cost", "in addition to its other types" or a list of separate exceptions as a card line.
+- "Enters as a copy, except it has \"...\"" (`addStatics`) reads one quoted static ability. The plural token copy "except they're 3/3 Dragon creatures ... and they have flying" needs the keyword clause. `sameNameAsSource` matches only in a static subject.
 - `setCreatureTypes` keeps the original's other subtypes and card types (a copy of an artifact creature card is an artifact creature Zombie); read from CR 205.3d and 707.9b alone, unverified against Hashaton's rulings.
 - `trigger.discarded` reads one card kind ("a creature card", "a nonland card"), not "a creature or land card", a creature type or a color; the filter is read against the card where it went, not the hand it left.
 - A copy of a card discarded with madness: when the card is cast with madness before the ability resolves, the copy is made from its last-known information.
@@ -390,7 +407,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `exileOnResolve` is for an instant or sorcery card cast as a spell; an Adventure, a flashback spell and a spell with "exile it instead" get no return. It names the end step and the hand only.
 - Rebound (CR 702.88) with Buyback on one spell: Buyback wins and the card returns to the hand (the owner is not asked which replacement applies, CR 616.1).
 - "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature", "commander" in spell, cost and condition phrases, and a count in a static ability are not read.
-- Monstrosity: "Monstrosity X" (CR 701.37c), the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read.
+- Monstrosity: the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read; the X of "Monstrosity X" (CR 701.37c) is read only in the becomes monstrous trigger of the same permanent.
 - Spells cast this turn by kind: only card types; "noncreature", a color, a subtype ("a Dragon spell"), a count with a kind ("two or more creature spells"), an opponent's spells and the order ("your second spell") are not read.
 - "Another target creature" is read for a bite whose source is a target (the slot before it); for the creature of a trigger or for a list of two such nouns it is refused.
 - "Target creature or Vehicle": one card type and one subtype only; a list of three ("creature, Vehicle, or Elf") and "or" between a subtype and a modifier ("nonartifact creature or Vehicle") are not read.
@@ -452,7 +469,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A legendary creature "<Name> of <Title>" is called by its first word only when the face is a creature.
 - `permanentsEnterTapped` reads a plain group (a kind of permanent with a controller); "this turn" for it is built, but the text of no real card was read.
 - `cardTypesAmong` counts the cards of one zone filter; "among cards in all graveyards", "among permanents you control" and Descend (the permanent cards in your graveyard) are not read.
-- "Choose up to one" with no mode is read for a triggered ability only; a spell or an activated ability that may choose no mode is not built, nor "choose up to two" or "any number".
+- "Choose up to one" and "choose any number" with no mode are read for a triggered ability only; a spell or an activated ability that may choose none, or "choose up to two", is not built.
 - A results table is read for a spell's text, with rows "N" and "N—M" that cover the die exactly once: "N+" rows, a modified roll, "roll again" and a table in a permanent's ability are not read.
 - "Target creature that player controls" is read only for the player of the trigger's event; with an earlier player target in the same ability the text stays unread.
 - The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost; "during an opponent's turn" and a reduction of a mana ability are not read.
@@ -537,6 +554,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Arcane Lighthouse: creatures that enter later follow CR 611.2c; unverified against the ruling.
 - "Each other creature that's attacking one of your opponents gets +N/+N until end of turn" only; the plural without "other", other effects and a battle protected by an opponent are not read.
 - Goad as an effect: one creature, a target or "it"; "goad each creature" and a group are not read.
+- A static subject names a goaded creature only for a restriction (Bothersome Quasit).
 - Protection from the chosen color: the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
 - Counters on a chosen creature: only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read.
 - The condition `attackedHasMoreLifeThanOtherOpponent` for three players is tested directly, not through a full game (the scenario DSL has two seats).
@@ -593,8 +611,13 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Effects that last until a point in the next turn of a player who left the game (`turnEnd`, `endStep`) never end; only `turnStart` ones end as that turn would have begun (CR 800.4m, issue 507).
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
+- `playerSpellsCostLess` reduces generic mana by a number for spells of card types, for a target player, until your next turn; other spell filters and durations are unread.
+- "Whenever you activate an ability that isn't a mana ability" is read for "you" only, not an opponent or a player.
+- "Spend blue mana as though it were any color to activate those abilities" (Grell Philosopher) applies to the mana cost of a granted activated ability, not to a granted mana ability that has a mana cost.
+- "A creature entering causes a triggered ability of that creature to trigger" (Aboleth Spawn) puts its copy trigger above the ability it names, so it resolves first; the two cannot be ordered the other way round (CR 603.3b).
 - Aven Mindcensor limits only a search of the searcher's own library; searches of another player's library or of other zones are not limited.
 - Escalate with a tap cost holds one tap requirement per spell: a card whose alternative cost also taps permanents is not read.
 - An attack tax made by an effect ("until your next turn, creatures can't attack you unless their controller pays") covers attacks on the player only, not their planeswalkers.
 - Undercity is the only dungeon: no other dungeon card, no choice of dungeon for "venture into the dungeon", and the parser reads neither "venture into Undercity" nor "if you have the initiative" (the engine runs both).
 - A room ability of a dungeon with no legal target is removed with no `abilityRemoved` event, so the log shows only the venture. The casual agent values rooms from a fixed table, with no look-ahead.
+- Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.

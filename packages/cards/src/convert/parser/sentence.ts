@@ -59,6 +59,8 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
 const RECURSION_LEAD_CONDITIONS = [
   'condition.exiled-this-way',
   'condition.it-matches',
+  // Uglúk of the White Hand: "If that creature was a Goblin or Orc, put two +1/+1 counters on ~ instead."
+  'condition.that-was-either',
   // Moria Scavenger (CR 602.2b, 701.9a): "If the discarded card was a creature card, amass Orcs 1." in the body of an activated ability whose cost discards.
   'condition.discarded-card-matches',
   // D-298: "If its mana value was 3 or less, scry 1."
@@ -78,6 +80,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.foretold',
   // Burning Curiosity (CR 118.8, 701.68a): "If this spell's additional cost was paid, exile the top three cards instead."
   'condition.additional-cost-paid',
+  // Baleful Mastery (CR 118.9): "If the {1}{B} cost was paid, an opponent draws a card."
+  'condition.alt-cost-paid',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
@@ -133,6 +137,8 @@ const TURN_CONDITIONS = [
   'condition.first-combat-phase',
   // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
   'condition.entered-this-turn',
+  // Mind Flayarrrs deck (River of Tears): "{T}: Add {U}. If you played a land this turn, add {B} instead." (CR 305.1, 605.3b).
+  'condition.played-land-this-turn',
 ] as const;
 
 /**
@@ -146,7 +152,7 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  * "If the result is 1, ..." (D-271, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
  * instruction; the lowering reads it only after a roll of the same text.
  */
-const DIE_CONDITIONS = ['condition.die-result'] as const;
+const DIE_CONDITIONS = ['condition.die-result', 'condition.die-result-range'] as const;
 
 /**
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
@@ -305,6 +311,8 @@ const TRAILING_CONDITIONS = [
   'condition.this-power',
   // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
   'condition.exiled-mana-value-at-least',
+  // Descend upon the Sinful, Unholy Heat (CR 207.2c, 205.2a): "Create a 4/4 ... token if there are four or more card types among cards in your graveyard." (Delirium).
+  'condition.card-types-among',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -462,6 +470,11 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
         whose: 'you' as const,
       }),
     ),
+    // Massacre Girl (CR 603.7, 603.10a, 700.4): the creatures that die, any player's, for the rest of the turn.
+    map(literal('whenever a creature dies this turn, '), () => ({
+      step: 'creatureDies' as const,
+      whose: 'you' as const,
+    })),
     // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
     EACH_CAST_LEAD,
@@ -823,6 +836,8 @@ export const LOYALTY_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Narset of the Ancient Way: "Draw a card, then you may discard a card. When you discard a nonland card this way, ~ deals damage equal to that card's mana value to target creature or planeswalker."
+  afterDiscard: true,
   delayed: true,
 });
 

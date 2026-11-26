@@ -96,12 +96,13 @@ import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
 import { isLegalParty } from './rules/party';
 import { answerResolutionPile } from './rules/pile-answer';
+import { endOneOfPermissions } from './rules/play-permission-one';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
 import { matchesGroups } from './rules/sacrifice-groups';
 import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
-import { bottomCards, keepHand, takeMulligan } from './rules/setup';
+import { answerOpeningHand, bottomCards, keepHand, takeMulligan } from './rules/setup';
 import { sharesLandType } from './rules/share-type';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
@@ -112,6 +113,7 @@ import {
   answerResolutionChooseOne,
   answerResolutionChooseOpponent,
   answerResolutionChoosePlayer,
+  answerResolutionCipher,
   answerResolutionClash,
   answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
@@ -299,6 +301,8 @@ function playLand(
   let next = patchSeat(moved.state, seat, {
     landsPlayedThisTurn: getSeat(moved.state, seat).landsPlayedThisTurn + 1,
   });
+  // Nashi (CR 305.1): "you may play one of those cards": playing one of them from exile ends the permissions for the others.
+  if (obj.zone === 'exile') next = endOneOfPermissions(next, seat, object);
   if (graveyardUse !== null) {
     // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
     if (graveyardUse.unlimited !== true) {
@@ -339,7 +343,10 @@ function concede(state: GameState, seat: SeatId): Result {
   // CR 726.4: a player with the initiative who concedes hands it on at once (and the player who takes it ventures, CR 726.2).
   const handed = initiativeAfterLoss(monarchHanded.state);
   events.push(...handed.events);
-  const end = evaluateGameEnd(handed.state);
+  // CR 726.4: the same for the initiative.
+  const initiative = initiativeAfterLoss(handed.state);
+  events.push(...initiative.events);
+  const end = evaluateGameEnd(initiative.state);
   events.push(...end.events);
   if (end.state.result) return ok(end.state, events);
   // CR 800.4j: the game goes on without the seat that left; the next seat in turn order gets priority.
@@ -436,6 +443,11 @@ function answerConfirm(
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
+  // CR 103.6: "begin the game with this card on the battlefield?", asked after the mulligans and before the first turn.
+  if (d.purpose === 'openingHand') {
+    const r = answerOpeningHand(state, accept);
+    return r === null ? fail('The card cannot begin on the battlefield') : ok(r.state, r.events);
+  }
   // CR 701.30c: "put the card you revealed on the bottom of your library?", asked of each clashing player as the clash resolves.
   if (d.purpose === 'clash') return finishResolutionAnswer(answerResolutionClash(state, accept));
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
@@ -651,7 +663,10 @@ function answerChooseOption(
     return ok(played.state, [answered, ...played.events]);
   }
   const chosen = chosenFromOption(d.purpose, option, d.options);
-  if (chosen === null || !d.options.includes(option)) return fail('That is not one of the options');
+  // CR 201.2: a card name is typed, so the options of that question are only suggestions; every other choice is one of the options.
+  if (chosen === null || (d.purpose !== 'cardName' && !d.options.includes(option))) {
+    return fail('That is not one of the options');
+  }
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
@@ -1130,7 +1145,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           : answerSacrificeCost(state, action.objects);
       }
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
-      if (d.purpose === 'entersCopy')
+      if (d.purpose === 'cipher')
+        return finishResolutionAnswer(answerResolutionCipher(state, action.objects));
+      if (d.purpose === 'entersCopy' || d.purpose === 'entersCopyOther')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
       // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
       if (d.purpose === 'entersRemoveCounters')

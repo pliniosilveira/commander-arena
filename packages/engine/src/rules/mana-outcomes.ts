@@ -66,6 +66,8 @@ export function spendRestrictionOf(
   }
   // Issue 102 (Lord of the Forsaken, CR 106.6, 601.2a): "Spend this mana only to cast a spell from your graveyard".
   if (only.fromGraveyard === true) return { kind: 'spellMatch', fromGraveyard: true };
+  // CR 106.6, 108.3 (Thieving Varmint): "Spend this mana only to cast spells you don't own".
+  if (only.notOwned === true) return { kind: 'spellMatch', notOwned: true };
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
   // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
@@ -85,6 +87,7 @@ export function spendRestrictionOf(
   return {
     kind: 'spellMatch',
     ...(only.types === undefined ? {} : { types: [...only.types] }),
+    ...(only.notTypes === undefined ? {} : { notTypes: [...only.notTypes] }),
     ...(subtypes === undefined ? {} : { subtypes }),
     ...(only.alsoAbilities === true ? { alsoAbilities: true as const } : {}),
     ...(only.qualities === undefined ? {} : { qualities: only.qualities.map((q) => ({ ...q })) }),
@@ -271,6 +274,37 @@ function plainOutcomes(
   }
 }
 
+/**
+ * The types of mana in any outcome of a production that does not look at other permanents: the union of `plainOutcomes`, without listing
+ * them (issue 632). "Add X mana in any combination of colors" has one outcome per multiset of X of the five colors, C(X + 4, 4) of them,
+ * which grows past millions for a large X (Selvala, Heart of the Wilds with a big creature), while the types they hold are just the colors
+ * a combination can use (CR 106.1b, 106.7).
+ */
+function plainTypes(
+  state: GameState,
+  obj: GameObject,
+  p: Exclude<ManaProduction, { kind: 'couldProduce' }>,
+): Set<ManaColor> {
+  if (p.kind === 'anyCombination') {
+    // `colorMultisets`: no mana for a count of 0, and none when `distinct` asks for more different colors than there are to pick from.
+    const colors = COLORS.filter((c) => p.colors === undefined || p.colors.includes(c));
+    const none = p.count <= 0 || (p.distinct === true && p.count > colors.length);
+    return new Set(none ? [] : colors);
+  }
+  if (p.kind === 'anyCombinationAmount') {
+    const n = amountOf(
+      state,
+      p.amount,
+      { controller: controllerOf(state, obj), source: obj.id },
+      [],
+    );
+    return new Set(n > 0 ? COLORS : []);
+  }
+  const types = new Set<ManaColor>();
+  for (const outcome of plainOutcomes(state, obj, p)) for (const m of outcome) types.add(m);
+  return types;
+}
+
 type CouldProduce = Extract<ManaProduction, { kind: 'couldProduce' }>;
 
 interface Entry {
@@ -337,9 +371,7 @@ function computeTypes(state: GameState): ReadonlyMap<ObjectId, ReadonlySet<ManaC
           anyType: a.production.anyType === true,
         });
       } else {
-        for (const outcome of plainOutcomes(state, obj, a.production)) {
-          for (const m of outcome) types.add(m);
-        }
+        for (const m of plainTypes(state, obj, a.production)) types.add(m);
       }
     }
     entries.set(id, { abilities, types });
@@ -451,9 +483,7 @@ export function landManaTypes(state: GameState, obj: GameObject): ManaColor[] {
   const found = new Set<ManaColor>();
   for (const a of manaAbilities(state, obj)) {
     if (a.production.kind === 'couldProduce') continue;
-    for (const outcome of plainOutcomes(state, obj, a.production)) {
-      for (const m of outcome) found.add(m);
-    }
+    for (const m of plainTypes(state, obj, a.production)) found.add(m);
   }
   return inTypeOrder(found);
 }

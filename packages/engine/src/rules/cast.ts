@@ -34,7 +34,8 @@
  */
 
 import type { Ability, Cost } from '../ast/types';
-import { type CardType, COLORS } from '../characteristics';
+import { CARD_TYPES, type CardType, COLORS } from '../characteristics';
+import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -52,7 +53,7 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
-import { evokeGrantData, grantedEnergyOf } from './alt-cost-grant';
+import { energyGrantFor, evokeGrantData } from './alt-cost-grant';
 import {
   buybackCostOf,
   escalateCostOf,
@@ -60,6 +61,7 @@ import {
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
+  kickerXNotZero,
   manaSymbolsOf,
   multikickerCostOf,
   namedAlternativeCostOf,
@@ -140,6 +142,7 @@ import {
   playPermissionExiles,
 } from './play-permission-color';
 import { playPermissionLess } from './play-permission-cost';
+import { endOneOfPermissions } from './play-permission-one';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -185,6 +188,8 @@ export function beginCast(
     readonly payInstead?: readonly Cost[];
     /** Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains ...", kept for the permanent the spell becomes. */
     readonly creatureGains?: readonly Ability[];
+    /** Silent-Blade Oni, Extract Brain (CR 608.2g, 402.3): the card is cast from a hand that is not the caster's (`castFree.fromHand`). */
+    readonly fromHand?: boolean;
   } = {},
   /** The permanent type a card cast from the graveyard by `playFromGraveyardEachType` counts as (a card with several types: the player chooses one). */
   permanentType?: CardType,
@@ -207,6 +212,7 @@ export function beginCast(
                 : 'free',
           riders.anyManaType === true,
           riders.payInstead,
+          riders.fromHand === true,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -294,10 +300,13 @@ export function beginCast(
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
       ...(alternative === 'energyGrant'
-        ? {
-            energyGrant:
-              grantedEnergyOf(state, seat, castAs(obj, seat, face, alternative), zone) ?? 0,
-          }
+        ? (() => {
+            const granted = energyGrantFor(state, seat, castAs(obj, seat, face, alternative), zone);
+            return {
+              energyGrant: granted?.count ?? 0,
+              ...(granted?.once === undefined ? {} : { energyGrantOnce: granted.once }),
+            };
+          })()
         : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
@@ -366,6 +375,8 @@ export function beginCast(
       continuousEffects: next.continuousEffects.filter((e) => e.id !== freeUse.id),
     };
   }
+  // Nashi (CR 601.2): "you may play one of those cards": casting one of them from exile ends the permissions for the others (a cancelled cast restores the state before it, CR 733).
+  if (zone === 'exile' && !resolving) next = endOneOfPermissions(next, seat, objectId);
   // CR 601.2 (`mayCastOneMilled`): "you may cast a spell from among those cards" is one spell for all the cards, so casting one of them from the graveyard uses up the permissions
   // the effect made for the others.
   if (zone === 'graveyard' && !resolving && alternative === undefined) {
@@ -556,8 +567,11 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
     modeSet: stack.chosenModes,
   } as const;
   const kickerCost = kickerCostOf(faceOf(before, spell));
+  // CR 702.33a, 107.3a ("Kicker {X}. X can't be 0."): the kicker is offered only when it can be paid with X at 1, the least a kicked spell announces.
+  const kickedX = kickerXNotZero(faceOf(before, spell)) ? ({ x: 1 } as const) : {};
   let asksKicker =
-    kickerCost !== null && canPayRequest(before, seat, spell, { ...request, kicked: true });
+    kickerCost !== null &&
+    canPayRequest(before, seat, spell, { ...request, kicked: true, ...kickedX });
   // CR 702.33g, 601.2c (D-181): a spell with targets that depend on the kicker is cast the way it has what it needs: the kicked way needs its
   // targets and its total cost, the unkicked way its own targets. With both possible the caster is asked; with one the cast goes that way.
   if (kickerCost !== null && hasKickedTargets(faceOf(before, spell))) {
@@ -831,38 +845,56 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
   } as const;
-  const payable = ([0, 1] as const).filter((option) =>
-    canPaySpellCost(
-      state,
-      casting.seat,
-      request.spell,
-      spellCost(state, { ...request, costOption: option }),
-    ),
-  );
-  if (payable.length !== 2) {
+  const payable = choice
+    .map((_, option) => option)
+    .filter((option) =>
+      canPaySpellCost(
+        state,
+        casting.seat,
+        request.spell,
+        spellCost(state, { ...request, costOption: option }),
+      ),
+    );
+  if (payable.length < 2) {
     const only = payable[0] ?? 0;
     return toHarmonize(
       patchObject(state, casting.object, { stack: { ...stack, costOption: only } }),
       events,
     );
   }
-  const info = sourceInfo(state, casting.object);
   return ok(
     setPending(
       { ...state, casting: { ...casting, stage: 'kicker' } },
-      {
-        kind: 'confirmOptional',
-        seat: casting.seat,
-        source: casting.object,
-        sourceName: info?.name ?? '',
-        sourceOracleText: info?.oracleText ?? '',
-        purpose: 'costChoice',
-        cost: choice[0],
-        otherCost: choice[1],
-      },
+      costChoiceDecision(state, casting.seat, casting.object, choice, payable),
     ),
     events,
   );
+}
+
+/**
+ * The question of the additional cost choice (CR 118.8, 601.2b, D-181) between the ways `ways` (indexes into the face's choice, at least two): accepting pays the first, declining the
+ * second; with three ways declining asks again between the other two (`costWays`), so every way has a yes-or-no question of its own to answer.
+ */
+function costChoiceDecision(
+  state: GameState,
+  seat: SeatId,
+  object: ObjectId,
+  choice: readonly (readonly Cost[])[],
+  ways: readonly number[],
+): NewDecision {
+  const info = sourceInfo(state, object);
+  return {
+    kind: 'confirmOptional',
+    seat,
+    source: object,
+    sourceName: info?.name ?? '',
+    sourceOracleText: info?.oracleText ?? '',
+    purpose: 'costChoice',
+    cost: choice[ways[0] ?? 0] ?? [],
+    otherCost: choice[ways[1] ?? 1] ?? [],
+    costWays: ways,
+    ...(ways.length > 2 ? { moreCost: choice[ways[2] ?? 2] ?? [] } : {}),
+  };
 }
 
 /** The choice is recorded before X so the spell can use the number exiled to determine its cost. */
@@ -891,8 +923,23 @@ export function answerCostChoice(state: GameState, first: boolean): Result {
   }
   const stack = getObject(state, casting.object).stack;
   if (!stack) return fail('The spell is not on the stack');
+  const ways = d.costWays ?? [0, 1];
+  if (!first && ways.length > 2) {
+    // CR 601.2b: the other two ways are asked between next.
+    const face = faceOf(state, getObject(state, casting.object));
+    const choice = face?.additionalCostChoice;
+    if (choice === undefined) return fail('The spell has no additional cost choice');
+    return ok(
+      setPending(
+        state,
+        costChoiceDecision(state, casting.seat, casting.object, choice, ways.slice(1)),
+      ),
+      [],
+    );
+  }
+  const option = first ? ways[0] : ways[1];
   const next = patchObject({ ...state, pending: null }, casting.object, {
-    stack: { ...stack, costOption: first ? 0 : 1 },
+    stack: { ...stack, costOption: option ?? 0 },
   });
   return toHarmonize(next, []);
 }
@@ -947,7 +994,12 @@ function toX(state: GameState, events: GameEvent[]): Result {
     (spec) =>
       spec.what.kind === 'object' && JSON.stringify(spec.what.filter).includes('"manaValueX"'),
   );
-  const least = Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max);
+  // CR 702.33a, 107.3a: "Kicker {X}. X can't be 0." a kicked spell announces at least 1.
+  const leastKicked =
+    stack.kicked === true && kickerXNotZero(faceOf(state, spell))
+      ? Math.max(1, leastAllowedX(state, casting.seat, spell, true) ?? 1)
+      : (leastAllowedX(state, casting.seat, spell, true) ?? 0);
+  const least = Math.min(leastKicked, max);
   const targetable = (x: number): boolean => {
     const aimed = patchObject(state, casting.object, { stack: { ...stack, x } });
     return specs.every((spec) =>
@@ -1516,6 +1568,7 @@ export function answerPayment(
         activation.source,
         hasX(abilityXCost(activation.ability.cost)),
         activation.ability.cost.some((c) => c.kind === 'mana' && c.onlyChosenColor === true),
+        activation.ability.cost.some((c) => c.kind === 'mana' && c.blueAsAnyColor === true),
       )
     : // D-351 (CR 609.4b): "mana of any type can be spent to cast that spell".
       spellSpendTarget(state, spellObject, spellObject.stack?.anyManaType === true);
@@ -1600,17 +1653,21 @@ function abilitySpend(
   source: ObjectId,
   costHasX = false,
   onlyChosenColor = false,
+  blueAsAnyColor = false,
 ) {
   const obj = state.objects[source];
   const x = costHasX ? ({ hasX: true } as const) : {};
   // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability".
   const only = onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
-  if (obj === undefined) return { ability: true, ...x, ...only } as const;
+  // Grell Philosopher (CR 609.4b): blue mana may pay any color of the cost.
+  const blue = blueAsAnyColor ? ({ blueAsAnyColor: true } as const) : {};
+  if (obj === undefined) return { ability: true, ...x, ...only, ...blue } as const;
   const d = derive(state, obj);
   return {
     ability: true,
     ...x,
     ...only,
+    ...blue,
     source: { types: d.types, subtypes: d.subtypes },
   } as const;
 }
@@ -1794,8 +1851,13 @@ function withManaSpent(
     return state;
   }
   const fromTypes: Record<string, number> = {};
+  // Cataclysmic Prospecting (CR 205.3i): "for each mana from a Desert": the source's subtypes come with its card types, and are kept apart.
+  const fromSubtypes: Record<string, number> = {};
   for (const types of spent) {
-    for (const type of new Set(types)) fromTypes[type] = (fromTypes[type] ?? 0) + 1;
+    for (const type of new Set(types)) {
+      const into = (CARD_TYPES as readonly string[]).includes(type) ? fromTypes : fromSubtypes;
+      into[type] = (into[type] ?? 0) + 1;
+    }
   }
   return patchObject(state, casting.object, {
     stack: {
@@ -1803,6 +1865,7 @@ function withManaSpent(
       manaSpent: {
         total: spent.length,
         fromTypes,
+        ...(Object.keys(fromSubtypes).length === 0 ? {} : { fromSubtypes }),
         // D-260: the mana from a snow source (CR 107.4h); left out when there was none, so a spell that was paid without snow keeps its shape.
         ...(spentSnow > 0 ? { snow: spentSnow } : {}),
         // Issue 310 (Converge, CR 105.1): the colors of the five that the mana spent had; colorless is no color.
@@ -1839,6 +1902,15 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       ...next,
       turnLog: {
         ...next.turnLog,
+        // CR 601.2b (Tlincalli Hunter): "once each turn": the permanent whose alternative cost this spell was cast for has been used.
+        ...(obj.stack.energyGrantOnce === undefined
+          ? {}
+          : {
+              oncePerTurnGrants: [
+                ...(next.turnLog.oncePerTurnGrants ?? []),
+                obj.stack.energyGrantOnce,
+              ],
+            }),
         castSpells: [
           ...next.turnLog.castSpells,
           {
@@ -1854,8 +1926,18 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
             ...(xSymbolCount(derive(next, getObject(next, casting.object)).manaCost ?? []) > 0
               ? { hasX: true as const }
               : {}),
+            // CR 700.12 (Discreet Retreat): "your first outlaw spell each turn".
+            ...(isOutlaw(derive(next, getObject(next, casting.object)).subtypes)
+              ? { outlaw: true as const }
+              : {}),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
+            // Wild-Magic Sorcerer: "the first spell you cast from exile each turn".
+            ...(obj.stack.castFrom === 'exile' ? { fromExile: true as const } : {}),
+            // Rain of Riches (CR 601.2h): the subtypes of the sources whose mana paid for the spell.
+            ...(obj.stack.manaSpent?.fromSubtypes === undefined
+              ? {}
+              : { manaSubtypes: Object.keys(obj.stack.manaSpent.fromSubtypes) }),
           },
         ],
       },

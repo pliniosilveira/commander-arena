@@ -97,17 +97,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
         break;
       case 'discard':
         discards += 1;
-        // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
-        if (
-          cost.filter !== undefined ||
-          cost.named !== undefined ||
-          cost.hand !== undefined ||
-          cost.countX !== undefined
-        ) {
+        // D-207: a name picks out cards for the cost of an activated ability. A filter ("discard a land card", CR 701.9, 118.8) is read by a spell's cost too (`discardFilter`).
+        if (cost.named !== undefined || cost.hand !== undefined || cost.countX !== undefined) {
           issue(
             out,
             p,
-            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
+            'an additional cost discards any cards: no name and not the whole hand (D-207, D-626)',
           );
         }
         break;
@@ -163,18 +158,18 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
 }
 
 /**
- * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two ways to pay, each a non-empty
+ * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two or three ways to pay, each a non-empty
  * list of the costs `additionalCosts` takes, and with the face's own `additionalCosts` at most one sacrifice and one discard. No "pay X life" and no {X}
- * (X is announced before the targets and the choice comes first), and the two ways are not the same.
+ * (X is announced before the targets and the choice comes first), and no two ways are the same.
  */
 export function checkAdditionalCostChoice(
-  choice: readonly [readonly Cost[], readonly Cost[]],
+  choice: readonly (readonly Cost[])[],
   fixed: readonly Cost[],
   path: string,
   out: Out,
 ): void {
-  if (!Array.isArray(choice) || choice.length !== 2) {
-    issue(out, path, 'additionalCostChoice has exactly two ways to pay');
+  if (!Array.isArray(choice) || choice.length < 2 || choice.length > 3) {
+    issue(out, path, 'additionalCostChoice has two or three ways to pay');
     return;
   }
   choice.forEach((way, i) => {
@@ -194,8 +189,9 @@ export function checkAdditionalCostChoice(
       issue(out, p, 'a choice of additional costs has no "you may sacrifice any number" (D-491)');
     }
   });
-  if (JSON.stringify(choice[0]) === JSON.stringify(choice[1])) {
-    issue(out, path, 'the two ways to pay are the same');
+  const seen = new Set(choice.map((way) => JSON.stringify(way)));
+  if (seen.size !== choice.length) {
+    issue(out, path, 'two ways to pay are the same');
   }
 }
 
@@ -218,6 +214,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'sacrificeFromGraveyard',
   'sacrificePermanents',
   'payLife',
+  'payMana',
   'blitz',
 ];
 
