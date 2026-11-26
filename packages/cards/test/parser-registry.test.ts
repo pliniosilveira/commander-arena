@@ -1811,6 +1811,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
+  // Jump Scare! deck, group C: a permission of the card read "as long as" the condition holds, and the card's own restriction lifted "unless" it holds.
+  'condition.control-different-powers': permanent(
+    (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
+  ),
+  'condition.this-power-parity': permanent(
+    (e) => `As long as ${e}, you may cast noncreature spells as though they had flash.`,
+  ),
+  'condition.you-have-many-cards-in-hand': permanent((e) => `~ can't attack or block unless ${e}.`),
   // The party (CR 700.8).
   'condition.full-party': permanent(
     (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,

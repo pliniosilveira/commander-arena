@@ -150,6 +150,29 @@ export function evaluateCondition(
       }
       return count >= condition.count;
     }
+    case 'controlsDifferentPowers': {
+      // CR 208.1 (Augur of Autumn): the distinct powers the controller's permanents of the kind have now.
+      const filter = {
+        ...condition.filter,
+        zone: 'battlefield' as const,
+        controller: 'you' as const,
+      };
+      const powers = new Set<number>();
+      for (const id of objectsInZone(state, 'battlefield')) {
+        const obj = getObject(state, id);
+        if (!matchesFilter(state, obj, filter, ctx)) continue;
+        const power = derive(state, obj).power;
+        if (typeof power === 'number') powers.add(power);
+      }
+      return powers.size >= condition.count;
+    }
+    case 'thisPowerParity': {
+      // CR 107.1, 208.1 (integers, a power may be below zero): the power of the permanent the condition belongs to, as it is now (or as it last was, CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      const power = source === null ? undefined : derive(state, source).power;
+      if (typeof power !== 'number') return false;
+      return (Math.abs(power) % 2 === 0) === (condition.parity === 'even');
+    }
     case 'opponentsAtLeast':
       return opponentsOf(state, ctx.controller).length >= condition.count;
     case 'opponentPoisonAtLeast':

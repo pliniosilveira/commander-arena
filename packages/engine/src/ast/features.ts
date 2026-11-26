@@ -1502,6 +1502,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
     'triggerPlayerIsOpponent',
     'triggerPlayerStat',
+    // Augur of Autumn (Coven): "as long as you control three or more creatures with different powers", read as a permission to cast is used.
+    'controlsDifferentPowers',
+    // Kianne, Corrupted Memory: "as long as ~'s power is even", read as a permission to cast is used.
+    'thisPowerParity',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
@@ -2925,6 +2929,10 @@ export const CONDITION_KINDS = [
   /** The intervening "if" of the two abilities soulbond stands for (CR 702.95a, D-286): the engine's `soulbondReady`; built by the engine, refused in card data. */
   'soulbondReady',
   'unlessPays',
+  /** "As long as you control three or more creatures with different powers" (Augur of Autumn, CR 208.1): the engine's `controlsDifferentPowers`. */
+  'controlsDifferentPowers',
+  /** "As long as ~'s power is even" (Kianne, Corrupted Memory, CR 107.1): the engine's `thisPowerParity`. */
+  'thisPowerParity',
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',

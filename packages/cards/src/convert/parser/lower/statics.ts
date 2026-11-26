@@ -1015,6 +1015,48 @@ function lowerConditionalCastFromTop(
   };
 }
 
+/**
+ * "As long as ~'s power is even, you may cast noncreature spells as though they had flash." (Kianne, Corrupted Memory; CR 601.3b, 702.8a): the engine's `castAsThoughFlash` of the
+ * spells the words name, the controller's own, with the condition the engine reads as the spell is cast (`rules/legality.ts`). The subject is "you"; "any player" is not read here.
+ */
+function lowerConditionalFlash(
+  ability: Static,
+  part: IrStaticPart,
+  only: Extract<IrStaticEffect, { kind: 'castAsThoughFlash' }>,
+  condition: Condition,
+): LowerResult<readonly Ability[]> {
+  if (part.subject.det !== 'you' || only.anyPlayer === true) return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'ability:staticCondition',
+    'static:castAsThoughFlash',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const { zone: _zone, stackKind: _kind, ...described } = only.spells;
+  const spells = lowerFilter({
+    kind: 'noun',
+    det: 'a',
+    filter: described,
+    upTo: false,
+    plural: true,
+    other: false,
+    span: ability.span,
+    rule: ability.rule,
+  });
+  if (!spells.ok) return spells;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'static',
+        static: { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+        condition,
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** One subject with what it gets or has: one engine `static` ability for each effect, with the condition when there is one. */
 function lowerPart(
   part: IrStaticPart,
@@ -1549,6 +1591,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         const cast = lowerConditionalCastFromTop(ability, part, only, condition);
         if (!cast.ok) return cast;
         abilities.push(...cast.value);
+        continue;
+      }
+      // "As long as ~'s power is even, you may cast noncreature spells as though they had flash." (Kianne, Corrupted Memory).
+      if (only?.kind === 'castAsThoughFlash' && part.effects.length === 1) {
+        const flash = lowerConditionalFlash(ability, part, only, condition);
+        if (!flash.ok) return flash;
+        abilities.push(...flash.value);
         continue;
       }
       if (only !== undefined && isPlayRule(only)) {

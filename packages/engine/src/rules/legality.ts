@@ -146,6 +146,12 @@ function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): bool
   return flashPermissionSources(state).some(
     (source) =>
       (source.anyPlayer || controllerOf(state, source.object) === seat) &&
+      // Kianne, Corrupted Memory: the permission of a permanent applies "as long as" its condition holds, for the controller of the permanent.
+      (source.condition === undefined ||
+        evaluateCondition(state, source.condition, {
+          controller: controllerOf(state, source.object),
+          source: source.object.id,
+        })) &&
       matchesFilter(
         state,
         spell,

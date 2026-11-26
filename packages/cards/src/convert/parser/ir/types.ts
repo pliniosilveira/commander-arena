@@ -979,6 +979,10 @@ export interface IrCondition extends IrNode {
       }
     // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
+    // "you control three or more creatures with different powers" (Augur of Autumn, Coven, CR 208.1): the permanents the noun names, as many as the amount says, with powers all different
+    | { readonly kind: 'controlDifferentPowers'; readonly noun: IrNoun; readonly atLeast: IrAmount }
+    // "~'s power is even", "~'s power is odd" (Kianne, Corrupted Memory, CR 107.1): the power of the permanent itself
+    | { readonly kind: 'thisPowerParity'; readonly parity: 'even' | 'odd' }
     // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
     | { readonly kind: 'aPlayerCardsInHand'; readonly compare: IrComparison }
     // "the player is your opponent and has four or more cards in hand" (Fevered Visions, CR 603.2b, 102.2, 402.1): the player the event of the trigger is about is an

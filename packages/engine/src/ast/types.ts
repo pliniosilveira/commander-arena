@@ -7537,6 +7537,23 @@ export type Keyword =
 export type Condition =
   | { readonly kind: 'controlsAtLeast'; readonly filter: ObjectFilter; readonly count: number }
   /**
+   * "As long as you control three or more creatures with different powers" (Augur of Autumn, Coven, CR 208.1, 207.2c): the battlefield permanents the controller controls that `filter`
+   * matches have at least `count` different powers between them, so `count` of them can be named with powers that are all different (a permanent with no power, as a noncreature, has none).
+   * The powers are those the permanents have now, through every layer, so it is read where a rule acts (a permission to cast, as the spell is cast), never in a layer of `derive`: a
+   * static ability takes it only on a permission to cast (`castFromTopOfLibrary`, `castAsThoughFlash`).
+   */
+  | {
+      readonly kind: 'controlsDifferentPowers';
+      readonly filter: ObjectFilter;
+      readonly count: number;
+    }
+  /**
+   * "As long as Kianne's power is even", "... is odd" (Kianne, Corrupted Memory; CR 107.1: the numbers of the game are integers, a power may be below zero; CR 208.1): the power of the permanent the condition belongs to, as it is now through
+   * every layer, is an even or an odd number. A permanent with no power meets neither. Read where a rule acts (a permission to cast), never in a layer of `derive`: a static ability takes it
+   * only on `castAsThoughFlash` and `castFromTopOfLibrary`.
+   */
+  | { readonly kind: 'thisPowerParity'; readonly parity: 'even' | 'odd' }
+  /**
    * "If you both own and control this creature and a creature named Bruna, the Fading Light" (CR 603.4, 701.42a, D-278): the permanent the ability belongs
    * to is on the battlefield and both owned and controlled by the controller of the ability, and so is another permanent of that card type whose name is
    * `name` (its name as it is now, after copy effects, CR 201.2). Read as the ability triggers and again as it resolves (an intervening "if").
