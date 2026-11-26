@@ -33,14 +33,13 @@ const MAKER = parsed('SYNTHETIC Treasure Maker', 'Sorcery', 'Create two Treasure
 });
 const FILLER = Array.from({ length: 8 }, () => 'Island');
 
-describe('Vihaan, Goldwaker: only its second line is read', () => {
-  test('the real card is still unsupported, for its first line only', () => {
+describe('Vihaan, Goldwaker: both lines are read', () => {
+  test('the real card is supported once the outlaw line and the Treasure line both read', () => {
     const card = GOLDEN.find((c) => c.name === 'Vihaan, Goldwaker');
     if (card === undefined) throw new Error('Vihaan, Goldwaker is not in the golden corpus');
     const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
-    expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.unparsed).toHaveLength(1);
-    expect(JSON.stringify(imported.support.unparsed)).toContain('Other outlaws you control');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
   });
 });
 
