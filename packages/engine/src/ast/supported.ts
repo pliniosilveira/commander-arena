@@ -660,8 +660,9 @@ function activationCostIssues(
 function unlessSacrificeIssues(costs: readonly Cost[], path: string, out: AstIssue[]): void {
   for (const [i, c] of costs.entries()) {
     if (c.kind !== 'sacrifice') continue;
+    // Enchanter's Bane (CR 701.21a): "unless that player sacrifices it", the permanent a target named; `validateCard` allows it only in an `unlessPays`.
     if (
-      'kind' in c.what ||
+      ('kind' in c.what && c.what.kind !== 'target') ||
       c.countX !== undefined ||
       c.anyNumber !== undefined ||
       c.alongside !== undefined

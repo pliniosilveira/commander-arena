@@ -114,6 +114,41 @@ export function sacrificeOf(
   return null;
 }
 
+/** The permanent a `{ kind: 'target' }` sacrifice cost names (Enchanter's Bane): the cost sacrifices that one permanent and nothing else. */
+function sacrificesTarget(cost: readonly Cost[]): boolean {
+  return cost.some((c) => c.kind === 'sacrifice' && 'kind' in c.what && c.what.kind === 'target');
+}
+
+/**
+ * The permanents the payer may sacrifice for the cost (CR 701.21a): those a filter matches among the permanents they control, or, for "unless that player sacrifices it", the one
+ * permanent a target named, when the payer controls it and it can be sacrificed.
+ */
+function unlessSacrificeChoices(
+  state: GameState,
+  payer: SeatId,
+  source: ObjectId | null,
+  cost: readonly Cost[],
+  only: ObjectId | undefined,
+): { readonly legal: ObjectId[]; readonly count: number } | null {
+  if (sacrificesTarget(cost)) {
+    const obj = only === undefined ? undefined : state.objects[only];
+    const legal =
+      only !== undefined &&
+      obj?.zone === 'battlefield' &&
+      controllerOf(state, obj) === payer &&
+      sacrificeCandidates(state, payer, source, {}).includes(only)
+        ? [only]
+        : [];
+    return { legal, count: 1 };
+  }
+  const sacrifice = sacrificeOf(cost);
+  if (sacrifice === null) return null;
+  return {
+    legal: sacrificeCandidates(state, payer, source, sacrifice.filter),
+    count: sacrifice.count,
+  };
+}
+
 /** The energy counters the cost removes (CR 107.14, D-209): the sum of its `energy` costs. */
 export function energyOf(cost: readonly Cost[]): number {
   return cost.reduce((n, c) => n + (c.kind === 'energy' ? c.count : 0), 0);
@@ -130,6 +165,7 @@ export function canPayUnless(
   payer: SeatId,
   cost: readonly Cost[],
   source: ObjectId | null = null,
+  only?: ObjectId,
 ): boolean {
   if (
     cost.some(
@@ -147,13 +183,8 @@ export function canPayUnless(
   // CR 701.68b: a player with no creature that can take the counters can't choose to blight, so can't pay (CR 118.3).
   if (blightOf(cost) > 0 && blightCandidates(state, payer).length === 0) return false;
   // CR 701.21a, 118.3: the payer sacrifices permanents they control, so they need that many that match (and that can be sacrificed).
-  const sacrifice = sacrificeOf(cost);
-  if (
-    sacrifice !== null &&
-    sacrificeCandidates(state, payer, source, sacrifice.filter).length < sacrifice.count
-  ) {
-    return false;
-  }
+  const sacrifice = unlessSacrificeChoices(state, payer, source, cost, only);
+  if (sacrifice !== null && sacrifice.legal.length < sacrifice.count) return false;
   const life = lifeOf(cost);
   const seat = getSeat(state, payer);
   if (life > 0 && (seat.life < life || lifeTotalIsLocked(state, payer))) return false;
@@ -201,7 +232,15 @@ export function runCounterUnlessPays(
   }
   if (instruction.stage === 'ask') {
     // CR 118.3: a cost that cannot be paid is not paid, so nobody is asked.
-    if (!canPayUnless(state, payer, instruction.cost, res.source)) {
+    if (
+      !canPayUnless(
+        state,
+        payer,
+        instruction.cost,
+        res.source,
+        instruction.kind === 'unlessPays' ? instruction.sacrificeOnly : undefined,
+      )
+    ) {
       return notPaid(state, instruction);
     }
     const info = sourceInfo(state, res.source);
@@ -241,8 +280,14 @@ export function runCounterUnlessPays(
   }
   if (instruction.stage === 'sacrifice') {
     // CR 701.21a: the permanents of the payer that are sacrificed; they accepted, so no `cancel`.
-    const cost = sacrificeOf(instruction.cost);
-    const legal = cost === null ? [] : sacrificeCandidates(state, payer, res.source, cost.filter);
+    const cost = unlessSacrificeChoices(
+      state,
+      payer,
+      res.source,
+      instruction.cost,
+      instruction.kind === 'unlessPays' ? instruction.sacrificeOnly : undefined,
+    );
+    const legal = cost === null ? [] : cost.legal;
     return {
       state,
       events: [],
@@ -361,9 +406,15 @@ export function acceptUnless(
     }
   }
   // CR 701.21a (Ward—Sacrifice a legendary creature): with exactly as many permanents that match as are asked for the engine chooses them, with more the payer chooses (stage 'sacrifice').
-  const sacrifice = sacrificeOf(head.cost);
+  const sacrifice = unlessSacrificeChoices(
+    next,
+    payer,
+    res.source,
+    head.cost,
+    head.kind === 'unlessPays' ? head.sacrificeOnly : undefined,
+  );
   if (sacrifice !== null) {
-    const legal = sacrificeCandidates(next, payer, res.source, sacrifice.filter);
+    const legal = sacrifice.legal;
     if (legal.length > sacrifice.count) {
       return { state: next, events, queue: [{ ...head, stage: 'sacrifice' }, ...rest] };
     }
@@ -487,9 +538,15 @@ export function sacrificeUnless(
   payer: SeatId,
   chosen: readonly ObjectId[],
 ): UnlessAnswer | null {
-  const cost = sacrificeOf(head.cost);
+  const cost = unlessSacrificeChoices(
+    state,
+    payer,
+    res.source,
+    head.cost,
+    head.kind === 'unlessPays' ? head.sacrificeOnly : undefined,
+  );
   if (cost === null || chosen.length !== cost.count) return null;
-  const legal = sacrificeCandidates(state, payer, res.source, cost.filter);
+  const legal = cost.legal;
   if (!chosen.every((id) => legal.includes(id))) return null;
   const gone = sacrificeAll(state, payer, res, chosen, false);
   if (gone === null) return null;

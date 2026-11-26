@@ -3680,7 +3680,7 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
 
 // ---- Costs (CR 118)
 
-export function checkCost(cost: Cost, path: string, out: Out): void {
+export function checkCost(cost: Cost, path: string, out: Out, allowTarget = false): void {
   switch (cost?.kind) {
     case 'mana':
       checkManaSymbols(cost.symbols, `${path}.symbols`, out);
@@ -3869,7 +3869,32 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           issue(out, `${path}.count`, 'this permanent is sacrificed once: no count');
         }
       }
-      if (kindOf(cost.what) !== 'this') {
+      if (kindOf(cost.what) === 'target') {
+        // Enchanter's Bane (CR 701.21a): "unless that player sacrifices it", the permanent a target names; `unlessPays` checks the target and where the cost stands.
+        if (!allowTarget) {
+          issue(
+            out,
+            `${path}.what`,
+            'a sacrifice of a target is read only in the cost of an unlessPays',
+          );
+        }
+        const ref = cost.what as { readonly id?: unknown };
+        if (typeof ref.id !== 'string' || ref.id === '') {
+          issue(out, `${path}.what.id`, 'a sacrifice of a target names the target by its id');
+        }
+        if (
+          cost.count !== undefined ||
+          cost.countX !== undefined ||
+          cost.anyNumber !== undefined ||
+          cost.alongside !== undefined
+        ) {
+          issue(
+            out,
+            `${path}`,
+            'a sacrifice of a target is one permanent: no count, X, any number or alongside',
+          );
+        }
+      } else if (kindOf(cost.what) !== 'this') {
         const what = cost.what as ObjectFilter;
         checkFilter(what, `${path}.what`, out);
         // CR 701.21a: a player can only sacrifice permanents they control, on the battlefield.
@@ -4160,13 +4185,18 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
   }
 }
 
-export function checkCosts(costs: readonly Cost[], path: string, out: Out): void {
+export function checkCosts(
+  costs: readonly Cost[],
+  path: string,
+  out: Out,
+  allowTarget = false,
+): void {
   if (!Array.isArray(costs) || costs.length === 0) {
     issue(out, path, 'cost list is empty (an ability with no cost must say {0}, CR 602.1)');
     return;
   }
   costs.forEach((c, i) => {
-    checkCost(c, `${path}[${i}]`, out);
+    checkCost(c, `${path}[${i}]`, out, allowTarget);
   });
 }
 
@@ -7100,7 +7130,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'unlessPays':
       // CR 118.12a: "[do something] unless [a player] pays [cost]".
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      checkCosts(e.cost, `${path}.cost`, out);
+      checkCosts(e.cost, `${path}.cost`, out, true);
+      // Enchanter's Bane (CR 701.21a): a sacrifice of a target names a target of this ability, and is the only cost.
+      e.cost.forEach((c, i) => {
+        if (c?.kind === 'sacrifice' && kindOf(c.what) === 'target') {
+          checkTargetRef(
+            (c.what as { id: string }).id,
+            'object',
+            `${path}.cost[${i}].what`,
+            scope,
+            out,
+          );
+          if (e.cost.length !== 1) {
+            issue(out, `${path}.cost`, 'a sacrifice of a target is the whole cost');
+          }
+        }
+      });
       checkEffect(e.effect, `${path}.effect`, scope, out);
       if (e.optional !== undefined && e.optional !== true) {
         issue(out, `${path}.optional`, 'optional must be true when present');

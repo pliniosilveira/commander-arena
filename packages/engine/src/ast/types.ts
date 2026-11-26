@@ -1947,7 +1947,14 @@ export type Cost =
   | { readonly kind: 'exileFromHand'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'sacrifice';
-      readonly what: { readonly kind: 'this' } | ObjectFilter;
+      /**
+       * `{ kind: 'target', id }` (Enchanter's Bane, Star Athlete; CR 701.21a, 118.12a): in the cost of an `unlessPays` only, the permanent a target of the ability names ("unless that player sacrifices
+       * it"), sacrificed by the player who pays, who must control it. Read when the effect resolves.
+       */
+      readonly what:
+        | { readonly kind: 'this' }
+        | { readonly kind: 'target'; readonly id: string }
+        | ObjectFilter;
       /**
        * "Sacrifice two artifacts" (D-133): how many permanents are sacrificed, 2 or more; left out for one. Only in the
        * cost of an activated ability (not an additional cost of a spell or the cost of a mana ability), and not with

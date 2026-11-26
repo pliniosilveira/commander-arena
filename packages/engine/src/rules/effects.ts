@@ -1805,6 +1805,14 @@ function runEffect(
               ? costWithHandSizeX(effect.cost, state.seats[seat]?.hand.length ?? 0)
               : effect.cost;
           if (cost === null) return [];
+          // CR 701.21a (Enchanter's Bane): "unless that player sacrifices it" names the permanent a target chose; worked out now, as the target is now.
+          const aimed = cost.find(
+            (c) => c.kind === 'sacrifice' && 'kind' in c.what && c.what.kind === 'target',
+          );
+          const only =
+            aimed?.kind === 'sacrifice' && 'kind' in aimed.what && aimed.what.kind === 'target'
+              ? resolveObjects(state, aimed.what, ctx, targets)[0]
+              : undefined;
           return [
             {
               kind: 'unlessPays' as const,
@@ -1813,6 +1821,7 @@ function runEffect(
               stage: 'ask' as const,
               effect: effect.effect,
               optional: effect.optional === true,
+              ...(only === undefined ? {} : { sacrificeOnly: only }),
               ...(effect.upkeep === undefined ? {} : { upkeep: effect.upkeep }),
             },
           ];

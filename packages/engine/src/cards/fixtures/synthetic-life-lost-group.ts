@@ -13,6 +13,7 @@ import { kw, singleFace } from './helpers';
 const YOU = { kind: 'you' } as const;
 const THIS = { kind: 'this' } as const;
 const T1 = { kind: 'target', id: 't1' } as const;
+const T1_REF = { kind: 'target', id: 't1' } as const;
 
 /** X of the dragon scholar: the opponents this creature or a Dragon dealt combat damage to this turn. */
 const DAMAGED_OPPONENTS: Amount = {
@@ -395,5 +396,41 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
     toughness: 1,
     oracleText: '',
     abilities: [],
+  }),
+  // "At the beginning of your end step, target enchantment deals damage equal to its mana value to its controller unless that player sacrifices it."
+  singleFace({
+    name: 'SYNTHETIC Tithing Idol',
+    manaCost: ['2', 'R'],
+    types: ['creature'],
+    subtypes: ['Imp'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 1,
+    toughness: 1,
+    oracleText:
+      'At the beginning of your end step, target enchantment deals damage equal to its mana value to its controller unless that player sacrifices it.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'you' },
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'battlefield', types: ['enchantment'] } },
+          },
+        ],
+        effect: {
+          kind: 'unlessPays',
+          player: { kind: 'controllerOf', of: T1_REF },
+          cost: [{ kind: 'sacrifice', what: { kind: 'target', id: 't1' } }],
+          effect: {
+            kind: 'dealDamage',
+            from: T1_REF,
+            amount: { kind: 'manaValueOf', of: T1_REF },
+            to: { kind: 'controllerOf', of: T1_REF },
+          },
+        },
+      },
+    ],
   }),
 ];

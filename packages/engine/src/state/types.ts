@@ -2090,6 +2090,8 @@ export type Instruction =
       readonly stage: 'ask' | 'discard' | 'blight' | 'sacrifice' | 'pay';
       readonly effect: Effect;
       readonly optional: boolean;
+      /** A sacrifice cost of `{ kind: 'target', id }` (CR 701.21a): the one permanent, worked out as the effect began, that the payer may sacrifice. */
+      readonly sacrificeOnly?: ObjectId;
       /**
        * "You may pay [cost]. If you do, [effect]" (`mayPay`, CR 702.101a, D-120): `seat` is the controller,
        * and `effect` runs when they pay, not when they do not. The purpose of both questions is 'mayPay'.
