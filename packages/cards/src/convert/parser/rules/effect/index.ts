@@ -104,6 +104,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
+import { EXILE_COUNTERS_EFFECT_RULES } from './exile-counters';
 import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
@@ -1451,6 +1452,8 @@ export const EFFECT_RULES = [
   // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
   ...JESKAI_FLASHBACK_EFFECT_RULES,
   ...LOREHOLD_G1_EFFECT_RULES,
+  // Mari, the Killing Quill: "exile it with a hit counter on it" and "remove a hit counter from a card that player owns in exile" start like a plain exile and a plain removal, and are tried first.
+  ...EXILE_COUNTERS_EFFECT_RULES,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller" starts like the plain "each" rules, and is tried first.
   ...CONTROLLER_DAMAGE_EFFECT_RULES,
   // Issue 279 (Etali, Primal Storm): "exile the top card of each player's library" starts like the plain exile, and is tried first.

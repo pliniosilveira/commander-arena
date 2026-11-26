@@ -1064,6 +1064,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Lander',
     'Wicked Role',
     'Junk',
+    // CR 111.10g (Kamber, the Plunderer): "{1}, {T}, Discard a card, Sacrifice this token: Draw a card."
+    'Blood',
   ],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
@@ -1816,6 +1818,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Lander',
     'Wicked Role',
     'Junk',
+    'Blood',
     'custom',
     'copyOf',
     'tapped',

@@ -2361,7 +2361,8 @@ export type TokenPreset =
   | 'Incubator'
   | 'Lander'
   | 'Wicked Role'
-  | 'Junk';
+  | 'Junk'
+  | 'Blood';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -4468,12 +4469,15 @@ export type Effect =
    * permanent can't have (CR 122.6) can't be chosen. Nothing is moved when the two are the same permanent, the first has no counter the second can have, or either is no longer on the
    * battlefield as the effect runs (CR 122.5). With `anyNumber` ("Move any number of counters from target permanent you control onto a second target permanent you control", Resourceful
    * Defense): the controller moves as many counters as they like, one at a time, and chooses to stop (the last option of the `counterPick` decision, `Done`), so a move may be none.
+   * `from` may name several permanents ("Move any number of +1/+1 counters from other permanents you control onto this creature", Aetherborn Marauder: an `each` selector): the counters
+   * come off any of them, the permanent and the kind chosen each time. `counter` limits the move to one kind of counter ("+1/+1 counters"); left out, any kind may go.
    */
   | {
       readonly kind: 'moveCounter';
-      readonly from: ObjectRef;
+      readonly from: ObjectSelector;
       readonly to: ObjectRef;
       readonly anyNumber?: true;
+      readonly counter?: string;
     }
   /**
    * "Remove any number of counters from among permanents on the battlefield" and "Remove up to three counters from target permanent" (CR 122.1, 608.2d; Eventide's Shadow, Glissa
@@ -4485,6 +4489,16 @@ export type Effect =
       readonly kind: 'removeChosenCounters';
       readonly objects: ObjectSelector;
       readonly upTo?: number;
+      /**
+       * "Remove a hit counter from a card that player owns in exile" (Mari, the Killing Quill; CR 122.1): only counters of this kind may be taken. The permanents `objects` names may be
+       * cards in exile as well as permanents on the battlefield (CR 122.1: counters stay on a card in exile). Left out, any kind.
+       */
+      readonly counter?: string;
+      /**
+       * "Remove a hit counter from a card that player owns in exile" (Mari, the Killing Quill): the controller takes `upTo` counters when there are that many to take, with no
+       * choice to stop (the question lists no "Done"). An offer in the text ("you may") is the `optional` of the ability or a `may` around this, not the last option of the question.
+       */
+      readonly required?: true;
     }
   /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,

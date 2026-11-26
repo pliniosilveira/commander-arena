@@ -4743,6 +4743,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Lander',
   'Wicked Role',
   'Junk',
+  'Blood',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
@@ -5854,6 +5855,8 @@ export const MAY_EFFECT_KINDS = [
   'revealTop',
   // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
   'removeCounters',
+  // Mari, the Killing Quill (CR 122.1, 608.2c): "you may remove a hit counter from a card that player owns in exile. If you do, ...": a removal that took a counter is something done.
+  'removeChosenCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
   // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
@@ -7849,11 +7852,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'moveCounter':
-      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
-      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`; the first may be several (`each`).
+      checkObjectSelector(e.from, `${path}.from`, scope, out);
       checkRef(e.to, 'object', `${path}.to`, scope, out);
       if (e.anyNumber !== undefined && e.anyNumber !== true) {
         issue(out, `${path}.anyNumber`, 'anyNumber must be true');
+      }
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'moveCounter names a kind of counter');
       }
       break;
     case 'removeChosenCounters':
@@ -7861,6 +7867,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       if (e.upTo !== undefined && (!isCount(e.upTo) || e.upTo < 1)) {
         issue(out, `${path}.upTo`, 'upTo must be a positive integer');
+      }
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'removeChosenCounters names a kind of counter');
+      }
+      if (e.required !== undefined && (e.required !== true || e.upTo === undefined)) {
+        issue(out, `${path}.required`, 'required must be true, and needs upTo');
       }
       break;
     case 'moveAllCounters':

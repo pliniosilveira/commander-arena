@@ -1497,6 +1497,10 @@ export type Instruction =
       readonly chosen: string | null;
       /** A move that takes "any number of counters": the player may stop (`left` is null), as a removal may (Resourceful Defense). */
       readonly anyNumber?: true;
+      /** Only counters of this kind may be taken ("move any number of +1/+1 counters", "remove a hit counter"); left out, any kind. */
+      readonly counterKind?: string;
+      /** A removal that may not stop before it has taken `left` counters or has none left to take (no "Done" option). */
+      readonly required?: true;
     }
   | {
       readonly kind: 'moveCounters';
