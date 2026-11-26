@@ -1,9 +1,16 @@
-import type { MatchResult, PlanWork, TableReport, TableResult } from '@commander-arena/ai';
+import type {
+  MatchResult,
+  PlanWork,
+  SearchWork,
+  TableReport,
+  TableResult,
+} from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
 import {
   formatMatch,
   formatPlanning,
   formatRound,
+  formatSearches,
   formatTable,
   formatTableReport,
   formatTimes,
@@ -79,6 +86,34 @@ describe('formatPlanning', () => {
 
   test('says nothing for an agent that never planned', () => {
     expect(formatPlanning('greedy', [])).toBeNull();
+  });
+});
+
+describe('formatSearches', () => {
+  const search = (o: Partial<SearchWork> = {}): SearchWork => ({
+    kind: 'priority',
+    calls: 100,
+    units: 1500,
+    cut: null,
+    ms: 10,
+    ...o,
+  });
+
+  test('counts the decisions that searched, the share each cut stopped and the mean work of one', () => {
+    const searches = [
+      search(),
+      search({ kind: 'declareAttackers', cut: 'clock', calls: 20, units: 300, ms: 30 }),
+      search({ cut: 'work' }),
+      search({ cut: 'work', calls: 180, units: 2700, ms: 0 }),
+    ];
+    expect(formatSearches('heuristic', searches)).toBe(
+      'searches heuristic: 4 decisions searched; cut by the clock 25.0%, by the work budget 50.0%; ' +
+        'per decision: 100.0 engine calls, 1500 work units, 12.50 ms',
+    );
+  });
+
+  test('says nothing for an agent that never searched', () => {
+    expect(formatSearches('greedy', [])).toBeNull();
   });
 });
 
