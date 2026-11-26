@@ -2231,6 +2231,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledCreatures: 'an exile effect',
   exiledCreatureCards: 'an exile effect',
   discardedTypeCount: 'a discard effect',
+  chosenStillOnBattlefield: 'a controllersMayExile effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -2290,6 +2291,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'exileTop') return ['exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
+  // Disorienting Choice: "if one or more of the chosen permanents are still on the battlefield".
+  if (e?.kind === 'controllersMayExile') return ['chosenStillOnBattlefield'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
   // CR 608.2c (Travel Through Caradhras): "For each Redhorn Pass vote, search ...": what the repeated effect does is counted each time it is done (0 for a number of 0).
@@ -10102,6 +10105,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.filter.controller`,
           'the opponent is the player each choice is for: the filter names no controller',
         );
+      }
+      break;
+    case 'controllersMayExile':
+      // CR 608.2d (Disorienting Choice): the permanents are the targets of a slot of the spell or ability; each is offered to the player who controls it.
+      if (kindOf(e.objects) !== 'target') {
+        issue(out, `${path}.objects`, 'controllersMayExile names the permanents of a target slot');
+      } else {
+        checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
       break;
     case 'proliferate':

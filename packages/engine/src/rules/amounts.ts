@@ -8,11 +8,11 @@
  * Every amount is a whole number that is never negative (CR 107.1b: a negative number counts as 0 where a number of
  * objects or an amount of life or cards is needed).
  */
-import type { Amount, ObjectFilter, PlayerStat } from '../ast/types';
+import type { Amount, ObjectFilter, PlayerStat, ThisWayKind } from '../ast/types';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
-import type { ChosenTarget, GameState } from '../state/types';
+import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { commanderIdentity } from './commander-identity';
 import { controllerOf } from './control';
 import { countersOfKind } from './counters-of-kind';
@@ -296,6 +296,24 @@ export function opponentsWithMore(
  * or the effect moved it (CR 608.2h, 113.7a): "Its controller gains life equal to its power" after
  * the creature was exiled gives the power it last had.
  */
+/**
+ * What the earlier instructions of this resolution did, for the `thisWay` amounts and conditions. Every count is the one the instructions kept, except `chosenStillOnBattlefield` (Disorienting
+ * Choice, CR 608.2c, 400.7): the permanents a `controllersMayExile` named that are still on the battlefield as the same objects, counted as it is read (a permanent that was exiled, or that left
+ * any other way, is a new object).
+ */
+export function thisWayCount(
+  state: GameState,
+  thisWay: ThisWayCounts | undefined,
+  what: ThisWayKind,
+): number {
+  if (what === 'chosenStillOnBattlefield') {
+    return (thisWay?.chosenPermanents ?? []).filter(
+      (id) => state.objects[id]?.zone === 'battlefield',
+    ).length;
+  }
+  return thisWay?.[what] ?? 0;
+}
+
 export function amountOf(
   state: GameState,
   amount: Amount,
@@ -604,7 +622,7 @@ export function stateAmountOf(
     case 'thisWay':
       // Each player's own number, read by `lifeAmountFor`, never here (`validateCard` allows it only as the whole amount of a `loseLife`).
       if (amount.what === 'destroyedCreaturesOfAffected') return 0;
-      return ctx.thisWay?.[amount.what] ?? 0;
+      return thisWayCount(state, ctx.thisWay, amount.what);
     case 'opponentsWithMore':
       return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
     case 'chosenPlayerLead': {

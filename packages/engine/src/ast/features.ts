@@ -611,6 +611,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayerChoosesDestroy',
     // Ultimate Magic: Meteor: "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents."
     'chooseOnePerOpponentDestroy',
+    // Disorienting Choice: "For each permanent chosen this way, its controller may exile it."
+    'controllersMayExile',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
     'exileTop',
     'mayPlay',
@@ -3693,6 +3695,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   proliferate: true,
   eachPlayerChoosesDestroy: true,
   chooseOnePerOpponentDestroy: true,
+  controllersMayExile: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,

@@ -4479,6 +4479,37 @@ function runEffect(
         ],
       );
 
+    case 'controllersMayExile': {
+      // CR 608.2d, 101.4 (Disorienting Choice): each permanent of the slot that is still a legal target and on the battlefield is offered to the player who controls it, in turn order from the
+      // controller of the effect; the ones they pick are exiled together at the end (rules/choose-each.ts). The permanents are remembered for "the chosen permanents ... still on the battlefield".
+      const chosen = resolveObjects(state, effect.objects, ctx, targets).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
+      const controllers = new Set(
+        chosen.flatMap((id) => {
+          const obj = state.objects[id];
+          return obj === undefined ? [] : [controllerOf(state, obj)];
+        }),
+      );
+      return {
+        ...done(
+          state,
+          [],
+          [
+            {
+              kind: 'chooseEach',
+              filter: {},
+              mayExile: chosen,
+              seats: seatsInOrder(state, res.controller).filter((seat) => controllers.has(seat)),
+              picked: [],
+              chosen: null,
+            },
+          ],
+        ),
+        thisWay: { chosenPermanents: chosen },
+      };
+    }
+
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
       // "Proliferate X times": each time is its own choice, read once as the effect starts.
