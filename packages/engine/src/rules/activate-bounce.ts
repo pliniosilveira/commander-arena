@@ -53,7 +53,11 @@ function rememberAttack(state: GameState, ability: ObjectId, id: ObjectId): Game
 }
 
 /** Writes the cards the cost exiled on the ability that is being paid for (`StackData.movedBefore`), for `moved` in its effect. */
-function rememberExiled(state: GameState, ability: ObjectId, exiled: readonly ObjectId[]): GameState {
+function rememberExiled(
+  state: GameState,
+  ability: ObjectId,
+  exiled: readonly ObjectId[],
+): GameState {
   const stack = state.objects[ability]?.stack;
   if (stack == null) return state;
   return patchObject(state, ability, { stack: { ...stack, movedBefore: [...exiled] } });
@@ -179,9 +183,18 @@ export function answerBounceCost(
   if (state.casting?.activation == null || state.casting.stage !== 'bounce') {
     return fail('No permanents are being chosen to return for a cost');
   }
-  const exile = breakDown(state.casting.activation.ability.cost, state.casting.activation.x)
-    ?.bounceToExile;
-  return chosen({ ...state, pending: null }, [], objects, false, next, exile === true ? 'exileCost' : 'bounce');
+  const exile = breakDown(
+    state.casting.activation.ability.cost,
+    state.casting.activation.x,
+  )?.bounceToExile;
+  return chosen(
+    { ...state, pending: null },
+    [],
+    objects,
+    false,
+    next,
+    exile === true ? 'exileCost' : 'bounce',
+  );
 }
 
 /**

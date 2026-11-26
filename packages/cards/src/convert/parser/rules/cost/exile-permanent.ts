@@ -1,7 +1,7 @@
 /**
  * Cost of the Jump Scare! deck (issue #108), Primordial Mist: "Exile a face-down permanent you control face up" (CR 118.3, 406.3, 708.9, 602.2b).
  */
-import { fail, literal, pattern, satisfy, map } from '../../combinators';
+import { fail, literal, map, pattern, satisfy } from '../../combinators';
 import type { IrCost, IrNoun } from '../../ir/types';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';

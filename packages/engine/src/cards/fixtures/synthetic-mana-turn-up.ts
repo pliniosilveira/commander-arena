@@ -16,7 +16,8 @@ export const SYNTHETIC_MANA_TURN_UP_LIST: readonly CardDefinition[] = [
     types: ['enchantment'],
     colors: ['U'],
     colorIdentity: ['U'],
-    oracleText: 'Exile a face-down permanent you control face up: You may play that card this turn.',
+    oracleText:
+      'Exile a face-down permanent you control face up: You may play that card this turn.',
     abilities: [
       {
         kind: 'activated',

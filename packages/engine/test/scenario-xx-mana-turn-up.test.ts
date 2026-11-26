@@ -77,7 +77,11 @@ describe('spendOnly.turnFaceUp (CR 106.6, 701.40b)', () => {
   });
 
   test('a cost it cannot cover is not offered: the rock makes green only', () => {
-    const g = base().battlefield(LORD, { faceDown: true }).battlefield(ROCK).at('precombatMain').build();
+    const g = base()
+      .battlefield(LORD, { faceDown: true })
+      .battlefield(ROCK)
+      .at('precombatMain')
+      .build();
     g.expect.illegal(0, { turnFaceUp: LORD });
   });
 });
