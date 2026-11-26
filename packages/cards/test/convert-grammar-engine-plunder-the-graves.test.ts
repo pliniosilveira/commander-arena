@@ -5,7 +5,7 @@ import { type CardDefinition, getLegalActions, validateCard } from '@commander-a
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES, parseOnly } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed, parseOnly } from './convert-grammar-helpers';
 import { syntheticCard } from './convert-helpers';
 
 const GOLDEN = parseGolden(
@@ -184,7 +184,7 @@ describe('Champion of Stray Souls', () => {
     const onBattlefield = board();
     expect(
       getLegalActions(onBattlefield.state, 0).some(
-        (a) => a.kind === 'activateAbility' && a.ability === 1,
+        (a) => a.kind === 'activateAbility' && a.abilityIndex === 1,
       ),
     ).toBe(false);
     const g = scenario()
@@ -234,5 +234,153 @@ describe('"Put this card from your graveyard on top of your library." (CR 113.6b
     expect(
       abilityOf('Put this card from your graveyard on top of your library.').support.status,
     ).toBe('unsupported');
+  });
+});
+
+describe('Diabolic Servitude', () => {
+  const servitude = real('Diabolic Servitude');
+  const disenchant = parsed(
+    'SYNTHETIC Parsed Disenchant',
+    'Instant',
+    'Destroy target enchantment.',
+    {
+      manaCost: '{U}',
+      colors: ['U'],
+    },
+  );
+  const DISENCHANT = disenchant.name;
+  const board = (seats: 2 | 3 = 2) => {
+    const b = scenario({ seats })
+      .define(servitude)
+      .define(disenchant)
+      .seat(0)
+      .library(...Array.from({ length: 6 }, () => 'Swamp'))
+      .hand(servitude.name)
+      .battlefield('Swamp', { count: 4 })
+      .graveyard('Grizzly Bears')
+      .seat(1)
+      .library(...Array.from({ length: 6 }, () => 'Swamp'))
+      .hand('Lightning Bolt', DISENCHANT)
+      .battlefield('Mountain', { count: 3 })
+      .battlefield('Island')
+      .graveyard('Llanowar Elves');
+    return (
+      seats === 3
+        ? b
+            .seat(2)
+            .library(...Array.from({ length: 6 }, () => 'Swamp'))
+            .graveyard('Llanowar Elves')
+        : b
+    )
+      .at('precombatMain', { active: 0 })
+      .build();
+  };
+  const entered = (seats: 2 | 3 = 2) => {
+    const g = board(seats);
+    g.act(0).cast(servitude.name, { pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('is valid: three linked triggered abilities, the first remembers the creature it puts onto the battlefield', () => {
+    expect(validateCard(servitude)).toEqual([]);
+    const [enters, dies, leaves] = servitude.faces[0]?.abilities ?? [];
+    expect(enters).toMatchObject({
+      trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+      effect: { kind: 'moveToZone', to: 'battlefield', putWithSource: true },
+    });
+    expect(dies).toMatchObject({
+      trigger: { kind: 'dies', what: { types: ['creature'], putWithSource: true } },
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'exile', objects: { kind: 'triggerSubject' } },
+          { kind: 'moveToZone', objects: { kind: 'this' }, to: 'hand' },
+        ],
+      },
+    });
+    expect(leaves).toMatchObject({
+      trigger: { kind: 'leavesBattlefield', what: { kind: 'this' } },
+      effect: { kind: 'exile', objects: { kind: 'putWithThis' } },
+    });
+  });
+
+  test('its enters ability returns a creature card of its controller’s graveyard, under their control', () => {
+    const g = entered();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('when the creature it returned dies, the card is exiled and the enchantment goes back to its owner’s hand', () => {
+    const g = entered();
+    g.act(0).pass();
+    g.act(1).cast('Lightning Bolt', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone(servitude.name, 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('when the enchantment leaves the battlefield, the creature it returned is exiled', () => {
+    const g = entered();
+    g.act(0).pass();
+    g.act(1).cast(DISENCHANT, { targets: [servitude.name], pay: true });
+    g.passAll();
+    g.expect.zone(servitude.name, 'graveyard', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with three seats only its controller’s graveyard is a source, and the link is the same', () => {
+    const g = entered(3);
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 1 });
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 2 });
+    g.act(0).pass();
+    g.act(1).cast(DISENCHANT, { targets: [servitude.name], pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+  });
+});
+
+describe('linked abilities that read what another ability put onto the battlefield (CR 607.2), the grammar', () => {
+  const faceOf = (text: string, subtypes = 'Enchantment') =>
+    parseOnly(
+      syntheticCard({
+        name: 'SYNTHETIC Linker',
+        typeLine: subtypes,
+        manaCost: '{3}{B}',
+        oracleText: text,
+      }),
+    );
+  const MAKER =
+    'When this enchantment enters, return target creature card from your graveyard to the battlefield.';
+  const LEAVES =
+    'When this enchantment leaves the battlefield, exile the creature put onto the battlefield with this enchantment.';
+
+  test('one ability that puts a permanent onto the battlefield is the one the others are linked to', () => {
+    const card = faceOf(`${MAKER}\n${LEAVES}`);
+    expect(card.support.status).toBe('supported');
+  });
+
+  test('a reader with no ability that puts a permanent onto the battlefield is refused, never guessed', () => {
+    const card = faceOf(LEAVES);
+    expect(card.support.status).toBe('unsupported');
+  });
+
+  test('two abilities that put permanents onto the battlefield leave the link ambiguous: the readers are refused', () => {
+    const card = faceOf(
+      `${MAKER}\nWhen this enchantment dies, return target creature card from your graveyard to the battlefield.\n${LEAVES}`,
+    );
+    expect(card.support.status).toBe('unsupported');
+    expect(card.support.unparsed.length).toBeGreaterThan(0);
+  });
+
+  test('"the creature put onto the battlefield with ~" is no other creature: "a creature" is not read', () => {
+    const card = faceOf(
+      `${MAKER}\nWhen this enchantment leaves the battlefield, exile a creature put onto the battlefield with this enchantment.`,
+    );
+    expect(card.support.status).toBe('unsupported');
   });
 });
