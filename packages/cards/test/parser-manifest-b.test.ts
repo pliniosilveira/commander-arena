@@ -113,7 +113,10 @@ describe('face-down and face-up permanents (CR 708.2)', () => {
       {
         effect: {
           kind: 'grantAbility',
-          objects: { kind: 'each', filter: { types: ['creature'], controller: 'you', facing: 'up' } },
+          objects: {
+            kind: 'each',
+            filter: { types: ['creature'], controller: 'you', facing: 'up' },
+          },
         },
       },
     ]);
@@ -204,7 +207,10 @@ describe('turn that creature face up', () => {
   });
 
   test('about the creature manifest dread manifested', () => {
-    const face = readAll('When ~ enters, manifest dread, then turn that creature face up.', 'creature');
+    const face = readAll(
+      'When ~ enters, manifest dread, then turn that creature face up.',
+      'creature',
+    );
     expect(face.abilities).toMatchObject([
       {
         effect: {

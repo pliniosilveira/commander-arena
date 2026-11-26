@@ -162,8 +162,8 @@ describe('"if you control no face-down permanents" (CR 603.4)', () => {
       .hand(GLITCH)
       .pool('UUU')
       .library('Island', { label: 'a' })
-        .library('Forest', { label: 'b' })
-        .library(...FILLER)
+      .library('Forest', { label: 'b' })
+      .library(...FILLER)
       .seat(1)
       .battlefield(VANILLA, { faceDown: true })
       .library('Plains')
@@ -176,7 +176,10 @@ describe('"if you control no face-down permanents" (CR 603.4)', () => {
 
 describe('"Manifest a card from your hand" (CR 701.40a)', () => {
   const game = (hand: readonly string[]): ScenarioGame => {
-    let b = scenario().seat(0).battlefield(SCROLL).library(...FILLER);
+    let b = scenario()
+      .seat(0)
+      .battlefield(SCROLL)
+      .library(...FILLER);
     for (const name of hand) b = b.hand(name);
     return b.seat(1).library('Plains').build();
   };
@@ -230,7 +233,9 @@ describe('"Manifest a card from your hand" (CR 701.40a)', () => {
 });
 
 describe('"face-up nontoken creatures you control gain ... until end of turn" (CR 611.2c, 613.1f)', () => {
-  const game = (extra: (b: ReturnType<typeof scenario>) => ReturnType<typeof scenario> = (b) => b) =>
+  const game = (
+    extra: (b: ReturnType<typeof scenario>) => ReturnType<typeof scenario> = (b) => b,
+  ) =>
     extra(
       scenario()
         .seat(0)
@@ -291,8 +296,8 @@ describe('manifest dread, then counters on "that creature" (CR 608.2c, 400.7j)',
       .hand(BRUTE)
       .pool('GGGGG')
       .library('Island', { label: 'a' })
-        .library('Forest', { label: 'b' })
-        .library(...FILLER)
+      .library('Forest', { label: 'b' })
+      .library(...FILLER)
       .seat(1)
       .library('Plains')
       .build();

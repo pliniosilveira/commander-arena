@@ -138,7 +138,6 @@ import { runLoseLifeManaValue } from './lose-life-mana-value';
 import { spendRestrictionOf } from './mana-outcomes';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
-import { runTurnFaceUp } from './turn-face-up';
 import {
   runGainActivatedAbilitiesOf,
   runMayCast,
@@ -214,6 +213,7 @@ import { TIME_COUNTER } from './time-counter';
 import { makeSettled } from './token-batch';
 import type { TokenBatch } from './token-replacement';
 import { runTransform } from './transform';
+import { runTurnFaceUp } from './turn-face-up';
 import { untapPermanent } from './untap';
 import { runVote } from './vote';
 import { winTheGame } from './win-game';

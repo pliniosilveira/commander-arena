@@ -367,46 +367,49 @@ export function runChooseMove(
           ? {}
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
         prompt:
-          instruction.permit !== undefined
-            ? 'Choose an exiled card to play this turn'
-            : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
-              decider !== chooser
-              ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
-                  instruction.to
-                ].replace('your', 'their')}`
-              : legal.length === 0
-                ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
-                  `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
-                : `Choose ${
-                    instruction.minCardTypes !== undefined
-                      ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-                      : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-                  } ${
-                    instruction.among !== undefined && zone === 'exile'
-                      ? 'from among the cards exiled this way'
-                      : instruction.among !== undefined
-                        ? 'from among the cards put into your graveyard'
-                        : instruction.anyOwner === true
-                          ? 'from a graveyard'
-                          : zone === 'exile'
-                            ? 'exiled with this permanent'
-                            : instruction.graveyardOf !== undefined
-                              ? instruction.graveyardOf === chooser
-                                ? 'from your graveyard'
-                                : "from an opponent's graveyard"
-                              : instruction.alsoGraveyard === true
-                                ? 'from your hand or graveyard'
-                                : zone === 'command'
-                                  ? 'from your command zone'
-                                  : instruction.handOf !== undefined
-                                    ? 'from their hand'
-                                    : `from your ${zone}`
-                  } to put ${WHERE[instruction.to]}`.replace(
-                    'from among the cards put into your graveyard',
-                    instruction.anyOwner === true
-                      ? 'from among the cards put into a graveyard'
-                      : 'from among the cards put into your graveyard',
-                  ),
+          instruction.entersFaceDown === 'manifest'
+            ? // CR 701.40a (Scroll of Fate): the card is put onto the battlefield face down, not revealed.
+              'Choose a card from your hand to manifest'
+            : instruction.permit !== undefined
+              ? 'Choose an exiled card to play this turn'
+              : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
+                decider !== chooser
+                ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
+                    instruction.to
+                  ].replace('your', 'their')}`
+                : legal.length === 0
+                  ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
+                    `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
+                  : `Choose ${
+                      instruction.minCardTypes !== undefined
+                        ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                        : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+                    } ${
+                      instruction.among !== undefined && zone === 'exile'
+                        ? 'from among the cards exiled this way'
+                        : instruction.among !== undefined
+                          ? 'from among the cards put into your graveyard'
+                          : instruction.anyOwner === true
+                            ? 'from a graveyard'
+                            : zone === 'exile'
+                              ? 'exiled with this permanent'
+                              : instruction.graveyardOf !== undefined
+                                ? instruction.graveyardOf === chooser
+                                  ? 'from your graveyard'
+                                  : "from an opponent's graveyard"
+                                : instruction.alsoGraveyard === true
+                                  ? 'from your hand or graveyard'
+                                  : zone === 'command'
+                                    ? 'from your command zone'
+                                    : instruction.handOf !== undefined
+                                      ? 'from their hand'
+                                      : `from your ${zone}`
+                    } to put ${WHERE[instruction.to]}`.replace(
+                      'from among the cards put into your graveyard',
+                      instruction.anyOwner === true
+                        ? 'from among the cards put into a graveyard'
+                        : 'from among the cards put into your graveyard',
+                    ),
       },
     };
   }

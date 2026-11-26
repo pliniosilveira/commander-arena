@@ -8162,7 +8162,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
       if (e.faceDownAs !== undefined) {
         if (e.faceDownAs !== 'forestLand' && e.faceDownAs !== 'manifest') {
-          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' or 'manifest' when present");
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            "faceDownAs must be 'forestLand' or 'manifest' when present",
+          );
         }
         if (e.to !== 'battlefield') {
           issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
