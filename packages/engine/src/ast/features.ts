@@ -460,6 +460,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'youCantSacrifice',
     // The Black Gate (CR 608.2d, 509.1b): "Choose a player with the most life or tied for most life" and "can't be blocked by creatures that player controls this turn".
     'choosePlayer',
+    // Vial Smasher the Fierce: "choose an opponent at random" (`choosePlayer` with `random`) and damage to that player or a planeswalker they control.
+    'dealDamageToChosenPlayerOrPlaneswalker',
     'cantBeBlockedByPlayer',
     'createToken',
     'search',
@@ -3734,6 +3736,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   youCantAttackPlayers: true,
   youCantSacrifice: true,
   choosePlayer: true,
+  dealDamageToChosenPlayerOrPlaneswalker: true,
   cantBeBlockedByPlayer: true,
   createToken: true,
   search: true,

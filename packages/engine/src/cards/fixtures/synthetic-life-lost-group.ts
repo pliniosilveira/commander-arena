@@ -570,4 +570,33 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever you cast your first spell each turn, choose an opponent at random. This creature deals damage equal to that spell's mana value to that player or a planeswalker that player controls."
+  singleFace({
+    name: 'SYNTHETIC Chaotic Smasher',
+    manaCost: ['1', 'B', 'R'],
+    types: ['creature'],
+    subtypes: ['Goblin'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    power: 2,
+    toughness: 3,
+    oracleText:
+      "Whenever you cast your first spell each turn, choose an opponent at random. This creature deals damage equal to that spell's mana value to that player or a planeswalker that player controls.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'you', nth: 1 },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'choosePlayer', among: 'opponent', random: true },
+            {
+              kind: 'dealDamageToChosenPlayerOrPlaneswalker',
+              amount: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+            },
+          ],
+        },
+      },
+    ],
+  }),
 ];

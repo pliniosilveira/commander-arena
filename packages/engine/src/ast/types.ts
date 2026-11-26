@@ -5879,7 +5879,16 @@ export type Effect =
       readonly kind: 'choosePlayer';
       /** `mostLife`: "Choose a player with the most life or tied for most life" (CR 608.2d, 119.1): the controller of the effect chooses among the players with the greatest life total; one candidate is chosen without asking. */
       readonly among: 'mostLife' | 'opponent';
+      /** "Choose an opponent at random" (Vial Smasher the Fierce; CR 701.13, 102.2): one opponent still in the game, picked by the seeded generator, nobody is asked. Only with `among` "opponent". */
+      readonly random?: true;
     }
+  /**
+   * "~ deals damage equal to that spell's mana value to that player or a planeswalker that player controls" (Vial Smasher the Fierce; CR 120.2, 608.2d): the damage of `amount`, read as
+   * the effect resolves, is dealt to the player a `choosePlayer` before it in the same resolution chose, or to a planeswalker that player controls, as the controller of the effect chooses
+   * as it resolves (nothing is targeted, so hexproof and protection do not apply to the choice). A player with no planeswalker is dealt the damage without a question. The source is the
+   * permanent with the ability. Valid only after a `choosePlayer` (`validateCard`).
+   */
+  | { readonly kind: 'dealDamageToChosenPlayerOrPlaneswalker'; readonly amount: Amount }
   /**
    * "Target creature can't be blocked by creatures that player controls this turn" (The Black Gate, CR 509.1b, 611.2a): until end of turn each object the selector names as the effect begins
    * can't be blocked by a creature controlled by a player `player` names as it resolves (a creature that enters or changes control later counts, as it is read when blockers are declared).

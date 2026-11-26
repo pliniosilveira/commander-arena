@@ -269,6 +269,11 @@ export function runInstruction(
     if (only !== undefined && candidates.length === 1) {
       return { ...done(state), front: [{ ...instruction, chosen: only }] };
     }
+    // CR 701.13, 102.2 (Vial Smasher the Fierce): "choose an opponent at random": the seeded generator picks one, nobody is asked.
+    if (instruction.random === true && candidates.length > 1) {
+      const [picked, rng] = pickRandom(candidates, state.rng);
+      return { ...done({ ...state, rng }), front: [{ ...instruction, chosen: picked }] };
+    }
     const info = sourceInfo(state, res.source);
     return {
       state,
@@ -4951,7 +4956,52 @@ function runEffect(
 
     case 'choosePlayer':
       // CR 608.2d (The Black Gate): the controller chooses a player with the most life; the answer is what "that player" means for the rest of the resolution.
-      return done(state, [], [{ kind: 'choosePlayer', among: effect.among, chosen: null }]);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'choosePlayer',
+            among: effect.among,
+            ...(effect.random === true ? { random: true as const } : {}),
+            chosen: null,
+          },
+        ],
+      );
+
+    case 'dealDamageToChosenPlayerOrPlaneswalker': {
+      // CR 120.2, 608.2d (Vial Smasher the Fierce): the player an earlier choice named, or a planeswalker they control, as the controller chooses now.
+      const chosen = res.chosenPlayer;
+      if (chosen === undefined || getSeat(state, chosen).hasLost) return done(state);
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      const toPlayer: Effect = { kind: 'dealDamage', amount, to: { kind: 'chosenPlayer' } };
+      const walkers = objectsInZone(state, 'battlefield').filter((id) => {
+        const obj = state.objects[id];
+        return (
+          obj !== undefined &&
+          controllerOf(state, obj) === chosen &&
+          derive(state, obj).types.includes('planeswalker')
+        );
+      });
+      if (walkers.length === 0) return done(state, [], [{ kind: 'effect', effect: toPlayer }]);
+      const names = walkers.map((id) => sourceInfo(state, id)?.name ?? String(id));
+      const options = [
+        { label: `Player ${chosen + 1}`, effect: toPlayer },
+        ...walkers.map((id, i) => ({
+          label:
+            names.filter((n) => n === names[i]).length > 1
+              ? `${names[i]} (${id})`
+              : (names[i] ?? String(id)),
+          effect: {
+            kind: 'dealDamage' as const,
+            amount,
+            to: { kind: 'boundObjects' as const, ids: [id] },
+          },
+        })),
+      ];
+      return done(state, [], [{ kind: 'chooseOne', options, chosen: null }]);
+    }
 
     case 'cantBeBlockedByPlayer':
       // CR 509.1b, 611.2a (The Black Gate): the creatures named can't be blocked by creatures a player controls this turn.

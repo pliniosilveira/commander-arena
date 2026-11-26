@@ -10634,6 +10634,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.among !== 'mostLife' && e.among !== 'opponent') {
         issue(out, `${path}.among`, `unknown rule for choosing a player ${String(e.among)}`);
       }
+      if (e.random !== undefined && (e.random !== true || e.among !== 'opponent')) {
+        issue(out, `${path}.random`, 'random is true and only for choosing among the opponents');
+      }
+      break;
+    case 'dealDamageToChosenPlayerOrPlaneswalker':
+      // Vial Smasher the Fierce: the damage of an amount, to the player an earlier choosePlayer chose or a planeswalker they control.
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'cantBeBlockedByPlayer':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);

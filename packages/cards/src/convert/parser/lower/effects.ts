@@ -201,6 +201,7 @@ import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
 import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
 import { QUICK_DRAW_LOWERINGS } from './quick-draw';
 import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
+import { RANDOM_OPPONENT_LOWERINGS } from './random-opponent';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { RETURNED_LAND_LOWERINGS } from './returned-land';
 import { REVEAL_CHOSEN_TYPE_LOWERINGS } from './reveal-chosen-type';
@@ -3288,6 +3289,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EXILE_COUNTERS_LOWERINGS,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
   ...CONTROLLER_DAMAGE_LOWERINGS,
+  ...RANDOM_OPPONENT_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...FOOD_D_LOWERINGS,

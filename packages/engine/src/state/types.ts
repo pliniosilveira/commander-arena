@@ -1253,6 +1253,8 @@ export type Instruction =
   | {
       readonly kind: 'choosePlayer';
       readonly among: 'mostLife' | 'opponent';
+      /** "Choose an opponent at random": picked by the seeded generator, nobody asked. */
+      readonly random?: true;
       readonly chosen: SeatId | null;
     }
   /**
