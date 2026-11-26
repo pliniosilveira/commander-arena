@@ -8,6 +8,7 @@ import {
   DEFAULT_BUDGET_MS,
   firstAcceptedAction,
   firstSafeAction,
+  type PlayOutPool,
 } from '@commander-arena/ai';
 import type { GameRecord } from '@commander-arena/cards';
 import {
@@ -59,6 +60,12 @@ export interface HostOptions {
    * `CasualAgent`.
    */
   readonly makeAgent?: (seed: number, kind: AiKind) => Agent;
+  /**
+   * Workers that play out the AI's plannings in parallel (`play-out-pool.ts`, issue 653 step 2c): handed to
+   * the agent in each decision's context. The AI decides the same with and without them; they only make it
+   * faster. The Worker builds the pool, a test may give its own.
+   */
+  readonly playOuts?: PlayOutPool;
   /** Test seam: a hard cap on AI answers per human action, so a stuck agent cannot hang the Worker. */
   readonly maxAiSteps?: number;
 }
@@ -245,6 +252,7 @@ function honestySummary(config: GameConfig): HonestySummary {
 export class GameHost implements GameClient {
   private readonly clock: () => number;
   private readonly budgetMs: number;
+  private readonly playOuts: PlayOutPool | undefined;
   private readonly marginMs: number;
   private readonly makeAgent: (seed: number, kind: AiKind) => Agent;
   private readonly maxAiSteps: number;
@@ -262,6 +270,7 @@ export class GameHost implements GameClient {
   constructor(options: HostOptions) {
     this.clock = options.clock;
     this.budgetMs = options.aiBudgetMs ?? DEFAULT_BUDGET_MS;
+    this.playOuts = options.playOuts;
     this.marginMs = options.aiMarginMs ?? DEFAULT_MARGIN_MS;
     this.makeAgent = options.makeAgent ?? createAgent;
     this.maxAiSteps = options.maxAiSteps ?? DEFAULT_MAX_AI_STEPS;
@@ -293,6 +302,8 @@ export class GameHost implements GameClient {
     for (let seat = 1; seat <= opponents.length; seat++) {
       this.agents.set(seat, this.makeAgent(agentSeed(options.seed, seat), options.ai ?? 'casual'));
     }
+    // The play-out workers load their code while the player looks at the opening hand.
+    if (options.ai === 'normal') this.playOuts?.warm?.();
     const created = createGame(config);
     this.state = created.state;
     const log = this.logFor(created.state, created.state, created.events);
@@ -436,6 +447,7 @@ export class GameHost implements GameClient {
           now: this.clock,
           // Built only when the agent asks (A31, D-161): the host holds the real state, the agent gets a sample.
           sample: (seed) => determinize(before, seat, createRng(seed)),
+          ...(this.playOuts === undefined ? {} : { playOuts: this.playOuts }),
         });
       } catch {
         this.countFallback(seat);

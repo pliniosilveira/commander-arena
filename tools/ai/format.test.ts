@@ -60,6 +60,8 @@ describe('formatPlanning', () => {
   const work = (o: Partial<PlanWork> = {}): PlanWork => ({
     planned: true,
     playOuts: 4,
+    deepPlayOuts: 0,
+    deepUnits: 0,
     steps: 100,
     views: 30,
     applies: 110,
@@ -82,6 +84,20 @@ describe('formatPlanning', () => {
       'planning heuristic: 4 plannings, 3 with a plan; cut by the clock 25.0%, by a work bound 25.0%; ' +
         'per planning: 23.0 views, 82.5 engine actions, 3.0 play-outs, 75.0 steps, 2.50 ms',
     );
+  });
+
+  test('adds what the deepening cost when any planning looked a turn further', () => {
+    const deep = work({ deepPlayOuts: 6, deepUnits: 3000 });
+    expect(
+      formatPlanning('heuristic', [deep, work(), work({ deepPlayOuts: 10, deepUnits: 5000 })]),
+    ).toContain('deepened 66.7%: 8.0 deep play-outs, 4000.0 work units each');
+  });
+
+  test('counts the deepened plannings whose choice the deeper values changed', () => {
+    const record = { ...work({ deepPlayOuts: 4, deepUnits: 100 }), deepChanged: true };
+    expect(
+      formatPlanning('heuristic', [record, work({ deepPlayOuts: 4, deepUnits: 100 })]),
+    ).toContain('50.0% of them changed the choice');
   });
 
   test('says nothing for an agent that never planned', () => {
@@ -110,6 +126,18 @@ describe('formatSearches', () => {
       'searches heuristic: 4 decisions searched; cut by the clock 25.0%, by the work budget 50.0%; ' +
         'per decision: 100.0 engine calls, 1500 work units, 12.50 ms',
     );
+  });
+
+  test('says how often the combat look-ahead ran and changed the choice', () => {
+    const searches = [
+      search({ kind: 'declareAttackers', look: { playOuts: 4, changed: true } }),
+      search({ kind: 'declareBlockers', look: { playOuts: 2, changed: false } }),
+      search(),
+    ];
+    expect(formatSearches('heuristic', searches)).toContain(
+      'combat look-ahead 2 times (3.0 play-outs each), 50.0% of them changed the choice',
+    );
+    expect(formatSearches('heuristic', [search()])).not.toContain('combat look-ahead');
   });
 
   test('says nothing for an agent that never searched', () => {

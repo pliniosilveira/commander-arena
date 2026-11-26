@@ -11,6 +11,7 @@ import type {
   GameView,
   PendingDecision,
 } from '@commander-arena/engine';
+import type { PlayOutPool } from './heuristic-plan-types';
 
 export interface DecideContext {
   /** Time the agent may spend on this decision, in milliseconds. The host replaces an answer that arrives far past it (A28). */
@@ -26,6 +27,12 @@ export interface DecideContext {
    * the hidden truth. Absent when the host provides none; an agent that does not use it pays nothing.
    */
   readonly sample?: (seed: number) => GameState;
+  /**
+   * A pool of workers that play out the lines of the turn planner in parallel (issue 653, step 2c), when the
+   * host has one. The agent uses it only with two or more workers, and its decisions and the work it counts are
+   * the same with it and without it (`heuristic-plan-trace.ts`); the benchmark and the arena give none.
+   */
+  readonly playOuts?: PlayOutPool;
 }
 
 /** One safe-choice fallback an agent took because a handler failed (SPEC 9). */
