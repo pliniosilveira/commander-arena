@@ -18,6 +18,9 @@ on:
       pairs:
         description: Pairs per iteration (each pair is one seed played twice, seats swapped)
         default: '8'
+      workers:
+        description: Processes that play the pairs of an iteration in parallel (the runner has 4 cores)
+        default: '1'
       seed:
         description: The run seed (the game seeds used are logged; validate on others)
         default: '1'
@@ -38,6 +41,7 @@ jobs:
       ITERATIONS: ${{ github.event.inputs.iterations }}
       PAIRS: ${{ github.event.inputs.pairs }}
       SEED: ${{ github.event.inputs.seed }}
+      WORKERS: ${{ github.event.inputs.workers }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -49,7 +53,7 @@ jobs:
       - name: Tune
         shell: bash
         run: |
-          args=(--iterations "$ITERATIONS" --pairs "$PAIRS" --seed "$SEED" --out tuned.json)
+          args=(--iterations "$ITERATIONS" --pairs "$PAIRS" --seed "$SEED" --workers "$WORKERS" --out tuned.json)
           if [ -n "$FIELDS" ]; then args+=(--fields "$FIELDS"); fi
           node tools/ai/tune.ts "${args[@]}" 2>&1 | tee tune.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

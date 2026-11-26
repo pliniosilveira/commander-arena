@@ -113,6 +113,8 @@ describe('fields and clamping', () => {
     expect([share.min, share.max]).toEqual([0, 1]);
     expect(clamp(share, 5)).toBe(2);
     expect(clamp(share, -1)).toBe(0);
+    const blend = tunedField('plan.deepBlend', 0.5);
+    expect([blend.min, blend.max]).toEqual([0, 1]);
     const land = tunedField('evaluator.land', 1.5);
     expect(clamp(land, -0.5)).toBe(0);
     expect(clamp(land, 40)).toBe(40);

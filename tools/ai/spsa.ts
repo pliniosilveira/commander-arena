@@ -111,6 +111,7 @@ const SHARES = new Set([
   'main.spareShare',
   'main.removalShare',
   'removal.nearEqual',
+  'plan.deepBlend',
 ]);
 
 /** A tuned field with its scale and its default bounds: [0, 1] for a share, [0, inf) for a positive default, none otherwise. */

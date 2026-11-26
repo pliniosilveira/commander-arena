@@ -23,7 +23,8 @@
 // HeuristicAgent, on `--pairs` pairs of fresh game seeds: the run's seeds are consecutive from `--seed`
 // and never reused, and pair j of the run is played on precon j mod the number of precons. theta+'s mean
 // score s gives the gradient estimate (2 s - 1) / (2 c_k delta_i). The agents get the runner's logical
-// clock, so a result does not depend on the speed of the machine. One line per iteration goes to stderr.
+// clock, so a result does not depend on the speed of the machine. One line per iteration goes to stderr, with
+// the new value of the eight fields that moved most.
 //
 // DEFAULT_FIELDS: the evaluator's main trade-offs (life, board pressure, cards in hand, lands, a creature
 // body), which every decision's board score reads; the crack-back terms, which decide how much an attack
@@ -78,6 +79,9 @@ export const DEFAULT_FIELDS = [
   'main.deltaFloor',
   'main.removalShare',
 ];
+
+/** How many fields' moves one iteration's log line lists (all of them in a run of a handful of fields). */
+const LOGGED_CHANGES = 8;
 
 const { values } = parseArgs({
   options: {
@@ -298,7 +302,7 @@ while (state.iteration < iterations) {
   }
   const score = total / (2 * pairs);
   const theta = update(state.fields, state.theta, delta, 2 * score - 1, state.gains, k);
-  const moved = largestChanges(state.fields, state.theta, theta, 3)
+  const moved = largestChanges(state.fields, state.theta, theta, LOGGED_CHANGES)
     .map((m) => `${m.path} ${fmt(m.from)} -> ${fmt(m.to)}`)
     .join(', ');
   process.stderr.write(
