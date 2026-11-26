@@ -557,6 +557,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-player-other-than-its-controller': spell(
     (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
   ),
+  // Bounty Board: the opponents of the controller of the creature that died.
+  'noun.each-of-its-controllers-opponents': permanent(
+    (e) => `Whenever a creature dies, ${e} draws a card.`,
+  ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   'noun.entered-chosen-player': spell((e) => `~ deals 2 damage to ${e}.`),
   // Stage P21: the life lost by the instruction before it.

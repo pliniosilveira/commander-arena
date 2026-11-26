@@ -4363,9 +4363,10 @@ function runEffect(
 
     case 'moveCounter': {
       // CR 122.5: one counter (or, with `anyNumber`, as many as the controller likes), of a kind they choose, from the first permanent to the second (rules/counter-pick.ts).
-      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
       const toId = resolveObjects(state, effect.to, ctx, targets)[0];
-      if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
+      // A permanent moving a counter onto itself moves nothing (CR 122.5), so it is never one of the permanents the counters come off.
+      const fromIds = resolveObjects(state, effect.from, ctx, targets).filter((id) => id !== toId);
+      if (toId === undefined || fromIds.length === 0) return done(next);
       return done(
         next,
         [],
@@ -4373,12 +4374,13 @@ function runEffect(
           {
             kind: 'counterPick',
             mode: 'move',
-            objects: [fromId],
+            objects: fromIds,
             to: toId,
             left: effect.anyNumber === true ? null : 1,
             removed: 0,
             chosen: null,
             ...(effect.anyNumber === true ? { anyNumber: true as const } : {}),
+            ...(effect.counter === undefined ? {} : { counterKind: effect.counter }),
           },
         ],
       );
@@ -4398,6 +4400,8 @@ function runEffect(
             left: effect.upTo ?? null,
             removed: 0,
             chosen: null,
+            ...(effect.counter === undefined ? {} : { counterKind: effect.counter }),
+            ...(effect.required === true ? { required: true as const } : {}),
           },
         ],
       );
