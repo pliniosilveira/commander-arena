@@ -1062,6 +1062,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.becomes-untapped': whenever,
   // Issue 103: "becomes monstrous" follows "Whenever"; the amount follows the damage to each opponent.
   'trigger.becomes-monstrous': whenever,
+  // CR 701.40b: "is turned face up", and "you turn a permanent face up".
+  'trigger.turned-face-up': whenever,
+  'trigger.you-turn-face-up': whenever,
   'amount.cards-in-hand-of-that-player': permanent(
     (e) => `At the beginning of each end step, ~ deals damage to each opponent ${e}.`,
   ),

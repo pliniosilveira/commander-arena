@@ -70,6 +70,7 @@ import { COUNTER_BLITZ_C_EFFECT_RULES } from './counter-blitz-c';
 import { COUNTER_BLITZ_E_EFFECT_RULES } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_EFFECT_RULES } from './counter-blitz-g';
 import { COUNTER_CHOICE_RULES } from './counter-choice';
+import { COUNTER_EXILE_CAST_WHILE_EXILED_EFFECT_RULES } from './counter-exile-cast-while-exiled';
 import { COUNTER_GROUP_A_EFFECT_RULES } from './counter-group-a';
 import { COUNTER_INTELLIGENCE_G2_EFFECT_RULES } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_EFFECT_RULES } from './counter-intelligence-g3';
@@ -1567,6 +1568,8 @@ export const EFFECT_RULES = [
   ...UP_TO_THAT_MANY_EFFECT_RULES,
   // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
   ...JESKAI_CASTFREE_EFFECT_RULES,
+  // "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard. You may cast that card ... for as long as it remains exiled": starts like the plain counter.
+  ...COUNTER_EXILE_CAST_WHILE_EXILED_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,

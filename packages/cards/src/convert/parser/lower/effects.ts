@@ -77,6 +77,7 @@ import { COUNTER_BLITZ_C_LOWERINGS } from './counter-blitz-c';
 import { COUNTER_BLITZ_E_LOWERINGS } from './counter-blitz-e';
 import { COUNTER_BLITZ_G_LOWERINGS } from './counter-blitz-g';
 import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
+import { COUNTER_EXILE_CAST_WHILE_EXILED_LOWERINGS } from './counter-exile-cast-while-exiled';
 import { COUNTER_GROUP_A_LOWERINGS } from './counter-group-a';
 import { COUNTER_INTELLIGENCE_G2_LOWERINGS } from './counter-intelligence-g2';
 import { COUNTER_INTELLIGENCE_G3_LOWERINGS } from './counter-intelligence-g3';
@@ -3081,6 +3082,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
+  ...COUNTER_EXILE_CAST_WHILE_EXILED_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,

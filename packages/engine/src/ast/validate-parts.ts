@@ -441,6 +441,7 @@ export function checkFilter(
     'singleTarget',
     'modified',
     'goaded',
+    'isFaceDown',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -599,6 +600,10 @@ export function checkFilter(
   // CR 700.9 (D-416): only a permanent is modified.
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
+  }
+  // CR 708.2: only a permanent on the battlefield is face down.
+  if (f.isFaceDown === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(out, `${path}.isFaceDown`, 'only a permanent on the battlefield can be face down');
   }
   // CR 701.15b: only a permanent is goaded.
   if (f.goaded === true && f.zone !== undefined && f.zone !== 'battlefield') {

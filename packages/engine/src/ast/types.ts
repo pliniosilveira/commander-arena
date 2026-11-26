@@ -954,6 +954,11 @@ export interface ObjectFilter {
    */
   readonly token?: boolean;
   /**
+   * "Face-down creature" (CR 708.2, 701.40a, 708.3): the object is a face-down permanent (manifested, cast face down, put onto the battlefield face down), as it is now or, for one that has
+   * left, as it was. A face-up permanent is not; there is no "face-up" form (a creature is face up unless said otherwise). Only a permanent on the battlefield can be face down.
+   */
+  readonly isFaceDown?: true;
+  /**
    * "With flying", "without flying" (D-133, CR 702): the object has all of the keywords in `keywords`, and none of
    * those in `notKeywords`, among the abilities `derive` gives it now (printed and granted, or those it last had when it
    * has left, CR 113.7a). Only keywords without parameters (`GRANTABLE_KEYWORDS`). Refused in a static ability's
@@ -6476,6 +6481,14 @@ export type Trigger =
    * once each time, and a permanent that is monstrous already does nothing when told to become monstrous, so it triggers nothing.
    */
   | { readonly kind: 'becomesMonstrous'; readonly what: TriggerSubject }
+  /**
+   * "Whenever a permanent you control is turned face up", "When this creature is turned face up", "Whenever you turn a permanent face up" (CR 701.40b, 708.8, 603.2, 116.2b): a face-down
+   * permanent that is turned face up (the special action, the event `turnedFaceUp`). It is the same object afterwards (CR 708.8), so `what` is read as the permanent is now, face up, with
+   * the abilities it has face up: "When this creature is turned face up" is the ability of the permanent itself, which has it once it is up. It does not trigger for a face-down permanent that
+   * leaves the battlefield, and nothing that has to do with entering the battlefield triggers (CR 708.8). `by` `you` ("Whenever you turn a permanent face up"): the player who turned it
+   * face up is the controller of this ability (the player who took the special action); left out, whoever did. `triggerSubject` is the permanent; "it" in the effect names it.
+   */
+  | { readonly kind: 'turnedFaceUp'; readonly what: TriggerSubject; readonly by?: 'you' }
   /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,

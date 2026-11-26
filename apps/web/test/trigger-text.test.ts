@@ -161,6 +161,21 @@ describe('the other new kinds', () => {
     expect(say(trigger)).toBe(words);
   });
 
+  test.each([
+    [{ kind: 'turnedFaceUp', what: { kind: 'this' } }, 'Whenever Pyre Hound is turned face up'],
+    [
+      { kind: 'turnedFaceUp', what: { controller: 'you' } },
+      'Whenever a permanent you control is turned face up',
+    ],
+    [{ kind: 'turnedFaceUp', what: {}, by: 'you' }, 'Whenever you turn a permanent face up'],
+    [
+      { kind: 'entersBattlefield', what: { ...CREATURE_YOU, isFaceDown: true } },
+      'Whenever a face-down creature you control enters',
+    ],
+  ] as [Trigger, string][])('turning a permanent face up (CR 701.40b): %j', (trigger, words) => {
+    expect(say(trigger)).toBe(words);
+  });
+
   test('filters of Mentor and Battle cry are said, not dropped', () => {
     const filter = { types: ['creature'], attacking: true, powerLessThanSource: true } as const;
     expect(filterPhrase(filter)).toBe(
@@ -251,6 +266,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   becomesTapped: { kind: 'becomesTapped', what: { kind: 'this' } },
   becomesUntapped: { kind: 'becomesUntapped', what: { kind: 'this' } },
   becomesMonstrous: { kind: 'becomesMonstrous', what: { kind: 'this' } },
+  turnedFaceUp: { kind: 'turnedFaceUp', what: { kind: 'this' } },
   discarded: { kind: 'discarded', who: 'you' },
   diesBatch: { kind: 'diesBatch', what: { types: ['creature'], controller: 'you', other: true } },
   entersBatch: { kind: 'entersBatch', what: { token: true, controller: 'you' } },

@@ -665,6 +665,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesUntapped',
     // CR 701.37: "When this creature becomes monstrous".
     'becomesMonstrous',
+    // CR 701.40b, 708.8: "Whenever a permanent you control is turned face up".
+    'turnedFaceUp',
     'discarded',
     'diesBatch',
     'entersBatch',
@@ -1378,6 +1380,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackingOpponents',
     // D-229: "attacking or blocking" (`ObjectFilter.attackingOrBlocking`).
     'attackingOrBlocking',
+    // CR 708.2: "face-down creature" (`ObjectFilter.isFaceDown`).
+    'isFaceDown',
     'all',
     'damageSource',
     // D-133: `ObjectFilter.token` (tokens, "nontoken"), `notSubtypes` ("non-Zombie"), `colorless`, and `keywords` /
@@ -2639,6 +2643,8 @@ export const SELECTOR_KINDS = [
   'attackingOpponents',
   /** "Attacking or blocking creatures" (CR 506.4, 509.1g, D-229): the engine's `ObjectFilter.attackingOrBlocking`. */
   'attackingOrBlocking',
+  /** "A face-down creature you control" (CR 708.2, 701.40a): the engine's `ObjectFilter.isFaceDown`. */
+  'isFaceDown',
   /** "You and target opponent each ...": several players in one selector (D-131), the engine's `PlayerSelector` `all`. */
   'all',
   /** "Target creature you control deals damage equal to its power to ..." (D-131): the engine's `dealDamage.from`. */
@@ -3728,6 +3734,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   becomesTapped: true,
   becomesUntapped: true,
   becomesMonstrous: true,
+  turnedFaceUp: true,
   discarded: true,
   diesBatch: true,
   entersBatch: true,

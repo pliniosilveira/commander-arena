@@ -219,6 +219,7 @@ import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
 import { SYNTHETIC_TRIGGER_MORE_LIST } from './synthetic-triggers-more';
 import { SYNTHETIC_TROYAN_G4_LIST } from './synthetic-troyan-g4';
+import { SYNTHETIC_TURN_UP_LIST } from './synthetic-turn-up';
 import { SYNTHETIC_TURNLOG_LIST } from './synthetic-turnlog';
 import { SYNTHETIC_UNBLOCKED_LIST } from './synthetic-unblocked';
 import { SYNTHETIC_UNBOUND_I_LIST } from './synthetic-unbound-i';
@@ -439,6 +440,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_ROOM_LIST,
   ...SYNTHETIC_MANIFEST_LIST,
+  ...SYNTHETIC_TURN_UP_LIST,
   ...SYNTHETIC_MORPH_LIST,
   ...SYNTHETIC_MELD_LIST,
   ...SYNTHETIC_SAGA_LIST,

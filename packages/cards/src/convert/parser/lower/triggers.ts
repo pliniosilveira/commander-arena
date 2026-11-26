@@ -68,6 +68,7 @@ const TRIGGER_KIND = {
   becomesTapped: 'becomesTapped',
   becomesUntapped: 'becomesUntapped',
   becomesMonstrous: 'becomesMonstrous',
+  turnedFaceUp: 'turnedFaceUp',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
   becomesUnblocked: 'becomesUnblocked',
@@ -329,6 +330,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (who === null) return failure(t);
       const blocked = missingFeatures(['trigger:winsCoinFlip']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsCoinFlip', who });
+    }
+    case 'turnedFaceUp': {
+      // CR 701.40b, 708.8: "~ is turned face up", "a permanent you control is turned face up", "you turn a permanent face up" (`by`: the player who turned it).
+      const blocked = missingFeatures(['trigger:turnedFaceUp']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const what = whatOf(t, ctx);
+      if (!what.ok) return what;
+      return ok({
+        kind: 'turnedFaceUp',
+        what: what.value,
+        ...(t.by === 'you' ? { by: 'you' as const } : {}),
+      });
     }
     case 'dies':
     case 'blocks':
@@ -2341,6 +2354,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
   'trigger:becomesMonstrous',
+  'trigger:turnedFaceUp',
   'trigger:blocks',
   'trigger:becomesBlocked',
   'trigger:becomesUnblocked',

@@ -57,6 +57,8 @@ export interface FilterParts {
   readonly modified: boolean;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds. */
   readonly goaded: boolean;
+  /** "face-down" (CR 708.2): a face-down permanent. */
+  readonly faceDown: boolean;
   /** "equipped" (CR 301.5): a permanent with an Equipment attached to it. */
   readonly equipped: boolean;
   /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
@@ -87,6 +89,7 @@ export const NO_PARTS: FilterParts = {
   historic: false,
   modified: false,
   goaded: false,
+  faceDown: false,
   equipped: false,
   commander: false,
   notCommander: false,
@@ -146,6 +149,8 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('modified', (p) => ({ ...p, modified: true })),
   // CR 701.15b (Goad): "goaded creature".
   word('goaded', (p) => ({ ...p, goaded: true })),
+  // CR 708.2, 701.40a: "face-down creature" (a manifested one, one cast face down).
+  word('face-down', (p) => ({ ...p, faceDown: true })),
   // Limit Break deck, group 1 (CR 301.5): "equipped creature", a creature with an Equipment attached to it.
   word('equipped', (p) => ({ ...p, equipped: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
@@ -259,6 +264,7 @@ export function toFilter(
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
     ...(p.goaded ? { goaded: true as const } : {}),
+    ...(p.faceDown ? { faceDown: true as const } : {}),
     ...(p.equipped ? { equipped: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),
     ...(p.notCommander ? { notCommander: true as const } : {}),
@@ -993,6 +999,7 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           !parts.attacking &&
           !parts.modified &&
           !parts.equipped &&
+          !parts.faceDown &&
           !parts.goaded,
       ),
       optional(
@@ -1040,6 +1047,7 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.attacking ||
           parts.modified ||
           parts.equipped ||
+          parts.faceDown ||
           parts.goaded
         )
           return fail(c, at);
@@ -1336,6 +1344,7 @@ export function graveyardPhrase(
       !parts.historic &&
       !parts.modified &&
       !parts.goaded &&
+      !parts.faceDown &&
       !parts.equipped &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
