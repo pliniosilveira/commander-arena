@@ -104,6 +104,58 @@ export const REPLACEMENT_AS_ENTERS_REMOVE_COUNTERS = defineRule<IrAbility>({
   },
 });
 
-export const COUNTER_BLITZ_G_REPLACEMENT_RULES = [REPLACEMENT_AS_ENTERS_REMOVE_COUNTERS].map(
-  quietly,
-);
+const ALL_ID = 'replacement.as-enters-remove-all-counters';
+
+/**
+ * `replacement.as-enters-remove-all-counters`: "As ~ enters, remove all counters from all permanents. ~ enters with a +1/+1 counter on it for each counter removed this way." (CR 614.12,
+ * 122.1, 122.6: nothing is chosen; every counter of every kind comes off every permanent on the battlefield, of every player, before it enters, and it enters with a +1/+1 counter for
+ * each that came off.) The engine's `asEntersRemoveCounters` with `all`, and an `entersWithCounters` of `countersRemovedAsEntered`. Not read: a group of permanents other than "all
+ * permanents", a kind of counter, another counter than +1/+1, another count than one for each counter removed, one sentence without the other.
+ */
+export const REPLACEMENT_AS_ENTERS_REMOVE_ALL_COUNTERS = defineRule<IrAbility>({
+  id: ALL_ID,
+  family: 'replacement',
+  leading: ['as'],
+  cites: [
+    'CR 614.12 (Replacement Effects)',
+    'CR 614.12a (Replacement Effects)',
+    'CR 122.1 (Counters)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: [
+    'As ~ enters, remove all counters from all permanents. ~ enters with a +1/+1 counter on it for each counter removed this way.',
+    'As ~ enters the battlefield, remove all counters from all permanents. ~ enters with a +1/+1 counter on it for each counter removed this way.',
+  ],
+  rejects: [
+    'As ~ enters, remove all counters from all permanents.',
+    'As ~ enters, remove all counters from all permanents. ~ enters with a +1/+1 counter on it for each counter removed this way',
+    'As ~ enters, remove all counters from all creatures. ~ enters with a +1/+1 counter on it for each counter removed this way.',
+    'As ~ enters, remove all +1/+1 counters from all permanents. ~ enters with a +1/+1 counter on it for each counter removed this way.',
+    'As ~ enters, remove all counters from all permanents. ~ enters with a -1/-1 counter on it for each counter removed this way.',
+    'As ~ enters, remove all counters from all permanents. ~ enters with two +1/+1 counters on it for each counter removed this way.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /as ~ enters(?: the battlefield)?, remove all counters from all permanents\. ~ enters with a \+1\/\+1 counter on it for each counter removed this way\./iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersRemoveCounters',
+      args: {
+        all: { kind: 'number', value: 1, span },
+        times: { kind: 'number', value: 1, span },
+      },
+      optional: false,
+      span,
+      rule: ALL_ID,
+    };
+    return { ok: true, value: replacement(ALL_ID, span, event), pos: r.pos };
+  },
+});
+
+export const COUNTER_BLITZ_G_REPLACEMENT_RULES = [
+  REPLACEMENT_AS_ENTERS_REMOVE_COUNTERS,
+  REPLACEMENT_AS_ENTERS_REMOVE_ALL_COUNTERS,
+].map(quietly);

@@ -8378,7 +8378,15 @@ export type Replacement =
    * or a copy: the choice is made whichever way the permanent enters. The question is a `choosePermanent` decision of purpose `entersRemoveCounters`. `filter` has no zone, controller or
    * owner: the battlefield, any player. A face has at most one question that is asked as it enters (`validateCard`).
    */
-  | { readonly kind: 'asEntersRemoveCounters'; readonly filter: ObjectFilter }
+  | {
+      readonly kind: 'asEntersRemoveCounters';
+      readonly filter: ObjectFilter;
+      /**
+       * "As this creature enters, remove all counters from all permanents" (Thief of Blood, CR 614.12, 122.1): no choice, every permanent `filter` matches (the empty filter is every permanent)
+       * loses all its counters as it enters, and nothing is asked. Absent: the controller chooses any number of them.
+       */
+      readonly all?: true;
+    }
   /**
    * "If a nontoken creature an opponent controls would die, instead exile that card and create a 2/2 black Zombie creature
    * token" (D-133, CR 614.1a, 700.4): a replacement effect of a permanent on the battlefield, for each creature that
