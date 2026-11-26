@@ -205,6 +205,7 @@ export const STATIC_GRAVEYARD_CARDS_HAVE_ENCORE = defineRule<IrStatic>({
   examples: [
     'Each Sliver creature card in your graveyard has encore {X}, where X is its mana value.',
     'Each Goblin creature card in your graveyard has encore {X}, where X is its mana value.',
+    'Each outlaw creature card in your graveyard has encore {X}, where X is its mana value.',
   ],
   rejects: [
     'Each Sliver creature card in your graveyard has encore {X}, where X is its mana value',
@@ -219,12 +220,17 @@ export const STATIC_GRAVEYARD_CARDS_HAVE_ENCORE = defineRule<IrStatic>({
     'Each Sliver card in your graveyard has encore {X}, where X is its mana value.',
     'Each Sliver creature card in your graveyard has encore {X}, where X is its converted mana cost.',
     'Each Sliver creature card in your graveyard has encore {X} and flying, where X is its mana value.',
+    'Each non-outlaw creature card in your graveyard has encore {X}, where X is its mana value.',
+    'Each outlaw card in your graveyard has encore {X}, where X is its mana value.',
   ],
   parse: (ctx, pos) => {
     const lead = sequence(
       quiet(literal('each ')),
       quiet(
-        pattern(new RegExp(`(${SUBTYPE_WORD}) creature card in your graveyard${BOUNDARY}`, 'u')),
+        // CR 700.12: "outlaw" is no creature type; it names the cards that have at least one of five.
+        pattern(
+          new RegExp(`(${SUBTYPE_WORD}|outlaw) creature card in your graveyard${BOUNDARY}`, 'u'),
+        ),
       ),
     )(ctx, pos);
     if (!lead.ok) return lead;
@@ -233,7 +239,7 @@ export const STATIC_GRAVEYARD_CARDS_HAVE_ENCORE = defineRule<IrStatic>({
     const subtype = lead.value[1][1] ?? '';
     const filter: IrFilter = {
       types: ['creature'],
-      subtypes: [subtype],
+      ...(subtype === 'outlaw' ? { outlaw: true } : { subtypes: [subtype] }),
       card: true,
       raw: ctx.text.slice(pos + 5, lead.pos),
     };

@@ -345,23 +345,26 @@ const SPELLS = pattern(new RegExp(`spells${BOUNDARY}`, 'iu'));
 export const SPELL = pattern(new RegExp(`spell${BOUNDARY}`, 'iu'));
 
 /** Modifiers a reduction's subject may carry: colors and "non<type>" words (no tapped, no supertype). */
-const SUBJECT_MODIFIERS = satisfy(
-  map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
-  // The filter below keeps only the colors and the "non<type>" words: any other modifier is refused, never dropped (D-230: "historic" would read as every spell).
-  (parts) =>
-    parts.tapped === undefined &&
-    parts.supertypes.length === 0 &&
-    parts.notSupertypes.length === 0 &&
-    parts.token === undefined &&
-    !parts.colorless &&
-    parts.notColors.length === 0 &&
-    !parts.attacking &&
-    !parts.attackingOrBlocking &&
-    !parts.blocking &&
-    !parts.historic &&
-    parts.outlaw === undefined &&
-    parts.colorCount === undefined,
-);
+const subjectModifiers = (supertypes: boolean) =>
+  satisfy(
+    map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
+    // The filter below keeps only the colors and the "non<type>" words (and the supertypes, where the rule reads them): any other modifier is refused, never dropped (D-230: "historic" would read as every spell).
+    (parts) =>
+      parts.tapped === undefined &&
+      (supertypes || parts.supertypes.length === 0) &&
+      parts.notSupertypes.length === 0 &&
+      parts.token === undefined &&
+      !parts.colorless &&
+      parts.notColors.length === 0 &&
+      !parts.attacking &&
+      !parts.attackingOrBlocking &&
+      !parts.blocking &&
+      !parts.historic &&
+      parts.outlaw === undefined &&
+      parts.colorCount === undefined,
+  );
+const SUBJECT_MODIFIERS = subjectModifiers(false);
+const SUBJECT_MODIFIERS_WITH_SUPERTYPES = subjectModifiers(true);
 
 /**
  * The subtypes a spell can be named by: the creature types and the three non-creature ones the
@@ -378,7 +381,12 @@ const isSpellSubtype = (word: string): boolean =>
  * spells", "Aura and Equipment spells", "Blue spells and red spells". A list of types, subtypes or colors is joined with "and" and takes
  * no modifier, as a list of permanent types does for a target (CR 205.2a, 205.3).
  */
-export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
+export function spellSubject(
+  word: Parser<unknown> = SPELLS,
+  options: { readonly supertypes?: boolean } = {},
+): Parser<IrFilter> {
+  const modifiers =
+    options.supertypes === true ? SUBJECT_MODIFIERS_WITH_SUPERTYPES : SUBJECT_MODIFIERS;
   const typeList: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typeChoice(CARD_TYPES, false, 'and'), literal(' '), word)(ctx, pos);
     if (!r.ok) return r;
@@ -397,7 +405,7 @@ export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
   };
   const plain: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
-      SUBJECT_MODIFIERS,
+      modifiers,
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([words]) => words),
         [] as string[],
@@ -417,6 +425,7 @@ export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
           : { notKeywords: [keyword.keyword] }),
       ...(parts.notTypes.length > 0 ? { notTypes: parts.notTypes } : {}),
       ...(parts.colors.length > 0 ? { colors: parts.colors } : {}),
+      ...(parts.supertypes.length > 0 ? { supertypes: parts.supertypes } : {}),
       raw: ctx.text.slice(pos, r.pos),
     };
     return { ok: true, value: filter, pos: r.pos };
