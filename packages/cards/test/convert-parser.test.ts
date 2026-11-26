@@ -1118,6 +1118,8 @@ describe('unmatched abilities', () => {
       'effect.each-player-draws-per-vote',
       'effect.each-player-without-votes-may-put',
       'effect.stun-voted-creatures',
+      'effect.vote-for-nonland-permanent',
+      'effect.exile-most-voted',
       'effect.voter-chooses-per-vote',
       'effect.gain-control-chosen-cant-attack-owner',
       'effect.then-for-each-vote-counters',

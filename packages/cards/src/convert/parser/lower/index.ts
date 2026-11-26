@@ -46,6 +46,7 @@ import { PLANESWALKER_NEEDS } from './planeswalker';
 import { REVEAL_TOP_CARD_NEEDS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
 import { SECRET_VOTES_NEEDS } from './secret-votes';
+import { VOTE_PERMANENTS_NEEDS } from './vote-permanents';
 import {
   COMBAT_DAMAGE_BATCH_NEEDS,
   COMBAT_DAMAGE_TO_PLAYER_NEEDS,
@@ -186,6 +187,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...KORVOLD_NEEDS,
     ...COUNCIL_VOTES_NEEDS,
     ...SECRET_VOTES_NEEDS,
+    ...VOTE_PERMANENTS_NEEDS,
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,

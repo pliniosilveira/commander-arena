@@ -204,6 +204,7 @@ import { REVIVAL_TRANCE_LOWERINGS } from './revival-trance';
 import { RIDERS_B_LOWERINGS } from './riders-b';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { SECRET_VOTES_LOWERINGS } from './secret-votes';
+import { VOTE_PERMANENTS_LOWERINGS } from './vote-permanents';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
@@ -3160,6 +3161,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KORVOLD_LOWERINGS,
   ...COUNCIL_VOTES_LOWERINGS,
   ...SECRET_VOTES_LOWERINGS,
+  ...VOTE_PERMANENTS_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,

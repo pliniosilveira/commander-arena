@@ -294,6 +294,7 @@ import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VALIGARMANDA_EFFECT_RULES } from './valigarmanda';
 import { VOTE_EFFECT_RULES } from './vote';
+import { VOTE_PERMANENTS_EFFECT_RULES } from './vote-permanents';
 import { VRASKA_EFFECT_RULES } from './vraska';
 import { WIN_GAME_EFFECT_RULES } from './win-game';
 import { WITHERBLOOM_A_EFFECT_RULES } from './witherbloom-a';
@@ -1658,6 +1659,8 @@ export const EFFECT_RULES = [
   ...COUNCIL_VOTES_EFFECT_RULES,
   // Secret council (Círdan the Shipwright, Elrond of the White Council, Trap the Trespassers, Erestor of the Council, Model of Unity): secret votes and what the votes came to.
   ...SECRET_VOTES_EFFECT_RULES,
+  // Council's Judgment: a vote for permanents and the exile of those with the most votes.
+  ...VOTE_PERMANENTS_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
   // CR 726 (From the Catacombs): "You take the initiative."
