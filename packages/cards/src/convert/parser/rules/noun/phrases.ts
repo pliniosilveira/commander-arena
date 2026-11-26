@@ -1193,6 +1193,8 @@ interface CardWords {
   readonly outlaw?: boolean;
   /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
   readonly notSupertypes?: readonly string[];
+  /** "basic land card" (CR 205.4, 205.4a): supertypes the card has; only "basic" with the land type is read. */
+  readonly supertypes?: readonly string[];
   /** "nonland card" (issue 102, CR 205.2a): card types the card does not have. */
   readonly notTypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
@@ -1304,6 +1306,11 @@ export function graveyardPhrase(
       ),
       // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
       optional(allowNonland ? map(literal('nonland '), () => ['land']) : fail, [] as string[]),
+      // "target basic land card from your graveyard" (Groundskeeper, CR 205.4, 205.4a): the supertype basic, said only with the land type.
+      optional(
+        map(literal('basic '), () => ['basic']),
+        [] as string[],
+      ),
       nonSubtypes,
       // CR 700.12: "outlaw creature card from your graveyard" (Back in Town, Charred Graverobber); outlaw is no creature type.
       optional(
@@ -1327,10 +1334,11 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSupertypes, notTypes, notSubtypes, outlaw, subtypes, types]): CardWords => ({
+    ([notSupertypes, notTypes, basic, notSubtypes, outlaw, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
+      ...(basic.length > 0 ? { supertypes: basic } : {}),
       ...(outlaw === undefined ? {} : { outlaw }),
       ...(notTypes.length > 0 ? { notTypes } : {}),
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
@@ -1598,6 +1606,7 @@ export function graveyardPhrase(
         types,
         anyOf,
         subtypes,
+        supertypes,
         notSubtypes,
         notSupertypes,
         notTypes,
@@ -1620,9 +1629,17 @@ export function graveyardPhrase(
     // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
     if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
     if (putThere === 'library' && preposition !== 'inOpponents') return fail(ctx, pos);
+    // "basic" is read only of a land card ("basic land card"): CR 205.4a, basic is a supertype that only lands have.
+    if (supertypes !== undefined && !types.includes('land')) return fail(ctx, pos);
     const filter = toFilter(
       'graveyard',
-      { ...NO_PARTS, types, controller, ...(notTypes === undefined ? {} : { notTypes }) },
+      {
+        ...NO_PARTS,
+        types,
+        controller,
+        ...(supertypes === undefined ? {} : { supertypes: [...supertypes] }),
+        ...(notTypes === undefined ? {} : { notTypes }),
+      },
       ctx.text.slice(pos, r.pos),
     );
     return {

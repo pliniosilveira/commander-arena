@@ -764,7 +764,7 @@ describe('tokens: tapped, counted, and made by a player (CR 110.5b, 111.2)', () 
     'Create a tapped Treasure.',
     'Create a Treasure token tapped.',
     'Create tapped Treasure tokens.',
-    'Create a tapped token that’s a copy of target creature.',
+    'Create a tapped token that’s a copy of equipped creature.',
     'Investigate twice.',
     'Investigate once.',
     'Create X Treasure tokens for each land you control.',

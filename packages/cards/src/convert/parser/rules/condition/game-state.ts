@@ -18,7 +18,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrComparison, IrCondition, IrNoun } from '../../ir/types';
-import { counted } from '../amount/count';
+import { counted, countedAre } from '../amount/count';
 import { quantity } from '../amount/index';
 import { defineRule, spanned } from '../registry';
 
@@ -211,6 +211,53 @@ export const CONDITION_AMOUNT_COUNT = defineRule<IrCondition>({
     return {
       ok: true,
       value: condition('condition.amount-count', pos, r.pos, { kind: 'amountIs', amount, compare }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.amount-count-are`: "seven or more land cards are in your graveyard" (Scouring Swarm, CR 603.4, 608.2c): the count of `condition.amount-count`, said with the cards first and
+ * "are in" a zone. The engine's `amountIs` of the `countOf` those cards. Not read: "there are" or "you have" (the other rule), one card ("is in"), a number with no "or more".
+ */
+export const CONDITION_AMOUNT_COUNT_ARE = defineRule<IrCondition>({
+  id: 'condition.amount-count-are',
+  family: 'condition',
+  leading: [],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'seven or more land cards are in your graveyard',
+    'four or more creature cards are in your graveyard',
+    '3 or more cards are in your graveyard',
+    'two or fewer cards are in your hand',
+  ],
+  rejects: [
+    'seven or more land cards are in your graveyard.',
+    'seven land cards are in your graveyard',
+    'zero or more land cards are in your graveyard',
+    'seven or more land cards are in a graveyard',
+    'seven or more land cards in your graveyard',
+    'seven or more land cards are on the battlefield',
+    'seven or more creatures are in your graveyard',
+    'there are seven or more land cards in your graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      numberCompare(),
+      literal(' '),
+      countedAre('condition.amount-count-are'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [compare, , of] = r.value;
+    if (of.filter.card !== true) return fail(ctx, pos);
+    const amount: IrAmount = { kind: 'countOf', of, span: of.span };
+    return {
+      ok: true,
+      value: condition('condition.amount-count-are', pos, r.pos, {
+        kind: 'amountIs',
+        amount,
+        compare,
+      }),
       pos: r.pos,
     };
   },
@@ -471,6 +518,7 @@ export const GAME_STATE_CONDITION_RULES = [
   CONDITION_COMPLETED_DUNGEON,
   CONDITION_DESIGNATION,
   CONDITION_AMOUNT_COUNT,
+  CONDITION_AMOUNT_COUNT_ARE,
   CONDITION_OPPONENT_CARDS_IN_GRAVEYARD,
   CONDITION_TOTAL_STAT,
   CONDITION_COUNTERS_AMONG,
