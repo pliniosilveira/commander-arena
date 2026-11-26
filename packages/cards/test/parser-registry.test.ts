@@ -1416,6 +1416,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.during-your-turn': asIs,
   // World Shaper deck: the permission to play the cards exiled with ~, a whole line; the condition after "as long as" of a permission to cast from the top of the library.
   'static.play-linked-exile': asIs,
+  'static.play-linked-exile-lands-and-spells': asIs,
   'condition.control-different-powers': permanent(
     (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
   ),

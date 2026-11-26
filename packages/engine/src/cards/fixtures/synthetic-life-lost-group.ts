@@ -215,4 +215,33 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "At the beginning of your upkeep, exile the top card of your library. During your turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled
+  //  with this enchantment."
+  singleFace({
+    name: 'SYNTHETIC Grim Playhouse',
+    manaCost: ['1', 'B', 'R'],
+    types: ['enchantment'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    oracleText:
+      'At the beginning of your upkeep, exile the top card of your library. During your turn, if an opponent lost life this turn, you may play lands and cast spells from among cards exiled with this enchantment.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'upkeep', whose: 'you' },
+        effect: { kind: 'exileTop', count: 1, linked: true },
+      },
+      {
+        kind: 'static',
+        static: { kind: 'playFromLinkedExile' },
+        condition: {
+          kind: 'and',
+          terms: [
+            { kind: 'yourTurn' },
+            { kind: 'aPlayerLostLifeThisTurn', atLeast: 1, opponent: true },
+          ],
+        },
+      },
+    ],
+  }),
 ];
