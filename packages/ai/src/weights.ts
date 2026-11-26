@@ -121,6 +121,11 @@ export interface MainWeights {
   readonly spellPerMana: number;
   /** A counterspell is cast only at a spell of at least this mana value. */
   readonly counterMinValue: number;
+  /**
+   * Counter or hold (`heuristic-response-look.ts`): a counterspell that today's rule would cast is held when playing
+   * the turn on with the agent passing scores better than playing it with the counterspell cast by more than this.
+   */
+  readonly counterLookMargin: number;
 }
 
 export interface PlanWeights {
@@ -155,6 +160,11 @@ export interface RemovalWeights {
   readonly walkerBase: number;
   /** ... and its value per loyalty counter. */
   readonly walkerLoyalty: number;
+  /**
+   * Removal target look-ahead (`heuristic-response-look.ts`, two players): today's target and the best two others whose
+   * value is within this many points of the best one's are played on to the start of the agent's next turn.
+   */
+  readonly lookMargin: number;
 }
 
 export interface ThreatWeights {
@@ -277,6 +287,7 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     spellBase: 1,
     spellPerMana: 0.8,
     counterMinValue: 2,
+    counterLookMargin: 1,
   },
   plan: {
     margin: 0.5,
@@ -286,7 +297,7 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     deepMargin: 1.5,
     deepBlend: 0.5,
   },
-  removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6 },
+  removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6, lookMargin: 4 },
   threat: { commander: 2, lethal: 20 },
   protection: { margin: 0.5, commanderBonus: 4, permanentValue: 3, saveValue: 6 },
   mulligan: { minLands: 2, maxLands: 5 },

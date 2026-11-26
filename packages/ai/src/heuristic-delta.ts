@@ -8,13 +8,41 @@
  * budget (`Think.budget`, which counts these engine calls) stops the search: a play the search did not reach
  * is kept, as it was before.
  */
-import type { Action, GameView, PendingDecision } from '@commander-arena/engine';
+import type { Action, GameState, GameView, PendingDecision, SeatId } from '@commander-arena/engine';
 import type { Play } from './casual-priority';
 import { evaluate } from './evaluate';
-import type { Think } from './heuristic-budget';
+import type { Engine, Think } from './heuristic-budget';
 import { applyOrNull, playOut, within } from './heuristic-sim';
 
 export type Answer = (view: GameView, pending: PendingDecision) => Action;
+
+/**
+ * Applies `first` for `me` on `state` and answers the follow-up questions of the same seat (targets, payment)
+ * with `answer`, up to the next priority decision; null when the engine refuses a step.
+ */
+export function applyAnswering(
+  state: GameState,
+  me: SeatId,
+  first: Action,
+  answer: Answer,
+  engine: Engine,
+): GameState | null {
+  let current = applyOrNull(state, me, first, engine);
+  if (current === null) return null;
+  for (let i = 0; i < 12; i += 1) {
+    const pending = current.pending;
+    if (pending === null || pending.seat !== me || pending.kind === 'priority') break;
+    let next: GameState | null;
+    try {
+      next = applyOrNull(current, me, answer(engine.view(current, me), pending), engine);
+    } catch {
+      return null;
+    }
+    if (next === null) return null;
+    current = next;
+  }
+  return current;
+}
 
 /** Casts `play` on the sample and plays the follow-up questions and the rest of the turn out; the score or null. */
 export function scoreCast(
@@ -26,24 +54,8 @@ export function scoreCast(
 ): number | null {
   if (sample === undefined) return null;
   const engine = think.budget.engine;
-  let state = sample;
-  if (play !== null) {
-    const cast = applyOrNull(state, me, play, engine);
-    if (cast === null) return null;
-    state = cast;
-    for (let i = 0; i < 12; i += 1) {
-      const pending = state.pending;
-      if (pending === null || pending.seat !== me || pending.kind === 'priority') break;
-      let next: ReturnType<typeof applyOrNull>;
-      try {
-        next = applyOrNull(state, me, answer(engine.view(state, me), pending), engine);
-      } catch {
-        return null;
-      }
-      if (next === null) return null;
-      state = next;
-    }
-  }
+  const state = play === null ? sample : applyAnswering(sample, me, play, answer, engine);
+  if (state === null) return null;
   // Played on to the start of the next turn, so effects that last until end of turn (a pump) and marked
   // damage are gone and only what lasts is scored.
   const turn = sample.turn.number;
