@@ -353,6 +353,13 @@ export function amountOf(
   if (amount.kind === 'controllerLifeLostThisTurn') {
     return getSeat(state, ctx.controller).lifeLostThisTurn;
   }
+  if (amount.kind === 'opponentsLifeLostThisTurn') {
+    // CR 119.3, 102.2: the life lost this turn by every opponent still in the game, added up.
+    return opponentsOf(state, ctx.controller).reduce(
+      (total, seat) => total + getSeat(state, seat).lifeLostThisTurn,
+      0,
+    );
+  }
   if (amount.kind === 'lifeGainedOrLostThisTurn') {
     return Math.max(
       state.turnLog.lifeGainedTotal[ctx.controller] ?? 0,

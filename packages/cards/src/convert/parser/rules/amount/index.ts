@@ -13,6 +13,7 @@ import { ENERGY_PAID_AMOUNT_RULES } from './energy-paid';
 import { EXPERIENCE_AMOUNT_RULES } from './experience';
 import { F144_AMOUNT_RULES } from './f144';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
+import { FLINT_AMOUNT_RULES } from './flint';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
 import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
@@ -516,6 +517,8 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_SCRIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
   ...KORVOLD_AMOUNT_RULES,
+  // Flint deck (issue 685): "for each 1 life your opponents have lost this turn".
+  ...FLINT_AMOUNT_RULES,
   // CR 205.2a: "for each card type among cards in your graveyard".
   ...CARD_TYPES_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".

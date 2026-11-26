@@ -469,6 +469,9 @@ export function checkFilter(
   ) {
     issue(out, `${path}.manaSpentFromSubtype`, 'manaSpentFromSubtype must be a subtype name');
   }
+  if (f.hasMadness !== undefined && f.hasMadness !== true) {
+    issue(out, `${path}.hasMadness`, 'hasMadness must be true when present');
+  }
   if (f.firstManaSpentFromSubtypeThisTurn === true && f.manaSpentFromSubtype === undefined) {
     issue(
       out,
@@ -2486,6 +2489,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsAttackedThisCombat':
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
+    case 'opponentsLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -2981,6 +2985,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
+    case 'opponentsLifeLostThisTurn':
     case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
@@ -4407,6 +4412,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.count`, 'the mana spent is a whole number of 1 or more');
       }
       break;
+    case 'manaSpentFromSubtype':
+      // CR 601.2h (Smaug, Wicked Worm): the mana of a source of this subtype spent on the spell that caused a cast trigger.
+      if (typeof c.subtype !== 'string' || c.subtype === '') {
+        issue(
+          out,
+          `${path}.subtype`,
+          'the subtype of the source of the mana must be a non-empty string',
+        );
+      }
+      break;
     case 'spellTargets':
       // D-207: a filter of the objects the spell targets (battlefield permanents).
       checkFilter(c.filter, `${path}.filter`, out);
@@ -5343,17 +5358,21 @@ function checkChooseMove(
       sel.filter?.zone !== 'hand' ||
       sel.fromMoved === true ||
       sel.alsoGraveyard !== undefined ||
-      sel.optional !== true
+      // Zara's choice is optional ("you may put"); Cruelclaw's Heist's is not ("You choose a nonland card from it"), and then the hand is revealed.
+      (sel.optional !== true && sel.revealHand !== true)
     ) {
       issue(
         out,
         `${path}.fromHandOf`,
-        'a choice from the hand of another player names the hand as its zone, is optional and is not a choice among moved cards or from the graveyard',
+        'a choice from the hand of another player names the hand as its zone, is optional (or reveals the hand) and is not a choice among moved cards or from the graveyard',
       );
     }
-    if (sel.fromHandOf.kind !== 'defendingPlayer') {
+    if (sel.fromHandOf.kind !== 'defendingPlayer' && sel.revealHand !== true) {
       issue(out, `${path}.fromHandOf`, "only the defending player's hand is read");
     }
+  }
+  if (sel.revealHand !== undefined && (sel.revealHand !== true || sel.fromHandOf === undefined)) {
+    issue(out, `${path}.revealHand`, 'revealHand is true and needs fromHandOf');
   }
   // Oblivion Sower: "land cards that player owns from exile": the cards in exile of one named player, the chooser choosing.
   if (sel.fromExileOf !== undefined) {
@@ -8250,11 +8269,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
         }
-        if ((e.objects as ChooseSelector).fromHandOf !== undefined && e.to !== 'battlefield') {
+        if (
+          (e.objects as ChooseSelector).fromHandOf !== undefined &&
+          e.to !== 'battlefield' &&
+          !((e.objects as ChooseSelector).revealHand === true && e.to === 'exile')
+        ) {
           issue(
             out,
             `${path}.to`,
-            "a card chosen from another player's hand is put onto the battlefield",
+            "a card chosen from another player's hand is put onto the battlefield (or, with the hand revealed, into exile)",
           );
         }
         if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {
@@ -8499,7 +8522,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
-    case 'lookAtTop':
+    case 'lookAtTop': {
       // D-139: look at the top N cards of the controller's library and take some that match.
       checkAmount(e.count, `${path}.count`, scope, out);
       checkFilter(e.take?.filter, `${path}.take.filter`, out);
@@ -8519,24 +8542,43 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner or stackKind',
         );
       }
-      if (!isCount(e.take?.max) || e.take.max < 1) {
+      // Orcish Spy (CR 701.20e, 401.2): "Look at the top three cards of target player's library": cards are looked at and none may be taken (`max` 0), so they all stay on top.
+      const lookOnly = e.take?.max === 0 && e.rest === 'top';
+      if (!isCount(e.take?.max) || (e.take.max < 1 && !lookOnly)) {
         issue(out, `${path}.take.max`, 'max must be a positive integer');
+      }
+      if (
+        lookOnly &&
+        (e.take?.to !== undefined ||
+          e.take?.min !== undefined ||
+          e.take?.kinds !== undefined ||
+          e.take?.hidden !== undefined ||
+          e.take?.all !== undefined ||
+          e.take?.any !== undefined ||
+          e.revealAll !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a look at cards with nothing taken (max 0) has no destination, min, kinds, hidden, all, any or revealAll',
+        );
       }
       // Gonti (CR 406.3, 608.2d): the library of one other player, one card of it exiled face down and remembered by nobody; the rest on the bottom of that library in a random order.
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
       }
-      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked') {
+      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked' && !lookOnly) {
         issue(
           out,
           `${path}.from`,
-          "from (another player's library) needs take.to 'exileFaceDownUnlinked'",
+          "from (another player's library) needs take.to 'exileFaceDownUnlinked', or a look with nothing taken (max 0)",
         );
       }
       if (
         e.take?.to === 'exileFaceDownUnlinked' &&
-        (e.take.max !== 1 ||
-          e.take.min !== 1 ||
+        (e.take.min !== e.take.max ||
+          // Black Cat, Cunning Thief (CR 406.3, 701.20): "exile two of them face down": a fixed number of cards, taken without a choice to stop.
+          (e.from === undefined && e.take.max !== 1) ||
           e.take.kinds !== undefined ||
           e.take.hidden !== undefined ||
           e.take.tapped !== undefined ||
@@ -8553,7 +8595,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.take`,
-          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order (or into the graveyard)",
+          "cards exiled face down from another player's library are a fixed number of cards (min equal to max) of any kind, with nothing revealed, and the rest go to the bottom in a random order (or into the graveyard)",
         );
       }
       // Harper Recruiter: one card for each of several kinds, put into the hand.
@@ -8802,6 +8844,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    }
     case 'copyCardAndCast':
       // D-654 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
       // Issue 121 (Arcane Bombardment): or the cards the permanent exiled with its linked ability ("copy each card exiled with this enchantment").
@@ -8961,6 +9004,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.fromHand`,
             "fromHand is true, on the cards an effect before moved ('moved'), with no play, max, perOwner, player, remember, paying or creatureGains",
+          );
+        }
+      }
+      // The Infamous Cruelclaw (CR 118.9, 701.9a): "by discarding a card rather than paying its mana cost": one discard of one card, for the card an effect before moved.
+      if (e.payInstead !== undefined) {
+        const only = e.payInstead;
+        if (
+          !Array.isArray(only) ||
+          only.length !== 1 ||
+          only[0]?.kind !== 'discard' ||
+          only[0].count !== 1 ||
+          only[0].filter !== undefined ||
+          kindOf(objects) !== 'moved' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.perOwner !== undefined ||
+          e.player !== undefined ||
+          e.remember !== undefined ||
+          e.paying !== undefined ||
+          e.fromHand !== undefined ||
+          e.creatureGains !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.payInstead`,
+            "payInstead is one discard of one card, on the cards an effect before moved ('moved'), with no play, max, perOwner, player, remember, paying, fromHand or creatureGains",
           );
         }
       }

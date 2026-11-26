@@ -87,6 +87,7 @@ describe('amounts that read an object', () => {
       'lifeGainedThisTurn',
       // CR 119.3 (Betor): the controller's own life lost this turn.
       'controllerLifeLostThisTurn',
+      'opponentsLifeLostThisTurn',
       'lifeGainedOrLostThisTurn',
       // Limit Break deck: an amount worked out as the spell is cast (Lifestream's Blessing).
       'asCast',

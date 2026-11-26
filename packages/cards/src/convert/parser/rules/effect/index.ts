@@ -125,6 +125,7 @@ import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
+import { FLINT_RIDER_EFFECT_RULES } from './flint-riders';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
@@ -1413,6 +1414,7 @@ export const EFFECT_RULES = [
   ...AHOY_G1B_EFFECT_RULES,
   // Brainstealer Dragon: "exile the top card of each opponent's library" and the any-color rider sentence start like the plain exile and "if" rules, and are tried first.
   ...BRAINSTEALER_G9_EFFECT_RULES,
+  ...FLINT_RIDER_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
   ...AHOY_G10_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.

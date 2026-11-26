@@ -11,6 +11,7 @@ import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
+import { definitionOf } from '../state/ops';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
@@ -398,6 +399,18 @@ export function matchesFilterWith(
   // CR 708.2, 701.40: "face-down" (true) or "face-up" (false) is the status the permanent has now.
   if (filter.facing !== undefined && d.isFaceDown !== (filter.facing === 'down')) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
+    return false;
+  }
+  // CR 702.35a (Anje Falkenrath: "if it has madness"): madness is a cost the card lists (`alternativeCosts`), not a keyword ability of the permanent; read from either face of the card.
+  if (
+    filter.hasMadness === true &&
+    !(
+      obj.card !== null &&
+      definitionOf(state, obj.card).faces.some((f) =>
+        f.alternativeCosts?.some((a) => a.kind === 'madness'),
+      )
+    )
+  ) {
     return false;
   }
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;

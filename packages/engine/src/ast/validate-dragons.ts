@@ -133,6 +133,23 @@ export function checkDragonsEffect(
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
       }
+      // The Ruinous Powers (CR 603.7, 119.3): "When you cast a spell this way, its owner loses life equal to its mana value": the one effect a cast rider of a play permission has.
+      if (
+        e.whenCast !== undefined &&
+        (e.lasts !== 'endOfTurn' ||
+          JSON.stringify(e.whenCast) !==
+            JSON.stringify({
+              kind: 'loseLife',
+              player: { kind: 'ownerOf', of: { kind: 'triggerSubject' } },
+              amount: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+            }))
+      ) {
+        issue(
+          out,
+          `${path}.whenCast`,
+          'a cast rider of a play permission is "its owner loses life equal to its mana value" (loseLife of the ownerOf the triggerSubject, the manaValueOf the triggerSubject), for a permission that lasts until end of turn',
+        );
+      }
       // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": generic mana off the cost, so a cost that is not free.
       if (e.lessGeneric !== undefined) {
         if (!isCount(e.lessGeneric) || e.lessGeneric < 1) {

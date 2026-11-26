@@ -192,9 +192,9 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
   examples: [
     'for each creature that died under your control this turn',
     'for each nontoken creature that died this turn',
+    'for each creature that died this turn',
   ],
   rejects: [
-    'for each creature that died this turn',
     'for each token creature that died this turn',
     'for each nontoken creature that died last turn',
     'for each creature that died under your control last turn',
@@ -219,7 +219,8 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
       };
     }
     // CR 700.4: "for each nontoken creature that died this turn" counts the creatures that died under any player's control; a token that died is not counted.
-    const any = pattern(/for each nontoken creature that died this turn(?![\p{L}\p{N}])/iu)(
+    // "for each creature that died this turn" (Mahadi, Emporium Master) counts them all, tokens too (a token put into a graveyard died, CR 700.4, 111.7).
+    const any = pattern(/for each (nontoken )?creature that died this turn(?![\p{L}\p{N}])/iu)(
       ctx,
       pos,
     );
@@ -230,7 +231,7 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
         kind: 'diedThisTurn',
         controller: 'any',
         types: ['creature'],
-        token: false,
+        ...(any.value[1] === undefined ? {} : { token: false }),
         span: { start: pos, end: any.pos },
       },
       pos: any.pos,
