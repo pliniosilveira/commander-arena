@@ -1394,6 +1394,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
   ),
+  // Eldrazi Monument: the rider of a sacrifice the controller may be unable to make.
+  'condition.if-you-cant': permanent(
+    (e) => `At the beginning of your upkeep, sacrifice a creature. If ${e}, sacrifice ~.`,
+  ),
   'condition.control-or-returned': spell(
     (e) =>
       `Mill four cards. You may put a permanent card from among them into your hand. If ${e}, create a Food token.`,

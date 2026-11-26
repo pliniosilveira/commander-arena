@@ -661,6 +661,7 @@ describe('unmatched abilities', () => {
       'condition.that-players-turn',
       'condition.you-dont-put-it-onto-battlefield',
       'condition.if-you-dont',
+      'condition.if-you-cant',
       'condition.host-is-color',
       'condition.other-attached-to-host',
       'condition.this-entered-this-turn',
