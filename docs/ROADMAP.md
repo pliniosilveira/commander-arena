@@ -165,6 +165,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Printings are kept by card name for the game on the table: on a card both decks name, a basic land above all, the player's printing is drawn for the opponent's copies too.
 - A "you may" on the first of several sentences is a `may` of that instruction only for `addCounters`; for any other first instruction it stays unread. `loseKeyword` takes keywords without parameters only.
 - A replicate cost that taps a permanent is refused with convoke, improvise, delve or a tapping alternative cost, and with mana in the same cost.
+- "Tap X untapped tokens you control: Add X mana in any combination of colors" (Hazel of the Rootbloom) is never part of automatic payment and has no control in the web's payment prompt: activate it at priority, then cast.
 - Exploit: the rules text was not available; a creature already gone as its exploit ability resolves does not trigger its exploit abilities (unverified).
 - "That was dealt damage this turn" is read only in "costs {3} less to cast if it targets a creature that was dealt damage this turn"; as a target or group wording elsewhere it stays unread.
 - Melee counts an opponent as attacked only when a creature was declared attacking that player, not a planeswalker or battle they control; unverified against the CR text, which was not available.
