@@ -2427,7 +2427,12 @@ export type IrStaticEffect =
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.
    */
-  | { readonly kind: 'cantCastThis'; readonly turns: number }
+  | {
+      readonly kind: 'cantCastThis';
+      readonly turns?: number;
+      /** "You can't cast ~ unless an opponent lost life this turn." (Rakdos, Lord of Riots; CR 101.2, 119.3): the card can be cast only when an opponent has lost life this turn. */
+      readonly unlessOpponentLostLife?: true;
+    }
   /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (stage P33, D-150, CR 509.1b, 509.1d): `cost` is
    * what each blocker costs its controller; `whileAttacking` is "As long as ~ is attacking," before it. The subject is `creatures`.

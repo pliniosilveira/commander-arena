@@ -355,17 +355,26 @@ export function lowerAngelStatic(
       case 'cantCastThis': {
         // CR 101.2, 500.1: the card can't be cast during the first N turns of the player who would cast it.
         if (subject.det !== 'self' || effects.length !== 1) return failure(ability);
+        if ((effect.turns === undefined) === (effect.unlessOpponentLostLife === undefined)) {
+          return failure(ability);
+        }
         const blocked = missingFeatures([
           'ability:static',
           'static:cantCastThis',
           'ability:staticCondition',
-          'condition:ownTurnNumber',
+          ...(effect.unlessOpponentLostLife === true
+            ? (['condition:aPlayerLostLifeThisTurn', 'condition:not'] as const)
+            : (['condition:ownTurnNumber'] as const)),
         ]);
         if (blocked.length > 0) return failure(ability, blocked);
-        const condition: Condition = {
-          kind: 'ownTurnNumber',
-          compare: { cmp: 'atMost', value: effect.turns },
-        };
+        // CR 119.3, 102.2: "unless an opponent lost life this turn" is the negation of the condition "an opponent lost life this turn".
+        const condition: Condition =
+          effect.turns === undefined
+            ? {
+                kind: 'not',
+                term: { kind: 'aPlayerLostLifeThisTurn', atLeast: 1, opponent: true },
+              }
+            : { kind: 'ownTurnNumber', compare: { cmp: 'atMost', value: effect.turns } };
         abilities.push({ kind: 'static', static: { kind: 'cantCastThis' }, condition });
         break;
       }

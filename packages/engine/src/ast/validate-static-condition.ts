@@ -53,6 +53,7 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'playerDealtDamage',
   'lifeGainedThisTurn',
   'lifeGainedAndLostThisTurn',
+  'aPlayerLostLifeThisTurn',
   'castFromGraveyardThisTurn',
   'cardsInGraveyard',
   'cardsInLibrary',
@@ -230,6 +231,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the spells cast this turn, from the turn log, which no layer changes
     case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
+    case 'aPlayerLostLifeThisTurn': // CR 119.3 (Rakdos, Lord of Riots): the seats' life lost this turn, which no layer changes
     case 'castFromGraveyardThisTurn': // Issue 159: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'cardsInLibrary': // D-331: the cards in a zone, which no layer changes

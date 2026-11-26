@@ -193,4 +193,26 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "You can't cast this creature unless an opponent lost life this turn."
+  singleFace({
+    name: 'SYNTHETIC Grudging Rioter',
+    manaCost: ['B'],
+    types: ['creature'],
+    subtypes: ['Demon'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 2,
+    toughness: 2,
+    oracleText: "You can't cast this creature unless an opponent lost life this turn.",
+    abilities: [
+      {
+        kind: 'static',
+        static: { kind: 'cantCastThis' },
+        condition: {
+          kind: 'not',
+          term: { kind: 'aPlayerLostLifeThisTurn', atLeast: 1, opponent: true },
+        },
+      },
+    ],
+  }),
 ];
