@@ -2222,7 +2222,7 @@ export interface ChooseSelector {
   /**
    * "A creature with the greatest power among creatures they control" (D-135): the choice is limited to the permanents the
    * filter matches that have the greatest value of this stat among them (the player chooses among the tied ones). Read as
-   * the choice is made, with the stat as `derive` gives it. Only for `sacrifice`.
+   * the choice is made, with the stat as `derive` gives it. Only for `sacrifice`, and for a `moveToZone` choice with `players` (Dispersal).
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /**
@@ -2281,6 +2281,13 @@ export interface ChooseSelector {
    * each, with `count` 1. Only for `moveToZone` to exile, with `filter.zone` `graveyard` and no `fromMoved`.
    */
   readonly eachGraveyard?: true;
+  /**
+   * "Each opponent returns a nonland permanent they control with the greatest mana value among permanents they control to its owner's hand" (Discovery // Dispersal, CR 608.2d, 101.4,
+   * 701.21a's wording for a return): each player the selector names chooses among the permanents they control that `filter` matches (`filter.controller` is `you`, read for each chooser)
+   * and the permanents chosen move together once the last has chosen, the players choosing in APNAP order; with `greatest` the choice is among the ties for the greatest value of that stat
+   * among the matching permanents. Only for `moveToZone` to the hand with a `filter.zone` of the battlefield (left out), no `optional` and no other quantity than `count`.
+   */
+  readonly players?: PlayerSelector;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
   /**

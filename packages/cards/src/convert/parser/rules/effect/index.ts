@@ -83,6 +83,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { EACH_RETURNS_EFFECT_RULES } from './each-returns';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
@@ -1413,6 +1414,7 @@ export const EFFECT_RULES = [
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
   ...CLOAK_EFFECT_RULES,
+  ...EACH_RETURNS_EFFECT_RULES,
   ...CAST_FREE_HAND_VALUE_EFFECT_RULES,
   // Lorwyn Eclipsed (CR 701.68a): "blight 1" as an instruction.
   ...BLIGHT_EFFECT_RULES,

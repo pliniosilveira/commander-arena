@@ -912,6 +912,7 @@ describe('unmatched abilities', () => {
       'effect.amass',
       'effect.populate',
       'effect.cloak',
+      'effect.each-returns',
       'effect.cast-free-hand-value',
       'effect.blight',
       'effect.each-enters-with-additional-counters',

@@ -1508,6 +1508,8 @@ export type Instruction =
       readonly optional?: true;
       /** "Put a creature card from defending player's hand" (`ChooseSelector.fromHandOf`): the candidates are the cards in the hand of this player, not the chooser's. */
       readonly handOf?: SeatId;
+      /** "With the greatest mana value among permanents they control" (`ChooseSelector.greatest` of a choice with `players`): only the permanents tied for the greatest value of the stat are offered. */
+      readonly greatest?: 'power' | 'toughness' | 'manaValue';
       /** "From your hand or graveyard" (`ChooseSelector.alsoGraveyard`, D-544): the cards of the graveyard are candidates besides those of the hand `filter` names. */
       readonly alsoGraveyard?: true;
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */

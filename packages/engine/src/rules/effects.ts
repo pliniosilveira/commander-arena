@@ -1276,6 +1276,33 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // CR 608.2d, 101.4 (Dispersal): "each opponent returns a nonland permanent they control ... to its owner's hand": each player the selector names chooses among their own
+        // permanents, in APNAP order, and the permanents chosen move together once the last has chosen.
+        if (sel.players !== undefined) {
+          const [first, ...later] = apnapOrder(
+            state,
+            resolvePlayers(state, sel.players, ctx, targets),
+          );
+          if (first === undefined) return { ...done(state), lastMoved: [] };
+          const returning = {
+            kind: 'chooseMove' as const,
+            filter: sel.filter,
+            count: amountOf(state, sel.count ?? 1, ctx, targets),
+            to: effect.to,
+            position: effect.position ?? 'top',
+            ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
+            seat: first,
+            chosen: null,
+          };
+          return {
+            ...done(
+              state,
+              [],
+              [later.length === 0 ? returning : { ...returning, together: { later, held: [] } }],
+            ),
+            lastMoved: [],
+          };
+        }
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];

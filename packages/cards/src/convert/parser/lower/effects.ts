@@ -80,6 +80,7 @@ import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
+import { EACH_RETURNS_LOWERINGS } from './each-returns';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
@@ -2883,6 +2884,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...CLOAK_LOWERINGS,
+  ...EACH_RETURNS_LOWERINGS,
   ...BLIGHT_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.

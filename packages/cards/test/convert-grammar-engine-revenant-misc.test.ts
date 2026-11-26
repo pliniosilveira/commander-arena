@@ -172,6 +172,47 @@ describe("Final-Word Phantom: spells at instant speed during each opponent's end
 /** Tries to cast the Bears from seat 0's hand. */
 const g2 = (g: ScenarioGame) => g.act(0).try.cast(BEARS);
 
+// ---- Dispersal: "Each opponent returns a nonland permanent they control with the greatest mana value among permanents they control to its owner's hand, then discards a card."
+
+const DISPERSAL = parsed(
+  'SYNTHETIC Parsed Dispersal',
+  'Instant',
+  "Each opponent returns a nonland permanent they control with the greatest mana value among permanents they control to its owner's hand, then discards a card.",
+  { manaCost: '{3}{U}{B}', colors: ['U', 'B'] },
+);
+
+describe('Dispersal: each opponent returns their most expensive nonland permanent, then discards', () => {
+  const board = () =>
+    scenario({ seats: 3 })
+      .define(DISPERSAL)
+      .seat(0)
+      .hand(DISPERSAL.name)
+      .battlefield('Island', { count: 3 })
+      .battlefield('Swamp', { count: 2 })
+      .seat(1)
+      .battlefield('Giant Spider', 'Grizzly Bears', 'Forest')
+      .hand('Plains', 'Plains')
+      .seat(2)
+      .battlefield('Llanowar Elves')
+      .hand('Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the unique greatest permanent of every opponent goes to its owner hand and they discard a card', () => {
+    const g = board();
+    g.act(0).cast(DISPERSAL.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Giant Spider', 'hand', { seat: 1 });
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 1 });
+    g.expect.zone('Llanowar Elves', 'hand', { seat: 2 });
+    g.act(1).chooseCards('Plains[0]');
+    g.act(2).chooseCards('Plains');
+    g.expect.handSize(1, 2);
+    g.expect.handSize(2, 1);
+    g.expect.invariants();
+  });
+});
+
 // ---- Marvo, Deep Operative: "Whenever ~ attacks, clash with defending player." and "Whenever you win a clash, draw a card. Then you may cast a spell from your hand with mana value 8
 // or less without paying its mana cost." (CR 701.30, 508.5, 608.2g, 118.9).
 
