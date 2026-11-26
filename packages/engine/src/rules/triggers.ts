@@ -516,6 +516,11 @@ function occurrences(
       return event.kind === 'coinFlipped' && event.won
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
+    case 'winsClash':
+      // CR 701.30d (Marvo, Deep Operative): the player who won the clash.
+      return event.kind === 'clashWon'
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'becomesMonstrous':
       // CR 701.37a, 701.37b: the permanent that became monstrous.
       return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
@@ -992,6 +997,7 @@ function matches(
     case 'surveils':
     case 'rollsHighest':
     case 'winsCoinFlip':
+    case 'winsClash':
       // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability. CR 706.1a: the player who rolled the die.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -1283,6 +1289,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'surveiled':
     case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
     case 'coinFlipped': // CR 705.2 (Setzer): "whenever you win a coin flip"
+    case 'clashWon': // CR 701.30d (Marvo, Deep Operative): "whenever you win a clash"
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':

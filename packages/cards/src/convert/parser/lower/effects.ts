@@ -38,7 +38,9 @@ import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
 import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
+import { CLASH_DEFENDING_LOWERINGS } from './clash-defending';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
+import { CLOAK_LOWERINGS } from './cloak';
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
@@ -79,6 +81,7 @@ import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
+import { EACH_RETURNS_LOWERINGS } from './each-returns';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
@@ -2767,6 +2770,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
+  ...CLASH_DEFENDING_LOWERINGS,
   // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards" after a mill.
   ...LOCKE_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
@@ -2885,6 +2889,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...CLOAK_LOWERINGS,
+  ...EACH_RETURNS_LOWERINGS,
   ...BLIGHT_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.

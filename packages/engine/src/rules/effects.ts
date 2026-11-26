@@ -1287,6 +1287,33 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // CR 608.2d, 101.4 (Dispersal): "each opponent returns a nonland permanent they control ... to its owner's hand": each player the selector names chooses among their own
+        // permanents, in APNAP order, and the permanents chosen move together once the last has chosen.
+        if (sel.players !== undefined) {
+          const [first, ...later] = apnapOrder(
+            state,
+            resolvePlayers(state, sel.players, ctx, targets),
+          );
+          if (first === undefined) return { ...done(state), lastMoved: [] };
+          const returning = {
+            kind: 'chooseMove' as const,
+            filter: sel.filter,
+            count: amountOf(state, sel.count ?? 1, ctx, targets),
+            to: effect.to,
+            position: effect.position ?? 'top',
+            ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
+            seat: first,
+            chosen: null,
+          };
+          return {
+            ...done(
+              state,
+              [],
+              [later.length === 0 ? returning : { ...returning, together: { later, held: [] } }],
+            ),
+            lastMoved: [],
+          };
+        }
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
@@ -2943,9 +2970,16 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
-    case 'clash':
+    case 'clash': {
       // CR 701.30b: the controller clashes with an opponent, in stages (rules/clash.ts); who won is what `clashWon` reads.
-      return done(state, [], [newClash()]);
+      if (effect.against === undefined) return done(state, [], [newClash()]);
+      // "Clash with defending player" (CR 508.5, 701.30b): the opponent is named, not chosen; with no defending player (it left combat or the game) there is no clash.
+      const [against] = resolvePlayers(state, effect.against, ctx, targets);
+      if (against === undefined || against === res.controller || getSeat(state, against).hasLost) {
+        return { ...done(state), clashWon: false };
+      }
+      return done(state, [], [newClash(against)]);
+    }
 
     case 'coinFlip': {
       // CR 705.2: the controller flips a coin with the call the option made (the `chooseOne` the player answered); they win the flip when it matches the result.

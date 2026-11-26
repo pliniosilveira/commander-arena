@@ -65,15 +65,22 @@ export function turnUpPayDetail(name: string): string {
 
 /** The title of the badge on a face-down permanent. */
 export function faceDownBadgeTitle(o: ObjectView): string {
-  const by = o.faceDownBy === 'manifest' ? 'manifested' : 'face down';
+  const by =
+    o.faceDownBy === 'manifest' ? 'manifested' : o.faceDownBy === 'cloak' ? 'cloaked' : 'face down';
   return isOwnFaceDown(o)
-    ? `This permanent is ${by}: a 2/2 creature with no name, no types but creature, no mana cost and no abilities. Only you can look at the card (${o.hiddenFace?.name ?? 'the card'}); the preview shows it.${o.turnFaceUpCost === undefined ? ' It can’t be turned face up: it is not a creature card with a mana cost.' : ' You may turn it face up any time you have priority by paying its mana cost.'}`
+    ? `This permanent is ${by}: a 2/2 creature with no name, no types but creature, no mana cost and no abilities${o.faceDownBy === 'cloak' ? ' but ward {2}' : ''}. Only you can look at the card (${o.hiddenFace?.name ?? 'the card'}); the preview shows it.${o.turnFaceUpCost === undefined ? ' It can’t be turned face up: it is not a creature card with a mana cost.' : ' You may turn it face up any time you have priority by paying its mana cost.'}`
     : `This permanent is ${by}: a 2/2 creature with no name, no types but creature, no mana cost and no abilities. Nobody but its controller can look at the card; it is revealed if it leaves the battlefield.`;
 }
 
 /** The log line of a manifest: "You manifest the top card of your library", "Opponent manifests the top card of your library". It names no card (CR 708.5). */
-export function manifestedLine(who: string, yours: boolean, library: string): string {
-  return `${who} ${yours ? 'manifest' : 'manifests'} the top card of ${library}.`;
+export function manifestedLine(
+  who: string,
+  yours: boolean,
+  library: string,
+  cloaked = false,
+): string {
+  const verb = cloaked ? 'cloak' : 'manifest';
+  return `${who} ${yours ? verb : `${verb}s`} the top card of ${library}.`;
 }
 
 /** The log line of turning a face-down permanent face up: the card is public from then on (CR 708.8). */

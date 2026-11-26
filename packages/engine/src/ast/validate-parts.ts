@@ -3669,6 +3669,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'descendedThisTurn':
     case 'yourMainPhase':
     case 'yourTurn':
+    case 'opponentsEndStep':
       // D-187, D-206: no parameters.
       break;
     case 'yourCombatPhase':
@@ -4437,8 +4438,29 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
+  // CR 608.2d (Dispersal): a choice with `players` is made by each player the selector names, among their own permanents, and may be limited to the ties for the greatest value.
+  if (sel.players !== undefined) {
+    checkPlayerSelector(sel.players, `${path}.players`, scope, out);
+    if (
+      (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') ||
+      sel.optional !== undefined ||
+      sel.anyNumber !== undefined ||
+      sel.fromMoved !== undefined ||
+      sel.fromHandOf !== undefined ||
+      sel.alsoGraveyard !== undefined ||
+      sel.eachGraveyard !== undefined ||
+      sel.chosenBy !== undefined ||
+      sel.minCardTypes !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.players`,
+        'a choice by each player is among the permanents on the battlefield they control, with no other option than count and greatest',
+      );
+    }
+  }
   if (
-    sel.greatest !== undefined ||
+    (sel.greatest !== undefined && sel.players === undefined) ||
     sel.least !== undefined ||
     sel.dealtCombatDamageToYou !== undefined ||
     (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
@@ -5778,6 +5800,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.fromLibraryOf !== undefined) {
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
       }
+      if (e.cloak === true && e.fromLibraryOf !== undefined) {
+        issue(
+          out,
+          `${path}.cloak`,
+          "cloak takes the top card of the cloaking player's own library",
+        );
+      }
       break;
     case 'keepOrSacrifice':
       // CR 608.2d, 701.21a (Slaughter the Strong): each player the selector names keeps a set of their own permanents with total power at most the limit, and sacrifices the rest.
@@ -6868,6 +6897,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       } else if (kindOf(e.objects) === 'choose') {
         checkChooseMove(e.objects as ChooseSelector, `${path}.objects`, scope, out);
+        if ((e.objects as ChooseSelector).players !== undefined && e.to !== 'hand') {
+          issue(out, `${path}.to`, "a choice by each player is put into the hand ('hand')");
+        }
         // A chosen permanent would enter under a control the choice does not settle: only a card chosen from the hand or the
         // graveyard (D-139) is put onto the battlefield, by the controller of the effect. A card that could be an Aura would need to
         // choose what to enchant (CR 303.4f): not run (`ast/supported.ts`).
@@ -8665,7 +8697,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 402.2: no parameters; it is the controller's.
       break;
     case 'clash':
-      // CR 701.30b: the controller clashes with an opponent; no parameters.
+      // CR 701.30b: the controller clashes with an opponent; `against` (CR 508.5) names the defending player of an attacking creature's ability instead.
+      if (e.against !== undefined) {
+        if (e.against.kind !== 'defendingPlayer') {
+          issue(out, `${path}.against`, "clash is against 'defendingPlayer' or a chosen opponent");
+        } else {
+          checkPlayerSelector(e.against, `${path}.against`, scope, out);
+        }
+      }
       break;
     case 'coinFlip':
       // CR 705.2: the call is heads or tails; the flip is a `chooseOne` option (the player calls as it resolves), so it is checked in the option (`chooseOne`).

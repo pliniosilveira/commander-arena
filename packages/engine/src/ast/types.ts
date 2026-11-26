@@ -2222,7 +2222,7 @@ export interface ChooseSelector {
   /**
    * "A creature with the greatest power among creatures they control" (D-135): the choice is limited to the permanents the
    * filter matches that have the greatest value of this stat among them (the player chooses among the tied ones). Read as
-   * the choice is made, with the stat as `derive` gives it. Only for `sacrifice`.
+   * the choice is made, with the stat as `derive` gives it. Only for `sacrifice`, and for a `moveToZone` choice with `players` (Dispersal).
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /**
@@ -2281,6 +2281,13 @@ export interface ChooseSelector {
    * each, with `count` 1. Only for `moveToZone` to exile, with `filter.zone` `graveyard` and no `fromMoved`.
    */
   readonly eachGraveyard?: true;
+  /**
+   * "Each opponent returns a nonland permanent they control with the greatest mana value among permanents they control to its owner's hand" (Discovery // Dispersal, CR 608.2d, 101.4,
+   * 701.21a's wording for a return): each player the selector names chooses among the permanents they control that `filter` matches (`filter.controller` is `you`, read for each chooser)
+   * and the permanents chosen move together once the last has chosen, the players choosing in APNAP order; with `greatest` the choice is among the ties for the greatest value of that stat
+   * among the matching permanents. Only for `moveToZone` to the hand with a `filter.zone` of the battlefield (left out), no `optional` and no other quantity than `count`.
+   */
+  readonly players?: PlayerSelector;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
   /**
@@ -2514,12 +2521,14 @@ export type Effect =
    * (CR 701.40a, 708.2a) under that player's control, and stays one until it is turned face up (the special action `turnFaceUp`, CR 701.40b). The library is
    * the same player's, or `fromLibraryOf`'s when that is given ("the top card of target opponent's library"). "Its controller manifests the top card of their
    * library" is `player: controllerOf` the exiled object (last-known information). An empty library manifests nothing (CR 701.40f: the card stays where it
-   * was; milling and manifesting from an empty library lose nothing). Cloak (CR 701.58) and manifest dread (CR 701.62) are other effects, not built.
+   * was; milling and manifesting from an empty library lose nothing). Manifest dread (CR 701.62) is another effect, not built.
+   * `cloak` (CR 701.58a, "cloak the top card of your library"): the same, and the face-down creature also has ward {2}; it is turned face up like a manifested one.
    */
   | {
       readonly kind: 'manifest';
       readonly player: PlayerSelector;
       readonly fromLibraryOf?: PlayerSelector;
+      readonly cloak?: true;
     }
   /**
    * CR 701.8 (Destroy). `cantBeRegenerated` is "It can't be regenerated" (CR 701.19c, D-120): the
@@ -4532,8 +4541,10 @@ export type Effect =
    * bottom of their library, and the cards move at the same time. The controller wins the clash if the card they revealed has a higher mana value than every other card revealed (CR 701.30d):
    * the condition `clashWon` of a later `conditional` or `repeatWhile` of the same resolution reads it. A later clash of the same resolution replaces it. Only the controller clashing
    * with an opponent: "each player clashes", "clash with target opponent" and a clash that more than two players join are not built.
+   * `against` (Marvo, Deep Operative: "clash with defending player", CR 508.5): the opponent is that player, not one the controller chooses; with none (the source is no longer in
+   * combat) nothing happens. Only `defendingPlayer`, in an ability of an attacking creature.
    */
-  | { readonly kind: 'clash' }
+  | { readonly kind: 'clash'; readonly against?: { readonly kind: 'defendingPlayer' } }
   /**
    * CR 701.22 (Scry): look at the top `count` cards of the library, put any number of them on the
    * bottom in any order and the rest on top in any order. `player` is left out or `you`: the
@@ -5549,6 +5560,11 @@ export type Trigger =
    * flip, which is the flip of a `coinFlip` whose call matched the result. A flip that nobody wins or loses (CR 705.2: an effect that only cares about heads or tails) is not run.
    */
   | { readonly kind: 'winsCoinFlip'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
+   * "Whenever you win a clash" (CR 701.30d, 603.2; Marvo, Deep Operative): once each time the player `who` names (relative to the controller of this ability) wins a clash (the event
+   * `clashWon`): the card they revealed had a greater mana value than every other card revealed.
+   */
+  | { readonly kind: 'winsClash'; readonly who: 'you' | 'opponent' | 'any' }
   /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
@@ -6958,6 +6974,12 @@ export type Condition =
    * read (a static ability's `condition` each time its effect is looked at; an `interveningIf` as the event happens and as the ability resolves).
    */
   | { readonly kind: 'yourTurn' }
+  /**
+   * "During each opponent's end step, you may cast spells as though they had flash." (CR 513.1, 601.3b, 611.3a): true while the game is in the end step of a turn of an
+   * opponent of the condition's controller (the active player is another player). Read where the condition is read: by the permission of a `castAsThoughFlash` static
+   * ability (`rules/legality.ts`) and as an `interveningIf` as the event happens and as the ability resolves; the stack empties before a step ends (CR 117.4).
+   */
+  | { readonly kind: 'opponentsEndStep' }
   /**
    * "If a card left your graveyard this turn" (CR 603.4, 400.7, D-206): a card of the controller's (owned by them) left a graveyard, to any zone, since
    * the turn began (a card cast from it, exiled, returned, shuffled in; a card that moved on from there is a new object and counts once, as it left).

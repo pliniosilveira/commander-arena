@@ -1384,6 +1384,12 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // "During each opponent's end step, you may cast spells as though they had flash." (Revenant Recon deck, CR 513.1, 601.3b): a permanent's permission with the condition
+  // the engine reads where the permission is used.
+  if (first.kind === 'castAsThoughFlash' && statement.condition !== undefined) {
+    if (more.length > 0 || statement.also !== undefined) return failure(ability);
+    return lowerOwnStatic(ability, first, ctx);
+  }
   if (statement.condition === undefined) {
     if (parts.length > 1) return failure(ability);
   } else {
@@ -1539,7 +1545,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     first.kind === 'opponentsCantCastSpells'
   ) {
     if (more.length > 0) return failure(ability);
-    return lowerOwnStatic(ability, first);
+    return lowerOwnStatic(ability, first, ctx);
   }
   // "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3).
   if (first.kind === 'creatureOffBattlefield') {
@@ -1596,6 +1602,7 @@ function lowerOwnStatic(
         | 'opponentsCantCastSpells';
     }
   >,
+  ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', ...needsOf(effect)]);
@@ -1633,6 +1640,16 @@ function lowerOwnStatic(
     void stackKind;
     const spells = lowerFilter(noun(described));
     if (!spells.ok) return spells;
+    // "During each opponent's end step, you may cast ..." (CR 513.1): the permission works while the condition holds, read where it is used; no other condition is read.
+    let condition: Condition | undefined;
+    if (ability.statement.condition !== undefined) {
+      if (ability.statement.condition.test.kind !== 'opponentsEndStep') return failure(ability);
+      const lowered = lowerCondition(ability.statement.condition, false, ctx);
+      if (!lowered.ok) return lowered;
+      const blocked = missingFeatures(['ability:staticCondition']);
+      if (blocked.length > 0) return failure(ability, blocked);
+      condition = lowered.value;
+    }
     // "Any player may cast ..." (CR 601.3b): every player may, so no controller is named; "You may cast ..." names the controller.
     return {
       ok: true,
@@ -1643,6 +1660,7 @@ function lowerOwnStatic(
             effect.anyPlayer === true
               ? { kind: 'castAsThoughFlash', spells: spells.value, anyPlayer: true }
               : { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+          ...(condition === undefined ? {} : { condition }),
         },
       ],
       rule: ability.rule,

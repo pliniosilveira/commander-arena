@@ -414,6 +414,7 @@ describe('supported feature gate', () => {
         'unblockedAttackBatch',
         'upkeep',
         'winsCoinFlip',
+        'winsClash',
       ].sort(),
     );
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('triggered');

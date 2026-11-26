@@ -288,7 +288,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Piles: the AI separates by a plain worth (mana value, a land a little, a creature's power and toughness) and does not read what the other player needs; the heuristic agent has no search over piles.
 - Piles: with fewer than two cards revealed the separator is not asked; the chooser still is.
 - Morph: a non-mana morph cost, a manifested card turned up for its morph cost (CR 701.40c), "when turned face up" triggers and an {X} morph cost are not built, nor are Megamorph and Disguise.
-- Cloak (CR 701.58) and manifest dread (CR 701.62) are not built or read; the cards stay unsupported.
+- Manifest dread (CR 701.62) is not built or read; the cards stay unsupported.
 - "Manifest the top card of target opponent's library" runs in the engine but the parser does not read it, nor "manifest the top two cards" or a count.
 - "When ~ is turned face up" and other abilities that care about a permanent being turned face up are not built; no trigger kind reads the `turnedFaceUp` event.
 - Turning a manifested card face up: the cost is revealed when the card is turned up, not when the player starts the action (CR 701.40b); a cancelled payment shows nobody anything.
@@ -586,3 +586,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A `chooseObjects` with `exactly` asks the controller even when one object qualifies (Zack Fair's "an Equipment that was attached to ~"), where nothing is left to choose; the answer is forced.
 - Ninjutsu reads only a mana cost; Commander ninjutsu is unread. Its rule number (702.49) and the CR 509.1h wording of "unblocked" are unverified, as the CR text was not available.
 - "Whenever you remove a time counter from this card while it's exiled" counts only Suspend's upkeep removal; other removals do not say who removed the counter. Surveil rulings (Dream Eater, Eye of Duskmantle) are unverified.
+- "Each opponent returns ..., then discards a card" runs as all returns, then all discards; with three or more seats a per-player order was not checked against rulings or the CR text (not available).

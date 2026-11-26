@@ -953,6 +953,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.roll-highest': whenever,
   // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
   'trigger.win-coin-flip': whenever,
+  // Marvo, Deep Operative (CR 701.30d): "you win a clash" follows "Whenever".
+  'trigger.win-clash': whenever,
   'effect.flip-coin': spell((e) => `${cap(e)}.`),
   // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
   'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
@@ -1173,6 +1175,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.foretold': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
+  // Final-Word Phantom (CR 513.1, 601.3b): the permission of a permanent, said for each opponent's end step.
+  'static.during-opponents-end-step': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),

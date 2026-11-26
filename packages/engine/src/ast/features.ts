@@ -647,6 +647,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'winsCoinFlip',
     // Watcher of Hours: "Whenever you remove a time counter from this card while it's exiled" (CR 702.62a).
     'removesCounterWhileExiled',
+    // CR 701.30d (Marvo, Deep Operative): "Whenever you win a clash".
+    'winsClash',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -1368,6 +1370,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'yourCombatPhase',
     // D-206: "during your turn" (`yourTurn`), "if a card left your graveyard this turn", "if at least four mana was spent to cast it", "if this spell was cast from a graveyard".
     'yourTurn',
+    // CR 513.1: "during each opponent's end step" (`opponentsEndStep`), the condition of a permission to cast as though with flash.
+    'opponentsEndStep',
     'cardLeftYourGraveyard',
     'descendedThisTurn',
     'manaSpentAtLeast',
@@ -2473,6 +2477,8 @@ export const CONDITION_KINDS = [
   'yourCombatPhase',
   /** "During your turn" (CR 611.3a, D-206): the engine's `yourTurn`. */
   'yourTurn',
+  /** "During each opponent's end step" (CR 513.1): the engine's `opponentsEndStep`. */
+  'opponentsEndStep',
   /** "If a card left your graveyard this turn" (D-206): the engine's `cardLeftYourGraveyard`. */
   'cardLeftYourGraveyard',
   /** "If you descended this turn": the engine's `descendedThisTurn`. */
@@ -3311,6 +3317,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   rollsHighest: true,
   winsCoinFlip: true,
   removesCounterWhileExiled: true,
+  winsClash: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,

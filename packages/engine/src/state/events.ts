@@ -68,6 +68,8 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly from: SeatId;
       readonly object: ObjectId;
+      /** CR 701.58a (Cloak): the card was cloaked, a manifest with ward {2}. */
+      readonly cloaked?: true;
     }
   /**
    * CR 116.2b, 701.40b, 708.8 (D-310): `seat` turned the face-down permanent `object` face up, a special action that does not use the stack. `card` is the card it
@@ -142,6 +144,11 @@ export type GameEvent =
       readonly result: 'heads' | 'tails';
       readonly won: boolean;
     }
+  /**
+   * CR 701.30d (Clash): `seat` won a clash: the card they revealed had a greater mana value than every other card revealed. "Whenever you win a clash" (`winsClash`) reads it. One event for
+   * the winner; a clash nobody wins (equal values, or no card revealed) has none.
+   */
+  | { readonly kind: 'clashWon'; readonly seat: SeatId }
   /**
    * CR 701.17a (Mill, D-131): `seat` put the top cards of their library into their graveyard, as the new objects they
    * became there (CR 400.7), in the order they were milled (the top card first). One event for each player and each

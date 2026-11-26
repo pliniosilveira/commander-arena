@@ -230,6 +230,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
         : null;
     if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
       ctx.randomYardCard = true;
+    if (lowered.value.some((e) => e.kind === 'revealTopCard')) ctx.revealedTopCard = true;
     if (lowered.value.some((e) => e.kind === 'choosePlayer')) ctx.choseAPlayer = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;

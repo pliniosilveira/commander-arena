@@ -314,6 +314,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:winsCoinFlip']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsCoinFlip', who });
     }
+    case 'winsClash': {
+      // "Whenever you win a clash" (Marvo, Deep Operative, CR 701.30d): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:winsClash']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsClash', who });
+    }
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
@@ -910,6 +917,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'surveils',
       'rollsHighest',
       'winsCoinFlip',
+      'winsClash',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -2065,6 +2073,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:removesCounterWhileExiled',
   'trigger:rollsHighest',
   'trigger:winsCoinFlip',
+  'trigger:winsClash',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

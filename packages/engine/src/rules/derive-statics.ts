@@ -170,6 +170,8 @@ export interface FlashPermissionSource {
   readonly spells: ObjectFilter;
   /** "Any player may cast ..." (CR 601.3b): the permission is every player's, not the controller's alone. */
   readonly anyPlayer: boolean;
+  /** "During each opponent's end step, you may cast ...": read where the permission is used (`rules/legality.ts`), for the controller of the permanent. */
+  readonly condition?: Condition;
 }
 
 /**
@@ -431,7 +433,12 @@ function flashesOf(object: GameObject, abilities: readonly Ability[]): FlashPerm
       a.static.kind === 'castAsThoughFlash' &&
       !('kind' in a.static.spells)
     ) {
-      out.push({ object, spells: a.static.spells, anyPlayer: a.static.anyPlayer === true });
+      out.push({
+        object,
+        spells: a.static.spells,
+        anyPlayer: a.static.anyPlayer === true,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
     }
   }
   return out;

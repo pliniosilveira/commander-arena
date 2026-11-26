@@ -44,11 +44,14 @@ import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CAST_FREE_HAND_VALUE_EFFECT_RULES } from './cast-free-hand-value';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
+import { CLASH_DEFENDING_EFFECT_RULES } from './clash-defending';
+import { CLOAK_EFFECT_RULES } from './cloak';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
 import { CONTROL_EFFECT_RULES } from './control';
@@ -81,6 +84,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { EACH_RETURNS_EFFECT_RULES } from './each-returns';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
@@ -1418,6 +1422,9 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
+  ...CLOAK_EFFECT_RULES,
+  ...EACH_RETURNS_EFFECT_RULES,
+  ...CAST_FREE_HAND_VALUE_EFFECT_RULES,
   // Lorwyn Eclipsed (CR 701.68a): "blight 1" as an instruction.
   ...BLIGHT_EFFECT_RULES,
   // Aberrant Return: "Each of them enters with an additional -1/-1 counter on it." after a put onto the battlefield.
@@ -1489,6 +1496,7 @@ export const EFFECT_RULES = [
   ...CROSS_ZONE_EFFECT_RULES,
   // Stage P69 (D-271): rolling a die, "roll a four-sided die".
   ...ARDEN_EFFECT_RULES,
+  ...CLASH_DEFENDING_EFFECT_RULES,
   // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards".
   ...LOCKE_EFFECT_RULES,
   // Stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.

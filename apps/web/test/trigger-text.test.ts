@@ -224,6 +224,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
   winsCoinFlip: { kind: 'winsCoinFlip', who: 'you' },
   removesCounterWhileExiled: { kind: 'removesCounterWhileExiled', counter: 'time' },
+  winsClash: { kind: 'winsClash', who: 'you' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },

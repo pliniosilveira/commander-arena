@@ -837,6 +837,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:yourTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'yourTurn' });
     }
+    case 'opponentsEndStep': {
+      // CR 513.1 (Final-Word Phantom): the end step of a turn of an opponent, read where the permission of a `castAsThoughFlash` is used.
+      const blocked = missingFeatures(['condition:opponentsEndStep']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'opponentsEndStep' });
+    }
     case 'yourMainPhase': {
       // CR 505.1 (stage P41, D-188): the precombat or postcombat main phase of the controller's turn, as the event happens and as the ability resolves.
       const blocked = missingFeatures(['condition:yourMainPhase']);

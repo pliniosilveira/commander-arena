@@ -24,9 +24,9 @@ export type ClashInstruction = Extract<Instruction, { kind: 'clash' }>;
 export const clashOpponentOption = (seat: SeatId): string => `seat:${seat}`;
 
 /** A fresh clash instruction, for the effect. */
-export const newClash = (): ClashInstruction => ({
+export const newClash = (opponent: SeatId | null = null): ClashInstruction => ({
   kind: 'clash',
-  opponent: null,
+  opponent,
   chosen: null,
   revealed: null,
   decisions: [],
@@ -138,5 +138,9 @@ export function runClash(
   const mine = revealed.find((r) => r.seat === controller);
   const won =
     mine !== undefined && revealed.every((r) => r.seat === controller || mine.value > r.value);
-  return { ...done(moved, [...events, ...bottomed]), clashWon: won };
+  // CR 701.30d: a player wins if the card they revealed has a greater mana value than every other card revealed; the event is the winner's, whoever they are ("whenever you win a clash").
+  const winners: GameEvent[] = revealed
+    .filter((r) => revealed.every((o) => o === r || r.value > o.value))
+    .map((r): GameEvent => ({ kind: 'clashWon', seat: r.seat }));
+  return { ...done(moved, [...events, ...bottomed, ...winners]), clashWon: won };
 }
