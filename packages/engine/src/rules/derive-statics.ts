@@ -218,6 +218,10 @@ export interface GraveyardPlaySource {
   readonly exileOthers?: number;
   /** Banon, the Returners' Leader: only a card put into the graveyard this turn from a zone other than the battlefield may be cast with this permission. */
   readonly putElsewhereThisTurn?: true;
+  /** `playSurveiledFromGraveyard` (Eye of Duskmantle): not limited to the controller's own turn, and only for a card a surveil of the controller put into the graveyard this turn. */
+  readonly surveiled?: true;
+  /** `playSurveiledFromGraveyard`: a spell cast with this permission is cast for the alternative cost `lifeForMana`, never for its mana cost (CR 118.9). */
+  readonly lifeForMana?: true;
 }
 
 /**
@@ -474,6 +478,19 @@ function graveyardPlaysOf(
         entersTapped: false,
         gains: undefined,
         eachType: true,
+      });
+    }
+    // CR 701.25a, 118.9 (Eye of Duskmantle): any land, and any spell cast for life, among the cards the controller surveilled into the graveyard this turn; never used up.
+    if (a.kind === 'static' && a.static.kind === 'playSurveiledFromGraveyard') {
+      out.push({
+        object,
+        cast: {},
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        unlimited: true,
+        surveiled: true,
+        lifeForMana: true,
       });
     }
     // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.

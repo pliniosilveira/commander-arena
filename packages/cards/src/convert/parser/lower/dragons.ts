@@ -261,19 +261,30 @@ export const DRAGON_NEEDS: readonly FeatureRef[] = [
   'amount:shortfall',
   'static:unspentManaStays',
   'static:unspentManaBecomesColorless',
+  'static:surveilLookAdditional',
+  'static:playSurveiledFromGraveyard',
   'static:castFromTopOfLibrary',
 ];
 
 type Static = Extract<IrAbility, { kind: 'static' }>;
 type DragonStaticEffect = Extract<
   IrStaticEffect,
-  { kind: 'unspentManaStays' | 'unspentManaBecomesColorless' | 'castFromTop' }
+  {
+    kind:
+      | 'unspentManaStays'
+      | 'unspentManaBecomesColorless'
+      | 'surveilLookAdditional'
+      | 'playSurveiledFromGraveyard'
+      | 'castFromTop';
+  }
 >;
 
 export function isDragonStatic(effect: IrStaticEffect): effect is DragonStaticEffect {
   return (
     effect.kind === 'unspentManaStays' ||
     effect.kind === 'unspentManaBecomesColorless' ||
+    effect.kind === 'surveilLookAdditional' ||
+    effect.kind === 'playSurveiledFromGraveyard' ||
     effect.kind === 'castFromTop'
   );
 }
@@ -323,6 +334,24 @@ export function lowerDragonStatic(ability: Static): LowerResult<readonly Ability
     return {
       ok: true,
       value: [{ kind: 'static', static: { kind: 'unspentManaBecomesColorless' } }],
+      rule: ability.rule,
+    };
+  }
+  if (effect.kind === 'surveilLookAdditional') {
+    const blockedLook = missingFeatures(['ability:static', 'static:surveilLookAdditional']);
+    if (blockedLook.length > 0) return staticFailure(ability, blockedLook);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'surveilLookAdditional', count: effect.count } }],
+      rule: ability.rule,
+    };
+  }
+  if (effect.kind === 'playSurveiledFromGraveyard') {
+    const blockedPlay = missingFeatures(['ability:static', 'static:playSurveiledFromGraveyard']);
+    if (blockedPlay.length > 0) return staticFailure(ability, blockedPlay);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'playSurveiledFromGraveyard' } }],
       rule: ability.rule,
     };
   }

@@ -240,7 +240,15 @@ export function beginCast(
     alternative !== 'retrace' &&
     alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
-      ? graveyardPlayPermission(state, seat, obj, false, permanentType)
+      ? graveyardPlayPermission(
+          state,
+          seat,
+          obj,
+          false,
+          permanentType,
+          // CR 118.9 (Eye of Duskmantle): cast for life, which only the permission that says so gives.
+          alternative === 'lifeForMana',
+        )
       : null;
   const graveyardSlot =
     graveyardUse === null

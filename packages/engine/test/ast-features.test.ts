@@ -295,8 +295,12 @@ describe('the dimensions', () => {
       'unspentManaStays',
       // Issue 81: "If you would lose unspent mana, that mana becomes colorless instead."
       'unspentManaBecomesColorless',
+      // Enhanced Surveillance: "You may look at an additional two cards each time you surveil."
+      'surveilLookAdditional',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      // Eye of Duskmantle: play lands and cast spells from among the cards you surveilled this turn, for life.
+      'playSurveiledFromGraveyard',
       'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',

@@ -1693,6 +1693,11 @@ export interface IrTrigger extends IrNode {
    */
   readonly firstEachTurn?: true;
   /**
+   * 'countersRemoved' "Whenever you remove a time counter from this card while it's exiled" (Watcher of Hours, CR 122.1, 702.62a): the player removes a counter of the kind `counter` from the
+   * card with the ability while it is in exile; the card is the subject (`~`).
+   */
+  readonly whileExiled?: true;
+  /**
    * 'countersAdded': the kind of counter ("+1/+1", "page"), none for "counters" of any kind (stage P33, D-150, CR 122.6); `by` is who put
    * them: `you` ("Whenever you put one or more +1/+1 counters on ~") or `any` ("Whenever one or more +1/+1 counters are put on ~").
    * 'noncombatDamageDealt' (issue 25, D-333): whose source dealt the damage, `you` ("a source you control") or `any` ("a source").
@@ -2185,6 +2190,14 @@ export type IrStaticEffect =
   | { readonly kind: 'unspentManaStays'; readonly colors: readonly string[] }
   /** "If you would lose unspent mana, that mana becomes colorless instead." (issue 81, Omnath, CR 106.4, 614.1a): the mana in the controller's pool is made colorless instead of lost. The subject is `you`. */
   | { readonly kind: 'unspentManaBecomesColorless' }
+  /** "You may look at an additional two cards each time you surveil." (Enhanced Surveillance, CR 701.25a): each surveil of the controller looks at `count` more cards. The subject is `you`. */
+  | { readonly kind: 'surveilLookAdditional'; readonly count: number }
+  /**
+   * "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying
+   * its mana cost." (Eye of Duskmantle, CR 701.25a, 601.2a, 118.9): the controller plays and casts the cards a surveil of theirs put into the graveyard this turn, paying life for the spells.
+   * The subject is `you`.
+   */
+  | { readonly kind: 'playSurveiledFromGraveyard' }
   /**
    * "~ gets +1/+1 for each unspent mana you have." (issue 81, Omnath, CR 106.4, 613.4c): +1 to each stat whose flag is set, for each mana in the controller's pool (the engine's `unspentMana`).
    */

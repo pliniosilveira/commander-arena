@@ -730,6 +730,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.damage-bonus': asIs,
   'replacement.damage-double': asIs,
   'static.unspent-mana': asIs,
+  // Revenant Recon deck, surveil group: Enhanced Surveillance and Eye of Duskmantle say the whole ability, and the two triggers are those of Unshakable Tail and Watcher of Hours.
+  'static.surveil-look-additional': asIs,
+  'static.play-surveiled-graveyard': asIs,
+  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.remove-counter-exiled': whenever,
   'static.cast-from-top': asIs,
   'trigger.attacks-first-time': whenever,
   'condition.attacking-most-life': permanent(

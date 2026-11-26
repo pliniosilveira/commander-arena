@@ -2961,6 +2961,16 @@ export interface TurnLog {
     /** The zone the card was put into the graveyard from (issue 102, "put into your graveyard from your hand or library this turn"). */
     readonly from: Zone;
   }[];
+  /**
+   * Each surveil this turn (CR 701.25), in order: the player who surveilled. A surveil of 0 is no surveil (CR 701.25c) and is not here; one of an empty library is (CR 701.25d).
+   * "Whenever you surveil for the first time each turn" (Whispering Snitch) reads it. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly surveils?: readonly SeatId[];
+  /**
+   * Each card a surveil put into a graveyard this turn (CR 701.25a), by the id it has in the graveyard, and the player who surveilled (Eye of Duskmantle: "cards in your graveyard
+   * you've surveilled this turn"). A card that moved on from there is a new object (CR 400.7) and is not in it. Absent until one was recorded.
+   */
+  readonly surveiledCards?: readonly { readonly card: ObjectId; readonly by: SeatId }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**

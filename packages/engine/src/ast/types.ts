@@ -5525,8 +5525,19 @@ export type Trigger =
   /**
    * "Whenever you surveil" (CR 701.25, 603.2; Galadriel group 1): once each time the player `who` names (relative to the controller of this ability) surveils (the event `surveiled`:
    * also a surveil of a library with no card, CR 701.25d; never "surveil 0", CR 701.25c). "Whenever you scry or surveil" is two abilities with one body, as every "or" of events is.
+   * `firstEachTurn` (Whispering Snitch: "Whenever you surveil for the first time each turn", CR 603.2): only the first surveil of that player in the turn (the turn log counts them); only with `who` "you".
    */
-  | { readonly kind: 'surveils'; readonly who: 'you' | 'opponent' | 'any' }
+  | {
+      readonly kind: 'surveils';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly firstEachTurn?: true;
+    }
+  /**
+   * "Whenever you remove a time counter from this card while it's exiled" (Watcher of Hours, CR 122.1, 113.6b, 702.62a, 603.2): an ability of a card in exile, which the engine finds when the
+   * owner of the card removes a counter of the kind `counter` from it there (today Suspend's upkeep ability removes a time counter, and says who removed it in the event `counterRemoved`; a
+   * removal that does not say is not counted). It works from exile only and never on the battlefield (`rules/later-triggers.ts`); it has no subject, no target of its own and no intervening "if".
+   */
+  | { readonly kind: 'removesCounterWhileExiled'; readonly counter: string }
   /**
    * "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2, 603.2; Galadriel group 3): once each time the player `who` names (relative to the controller of
    * this ability) rolls a die and its natural result (the number on the top face before any modifier) is the greatest the die can show: its number of sides (a d4 rolls 4).
@@ -7690,6 +7701,13 @@ export type StaticEffect =
    */
   | { readonly kind: 'unspentManaBecomesColorless' }
   /**
+   * "You may look at an additional two cards each time you surveil." (Enhanced Surveillance, CR 701.25a, 604.1): each time the controller of the permanent surveils, they look at
+   * `count` more cards of the top of the library than the surveil says, so surveil N looks at the top N + `count`, puts any number of them into the graveyard and the rest on top in any
+   * order. Several of them add up. Only the controller's own surveils (the permanent's "you"); another player's are not changed. The offer ("you may look") is never asked: looking at more
+   * cards can never be worse (the extra cards go back on top in the order they lay in, which is what not looking would have left), so the engine always shows them.
+   */
+  | { readonly kind: 'surveilLookAdditional'; readonly count: number }
+  /**
    * "You may look at the top card of your library any time." (CR 401.5, D-125): while the permanent is on the
    * battlefield with the ability, its controller may look at the top card of their own library. Nothing is
    * revealed: the other players never learn it. It shows in the controller's view (`SeatView.libraryTop`),
@@ -8316,6 +8334,15 @@ export type StaticEffect =
    * type's slot (the land slot is the land play, which also uses the turn's land drop). The timing and the cost of the card are its own.
    */
   | { readonly kind: 'playFromGraveyardEachType' }
+  /**
+   * "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying
+   * its mana cost." (Eye of Duskmantle, CR 701.25a, 601.2a, 305.1, 118.9, 119.4, 202.3, 604.1): while the permanent has the ability, its controller may play a land from their graveyard, or cast
+   * a spell from it, when a surveil of theirs put that card into the graveyard this turn (`TurnLog.surveiledCards`: a card that has since left the graveyard is a new object and no longer
+   * qualifies). The permission is not used up and is not limited to the controller's own turn: the card is played at the timing its type allows (a land in the controller's main phase with
+   * the stack empty, CR 305.1, an instant at any time the controller has priority). A spell cast this way is cast for the alternative cost `lifeForMana` only (the life paid is its mana
+   * value, with the X announced counted, CR 202.3e), never for its mana cost; a card with its own way to be cast from the graveyard keeps it.
+   */
+  | { readonly kind: 'playSurveiledFromGraveyard' }
   /**
    * "You may play Forests from your graveyard." and "You may play lands from your graveyard." (CR 305.1, 601.2a, 604.1, 113.6): while the permanent has the ability, its controller may
    * play a land card of their graveyard that `lands` matches (as the card it is: its types and subtypes; `zone`, `owner` and `controller` are not read; none is any land), as a
