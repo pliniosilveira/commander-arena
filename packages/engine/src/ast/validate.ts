@@ -2107,8 +2107,14 @@ function checkDiscardedAsCost(face: CardFace, path: string, out: AstIssue[]): vo
       );
     }
   });
-  if (effectHas(face.spell, 'discardedAsCostMatches')) {
-    issue(out, `${path}.spell`, 'discardedAsCostMatches is not read by a spell (CR 602.2b)');
+  // CR 601.2b, 701.9a (Grab the Prize): a spell reads it when its additional cost discards cards from the hand.
+  const discardsToCast = (face.additionalCosts ?? []).some((c) => c?.kind === 'discard');
+  if (effectHas(face.spell, 'discardedAsCostMatches') && !discardsToCast) {
+    issue(
+      out,
+      `${path}.spell`,
+      'discardedAsCostMatches is read by a spell only when its additional cost discards cards from the hand (CR 601.2b)',
+    );
   }
 }
 

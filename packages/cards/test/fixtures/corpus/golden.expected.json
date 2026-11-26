@@ -10527,19 +10527,10 @@
     "a37387f0-9d57-49ff-aa38-2c6b359e8916": {
       "name": "Grab the Prize",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Draw two cards. If the discarded card wasn't a land card, ~ deals 2 damage to each opponent.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5c15227d"
+      "ast": "47ea36ef"
     },
     "a38828be-781e-4340-9c6f-f40b1d34773f": {
       "name": "White Sun's Twilight",
@@ -16513,7 +16504,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1747,
+      "supported": 1748,
       "total": 1770
     }
   }

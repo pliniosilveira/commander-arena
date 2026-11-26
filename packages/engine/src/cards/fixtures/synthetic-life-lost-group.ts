@@ -518,4 +518,31 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "As an additional cost to cast this spell, discard a card. Draw two cards. If the discarded card wasn't a land card, this spell deals 2 damage to each opponent."
+  singleFace({
+    name: 'SYNTHETIC Grasping Prize',
+    manaCost: ['1', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      "As an additional cost to cast this spell, discard a card. Draw two cards. If the discarded card wasn't a land card, this spell deals 2 damage to each opponent.",
+    additionalCosts: [{ kind: 'discard', count: 1 }],
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'draw', player: YOU, count: 2 },
+          {
+            kind: 'conditional',
+            condition: {
+              kind: 'not',
+              term: { kind: 'discardedAsCostMatches', filter: { types: ['land'] } },
+            },
+            effect: { kind: 'dealDamage', amount: 2, to: { kind: 'eachOpponent' } },
+          },
+        ],
+      },
+    },
+  }),
 ];

@@ -331,7 +331,19 @@ function discardChosen(
   if (!casting) return fail('No cast in progress');
   const moved = discardObjects(state, casting.seat, chosen);
   if (moved === null) return fail('Those cards cannot be discarded');
-  return payExile(moved.state, [...events, ...moved.events], finish);
+  // CR 601.2b, 701.9a, 608.2h (Grab the Prize): the spell remembers the cards its additional cost discarded (as they are now, in the graveyard or in exile), which "if the discarded card
+  // wasn't a land card" reads.
+  const landed = moved.events.flatMap((e) =>
+    e.kind === 'discarded' && e.to !== null ? [e.to] : [],
+  );
+  const stack = moved.state.objects[casting.object]?.stack;
+  const next =
+    stack == null || landed.length === 0
+      ? moved.state
+      : patchObject(moved.state, casting.object, {
+          stack: { ...stack, discardedAsCost: [...(stack.discardedAsCost ?? []), ...landed] },
+        });
+  return payExile(next, [...events, ...moved.events], finish);
 }
 
 /** CR 702.138a: exile the other cards an escape cost asks for, then the spell is cast. */

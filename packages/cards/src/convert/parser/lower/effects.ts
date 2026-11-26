@@ -2132,7 +2132,7 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       what.det === 'anaphor' &&
       /^t\d+$/u.test(what.ref ?? '') &&
       arg(clause, 'player') === undefined &&
-      ctx.askedActs !== undefined
+      ctx.askedActs
     ) {
       const ref = objectRefOf(what, ctx);
       if (!ref.ok) return ref;
