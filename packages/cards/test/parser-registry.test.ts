@@ -1368,6 +1368,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
   'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.copy-each-creature-token': permanent((e) => `At the beginning of your end step, ${e}.`),
+  'effect.copy-each-token-that-permanent': spell((e) => `${cap(e)}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),
@@ -1484,6 +1485,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, draw a card.`,
   ),
   'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
+  'noun.target-token-you-control': spell((e) => `Create a token that's a copy of ${e}.`),
   'noun.commander-creatures-you-own': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.other-commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),

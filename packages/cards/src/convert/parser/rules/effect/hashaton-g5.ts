@@ -147,4 +147,66 @@ export const EFFECT_COPY_EACH_CREATURE_TOKEN = defineRule<Clauses>({
   },
 });
 
-export const HASHATON_G5_EFFECT_RULES = [EFFECT_COPY_EACH_TOKEN, EFFECT_COPY_EACH_CREATURE_TOKEN];
+/**
+ * `effect.copy-each-token-that-permanent`: "for each token you control, create a token that's a copy of that permanent" (Second Harvest; CR 707.2, 111.4, 608.2c: a token for each
+ * token the controller controls, of any type, with its copiable values, which are those of the token as it is when the instruction is carried out). The engine's `createCopies` with no
+ * exception, as `effect.copy-each-token`. Not read: a token of an opponent, a group that is not tokens, another way to say it ("it", "that token", "that creature"), an exception, a number
+ * of copies.
+ */
+export const EFFECT_COPY_EACH_TOKEN_THAT_PERMANENT = defineRule<Clauses>({
+  id: 'effect.copy-each-token-that-permanent',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 707.2 (Copying Objects)',
+    'CR 111.4 (Tokens)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'for each token you control, create a token that’s a copy of that permanent',
+    "for each token you control, create a token that's a copy of that permanent",
+  ],
+  rejects: [
+    'for each token you control, create a token that’s a copy of that token',
+    'for each token you control, create a token that’s a copy of it',
+    'for each token an opponent controls, create a token that’s a copy of that permanent',
+    'for each creature you control, create a token that’s a copy of that permanent',
+    'for each tokens you control, create a token that’s a copy of that permanent',
+    'for each token you control, create two tokens that are copies of that permanent',
+    'for each token you control, create a token that’s a copy of that permanent, except it has haste',
+    'for each token you control that entered this turn, create a token that’s a copy of that permanent',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.copy-each-token-that-permanent';
+    const r = sequence(
+      literal('for each token you control'),
+      spanned(
+        pattern(new RegExp(`, create a token that['’]s a copy of that permanent${BOUNDARY}`, 'iu')),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const end = r.pos;
+    const filter: IrFilter = { token: true, controller: 'you', raw: 'token you control' };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [makeClause(id, 'createCopiesOfTokens', { objects }, { start: pos, end })],
+      pos: end,
+    };
+  },
+});
+
+export const HASHATON_G5_EFFECT_RULES = [
+  EFFECT_COPY_EACH_TOKEN,
+  EFFECT_COPY_EACH_CREATURE_TOKEN,
+  EFFECT_COPY_EACH_TOKEN_THAT_PERMANENT,
+];

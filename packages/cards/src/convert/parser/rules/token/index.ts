@@ -829,7 +829,12 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
 });
 
 /** What a copy can be made of: this permanent, one target permanent, or "it" (CR 707.2). */
-const COPY_SOURCES = ['noun.self', 'noun.target-permanent', 'noun.it'] as const;
+const COPY_SOURCES = [
+  'noun.self',
+  'noun.target-permanent',
+  'noun.target-token-you-control',
+  'noun.it',
+] as const;
 
 const COPY_SOURCE = satisfy(family<IrNoun>('noun', { only: COPY_SOURCES }), (noun) => !noun.plural);
 
@@ -855,10 +860,11 @@ export const TOKEN_COPY = defineRule<IrToken>({
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
+    "a token that's a copy of target token you control",
+    'two tokens that are copies of it',
   ],
   rejects: [
     "a token that's a copy of target creature, except it's a 1/1",
-    "a token that's a copy of target token you control",
     "a token that's a copy of equipped creature",
     "a token that's a copy of two target creatures",
     "a token that's a copy of target creatures",
