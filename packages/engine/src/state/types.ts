@@ -2564,6 +2564,8 @@ export interface ThisWayCounts {
   readonly destroyedCreaturesBy?: Readonly<Record<number, number>>;
   /** Never set: each player's own number is read from `destroyedCreaturesBy` (`rules/life-amounts.ts`); the key only lets the `thisWay` readers index every `ThisWayKind`. */
   readonly destroyedCreaturesOfAffected?: number;
+  /** The permanents `destroy` effects destroyed, by the id they had on the battlefield (Terastodon: "for each permanent put into a graveyard this way, its controller creates ..."); left out until some are. */
+  readonly destroyedObjects?: readonly ObjectId[];
   /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
   readonly exiledPowerOwn?: number;
 }
