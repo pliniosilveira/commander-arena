@@ -38,6 +38,8 @@ export interface FilterParts {
   readonly token: boolean | undefined;
   /** "non-Zombie": none of these subtypes (CR 205.3d); stage P29. */
   readonly notSubtypes: readonly string[];
+  /** "outlaw" (true) and "non-outlaw" (false) before a type (CR 700.12): at least one of the Assassin, Mercenary, Pirate, Rogue and Warlock creature types, or none. */
+  readonly outlaw: boolean | undefined;
   /** "colorless" (CR 105.2c); stage P29. */
   readonly colorless: boolean;
   /** "with flying" and "without flying": the keyword words, lowercase (CR 702); stage P29. */
@@ -77,6 +79,7 @@ export const NO_PARTS: FilterParts = {
   controller: undefined,
   token: undefined,
   notSubtypes: [],
+  outlaw: undefined,
   colorless: false,
   keywords: [],
   notKeywords: [],
@@ -153,6 +156,9 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('blocking', (p) => ({ ...p, blocking: true })),
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
   word('multicolored', (p) => ({ ...p, colorCount: { cmp: 'atLeast', value: 2 } })),
+  // CR 700.12 (outlaw): "outlaw creature", "non-outlaw creature"; outlaw is no creature type, so it is not a `NON_SUBTYPE`.
+  word('outlaw', (p) => ({ ...p, outlaw: true })),
+  word('non-outlaw', (p) => ({ ...p, outlaw: false })),
   NON_SUBTYPE,
   word('untapped', (p) => ({ ...p, tapped: false })),
   word('tapped', (p) => ({ ...p, tapped: true })),
@@ -249,6 +255,7 @@ export function toFilter(
     ...(p.controller !== undefined ? { controller: p.controller } : {}),
     ...(p.token !== undefined ? { token: p.token } : {}),
     ...(p.notSubtypes.length > 0 ? { notSubtypes: p.notSubtypes } : {}),
+    ...(p.outlaw !== undefined ? { outlaw: p.outlaw } : {}),
     ...(p.colorless ? { colorless: true as const } : {}),
     ...(p.keywords.length > 0 ? { keywords: p.keywords } : {}),
     ...(p.notKeywords.length > 0 ? { notKeywords: p.notKeywords } : {}),
@@ -559,10 +566,16 @@ export function permanentPhrase(
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
-  const nouns: Parser<{ subtypes: string[]; types: string[] }> =
+  // CR 700.12, 700.12a ("outlaws you control"): the plural noun alone, the permanents that have at least one of the five outlaw creature types.
+  const bareOutlaws: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> = map(
+    pattern(new RegExp(`outlaws${BOUNDARY}`, 'u')),
+    () => ({ subtypes: [] as string[], types: [] as string[], outlaw: true as const }),
+  );
+  const nouns: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> =
     subtypes === false
       ? map(permanentNoun(plural), (types) => ({ subtypes: [] as string[], types }))
       : choice(
+          ...(plural ? [bareOutlaws] : []),
           subtyped(plural, subtypes),
           map(permanentNoun(plural), (types) => ({ subtypes: [] as string[], types })),
         );
@@ -696,6 +709,7 @@ export function permanentPhrase(
       ...NO_PARTS,
       types: noun.types,
       controller,
+      ...(noun.outlaw === true ? { outlaw: true } : {}),
       ...(isToken ? { token: true } : {}),
       ...(keyword === undefined
         ? {}
@@ -1040,7 +1054,8 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.attacking ||
           parts.modified ||
           parts.equipped ||
-          parts.goaded
+          parts.goaded ||
+          parts.outlaw !== undefined
         )
           return fail(c, at);
         const types = optional(typeWords(CARD_TYPES, false), [] as string[])(c, modifiers.pos);
@@ -1174,6 +1189,8 @@ interface CardWords {
   readonly subtypes: readonly string[];
   /** "non-Dragon creature card" (CR 205.3d): creature types the card does not have. */
   readonly notSubtypes?: readonly string[];
+  /** "outlaw creature card" (true), "non-outlaw creature card" (false) (CR 700.12): at least one of the five outlaw creature types, or none. */
+  readonly outlaw?: boolean;
   /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
   readonly notSupertypes?: readonly string[];
   /** "nonland card" (issue 102, CR 205.2a): card types the card does not have. */
@@ -1288,6 +1305,14 @@ export function graveyardPhrase(
       // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
       optional(allowNonland ? map(literal('nonland '), () => ['land']) : fail, [] as string[]),
       nonSubtypes,
+      // CR 700.12: "outlaw creature card from your graveyard" (Back in Town, Charred Graverobber); outlaw is no creature type.
+      optional(
+        choice(
+          map(literal('outlaw '), () => true),
+          map(literal('non-outlaw '), () => false),
+        ),
+        undefined,
+      ),
       many(
         map(
           sequence(
@@ -1302,10 +1327,11 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSupertypes, notTypes, notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notTypes, notSubtypes, outlaw, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
+      ...(outlaw === undefined ? {} : { outlaw }),
       ...(notTypes.length > 0 ? { notTypes } : {}),
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
       ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
@@ -1337,6 +1363,7 @@ export function graveyardPhrase(
       !parts.modified &&
       !parts.goaded &&
       !parts.equipped &&
+      parts.outlaw === undefined &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
     if (!plain || left.length === 0) return fail(ctx, pos);
@@ -1471,8 +1498,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes, outlaw }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
+    // An outlaw kind inside a union is another reading, not built here.
+    if (outlaw !== undefined) return fail(ctx, pos);
     // A negated supertype inside a union is another reading, not built here.
     if (notSupertypes !== undefined || notTypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
@@ -1572,6 +1601,7 @@ export function graveyardPhrase(
         notSubtypes,
         notSupertypes,
         notTypes,
+        outlaw,
         extra,
         subtypeAnyOf,
         historic,
@@ -1602,6 +1632,7 @@ export function graveyardPhrase(
           ...filter,
           ...(subtypes.length > 0 ? { subtypes } : {}),
           ...(notSubtypes !== undefined ? { notSubtypes } : {}),
+          ...(outlaw !== undefined ? { outlaw } : {}),
           ...(notSupertypes !== undefined ? { notSupertypes } : {}),
           ...(anyOf.length > 0
             ? {

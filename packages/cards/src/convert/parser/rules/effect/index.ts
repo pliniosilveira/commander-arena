@@ -172,6 +172,7 @@ import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES } from './land-creature-unblockable';
 import { LEAD_GAIN_NEXT_TURN_EFFECT_RULES } from './lead-gain-next-turn';
+import { LEAD_PUMP_GRANT_ABILITY_RULES } from './lead-pump-grant-ability-all';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
@@ -1536,6 +1537,8 @@ export const EFFECT_RULES = [
   ...LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,
+  // Most Wanted deck, group 1 (Dead Before Sunrise): "Until end of turn, outlaw creatures you control get +1/+0 and gain \"{T}: ...\"".
+  ...LEAD_PUMP_GRANT_ABILITY_RULES,
   // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
   ...GAIN_NEXT_TURN_EFFECT_RULES,
   // Draconic Dissent deck (issue 167): "Until your next turn, target creature can't be blocked".

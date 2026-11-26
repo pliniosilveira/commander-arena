@@ -1381,6 +1381,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'token',
     'nontoken',
     'notSubtypes',
+    // CR 700.12: "outlaw" / "non-outlaw" (`ObjectFilter.outlaw`).
+    'outlaw',
     'colorless',
     'notColors',
     'keywords',
@@ -2642,6 +2644,8 @@ export const SELECTOR_KINDS = [
   'nontoken',
   /** "Non-Zombie creature" (CR 205.3d, D-133): the engine's `ObjectFilter.notSubtypes`. */
   'notSubtypes',
+  /** "Outlaw creature", "non-outlaw creature" (CR 700.12): the engine's `ObjectFilter.outlaw`. */
+  'outlaw',
   /** "Colorless creature" (CR 105.2c, D-133): the engine's `ObjectFilter.colorless`. */
   'colorless',
   /** "Nonblack creature" (CR 105.2): the engine's `ObjectFilter.notColors`. */

@@ -282,6 +282,8 @@ export interface IrFilter {
   readonly colors?: readonly string[];
   /** "nonblack" (CR 105.2, 205.4): none of these colors, as color words. */
   readonly notColors?: readonly string[];
+  /** "outlaw" (true), "non-outlaw" (false) (CR 700.12): at least one of the Assassin, Mercenary, Pirate, Rogue and Warlock creature types, or none of them. */
+  readonly outlaw?: boolean;
   /** "colorless" (stage P29, CR 105.2c). */
   readonly colorless?: true;
   /** "with flying" and "without flying" (stage P29): keywords without parameters, as the words spell them (lowercase). */
