@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- "Three or more creatures with different powers" and "~'s power is even/odd" are read only by permissions to cast (from the top of the library, as though with flash); a +N/+N or keyword static with them stays unsupported.
 - Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
 - Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
 - Void Attendant: a card exiled face down cannot be chosen for the cost "Put a card an opponent owns from exile into that player's graveyard" (the rules pick a pile, then a card at random).
