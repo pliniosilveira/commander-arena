@@ -1221,6 +1221,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
@@ -1982,6 +1983,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
@@ -2196,6 +2198,7 @@ function checkActivationCosts(
       kind === 'loyalty' ||
       kind === 'putCounters' ||
       // D-540 (CR 602.2, 118.3): returning other permanents you control is paid wherever the ability works ("Return two lands you control to their owner's hand: Return this card from your graveyard to your hand"); returning the source itself needs it on the battlefield.
+      c?.kind === 'exilePermanent' ||
       (c?.kind === 'returnToHand' &&
         typeof c.what === 'object' &&
         c.what !== null &&
@@ -2877,6 +2880,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // D-232: "the exiled cards" are readable where the cost exiled cards from the graveyard.
         ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'exileFromGraveyard')
           ? { exiledCost: true }
+          : {}),
+        // Primordial Mist: "that card" is the card the cost exiled from the battlefield, which `moved` names.
+        ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'exilePermanent')
+          ? { movedAvailable: true }
           : {}),
         ...HOOKS,
       });

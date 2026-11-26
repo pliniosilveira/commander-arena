@@ -361,7 +361,7 @@ export function groupTypeEffects(
       continue;
     if (
       src.condition !== undefined &&
-      !plainConditionHolds(state, src.condition, controllerOf(state, src.object))
+      !plainConditionHolds(state, src.condition, controllerOf(state, src.object), src.object)
     ) {
       continue;
     }

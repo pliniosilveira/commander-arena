@@ -399,6 +399,12 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'morph') && !face.types.includes('creature')) {
     issue(out, `${path}.alternativeCosts`, 'morph is on a creature card (CR 702.37a)');
   }
+  // CR 702.37b: megamorph is a variant of morph, so the flag is only on a morph cost.
+  for (const a of alternatives) {
+    if (a !== undefined && 'megamorph' in a && a.megamorph === true && a.kind !== 'morph') {
+      issue(out, `${path}.alternativeCosts`, 'megamorph is only on a morph cost (CR 702.37b)');
+    }
+  }
   // CR 702.62a (D-128): suspend exiles the card to cast it later, so it is on a card that is not a land, and a face
   // has at most one.
   const suspends = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'suspend');

@@ -265,6 +265,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (lowered.value.some((e) => e.kind === 'choosePlayer')) ctx.choseAPlayer = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
+    // CR 701.62a: "that creature" after manifest dread is the manifested one, and stays so through the counters and the turning face up that follow.
+    ctx.manifestedCreature = lowered.value.some((e) =>
+      e.kind === 'lookAtTop' && e.take.to === 'manifest'
+        ? true
+        : ctx.manifestedCreature && (e.kind === 'addCounters' || e.kind === 'turnFaceUp'),
+    );
     noteTokensMade(lowered.value, ctx);
     noteMoved(lowered.value, ctx);
     noteExiledOwnGraveyards(clause, lowered.value, ctx);

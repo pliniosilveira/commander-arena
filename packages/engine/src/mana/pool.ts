@@ -33,6 +33,11 @@ export type SpendTarget =
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
       readonly ability: true;
+      /**
+       * The cost of turning a permanent face up (CR 116.2b, 701.40b): a special action, so not an ability. Only mana without a restriction, mana that can't pay generic costs and
+       * mana restricted to turning permanents face up may pay it (CR 106.6).
+       */
+      readonly turnFaceUp?: true;
       /** The activation cost has an {X} (CR 107.3, 602.2b). */
       readonly hasX?: true;
       /**
@@ -69,6 +74,9 @@ export function restrictionAllows(
 ): boolean {
   if (restriction === null) return true;
   const isAbility = 'ability' in target;
+  // CR 106.6, 701.40b: "Spend this mana only to turn permanents face up": the special action's cost and nothing else; that cost, in turn, takes no other restricted mana.
+  if (restriction.kind === 'turnFaceUp') return isAbility && target.turnFaceUp === true;
+  if (isAbility && target.turnFaceUp === true) return restriction.kind === 'notGeneric';
   if (restriction.kind === 'abilitiesOnly') return isAbility;
   // CR 106.6, 107.3: a spell or an ability whose cost contains {X}.
   if (restriction.kind === 'xCost') return target.hasX === true;

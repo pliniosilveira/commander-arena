@@ -914,6 +914,17 @@ export function describeEvent(
           'CR 602.2b',
         );
       }
+      // Primordial Mist (CR 118.3, 406.3, 708.9): "Exile a face-down permanent you control face up" as a cost; the move's own line follows.
+      if (event.purpose === 'exileCost') {
+        const exiled = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'exile', 'exiles')} ${exiled} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 602.2b',
+        );
+      }
       // CR 701.26b, 602.2b: "Untap two tapped creatures you control" as a cost; the untapped lines follow.
       if (event.purpose === 'untapCost') {
         const untapped = joinNames(event.objects.map(name));

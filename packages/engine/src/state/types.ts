@@ -1172,6 +1172,12 @@ export interface CastingContext {
     readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
+    /**
+     * "As an additional cost to cast this spell, exile three creature cards from your graveyard" (CR 118.8, 601.2b): the kind and number of the cards of the caster's graveyard exiled as the cost
+     * is paid; `exileGraveyardAsked` is set once the question is being asked (the answer then goes to this cost and not to the escape exile).
+     */
+    readonly exileGraveyard?: { readonly filter: ObjectFilter; readonly count: number };
+    readonly exileGraveyardAsked?: true;
     /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
     readonly exileFromHand?: ObjectId[];
     /** The number of -1/-1 counters of an optional blight additional cost ("you may blight 1"), asked once the mana is paid; absent for none. `blightAsked` is set while the question is pending. */
@@ -1590,6 +1596,11 @@ export type Instruction =
        * are then the opponents still to choose for, and the question is asked of the controller.
        */
       readonly perOpponent?: true;
+      /**
+       * `controllersMayExile` (Disorienting Choice, CR 608.2d): the permanents chosen, in `filter`'s place: each seat of `seats` is asked which of the ones it controls it exiles (any number, none included),
+       * and every permanent picked is exiled together at the end instead of destroyed.
+       */
+      readonly mayExile?: readonly ObjectId[];
       readonly seats: readonly SeatId[];
       readonly picked: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -1601,6 +1612,12 @@ export type Instruction =
       readonly anyNumber?: true;
       /** "Untap up to three lands" (D-216): the tapped permanents the filter matches, none up to `count`, are untapped instead of tapped. */
       readonly untap?: true;
+      /**
+       * "You may turn a permanent you control face up" (`turnFaceUp` with a `choose` selector, CR 608.2d, 701.40g): the face-down permanents the controller controls that the filter matches
+       * (`upTo`: the controller chooses none or `count`) are turned face up instead of tapped. See rules/turn-face-up.ts.
+       */
+      readonly turnUp?: true;
+      readonly upTo?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   | {
@@ -1643,6 +1660,8 @@ export type Instruction =
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
       readonly withCounters?: EntryCounter | readonly EntryCounter[];
+      /** "Manifest a card from your hand" (`moveToZone.faceDownAs` `manifest`, CR 701.40a): the card chosen enters the battlefield face down, manifested. */
+      readonly entersFaceDown?: 'manifest';
       /**
        * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
@@ -1807,7 +1826,14 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'castFree' | 'top';
+      readonly to?:
+        | 'hand'
+        | 'battlefield'
+        | 'exileFaceDown'
+        | 'exile'
+        | 'castFree'
+        | 'top'
+        | 'manifest';
       /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
       readonly libraryOf?: SeatId;
       /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
@@ -2282,6 +2308,8 @@ export type Instruction =
       readonly withCounters?: EntryCounter | readonly EntryCounter[];
       /** Enters the battlefield face down (`moveToZone.faceDownAs`, CR 708.3): what made it face down. */
       readonly entersFaceDown?: FaceDownBy;
+      /** The new object is not added to `moved` (the cards manifest dread puts into the graveyard are not "that creature", CR 608.2c, 701.62a). */
+      readonly notMoved?: true;
       /** The permanent returns by unearth (CR 702.84a, D-124): it remembers it, and a delayed exile is created. */
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */
@@ -2576,6 +2604,10 @@ export interface ThisWayCounts {
   readonly destroyedCreaturesBy?: Readonly<Record<number, number>>;
   /** Never set: each player's own number is read from `destroyedCreaturesBy` (`rules/life-amounts.ts`); the key only lets the `thisWay` readers index every `ThisWayKind`. */
   readonly destroyedCreaturesOfAffected?: number;
+  /** The permanents a `controllersMayExile` effect named (Disorienting Choice: "the chosen permanents"), each as the object it was; `chosenStillOnBattlefield` counts those still on the battlefield. */
+  readonly chosenPermanents?: readonly ObjectId[];
+  /** Never set: counted from `chosenPermanents` as it is read (`thisWayCount`), so the `thisWay` readers can index every `ThisWayKind`. */
+  readonly chosenStillOnBattlefield?: number;
   /** The permanents `destroy` effects destroyed, by the id they had on the battlefield (Terastodon: "for each permanent put into a graveyard this way, its controller creates ..."); left out until some are. */
   readonly destroyedObjects?: readonly ObjectId[];
   /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */

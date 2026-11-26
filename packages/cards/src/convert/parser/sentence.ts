@@ -315,6 +315,8 @@ const TRAILING_CONDITIONS = [
   'condition.exiled-mana-value-at-least',
   // Descend upon the Sinful, Unholy Heat (CR 207.2c, 205.2a): "Create a 4/4 ... token if there are four or more card types among cards in your graveyard." (Delirium).
   'condition.card-types-among',
+  // Zimone, Mystery Unraveler: "manifest dread if this is the first time this ability has resolved this turn. Otherwise, ..." (CR 608.2c).
+  'condition.resolved-times',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(

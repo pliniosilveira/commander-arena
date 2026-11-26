@@ -23,6 +23,7 @@ export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
   'payXLife',
   'discardX',
   'exileFromHand',
+  'exileFromGraveyard',
   'blight',
   'mana',
 ];
@@ -44,6 +45,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   let xDiscard = 0;
   let beholds = 0;
   let blights = 0;
+  let graveyardExiles = 0;
   costs.forEach((cost, i) => {
     const p = `${path}[${i}]`;
     checkCost(cost, p, out);
@@ -122,6 +124,20 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
           issue(out, `${p}.filter.zone`, 'an additional exile cost selects cards from hand');
         }
         break;
+      case 'exileFromGraveyard':
+        graveyardExiles += 1;
+        // CR 118.8, 601.2b (Skaab Ruinator): "exile three creature cards from your graveyard" is a fixed number of cards chosen as the cost is paid; X is a cost of an ability.
+        if (cost.countX !== undefined) {
+          issue(out, `${p}.countX`, 'an additional cost exiles a fixed number of graveyard cards');
+        }
+        if (cost.filter?.zone !== undefined || cost.filter?.controller !== undefined) {
+          issue(
+            out,
+            `${p}.filter`,
+            "the cards exiled are in the caster's graveyard: no zone, no controller",
+          );
+        }
+        break;
       case 'blight':
         blights += 1;
         // CR 118.8, 701.68a: "you may blight 1" is the one form of a spell's additional blight; a mandatory one is not run.
@@ -151,6 +167,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   if (xLife > 1) issue(out, path, 'more than one "pay X life" cost is not supported');
   if (beholds > 1) issue(out, path, 'more than one behold cost is not supported');
   if (blights > 1) issue(out, path, 'more than one blight cost is not supported');
+  if (graveyardExiles > 1) issue(out, path, 'more than one graveyard exile cost is not supported');
   // D-386: "discard X cards" is the one discard cost of the spell (the discard of N cards pays into the same cards).
   if (xDiscard > 1 || (xDiscard === 1 && discards > 0)) {
     issue(out, path, 'discard X cards is the only discard cost of a spell (D-386)');

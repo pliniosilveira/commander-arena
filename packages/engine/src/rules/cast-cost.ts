@@ -111,6 +111,8 @@ export interface SpellCost {
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
   readonly exile: number;
+  /** CR 118.8, 601.2b ("As an additional cost to cast this spell, exile three creature cards from your graveyard"): the cards of the caster's graveyard the cost exiles, of the kind the filter names; absent for none. */
+  readonly exileGraveyard?: GraveyardExile;
   /** Optional number of cards selected from hand for an additional exile cost, if present. */
   readonly exileFromHand: ObjectFilter | null;
   /** CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): the exile of `exileFromHand` is part of the alternative cost, so one such card must be exiled and one must be in the hand. */
@@ -125,6 +127,12 @@ export interface SpellCost {
   readonly anyColor?: true;
   /** CR 601.2a, 106.6: the zone the spell is cast from, read by mana that can be spent only on a spell cast from a graveyard (issue 102). */
   readonly castFrom?: CastFrom;
+}
+
+/** "Exile three creature cards from your graveyard" as an additional cost: how many cards the filter matches are exiled. */
+export interface GraveyardExile {
+  readonly filter: ObjectFilter;
+  readonly count: number;
 }
 
 /** "Tap four untapped creatures you control with flying" (D-149): how many permanents matching the filter are tapped. */
@@ -527,6 +535,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let behold: ObjectFilter | null = null;
   let exileFromHand: ObjectFilter | null = null;
   let blight = 0;
+  let exileGraveyard: GraveyardExile | undefined;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
@@ -540,6 +549,9 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       if (c.filter !== undefined) additionalDiscardFilter = c.filter;
     } else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
+    else if (c.kind === 'exileFromGraveyard') {
+      exileGraveyard = { filter: c.filter, count: c.count };
+    }
     // CR 118.8, 701.68a: "you may blight 1" is no requirement for casting the spell: it is asked as the cost is paid.
     else if (c.kind === 'blight') blight = c.count;
   }
@@ -677,6 +689,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         : { discardFilter: additionalDiscardFilter }),
     behold,
     exile,
+    ...(exileGraveyard === undefined ? {} : { exileGraveyard }),
     exileFromHand,
     ...(evokeExile === undefined ? {} : { exileFromHandRequired: true as const }),
     ...(blight === 0 ? {} : { blight }),
@@ -716,6 +729,30 @@ export function largestSpellX(state: GameState, request: CostRequest): number {
  */
 export function exilable(state: GameState, seat: SeatId, spell: ObjectId): ObjectId[] {
   return getSeat(state, seat).graveyard.filter((id) => id !== spell);
+}
+
+/**
+ * The cards in `seat`'s graveyard that an additional cost "exile three creature cards from your graveyard" can exile for `spell` (CR 118.8: the cards the filter matches, never the
+ * spell being cast, which is on the stack when the cost is paid).
+ */
+export function exilableFor(
+  state: GameState,
+  seat: SeatId,
+  spell: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  return exilable(state, seat, spell).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(
+        state,
+        card,
+        { ...filter, zone: 'graveyard' },
+        { controller: seat, source: spell },
+      )
+    );
+  });
 }
 
 /** The cards in `seat`'s hand that can be discarded for the cost of `spell` (never the spell). */
@@ -857,6 +894,13 @@ export function canPaySpellCost(
   if (cost.energy > (getSeat(state, seat).energy ?? 0)) return false;
   if (cost.discard > discardableFor(state, seat, spell.id, cost.discardFilter).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
+  if (
+    cost.exileGraveyard !== undefined &&
+    cost.exileGraveyard.count >
+      exilableFor(state, seat, spell.id, cost.exileGraveyard.filter).length
+  ) {
+    return false;
+  }
   // An optional exile cost can always be paid by choosing zero cards; the one of an evoke cost needs a card in the hand (CR 702.74a, never the spell itself).
   if (
     cost.exileFromHandRequired === true &&

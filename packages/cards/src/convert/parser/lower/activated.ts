@@ -90,6 +90,11 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   if (notGeneric?.kind === 'flag' && notGeneric.value) {
     return plainClause(clause) ? { notGeneric: true } : null;
   }
+  // "Spend this mana only to turn permanents face up." (Overgrown Zealot, CR 106.6, 701.40b).
+  const turnFaceUp = clause.args.turnFaceUp;
+  if (turnFaceUp?.kind === 'flag' && turnFaceUp.value) {
+    return plainClause(clause) ? { turnFaceUp: true } : null;
+  }
   // "Spend this mana only to cast a spell from your graveyard." (issue 102, Lord of the Forsaken, CR 106.6, 601.2a).
   const fromGraveyard = clause.args.fromGraveyard;
   if (fromGraveyard?.kind === 'flag' && fromGraveyard.value) {
@@ -447,6 +452,7 @@ function lowerManaAbility(
       : []),
     ...(spendOnly?.fromGraveyard === true ? (['ability:manaSpendOnlyFromGraveyard'] as const) : []),
     ...(spendOnly?.notOwned === true ? (['ability:manaSpendOnlyNotOwned'] as const) : []),
+    ...(spendOnly?.turnFaceUp === true ? (['ability:manaSpendOnlyTurnFaceUp'] as const) : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -1047,7 +1053,11 @@ function lowerOrdinary(written: Activated, ctx: LowerContext): LowerResult<reado
   // The sentences are lowered as the body of any other ability is, so an X that a sentence defines ("..., where X is
   // the number of creatures you control", stage P28) and what "this way" counts are read as they are everywhere.
   ctx.activatedBody = true;
+  // Primordial Mist (CR 400.7): the cost exiled a permanent, so "that card" of the effect is the card it became in exile.
+  const previousExiled = ctx.exiled;
+  if (costs.some((c) => c.kind === 'exilePermanent')) ctx.exiled = 'cards';
   const sentenced = lowerSentences(ability.body.sentences, ctx);
+  ctx.exiled = previousExiled;
   ctx.activatedBody = false;
   ctx.graveyardSource = false;
   const functionsInGraveyard = ctx.usedGraveyardSource;
@@ -1209,6 +1219,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaSpendOnlyNotGeneric',
   'ability:manaSpendOnlyFromGraveyard',
   'ability:manaSpendOnlyNotOwned',
+  'ability:manaSpendOnlyTurnFaceUp',
   'ability:spendOnlyChosenColor',
   'manaCost:tap',
   'manaCost:mana',

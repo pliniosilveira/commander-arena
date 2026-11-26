@@ -44,6 +44,12 @@ export function lowerCondition(
       if (count < 1) return failure(c, []);
       return ok({ kind: 'controlsAtLeast', filter: filter.value, count });
     }
+    case 'thisPowerParity': {
+      // CR 107.1 (Kianne, Corrupted Memory): the engine's `thisPowerParity`, the power of the permanent the ability belongs to.
+      const blocked = missingFeatures(['condition:thisPowerParity']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({ kind: 'thisPowerParity', parity: test.parity });
+    }
     case 'opponentsAtLeast': {
       const blocked = missingFeatures(['condition:opponentsAtLeast']);
       if (blocked.length > 0) return failure(c, blocked);
@@ -1100,6 +1106,7 @@ export function lowerCondition(
 /** The feature references the condition lowerings can name, for the dimension test. */
 export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlsAtLeast',
+  'condition:thisPowerParity',
   'condition:opponentsAtLeast',
   'condition:opponentPoisonAtLeast',
   'condition:kicked',

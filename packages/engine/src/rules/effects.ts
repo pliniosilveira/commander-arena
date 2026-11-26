@@ -214,6 +214,7 @@ import { TIME_COUNTER } from './time-counter';
 import { makeSettled } from './token-batch';
 import type { TokenBatch } from './token-replacement';
 import { runTransform } from './transform';
+import { runTurnFaceUp } from './turn-face-up';
 import { untapPermanent } from './untap';
 import { runVote } from './vote';
 import { winTheGame } from './win-game';
@@ -677,7 +678,10 @@ export function runInstruction(
         : result.alsoNewObject === undefined
           ? [result.newObject]
           : [result.newObject, result.alsoNewObject];
-    const lastMoved = [...(res.lastMoved ?? []), ...movedObjects];
+    const lastMoved =
+      instruction.notMoved === true
+        ? (res.lastMoved ?? [])
+        : [...(res.lastMoved ?? []), ...movedObjects];
     // CR 702.84a, 603.7 (D-124): unearth also creates the delayed triggered ability that exiles the permanent it
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
@@ -1599,6 +1603,7 @@ function runEffect(
               count: amountOf(state, sel.count ?? 1, ctx, targets),
               to: effect.to,
               position: effect.position ?? 'top',
+              ...(effect.faceDownAs === 'manifest' ? { entersFaceDown: 'manifest' as const } : {}),
               ...(sel.optional === true ? { optional: true as const } : {}),
               ...(sel.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
               // "Put a creature card from defending player's hand": the hand of the one player the selector names (nothing to choose when it names none).
@@ -3135,6 +3140,10 @@ function runEffect(
       // CR 701.40a (D-309): the top card of a library goes onto the battlefield face down as a 2/2 creature.
       return runManifest(state, effect, ctx, targets);
 
+    case 'turnFaceUp':
+      // CR 701.40g, 708.8: a face-down permanent is turned face up by the effect, at no cost.
+      return runTurnFaceUp(state, effect, ctx, targets);
+
     case 'gainLife':
     case 'loseLife': {
       const everyone = amountOf(state, effect.amount, ctx, targets);
@@ -4591,6 +4600,37 @@ function runEffect(
           },
         ],
       );
+
+    case 'controllersMayExile': {
+      // CR 608.2d, 101.4 (Disorienting Choice): each permanent of the slot that is still a legal target and on the battlefield is offered to the player who controls it, in turn order from the
+      // controller of the effect; the ones they pick are exiled together at the end (rules/choose-each.ts). The permanents are remembered for "the chosen permanents ... still on the battlefield".
+      const chosen = resolveObjects(state, effect.objects, ctx, targets).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
+      const controllers = new Set(
+        chosen.flatMap((id) => {
+          const obj = state.objects[id];
+          return obj === undefined ? [] : [controllerOf(state, obj)];
+        }),
+      );
+      return {
+        ...done(
+          state,
+          [],
+          [
+            {
+              kind: 'chooseEach',
+              filter: {},
+              mayExile: chosen,
+              seats: seatsInOrder(state, res.controller).filter((seat) => controllers.has(seat)),
+              picked: [],
+              chosen: null,
+            },
+          ],
+        ),
+        thisWay: { chosenPermanents: chosen },
+      };
+    }
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).

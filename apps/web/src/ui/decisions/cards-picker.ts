@@ -131,7 +131,7 @@ export function lookTakeRevealed(
 }
 
 /** Where a looked-at card goes when taken (D-145): into the hand (the default), onto the battlefield, or into exile face down; or it stays on top of the library (Cream of the Crop). */
-export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top';
+export type TakeTo = 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top' | 'manifest';
 
 /**
  * Where the card taken from the top of the library goes, read from the `lookAtTop` of the ability on the stack; the hand
@@ -257,6 +257,8 @@ export function confirmLabel(
     // Durnan of the Yawning Portal: "You may exile a creature card from among them".
     if (to === 'exile') return chosen.length === 0 ? 'Exile none' : 'Exile';
     if (to === 'top') return 'Put on top';
+    // CR 701.62a: manifest dread manifests the one card it must take.
+    if (to === 'manifest') return 'Manifest';
     if (to === 'battlefield') return chosen.length === 0 ? 'Put none' : 'Put onto battlefield';
     return chosen.length === 0 ? 'Take none' : 'Put into hand';
   }
@@ -348,7 +350,13 @@ export function foundBadge(
     return MOVE_BADGE[to];
   }
   if (decision.purpose === 'lookTake') {
-    return to === 'exileFaceDown' ? 'Exile' : to === 'battlefield' || to === 'top' ? 'Put' : 'Take';
+    return to === 'exileFaceDown'
+      ? 'Exile'
+      : to === 'manifest'
+        ? 'Manifest'
+        : to === 'battlefield' || to === 'top'
+          ? 'Put'
+          : 'Take';
   }
   if (decision.purpose === 'lookSplit') {
     return decision.to === 'bottom' ? 'Bottom' : 'Hand';

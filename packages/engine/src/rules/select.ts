@@ -30,6 +30,7 @@ import { countersOfKind } from './counters-of-kind';
 import { defendingPlayerOfAbility } from './defending';
 import { derive } from './derive';
 import { keywordKindsOf } from './derive-keywords';
+import { isFaceDown } from './face-down';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { abilitiesHaveKeyword } from './keywords';
 import { manaValueOfCost } from './mana-value';
@@ -196,6 +197,10 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
           (e) => e.change.kind === 'goaded' && e.objects.includes(obj.id),
         ) || d.goadedBy.length > 0
       );
+    },
+    // CR 708.2: only a filter that says "face-down" or "face-up" reads it; only a permanent on the battlefield is face down.
+    get isFaceDown() {
+      return obj.zone === 'battlefield' && isFaceDown(obj);
     },
     // Only a filter that compares mana value reads it.
     get manaValue() {

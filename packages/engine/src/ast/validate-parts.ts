@@ -631,6 +631,14 @@ export function checkFilter(
   if (f.goaded === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.goaded`, 'only a permanent on the battlefield can be goaded');
   }
+  // CR 708.2: only a permanent is face down or face up.
+  if (f.facing !== undefined) {
+    if (f.facing !== 'down' && f.facing !== 'up') {
+      issue(out, `${path}.facing`, "facing must be 'down' or 'up'");
+    } else if (f.zone !== undefined && f.zone !== 'battlefield') {
+      issue(out, `${path}.facing`, 'only a permanent on the battlefield is face down or face up');
+    }
+  }
   if (f.putFromBattlefieldThisTurn === true && f.zone !== 'graveyard') {
     issue(
       out,
@@ -1042,6 +1050,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
   f.goaded !== undefined ||
+  f.facing !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined ||
   f.abilitySource !== undefined ||
@@ -2308,6 +2317,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledCreatures: 'an exile effect',
   exiledCreatureCards: 'an exile effect',
   discardedTypeCount: 'a discard effect',
+  chosenStillOnBattlefield: 'a controllersMayExile effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -2368,6 +2378,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'exileTop') return ['exiledCreatureCards'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
+  // Disorienting Choice: "if one or more of the chosen permanents are still on the battlefield".
+  if (e?.kind === 'controllersMayExile') return ['chosenStillOnBattlefield'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   // "Discard a card or sacrifice a permanent" (Eumidian Wastewaker): what the declined (otherwise) effect does is counted too.
   if (e?.kind === 'playersMay') {
@@ -4103,6 +4115,29 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         }
       }
       break;
+    case 'exilePermanent': {
+      // Primordial Mist: "Exile a face-down permanent you control face up": a choice among the player's own permanents on the battlefield.
+      const what = cost.filter as ObjectFilter;
+      checkFilter(what, `${path}.filter`, out);
+      if (filterSome(what, (f) => f.controller === 'opponent')) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'only permanents you control can be exiled for a cost',
+        );
+      }
+      if (what.zone !== undefined && what.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be exiled');
+      }
+      if (filterSome(what, (f) => f.owner !== undefined || f.stackKind !== undefined)) {
+        issue(
+          out,
+          `${path}.filter`,
+          'a cost names permanents by type and the like: no owner or stackKind',
+        );
+      }
+      break;
+    }
     default:
       issue(out, path, `unknown cost ${kindOf(cost)}`);
   }
@@ -4214,6 +4249,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.filter.controller`, "'you control' counts the permanents you control");
       }
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
+      break;
+    case 'thisPowerParity':
+      if (c.parity !== 'even' && c.parity !== 'odd') {
+        issue(out, `${path}.parity`, 'parity is even or odd');
+      }
       break;
     case 'opponentsAtLeast':
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
@@ -4832,7 +4872,10 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
     (e?.kind === 'lookAtTop' &&
-      (e.take?.to === 'exileFaceDownUnlinked' || e.take?.to === 'exile')) ||
+      (e.take?.to === 'exileFaceDownUnlinked' ||
+        e.take?.to === 'exile' ||
+        // CR 701.62a: "that creature" after manifest dread is the creature it manifested (the cards put into the graveyard are not it).
+        e.take?.to === 'manifest')) ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -4975,6 +5018,38 @@ function checkSacrificeSelector(
     } else if (typeof choose.count !== 'number') {
       checkAmount(choose.count, `${path}.count`, scope, out);
     }
+  }
+}
+
+/**
+ * The `choose` selector of `turnFaceUp` ("you may turn a permanent you control face up", CR 608.2d): the controller chooses one of the face-down permanents they control that match; the
+ * other fields of a choice are for other effects.
+ */
+function checkChooseTurnUp(sel: ChooseSelector, path: string, out: Out): void {
+  checkFilter(sel.filter, `${path}.filter`, out);
+  if (sel.filter?.controller !== 'you') {
+    issue(
+      out,
+      `${path}.filter.controller`,
+      "a choice of what to turn face up is among the permanents you control: set controller to 'you'",
+    );
+  }
+  if (sel.filter?.zone !== undefined && sel.filter.zone !== 'battlefield') {
+    issue(out, `${path}.filter.zone`, 'only permanents on the battlefield are face down');
+  }
+  if (
+    sel.count !== undefined ||
+    sel.anyNumber !== undefined ||
+    sel.upTo !== undefined ||
+    sel.greatest !== undefined ||
+    sel.least !== undefined ||
+    sel.chosenBy !== undefined
+  ) {
+    issue(
+      out,
+      path,
+      'a turn-face-up choice picks one permanent: only filter and optional belong to it',
+    );
   }
 }
 
@@ -6744,6 +6819,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
       }
       break;
+    case 'turnFaceUp':
+      // CR 701.40g, 708.8: the permanents turned face up: a selector, or the permanent a trigger is about ("turn that creature face up").
+      if (kindOf(e.objects) === 'choose') {
+        checkChooseTurnUp(e.objects as ChooseSelector, `${path}.objects`, out);
+      } else {
+        checkAffectedObjects(e.objects as ObjectSelector, `${path}.objects`, scope, out);
+      }
+      break;
     case 'balance':
       // CR 101.4, 701.21a, 701.9 (Magus of the Balance): every player keeps the smallest number of lands, cards in hand or creatures.
       if (!isOneOf(e.what, ['lands', 'hand', 'creatures'])) {
@@ -8352,18 +8435,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
       if (e.faceDownAs !== undefined) {
-        if (e.faceDownAs !== 'forestLand') {
-          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' when present");
+        if (
+          e.faceDownAs !== 'forestLand' &&
+          e.faceDownAs !== 'manifest' &&
+          e.faceDownAs !== 'morph'
+        ) {
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            "faceDownAs must be 'forestLand', 'manifest' or 'morph' when present",
+          );
         }
         if (e.to !== 'battlefield') {
           issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
         }
+        // CR 701.40a: a card the player chooses in their hand is manifested; no other card chosen as the effect runs enters face down.
         if (kindOf(e.objects) === 'choose') {
-          issue(
-            out,
-            `${path}.faceDownAs`,
-            'a card chosen as the effect runs does not enter face down',
-          );
+          const chosenFrom = (e.objects as { filter?: { zone?: string } }).filter?.zone;
+          if (e.faceDownAs !== 'manifest' || chosenFrom !== 'hand') {
+            issue(
+              out,
+              `${path}.faceDownAs`,
+              'only a card chosen from the hand is manifested as the effect runs',
+            );
+          }
+        } else if (e.faceDownAs === 'manifest') {
+          issue(out, `${path}.faceDownAs`, 'manifest puts a card chosen from the hand');
         }
       }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
@@ -8541,12 +8638,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'exile',
           'castFree',
           'top',
+          'manifest',
         ])
       ) {
         issue(
           out,
           `${path}.take.to`,
           `the cards taken go to the hand, the battlefield or exile face down, are cast, or stay on top, not ${JSON.stringify(e.take.to)}`,
+        );
+      }
+      // CR 701.62a (Manifest dread): one card of those looked at, unrevealed, put onto the battlefield face down; the rest go into the graveyard.
+      if (
+        e.take?.to === 'manifest' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.hidden !== true ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.all !== undefined ||
+          e.take.kinds !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          e.from !== undefined ||
+          e.rest !== 'graveyard')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'manifesting one of the cards looked at takes one card (min and max 1, hidden) of any kind, with the rest in the graveyard and nothing revealed',
         );
       }
       // CR 401.2, 401.4: "Put one of those cards on top of your library and the rest on the bottom": one card, unrevealed, left in the library; the rest goes to the bottom or the graveyard.
@@ -10352,6 +10471,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.filter.controller`,
           'the opponent is the player each choice is for: the filter names no controller',
         );
+      }
+      break;
+    case 'controllersMayExile':
+      // CR 608.2d (Disorienting Choice): the permanents are the targets of a slot of the spell or ability; each is offered to the player who controls it.
+      if (kindOf(e.objects) !== 'target') {
+        issue(out, `${path}.objects`, 'controllersMayExile names the permanents of a target slot');
+      } else {
+        checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
       break;
     case 'proliferate':

@@ -56,6 +56,7 @@ import {
 import { usesSharesWithSource } from './sliver-d';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
+import { THEN_MAY_RETURN_NEEDS } from './then-may-return';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
 import { TROYAN_G4_NEEDS } from './troyan-g4';
 import type { FaceCosts, LowerContext, LowerResult, SpellParts } from './types';
@@ -196,6 +197,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ELVEN_COUNCIL_REVEAL_NEEDS,
     ...REVEAL_TOP_CARD_NEEDS,
     ...PLANESWALKER_NEEDS,
+    ...THEN_MAY_RETURN_NEEDS,
     ...DESTINY_NEEDS,
     ...WIN_GAME_NEEDS,
     ...MELD_NEEDS,

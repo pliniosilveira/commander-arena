@@ -238,6 +238,26 @@ export function isBounceCost(decision: Pick<ChoosePermanentDecision, 'purpose'>)
   return decision.purpose === 'bounce';
 }
 
+/** True for the cost of an ability that exiles a permanent the player controls (Primordial Mist, CR 118.3, 406.3). */
+export function isExileCost(decision: Pick<ChoosePermanentDecision, 'purpose'>): boolean {
+  return decision.purpose === 'exileCost';
+}
+
+/** "Exile a face-down permanent you control face up to pay for X's ability." (CR 602.2b): the words of the exile cost of the ability on the stack. */
+export function exileCostPrompt(
+  decision: Pick<ChoosePermanentDecision, 'source'>,
+  index: Index,
+): string {
+  const source = index.get(decision.source);
+  const ability = source?.ability;
+  const cost =
+    ability?.kind === 'activated'
+      ? ability.cost.find((c) => c.kind === 'exilePermanent')
+      : undefined;
+  const pay = `to pay for ${stackName(index, decision.source)}`;
+  return `${cost === undefined ? 'Exile a permanent you control' : activationCostPart(cost)} ${pay}.`;
+}
+
 /**
  * "Return an artifact you control to its owner's hand to pay for X's ability." (D-139, CR 602.2b): the words of the
  * return cost of the ability on the stack; the plain count when the view does not show it.
@@ -325,6 +345,7 @@ export function chosenBadge(
   if (isFight(decision)) return 'Fights it';
   if (isTapCost(decision)) return 'Tap';
   if (isBounceCost(decision)) return 'Return';
+  if (isExileCost(decision)) return 'Exile';
   const { source } = decision;
   if (index !== undefined && source !== undefined) {
     if (tapEffectOf({ purpose: decision.purpose, source }, index) !== null) return 'Tap';
@@ -439,6 +460,7 @@ export function choosePermanentPrompt(
   }
   if (isTapCost(decision)) return tapPrompt(decision, index);
   if (isBounceCost(decision)) return bouncePrompt(decision, index);
+  if (isExileCost(decision)) return exileCostPrompt(decision, index);
   const source = nameOf(index, decision.source);
   if (isSpellCost(decision, index)) {
     return `Sacrifice ${spellSacrificeWhat(decision, index)} as an additional cost to cast ${source}.`;
