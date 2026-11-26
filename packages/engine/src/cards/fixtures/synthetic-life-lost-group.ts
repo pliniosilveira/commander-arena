@@ -545,4 +545,29 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Whenever a player casts their first spell each turn, choose another target player. This creature deals damage equal to that spell's mana value to the chosen player."
+  singleFace({
+    name: 'SYNTHETIC Spiteful Judge',
+    manaCost: ['3', 'B', 'R'],
+    types: ['creature'],
+    subtypes: ['Demon'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    power: 4,
+    toughness: 4,
+    oracleText:
+      "Whenever a player casts their first spell each turn, choose another target player. This creature deals damage equal to that spell's mana value to the chosen player.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'any', nth: 1 },
+        targets: [{ id: 't1', what: { kind: 'player', filter: 'otherThanTriggerPlayer' } }],
+        effect: {
+          kind: 'dealDamage',
+          amount: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+          to: T1,
+        },
+      },
+    ],
+  }),
 ];

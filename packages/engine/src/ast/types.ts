@@ -1363,7 +1363,12 @@ export type AttachedTo =
  * Which players a player target may be: any, an opponent of the controller, or (`opponentWhoseTurn`, CR 115.1, 500.1: "target opponent whose turn it is", Cmdr. Troi) the opponent
  * whose turn it is, which is a legal target only during the turn of an opponent.
  */
-export type PlayerFilter = 'any' | 'opponent' | 'opponentWhoseTurn';
+export type PlayerFilter =
+  | 'any'
+  | 'opponent'
+  | 'opponentWhoseTurn'
+  /** "Another target player" of a trigger about a player (The Lord of Pain; CR 115.1, 603.2): any player but the one the event is about (`triggerPlayer`). With no such player nothing is a legal target. */
+  | 'otherThanTriggerPlayer';
 
 /**
  * The counters a permanent enters the battlefield with (`moveToZone.withCounters`, CR 122.6, 614.1c): `count` counters of the kind `counter`, and `also` more kinds ("with a vigilance counter

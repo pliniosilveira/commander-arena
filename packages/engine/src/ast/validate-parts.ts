@@ -1177,7 +1177,9 @@ export function declareTargets(
         }
         break;
       case 'player':
-        if (!isOneOf(what.filter, ['any', 'opponent', 'opponentWhoseTurn'])) {
+        if (
+          !isOneOf(what.filter, ['any', 'opponent', 'opponentWhoseTurn', 'otherThanTriggerPlayer'])
+        ) {
           issue(out, `${p}.what.filter`, `unknown player filter ${JSON.stringify(what.filter)}`);
         }
         break;

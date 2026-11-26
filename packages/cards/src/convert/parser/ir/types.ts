@@ -455,7 +455,7 @@ export interface IrFilter {
    */
   readonly anyOf?: readonly IrFilter[];
   /** The noun names a player, not an object: "target player", "target opponent". */
-  readonly player?: 'any' | 'opponent' | 'opponentWhoseTurn';
+  readonly player?: 'any' | 'opponent' | 'opponentWhoseTurn' | 'otherThanTriggerPlayer';
   /** "the chosen player casts a spell" (Sewer Nemesis, CR 607.2d): the player noun of a cast trigger is the player the permanent chose as it entered (the engine's `by: 'chosenPlayer'`). */
   readonly chosenPlayer?: true;
   /**

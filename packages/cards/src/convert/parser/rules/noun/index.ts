@@ -302,13 +302,36 @@ function player(text: string): Parser<string> {
 export const NOUN_PLAYER = defineRule<IrNoun>({
   id: ID.player,
   family: 'noun',
-  leading: ['you', 'target', 'each'],
+  leading: ['you', 'target', 'each', 'another'],
   cites: ['CR 102.1 (Players)', 'CR 115.1 (Targets)'],
-  examples: ['you', 'target player', 'target opponent', 'each player', 'each opponent'],
-  rejects: ['your', 'target creature', 'each creature', 'target players'],
-  parse: node<{ det: IrNoun['det']; raw: string; player?: 'any' | 'opponent' }, IrNoun>(
+  examples: [
+    'you',
+    'target player',
+    'target opponent',
+    'each player',
+    'each opponent',
+    // The Lord of Pain: any player but the one the trigger is about.
+    'another target player',
+  ],
+  rejects: [
+    'your',
+    'target creature',
+    'each creature',
+    'target players',
+    'another target players',
+    'another player',
+    'another target opponent',
+  ],
+  parse: node<
+    { det: IrNoun['det']; raw: string; player?: 'any' | 'opponent' | 'otherThanTriggerPlayer' },
+    IrNoun
+  >(
     ID.player,
-    choice<{ det: IrNoun['det']; raw: string; player?: 'any' | 'opponent' }>(
+    choice<{
+      det: IrNoun['det'];
+      raw: string;
+      player?: 'any' | 'opponent' | 'otherThanTriggerPlayer';
+    }>(
       map(player('you'), (raw) => ({ det: 'you' as const, raw })),
       map(player('target player'), (raw) => ({
         det: 'target' as const,
@@ -319,6 +342,11 @@ export const NOUN_PLAYER = defineRule<IrNoun>({
         det: 'target' as const,
         raw,
         player: 'opponent' as const,
+      })),
+      map(player('another target player'), (raw) => ({
+        det: 'target' as const,
+        raw,
+        player: 'otherThanTriggerPlayer' as const,
       })),
       map(player('each player'), (raw) => ({ det: 'eachPlayer' as const, raw })),
       map(player('each opponent'), (raw) => ({ det: 'eachOpponent' as const, raw })),

@@ -11553,19 +11553,10 @@
     "b194f277-5045-4391-8b48-d555a6d657a7": {
       "name": "The Lord of Pain",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever a player casts their first spell each turn, choose another target player. ~ deals damage equal to that spell's mana value to the chosen player.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-permanent"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "af846ac5"
+      "ast": "56bc45e2"
     },
     "b23587e0-9fb7-492e-8bb4-f218e8e4ce6c": {
       "name": "Brisela, Voice of Nightmares",
@@ -16504,7 +16495,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1748,
+      "supported": 1749,
       "total": 1770
     }
   }

@@ -75,6 +75,8 @@ export function readsTriggerPlayer(ability: Ability): boolean {
       JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
       // Issue 506 (U.S.S. Prometheus): "each other opponent" leaves out the player the event is about, so the player must stay on the stack object.
       JSON.stringify([ability.effect, ability.modes ?? []]).includes('"eachOtherOpponent"') ||
+      // The Lord of Pain: "another target player" leaves out the player the event is about, so the player must stay on the stack object.
+      JSON.stringify(ability.targets ?? []).includes('"otherThanTriggerPlayer"') ||
       JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"') ||
       JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerTurn"'))
   );
