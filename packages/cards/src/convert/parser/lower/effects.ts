@@ -2126,6 +2126,22 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
       if (!ref.ok) return ref;
       return { ok: true, value: [{ kind: 'sacrifice', objects: ref.value }], rule: clause.rule };
     }
+    // "Choose up to one target nonland permanent. Its controller may sacrifice it." (Star Athlete, CR 701.21a, 608.2c): "it" is a target of the ability, sacrificed by the player who
+    // controls it (the engine's `sacrifice` with `byController`), whoever the "may" asked.
+    if (
+      what.det === 'anaphor' &&
+      /^t\d+$/u.test(what.ref ?? '') &&
+      arg(clause, 'player') === undefined &&
+      ctx.askedActs !== undefined
+    ) {
+      const ref = objectRefOf(what, ctx);
+      if (!ref.ok) return ref;
+      return {
+        ok: true,
+        value: [{ kind: 'sacrifice', objects: ref.value, byController: true }],
+        rule: clause.rule,
+      };
+    }
     // "Whenever a Goblin or Orc you control deals combat damage to a player, you may sacrifice it." (Gorbag of Minas Morgul, CR 701.21a, 603.2c): "it" is the permanent the trigger is
     // about, which its controller (the controller of the ability) sacrifices; the engine's `sacrifice` of the `triggerSubject`.
     if (what.det === 'triggerSubject' && arg(clause, 'player') === undefined) {

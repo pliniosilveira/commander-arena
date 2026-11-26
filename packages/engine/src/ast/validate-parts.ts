@@ -2229,6 +2229,7 @@ export const PLAYER_ONLY = [
   'chosenPlayer',
   'enteredChosenPlayer',
   'triggerPlayer',
+  'declinedPlayer',
   'triggerDamagedPlayers',
   'attackedPlayers',
   'combatDamagedByNamed',

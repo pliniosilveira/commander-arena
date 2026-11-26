@@ -16232,19 +16232,10 @@
     "fb03befb-b4e4-4ae9-908d-a16d5b03b054": {
       "name": "Star Athlete",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ attacks, choose up to one target nonland permanent. Its controller may sacrifice it. If they don't, ~ deals 5 damage to that player.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-target-dies-return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2d8124ad"
+      "ast": "f5473b90"
     },
     "fb084141-cb80-479e-b5d4-114c1f31eb6c": {
       "name": "Generous Patron",
@@ -16530,7 +16521,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1745,
+      "supported": 1746,
       "total": 1770
     }
   }

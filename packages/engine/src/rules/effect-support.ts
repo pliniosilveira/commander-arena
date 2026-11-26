@@ -44,6 +44,8 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'chosenPlayer',
   'enteredChosenPlayer',
   'triggerPlayer',
+  // CR 608.2d (Star Athlete): "deals 5 damage to that player" of the player who declined an offer.
+  'declinedPlayer',
   'triggerDamagedPlayers',
   'discardedThisWay',
   'couldntSacrificeThisWay',

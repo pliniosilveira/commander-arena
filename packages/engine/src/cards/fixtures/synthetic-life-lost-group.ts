@@ -433,4 +433,38 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever this creature attacks, choose up to one target nonland permanent. Its controller may sacrifice it. If they don't, this creature deals 5 damage to that player."
+  singleFace({
+    name: 'SYNTHETIC Reckless Athlete',
+    manaCost: ['2', 'R'],
+    types: ['creature'],
+    subtypes: ['Human'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      "Whenever this creature attacks, choose up to one target nonland permanent. Its controller may sacrifice it. If they don't, this creature deals 5 damage to that player.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'battlefield', notTypes: ['land'] } },
+            min: 0,
+            max: 1,
+          },
+        ],
+        effect: {
+          kind: 'playersMay',
+          players: { kind: 'controllerOf', of: T1_REF },
+          effect: { kind: 'sacrifice', objects: T1_REF, byController: true },
+          runsAs: 'chooser',
+          otherwise: { kind: 'dealDamage', amount: 5, to: { kind: 'declinedPlayer' } },
+        },
+      },
+    ],
+  }),
 ];
