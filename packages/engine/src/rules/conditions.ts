@@ -8,7 +8,7 @@ import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { resolutionCount } from './action-taken';
-import { amountOf, playerStatOf, statOf } from './amounts';
+import { amountOf, playerStatOf, statOf, thisWayCount } from './amounts';
 import { castInOwnMainPhase } from './cast-phase';
 import { chosenOf } from './chosen';
 import {
@@ -275,7 +275,7 @@ export function evaluateCondition(
       );
     case 'thisWayAtLeast':
       // D-210 (CR 608.2c): "if a creature card was discarded this way": what the effects before this one did.
-      return (ctx.thisWay?.[condition.what] ?? 0) >= condition.count;
+      return thisWayCount(state, ctx.thisWay, condition.what) >= condition.count;
     case 'didPrevious':
       // CR 603.12, 608.2c (D-135; Learn, CR 701.48a, reads the same way): "if you do": the nearest `may` effect before this was accepted and did something.
       return (ctx.performed ?? 0) > 0;

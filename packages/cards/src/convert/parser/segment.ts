@@ -777,6 +777,18 @@ const FOR_EACH_OPPONENT_CHOOSE =
 const DESTROY_THE_CHOSEN_PERMANENTS = /^destroy the chosen permanents\.$/i;
 
 /**
+ * "For each opponent, choose up to one target artifact or enchantment that player controls. For each permanent chosen this way, its controller may exile it. Then if one or more of the chosen
+ * permanents are still on the battlefield, you search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle." (Disorienting Choice, CR 608.2d): the
+ * three sentences are one instruction, the second and third being about the permanents the first has chosen.
+ */
+const FOR_EACH_OPPONENT_CHOOSE_TARGET =
+  /^for each opponent, choose up to one target [^.,]* that player controls\.$/i;
+const CONTROLLER_MAY_EXILE_EACH_CHOSEN =
+  /^for each permanent chosen this way, its controller may exile it\.$/i;
+const THEN_IF_CHOSEN_STILL_SEARCH =
+  /^then if one or more of the chosen permanents are still on the battlefield, you search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle\.$/i;
+
+/**
  * "Exile the top card of your library. You may play that card until you exile another card with ~." (Furious Rise, CR 607.2a): the permission is of the card the permanent exiled
  * with this ability and ends as it exiles another, so the two sentences are read as one instruction (the first may follow the comma of a condition).
  */
@@ -1529,6 +1541,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, BECOMES_LAND_CREATURE) &&
       said(b, ITS_STILL_A_LAND) &&
       said(c, IT_CANT_BE_BLOCKED_THIS_TURN)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, FOR_EACH_OPPONENT_CHOOSE_TARGET) &&
+      said(b, CONTROLLER_MAY_EXILE_EACH_CHOSEN) &&
+      said(c, THEN_IF_CHOSEN_STILL_SEARCH)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

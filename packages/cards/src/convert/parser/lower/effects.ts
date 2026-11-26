@@ -64,6 +64,7 @@ import {
 } from './continuous';
 import { EXCHANGE_CONTROL_OF_ALL, GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
+import { CONTROLLERS_MAY_EXILE_LOWERINGS } from './controllers-may-exile';
 import { lowerCopyToken } from './copies';
 import { COPY_CAST_PAYING_LOWERINGS } from './copy-cast-paying';
 import { COPY_CHOSEN_TOKEN_LOWERINGS } from './copy-chosen-token';
@@ -3197,6 +3198,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
+  ...CONTROLLERS_MAY_EXILE_LOWERINGS,
   ...COUNTER_BLITZ_C_LOWERINGS,
   ...COUNTER_BLITZ_E_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,

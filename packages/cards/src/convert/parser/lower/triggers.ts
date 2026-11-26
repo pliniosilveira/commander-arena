@@ -1322,7 +1322,9 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       e.event === 'damageToPlayerPrevented' ||
       // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.
       e.event === 'dealsCombatDamage' ||
-      e.event === 'dealsDamage',
+      e.event === 'dealsDamage' ||
+      // Body of Knowledge: "Whenever this creature is dealt damage, draw that many cards" (CR 120.3, 603.2g): the damage the permanent was dealt (the excess, for "excess damage").
+      e.event === 'dealtDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
   const attackers = events.every((e) => e.event === 'attackBatch');

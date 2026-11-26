@@ -1170,6 +1170,12 @@ export interface CastingContext {
     readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
+    /**
+     * "As an additional cost to cast this spell, exile three creature cards from your graveyard" (CR 118.8, 601.2b): the kind and number of the cards of the caster's graveyard exiled as the cost
+     * is paid; `exileGraveyardAsked` is set once the question is being asked (the answer then goes to this cost and not to the escape exile).
+     */
+    readonly exileGraveyard?: { readonly filter: ObjectFilter; readonly count: number };
+    readonly exileGraveyardAsked?: true;
     /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
     readonly exileFromHand?: ObjectId[];
     /** The number of -1/-1 counters of an optional blight additional cost ("you may blight 1"), asked once the mana is paid; absent for none. `blightAsked` is set while the question is pending. */
@@ -1582,6 +1588,11 @@ export type Instruction =
        * are then the opponents still to choose for, and the question is asked of the controller.
        */
       readonly perOpponent?: true;
+      /**
+       * `controllersMayExile` (Disorienting Choice, CR 608.2d): the permanents chosen, in `filter`'s place: each seat of `seats` is asked which of the ones it controls it exiles (any number, none included),
+       * and every permanent picked is exiled together at the end instead of destroyed.
+       */
+      readonly mayExile?: readonly ObjectId[];
       readonly seats: readonly SeatId[];
       readonly picked: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -2571,6 +2582,10 @@ export interface ThisWayCounts {
   readonly destroyedCreaturesBy?: Readonly<Record<number, number>>;
   /** Never set: each player's own number is read from `destroyedCreaturesBy` (`rules/life-amounts.ts`); the key only lets the `thisWay` readers index every `ThisWayKind`. */
   readonly destroyedCreaturesOfAffected?: number;
+  /** The permanents a `controllersMayExile` effect named (Disorienting Choice: "the chosen permanents"), each as the object it was; `chosenStillOnBattlefield` counts those still on the battlefield. */
+  readonly chosenPermanents?: readonly ObjectId[];
+  /** Never set: counted from `chosenPermanents` as it is read (`thisWayCount`), so the `thisWay` readers can index every `ThisWayKind`. */
+  readonly chosenStillOnBattlefield?: number;
   /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
   readonly exiledPowerOwn?: number;
 }

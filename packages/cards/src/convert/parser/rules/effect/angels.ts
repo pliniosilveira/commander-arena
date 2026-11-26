@@ -100,7 +100,7 @@ export const UNTIL_SOURCE_LEAVES = pattern(
 export function perOpponentNoun(
   ctx: ParseContext,
   from: number,
-  verb: 'exile' | 'destroy' | 'tap' | 'gain control of' | 'return',
+  verb: 'exile' | 'destroy' | 'tap' | 'gain control of' | 'return' | 'choose',
   at: number,
   id: string,
 ) {

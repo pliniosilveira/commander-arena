@@ -835,6 +835,7 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
       'cost.pay-life',
       'cost.pay-x-life',
       'cost.exile-any-hand',
+      'cost.exile-graveyard-cards',
       'cost.blight',
     ],
   }),
@@ -884,6 +885,9 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, pay X life.',
     'As an additional cost to cast ~, pay X life and discard a card.',
     'As an additional cost to cast ~, you may exile any number of blue cards from your hand.',
+    // CR 118.8, 406.1 (Skaab Ruinator): cards of a kind exiled from the caster's own graveyard.
+    'As an additional cost to cast ~, exile three creature cards from your graveyard.',
+    'As an additional cost to cast ~, exile a card from your graveyard.',
     // Lorwyn Eclipsed (CR 701.68a, 118.8): the optional blight of a spell's additional cost.
     'As an additional cost to cast ~, you may blight 1.',
     'As an additional cost to cast ~, you may blight 2.',
@@ -923,7 +927,7 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, discard a land.',
     'As an additional cost to cast ~, discard two land cards.',
     'As an additional cost to cast ~, behold another Jace or pay {1}.',
-    'As an additional cost to cast ~, exile a card from your graveyard.',
+    'As an additional cost to cast ~, exile three creature cards from an opponent’s graveyard.',
     'As an additional cost to cast ~, tap an untapped creature you control.',
     'As an additional cost to cast spells, sacrifice a creature.',
     'As an additional cost to cast ~.',

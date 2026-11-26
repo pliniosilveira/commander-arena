@@ -623,7 +623,10 @@ export type ThisWayKind =
   // each player it affects as the number of creatures that player controlled (as they were just before they died) that the `destroy` effects of this resolution destroyed.
   | 'destroyedCreaturesOfAffected'
   // Revival Experiment (CR 608.2c): "You lose 3 life for each card returned this way": the cards a `moveToZone` of a `choose` selector put from a graveyard onto the battlefield in this resolution.
-  | 'returned';
+  | 'returned'
+  // Disorienting Choice (CR 608.2c, 400.7): "the chosen permanents ... still on the battlefield": the permanents a `controllersMayExile` effect of this resolution named that are, as this is read, still on the
+  // battlefield as the same objects (one that was exiled, or left any other way, is a new object and is not counted).
+  | 'chosenStillOnBattlefield';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -5417,6 +5420,17 @@ export type Effect =
    * together. `filter` names what a permanent is, with no controller (the opponent is the player the choice is for). Works for any number of opponents. See rules/choose-each.ts.
    */
   | { readonly kind: 'chooseOnePerOpponentDestroy'; readonly filter: ObjectFilter }
+  /**
+   * "For each permanent chosen this way, its controller may exile it." (Disorienting Choice; CR 608.2d, 101.4, 701.13): `objects` is a target slot (the permanents chosen as the spell was cast); each
+   * of them that is still a legal target and on the battlefield is offered to the player who controls it now, which of them that player exiles (a `choosePermanent` decision of purpose 'effect',
+   * none to all of them, asked of that player), the players asked in turn order starting with the controller of the effect and each choosing knowing the choices before. Nothing is asked of a player
+   * who controls none of them. Then every permanent chosen is exiled together. The permanents named are remembered for `thisWay` `chosenStillOnBattlefield` ("if one or more of the chosen permanents are
+   * still on the battlefield"), which counts those still there as the same objects. Works for any number of opponents. See rules/choose-each.ts.
+   */
+  | {
+      readonly kind: 'controllersMayExile';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'target' }>;
+    }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that
