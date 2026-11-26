@@ -867,7 +867,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'tappedForMana': {
       // CR 106.12, 605.1b, 303.4: "Whenever enchanted land is tapped for mana", for whoever taps the land the Aura is attached to; any other permanent a player may tap has no words yet.
       if (trigger.by === 'tapper') {
-        if (trigger.what.hostOfSource !== true || trigger.mana !== undefined) return null;
+        if (trigger.mana !== undefined) return null;
+        if (trigger.what.hostOfSource !== true) {
+          // "Whenever a player taps a land for mana": any player who taps the permanent, whoever controls it.
+          const any = filterPhrase(trigger.what);
+          return any === null ? null : `Whenever a player taps ${any} for mana`;
+        }
         const { hostOfSource: _host, ...kind } = trigger.what;
         const core = nounCore(kind, 'permanent');
         return core === null ? null : `Whenever enchanted ${core} is tapped for mana`;
