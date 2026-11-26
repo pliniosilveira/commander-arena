@@ -4831,6 +4831,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (typeof c.counter !== 'string' || c.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
+      if (c.atLeast !== undefined && (!Number.isInteger(c.atLeast) || c.atLeast < 1)) {
+        issue(out, `${path}.atLeast`, 'atLeast is a whole number of 1 or more');
+      }
       break;
     case 'and':
     case 'or':
@@ -10137,7 +10140,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (
           e.ifThisWay !== 'exiledNonland' &&
           e.ifThisWay !== 'discardedNonland' &&
-          e.ifThisWay !== 'discarded'
+          e.ifThisWay !== 'discarded' &&
+          e.ifThisWay !== 'countersPut'
         ) {
           issue(out, `${path}.ifThisWay`, `unknown count ${JSON.stringify(e.ifThisWay)}`);
         } else if (!(scope.thisWay ?? []).includes(e.ifThisWay)) {
@@ -10148,6 +10152,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 603.4: the intervening "if" of the reflexive ability, read as it is created and as it resolves, about its source.
+      if (e.interveningIf !== undefined) checkCondition(e.interveningIf, `${path}.interveningIf`, out);
       const own = declareTargets(
         e.targets,
         `${path}.targets`,

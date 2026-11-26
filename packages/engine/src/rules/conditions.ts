@@ -234,7 +234,7 @@ export function evaluateCondition(
       // CR 603.10a, 113.7a: "if it had no -1/-1 counters on it" reads the permanent as it last existed
       // once it has left (Persist, Undying), as it is now while it is still on the battlefield.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
-      return source !== null && (source.counters[condition.counter] ?? 0) > 0;
+      return source !== null && (source.counters[condition.counter] ?? 0) >= (condition.atLeast ?? 1);
     }
     case 'subjectGreaterPt': {
       // CR 702.100a, 702.100c: that creature's power is greater and/or its toughness is greater than the

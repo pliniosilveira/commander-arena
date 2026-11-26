@@ -3188,6 +3188,11 @@ export type Effect =
        * filter (a card of that kind, wherever it went: the filter names no zone), and carries just the ones that match, which are what `moved` names in it.
        */
       readonly ifMovedMatches?: ObjectFilter;
+      /**
+       * "Put a quest counter on ~. When you do, if it has four or more quest counters on it, ..." (CR 603.12, 603.4): the intervening "if" of the reflexive ability. It is read as the
+       * ability is created (no ability is created when it is false) and again as the ability resolves, with the source of this ability as "this".
+       */
+      readonly interveningIf?: Condition;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -7860,7 +7865,12 @@ export type Condition =
    * least one counter of the kind, as it is now or, once it has left the battlefield, as it last existed
    * (CR 603.10a, 113.7a). "If it had no -1/-1 counters" is `not` of this.
    */
-  | { readonly kind: 'sourceHasCounter'; readonly counter: string }
+  | {
+      readonly kind: 'sourceHasCounter';
+      readonly counter: string;
+      /** "If it has four or more quest counters on it" (CR 122.1, 603.4, Earthbender Ascension): at least this many counters of the kind (1 when left out). */
+      readonly atLeast?: number;
+    }
   /**
    * "That creature's power is greater than this creature's power and/or that creature's toughness is greater
    * than this creature's toughness" (CR 702.100a, Evolve, D-120): the trigger's subject (the creature that
