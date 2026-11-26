@@ -101,6 +101,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { DURNAN_EFFECT_RULES } from './durnan';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { EARTHBEND_RULES } from './earthbend';
 import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
 import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
@@ -1830,6 +1831,7 @@ export const EFFECT_RULES = [
   // Abzan Armor deck, group A: "can attack this turn as though it didn't have defender", "assigns combat damage equal to its toughness rather than its power".
   ...COMBAT_RULE_EFFECT_RULES,
   ...COUNTER_RULES,
+  ...EARTHBEND_RULES,
   ...TOKEN_EFFECT_RULES,
   ...PUMP_RULES,
   ...GAIN_RULES,

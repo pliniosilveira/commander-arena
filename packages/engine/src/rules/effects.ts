@@ -2089,13 +2089,7 @@ function runEffect(
         return obj?.zone === 'battlefield' && derive(state, obj).types.includes('land');
       });
       if (lands.length === 0) return done(state);
-      const extra =
-        effect.additional !== undefined &&
-        evaluateCondition(state, effect.additional.condition, { ...ctx, targets })
-          ? amountOf(state, effect.additional.count, ctx, targets)
-          : 0;
-      const counters =
-        Math.max(0, amountOf(state, effect.count, ctx, targets)) + Math.max(0, extra);
+      const counters = Math.max(0, amountOf(state, effect.count, ctx, targets));
       return done(
         {
           ...state,

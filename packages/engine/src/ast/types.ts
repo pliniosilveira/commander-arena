@@ -4155,14 +4155,13 @@ export type Effect =
    * creature with haste in addition to its other types, for good (it keeps its land type, subtypes and abilities); then `count` +1/+1 counters are put on it; and a delayed triggered
    * ability of the controller, about that permanent only (CR 603.7c, 603.7e), returns it to the battlefield tapped under the controller's control when it dies or is exiled
    * (the card it became in a graveyard or in exile; a land that goes to any other zone, or a token, is not returned). A land that is no longer a land on the battlefield as the effect
-   * resolves is not affected and nothing is done (CR 608.2b); a land already a creature gets the counters and the 0/0 base power and toughness again. `additional` (Toph, Hardheaded
-   * Teacher: "If that spell is a Lesson, put an additional +1/+1 counter on that land"): `count` more counters when `condition` holds as the effect resolves.
+   * resolves is not affected and nothing is done (CR 608.2b); a land already a creature gets the counters and the 0/0 base power and toughness again. The counters put are something done, so a "When you do"
+   * reflexive ability may follow (Earth Rumble, CR 603.12).
    */
   | {
       readonly kind: 'earthbend';
       readonly objects: ObjectSelector;
       readonly count: Amount;
-      readonly additional?: { readonly condition: Condition; readonly count: Amount };
     }
   | { readonly kind: 'becomeMonarch'; readonly player: PlayerSelector }
   /**

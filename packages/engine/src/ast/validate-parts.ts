@@ -6614,7 +6614,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
               child?.kind === 'createToken' ||
               // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done (`performed`).
-              child?.kind === 'addCounters') &&
+              child?.kind === 'addCounters' ||
+              // Earth Rumble: "Earthbend 2. When you do, ...": the counters put on the land are something done (`performed`).
+              child?.kind === 'earthbend') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -10432,13 +10434,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'earthbend':
-      // "Earthbend N": the land the objects name (a target land the controller controls, or "it") and a count; the optional extra counters are a condition and a count.
+      // "Earthbend N": the land the objects name (a target land the controller controls, or "it") and a count.
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
       checkAmount(e.count, `${path}.count`, scope, out);
-      if (e.additional !== undefined) {
-        checkEffectCondition(e.additional.condition, `${path}.additional.condition`, scope, out);
-        checkAmount(e.additional.count, `${path}.additional.count`, scope, out);
-      }
       break;
     case 'doubleCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);

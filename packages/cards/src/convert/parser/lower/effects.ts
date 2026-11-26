@@ -95,6 +95,7 @@ import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { DURNAN_LOWERINGS } from './durnan';
+import { EARTHBEND_LOWERINGS } from './earthbend';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
@@ -3250,6 +3251,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KENRITH_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
+  ...EARTHBEND_LOWERINGS,
   ...KEFKA_LOWERINGS,
   ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
