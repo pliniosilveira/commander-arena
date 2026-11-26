@@ -150,8 +150,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:modified',
   // CR 701.15b: "a goaded creature".
   'selector:goaded',
-  // CR 708.2: "a face-down creature" (`ObjectFilter.isFaceDown`).
-  'selector:isFaceDown',
+  // CR 708.2: "a face-down permanent", "a face-up creature".
+  'selector:faceDown',
   // CR 201.2 (Mocking Doppelganger): "with the same name as ~", in the subject of a static ability.
   'selector:sameNameAsSource',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
@@ -459,10 +459,10 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:goaded');
   }
-  // CR 708.2: "face-down", a permanent on the battlefield (the engine's `isFaceDown`), read from the object where the filter is matched.
-  if (filter.faceDown === true) {
-    if (filter.zone !== undefined && filter.zone !== 'battlefield') return bad([]);
-    parts.push('selector:isFaceDown');
+  // CR 708.2: "face-down" and "face-up", read where the filter is matched against the game (a count, a target slot, an `each` selector); never a member of a choice.
+  if (filter.facing !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:faceDown');
   }
   // CR 201.2: "with the same name as ~" is read where the subject of a static ability is matched (`subjectAffects`); never a member of a choice.
   if (filter.sameNameAsSource === true) {
@@ -741,7 +741,7 @@ function lowerFilterAt(
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
-    ...(filter.faceDown === true ? { isFaceDown: true as const } : {}),
+    ...(filter.facing === undefined ? {} : { facing: filter.facing }),
     ...(filter.sameNameAsSource === true ? { sameNameAsSource: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
@@ -1374,6 +1374,17 @@ export function objectRefOf(
         value: { kind: 'thisCard' },
         rule: noun.rule,
       }
+    );
+  }
+  // Experimental Lab (CR 701.62a, 608.2c, 400.7j): "that creature" after "manifest dread" is the creature it manifested, the engine's `moved`.
+  if (
+    options.moved === true &&
+    ctx.manifestedCreature &&
+    (noun.rule === 'noun.that-object' || noun.rule === 'noun.it') &&
+    (noun.det === 'anaphor' || noun.det === 'triggerSubject')
+  ) {
+    return (
+      gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
     );
   }
   // "Then if you control four or more lands, untap that land." (stage P36, D-178, CR 400.7j): the card a search found, the engine's `moved`.

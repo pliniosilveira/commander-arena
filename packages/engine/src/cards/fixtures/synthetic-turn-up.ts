@@ -93,7 +93,7 @@ export const SYNTHETIC_TURN_UP_LIST: readonly CardDefinition[] = [
       kind: 'triggered',
       trigger: {
         kind: 'entersBattlefield',
-        what: { ...CREATURE_YOU_CONTROL, isFaceDown: true },
+        what: { ...CREATURE_YOU_CONTROL, facing: 'down' },
       },
       effect: { kind: 'draw', player: YOU, count: 1 },
     },

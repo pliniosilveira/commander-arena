@@ -287,7 +287,16 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
   if (left.length === 0) return done(state);
   // D-151: "look at the top card": what was not taken stays where it is.
   if (ins.rest === 'top') return done(state);
-  if (ins.rest === 'graveyard') return done(state, [], moveInstructions(left, 'graveyard'));
+  if (ins.rest === 'graveyard') {
+    // CR 701.62a: manifest dread puts the cards not manifested into the graveyard; "that creature" after it is the manifested one, so these are not what `moved` names.
+    return done(
+      state,
+      [],
+      moveInstructions(left, 'graveyard').map((i) =>
+        ins.to === 'manifest' && i.kind === 'move' ? { ...i, notMoved: true as const } : i,
+      ),
+    );
+  }
   // CR 401.4: cards put on top at the same time are arranged by their owner.
   if (ins.rest === 'topChosen') {
     return done(

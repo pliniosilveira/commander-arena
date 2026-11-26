@@ -954,11 +954,6 @@ export interface ObjectFilter {
    */
   readonly token?: boolean;
   /**
-   * "Face-down creature" (CR 708.2, 701.40a, 708.3): the object is a face-down permanent (manifested, cast face down, put onto the battlefield face down), as it is now or, for one that has
-   * left, as it was. A face-up permanent is not; there is no "face-up" form (a creature is face up unless said otherwise). Only a permanent on the battlefield can be face down.
-   */
-  readonly isFaceDown?: true;
-  /**
    * "With flying", "without flying" (D-133, CR 702): the object has all of the keywords in `keywords`, and none of
    * those in `notKeywords`, among the abilities `derive` gives it now (printed and granted, or those it last had when it
    * has left, CR 113.7a). Only keywords without parameters (`GRANTABLE_KEYWORDS`). Refused in a static ability's
@@ -1027,6 +1022,12 @@ export interface ObjectFilter {
    * `modified` is, because `derive` matches those before the designation is known.
    */
   readonly goaded?: true;
+  /**
+   * "Face-down permanents", "face-up nontoken creatures" (CR 708.2, 701.40): `down` is a face-down permanent, `up` a face-up one (the status the permanent has now, which no
+   * layer changes, CR 708.2). Only a permanent on the battlefield is face down; read where the filter is matched against the game (a count, a selector, a trigger's subject), never in the
+   * subject of a static ability (`derive` does not read it).
+   */
+  readonly facing?: 'down' | 'up';
   /**
    * "Target commander", "your commanders" (D-145, CR 903.3): the object is a card a player designated as their commander (a token or a
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
@@ -2917,6 +2918,12 @@ export type Effect =
       readonly fromLibraryOf?: PlayerSelector;
     }
   /**
+   * "Turn that creature face up" (CR 701.40g, 708.8, Staff Room): each face-down permanent `objects` names is turned face up by the effect, with no cost paid (the special action
+   * `turnFaceUp` is the one that pays). It is the same object with the characteristics of its card, nothing enters, and the `turnedFaceUp` event comes out. A permanent that is
+   * not face down is left alone; a manifested permanent whose card is an instant or sorcery is revealed and stays face down (CR 701.40g).
+   */
+  | { readonly kind: 'turnFaceUp'; readonly objects: ObjectSelector }
+  /**
    * CR 701.8 (Destroy). `cantBeRegenerated` is "It can't be regenerated" (CR 701.19c, D-120): the
    * regeneration shields of the permanents it destroys are not applied (they stay until they end).
    */
@@ -4221,8 +4228,10 @@ export type Effect =
        * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 708.3, 613.2b): the permanents enter face down, as a land with the Forest subtype and no other
        * characteristic (the face-down status `forestLand`); the card's own enters replacements and triggers do not apply (CR 708.3). Only with `to` `battlefield` and a selector
        * that is not `choose`. A face-down permanent of this kind is never turned face up.
+       * `manifest` (CR 701.40a, 701.40b, Scroll of Fate: "Manifest a card from your hand"): the card the player chooses among the cards of their hand (a `choose` selector with `filter.zone`
+       * `hand`, and `to` `battlefield`) is put onto the battlefield face down as a manifested 2/2 creature under their control, which can be turned face up as any manifested card can.
        */
-      readonly faceDownAs?: 'forestLand';
+      readonly faceDownAs?: 'forestLand' | 'manifest';
       /**
        * For battlefield: the permanents enter with `count` counters of the kind on them ("return it to
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6

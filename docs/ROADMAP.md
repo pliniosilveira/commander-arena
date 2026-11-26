@@ -142,6 +142,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Skaab Ruinator shape: an additional cost of exiling graveyard cards is a fixed count, alone; it is not X cards and not one way of an "or" choice.
 - Disorienting Choice: a chosen permanent that became an illegal target before resolution is not counted as chosen, so it adds nothing to the number of lands searched for.
 - "Three or more creatures with different powers" and "~'s power is even/odd" are read only by permissions to cast (from the top of the library, as though with flash); a +N/+N or keyword static with them stays unsupported.
+- Face-down and face-up filters (Glitch Interpreter, Whisperwood Elemental): read from permanents on the battlefield only, not from last-known information or the subject of a static ability.
 - Bladegriff Prototype: if the damaged player has left the game, the first opponent in turn order chooses the target; the controller does not choose which opponent does.
 - Felix Five-Boots: a combat damage batch trigger is doubled only when its filter names creatures you control; other batches are not.
 - Void Attendant: a card exiled face down cannot be chosen for the cost "Put a card an opponent owns from exile into that player's graveyard" (the rules pick a pile, then a card at random).

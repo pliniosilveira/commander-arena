@@ -441,7 +441,6 @@ export function checkFilter(
     'singleTarget',
     'modified',
     'goaded',
-    'isFaceDown',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -601,13 +600,17 @@ export function checkFilter(
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
   }
-  // CR 708.2: only a permanent on the battlefield is face down.
-  if (f.isFaceDown === true && f.zone !== undefined && f.zone !== 'battlefield') {
-    issue(out, `${path}.isFaceDown`, 'only a permanent on the battlefield can be face down');
-  }
   // CR 701.15b: only a permanent is goaded.
   if (f.goaded === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.goaded`, 'only a permanent on the battlefield can be goaded');
+  }
+  // CR 708.2: only a permanent is face down or face up.
+  if (f.facing !== undefined) {
+    if (f.facing !== 'down' && f.facing !== 'up') {
+      issue(out, `${path}.facing`, "facing must be 'down' or 'up'");
+    } else if (f.zone !== undefined && f.zone !== 'battlefield') {
+      issue(out, `${path}.facing`, 'only a permanent on the battlefield is face down or face up');
+    }
   }
   if (f.putFromBattlefieldThisTurn === true && f.zone !== 'graveyard') {
     issue(
@@ -1019,6 +1022,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
   f.goaded !== undefined ||
+  f.facing !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined ||
   f.abilitySource !== undefined ||
@@ -4720,7 +4724,10 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // Gonti: the card `lookAtTop` exiled face down from another player's library is "that card" (`take.to` `exileFaceDownUnlinked`).
     (e?.kind === 'lookAtTop' &&
-      (e.take?.to === 'exileFaceDownUnlinked' || e.take?.to === 'exile')) ||
+      (e.take?.to === 'exileFaceDownUnlinked' ||
+        e.take?.to === 'exile' ||
+        // CR 701.62a: "that creature" after manifest dread is the creature it manifested (the cards put into the graveyard are not it).
+        e.take?.to === 'manifest')) ||
     // CR 701.20a, 400.7j: the card `revealTopCard` revealed is "that card" ("Reveal the top card of your library. Draw cards equal to that card's mana value").
     e?.kind === 'revealTopCard' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
@@ -6592,6 +6599,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
       }
       break;
+    case 'turnFaceUp':
+      // CR 701.40g, 708.8: the permanents turned face up: a selector, or the permanent a trigger is about ("turn that creature face up").
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'balance':
       // CR 101.4, 701.21a, 701.9 (Magus of the Balance): every player keeps the smallest number of lands, cards in hand or creatures.
       if (!isOneOf(e.what, ['lands', 'hand', 'creatures'])) {
@@ -8170,18 +8181,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
       if (e.faceDownAs !== undefined) {
-        if (e.faceDownAs !== 'forestLand') {
-          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' when present");
+        if (e.faceDownAs !== 'forestLand' && e.faceDownAs !== 'manifest') {
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            "faceDownAs must be 'forestLand' or 'manifest' when present",
+          );
         }
         if (e.to !== 'battlefield') {
           issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
         }
+        // CR 701.40a: a card the player chooses in their hand is manifested; no other card chosen as the effect runs enters face down.
         if (kindOf(e.objects) === 'choose') {
-          issue(
-            out,
-            `${path}.faceDownAs`,
-            'a card chosen as the effect runs does not enter face down',
-          );
+          const chosenFrom = (e.objects as { filter?: { zone?: string } }).filter?.zone;
+          if (e.faceDownAs !== 'manifest' || chosenFrom !== 'hand') {
+            issue(
+              out,
+              `${path}.faceDownAs`,
+              'only a card chosen from the hand is manifested as the effect runs',
+            );
+          }
+        } else if (e.faceDownAs === 'manifest') {
+          issue(out, `${path}.faceDownAs`, 'manifest puts a card chosen from the hand');
         }
       }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.

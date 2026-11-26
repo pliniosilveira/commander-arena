@@ -51,7 +51,7 @@ describe('the cards and the trigger are known to the engine', () => {
       expect(validateCard(syntheticCard(name)), name).toEqual([]);
     }
     expect(isFeatureSupported('trigger:turnedFaceUp')).toBe(true);
-    expect(isFeatureSupported('selector:isFaceDown')).toBe(true);
+    expect(isFeatureSupported('selector:faceDown')).toBe(true);
   });
 });
 

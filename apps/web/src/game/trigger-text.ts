@@ -104,7 +104,7 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'commander',
   'hasCounter',
   // CR 708.2: "a face-down creature you control".
-  'isFaceDown',
+  'facing',
 ]);
 
 /** The noun of a filter with its adjectives and no article: "nonland permanent", "red Goblin creature". */
@@ -133,7 +133,7 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
   const adjectives = [
     filter.tapped === true ? 'tapped' : filter.tapped === false ? 'untapped' : '',
     filter.attacking === true ? 'attacking' : '',
-    filter.isFaceDown === true ? 'face-down' : '',
+    filter.facing === 'down' ? 'face-down' : filter.facing === 'up' ? 'face-up' : '',
     filter.token === false ? 'nontoken' : '',
     (filter.notTypes ?? []).map((t) => `non${t}`).join(' '),
     // D-135 (CR 205.4): "a nonbasic land".

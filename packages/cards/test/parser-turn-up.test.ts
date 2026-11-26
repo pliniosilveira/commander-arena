@@ -97,7 +97,7 @@ describe('"Whenever a face-down creature you control enters"', () => {
         kind: 'triggered',
         trigger: {
           kind: 'entersBattlefield',
-          what: { types: ['creature'], controller: 'you', isFaceDown: true },
+          what: { types: ['creature'], controller: 'you', facing: 'down' },
         },
         effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
       },
@@ -112,7 +112,7 @@ describe('"Whenever a face-down creature you control enters"', () => {
     expect(face.abilities).toMatchObject([
       {
         kind: 'triggered',
-        trigger: { kind: 'entersBattlefield', what: { isFaceDown: true } },
+        trigger: { kind: 'entersBattlefield', what: { facing: 'down' } },
         optional: true,
         effect: { kind: 'search' },
       },

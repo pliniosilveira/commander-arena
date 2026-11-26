@@ -169,7 +169,7 @@ describe('the other new kinds', () => {
     ],
     [{ kind: 'turnedFaceUp', what: {}, by: 'you' }, 'Whenever you turn a permanent face up'],
     [
-      { kind: 'entersBattlefield', what: { ...CREATURE_YOU, isFaceDown: true } },
+      { kind: 'entersBattlefield', what: { ...CREATURE_YOU, facing: 'down' } },
       'Whenever a face-down creature you control enters',
     ],
   ] as [Trigger, string][])('turning a permanent face up (CR 701.40b): %j', (trigger, words) => {

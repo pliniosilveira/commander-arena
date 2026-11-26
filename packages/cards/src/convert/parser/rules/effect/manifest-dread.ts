@@ -36,4 +36,33 @@ export const EFFECT_MANIFEST_DREAD = defineRule<Clauses>({
   ),
 });
 
-export const MANIFEST_DREAD_EFFECT_RULES = [EFFECT_MANIFEST_DREAD] as const;
+/**
+ * `effect.manifest-from-hand`: "Manifest a card from your hand." (Scroll of Fate; CR 701.40a): the player chooses a card of their hand and puts it onto the battlefield face down as a
+ * manifested 2/2 creature. The engine's `moveToZone` of a `choose` from the hand with `faceDownAs` `manifest`. Not read: another player's hand, "a creature card", "two cards", "up to one".
+ */
+export const EFFECT_MANIFEST_FROM_HAND = defineRule<Clauses>({
+  id: 'effect.manifest-from-hand',
+  family: 'effect',
+  leading: ['manifest'],
+  cites: ['CR 701.40a (Manifest)', 'CR 608.2d (Resolving Spells and Abilities)'],
+  examples: ['manifest a card from your hand', 'Manifest a card from your hand'],
+  rejects: [
+    'manifests a card from your hand',
+    'manifest a card from their hand',
+    'manifest a creature card from your hand',
+    'manifest two cards from your hand',
+    'manifest a card from your graveyard',
+    'manifest a card from your hand and draw a card',
+    'manifest a card',
+  ],
+  parse: single(
+    'effect.manifest-from-hand',
+    pattern(/manifest a card from your hand(?![\p{L}\p{N}])/iu),
+    () => ({ verb: 'manifestFromHand', args: {} }),
+  ),
+});
+
+export const MANIFEST_DREAD_EFFECT_RULES = [
+  EFFECT_MANIFEST_DREAD,
+  EFFECT_MANIFEST_FROM_HAND,
+] as const;
