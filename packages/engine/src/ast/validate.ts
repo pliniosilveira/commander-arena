@@ -1329,6 +1329,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         const typed =
           (t.filter?.types?.length ?? 0) > 0 ||
           (t.filter?.notTypes?.length ?? 0) > 0 ||
+          t.filter?.outlaw === true ||
           (t.filter?.anyOf?.some((m) => (m.types?.length ?? 0) > 0) ?? false);
         if (t.firstOfKind !== true) issue(out, `${path}.firstOfKind`, 'firstOfKind must be true');
         if (t.self !== undefined || t.nth !== undefined) {
