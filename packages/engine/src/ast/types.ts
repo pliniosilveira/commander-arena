@@ -1407,7 +1407,7 @@ export type ObjectRef =
    * CR 400.7, 603.10a): the card the `triggerSubject` permanent became, if it is still in the graveyard (`zone` `graveyard`). Resolves to nothing when the card has left that zone
    * since (it would be a new object again) or the subject was a token. Valid only as the object of `moveToZone` or `exile` in a triggered ability whose subject is a permanent.
    */
-  | { readonly kind: 'triggerCard' }
+  | { readonly kind: 'triggerCard'; readonly zones?: readonly ('graveyard' | 'exile')[] }
   /**
    * "Those creatures" in the body of a `combatDamageBatch` trigger (Tamiyo, Upriser Crowned; CR 603.2c, 510.2, 400.7): the permanents `what` names that dealt the combat damage that
    * triggered the ability, as long as each is still the same permanent on the battlefield (one that left is a new object, or none, and is skipped).
@@ -4150,6 +4150,20 @@ export type Effect =
    * already the monarch or has left the game. The designation belongs to the player: it stays when the source
    * leaves the battlefield.
    */
+  /**
+   * "Earthbend N" (the keyword action of Avatar: The Last Airbender; rulings of 2025-10-02): the land `objects` names (a target land the controller controls) becomes a 0/0 land
+   * creature with haste in addition to its other types, for good (it keeps its land type, subtypes and abilities); then `count` +1/+1 counters are put on it; and a delayed triggered
+   * ability of the controller, about that permanent only (CR 603.7c, 603.7e), returns it to the battlefield tapped under the controller's control when it dies or is exiled
+   * (the card it became in a graveyard or in exile; a land that goes to any other zone, or a token, is not returned). A land that is no longer a land on the battlefield as the effect
+   * resolves is not affected and nothing is done (CR 608.2b); a land already a creature gets the counters and the 0/0 base power and toughness again. `additional` (Toph, Hardheaded
+   * Teacher: "If that spell is a Lesson, put an additional +1/+1 counter on that land"): `count` more counters when `condition` holds as the effect resolves.
+   */
+  | {
+      readonly kind: 'earthbend';
+      readonly objects: ObjectSelector;
+      readonly count: Amount;
+      readonly additional?: { readonly condition: Condition; readonly count: Amount };
+    }
   | { readonly kind: 'becomeMonarch'; readonly player: PlayerSelector }
   /**
    * "[Player] takes the initiative" (CR 726.1, 726.3, 726.5): the player the selector names (one player) has the initiative and the player who had it ceases to. A player who

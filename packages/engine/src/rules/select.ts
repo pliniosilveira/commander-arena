@@ -1038,9 +1038,11 @@ export function resolveObjects(
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
       // CR 712.21c (D-277): for a melded permanent that died, both cards.
+      // Earthbend: "when it dies or is exiled, return it": the card in exile counts too (`zones`).
+      const zones = selector.zones ?? ['graveyard'];
       return ctx.triggerSubject === undefined
         ? []
-        : successorsOf(state, ctx.triggerSubject, (o) => o.zone === 'graveyard');
+        : successorsOf(state, ctx.triggerSubject, (o) => zones.includes(o.zone as 'graveyard'));
     }
     case 'thisCard': {
       // CR 400.7, 603.10a: the card the source became when it left, if it is still in that zone. A

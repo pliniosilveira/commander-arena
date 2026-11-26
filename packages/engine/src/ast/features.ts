@@ -489,6 +489,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // "You take the initiative" (CR 726) and "venture into Undercity" (CR 701.49, 309).
     'takeInitiative',
+    // Avatar: "earthbend N" (a land becomes a 0/0 haste land creature with counters, returning when it dies or is exiled).
+    'earthbend',
     'venture',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
@@ -3709,6 +3711,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   takeInitiative: true,
+  earthbend: true,
   venture: true,
   extraTurn: true,
   loseLifeManaValue: true,

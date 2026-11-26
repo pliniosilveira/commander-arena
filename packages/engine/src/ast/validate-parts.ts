@@ -10431,6 +10431,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;
+    case 'earthbend':
+      // "Earthbend N": the land the objects name (a target land the controller controls, or "it") and a count; the optional extra counters are a condition and a count.
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.additional !== undefined) {
+        checkEffectCondition(e.additional.condition, `${path}.additional.condition`, scope, out);
+        checkAmount(e.additional.count, `${path}.additional.count`, scope, out);
+      }
+      break;
     case 'doubleCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
       if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
