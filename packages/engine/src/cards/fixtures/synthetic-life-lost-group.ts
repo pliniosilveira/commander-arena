@@ -324,4 +324,41 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "At the beginning of each opponent's upkeep, they lose 1 life and you put a -1/-1 counter on up to one target creature they control."
+  singleFace({
+    name: 'SYNTHETIC Creeping Constrictor',
+    manaCost: ['2', 'B'],
+    types: ['creature'],
+    subtypes: ['Snake'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 2,
+    toughness: 3,
+    oracleText:
+      "At the beginning of each opponent's upkeep, they lose 1 life and you put a -1/-1 counter on up to one target creature they control.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'upkeep', whose: 'opponent' },
+        targets: [
+          {
+            id: 't1',
+            what: {
+              kind: 'object',
+              filter: { zone: 'battlefield', types: ['creature'], controller: 'triggerPlayer' },
+            },
+            min: 0,
+            max: 1,
+          },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'loseLife', player: { kind: 'triggerPlayer' }, amount: 1 },
+            { kind: 'addCounters', objects: T1, counter: '-1/-1', count: 1 },
+          ],
+        },
+      },
+    ],
+  }),
 ];
