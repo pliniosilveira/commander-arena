@@ -78,5 +78,3 @@ Mainboard
 1x Wall of Blossoms
 1x Wood Elves
 1x Wretched Confluence
-
----
