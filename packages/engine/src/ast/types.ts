@@ -9079,6 +9079,8 @@ export type Replacement =
    * a replacement effect of a permanent on the battlefield for every damage event, combat or not, whose source `sources` matches (read as for `damageBonus`, `controller: 'you'`
    * required) and whatever the recipient: a player or a permanent of any controller. The same source deals twice the damage; an event of 0 damage is no event. It applies once to an
    * event (CR 614.5) and the player dealt the damage orders it with the other effects that change the event (CR 616.1, `rules/damage-order.ts`). It is the ability of the permanent.
+   * With `zone: 'battlefield'` in `sources`, "If a creature you control would deal damage ..." (Gratuitous Violence, CR 109.2): only a permanent, as it is or as it last
+   * was on the battlefield, never a spell or a card elsewhere.
    */
   | { readonly kind: 'damageDouble'; readonly sources: ObjectFilter }
   /**
