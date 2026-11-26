@@ -83,6 +83,7 @@ describe('selectPaths', () => {
     expect(selectPaths(all, ['blocks', 'evaluator.land', 'blocks.margin'])).toEqual([
       'evaluator.land',
       'blocks.margin',
+      'blocks.lookMargin',
     ]);
     expect(selectPaths(all, ['danger'])).toEqual([
       'danger.life',

@@ -101,6 +101,8 @@ export interface SearchWork {
   readonly cut: Cut | null;
   /** The milliseconds of the decision's clock it used (0 on a logical clock). */
   readonly ms: number;
+  /** For a combat decision whose look-ahead ran (`heuristic-combat-look.ts`): its play-outs and whether it changed the choice. */
+  readonly look?: { readonly playOuts: number; readonly changed: boolean };
 }
 
 /** The two engine calls of a search: `getView` and `applyAction`. */

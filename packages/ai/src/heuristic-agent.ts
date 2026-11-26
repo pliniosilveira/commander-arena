@@ -52,6 +52,7 @@ import {
   startBudget,
   type Think,
 } from './heuristic-budget';
+import type { LookRecord } from './heuristic-combat-look';
 import { choosePriorityHeuristic, type PriorityChoice } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
@@ -106,6 +107,8 @@ export class HeuristicAgent implements ExplainingAgent {
   private readonly searchList: SearchWork[] = [];
   /** The budget of the decision being answered (`decide`), read once it is answered. */
   private budget: Budget = NO_BUDGET;
+  /** What the combat look-ahead of the decision being answered did (`heuristic-combat-look.ts`), if it ran. */
+  private look: LookRecord | null = null;
   /** The plannings tried this turn (see `priorityChoice`). */
   private tries: { turn: number; count: number; failed: Set<Window> } = {
     turn: -1,
@@ -315,7 +318,9 @@ export class HeuristicAgent implements ExplainingAgent {
           weights: this.weights,
           passiveWeight: this.opponent.passiveWeight,
           passiveWeightFor: (seat) => this.opponent.passiveWeightFor(seat),
+          agents: this.simAgents,
         });
+        this.look = choice.look ?? null;
         note(choice.reason);
         return choice.action;
       },
@@ -324,7 +329,9 @@ export class HeuristicAgent implements ExplainingAgent {
           sample: think.sample(),
           budget: think.budget,
           weights: this.weights,
+          agents: this.simAgents,
         });
+        this.look = choice.look ?? null;
         note(choice.reason);
         return choice.action;
       },
@@ -360,6 +367,8 @@ export class HeuristicAgent implements ExplainingAgent {
       );
       const budget = this.budget;
       this.budget = NO_BUDGET;
+      const look = this.look;
+      this.look = null;
       if (budget.calls() > 0) {
         this.searchList.push({
           kind: decision.kind,
@@ -369,6 +378,7 @@ export class HeuristicAgent implements ExplainingAgent {
           // The clock as the searches last read it: one more read would make the decision longer on a host
           // whose clock moves with every read.
           ms: budget.seen(),
+          ...(look === null ? {} : { look }),
         });
       }
       this.reasonList.push({
@@ -379,6 +389,7 @@ export class HeuristicAgent implements ExplainingAgent {
       return Promise.resolve(action);
     } catch (error) {
       this.budget = NO_BUDGET;
+      this.look = null;
       this.fallbackList.push({
         decisionKind: decision.kind,
         message: error instanceof Error ? error.message : String(error),
