@@ -70,6 +70,8 @@ export function spendRestrictionOf(
   if (only.notOwned === true) return { kind: 'spellMatch', notOwned: true };
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
+  // CR 106.6, 701.40b (Overgrown Zealot): "Spend this mana only to turn permanents face up".
+  if (only.turnFaceUp === true) return { kind: 'turnFaceUp' };
   // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
   if (only.notGeneric === true) return { kind: 'notGeneric' };
   // CR 106.6 (issue 345): "Spend this mana only to activate abilities".

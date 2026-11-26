@@ -380,6 +380,8 @@ export interface IrFilter {
   readonly modified?: true;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds (the engine's `goaded`). */
   readonly goaded?: true;
+  /** "face-down" or "face-up" (CR 708.2): the status the permanent has now (the engine's `facing`). */
+  readonly facing?: 'down' | 'up';
   /** "with the same name as ~" (Mocking Doppelganger, CR 201.2): the creature has the name of the permanent with the static ability (the engine's `sameNameAsSource`), read in the subject of a static ability only. */
   readonly sameNameAsSource?: true;
   /**
@@ -989,6 +991,8 @@ export interface IrCondition extends IrNode {
       }
     // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
+    // "~'s power is even", "~'s power is odd" (Kianne, Corrupted Memory, CR 107.1): the power of the permanent itself
+    | { readonly kind: 'thisPowerParity'; readonly parity: 'even' | 'odd' }
     // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
     | { readonly kind: 'aPlayerCardsInHand'; readonly compare: IrComparison }
     // "the player is your opponent and has four or more cards in hand" (Fevered Visions, CR 603.2b, 102.2, 402.1): the player the event of the trigger is about is an
@@ -1201,6 +1205,8 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): `what` the permanent
+    | { readonly kind: 'exilePermanent'; readonly what: IrNoun }
     // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
     | {
         readonly kind: 'untapPermanents';
@@ -1399,6 +1405,8 @@ export interface IrZoneSpec extends IrNode {
    */
   readonly whose?: 'you' | 'owner';
   readonly tapped?: boolean;
+  /** "to the battlefield face up or face down" (Deathmist Raptor, CR 708.2a, 708.3): the controller chooses as the effect resolves whether the card enters face up or face down. */
+  readonly faceChoice?: true;
   /** "onto the battlefield tapped and attacking" (stage P34, D-152, CR 508.4): the permanent enters attacking, never declared as an attacker. */
   readonly attacking?: true;
   /** `top`, `bottom`, or "third from the top" as 3 (stage P30, CR 401.7): a number of 2 or more. */

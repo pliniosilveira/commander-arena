@@ -72,6 +72,8 @@ describe('the dimensions', () => {
       // D-139: "Put a page counter on this artifact", "Return an artifact you control to its owner's hand".
       'putCounters',
       'returnToHand',
+      // Primordial Mist: "Exile a face-down permanent you control face up".
+      'exilePermanent',
       // D-185: "Exile this card from your graveyard" (the cost of Encore).
       'exileThis',
       // D-229: "Mill a card" as the cost of an ordinary ability.
@@ -132,6 +134,7 @@ describe('the dimensions', () => {
       'triggerPlayerTurn',
       'triggerPlayerIsOpponent',
       'triggerPlayerStat',
+      'thisPowerParity',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',

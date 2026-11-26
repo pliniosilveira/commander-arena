@@ -632,7 +632,10 @@ export type ThisWayKind =
   // each player it affects as the number of creatures that player controlled (as they were just before they died) that the `destroy` effects of this resolution destroyed.
   | 'destroyedCreaturesOfAffected'
   // Revival Experiment (CR 608.2c): "You lose 3 life for each card returned this way": the cards a `moveToZone` of a `choose` selector put from a graveyard onto the battlefield in this resolution.
-  | 'returned';
+  | 'returned'
+  // Disorienting Choice (CR 608.2c, 400.7): "the chosen permanents ... still on the battlefield": the permanents a `controllersMayExile` effect of this resolution named that are, as this is read, still on the
+  // battlefield as the same objects (one that was exiled, or left any other way, is a new object and is not counted).
+  | 'chosenStillOnBattlefield';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -1046,6 +1049,12 @@ export interface ObjectFilter {
    * `modified` is, because `derive` matches those before the designation is known.
    */
   readonly goaded?: true;
+  /**
+   * "Face-down permanents", "face-up nontoken creatures" (CR 708.2, 701.40): `down` is a face-down permanent, `up` a face-up one (the status the permanent has now, which no
+   * layer changes, CR 708.2). Only a permanent on the battlefield is face down; read where the filter is matched against the game (a count, a selector, a trigger's subject), never in the
+   * subject of a static ability (`derive` does not read it).
+   */
+  readonly facing?: 'down' | 'up';
   /**
    * "Target commander", "your commanders" (D-145, CR 903.3): the object is a card a player designated as their commander (a token or a
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
@@ -2174,7 +2183,15 @@ export type Cost =
        * owner's library instead of their hand (a commander's owner may still put it into the command zone, CR 903.9b). Only with `what` `this`.
        */
       readonly toLibraryBottom?: true;
-    };
+    }
+  /**
+   * "Exile a face-down permanent you control face up" as a cost (Primordial Mist; CR 118.3, 406.3, 708.9, 602.2b): the player chooses one permanent they control on the battlefield that
+   * `filter` matches (with more candidates than one a `choosePermanent` decision of purpose `exileCost` and `forCost` asks; with exactly one the engine takes it) and it goes to
+   * exile, face up (a face-down permanent is revealed as it moves, CR 708.9; a token ceases to exist). The card it becomes in exile is what `moved` names in the effect of the
+   * ability (CR 400.7: "that card"), so a `mayPlay` of `moved` lets its controller play it. Paid with the return cost's pieces, after the sacrifice and before the discard. Only the
+   * cost of an activated ability of a permanent; `filter` names the battlefield and the player's own permanents, no owner or stack kind.
+   */
+  | { readonly kind: 'exilePermanent'; readonly filter: ObjectFilter };
 
 /** The named alternative costs that are paid with mana instead of the mana cost (D-121). */
 export type NamedAlternativeKind =
@@ -2316,6 +2333,11 @@ export type AlternativeCost =
        * card cast is never that card (it is on the stack by then, CR 601.2a).
        */
       readonly exileFromHand?: ObjectFilter;
+      /**
+       * `morph` only (CR 702.37b, Megamorph): the `cost` is a megamorph cost, which is a morph cost, and as the permanent is turned face up for it a +1/+1 counter is put on it. Not for a
+       * permanent turned face up some other way (a manifested one is turned up for its mana cost, CR 701.40b).
+       */
+      readonly megamorph?: true;
       readonly condition?: Condition;
     }
   | {
@@ -2964,6 +2986,14 @@ export type Effect =
       readonly player: PlayerSelector;
       readonly fromLibraryOf?: PlayerSelector;
     }
+  /**
+   * "Turn that creature face up" (CR 701.40g, 708.8, Staff Room): each face-down permanent `objects` names is turned face up by the effect, with no cost paid (the special action
+   * `turnFaceUp` is the one that pays). It is the same object with the characteristics of its card, nothing enters, and the `turnedFaceUp` event comes out. A permanent that is
+   * not face down is left alone; a manifested permanent whose card is an instant or sorcery is revealed and stays face down (CR 701.40g). A `choose` selector (Zimone, Mystery Unraveler,
+   * "you may turn a permanent you control face up", CR 608.2d): the controller chooses one of the face-down permanents they control that the filter matches (`filter.controller` `you`,
+   * `filter.zone` the battlefield or left out); with `optional` they may choose none.
+   */
+  | { readonly kind: 'turnFaceUp'; readonly objects: ObjectSelector | ChooseSelector }
   /**
    * CR 701.8 (Destroy). `cantBeRegenerated` is "It can't be regenerated" (CR 701.19c, D-120): the
    * regeneration shields of the permanents it destroys are not applied (they stay until they end).
@@ -4298,8 +4328,12 @@ export type Effect =
        * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 708.3, 613.2b): the permanents enter face down, as a land with the Forest subtype and no other
        * characteristic (the face-down status `forestLand`); the card's own enters replacements and triggers do not apply (CR 708.3). Only with `to` `battlefield` and a selector
        * that is not `choose`. A face-down permanent of this kind is never turned face up.
+       * `morph` (CR 708.2a, 708.3, 702.37e, Deathmist Raptor: "return this card ... to the battlefield face down"): the card enters as a 2/2 face-down creature with no characteristics
+       * of its own; it can be turned face up for its morph cost if it has one (and for its megamorph cost, with the counter), and cannot be turned face up if it has none. Not with a `choose` selector.
+       * `manifest` (CR 701.40a, 701.40b, Scroll of Fate: "Manifest a card from your hand"): the card the player chooses among the cards of their hand (a `choose` selector with `filter.zone`
+       * `hand`, and `to` `battlefield`) is put onto the battlefield face down as a manifested 2/2 creature under their control, which can be turned face up as any manifested card can.
        */
-      readonly faceDownAs?: 'forestLand';
+      readonly faceDownAs?: 'forestLand' | 'manifest' | 'morph';
       /**
        * For battlefield: the permanents enter with `count` counters of the kind on them ("return it to
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
@@ -5419,6 +5453,9 @@ export type Effect =
         // afterwards, for a `mayPlay` of it (`whileExiled`). `min` and `max` of 1 or `max` of 1 with "you may"; the rest goes where `rest` says.
         // `exileFaceDownUnlinked` (Gonti, CR 406.3): exiled face down as `exileFaceDown` is, but no permanent remembers the card: it is what `moved` names afterwards, for a `mayPlay` of it
         // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` and `max` of 1, and the rest on the bottom in a random order.
+        // `manifest` (Manifest dread, CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the cards you looked at that were not manifested this way into your
+        // graveyard." The card taken is put onto the battlefield face down as a manifested 2/2 creature under the controller's control (CR 701.40a), unrevealed (nobody sees it, CR 708.5); what
+        // `moved` names afterwards is that permanent. `min` and `max` of 1 and `hidden`, with `rest` the graveyard (a single card is manifested with no question, CR 701.62a).
         readonly to?:
           | 'hand'
           | 'battlefield'
@@ -5426,7 +5463,8 @@ export type Effect =
           | 'exileFaceDownUnlinked'
           | 'exile'
           | 'castFree'
-          | 'top';
+          | 'top'
+          | 'manifest';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.
@@ -5511,6 +5549,17 @@ export type Effect =
    * together. `filter` names what a permanent is, with no controller (the opponent is the player the choice is for). Works for any number of opponents. See rules/choose-each.ts.
    */
   | { readonly kind: 'chooseOnePerOpponentDestroy'; readonly filter: ObjectFilter }
+  /**
+   * "For each permanent chosen this way, its controller may exile it." (Disorienting Choice; CR 608.2d, 101.4, 701.13): `objects` is a target slot (the permanents chosen as the spell was cast); each
+   * of them that is still a legal target and on the battlefield is offered to the player who controls it now, which of them that player exiles (a `choosePermanent` decision of purpose 'effect',
+   * none to all of them, asked of that player), the players asked in turn order starting with the controller of the effect and each choosing knowing the choices before. Nothing is asked of a player
+   * who controls none of them. Then every permanent chosen is exiled together. The permanents named are remembered for `thisWay` `chosenStillOnBattlefield` ("if one or more of the chosen permanents are
+   * still on the battlefield"), which counts those still there as the same objects. Works for any number of opponents. See rules/choose-each.ts.
+   */
+  | {
+      readonly kind: 'controllersMayExile';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'target' }>;
+    }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that
@@ -6558,6 +6607,14 @@ export type Trigger =
    * once each time, and a permanent that is monstrous already does nothing when told to become monstrous, so it triggers nothing.
    */
   | { readonly kind: 'becomesMonstrous'; readonly what: TriggerSubject }
+  /**
+   * "Whenever a permanent you control is turned face up", "When this creature is turned face up", "Whenever you turn a permanent face up" (CR 701.40b, 708.8, 603.2, 116.2b): a face-down
+   * permanent that is turned face up (the special action, the event `turnedFaceUp`). It is the same object afterwards (CR 708.8), so `what` is read as the permanent is now, face up, with
+   * the abilities it has face up: "When this creature is turned face up" is the ability of the permanent itself, which has it once it is up. It does not trigger for a face-down permanent that
+   * leaves the battlefield, and nothing that has to do with entering the battlefield triggers (CR 708.8). `by` `you` ("Whenever you turn a permanent face up"): the player who turned it
+   * face up is the controller of this ability (the player who took the special action); left out, whoever did. `triggerSubject` is the permanent; "it" in the effect names it.
+   */
+  | { readonly kind: 'turnedFaceUp'; readonly what: TriggerSubject; readonly by?: 'you' }
   /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,
@@ -7648,6 +7705,12 @@ export type Keyword =
  */
 export type Condition =
   | { readonly kind: 'controlsAtLeast'; readonly filter: ObjectFilter; readonly count: number }
+  /**
+   * "As long as Kianne's power is even", "... is odd" (Kianne, Corrupted Memory; CR 107.1: the numbers of the game are integers, a power may be below zero; CR 208.1): the power of the permanent the condition belongs to, as it is now through
+   * every layer, is an even or an odd number. A permanent with no power meets neither. Read where a rule acts (a permission to cast), never in a layer of `derive`: a static ability takes it
+   * only on `castAsThoughFlash` and `castFromTopOfLibrary`.
+   */
+  | { readonly kind: 'thisPowerParity'; readonly parity: 'even' | 'odd' }
   /**
    * "If you both own and control this creature and a creature named Bruna, the Fading Light" (CR 603.4, 701.42a, D-278): the permanent the ability belongs
    * to is on the battlefield and both owned and controlled by the controller of the ability, and so is another permanent of that card type whose name is
@@ -10132,6 +10195,11 @@ export interface ManaAbility {
      * `notGeneric` or `fromGraveyard`.
      */
     readonly notOwned?: true;
+    /**
+     * "Spend this mana only to turn permanents face up." (Overgrown Zealot; CR 106.6, 116.2b, 701.40b): the mana can pay only the cost of the special action of turning a face-down
+     * permanent face up (a morph cost, the mana cost of a manifested creature card), never a spell and never an ability. Alone: no other `spendOnly` field.
+     */
+    readonly turnFaceUp?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

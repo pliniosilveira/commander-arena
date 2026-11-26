@@ -62,6 +62,7 @@ import { IF_YOU_CANT_CONDITION_RULES } from './if-you-cant';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
 import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
+import { JUMP_SCARE_C_CONDITION_RULES } from './jump-scare-c';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
@@ -586,6 +587,8 @@ export const CONDITION_RULES = [
   ...DIFFERENT_POWERS_CONDITION_RULES,
   // Ahoy Mateys deck, group 8: "you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   ...AHOY_G8_CONDITION_RULES,
+  // Jump Scare! deck, group C (Augur of Autumn): "you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.
+  ...JUMP_SCARE_C_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,
   CONDITION_CONTROL_AT_MOST,

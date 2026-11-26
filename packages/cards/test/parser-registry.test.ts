@@ -174,6 +174,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.foretell': asIs,
   // Morph (CR 702.37) is a line of its own.
   'keyword.morph': asIs,
+  'keyword.megamorph': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,
   'keyword.gravestorm': asIs,
@@ -663,6 +664,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.loyalty': permanent((e) => `${e}: Draw a card.`),
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
+  'cost.exile-face-down-permanent': permanent((e) => `{U}, ${e}: Draw a card.`),
   'trigger.combat-damage-batch': whenever,
   'trigger.damage-batch': whenever,
   'trigger.tapped-for-mana': whenever,
@@ -1074,6 +1076,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.becomes-untapped': whenever,
   // Issue 103: "becomes monstrous" follows "Whenever"; the amount follows the damage to each opponent.
   'trigger.becomes-monstrous': whenever,
+  // CR 701.40b: "is turned face up", and "you turn a permanent face up".
+  'trigger.turned-face-up': whenever,
+  'trigger.you-turn-face-up': whenever,
   'amount.cards-in-hand-of-that-player': permanent(
     (e) => `At the beginning of each end step, ~ deals damage to each opponent ${e}.`,
   ),
@@ -1846,6 +1851,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
+  // Jump Scare! deck, group C: a permission of the card read "as long as" the condition holds, and the card's own restriction lifted "unless" it holds.
+  'condition.this-power-parity': permanent(
+    (e) => `As long as ${e}, you may cast noncreature spells as though they had flash.`,
+  ),
+  'condition.you-have-many-cards-in-hand': permanent((e) => `~ can't attack or block unless ${e}.`),
   // The party (CR 700.8).
   'condition.full-party': permanent(
     (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,

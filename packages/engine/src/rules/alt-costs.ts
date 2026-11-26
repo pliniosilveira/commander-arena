@@ -165,6 +165,12 @@ export function evokeExileOf(face: CardFace | null): ObjectFilter | undefined {
   return alt !== undefined && 'exileFromHand' in alt ? alt.exileFromHand : undefined;
 }
 
+/** CR 702.37b (Megamorph): whether the face's morph cost is a megamorph cost, one that puts a +1/+1 counter on the permanent as it is turned face up. */
+export function megamorphCostOf(face: CardFace | null): boolean {
+  const morph = face?.alternativeCosts?.find((a) => a.kind === 'morph');
+  return morph !== undefined && 'megamorph' in morph && morph.megamorph === true;
+}
+
 /** The cost of the named alternative cost (overload, ...) the face lists, or null (D-121). */
 export function namedAlternativeCostOf(
   face: CardFace | null,

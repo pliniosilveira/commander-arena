@@ -611,7 +611,7 @@ function activationCostIssues(
     // `breakDown` (rules/activate-costs.ts) pays one discard cost, of N cards.
     out.push({ path, message: 'more than one discard cost is not implemented by the engine yet' });
   }
-  if (costs.filter((c) => c.kind === 'returnToHand').length > 1) {
+  if (costs.filter((c) => c.kind === 'returnToHand' || c.kind === 'exilePermanent').length > 1) {
     // `breakDown` pays one return cost (D-139), of N permanents.
     out.push({
       path,
@@ -702,6 +702,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
@@ -1126,8 +1127,8 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
   for (const [i, c] of (face.additionalCosts ?? []).entries()) {
     if (
       (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
-      c.kind === 'exileFromGraveyard' ||
       c.kind === 'putLinkedExileInGraveyard' ||
+      c.kind === 'exilePermanent' ||
       c.kind === 'putOpponentExileInGraveyard'
     ) {
       out.push({
@@ -1147,6 +1148,7 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
       if (
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
         c.kind === 'exileFromGraveyard' ||
+        c.kind === 'exilePermanent' ||
         c.kind === 'putLinkedExileInGraveyard' ||
         c.kind === 'putOpponentExileInGraveyard' ||
         c.kind === 'exileFromHand'

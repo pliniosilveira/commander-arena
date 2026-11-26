@@ -414,6 +414,14 @@ const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
 /** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
 const EXILE_COUNTERED_THEN_CAST =
   /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard, then you may cast it without paying its mana cost\.$/i;
+/**
+ * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard. You may cast that card without paying its mana cost for as long as
+ * it remains exiled." (Kheru Spellsnatcher, CR 701.6a, 614.1a, 611.2b): three sentences that are one instruction (`effect.counter-exile-cast-while-exiled`).
+ */
+const EXILE_COUNTERED_INSTEAD =
+  /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard\.$/i;
+const MAY_CAST_FREE_WHILE_EXILED =
+  /^you may cast that card without paying its mana cost for as long as it remains exiled\.$/i;
 const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
@@ -775,6 +783,18 @@ const EACH_OPPONENT_GAINS_CONTROL =
 const FOR_EACH_OPPONENT_CHOOSE =
   /(?:^|, )for each opponent, choose an? [^.,]* that player controls\.$/i;
 const DESTROY_THE_CHOSEN_PERMANENTS = /^destroy the chosen permanents\.$/i;
+
+/**
+ * "For each opponent, choose up to one target artifact or enchantment that player controls. For each permanent chosen this way, its controller may exile it. Then if one or more of the chosen
+ * permanents are still on the battlefield, you search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle." (Disorienting Choice, CR 608.2d): the
+ * three sentences are one instruction, the second and third being about the permanents the first has chosen.
+ */
+const FOR_EACH_OPPONENT_CHOOSE_TARGET =
+  /^for each opponent, choose up to one target [^.,]* that player controls\.$/i;
+const CONTROLLER_MAY_EXILE_EACH_CHOSEN =
+  /^for each permanent chosen this way, its controller may exile it\.$/i;
+const THEN_IF_CHOSEN_STILL_SEARCH =
+  /^then if one or more of the chosen permanents are still on the battlefield, you search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle\.$/i;
 
 /**
  * "Exile the top card of your library. You may play that card until you exile another card with ~." (Furious Rise, CR 607.2a): the permission is of the card the permanent exiled
@@ -1535,6 +1555,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, FOR_EACH_OPPONENT_CHOOSE_TARGET) &&
+      said(b, CONTROLLER_MAY_EXILE_EACH_CHOSEN) &&
+      said(c, THEN_IF_CHOSEN_STILL_SEARCH)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
       said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
       said(c, CANT_CHOOSE_TAP_IT)
@@ -1629,6 +1658,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, COUNTER_TARGET_SPELL) &&
+      said(b, EXILE_COUNTERED_INSTEAD) &&
+      said(c, MAY_CAST_FREE_WHILE_EXILED)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

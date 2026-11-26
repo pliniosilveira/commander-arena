@@ -14,6 +14,7 @@ import type {
   ResolutionContext,
   TriggeredAbility,
 } from '../state/types';
+import { thisWayCount } from './amounts';
 import { runContinuous } from './continuous';
 import { derive } from './derive';
 import { playEnd } from './impulse';
@@ -40,7 +41,7 @@ export function runReflexive(
 ): StepOutcome {
   // CR 603.12 (D-231): "When one or more nonland cards are exiled this way": created when this resolution counted one, not when it merely did something.
   if (effect.ifThisWay !== undefined) {
-    if ((res.thisWay?.[effect.ifThisWay] ?? 0) <= 0) return done(state);
+    if (thisWayCount(state, res.thisWay, effect.ifThisWay) <= 0) return done(state);
   } else if (effect.ifMoved === true) {
     // CR 603.12 (Cait Sith, Espers to Magicite): "When you exile a card this way", "When you do" after an exile: created when the instruction before it moved a card.
     if ((res.lastMoved ?? []).length === 0) return done(state);

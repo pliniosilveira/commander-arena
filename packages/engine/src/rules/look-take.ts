@@ -56,7 +56,7 @@ function revealedEvent(
 /** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-396), "You may put a card that matches into your hand". */
 function mayTakeWords(
   ins: LookTake,
-  to: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top',
+  to: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top' | 'manifest',
 ): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
   // `min`: a card that must be taken (Cavalier of Thorns: "Put a land card from among them onto the battlefield"), not a "you may".
@@ -195,13 +195,15 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
       prompt: `${ins.revealAll === true ? 'Reveal' : 'Look at'} the top ${looked.length} card${looked.length === 1 ? '' : 's'} of ${ins.libraryOf === undefined ? 'your' : 'that player’s'} library. ${
         to === 'exileFaceDown'
           ? 'Exile one of them face down'
-          : ins.totalManaValue !== undefined
-            ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
-            : ins.hidden === true && to === 'top'
-              ? 'Put one of them on top of your library'
-              : ins.hidden === true && to === 'hand'
-                ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
-                : mayTakeWords(ins, to)
+          : to === 'manifest'
+            ? 'Manifest one of them'
+            : ins.totalManaValue !== undefined
+              ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
+              : ins.hidden === true && to === 'top'
+                ? 'Put one of them on top of your library'
+                : ins.hidden === true && to === 'hand'
+                  ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
+                  : mayTakeWords(ins, to)
       }; the rest ${
         ins.rest === 'graveyard'
           ? 'go into your graveyard'
@@ -259,17 +261,22 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
                 ins.withCounters,
               ),
             )
-          : to === 'exile'
-            ? // CR 406.3 (Durnan): exiled face up; no permanent remembers it, `moved` names it afterwards.
-              moveInstructions(chosen, 'exile')
-            : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
-              moveInstructions(chosen, 'exile').map((i) =>
-                i.kind === 'move'
-                  ? ins.unlinked === true
-                    ? { ...i, faceDown: true as const }
-                    : { ...i, linkTo: res.source, faceDown: true as const }
-                  : i,
-              )),
+          : to === 'manifest'
+            ? // CR 701.62a, 701.40a: the card is put onto the battlefield face down as a manifested 2/2 creature under the control of the player who manifests dread.
+              moveInstructions(chosen, 'battlefield', 'top', false, 'you').map((i) =>
+                i.kind === 'move' ? { ...i, entersFaceDown: 'manifest' as const } : i,
+              )
+            : to === 'exile'
+              ? // CR 406.3 (Durnan): exiled face up; no permanent remembers it, `moved` names it afterwards.
+                moveInstructions(chosen, 'exile')
+              : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
+                moveInstructions(chosen, 'exile').map((i) =>
+                  i.kind === 'move'
+                    ? ins.unlinked === true
+                      ? { ...i, faceDown: true as const }
+                      : { ...i, linkTo: res.source, faceDown: true as const }
+                    : i,
+                )),
     { ...ins, stage: 'rest', chosen, left },
   ]);
 }
@@ -280,7 +287,16 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
   if (left.length === 0) return done(state);
   // D-151: "look at the top card": what was not taken stays where it is.
   if (ins.rest === 'top') return done(state);
-  if (ins.rest === 'graveyard') return done(state, [], moveInstructions(left, 'graveyard'));
+  if (ins.rest === 'graveyard') {
+    // CR 701.62a: manifest dread puts the cards not manifested into the graveyard; "that creature" after it is the manifested one, so these are not what `moved` names.
+    return done(
+      state,
+      [],
+      moveInstructions(left, 'graveyard').map((i) =>
+        ins.to === 'manifest' && i.kind === 'move' ? { ...i, notMoved: true as const } : i,
+      ),
+    );
+  }
   // CR 401.4: cards put on top at the same time are arranged by their owner.
   if (ins.rest === 'topChosen') {
     return done(

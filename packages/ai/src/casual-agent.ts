@@ -154,8 +154,9 @@ export function createCasualHandlers(
                                       ? choosePermanentToTap(view, d) // D-133: the permanents tapped for a cost
                                       : d.purpose === 'blight'
                                         ? chooseBlightCreature(view, d) // D-407: the creature that gets the -1/-1 counters of a blight cost
-                                        : d.purpose === 'removeCountersCost'
-                                          ? choosePermanentToSacrifice(view, d) // CR 118.3, 122.1: the counter comes off the permanent the agent values least
+                                        : d.purpose === 'removeCountersCost' ||
+                                            d.purpose === 'exileCost'
+                                          ? choosePermanentToSacrifice(view, d) // CR 118.3, 122.1: the counter comes off the permanent the agent values least; Primordial Mist: the permanent it gives up for the cost is the one it values least
                                           : d.purpose === 'proliferate'
                                             ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
                                             : d.purpose === 'auraHost'

@@ -94,6 +94,8 @@ export interface CostBreakdown {
   readonly bounce: 'this' | ObjectFilter | null;
   /** How many of them; 1 for the source and for an ordinary cost. */
   readonly bounceCount: number;
+  /** The cost is the exile of a permanent (`exilePermanent`, Primordial Mist): the chosen permanent goes to exile face up and its card is what `moved` names in the effect, in place of the return to a hand. */
+  readonly bounceToExile: boolean;
   /** The return cost puts the permanent on the bottom of its owner's library instead of their hand (`returnToHand.toLibraryBottom`, CR 401.4). */
   readonly bounceToLibraryBottom: boolean;
   /** "Exile two creature cards from your graveyard" (D-232): the cards of the graveyard the cost exiles, or null for none. */
@@ -143,6 +145,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let bounce: CostBreakdown['bounce'] = null;
   let bounceCount = 1;
   let bounceToLibraryBottom = false;
+  let bounceToExile = false;
   let bounces = 0;
   let exileCards: CostBreakdown['exileCards'] = null;
   let exileCardsCosts = 0;
@@ -217,6 +220,13 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         bounce = 'kind' in cost.what ? 'this' : cost.what;
         bounceCount = cost.count ?? 1;
         bounceToLibraryBottom = cost.toLibraryBottom === true;
+        break;
+      case 'exilePermanent':
+        // Primordial Mist: paid like a return cost (one permanent the player chooses), to exile.
+        bounces += 1;
+        bounce = cost.filter;
+        bounceCount = 1;
+        bounceToExile = true;
         break;
       case 'discardThis':
         discardThis = true;
@@ -351,6 +361,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounce,
     bounceCount,
     bounceToLibraryBottom,
+    bounceToExile,
     exileCards,
     linkedExile,
     linkedExileOpponents,
@@ -651,7 +662,9 @@ export function costRefusal(
     const found = controlledCandidates(paid, seat, source.id, parts.bounce).length;
     if (found < parts.bounceCount) {
       return found === 0
-        ? "you control nothing to return to its owner's hand"
+        ? parts.bounceToExile
+          ? 'you control nothing to exile'
+          : "you control nothing to return to its owner's hand"
         : `you control fewer than ${parts.bounceCount} permanents to return to their owners' hands`;
     }
   }

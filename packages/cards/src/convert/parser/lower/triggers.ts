@@ -68,6 +68,7 @@ const TRIGGER_KIND = {
   becomesTapped: 'becomesTapped',
   becomesUntapped: 'becomesUntapped',
   becomesMonstrous: 'becomesMonstrous',
+  turnedFaceUp: 'turnedFaceUp',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
   becomesUnblocked: 'becomesUnblocked',
@@ -329,6 +330,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (who === null) return failure(t);
       const blocked = missingFeatures(['trigger:winsCoinFlip']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsCoinFlip', who });
+    }
+    case 'turnedFaceUp': {
+      // CR 701.40b, 708.8: "~ is turned face up", "a permanent you control is turned face up", "you turn a permanent face up" (`by`: the player who turned it).
+      const blocked = missingFeatures(['trigger:turnedFaceUp']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const what = whatOf(t, ctx);
+      if (!what.ok) return what;
+      return ok({
+        kind: 'turnedFaceUp',
+        what: what.value,
+        ...(t.by === 'you' ? { by: 'you' as const } : {}),
+      });
     }
     case 'dies':
     case 'blocks':
@@ -1332,7 +1345,9 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       e.event === 'damageToPlayerPrevented' ||
       // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.
       e.event === 'dealsCombatDamage' ||
-      e.event === 'dealsDamage',
+      e.event === 'dealsDamage' ||
+      // Body of Knowledge: "Whenever this creature is dealt damage, draw that many cards" (CR 120.3, 603.2g): the damage the permanent was dealt (the excess, for "excess damage").
+      e.event === 'dealtDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
   const attackers = events.every((e) => e.event === 'attackBatch');
@@ -2062,6 +2077,8 @@ function lowerTriggeredAbility(
       c.verb === 'putFromAmong' ||
       // Journey to the Lost City: "you may put a land card from among those cards onto the battlefield": the engine's choice of none or one exiled card is the offer.
       c.verb === 'putFromAmongExiled' ||
+      // Zimone, Mystery Unraveler: "Otherwise, you may turn a permanent you control face up": the engine's choice of none or one face-down permanent is the offer.
+      c.verb === 'turnFaceUpChosen' ||
       // Kimahri, Valiant Guardian (CR 707.9b): "Then you may have ~ become a copy of that creature, except ...": the lowering wraps the copy in the engine's `may`.
       c.verb === 'becomeCopyKeepingAbility' ||
       // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
@@ -2367,6 +2384,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
   'trigger:becomesMonstrous',
+  'trigger:turnedFaceUp',
   'trigger:blocks',
   'trigger:becomesBlocked',
   'trigger:becomesUnblocked',

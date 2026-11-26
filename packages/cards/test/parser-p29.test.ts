@@ -1485,7 +1485,7 @@ describe('conditional static abilities (CR 611.3a, 613.8)', () => {
     ],
     [
       'You may cast this card from your hand as long as you control a Zombie.',
-      'You may cast this card from your hand as long as you control a Zombie.',
+      'this card from your hand as long as you control a Zombie.',
     ],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(drop(text)).toMatchObject({ reason: 'unrecognised', stoppedAt });
