@@ -85,8 +85,8 @@ import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
-import { TARGET_TOKEN_NOUN_RULES } from './target-token';
 import { withSubtypeClause } from './subtype-clause';
+import { TARGET_TOKEN_NOUN_RULES } from './target-token';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
