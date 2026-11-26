@@ -622,6 +622,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     sacrifice = flashbackSacrifice.what;
     sacrificeCount = flashbackSacrifice.count ?? 1;
   }
+  // CR 702.33a, 118.8, 601.2h, 701.21a: "Kicker—Sacrifice a creature." is an additional cost paid when the spell is kicked: the permanent is chosen after the mana is paid, as an
+  // additional cost's sacrifice is (`validateCard` refuses a card with another sacrifice in the same cast).
+  const kickerSacrifice = kicker?.find((c) => c.kind === 'sacrifice') ?? null;
+  if (kickerSacrifice?.kind === 'sacrifice' && !('kind' in kickerSacrifice.what)) {
+    sacrifice = kickerSacrifice.what;
+    sacrificeCount = 1;
+  }
   // Hostage Taker (CR 609.4b): the card still in exile is read as the permission that lets it be cast says.
   const anyType =
     request.anyType === true ||

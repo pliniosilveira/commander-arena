@@ -120,10 +120,10 @@ describe('keyword.kicker: "Kicker {M}" and "Kicker—Pay N life" (CR 702.33a)', 
   });
 
   test('a cost the engine does not pay for kicker is read and refused, naming the rule', () => {
-    expect(dropped('Kicker—Sacrifice a creature')).toMatchObject({
+    expect(dropped('Kicker—Discard a card')).toMatchObject({
       reason: 'notRunnable',
       closestRule: 'keyword.kicker',
-      recognised: expect.arrayContaining(['keyword.kicker', 'cost.sacrifice']),
+      recognised: expect.arrayContaining(['keyword.kicker', 'cost.discard']),
     });
   });
 

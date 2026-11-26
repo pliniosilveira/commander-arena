@@ -78,6 +78,7 @@ import { PARTY_TIME_LIBRARY_TRIGGER_RULES } from './party-time-library';
 import { PLAYER_ATTACKS_TRIGGER_RULES } from './player-attacks';
 import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
+import { PUT_WITH_TRIGGER_RULES } from './put-with';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
 import { RIDERS_C_TRIGGER_RULES } from './riders-c';
@@ -1660,6 +1661,7 @@ export const TRIGGER_RULES = [
   ...DEATH_TOLL_B_TRIGGER_RULES,
   // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
   ...TROYAN2_TRIGGER_RULES,
+  ...PUT_WITH_TRIGGER_RULES,
   // Mind Flayarrrs deck, group 8: "a card is put into an opponent's graveyard from anywhere".
   ...MIND_FLAYARRRS_G8_TRIGGER_RULES,
   // Centaur Vinecrasher: "a land card is put into a graveyard from anywhere".
