@@ -1333,6 +1333,22 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
         pos: milledLand.pos,
       };
     }
+    // Eumidian Wastewaker (CR 701.9, 701.21, 608.2c): "for each land card put into a graveyard this way": the land cards the discards and sacrifices before it put there.
+    const landsToGraveyard = pattern(
+      /for each land card put into a graveyard this way(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (landsToGraveyard.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'landCardsToGraveyard',
+          words: ['land'],
+          span: { start: pos, end: landsToGraveyard.pos },
+        },
+        pos: landsToGraveyard.pos,
+      };
+    }
     // Devout Invocation (CR 701.26a, 608.2c): "for each creature tapped this way": the permanents the `tap` of a chosen set before it tapped.
     const tapped = spanned(
       pattern(new RegExp(`for each (${SINGLE_TYPE}) tapped this way${BOUNDARY}`, 'iu')),

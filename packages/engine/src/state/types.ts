@@ -2530,6 +2530,8 @@ export interface ThisWayCounts {
   readonly milledCreature?: number;
   /** The land cards milled by `mill` effects, for "for each land card milled this way" (Dune Chanter). */
   readonly milledLand?: number;
+  /** The land cards (never tokens) `discard` and `sacrifice` effects put into a graveyard, each read as a card in the graveyard (Eumidian Wastewaker: "for each land card put into a graveyard this way", CR 701.9, 701.21); left out until there is one. */
+  readonly landCardsToGraveyard?: number;
   /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
   readonly exiledCreatures?: number;
   /** The creature cards (tokens never) that `exile` effects exiled, from any zone (Grey Host Reinforcements: "the number of creature cards exiled this way", CR 608.2c). */

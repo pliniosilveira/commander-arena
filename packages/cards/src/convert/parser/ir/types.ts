@@ -773,6 +773,7 @@ export type IrAmount =
         | 'milledValue'
         | 'milledCreature'
         | 'milledLand'
+        | 'landCardsToGraveyard'
         | 'discardedMost'
         | 'discardedTypeCount'
         | 'exiledCreatures'

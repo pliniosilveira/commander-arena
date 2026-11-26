@@ -2631,6 +2631,13 @@ function countsWhatHappened(
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';
+    case 'landCardsToGraveyard':
+      // Eumidian Wastewaker (CR 701.9, 701.21): "for each land card put into a graveyard this way": the discards and sacrifices before it, here the discard-or-sacrifice of the players.
+      return (
+        earlier.verb === 'eachDiscardOrSacrifice' ||
+        earlier.verb === 'discard' ||
+        earlier.verb === 'sacrifice'
+      );
     case 'milledCreature':
     case 'milledLand':
     case 'milledValue':
