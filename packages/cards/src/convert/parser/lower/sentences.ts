@@ -1039,6 +1039,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'becomeCopy',
   // Quandrix Unlimited deck, group G (CR 122.1, 608.2c): "you may remove a +1/+1 counter from ~. If you do, ...".
   'removeCounters',
+  // Mari, the Killing Quill (CR 122.1, 608.2c): "you may remove a hit counter from a card that player owns in exile. If you do, ...".
+  'removeChosenCounters',
   // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, ...": done when some life was lost.
   'loseLife',
 ]);
@@ -2795,6 +2797,46 @@ function lowerNextCast(
   return { last: i };
 }
 
+/** What "Whenever a creature dies this turn, ..." needs of the engine (Massacre Girl). */
+export const CREATURE_DIES_NEEDS: readonly FeatureRef[] = ['effect:delayedDiesTurn'];
+
+/**
+ * "Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn." (Massacre Girl, CR 603.7, 603.7c, 603.10a, 700.4): the sentence is what a delayed
+ * triggered ability does, for the turn, which the engine's `delayedDiesTurn` creates as the instructions before it have been done. The sentence names no target of its own, and a
+ * test, a "you may" or a "where X" in it is not read inside it.
+ */
+function lowerCreatureDies(
+  sentence: IrSentence,
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  const blocked = missingFeatures(CREATURE_DIES_NEEDS);
+  if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+  if (
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return stop(refuse(sentence));
+  }
+  const before = ctx.targets.length;
+  const inner = lowerClauses(sentence.clauses, ctx);
+  if (!inner.ok) return stop(inner);
+  // What the ability does reads nothing the spell chose (CR 603.7c): no target of its own.
+  if (ctx.targets.length !== before) return stop(refuse(sentence));
+  const effect: Effect = {
+    kind: 'delayedDiesTurn',
+    filter: { types: ['creature'] },
+    effect: oneEffect(inner.value),
+  };
+  steps.push({ effects: [effect], replaceable: false });
+  return { last: i };
+}
+
 /** What "Whenever one or more creatures you control deal combat damage to one or more players this turn, ..." needs of the engine (Forth Eorlingas!). */
 export const COMBAT_DAMAGE_BATCH_NEEDS: readonly FeatureRef[] = [
   'effect:delayedCombatDamageBatchTurn',
@@ -3061,6 +3103,35 @@ function lowerStep(
     // itself (`acceptsOptional`: the engine's `castFree`); any other optional clause makes `lowerClauses` fail, so it is never run as if it were not a choice.
     const other = lowerClauses(sentence.clauses, ctx);
     if (!other.ok) return stop(other);
+    // "If it was a creature card, create a Rogue. If it was a land card, create a Treasure. Otherwise, you gain 3 life." (Misfortune Teller, CR 608.2c, 205.2): after a run of
+    // conditional instructions that each test the same object (they do not exclude each other: a card that is both a creature and a land does both), "otherwise" is
+    // for the case where none of the tests held, so it is its own conditional on the negation of all of them, not the `else` of the last one.
+    const run: Extract<Effect, { kind: 'conditional' }>[] = [];
+    for (let k = steps.length - 1; k >= 0; k--) {
+      const only = steps[k]?.effects.length === 1 ? steps[k]?.effects[0] : undefined;
+      if (only?.kind !== 'conditional' || only.else !== undefined) break;
+      run.unshift(only);
+    }
+    const head = run[0];
+    const same = run.every(
+      (c) =>
+        c.condition.kind === 'objectMatches' &&
+        head?.condition.kind === 'objectMatches' &&
+        JSON.stringify(c.condition.of) === JSON.stringify(head.condition.of),
+    );
+    if (run.length >= 2 && same) {
+      steps.push({
+        effects: [
+          {
+            kind: 'conditional',
+            condition: { kind: 'not', term: { kind: 'or', terms: run.map((c) => c.condition) } },
+            effect: oneEffect(other.value),
+          },
+        ],
+        replaceable: false,
+      });
+      return { last: i };
+    }
     steps.pop();
     steps.push({
       effects: [{ ...before, else: oneEffect(other.value) }],
@@ -3079,6 +3150,7 @@ function lowerStep(
     if (step === 'combatDamageToThatPlayer')
       return lowerCombatDamageToThatPlayer(sentence, i, steps, ctx);
     if (step === 'combatDamageBatch') return lowerCombatDamageBatch(sentence, i, steps, ctx);
+    if (step === 'creatureDies') return lowerCreatureDies(sentence, i, steps, ctx);
     const blocked = missingFeatures(['effect:delayedTrigger']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
     // A test or a "you may" of the sentence is not read inside what a delayed ability does.

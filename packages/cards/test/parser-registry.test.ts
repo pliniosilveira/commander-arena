@@ -558,6 +558,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-player-other-than-its-controller': spell(
     (e) => `Exile target nonland permanent. ${cap(e)} creates a Treasure token.`,
   ),
+  // Bounty Board: the opponents of the controller of the creature that died.
+  'noun.each-of-its-controllers-opponents': permanent(
+    (e) => `Whenever a creature dies, ${e} draws a card.`,
+  ),
   'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   'noun.entered-chosen-player': spell((e) => `~ deals 2 damage to ${e}.`),
   // Stage P21: the life lost by the instruction before it.
@@ -1104,6 +1108,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.each-player-draws-per-vote': spell((e) => `${cap(e)}.`),
   'effect.each-player-without-votes-may-put': spell((e) => `${cap(e)}.`),
   'effect.stun-voted-creatures': spell((e) => `${cap(e)}.`),
+  'effect.vote-for-nonland-permanent': spell((e) => `${cap(e)}.`),
+  'effect.exile-most-voted': spell((e) => `${cap(e)}.`),
+  'effect.each-player-chooses-words': spell((e) => `${cap(e)}.`),
+  'effect.gain-control-per-chooser': spell((e) => `${cap(e)}.`),
+  'effect.untap-chosen-gain-haste': spell((e) => `${cap(e)}.`),
+  'effect.per-chooser-draw-treasure': spell((e) => `${cap(e)}.`),
   'effect.voter-chooses-per-vote': spell((e) => `${cap(e)}.`),
   'effect.gain-control-chosen-cant-attack-owner': spell((e) => `${cap(e)}.`),
   'effect.then-for-each-vote-counters': spell((e) => `${cap(e)}.`),
@@ -1133,6 +1143,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
   'static.first-spell-from-exile-has-cascade': asIs,
+  'static.first-spell-with-treasure-mana-has-cascade': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
   'static.permanent-spells-from-hand-gain-evoke': asIs,
   'static.legend-rule-doesnt-apply': asIs,
@@ -1267,6 +1278,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
+  'replacement.tokens-each-of': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'static.same-name-goaded': asIs,

@@ -962,6 +962,18 @@ export function resolveObjects(
       }
       return ids;
     }
+    case 'mostVotedObjects': {
+      // CR 701.38a, 701.38b (Council's Judgment): the permanents with the most votes, every one of a tie; a permanent that left the battlefield meanwhile is not read.
+      const votes = new Map<ObjectId, number>();
+      for (const c of ctx.voteCast ?? []) {
+        const id = objectOfOption(c.option);
+        if (id !== null && state.objects[id]?.zone === 'battlefield') {
+          votes.set(id, (votes.get(id) ?? 0) + 1);
+        }
+      }
+      const most = Math.max(0, ...votes.values());
+      return [...votes].filter(([, n]) => n === most).map(([id]) => id);
+    }
     case 'sacrificedCost':
       // D-133, CR 602.2c: the permanents sacrificed as the cost of the ability that is resolving (gone now: last-known
       // information is read through their old ids).
@@ -1268,6 +1280,16 @@ export function resolvePlayers(
         seatsInOrder(state, ctx.controller).filter(
           (seat) => !cast.some((c) => seatOfOption(c.option) === seat),
         ),
+      );
+    }
+    case 'eachPlayerWhoChose': {
+      // CR 101.4, 608.2d (Seize the Spotlight): the players still in the game who chose the option in the latest `eachPlayerChooses` of this resolution.
+      const cast = ctx.voteCast ?? [];
+      return apnapOrder(
+        state,
+        cast
+          .filter((c) => c.option === selector.option && !getSeat(state, c.seat).hasLost)
+          .map((c) => c.seat),
       );
     }
     case 'eachOpponentWhoVoted': {

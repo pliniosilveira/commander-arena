@@ -58,6 +58,8 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   // D-133.
   'token',
   'notSubtypes',
+  // CR 700.12: "outlaw" and "non-outlaw".
+  'outlaw',
   'colorless',
   'notColors',
   'keywords',
@@ -219,6 +221,7 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
     // D-135 (CR 205.4): "nonbasic lands", "nonlegendary creatures".
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
+    filter.outlaw === true ? 'outlaw' : filter.outlaw === false ? 'non-outlaw' : '',
     filter.colorless === true ? 'colorless' : '',
     // CR 105.2: "nonblack creatures".
     (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),

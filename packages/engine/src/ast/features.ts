@@ -516,6 +516,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedCombatDamageToPlayer',
     // Forth Eorlingas!: "whenever one or more creatures you control deal combat damage to one or more players this turn, ..." (CR 603.7, 603.2c).
     'delayedCombatDamageBatchTurn',
+    // Massacre Girl: "whenever a creature dies this turn, ..." (CR 603.7, 603.10a).
+    'delayedDiesTurn',
     'delayedCombatDamage',
     // Together Forever (CR 603.7, 603.7c): "When that creature dies this turn, return that card to its owner's hand."
     'delayedDies',
@@ -559,6 +561,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'vote',
     // CR 701.38a, 701.38b: "each player votes for a player", "secretly votes for a creature you don't control" (Círdan the Shipwright, Trap the Trespassers).
     'voteFor',
+    // CR 101.4, 608.2d: "each opponent chooses fame or fortune" (Seize the Spotlight).
+    'eachPlayerChooses',
     // D-196: "The Ring tempts you" (CR 701.54a), and the engine's own sacrifice at end of combat of the Ring's third ability.
     'ringTempts',
     // D-286: "you may pair this creature with another unpaired creature you control" (CR 702.95a): the engine's effect of the two abilities soulbond stands for.
@@ -1080,6 +1084,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Lander',
     'Wicked Role',
     'Junk',
+    // CR 111.10g (Kamber, the Plunderer): "{1}, {T}, Discard a card, Sacrifice this token: Draw a card."
+    'Blood',
   ],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
@@ -1226,6 +1232,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'firstXSpellThisTurn',
     // Exit from Exile deck (Wild-Magic Sorcerer): "the first spell you cast from exile each turn" (`ObjectFilter.firstCastFromExileThisTurn`).
     'firstCastFromExileThisTurn',
+    // Most Wanted deck (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast" (`ObjectFilter.manaSpentFromSubtype`, `firstManaSpentFromSubtypeThisTurn`).
+    'manaSpentFromSubtype',
+    'firstManaSpentFromSubtypeThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
     // Draconic Dissent (Artifact Class): "the first artifact spell you cast each turn" (`ObjectFilter.firstOfTypeThisTurn`).
@@ -1399,6 +1408,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'token',
     'nontoken',
     'notSubtypes',
+    // CR 700.12: "outlaw" / "non-outlaw" (`ObjectFilter.outlaw`).
+    'outlaw',
     'colorless',
     'notColors',
     'keywords',
@@ -1413,8 +1424,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 701.38a, 701.38b: "each creature with one or more votes" (Trap the Trespassers), "each player who received no votes" (Círdan the Shipwright), "each opponent who voted for a
     // choice you voted for" (Erestor of the Council).
     'votedObjects',
+    'mostVotedObjects',
     'eachPlayerWithoutVotes',
     'eachOpponentWhoVoted',
+    // CR 101.4: "for each player who chose fame" (Seize the Spotlight).
+    'eachPlayerWhoChose',
     // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
     'ringBearer',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
@@ -1840,6 +1854,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Lander',
     'Wicked Role',
     'Junk',
+    'Blood',
     'custom',
     'copyOf',
     'tapped',
@@ -2575,6 +2590,10 @@ export const SELECTOR_KINDS = [
   'firstXSpellThisTurn',
   /** "The first spell you cast from exile each turn" (CR 601.2i, Wild-Magic Sorcerer): the engine's `ObjectFilter.firstCastFromExileThisTurn`. */
   'firstCastFromExileThisTurn',
+  /** "A spell that mana from a Treasure was spent to cast" (CR 601.2h, Rain of Riches): the engine's `ObjectFilter.manaSpentFromSubtype`. */
+  'manaSpentFromSubtype',
+  /** "The first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2i, Rain of Riches): the engine's `ObjectFilter.firstManaSpentFromSubtypeThisTurn`. */
+  'firstManaSpentFromSubtypeThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
   'nthSpellThisTurn',
   /** "The first artifact spell you cast each turn" (CR 601.2i, Artifact Class): the engine's `ObjectFilter.firstOfTypeThisTurn`. */
@@ -2676,6 +2695,8 @@ export const SELECTOR_KINDS = [
   'nontoken',
   /** "Non-Zombie creature" (CR 205.3d, D-133): the engine's `ObjectFilter.notSubtypes`. */
   'notSubtypes',
+  /** "Outlaw creature", "non-outlaw creature" (CR 700.12): the engine's `ObjectFilter.outlaw`. */
+  'outlaw',
   /** "Colorless creature" (CR 105.2c, D-133): the engine's `ObjectFilter.colorless`. */
   'colorless',
   /** "Nonblack creature" (CR 105.2): the engine's `ObjectFilter.notColors`. */
@@ -2692,10 +2713,14 @@ export const SELECTOR_KINDS = [
   'eachObject',
   /** "Each creature with one or more votes" (CR 701.38a, Trap the Trespassers): the engine's `ObjectRef` `votedObjects`. */
   'votedObjects',
+  /** "Exile each permanent with the most votes or tied for most votes" (CR 701.38a, Council's Judgment): the engine's `ObjectRef` `mostVotedObjects`. */
+  'mostVotedObjects',
   /** "Each player who received no votes" (CR 701.38a, Círdan the Shipwright): the engine's `eachPlayerWithoutVotes`. */
   'eachPlayerWithoutVotes',
   /** "Each opponent who voted for a choice you voted for" (CR 701.38a, Erestor of the Council): the engine's `eachOpponentWhoVoted`. */
   'eachOpponentWhoVoted',
+  /** "For each player who chose fame" (CR 101.4, Seize the Spotlight): the engine's `eachPlayerWhoChose`. */
+  'eachPlayerWhoChose',
   /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
   'ringBearer',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
@@ -3675,6 +3700,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedCombatDamageTurn: true,
   delayedCombatDamageToPlayer: true,
   delayedCombatDamageBatchTurn: true,
+  delayedDiesTurn: true,
   delayedCombatDamage: true,
   delayedDies: true,
   forEachPlayer: true,
@@ -3715,6 +3741,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   addManaCombination: true,
   vote: true,
   voteFor: true,
+  eachPlayerChooses: true,
   ringTempts: true,
   pair: true,
   empowerJace: true,

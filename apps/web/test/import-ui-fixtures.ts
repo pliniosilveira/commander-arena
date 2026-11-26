@@ -101,8 +101,9 @@ export const ENGINE_GAP: ImportedCard = importCard(
     name: 'SYNTHETIC Engine Gap',
     manaCost: '{1}{U}',
     typeLine: 'Creature — Wizard',
-    // Blood is a predefined token (CR 111.10) the engine does not have yet: a real `notRunnable`.
-    oracleText: 'When SYNTHETIC Engine Gap enters, create a Blood token.',
+    // A mana ability with a discard cost is not run by the engine (needs manaCost:discard): a real
+    // `notRunnable`. (Blood, used here before, runs since CR 111.10g.)
+    oracleText: '{T}, Discard a card: Add {R}{R}.',
     power: '1',
     toughness: '1',
     colors: ['U'],
@@ -115,7 +116,7 @@ export const BOTH_GAPS: ImportedCard = importCard(
     name: 'SYNTHETIC Both Gaps',
     manaCost: '{2}{U}',
     typeLine: 'Creature — Wizard',
-    oracleText: 'When SYNTHETIC Both Gaps enters, create a Blood token.\nFrobnicate the glorp.',
+    oracleText: '{T}, Discard a card: Add {R}{R}.\nFrobnicate the glorp.',
     power: '1',
     toughness: '1',
     colors: ['U'],

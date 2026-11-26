@@ -81,6 +81,21 @@ const PROTECTION_MULTICOLORED: Parser<RegExpExecArray> = pattern(
   /protection from multicolored(?![\p{L}\p{N}])/iu,
 );
 
+/** "protection from mana value 3 or greater", "... 2 or less", "... mana value 0" (CR 702.16a, 202.3). */
+const PROTECTION_MANA_VALUE: Parser<{ cmp: 'atLeast' | 'atMost' | 'equal'; value: number }> = (
+  ctx,
+  pos,
+) => {
+  const m = pattern(/protection from mana value (\d+)( or greater| or less)?(?![\p{L}\p{N}])/iu)(
+    ctx,
+    pos,
+  );
+  if (!m.ok) return m;
+  const tail = (m.value[2] ?? '').toLowerCase();
+  const cmp = tail === ' or greater' ? 'atLeast' : tail === ' or less' ? 'atMost' : 'equal';
+  return { ok: true, value: { cmp, value: Number(m.value[1]) }, pos: m.pos };
+};
+
 export function protectionKeyword(rule: string): Parser<IrKeyword> {
   return choice(
     node<string[], IrKeyword>(rule, PROTECTION_COLORS, (colors) => ({
@@ -95,5 +110,10 @@ export function protectionKeyword(rule: string): Parser<IrKeyword> {
       params: [],
       quality: 'multicolored',
     })),
+    node<{ cmp: 'atLeast' | 'atMost' | 'equal'; value: number }, IrKeyword>(
+      rule,
+      PROTECTION_MANA_VALUE,
+      (manaValue) => ({ kind: 'keyword', name: 'protection', params: [], manaValue }),
+    ),
   );
 }

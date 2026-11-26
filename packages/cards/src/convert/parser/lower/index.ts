@@ -43,6 +43,7 @@ import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS, MODE_CHOICE_NEEDS, MODE_COST_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
+import { PLAYER_CHOICES_NEEDS } from './player-choices';
 import { REVEAL_TOP_CARD_NEEDS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
 import { SECRET_VOTES_NEEDS } from './secret-votes';
@@ -59,6 +60,7 @@ import { THEN_MAY_RETURN_NEEDS } from './then-may-return';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
 import { TROYAN_G4_NEEDS } from './troyan-g4';
 import type { FaceCosts, LowerContext, LowerResult, SpellParts } from './types';
+import { VOTE_PERMANENTS_NEEDS } from './vote-permanents';
 import { WIN_GAME_NEEDS } from './win-game';
 
 // The clause that creates a token with an ability in quotes lowers that ability with these two (stage P35, D-176; `late.ts`).
@@ -187,6 +189,8 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...KORVOLD_NEEDS,
     ...COUNCIL_VOTES_NEEDS,
     ...SECRET_VOTES_NEEDS,
+    ...VOTE_PERMANENTS_NEEDS,
+    ...PLAYER_CHOICES_NEEDS,
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,

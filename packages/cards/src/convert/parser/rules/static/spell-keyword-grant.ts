@@ -16,6 +16,7 @@ const ALLOWED: ReadonlySet<string> = new Set([
   'subtypes',
   'notSubtypes',
   'colors',
+  'supertypes',
   'anyOf',
 ]);
 
@@ -43,6 +44,7 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
     'Nonartifact spells you cast have improvise.',
     'Noncreature spells you cast have demonstrate.',
     'Red creature spells you cast have convoke.',
+    'Legendary creature spells you cast have convoke.',
     'Instant and sorcery spells you cast have demonstrate.',
   ],
   rejects: [
@@ -61,13 +63,15 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
     'Creature spells you cast of the chosen type have demonstrate.',
     'Creature spells you cast from your graveyard have demonstrate.',
     'Creature spell you cast has demonstrate.',
+    'Historic spells you cast have convoke.',
+    'Nonlegendary creature spells you cast have convoke.',
   ],
   parse: (ctx, pos) => {
     // The words up to the keyword decide whether this is the statement at all ("Creature spells you cast cost {1} less" never was): their failure is no trace in the diagnostics.
     const r = sequence(
       quiet(
         sequence(
-          spellSubject(),
+          spellSubject(undefined, { supertypes: true }),
           literal(' you cast have '),
           choice(
             map(literal('demonstrate'), () => 'demonstrate' as const),

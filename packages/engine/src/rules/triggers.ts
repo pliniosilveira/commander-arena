@@ -1325,9 +1325,12 @@ function matches(
         ];
         // Issue 81 (Plan for All Outcomes): "your first noncreature spell each turn": the card types the spell must not have (`notTypes`), with no type to name.
         const unwanted = trigger.filter.notTypes ?? [];
+        // CR 700.12 (Discreet Retreat): "your first outlaw spell each turn": the spells that were outlaws as they were cast.
+        const outlawOnly = trigger.filter.outlaw === true;
         const same = state.turnLog.castSpells.filter(
           (s) =>
             s.seat === occ.seat &&
+            (!outlawOnly || s.outlaw === true) &&
             (wanted.length === 0 || s.types.some((t) => wanted.includes(t))) &&
             !s.types.some((t) => unwanted.includes(t)),
         );

@@ -1142,6 +1142,8 @@ export interface VoteQuestion {
   readonly cast: readonly VoteCast[];
   /** A secret vote: `cast` is left empty on purpose. */
   readonly secret?: true;
+  /** Not a vote but a choice every player named makes in turn (`eachPlayerChooses`, CR 101.4, 701.38c): `cast` holds the choices already made, which later players see. */
+  readonly choice?: true;
   /**
    * For a vote for players or permanents (`voteFor`, CR 701.38b): what each of `options` (`seat:<n>`, `object:<id>`) stands for, in the same order, so a player can be shown who or
    * what it is. Absent for a vote with words.

@@ -203,6 +203,19 @@ export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
       effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 3 },
     },
   ]),
+  // CR 111.10g: "{1}, {T}, Discard a card, Sacrifice this token: Draw a card."
+  Blood: artifactToken('Blood', '{1}, {T}, Discard a card, Sacrifice this token: Draw a card.', [
+    {
+      kind: 'activated',
+      cost: [
+        { kind: 'mana', symbols: ['1'] },
+        { kind: 'tap' },
+        { kind: 'discard', count: 1 },
+        { kind: 'sacrifice', what: { kind: 'this' } },
+      ],
+      effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+    },
+  ]),
   // CR 111.10c: "Sacrifice this token: Add one mana of any color."
   Gold: artifactToken('Gold', 'Sacrifice this token: Add one mana of any color.', [
     {

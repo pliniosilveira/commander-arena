@@ -62,6 +62,7 @@ import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
 import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
+import { TREASURE_SPELL_GRANT_STATIC_RULES } from './treasure-spell-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 import { WORLD_RULES_STATIC_RULES } from './world-rules';
 
@@ -206,6 +207,8 @@ export const STATIC_RULES = [
   // Issue 145 (Hatsune Miku deck): "Creature spells you cast have demonstrate."
   ...SPELL_KEYWORD_GRANT_STATIC_RULES,
   ...EXILE_SPELL_GRANT_STATIC_RULES,
+  // Most Wanted deck, group 2 (Rain of Riches): "The first spell you cast each turn that mana from a Treasure was spent to cast has cascade."
+  ...TREASURE_SPELL_GRANT_STATIC_RULES,
   // Issue 133 (the Sliver Swarm deck, group B): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   ...SLIVER_LORDS_STATIC_RULES,
 ];
