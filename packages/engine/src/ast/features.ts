@@ -1053,6 +1053,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payLife',
     'mill',
     'tapPermanents',
+    // CR 107.3, 118.3 (Hazel of the Rootbloom): "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors." (with `anyCombinationTapped`).
+    'tapPermanentsX',
     // Issue 105 (Aether Hub): "{T}, Pay {E}: Add one mana of any color." (CR 107.14, 118.3, 605.3).
     'energy',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
@@ -1082,6 +1084,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorAmong',
     // "Add X mana in any combination of colors, where X is the greatest power among creatures you control." (`anyCombinationAmount`)
     'anyCombinationAmount',
+    // CR 106.1b, 107.3 (Hazel of the Rootbloom): "Add X mana in any combination of colors", X the number of permanents tapped for the cost.
+    'anyCombinationTapped',
     // "For each color among permanents you control, add one mana of that color." (`eachColorAmong`)
     'eachColorAmong',
     // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
@@ -4099,6 +4103,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyColorAmount: true,
   anyColorAmong: true,
   anyCombinationAmount: true,
+  anyCombinationTapped: true,
   eachColorAmong: true,
   producedType: true,
 };
@@ -4119,6 +4124,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  tapPermanentsX: true,
   untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,

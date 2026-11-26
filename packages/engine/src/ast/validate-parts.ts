@@ -3778,6 +3778,35 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         );
       }
       break;
+    case 'tapPermanentsX':
+      // CR 107.3, 118.3 (Hazel of the Rootbloom): "Tap X untapped tokens you control": any number of permanents the player controls, on the battlefield, that are untapped (the
+      // engine adds that itself); it has no count, the player's list is X.
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (filterSome(cost.filter, (f) => f.controller === 'opponent')) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'only permanents you control can be tapped for a cost',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.tapped !== undefined)) {
+        issue(
+          out,
+          `${path}.filter.tapped`,
+          'the permanents tapped for a cost are untapped: the filter does not say so',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be tapped');
+      }
+      if (filterSome(cost.filter, (f) => f.stackKind !== undefined || f.owner !== undefined)) {
+        issue(
+          out,
+          `${path}.filter`,
+          'a tap cost names permanents by type, subtype, color and the like: no stackKind or owner',
+        );
+      }
+      break;
     case 'untapPermanents':
       // CR 701.26b, 118.3: "Untap two tapped creatures you control": a count of 1 or more, permanents the player controls, on the battlefield, that are
       // tapped (the engine adds that itself).

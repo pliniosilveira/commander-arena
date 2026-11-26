@@ -150,7 +150,8 @@ export function isCombinationProduction(production: ManaProduction): boolean {
   return (
     production.kind === 'combination' ||
     production.kind === 'anyCombination' ||
-    production.kind === 'anyCombinationAmount'
+    production.kind === 'anyCombinationAmount' ||
+    production.kind === 'anyCombinationTapped'
   );
 }
 
@@ -264,6 +265,10 @@ function plainOutcomes(
       // Issue 632: too many combinations to list (`MAX_LISTED_COMBINATIONS`): a few of them, the others accepted when named (`acceptedCombination`).
       return isTooManyCombinations(n) ? representativeCombinations(n) : colorMultisets(n, false);
     }
+    case 'anyCombinationTapped':
+      // CR 106.1b, 605.3b (Hazel of the Rootbloom): X is the number of permanents the player taps as the ability is activated, so no outcome can be listed from the game alone: the
+      // activation names the combination (`activateManaAbility`), and the priority options list a few (`representativeCombinations`).
+      return [];
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));
@@ -348,6 +353,8 @@ function plainTypes(
     );
     return new Set(n > 0 ? COLORS : []);
   }
+  // Hazel of the Rootbloom: any of the five colors, as many mana as permanents the player taps.
+  if (p.kind === 'anyCombinationTapped') return new Set(COLORS);
   const types = new Set<ManaColor>();
   for (const outcome of plainOutcomes(state, obj, p)) for (const m of outcome) types.add(m);
   return types;

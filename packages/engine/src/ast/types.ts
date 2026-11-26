@@ -2002,6 +2002,14 @@ export type Cost =
    */
   | { readonly kind: 'tapPermanents'; readonly filter: ObjectFilter; readonly count: number }
   /**
+   * "Tap X untapped tokens you control" (Hazel of the Rootbloom, CR 118.3, 107.3, 602.2b, 605.3b): the player taps any number of untapped permanents they control that match `filter`,
+   * as part of the cost of a mana ability; X is the number they tap, which they choose as the ability is activated (a mana ability never uses the stack, so X is not announced: it is
+   * the length of the list the activation names, `Action.tappedMany`). X may be 0. As for `tapPermanents`, a creature that came under their control this turn may be tapped (CR 302.6:
+   * only its own {T} ability is held back), and the source may be one of them only when its own cost leaves it untapped. Only in a mana ability whose production is
+   * `anyCombinationTapped` (`validateCard`), and the other way round.
+   */
+  | { readonly kind: 'tapPermanentsX'; readonly filter: ObjectFilter }
+  /**
    * "Untap two tapped creatures you control" (CR 701.26b, 118.3, 602.2b): the player untaps `count` tapped permanents they control that match `filter`, as part of the cost of an
    * activated ability. Only a tapped permanent can be untapped, so a player with fewer than `count` of them cannot pay (CR 118.3). The costs are paid in the order the player likes
    * (CR 601.2h): this one is paid after the mana, so a creature tapped for the mana of the cost may be one of them, and a creature that came under the player's control this turn
@@ -6151,6 +6159,14 @@ export type ManaProduction =
    * five chosen on its own, so the activation names the combination. An amount of 0 or less makes no mana. Only a mana ability, and an amount and costs as for `anyColorAmount`.
    */
   | { readonly kind: 'anyCombinationAmount'; readonly amount: Amount }
+  /**
+   * "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors." (Hazel of the Rootbloom; CR 106.1b, 107.3, 605.3b): X is the number of permanents the
+   * `tapPermanentsX` cost of the same ability taps, each mana a color of the five chosen on its own, so the activation names the permanents (`Action.tappedMany`) and the combination
+   * (`Action.combination`, as many colors as permanents). No X is announced and none is read from the game, so no listing of the combinations is possible before the player chooses
+   * X: the priority options hold a few representative ones and the engine accepts any other the activation names. Only a mana ability that has a `tapPermanentsX` cost, and the
+   * other way round (`validateCard`); never part of the payment planner's sources (the player activates it at priority, or names it in a `payManual`).
+   */
+  | { readonly kind: 'anyCombinationTapped' }
   /**
    * "{T}: For each color among permanents you control, add one mana of that color." (Faeburrow Elder; CR 105.2, 106.1b, 605.3b): one mana of each of the colors the permanents
    * `filter` matches on the battlefield have between them (the `colorsAmong` count, colorless is no color), read as the ability is activated for its controller with its permanent as

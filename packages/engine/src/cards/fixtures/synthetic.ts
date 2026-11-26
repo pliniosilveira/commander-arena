@@ -219,6 +219,7 @@ import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
 import { SYNTHETIC_TAP_ALT_LIST } from './synthetic-tap-alt';
 import { SYNTHETIC_TAP_CHOICE_LIST } from './synthetic-tap-choice';
 import { SYNTHETIC_TAP_COST_LIST } from './synthetic-tap-cost';
+import { SYNTHETIC_TAP_X_LIST } from './synthetic-tap-x';
 import { SYNTHETIC_TARGETING_LIST } from './synthetic-targeting';
 import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
@@ -557,6 +558,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_EVOKE_GRANT_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
+  ...SYNTHETIC_TAP_X_LIST,
   ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
