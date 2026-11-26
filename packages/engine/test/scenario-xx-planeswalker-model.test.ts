@@ -144,3 +144,33 @@ describe('the view', () => {
     expect(getView(g.state, 0).seats[0]?.hand?.[0]?.printedLoyalty).toBeUndefined();
   });
 });
+
+describe('a planeswalker that is no longer one loses its planeswalker type (CR 205.1a, 205.3d)', () => {
+  test('"becomes an artifact": the walker is only an artifact, with no Dack subtype', () => {
+    const g = scenario()
+      .seat(0)
+      .hand('SYNTHETIC Type Wipe')
+      .battlefield('Island', 'Island')
+      .seat(1)
+      .battlefield(WALKER)
+      .build();
+    g.expect.derived(WALKER, { types: ['planeswalker'], subtypes: ['Dack'] });
+    g.act(0).cast('SYNTHETIC Type Wipe', { targets: [WALKER], pay: true });
+    g.passAll();
+    g.expect.derived(WALKER, { types: ['artifact'], subtypes: [] });
+  });
+
+  test('the effect that is "still a planeswalker" keeps the type and its subtype', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(ANIMATE, { counters: { loyalty: 4 } })
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(ANIMATE, { ability: 0 });
+    g.passAll();
+    g.expect.derived(ANIMATE, {
+      types: ['planeswalker', 'creature'],
+      subtypes: ['Dack', 'Human', 'Soldier'],
+    });
+  });
+});
