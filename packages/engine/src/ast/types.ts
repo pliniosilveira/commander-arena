@@ -595,6 +595,8 @@ export type ThisWayKind =
   | 'milledCreature'
   // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards the `mill` effects of this resolution milled, whoever's they are.
   | 'milledLand'
+  // CR 701.9, 701.21, 608.2c (Eumidian Wastewaker): "for each land card put into a graveyard this way": the land cards (never tokens) that `discard` and `sacrifice` effects of this resolution put into a graveyard.
+  | 'landCardsToGraveyard'
   | 'discardedCreature'
   | 'discardedNoncreature'
   // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.
@@ -4203,13 +4205,18 @@ export type Effect =
       readonly kind: 'keepOrSacrifice';
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
-      /** The limit on the total power of what is kept; exactly one of this and `keepAtMost`. */
+      /** The limit on the total power of what is kept; exactly one of this, `keepAtMost` and `keepExactly`. */
       readonly totalPowerAtMost?: number;
       /**
        * "That player chooses up to two creatures they control, then sacrifices the rest" (CR 608.2d, 701.21a, 101.4; Archfiend of Depravity): the limit is on how many are kept, 0 or more,
        * instead of on their total power. The player may keep fewer; one who controls no more than that many sacrifices nothing.
        */
       readonly keepAtMost?: number;
+      /**
+       * "Each player chooses six lands they control, then sacrifices the rest" (Planetary Annihilation, CR 608.2d, 701.21a, 101.4): the limit is on how many are kept, and the player keeps
+       * exactly that many (all of them when they control no more, which chooses nothing), 0 or more, instead of at most that many. The choices are made in APNAP order, then the rest are sacrificed at once.
+       */
+      readonly keepExactly?: number;
     }
   /**
    * "Each player chooses a party from among creatures they control, then sacrifices the rest" (Stick Together, CR 700.8d, 701.21a, 101.4): each player the selector names, in APNAP

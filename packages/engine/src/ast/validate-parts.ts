@@ -2272,6 +2272,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   milledValue: 'a mill effect',
   milledCreature: 'a mill effect',
   milledLand: 'a mill effect',
+  landCardsToGraveyard: 'a discard or sacrifice effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedNonland: 'a discard effect',
@@ -2297,7 +2298,7 @@ const THIS_WAY_KINDS = Object.keys(THIS_WAY_SOURCES);
 function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
-  if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
+  if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn', 'landCardsToGraveyard'];
   if (e?.kind === 'destroy')
     return [
       'destroyed',
@@ -2327,6 +2328,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedInstantOrSorcery',
       'discardedMost',
       'discardedTypeCount',
+      'landCardsToGraveyard',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature', 'milledLand'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
@@ -2348,7 +2350,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
-  if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
+  // "Discard a card or sacrifice a permanent" (Eumidian Wastewaker): what the declined (otherwise) effect does is counted too.
+  if (e?.kind === 'playersMay') {
+    return [
+      ...thisWayProduced(e.effect),
+      ...(e.otherwise === undefined ? [] : thisWayProduced(e.otherwise)),
+    ];
+  }
   // CR 608.2c (Travel Through Caradhras): "For each Redhorn Pass vote, search ...": what the repeated effect does is counted each time it is done (0 for a number of 0).
   if (e?.kind === 'repeat') return thisWayProduced(e.effect);
   // "You may discard all the cards in your hand. If you do, draw that many cards": a declined offer counts 0.
@@ -6684,10 +6692,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter?.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be sacrificed');
       }
-      if ((e.totalPowerAtMost === undefined) === (e.keepAtMost === undefined)) {
-        issue(out, path, 'name exactly one of totalPowerAtMost and keepAtMost');
+      if (
+        [e.totalPowerAtMost, e.keepAtMost, e.keepExactly].filter((n) => n !== undefined).length !==
+        1
+      ) {
+        issue(out, path, 'name exactly one of totalPowerAtMost, keepAtMost and keepExactly');
       }
-      for (const key of ['totalPowerAtMost', 'keepAtMost'] as const) {
+      for (const key of ['totalPowerAtMost', 'keepAtMost', 'keepExactly'] as const) {
         const limit = e[key];
         if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
           issue(out, `${path}.${key}`, `${key} must be a whole number, 0 or more`);
