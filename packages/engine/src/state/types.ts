@@ -1230,6 +1230,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** `chooseObjects.perChoice` (CR 101.4): the candidates are the permanents of `seat` the filter matches, `seat` is not the chooser, and the choice joins what `id` already names (`first` starts it afresh). */
+      readonly ofPlayer?: { readonly seat: SeatId; readonly first: boolean };
       /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */
       readonly asChooser?: true;
       readonly anyNumber?: true;
@@ -1497,6 +1499,10 @@ export type Instruction =
       readonly chosen: string | null;
       /** A move that takes "any number of counters": the player may stop (`left` is null), as a removal may (Resourceful Defense). */
       readonly anyNumber?: true;
+      /** Only counters of this kind may be taken ("move any number of +1/+1 counters", "remove a hit counter"); left out, any kind. */
+      readonly counterKind?: string;
+      /** A removal that may not stop before it has taken `left` counters or has none left to take (no "Done" option). */
+      readonly required?: true;
     }
   | {
       readonly kind: 'moveCounters';
@@ -2214,6 +2220,8 @@ export type Instruction =
         | { readonly kind: 'objects'; readonly filter: ObjectFilter };
       /** "Secretly" (CR 701.38a): the votes are not shown until all are cast (`VoteQuestion.secret`). */
       readonly secret?: true;
+      /** `eachPlayerChooses` (CR 101.4): not a vote (CR 701.38c), asked of exactly these players, in this order (the active player first), and nothing is revealed at the end. */
+      readonly voters?: readonly SeatId[];
     }
   /**
    * CR 702.94a (Miracle, D-274): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
@@ -3254,6 +3262,10 @@ export interface TurnLog {
     readonly fromGraveyard?: true;
     /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
     readonly fromExile?: true;
+    /** The spell was an outlaw as it was cast (CR 700.12): "your first outlaw spell each turn" tells it from the others. */
+    readonly outlaw?: true;
+    /** The subtypes of the sources that made the mana spent on the spell (Rain of Riches, CR 601.2h: "the first spell you cast each turn that mana from a Treasure was spent to cast"). */
+    readonly manaSubtypes?: readonly string[];
   }[];
   /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
   readonly oncePerTurnGrants?: readonly ObjectId[];

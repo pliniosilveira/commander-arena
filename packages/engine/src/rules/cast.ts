@@ -35,6 +35,7 @@
 
 import type { Ability, Cost } from '../ast/types';
 import { CARD_TYPES, type CardType, COLORS } from '../characteristics';
+import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -1925,10 +1926,18 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
             ...(xSymbolCount(derive(next, getObject(next, casting.object)).manaCost ?? []) > 0
               ? { hasX: true as const }
               : {}),
+            // CR 700.12 (Discreet Retreat): "your first outlaw spell each turn".
+            ...(isOutlaw(derive(next, getObject(next, casting.object)).subtypes)
+              ? { outlaw: true as const }
+              : {}),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
             // Wild-Magic Sorcerer: "the first spell you cast from exile each turn".
             ...(obj.stack.castFrom === 'exile' ? { fromExile: true as const } : {}),
+            // Rain of Riches (CR 601.2h): the subtypes of the sources whose mana paid for the spell.
+            ...(obj.stack.manaSpent?.fromSubtypes === undefined
+              ? {}
+              : { manaSubtypes: Object.keys(obj.stack.manaSpent.fromSubtypes) }),
           },
         ],
       },

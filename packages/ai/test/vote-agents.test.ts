@@ -223,3 +223,22 @@ describe('the heuristic agent plays each option out', () => {
     expect(a).toEqual({ kind: 'chooseOption', option: 'profit' });
   });
 });
+
+describe('a choice of "each opponent chooses fame or fortune" (CR 101.4, 701.38c) is answered like a vote of words', () => {
+  const asked = (seat: number, cast: { seat: number; option: string }[]): ChooseOptionDecision =>
+    ({
+      kind: 'chooseOption',
+      seat,
+      purpose: 'vote',
+      options: ['fame', 'fortune'],
+      vote: { controller: 0, cast, choice: true },
+    }) as unknown as ChooseOptionDecision;
+
+  test('the casual rule gives an option the decision lists', () => {
+    expect(chooseVote(asked(1, []))).toEqual({ kind: 'chooseOption', option: 'fortune' });
+    expect(chooseVote(asked(2, [{ seat: 1, option: 'fortune' }]))).toEqual({
+      kind: 'chooseOption',
+      option: 'fame',
+    });
+  });
+});

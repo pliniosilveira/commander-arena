@@ -9,6 +9,7 @@
 import type { AttachedTo, Keyword, NumberComparison, ObjectFilter } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
+import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
@@ -366,6 +367,8 @@ export function matchesFilterWith(
   if (filter.notSupertypes?.some((t) => d.supertypes.includes(t))) return false;
   if (filter.subtypes && !filter.subtypes.every((t) => d.subtypes.includes(t))) return false;
   if (filter.notSubtypes?.some((t) => d.subtypes.includes(t))) return false;
+  // CR 700.12 (outlaw): at least one of the Assassin, Mercenary, Pirate, Rogue and Warlock creature types; `false` is "non-outlaw".
+  if (filter.outlaw !== undefined && isOutlaw(d.subtypes) !== filter.outlaw) return false;
   if (filter.colorless === true && d.colors.length > 0) return false;
   // CR 105.2c: a colorless object has no color, so it is "nonblack" like any object that lacks black.
   if (filter.notColors?.some((c) => d.colors.includes(c))) return false;
@@ -515,6 +518,30 @@ export function matchesFilterWith(
     filter.firstCastFromExileThisTurn === true &&
     state.turnLog.castSpells.some(
       (e) => e.fromExile === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
+  // CR 601.2h (Rain of Riches): "a spell that mana from a Treasure was spent to cast": a spell on the stack that was paid, in part, with mana a source of the subtype made.
+  if (
+    filter.manaSpentFromSubtype !== undefined &&
+    !(
+      obj.zone === 'stack' &&
+      obj.stack?.kind === 'spell' &&
+      (obj.stack.manaSpent?.fromSubtypes?.[filter.manaSpentFromSubtype] ?? 0) > 0
+    )
+  ) {
+    return false;
+  }
+  // CR 601.2i (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast": no other spell the caster cast this turn so far was paid so.
+  if (
+    filter.firstManaSpentFromSubtypeThisTurn === true &&
+    filter.manaSpentFromSubtype !== undefined &&
+    state.turnLog.castSpells.some(
+      (e) =>
+        e.manaSubtypes?.includes(filter.manaSpentFromSubtype ?? '') === true &&
+        e.seat === controllerOf(state, obj) &&
+        e.object !== obj.id,
     )
   ) {
     return false;

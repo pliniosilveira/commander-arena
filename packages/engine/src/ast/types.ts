@@ -790,6 +790,12 @@ export interface ObjectFilter {
   readonly subtypes?: readonly Subtype[];
   /** "Non-Zombie creature" (D-133, CR 205.3d): none of these creature types (or other subtypes). */
   readonly notSubtypes?: readonly Subtype[];
+  /**
+   * "Outlaw creature", "outlaws you control", "outlaw card", "outlaw spell", "non-outlaw creature" (CR 700.12): `true` matches an object that has at least one of the Assassin,
+   * Mercenary, Pirate, Rogue and Warlock creature types, `false` one that has none. Outlaw is no creature type, so it is no `subtypes` entry. Read from the object's types as it is now
+   * (a permanent through layers 1, 4 and 5, a card as printed, a spell as it is on the stack), so it works in every zone.
+   */
+  readonly outlaw?: boolean;
   readonly colors?: readonly Color[];
   /** "Nonblack creature", "nonartifact, nonblack creature" (CR 105.2, 205.4): the object has none of these colors (a colorless object has none, CR 105.2c). */
   readonly notColors?: readonly Color[];
@@ -888,6 +894,18 @@ export interface ObjectFilter {
    * (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Meant with `castFromExile`. Read as `firstXSpellThisTurn` is.
    */
   readonly firstCastFromExileThisTurn?: true;
+  /**
+   * "A spell that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2h, 106.1, 205.3i): the spell on the stack had mana spent on it that a source with this subtype made
+   * ("Treasure": a Treasure token, an artifact with the subtype), as the mana of `StackData.manaSpent` records it (a copy was not cast, CR 707.10, and has none; a spell cast without
+   * paying its mana cost has none). Read from the spell itself once it has been paid, so only a spell is matched, and only as it is cast or after (a cost reduction or an alternative
+   * cost is worked out before the mana is paid: not read there). A subtype name, as `subtypes` has them.
+   */
+  readonly manaSpentFromSubtype?: string;
+  /**
+   * "The first spell you cast each turn that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2i): no other spell its caster cast this turn, before it, had mana spent on
+   * it that a source of the subtype `manaSpentFromSubtype` made (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Needs `manaSpentFromSubtype`. Read as `firstXSpellThisTurn` is.
+   */
+  readonly firstManaSpentFromSubtypeThisTurn?: true;
   /**
    * "The second spell you cast each turn" (Alisaie Leveilleur, CR 601.2f, 601.2i, 604.2): the spell is the `nthSpellThisTurn`th spell its caster casts this turn, that is, exactly
    * `nthSpellThisTurn - 1` other spells were cast by that caster before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10, and the spell itself is left out of the count
@@ -1400,6 +1418,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'votedObjects' }
   /**
+   * "Each permanent with the most votes or tied for most votes" (CR 701.38a, 701.38b, Council's Judgment): of the permanents voted for in the latest `voteFor` of objects of this resolution
+   * that are still on the battlefield, those with the greatest number of votes (every one of a tie), in the order they were first voted for. Nothing when no permanent got a vote. Valid
+   * only after such a `voteFor` in the same sequence (`validateCard`).
+   */
+  | { readonly kind: 'mostVotedObjects' }
+  /**
    * The engine's own form of `moved` inside a delayed triggered ability (D-639, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
    * and a card that left and came back is a new object with a new id). Never written in a card (`validateCard`): the engine writes it when it creates the delayed ability.
@@ -1518,6 +1542,11 @@ export type PlayerSelector =
    * for, in the order of CR 101.4. Valid only after such a `voteFor` in the same sequence (`validateCard`).
    */
   | { readonly kind: 'eachPlayerWithoutVotes' }
+  /**
+   * "For each player who chose fame" (CR 101.4, 608.2d, Seize the Spotlight): the players still in the game who chose `option` in the latest `eachPlayerChooses` of this resolution, in the order
+   * of CR 101.4. Valid only after such an effect in the same sequence that offers `option` (`validateCard`).
+   */
+  | { readonly kind: 'eachPlayerWhoChose'; readonly option: string }
   /**
    * "Each opponent who voted for a choice you voted for" / "who voted for a choice you didn't vote for" (CR 701.38a, 701.38d, Erestor of the Council, Model of Unity): the opponents of the
    * controller still in the game who, in the vote of this resolution or the vote that triggered this ability (the record of who voted for what), voted for at least one choice the
@@ -2361,7 +2390,8 @@ export type TokenPreset =
   | 'Incubator'
   | 'Lander'
   | 'Wicked Role'
-  | 'Junk';
+  | 'Junk'
+  | 'Blood';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -2656,6 +2686,13 @@ export type Effect =
        * ability; with `exactly` the voter must choose; not with `chooser`.
        */
       readonly perVote?: string;
+      /**
+       * "For each player who chose fame, gain control of a creature that player controls" (CR 101.4, 608.2d, Seize the Spotlight): one choice of `count` permanents for each player who chose the
+       * option `perChoice` in the latest `eachPlayerChooses` of this resolution, made by the controller of the ability, among the permanents the filter matches that THAT player controls (the
+       * filter's own `controller` is left out). The choices are all remembered under `id`. Valid only after such an effect that offers the option; with `exactly` the controller must choose
+       * (when the player controls a match); not with `chooser` or `perVote`.
+       */
+      readonly perChoice?: string;
       /**
        * "Proliferate, then choose any number of permanents you control that had a counter put on them this way" (Ripples of Potential, CR 608.2d, 701.34a): the controller chooses none, some
        * or all of the candidates, so `count` is not a limit (write 1). Not with `exactly`.
@@ -3003,6 +3040,18 @@ export type Effect =
        * knowing them.
        */
       readonly secret?: true;
+    }
+  /**
+   * "Each opponent chooses fame or fortune" (CR 101.4, 608.2d, Seize the Spotlight): each player `players` names chooses one of the `options` (two to eight distinct words with no rules
+   * meaning, each connected to an instruction the rest of the text gives), in the order of CR 101.4 (the active player first); a later player sees the earlier choices. It is a choice, not a
+   * vote (CR 701.38c): nothing is revealed together and "whenever players finish voting" does not trigger. Each player is asked with a `chooseOption` decision (`purpose` 'vote', the
+   * question marked `choice`). What each chose is kept for the rest of this resolution: the selector `eachPlayerWhoChose` and `chooseObjects.perChoice` read it; a later `eachPlayerChooses`
+   * replaces it. A player who has left the game is not asked.
+   */
+  | {
+      readonly kind: 'eachPlayerChooses';
+      readonly players: PlayerSelector;
+      readonly options: readonly string[];
     }
   /**
    * "Each player votes for a player" / "each player secretly votes for a creature you don't control" (CR 701.38a, 701.38b, Círdan the Shipwright, Trap the Trespassers): a vote whose choices
@@ -3773,6 +3822,18 @@ export type Effect =
       readonly effect: Effect;
     }
   /**
+   * "Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn." (CR 603.7, 603.7c, 603.10a, 700.4, 514.2, Massacre Girl): a delayed triggered ability of
+   * the controller of the spell or ability, created as it resolves (a creature that dies before, while the ability that makes it is still on the stack, does not trigger it), that
+   * triggers each time a permanent `filter` names dies (is put into a graveyard from the battlefield, as it was on the battlefield, controllers of any player) until the end of the turn,
+   * once for each such permanent that dies, however many die at once (CR 603.2c), and ends with the turn (CR 514.2). Its source is the source of the spell or ability that made it, which
+   * may be gone. `effect` runs each time, with the controller of the spell or ability as "you"; it names no target and reads nothing of the spell.
+   */
+  | {
+      readonly kind: 'delayedDiesTurn';
+      readonly filter: ObjectFilter;
+      readonly effect: Effect;
+    }
+  /**
    * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (CR 603.7, 603.7c, 510.3a, 514.2, issue 144,
    * Great Train Heist): a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the
    * controller controls, as it is when the damage is dealt) deals combat damage to the one player `player` names, until the end of the turn (CR 514.2), once for each such creature
@@ -4468,12 +4529,15 @@ export type Effect =
    * permanent can't have (CR 122.6) can't be chosen. Nothing is moved when the two are the same permanent, the first has no counter the second can have, or either is no longer on the
    * battlefield as the effect runs (CR 122.5). With `anyNumber` ("Move any number of counters from target permanent you control onto a second target permanent you control", Resourceful
    * Defense): the controller moves as many counters as they like, one at a time, and chooses to stop (the last option of the `counterPick` decision, `Done`), so a move may be none.
+   * `from` may name several permanents ("Move any number of +1/+1 counters from other permanents you control onto this creature", Aetherborn Marauder: an `each` selector): the counters
+   * come off any of them, the permanent and the kind chosen each time. `counter` limits the move to one kind of counter ("+1/+1 counters"); left out, any kind may go.
    */
   | {
       readonly kind: 'moveCounter';
-      readonly from: ObjectRef;
+      readonly from: ObjectSelector;
       readonly to: ObjectRef;
       readonly anyNumber?: true;
+      readonly counter?: string;
     }
   /**
    * "Remove any number of counters from among permanents on the battlefield" and "Remove up to three counters from target permanent" (CR 122.1, 608.2d; Eventide's Shadow, Glissa
@@ -4485,6 +4549,16 @@ export type Effect =
       readonly kind: 'removeChosenCounters';
       readonly objects: ObjectSelector;
       readonly upTo?: number;
+      /**
+       * "Remove a hit counter from a card that player owns in exile" (Mari, the Killing Quill; CR 122.1): only counters of this kind may be taken. The permanents `objects` names may be
+       * cards in exile as well as permanents on the battlefield (CR 122.1: counters stay on a card in exile). Left out, any kind.
+       */
+      readonly counter?: string;
+      /**
+       * "Remove a hit counter from a card that player owns in exile" (Mari, the Killing Quill): the controller takes `upTo` counters when there are that many to take, with no
+       * choice to stop (the question lists no "Done"). An offer in the text ("you may") is the `optional` of the ability or a `may` around this, not the last option of the question.
+       */
+      readonly required?: true;
     }
   /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,
@@ -6097,7 +6171,7 @@ export type Trigger =
       readonly nth?: number;
       /**
        * "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i, 603.2): only the first spell of the card types `filter` names (`types` or the `types` of its `anyOf`
-       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
+       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`), or (Discreet Retreat, CR 700.12) is `outlaw: true`: the first outlaw spell the caster casts this turn.
        */
       readonly firstOfKind?: true;
       /**
@@ -7022,6 +7096,18 @@ export type Keyword =
    * carry it.
    */
   | { readonly kind: 'protection'; readonly from: 'multicolored' }
+  /**
+   * "Protection from mana value 3 or greater" (CR 702.16a, 202.3; Mistmeadow Skulk): protection from every source whose mana value compares as stated: `atLeast` ("N or
+   * greater"), `atMost` ("N or less") or `equal` ("mana value N"). The mana value of a source is read as it is, or as it last was (CR 113.7a, 608.2h): a spell on the stack
+   * counts the X it was cast with (CR 202.3e), a token or a land has 0. Read where protection is read (`rules/protection.ts`). Only a printed keyword or a static
+   * `grantKeyword` may carry it.
+   */
+  | {
+      readonly kind: 'protection';
+      readonly from: 'manaValue';
+      readonly cmp: 'atLeast' | 'atMost' | 'equal';
+      readonly value: number;
+    }
   /**
    * "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (CR 702.16a, 607.2d, D-652; Flickering Ward): protection from the
    * color the permanent that gives the keyword chose as it entered (needs `asEntersChoose` `color`); it chose none: nothing is given. `exceptSource`: the Aura that gives
@@ -8443,6 +8529,19 @@ export type Replacement =
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
+  /**
+   * "If you would create a Clue, Food, or Treasure token, instead create one of each." (Academy Manufactor, CR 614.1a, 111.2, 614.5): every token `what` matches among the ones its
+   * controller would create at once is replaced by one of each of the predefined tokens `tokens` for each such token (a count of N is N of each), so a Treasure becomes a Clue, a
+   * Food and a Treasure. The tokens it makes are the ones it names (what the instruction said about the replaced ones, tapped for one, does not carry over, as for `thatMany`). It is
+   * applied once to one event (CR 614.5): a second one sees the tokens the first made and replaces each of them again, so two make three times as many of each (the rulings of the card).
+   * Not an `investigate` or any other action: only the creation of the tokens is replaced. `tokens` names at least two different presets and `what` names only them.
+   */
+  | {
+      readonly kind: 'tokensInstead';
+      readonly what: ObjectFilter;
+      readonly mode: 'eachOf';
+      readonly tokens: readonly TokenPreset[];
+    }
   /**
    * "As this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste." (CR 707.9,
    * 614.1c, 614.12, 707.2, D-151): as the permanent enters, its controller may choose a permanent on the battlefield that `what` matches (`optional`:

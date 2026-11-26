@@ -151,7 +151,7 @@ describe('Gisa: "Skeletons and Zombies you control get +1/+1 and have menace." (
     'Skeletons and Zombies get +1/+1.',
     'Skeletons and Zombies your opponents control get +1/+1.',
     'Skeletons and other Zombies you control get +1/+1.',
-    'Skeletons, Zombies, and Elves you control get +1/+1.',
+    'Skeletons, Zombies, and Bananas you control get +1/+1.',
     'Skeleton and Zombie you control gets +1/+1.',
     'Skeletons and Bananas you control get +1/+1.',
     'Zombies and Zombies you control get +1/+1.',

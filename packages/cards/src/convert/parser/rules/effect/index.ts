@@ -104,6 +104,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
+import { EXILE_COUNTERS_EFFECT_RULES } from './exile-counters';
 import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
@@ -153,6 +154,7 @@ import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HAVE_DAMAGE_EFFECT_RULES } from './have-damage';
+import { HAVE_GROUP_BECOMES_RULES } from './have-group-becomes';
 import { HEXPROOF_LOSS_EFFECT_RULES } from './hexproof-loss';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
@@ -172,6 +174,7 @@ import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES } from './land-creature-unblockable';
 import { LEAD_GAIN_NEXT_TURN_EFFECT_RULES } from './lead-gain-next-turn';
+import { LEAD_PUMP_GRANT_ABILITY_RULES } from './lead-pump-grant-ability-all';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
 import { LIMIT_BREAK_G1_EFFECT_RULES } from './limit-break-g1';
@@ -234,6 +237,7 @@ import {
   EFFECT_PLAYER_PROTECTION,
   EFFECT_SHUFFLE,
 } from './player';
+import { PLAYER_CHOICES_EFFECT_RULES } from './player-choices';
 import { PLAYER_CHOOSES_ATTACKER_EFFECT_RULES } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { POPULATE_EFFECT_RULES } from './populate';
@@ -293,6 +297,7 @@ import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VALIGARMANDA_EFFECT_RULES } from './valigarmanda';
 import { VOTE_EFFECT_RULES } from './vote';
+import { VOTE_PERMANENTS_EFFECT_RULES } from './vote-permanents';
 import { VRASKA_EFFECT_RULES } from './vraska';
 import { WIN_GAME_EFFECT_RULES } from './win-game';
 import { WITHERBLOOM_A_EFFECT_RULES } from './witherbloom-a';
@@ -1451,6 +1456,8 @@ export const EFFECT_RULES = [
   // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
   ...JESKAI_FLASHBACK_EFFECT_RULES,
   ...LOREHOLD_G1_EFFECT_RULES,
+  // Mari, the Killing Quill: "exile it with a hit counter on it" and "remove a hit counter from a card that player owns in exile" start like a plain exile and a plain removal, and are tried first.
+  ...EXILE_COUNTERS_EFFECT_RULES,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller" starts like the plain "each" rules, and is tried first.
   ...CONTROLLER_DAMAGE_EFFECT_RULES,
   // Issue 279 (Etali, Primal Storm): "exile the top card of each player's library" starts like the plain exile, and is tried first.
@@ -1536,6 +1543,8 @@ export const EFFECT_RULES = [
   ...LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,
+  // Most Wanted deck, group 1 (Dead Before Sunrise): "Until end of turn, outlaw creatures you control get +1/+0 and gain \"{T}: ...\"".
+  ...LEAD_PUMP_GRANT_ABILITY_RULES,
   // Elminster deck (issue 576): "Non-Angel creatures you control gain indestructible until your next turn".
   ...GAIN_NEXT_TURN_EFFECT_RULES,
   // Draconic Dissent deck (issue 167): "Until your next turn, target creature can't be blocked".
@@ -1655,6 +1664,10 @@ export const EFFECT_RULES = [
   ...COUNCIL_VOTES_EFFECT_RULES,
   // Secret council (Círdan the Shipwright, Elrond of the White Council, Trap the Trespassers, Erestor of the Council, Model of Unity): secret votes and what the votes came to.
   ...SECRET_VOTES_EFFECT_RULES,
+  // Council's Judgment: a vote for permanents and the exile of those with the most votes.
+  ...VOTE_PERMANENTS_EFFECT_RULES,
+  // Seize the Spotlight: each opponent chooses a word, then a reward for each player who chose it.
+  ...PLAYER_CHOICES_EFFECT_RULES,
   // Stage P45 (D-197): "The Ring tempts you."
   ...RING_EFFECT_RULES,
   // CR 726 (From the Catacombs): "You take the initiative."
@@ -1806,6 +1819,8 @@ export const EFFECT_RULES = [
   ...GAIN_RULES,
   ...RESTRICT_RULES,
   ...BECOMES_RULES,
+  // Most Wanted deck, group 2 (Vihaan, Goldwaker): "have Treasures you control become 3/3 Construct Assassin artifact creatures in addition to their other types until end of turn".
+  ...HAVE_GROUP_BECOMES_RULES,
   ...GROUP_BASE_PT_RULES,
   ...GROUP_BASE_PT_SOURCE_RULES,
   ...SEARCH_RULES,

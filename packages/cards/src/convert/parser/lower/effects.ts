@@ -99,6 +99,7 @@ import { ELVEN_COUNCIL_LOWERINGS } from './elven-council';
 import { ELVEN_COUNCIL_REVEAL_LOWERINGS } from './elven-council-reveal';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
+import { EXILE_COUNTERS_LOWERINGS } from './exile-counters';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
@@ -177,6 +178,7 @@ import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { PLAYER_CHOICES_LOWERINGS } from './player-choices';
 import { PLAYER_CHOOSES_ATTACKER_LOWERINGS } from './player-chooses-attacker';
 import { PLAYER_MANA_ABILITY_LOWERINGS } from './player-mana-ability';
 import { POPULATE_LOWERINGS } from './populate';
@@ -211,6 +213,7 @@ import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
+import { VOTE_PERMANENTS_LOWERINGS } from './vote-permanents';
 import { VRASKA_LOWERINGS } from './vraska';
 import { VRONOS_LOWERINGS } from './vronos';
 import { WIN_GAME_LOWERINGS } from './win-game';
@@ -2396,8 +2399,7 @@ const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
 
 /**
  * "Create a Treasure token", "create two 1/1 white Soldier creature tokens" (CR 111.2, 111.10).
- * A predefined token the engine cannot run (Food and Clue carry abilities it cannot activate yet,
- * Blood is not in the AST) is reported with `token:<name>`.
+ * A predefined token the engine cannot run is reported with `token:<name>`.
  */
 const CREATE_TOKEN: Lowering<IrClause, Effects> = {
   head: 'createToken',
@@ -2594,7 +2596,6 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
     if (blocked.length > 0) return { ok: false, needs: blocked, ...at };
-    if (name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
     // CR 111.10, 303.7: a Role token is an Aura token; the engine creates it only attached to the target the text names (`createToken.attachTo`).
     let attachTo: { kind: 'target'; id: string } | undefined;
     const host = arg(clause, 'attachTo');
@@ -3160,6 +3161,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KORVOLD_LOWERINGS,
   ...COUNCIL_VOTES_LOWERINGS,
   ...SECRET_VOTES_LOWERINGS,
+  ...VOTE_PERMANENTS_LOWERINGS,
+  ...PLAYER_CHOICES_LOWERINGS,
   // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
   ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
@@ -3207,6 +3210,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
   ...JESKAI_FLASHBACK_LOWERINGS,
   ...LOREHOLD_G1_LOWERINGS,
+  ...EXILE_COUNTERS_LOWERINGS,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
   ...CONTROLLER_DAMAGE_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
