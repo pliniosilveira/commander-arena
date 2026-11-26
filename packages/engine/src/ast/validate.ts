@@ -1210,6 +1210,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
@@ -1967,6 +1968,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':

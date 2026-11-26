@@ -700,6 +700,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
     case 'becomesUnblocked':
