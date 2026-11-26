@@ -23,6 +23,7 @@ import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
 import { PAY_ENERGY_COST_RULES } from './pay-energy';
 import { PUT_LINKED_EXILE_COST_RULES } from './put-linked-exile';
+import { TAP_PERMANENTS_X_COST_RULES } from './tap-permanents-x';
 import { UNTAP_PERMANENTS_COST_RULES } from './untap-permanents';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -986,6 +987,7 @@ export const COST_RULES = [
   COST_RETURN_TO_HAND,
   COST_LOYALTY,
   // Hatsune Miku deck (issue 145): "Untap two tapped creatures you control".
+  ...TAP_PERMANENTS_X_COST_RULES,
   ...UNTAP_PERMANENTS_COST_RULES,
   // Federation Fleet deck, group D: "Remove two +1/+1 counters from among creatures you control".
   ...FEDERATION_D_COST_RULES,

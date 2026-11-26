@@ -591,6 +591,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
   'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
+  'cost.tap-permanents-x': permanent((e) => `{T}, ${e}: Add X mana in any combination of colors.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),

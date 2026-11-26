@@ -1220,6 +1220,8 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Tap X untapped tokens you control" (Hazel of the Rootbloom, CR 118.3, 107.3): `what` the permanents; X is how many the player taps
+    | { readonly kind: 'tapPermanentsX'; readonly what: IrNoun }
     // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): `what` the permanent
     | { readonly kind: 'exilePermanent'; readonly what: IrNoun }
     // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
