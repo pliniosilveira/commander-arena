@@ -30,6 +30,8 @@ class FakeWorker implements PoolWorker {
   readonly received: PoolRequest[] = [];
   terminated = false;
   mode: 'ok' | 'throw' | 'silent' | 'crash' = 'ok';
+  /** The kind of message `postMessage` refuses (as a structured clone of a spec that cannot be cloned does). */
+  refuses: PoolRequest['t'] | null = null;
   private readonly service = new PlanService(simAgentsOf);
   private readonly delay: number;
 
@@ -38,6 +40,7 @@ class FakeWorker implements PoolWorker {
   }
 
   postMessage(message: PoolRequest): void {
+    if (this.refuses === message.t) throw new Error('DataCloneError');
     const data = structuredClone(message);
     this.received.push(data);
     if (data.t === 'open') {
@@ -251,6 +254,32 @@ describe('the pool', () => {
     await expect(job.run(2, 0, false, 2)).rejects.toThrow();
     expect(a.terminated && b.terminated).toBe(true);
     expect(() => pool.open(spec)).toThrow();
+  });
+
+  test('a request whose planning cannot be posted is rejected, not lost, and its worker is given up', async () => {
+    const { spec } = await planningOf();
+    const workers: FakeWorker[] = [];
+    const pool = new WorkerPlayOutPool({ size: 2, spawn: spawnOf(workers), timeoutMs: 1000 });
+    const job = pool.open(spec);
+    const [a, b] = workers as [FakeWorker, FakeWorker];
+    a.refuses = 'open';
+    // The first request goes to the worker that refuses: it must settle (the planner then plays it itself).
+    const outcome = await Promise.race([
+      job.run(0, 0, true, 0).then(
+        () => 'resolved',
+        (error: Error) => `rejected: ${error.message}`,
+      ),
+      new Promise<string>((r) => setTimeout(() => r('HUNG'), 500)),
+    ]);
+    expect(outcome).toBe('rejected: DataCloneError');
+    expect(a.terminated).toBe(true);
+    // The other worker goes on.
+    expect(b.terminated).toBe(false);
+    expect((await job.run(1, 0, false, 1)).outcome).toBe('end');
+    // With no worker left that can take the planning, every request settles too.
+    b.refuses = 'run';
+    await expect(job.run(2, 0, false, 2)).rejects.toThrow('DataCloneError');
+    await expect(job.run(3, 0, false, 3)).rejects.toThrow();
   });
 
   test('a worker that cannot start is no worker', async () => {

@@ -255,14 +255,19 @@ export class WorkerPlayOutPool implements PlayOutPool {
 
   private send(slot: Slot, request: Pending): void {
     const { job } = request;
+    // The request is the slot's running one before anything is posted, so a post that throws (a spec that
+    // cannot be cloned) goes through `fail`, which rejects it for the planner to play, and is never lost.
+    slot.running = request;
     try {
       if (!slot.opened.has(job.id)) {
         const spec = this.specs.get(job.id);
-        if (spec === undefined) return;
+        if (spec === undefined) {
+          this.release(slot);
+          return;
+        }
         slot.worker.postMessage({ t: 'open', job: job.id, spec });
         slot.opened.add(job.id);
       }
-      slot.running = request;
       slot.timer = setTimeout(() => this.fail(slot, 'a play-out took too long'), this.timeoutMs);
       slot.worker.postMessage({
         t: 'run',
