@@ -13,6 +13,12 @@
  * running at `WORK_LIMIT` is dropped. A decision therefore does the same work on a slow device as on a fast
  * one, and the benchmark (a logical clock) plays as the web app does, unless the clock cuts it.
  *
+ * DEEPENING (step 4). A planning with two players may look one more turn ahead at its best lines
+ * (`heuristic-plan-deep.ts`). That phase draws from the same budget with every bound stretched `DEEP_FACTOR`
+ * times (`Budget.deep`): the work budget and limit, and the two shares of the clock. So a decision that deepens
+ * stops searching at `DEEP_FACTOR * SEARCH_SHARE` of the time budget (6 s of 5 s) and drops a running play-out
+ * at `DEEP_FACTOR * HARD_SHARE` of it (7 s), still inside the host's watchdog (SPEC 9, A28).
+ *
  * CLOCK. The agent never reads a clock itself: `ctx.now` is injected (SPEC 9, A28). It only guards the time
  * limit (SPEC 9: at most 5 s a decision, D-172), far above what a decision normally costs: a search starts no
  * candidate once `SEARCH_SHARE` of `ctx.budgetMs` is used (with the same projection, in time), and a running
@@ -73,6 +79,13 @@ export const SEARCH_SHARE = 0.6;
  * play-out checks it before each engine step, so it overruns by at most one step.
  */
 export const HARD_SHARE = 0.7;
+
+/**
+ * How many times the work bounds and the shares of the clock are stretched for the deepening phase of a
+ * planning (a bound of the search, not a weight). 2 puts the search's stop at 6 s and the play-out's at 7 s of
+ * the 5 s budget, under the host's watchdog at 7.5 s (SPEC 9).
+ */
+export const DEEP_FACTOR = 2;
 
 /** What stops a search or drops a play-out: the safety clock, or the work budget. */
 export type Cut = 'clock' | 'work';
@@ -140,6 +153,8 @@ export interface Budget {
   readonly used: () => number;
   /** The engine calls made so far. */
   readonly calls: () => number;
+  /** The work units left before searches start no candidate (negative past it; unbounded without a bound). */
+  readonly left: () => number;
   /** A search that starts now (it reads no clock: its first check does). */
   readonly search: () => Search;
   /** What drops a running play-out now (`WORK_LIMIT`, or `HARD_SHARE` of the clock), or null. */
@@ -153,6 +168,11 @@ export interface Budget {
   readonly seen: () => number;
   /** The first cut any search of the decision met, the clock first when both did; null when none did. */
   readonly cut: () => Cut | null;
+  /**
+   * The same decision's budget (the same work, clock and cut) with every bound `DEEP_FACTOR` times as large,
+   * for a planning's deepening phase (see the module comment). A budget that is already deep returns itself.
+   */
+  readonly deep: () => Budget;
 }
 
 /** The bounds of the work of one decision, in work units. */
@@ -171,8 +191,6 @@ export function startBudget(
   bounds: WorkBounds = WORK_BOUNDS,
 ): Budget {
   const start = ctx.now();
-  const searchMs = SEARCH_SHARE * ctx.budgetMs;
-  const hardMs = HARD_SHARE * ctx.budgetMs;
   const work = new Work();
   // The clock is read only where the searches check it, as before the work budget: a host measures the
   // decision on the same clock, and a slow one moves with every read.
@@ -186,30 +204,41 @@ export function startBudget(
     if (why !== null && first !== 'clock') first = why;
     return why;
   };
-  return {
-    engine: work,
-    used: () => work.units,
-    calls: () => work.calls,
-    search: () => {
-      const since = work.units;
-      return {
-        expired: (done) => {
-          const ms = read();
-          if (ms + (done > 0 ? ms / done : 0) >= searchMs) return note('clock');
-          const next = done > 0 ? (work.units - since) / done : 0;
-          const full = work.units >= bounds.budget || work.units + next > bounds.budget;
-          return note(full ? 'work' : null);
-        },
-      };
-    },
-    over: () => {
-      if (read() >= hardMs) return note('clock');
-      return note(work.units >= bounds.limit ? 'work' : null);
-    },
-    elapsed: read,
-    seen: () => last,
-    cut: () => first,
+  // One budget over the shared work and clock; `scale` stretches its bounds (1, or `DEEP_FACTOR`).
+  const make = (scale: number): Budget => {
+    const searchMs = scale * SEARCH_SHARE * ctx.budgetMs;
+    const hardMs = scale * HARD_SHARE * ctx.budgetMs;
+    const budgetUnits = scale * bounds.budget;
+    const limitUnits = scale * bounds.limit;
+    return {
+      engine: work,
+      used: () => work.units,
+      calls: () => work.calls,
+      left: () => budgetUnits - work.units,
+      search: () => {
+        const since = work.units;
+        return {
+          expired: (done) => {
+            const ms = read();
+            if (ms + (done > 0 ? ms / done : 0) >= searchMs) return note('clock');
+            const next = done > 0 ? (work.units - since) / done : 0;
+            const full = work.units >= budgetUnits || work.units + next > budgetUnits;
+            return note(full ? 'work' : null);
+          },
+        };
+      },
+      over: () => {
+        if (read() >= hardMs) return note('clock');
+        return note(work.units >= limitUnits ? 'work' : null);
+      },
+      elapsed: read,
+      seen: () => last,
+      cut: () => first,
+      deep: () => deeper,
+    };
   };
+  const deeper = make(DEEP_FACTOR);
+  return make(1);
 }
 
 /** A budget that never runs out and counts nothing (a decision answered from the view alone). */
@@ -217,9 +246,11 @@ export const NO_BUDGET: Budget = {
   engine: DIRECT,
   used: () => 0,
   calls: () => 0,
+  left: () => Number.POSITIVE_INFINITY,
   search: () => ({ expired: () => null }),
   over: () => null,
   elapsed: () => 0,
   seen: () => 0,
   cut: () => null,
+  deep: () => NO_BUDGET,
 };

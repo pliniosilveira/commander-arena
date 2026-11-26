@@ -17,6 +17,7 @@
 import type { Action, GameState, GameView, PendingDecision, SeatId } from '@commander-arena/engine';
 import { evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
+import { deepen, lineValue, type Scored } from './heuristic-plan-deep';
 import { type BoardPrint, boardPrint } from './heuristic-plan-print';
 import {
   isListed,
@@ -63,6 +64,10 @@ export interface PlanRecord extends PlanWork {
   /** The turn and the window it was made in. */
   readonly turn: number;
   readonly window: Window;
+  /** How many lines were played one turn further (`heuristic-plan-deep.ts`); 0 when the deepening did not run. */
+  readonly deepLines: number;
+  /** Whether the deeper values chose a line other than the one the horizon 1 values chose. */
+  readonly deepChanged: boolean;
 }
 
 /** The plan step for `view`'s decision `d` in window `when`, from `plan.next` on, or null. */
@@ -135,7 +140,8 @@ export function choosePlan(
   // With more than one opponent every opponent's turn is played out: fewer scenarios.
   const scenarios = view.seats.length > 2 ? all.slice(0, 2) : all;
   const ctx = { agents, budget: think.budget, weights, work };
-  const scored: { index: number; value: number; steps: readonly PlanStep[] }[] = [];
+  const scored: Scored[] = [];
+  const usedAtStart = think.budget.used();
   // Today's line is always played; each later play-out only when it fits in what is left of the decision's
   // budget at the average cost of the play-outs so far.
   const search = think.budget.search();
@@ -169,21 +175,52 @@ export function choosePlan(
       }
       continue;
     }
-    const total = scenarios.reduce((sum, s) => sum + s.weight, 0);
-    const mean =
-      total === 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : scenarios.reduce((sum, s, j) => sum + s.weight * (scores[j] ?? 0), 0) / total;
-    const worst = Math.min(...scores);
-    scored.push({ index: i, value: mean - weights.plan.riskAversion * (mean - worst), steps });
+    scored.push({
+      index: i,
+      value: lineValue(scores, scenarios, weights.plan.riskAversion),
+      steps,
+    });
   }
   const today = scored.find((s) => s.index === 0);
   if (today === undefined) return none();
-  let best = today;
-  for (const s of scored) {
-    if (s.index !== 0 && s.value > today.value + weights.plan.margin && s.value > best.value)
-      best = s;
+  const pick = (value: (s: Scored) => number | undefined): Scored => {
+    const base = value(today) ?? today.value;
+    let best = today;
+    let bestValue = base;
+    for (const s of scored) {
+      const v = value(s);
+      if (s.index !== 0 && v !== undefined && v > base + weights.plan.margin && v > bestValue) {
+        best = s;
+        bestValue = v;
+      }
+    }
+    return best;
+  };
+  let best = pick((s) => s.value);
+  // Two players, every line scored: the lines that came out close are played one turn further (`heuristic-plan-deep.ts`).
+  const deep =
+    view.seats.length === 2 && work.cut === null
+      ? deepen({
+          budget: think.budget.deep(),
+          me,
+          lines,
+          scored,
+          scenarios,
+          ctx,
+          weights,
+          work,
+          perPlayOut: (think.budget.used() - usedAtStart) / Math.max(1, work.playOuts),
+        })
+      : null;
+  let deepChanged = false;
+  let deepLines = 0;
+  if (deep !== null) {
+    deepLines = deep.size;
+    const deeper = pick((s) => deep.get(s.index));
+    deepChanged = deeper.index !== best.index;
+    best = deeper;
   }
+  const value = deep?.get(best.index) ?? best.value;
   const first = best.steps[0];
   if (first === undefined || first.when !== now) return none();
   const elapsed = think.budget.elapsed();
@@ -193,18 +230,20 @@ export function choosePlan(
     scored: scored.length,
     scenarios: scenarios.length,
     chosen: lines[best.index]?.label ?? '?',
-    today: today.value,
-    value: best.value,
+    today: deep?.get(0) ?? today.value,
+    value,
     elapsed,
     turn: view.turn,
     window: now,
+    deepLines,
+    deepChanged,
   };
   const plan: TurnPlan = {
     turn: view.turn,
     steps: best.steps,
     next: 1,
     line: record.chosen,
-    score: best.value,
+    score: value,
   };
   return { planned: { plan, index: best.index, record }, work: record };
 }

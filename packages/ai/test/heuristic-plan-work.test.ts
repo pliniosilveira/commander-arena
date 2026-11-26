@@ -92,6 +92,8 @@ describe('PlanCounter', () => {
     expect(work.done(false, 3)).toEqual({
       planned: false,
       playOuts: 1,
+      deepPlayOuts: 0,
+      deepUnits: 0,
       steps: 2,
       views: 0,
       applies: 1,
