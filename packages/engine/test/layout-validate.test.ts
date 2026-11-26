@@ -46,6 +46,8 @@ describe('the supported layouts', () => {
       'saga',
       // D-235: a Class (CR 716).
       'class',
+      // CR 719 (Case); validated in scenario-xx-case-solved.test.ts.
+      'case',
       // D-214: a preparation card (CR 722).
       'prepare',
       // D-277: a meld card (CR 701.42, 712.4).
