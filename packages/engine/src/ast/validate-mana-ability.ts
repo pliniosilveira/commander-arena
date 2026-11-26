@@ -142,9 +142,18 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     } else {
       checkStateAmount(amount, `${path}.production.amount`, out, 'the mana a mana ability makes');
     }
+    // CR 113.7a, 605.3b (Glittering Stockpile): giving up this permanent leaves the counters on it as they were, so an amount that counts only those may be combined with it.
+    const ownCounters =
+      typeof amount === 'object' &&
+      amount !== null &&
+      amount.kind === 'countersOn' &&
+      kindOf(amount.of) === 'this';
     if (
       (a.cost ?? []).some(
-        (c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters' || c?.kind === 'putCounters',
+        (c) =>
+          (c?.kind === 'sacrifice' && !(ownCounters && kindOf(c.what) === 'this')) ||
+          c?.kind === 'removeCounters' ||
+          c?.kind === 'putCounters',
       )
     ) {
       issue(
@@ -189,24 +198,14 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
     issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
   }
-  // CR 605.3b, 122.6 (Empowered Autogenerator): the counters the ability puts on its own permanent before its mana is added.
+  // CR 605.3b, 122.6 (Empowered Autogenerator, Glittering Stockpile): the counters the ability puts on its own permanent before its mana is added, so that an amount counts after them; a
+  // production that counts nothing is not told apart from putting them after the mana.
   if (a.putCounter !== undefined) {
     if (typeof a.putCounter.counter !== 'string' || a.putCounter.counter === '') {
       issue(out, `${path}.putCounter.counter`, 'the kind of counter is a name');
     }
     if (!Number.isSafeInteger(a.putCounter.count) || a.putCounter.count < 1) {
       issue(out, `${path}.putCounter.count`, 'count must be a positive integer');
-    }
-    if (
-      a.production?.kind !== 'anyColorAmount' &&
-      a.production?.kind !== 'anyCombinationAmount' &&
-      !(a.production?.kind === 'fixed' && a.production.times !== undefined)
-    ) {
-      issue(
-        out,
-        `${path}.putCounter`,
-        'the counters are put before the mana is added so that an amount counts after them: the production has an amount',
-      );
     }
   }
   if (a.production?.kind === 'anyColorAmong') {
