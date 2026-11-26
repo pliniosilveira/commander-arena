@@ -1974,19 +1974,10 @@
     "1f0548f8-5dec-44b5-b5a9-e55fa4366e08": {
       "name": "Enchanter's Bane",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your end step, target enchantment deals damage equal to its mana value to its controller unless that player sacrifices it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "condition.unless-pays"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f15b9e78"
+      "ast": "852c1911"
     },
     "1f139012-fa71-4f5f-8c57-6847bff95678": {
       "name": "Grishnákh, Brash Instigator",
@@ -16539,7 +16530,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1744,
+      "supported": 1745,
       "total": 1770
     }
   }

@@ -347,10 +347,20 @@ function lowerUnless(sentence: IrSentence, ctx: LowerContext): LowerResult<Effec
   void _unless;
   const body = lowerClauses([{ ...instruction, optional: false }], ctx);
   if (!body.ok) return body;
+  // Enchanter's Bane (CR 109.4, 118.12a): "... deals damage ... to its controller unless that player sacrifices it": "that player" is the player the instruction was said of.
+  const said = body.value.length === 1 ? body.value[0] : undefined;
+  if (said?.kind === 'dealDamage' && said.to.kind === 'controllerOf') ctx.lastPlayer = said.to;
   const player = playerSelectorOf(test.who, ctx);
   if (!player.ok) return player;
   const cost: Cost[] = [];
   for (const item of test.cost) {
+    // Enchanter's Bane (CR 701.21a): "unless that player sacrifices it" is the sacrifice of the one target of the ability.
+    if (item.kind === 'sacrifice' && item.what.det === 'anaphor' && item.what.filter.raw === 'it') {
+      const [only, ...others] = ctx.targets;
+      if (only === undefined || others.length > 0) return refuse(sentence);
+      cost.push({ kind: 'sacrifice', what: { kind: 'target', id: only.id } });
+      continue;
+    }
     const lowered = lowerCost(item, { unless: true });
     if (!lowered.ok) return lowered;
     cost.push(lowered.value);

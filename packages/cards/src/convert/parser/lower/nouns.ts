@@ -1981,6 +1981,16 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
         const blocked = gate(noun, ctx.thatPlayer.needs);
         return blocked ?? ok(ctx.thatPlayer.selector);
       }
+      // Enchanter's Bane (CR 109.4, 118.12a): "... deals damage equal to its mana value to its controller unless that player sacrifices it": "that player" is the controller of the
+      // object the instruction before it named, the player the instruction was said of.
+      if (
+        noun.det === 'anaphor' &&
+        (noun.ref === undefined || /^m\d+$/u.test(noun.ref)) &&
+        /^(?:that player|they)$/iu.test(noun.filter.raw.trim()) &&
+        (ctx.lastPlayer?.kind === 'controllerOf' || ctx.lastPlayer?.kind === 'ownerOf')
+      ) {
+        return ok(ctx.lastPlayer);
+      }
       const to = followed(noun);
       if ('needs' in to) return gate(noun, [to.needs]) ?? failure(noun, []);
       if ('target' in to && /^t\d+$/.test(to.target)) {

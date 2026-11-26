@@ -6,7 +6,7 @@
  * read: a cost with {X} (CR 107.3j: no X in a triggered ability), "pays 2 life", "discards a card",
  * "any opponent may pay" and a payer who chooses among costs are not.
  */
-import { choice, literal, map, optional, satisfy, sequence } from '../../combinators';
+import { choice, literal, map, optional, pattern, satisfy, sequence } from '../../combinators';
 import type { IrAmount, IrCondition, IrCost, IrNoun } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 
@@ -82,8 +82,14 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     'unless they sacrifice a creature',
     'unless that player sacrifices a creature',
     'unless that player sacrifices a land of their choice',
+    // Enchanter's Bane: the permanent the instruction named.
+    'unless that player sacrifices it',
   ],
   rejects: [
+    'unless they sacrifice it',
+    'unless that player sacrifices its',
+    'unless that player sacrifice it',
+    'unless you sacrifice it',
     'unless they sacrifice another creature',
     'unless they sacrifice two creatures',
     'unless they sacrifice ~',
@@ -150,6 +156,42 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
           rule: 'condition.unless-pays',
         },
         pos: theirs.pos,
+      };
+    }
+    // Enchanter's Bane (CR 701.21a, 118.12a): "unless that player sacrifices it", the permanent the instruction before it named, which the lowering reads as the target of the ability.
+    const itself = sequence(
+      map(spanned(literal('unless that player sacrifices ')), ({ span }) =>
+        anaphor(span, 'that player'),
+      ),
+      map(
+        spanned(pattern(/it(?![\p{L}\p{N}'’])/iu)),
+        ({ span }): IrNoun => ({
+          kind: 'noun',
+          det: 'anaphor',
+          filter: { raw: 'it' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: { start: span.start, end: span.end },
+          rule: 'condition.unless-pays',
+        }),
+      ),
+    )(ctx, pos);
+    if (itself.ok) {
+      const [who, what] = itself.value;
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: {
+            kind: 'unlessPays',
+            who,
+            cost: [{ kind: 'sacrifice', what, span: what.span, rule: 'condition.unless-pays' }],
+          },
+          span: { start: pos, end: itself.pos },
+          rule: 'condition.unless-pays',
+        },
+        pos: itself.pos,
       };
     }
     const sacrificed = sequence(
