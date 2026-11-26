@@ -351,6 +351,8 @@ export const EFFECT_DAMAGE = defineRule<Clauses>({
     '~ deals 2 damage to its controller',
     // Rowan Kenrith: the creatures of a player the ability targets.
     '~ deals 3 damage to each tapped creature target player controls',
+    // Fear of Burning Alive: the creatures of the player of the event of the trigger.
+    '~ deals 2 damage to target creature that player controls',
   ],
   rejects: [
     '~ deals 2 damage to target creature and planeswalker',

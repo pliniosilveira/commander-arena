@@ -119,6 +119,8 @@ export const DAMAGE_RECIPIENTS = [
   'noun.that-spells-controller',
   // Breaking of the Fellowship (CR 115.3): "another target creature that player controls", a second target of the controller of the first.
   'noun.another-target-of-same-controller',
+  // Fear of Burning Alive (CR 115.1, 109.4, 603.2): "~ deals that amount of damage to target creature that player controls", the player of the event of the trigger.
+  'noun.target-permanent-of-that-player',
   ...PERMANENT_OPERANDS,
   // "~ deals 1 damage to the player or planeswalker it's attacking" (stage P31, D-140): what the creature attacks.
   'noun.attacked-by-it',

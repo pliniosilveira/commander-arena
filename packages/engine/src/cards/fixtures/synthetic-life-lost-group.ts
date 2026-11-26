@@ -244,4 +244,36 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever a source you control deals noncombat damage to an opponent, if there are four or more card types among cards in your graveyard, this enchantment deals that amount of damage
+  //  to target creature that player controls."
+  singleFace({
+    name: 'SYNTHETIC Burning Reprisal',
+    manaCost: ['2', 'R'],
+    types: ['enchantment'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'Whenever a source you control deals noncombat damage to an opponent, if there are four or more card types among cards in your graveyard, this enchantment deals that amount of damage to target creature that player controls.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'noncombatDamageDealt', by: 'you', to: 'opponent' },
+        targets: [
+          {
+            id: 't1',
+            what: {
+              kind: 'object',
+              filter: { zone: 'battlefield', types: ['creature'], controller: 'triggerPlayer' },
+            },
+          },
+        ],
+        effect: { kind: 'dealDamage', amount: { kind: 'triggerDamage' }, to: T1 },
+        interveningIf: {
+          kind: 'amountIs',
+          amount: { kind: 'cardTypesAmong', filter: { zone: 'graveyard', controller: 'you' } },
+          compare: { cmp: 'atLeast', value: 4 },
+        },
+      },
+    ],
+  }),
 ];
