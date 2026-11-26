@@ -1146,6 +1146,12 @@ const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana
 const REVEALS_THEIR_HAND = /^target (?:opponent|player) reveals their hand\.$/i;
 const YOU_CHOOSE_NONLAND_FROM_IT = /^you choose a nonland card from it\.$/i;
 const EXILE_THAT_CARD = /^exile that card\.$/i;
+/**
+ * "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, issue 685, CR 101.4, 701.13): "that player" is the opponent the first sentence chooses, so
+ * the two are one instruction (`effect.choose-random-opponent-exile-top`).
+ */
+const CHOOSE_RANDOM_OPPONENT_PLAIN = /^choose an opponent at random\.$/i;
+const EXILE_TOP_THAT_PLAYERS_LIBRARY = /^exile the top card of that player['’]s library\.$/i;
 /** The Infamous Cruelclaw (issue 685): the cast of the card found, with a card discarded rather than the mana cost paid. */
 const MAY_CAST_THAT_CARD_DISCARD =
   /^you may cast that card by discarding a card rather than paying its mana cost\.$/i;
@@ -1265,6 +1271,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, MAY_PLAY_ONE_OF_THOSE) &&
       said(b, CAST_THIS_WAY_PAY_LIFE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
+    // The Ruinous Powers (issue 685): the opponent chosen at random and the exile from their library are one instruction.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, CHOOSE_RANDOM_OPPONENT_PLAIN) &&
+      said(b, EXILE_TOP_THAT_PLAYERS_LIBRARY)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

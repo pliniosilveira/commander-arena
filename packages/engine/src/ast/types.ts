@@ -3250,6 +3250,11 @@ export type Effect =
       readonly kind: 'exileTop';
       readonly count: Amount;
       /**
+       * "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13, 401.1, 101.4): the library is that of one opponent of the controller who is still
+       * in the game, picked by the game's seeded generator as the effect runs (nothing is exiled when there is none). Not with `from`.
+       */
+      readonly randomOpponent?: true;
+      /**
        * "Exile the top two cards of target opponent's library face down" (CR 406.3, 701.13, D-187): whose library, a selector that names exactly one player
        * (a target or an opponent); left out, the controller's own. The cards belong to that player (a card is exiled from its owner's library).
        * Issue 279 (Etali, Primal Storm): `eachPlayer` ("exile the top card of each player's library") names every player: the top `count` cards of each library are exiled, one player after
@@ -3662,6 +3667,12 @@ export type Effect =
        * the permissions of the others (`rules/play-permission-one.ts`).
        */
       readonly oneOf?: true;
+      /**
+       * "When you cast a spell this way, its owner loses life equal to its mana value." (The Ruinous Powers, CR 603.7, 603.7a, 603.2, 118.4): a delayed triggered ability of the controller for
+       * each card of `objects`, created with the permission, that triggers once when that card is cast this turn (the spell is its `triggerSubject`) and ends with the turn. Its effect is
+       * exactly `loseLife` of the `ownerOf` the spell, an amount of the `manaValueOf` the spell. Needs `lasts` `endOfTurn`.
+       */
+      readonly whenCast?: Effect;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a

@@ -576,6 +576,95 @@ export const EFFECT_EXILE_UNTIL_CAST_BY_DISCARDING = defineRule<Clauses>({
   },
 });
 
+const RANDOM_ID = 'effect.choose-random-opponent-exile-top';
+
+/**
+ * `effect.choose-random-opponent-exile-top`: "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers; CR 101.4, 701.13, 401.1): the two sentences are
+ * one instruction that `splitSentences` keeps together. One opponent still in the game is picked by the game's seeded generator, and the top card of their library is exiled, face up; it is what
+ * "that card" names afterwards. The engine's `exileTop` with `randomOpponent`. Not read: "target", "each opponent", another number of cards, another place, a trailing instruction.
+ */
+export const EFFECT_CHOOSE_RANDOM_OPPONENT_EXILE_TOP = defineRule<Clauses>({
+  id: RANDOM_ID,
+  family: 'effect',
+  leading: ['choose'],
+  cites: ['CR 101.4 (Handling Simultaneous Decisions)', 'CR 701.13 (Exile)', 'CR 401.1 (Library)'],
+  examples: [
+    "choose an opponent at random. Exile the top card of that player's library",
+    'choose an opponent at random. Exile the top card of that player’s library',
+  ],
+  rejects: [
+    'choose an opponent at random',
+    "choose an opponent at random. Exile the top two cards of that player's library",
+    "choose a player at random. Exile the top card of that player's library",
+    'choose an opponent at random. Exile the top card of your library',
+    "choose an opponent at random. Exile the top card of that player's library and draw a card",
+    "choose target opponent. Exile the top card of that player's library",
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /choose an opponent at random\. exile the top card of that player['’]s library(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { span } = r.value;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          RANDOM_ID,
+          'exileTop',
+          {
+            count: { kind: 'number', value: 1, span },
+            randomOpponent: flag(RANDOM_ID, true, span),
+          },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+const OWNER_LOSES_ID = 'effect.owner-loses-life-for-spell-cast-this-way';
+
+/**
+ * `effect.owner-loses-life-for-spell-cast-this-way`: "When you cast a spell this way, its owner loses life equal to its mana value." (The Ruinous Powers; CR 603.7, 603.2, 119.3, 202.3): not an
+ * instruction of its own, the rider of the permission to play the card the sentence before it allowed. The lowering sets `whenCast` on that `mayPlay`, a delayed triggered ability for the cast of
+ * the card this turn, and refuses the sentence anywhere else. Not read: "if", another amount, another player, "you", a following instruction, a different spell word.
+ */
+export const EFFECT_OWNER_LOSES_LIFE_FOR_SPELL_CAST_THIS_WAY = defineRule<Clauses>({
+  id: OWNER_LOSES_ID,
+  family: 'effect',
+  leading: ['when'],
+  cites: ['CR 603.7 (Delayed Triggered Abilities)', 'CR 119.3 (Life)', 'CR 202.3 (Mana Value)'],
+  examples: ['when you cast a spell this way, its owner loses life equal to its mana value'],
+  rejects: [
+    'if you cast a spell this way, its owner loses life equal to its mana value',
+    'when you cast a spell this way, you lose life equal to its mana value',
+    'when you cast a spell this way, its owner loses 2 life',
+    'when you cast a creature spell this way, its owner loses life equal to its mana value',
+    'when you cast a spell this way, its owner loses life equal to its power',
+    'when you cast a spell this way, its owner loses life equal to its mana value and you draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `when you cast a spell this way, its owner loses life equal to its mana value${NOT_MORE}`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause(OWNER_LOSES_ID, 'ownerLosesRider', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
 const REVEAL_ID = 'effect.reveal-hand-choose-exile';
 
 /**
@@ -637,6 +726,8 @@ export const EFFECT_REVEAL_HAND_CHOOSE_EXILE = defineRule<Clauses>({
 
 /** Tried first: "if ..." and "mana ..." are the first words of the plain rules. */
 export const FLINT_RIDER_EFFECT_RULES = [
+  EFFECT_CHOOSE_RANDOM_OPPONENT_EXILE_TOP,
+  EFFECT_OWNER_LOSES_LIFE_FOR_SPELL_CAST_THIS_WAY,
   EFFECT_REVEAL_HAND_CHOOSE_EXILE,
   EFFECT_EXILE_UNTIL_CAST_BY_DISCARDING,
   EFFECT_LOOK_AT_TOP_OF_TARGET_LIBRARY,

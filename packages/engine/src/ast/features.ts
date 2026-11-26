@@ -172,6 +172,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeNothing',
     // Cruelclaw's Heist (CR 701.20a, 402.3, 608.2d): "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (`ChooseSelector.revealHand`).
     'chooseRevealedHand',
+    // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
+    'exileTopRandomOpponent',
+    'mayPlayWhenCast',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -2246,6 +2249,10 @@ export const ABILITY_FEATURES = [
   'lookTakeNothing',
   /** "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3): the engine's `ChooseSelector.revealHand` with `fromHandOf`. */
   'chooseRevealedHand',
+  /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
+  'exileTopRandomOpponent',
+  /** "When you cast a spell this way, its owner loses life equal to its mana value" (The Ruinous Powers, CR 603.7): the engine's `mayPlay.whenCast`. */
+  'mayPlayWhenCast',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -3474,6 +3481,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeFromPlayer: true,
   lookTakeNothing: true,
   chooseRevealedHand: true,
+  exileTopRandomOpponent: true,
+  mayPlayWhenCast: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   chooseFromExileOwnedBy: true,
