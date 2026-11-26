@@ -7,7 +7,7 @@
 import type { Condition } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
-import type { GameState } from '../state/types';
+import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { commanderCardOf } from './melded';
 
@@ -212,8 +212,20 @@ export function plainConditionHolds(
   state: GameState,
   condition: Condition,
   controller: SeatId,
+  source?: GameObject,
 ): boolean {
   switch (condition.kind) {
+    case 'thisMatches': {
+      // CR 122.1, 613.8 (Arixmethes, Slumbering Isle): the permanent has a counter of the kind (any kind when none is named), which no layer changes. `validateCard` allows no other
+      // test of the permanent here.
+      if (source === undefined) return false;
+      const counter = condition.filter.hasCounter;
+      return counter === undefined
+        ? false
+        : counter === true
+          ? Object.values(source.counters).some((n) => n > 0)
+          : (source.counters[counter] ?? 0) > 0;
+    }
     case 'lifeTotal':
       return lifeTotalHolds(state, controller, condition);
     case 'controlCommander':
@@ -241,11 +253,11 @@ export function plainConditionHolds(
           : turns === value;
     }
     case 'and':
-      return condition.terms.every((t) => plainConditionHolds(state, t, controller));
+      return condition.terms.every((t) => plainConditionHolds(state, t, controller, source));
     case 'or':
-      return condition.terms.some((t) => plainConditionHolds(state, t, controller));
+      return condition.terms.some((t) => plainConditionHolds(state, t, controller, source));
     case 'not':
-      return !plainConditionHolds(state, condition.term, controller);
+      return !plainConditionHolds(state, condition.term, controller, source);
     default:
       return false;
   }

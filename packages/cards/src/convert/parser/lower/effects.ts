@@ -210,6 +210,7 @@ import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
 import { THE_TOKEN_LOWERINGS } from './the-token';
+import { THEN_MAY_RETURN_LOWERINGS } from './then-may-return';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -3251,6 +3252,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
+  ...THEN_MAY_RETURN_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...WIN_GAME_LOWERINGS,
   ...MELD_LOWERINGS,
@@ -3332,7 +3334,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                                   ? 'triggerPlayerTurn'
                                   : test === 'altCostPaid'
                                     ? 'castForAlternative'
-                                    : test;
+                                    : test === 'controlDifferentPowers'
+                                      ? 'controlsDifferentPowers'
+                                      : test;
     return failure(
       clause,
       kind === 'raw' ||

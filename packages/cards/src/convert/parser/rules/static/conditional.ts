@@ -9,6 +9,7 @@
  */
 import { choice, fail, literal, type Parser, pattern, sequence } from '../../combinators';
 import type { IrCondition, IrNoun, IrStatic, IrStaticPart } from '../../ir/types';
+import { spellPhrase } from '../noun/phrases';
 import { defineRule, family } from '../registry';
 import { SELF_BECOMES_UNIT } from './dragons';
 import { endsInQuote, predicate, type StaticUnit, unit } from './grants';
@@ -19,6 +20,8 @@ import { OPPONENTS_CANT_CAST_UNIT } from './korvold';
 const STATIC_CONDITIONS = [
   // Ahoy Mateys deck, group 8: "as long as you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   'condition.control-at-least-subtypes',
+  // Augur of Autumn (Coven): "as long as you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.
+  'condition.control-different-powers',
   'condition.control-at-least',
   'condition.control-a',
   'condition.control-at-most',
@@ -48,6 +51,8 @@ const STATIC_CONDITIONS = [
   'condition.this-entered-this-turn',
   // Lyse Hext (CR 601.2i, 611.3a): "you've cast two or more noncreature spells this turn", a read of the turn log.
   'condition.spells-cast-this-turn',
+  // Arixmethes, Slumbering Isle: "~ has a slumber counter on it", a plain test of the layer 4 effect that makes it a land.
+  'condition.this-has-counter',
   // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
   'condition.this-has-counter-count',
   // Quest for the Goblin Lord (CR 122.1, 611.3a): "~ has five or more quest counters on it".
@@ -55,6 +60,8 @@ const STATIC_CONDITIONS = [
   'condition.this-counter-count',
   // CR 700.8c (Multiclass Baldric): "you have a full party".
   'condition.full-party',
+  // Kianne, Corrupted Memory: "as long as ~'s power is even".
+  'condition.this-power-parity',
 ] as const;
 
 export const STATIC_CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
@@ -147,6 +154,37 @@ const CAST_TYPE_FROM_TOP_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   };
 };
 
+/**
+ * "you may cast noncreature spells as though they had flash" (Kianne, Corrupted Memory; CR 601.3b, 702.8a): the controller's permission to cast the spells the words name at the timing of an
+ * instant, said as one unit with no period. Only read after a condition ("As long as ~'s power is even, ..."), where the lowering gives the permission that condition. The spells are the
+ * phrase `static.cast-as-though-flash` reads; "any player" is not.
+ */
+const CAST_AS_THOUGH_FLASH_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const r = sequence(
+    literal('you may cast '),
+    spellPhrase(true),
+    literal(' as though they had flash'),
+  )(ctx, pos);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    value: {
+      noun: {
+        kind: 'noun',
+        det: 'you',
+        filter: { raw: 'You' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: pos + 3 },
+        rule: 'static.conditional-prefix',
+      },
+      effects: [{ kind: 'castAsThoughFlash', spells: r.value[1] }],
+    },
+    pos: r.pos,
+  };
+};
+
 const ANY_UNIT: Parser<StaticUnit> = choice(
   SELF_BECOMES_UNIT,
   // Stage P68 (D-229): "~ isn't a creature".
@@ -160,6 +198,7 @@ const ANY_UNIT: Parser<StaticUnit> = choice(
   ATTACHED_UNIT,
   PLAY_FROM_TOP_UNIT,
   CAST_TYPE_FROM_TOP_UNIT,
+  CAST_AS_THOUGH_FLASH_UNIT,
 );
 
 /**
@@ -210,6 +249,35 @@ const SELF_PRONOUN_UNIT: Parser<StaticUnit> = (ctx, pos) => {
     rule: 'static.conditional-prefix',
   };
   return { ok: true, value: { noun, effects: r.value }, pos: r.pos };
+};
+
+/**
+ * "it's a land" after a condition about the counters on `~` (Arixmethes, Slumbering Isle; CR 613.1d, 205.1a): the card types of the permanent are replaced by the one named
+ * (layer 4), so it is no longer a creature. The reminder "(It's not a creature.)" is not part of the Oracle rules text read here.
+ */
+const SELF_PRONOUN_IS_TYPE_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const r = pattern(/it['’]s an? (artifact|creature|enchantment|land)(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const noun: IrNoun = {
+    kind: 'noun',
+    det: 'self',
+    filter: { raw: 'it' },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start: pos, end: pos + 2 },
+    rule: 'static.conditional-prefix',
+  };
+  return {
+    ok: true,
+    value: {
+      noun,
+      effects: [
+        { kind: 'replaceTypes', cardTypes: [(r.value[1] ?? '').toLowerCase()], subtypes: [] },
+      ],
+    },
+    pos: r.pos,
+  };
 };
 
 /** The word a condition about the permanent an attachment is on says ("enchanted", "equipped"), or undefined for any other condition. */
@@ -462,14 +530,18 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     // D-427: after a condition about the host of an attachment, "it" is that permanent.
     const via = hostWordOf(condition);
     // Issue 145: after a condition about the counters on ~, "it" is ~.
-    const aboutSelfCounters = condition?.rule === 'condition.this-counter-count';
+    const aboutSelfCounters =
+      condition?.rule === 'condition.this-counter-count' ||
+      (condition?.rule === 'condition.this-has-counter' &&
+        condition.test.kind === 'thisMatches' &&
+        condition.test.who === 'self');
     const read = units(
       ctx,
       at,
       via !== undefined
         ? choice(hostPronounUnit(via), ANY_UNIT)
         : aboutSelfCounters
-          ? choice(SELF_PRONOUN_UNIT, ANY_UNIT)
+          ? choice(SELF_PRONOUN_UNIT, SELF_PRONOUN_IS_TYPE_UNIT, ANY_UNIT)
           : ANY_UNIT,
     );
     if (!read.ok) return read;

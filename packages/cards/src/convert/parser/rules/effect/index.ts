@@ -287,6 +287,7 @@ import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
+import { THEN_MAY_RETURN_EFFECT_RULES } from './then-may-return';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
@@ -1550,6 +1551,7 @@ export const EFFECT_RULES = [
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
   // Planeswalker Party deck (Chandra, Awakened Inferno): the damage and the exile of what dies, before the plain damage, which would read the first sentence and leave the rest.
   ...PLANESWALKER_PARTY_EFFECT_RULES,
+  ...THEN_MAY_RETURN_EFFECT_RULES,
   ...PARTY_TIME_LIBRARY_EFFECT_RULES,
   ...DURNAN_EFFECT_RULES,
   ...MANIFEST_DREAD_EFFECT_RULES,

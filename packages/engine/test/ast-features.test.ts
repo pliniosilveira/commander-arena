@@ -132,6 +132,8 @@ describe('the dimensions', () => {
       'triggerPlayerTurn',
       'triggerPlayerIsOpponent',
       'triggerPlayerStat',
+      'controlsDifferentPowers',
+      'thisPowerParity',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',

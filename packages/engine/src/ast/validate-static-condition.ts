@@ -63,12 +63,27 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'not',
 ];
 
+/** The conditions a permission to cast (`castAsThoughFlash`, `castFromTopOfLibrary`) reads as the spell is cast, with the power of permanents among them (CR 208.1). */
+const PERMISSION_CONDITIONS: readonly Condition['kind'][] = [
+  'controlsDifferentPowers',
+  'thisPowerParity',
+];
+
+/** Whether a filter on the permanent itself tests a counter and nothing else (`hasCounter`, with the `raw` words the grammar keeps). */
+function onlyCounterTest(f: ObjectFilter | undefined): boolean {
+  if (f === undefined || f.hasCounter === undefined) return false;
+  return Object.keys(f).every((k) => k === 'hasCounter' || k === 'raw');
+}
+
 function plainOnly(
   c: Condition,
   path: string,
   out: AstIssue[],
   owner = 'a static ability that changes types or colors',
 ): void {
+  // CR 613.8, 122.1 (Arixmethes, Slumbering Isle): "as long as ~ has a slumber counter on it, it's a land": a test of the counters on the permanent itself and nothing else (no type, no
+  // keyword, no power: those are what the layers change), which belong to no layer, so layer 4 may read it.
+  if (c?.kind === 'thisMatches' && onlyCounterTest(c.filter)) return;
   if (!PLAIN_CONDITIONS.includes(c?.kind)) {
     issue(
       out,
@@ -324,14 +339,24 @@ export function checkStaticCondition(
   // D-408, CR 601.3b, 601.3d: "You may cast this spell as though it had flash if it targets a commander": the spell's own permission, read as the spell is cast
   // (`rules/flash-targets.ts`), not by `derive`. A permanent's own `castAsThoughFlash` takes no condition.
   if (s?.kind === 'castAsThoughFlash') {
+    // Kianne, Corrupted Memory (CR 601.3b): "As long as ~'s power is even, you may cast noncreature spells as though they had flash": a permanent's permission read as the spell is cast
+    // (`rules/legality.ts`, with `evaluateCondition`), so it may read the power of the permanent, as `thisPowerParity` does, or the permanents its controller has.
     if (kindOf(s.spells) !== 'this') {
-      issue(
-        out,
-        `${path}.condition`,
-        'only the spell\'s own permission ("You may cast this spell as though it had flash if ...") takes a condition',
-      );
-      return;
+      if (!PERMISSION_CONDITIONS.includes(condition?.kind)) {
+        issue(
+          out,
+          `${path}.condition`,
+          `a permanent's permission to cast as though it had flash takes only a condition on the power of the permanent or on the permanents its controller controls, not ${kindOf(condition)}`,
+        );
+        return;
+      }
     }
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // Augur of Autumn (Coven): "As long as you control three or more creatures with different powers, you may cast creature spells from the top of your library": read as the spell is cast, with
+  // `evaluateCondition` (`rules/legality.ts`), so it may read the powers of the permanents.
+  if (s?.kind === 'castFromTopOfLibrary' && PERMISSION_CONDITIONS.includes(condition?.kind)) {
     checkCondition(condition, `${path}.condition`, out);
     return;
   }

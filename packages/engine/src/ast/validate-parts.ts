@@ -4109,6 +4109,23 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
+    case 'controlsDifferentPowers':
+      checkFilter(c.filter, `${path}.filter`, out);
+      if (c.filter?.zone !== undefined && c.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be counted');
+      }
+      if (c.filter?.controller !== undefined && c.filter.controller !== 'you') {
+        issue(out, `${path}.filter.controller`, "'you control' counts the permanents you control");
+      }
+      if (!positive(c.count) || c.count < 2) {
+        issue(out, `${path}.count`, 'different powers needs a count of at least two');
+      }
+      break;
+    case 'thisPowerParity':
+      if (c.parity !== 'even' && c.parity !== 'odd') {
+        issue(out, `${path}.parity`, 'parity is even or odd');
+      }
+      break;
     case 'opponentsAtLeast':
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
