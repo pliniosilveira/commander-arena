@@ -311,6 +311,7 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // Séance Board: card types and creature types in one list.
     'spend this mana only to cast instant, sorcery, Demon, and Spirit spells',
     'spend this mana only to cast artifact, Angel, and Demon spells',
+    'spend this mana only to cast instant, sorcery, Demon, or Spirit spells',
     'spend this mana only to cast artifact and creature spells',
     // Flamebraider, Primal Beyond: the sources of the spells' creature type, in the plural or with an article.
     'spend this mana only to cast Elemental spells or activate abilities of Elemental sources',
@@ -327,7 +328,6 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast instant, sorcery spells',
     'spend this mana only to cast instant and sorcery spells and draw a card',
     'spend this mana only to cast Demon, Spirit, and Angel spells',
-    'spend this mana only to cast instant, sorcery, Demon, or Spirit spells',
     'spend this mana only to cast instant, sorcery, Demon and Spirit spells',
     'spend this mana only to cast instant, instant, and Demon spells',
     'spend this mana only to cast instant, sorcery, Demon, and Spirit spell',
