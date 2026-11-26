@@ -367,7 +367,7 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
     manaCost: ['2'],
     types: ['artifact'],
     colors: [],
-    colorIdentity: [],
+    colorIdentity: ['B'],
     oracleText:
       '{T}: Add {B}{B}. Spend this mana only to cast instant, sorcery, Demon, and Spirit spells.',
     abilities: [
