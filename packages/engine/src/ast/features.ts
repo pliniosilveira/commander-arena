@@ -243,6 +243,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escalateTapCost',
     // Grand Larceny deck, group D1: "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): the engine's `kicker` keyword with an {X} in its cost and `xNotZero`.
     'kickerX',
+    // Plunder the Graves deck: "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost, paid after the mana.
+    'kickerSacrifice',
+    // Plunder the Graves deck: "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost, paid after the mana.
+    'kickerSacrifice',
     // Counter Blitz deck, group C: "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`.
     'moveChoosePlayers',
     // Counter Blitz deck, group C: "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`.
@@ -1324,6 +1328,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moved',
     // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
     'putCountersOn',
+    // CR 608.2c, 400.7: "for each permanent put into a graveyard this way, its controller creates a token" (`ObjectRef` `putIntoGraveyardThisWay`).
+    'putIntoGraveyardThisWay',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
@@ -2339,6 +2345,8 @@ export const ABILITY_FEATURES = [
   'escalateTapCost',
   /** "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a, Thieving Skydiver): the engine's `kicker` keyword with an {X} in its cost and `xNotZero`. */
   'kickerX',
+  /** "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost of one permanent chosen by a filter, paid after the mana. */
+  'kickerSacrifice',
   /** "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card. */
   'spellPermanentOrCard',
   'opponentsControlling',
@@ -2476,6 +2484,8 @@ export const SELECTOR_KINDS = [
   'moved',
   /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
   'putCountersOn',
+  /** "For each permanent put into a graveyard this way" (CR 608.2c): the engine's `putIntoGraveyardThisWay`. */
+  'putIntoGraveyardThisWay',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
   'colorChoice',
   /**
@@ -3540,6 +3550,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   spellPermanentOrCard: true,
   escalateTapCost: true,
   kickerX: true,
+  kickerSacrifice: true,
   moveChoosePlayers: true,
   attackTaxUntil: true,
   sacrificeX: true,

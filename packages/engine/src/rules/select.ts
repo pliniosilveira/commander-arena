@@ -938,6 +938,11 @@ export function resolveObjects(
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
+    case 'putIntoGraveyardThisWay':
+      // CR 608.2c, 400.7: the permanents the `destroy` effects of this resolution destroyed that are now in a graveyard (a replacement effect may have exiled one instead), by their old ids.
+      return (ctx.thisWay?.destroyedObjects ?? []).filter(
+        (id) => successorsOf(state, id, (o) => o.zone === 'graveyard').length > 0,
+      );
     case 'putCountersOn': {
       // CR 608.2c: the objects the `addCounters` effects of this resolution put counters on (of the kind the text names, when it names one), each once.
       const byKind = ctx.thisWay?.countersPutOn ?? {};

@@ -458,6 +458,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           'the permanents are those of the battlefield, of any player: no zone, controller or owner',
         );
       }
+      if (r.all !== undefined && r.all !== true) issue(out, `${path}.all`, 'all is true or absent');
       break;
     }
     case 'asEntersChoose':

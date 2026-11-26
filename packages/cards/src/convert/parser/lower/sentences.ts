@@ -1872,6 +1872,60 @@ function lowerYouDont(
 }
 
 /**
+ * "Sacrifice a creature. If you can't, sacrifice ~." (Eldrazi Monument, CR 608.2c, 701.21a): the sentence after a sacrifice the controller chooses says what is done when that
+ * sacrifice sacrificed nothing: they controlled no such permanent, or an effect forbids sacrificing it (CR 701.21a, 101.2). It is a `conditional` on "not at least one permanent
+ * sacrificed this way" (`thisWayAtLeast`), read when the instruction runs. Null when the sentence is not "If you can't"; one that does not follow such a sacrifice is refused,
+ * never guessed.
+ */
+function lowerYouCant(
+  sentence: IrSentence,
+  previous: Step | undefined,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  if (sentence.condition?.test.kind !== 'youCant') return null;
+  const last = previous?.effects[previous.effects.length - 1];
+  const afterSacrifice =
+    previous?.effects.length === 1 &&
+    last?.kind === 'sacrifice' &&
+    last.objects.kind === 'choose' &&
+    last.player === undefined &&
+    last.exploit === undefined;
+  if (
+    !afterSacrifice ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional)
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures([
+    'condition:thisWayAtLeast',
+    'effect:conditional',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const after = lowerClauses(sentence.clauses, ctx);
+  if (!after.ok) return after;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'conditional',
+        condition: {
+          kind: 'not',
+          term: { kind: 'thisWayAtLeast', what: 'sacrificed', count: 1 },
+        },
+        effect: oneEffect(after.value),
+      },
+    ],
+    rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
+}
+
+/**
  * "If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn." (issue 100, CR 608.2c, 611.2a): the sentence after the
  * "If you don't" conditional that makes a token and says what the token gains. The tokens exist only inside that conditional, so what they gain is done there (the engine's `moved`
  * means the tokens made). Null when the sentence is not such a rider; one that does not fit is refused, never guessed.
@@ -3307,6 +3361,13 @@ function lowerStep(
   if (notTaken !== null) {
     if (!notTaken.ok) return stop(notTaken);
     steps.push({ effects: notTaken.value, replaceable: false });
+    return { last: i };
+  }
+  // "Sacrifice a creature. If you can't, sacrifice ~." (Eldrazi Monument, CR 608.2c, 701.21a).
+  const cantSacrifice = lowerYouCant(sentence, steps[steps.length - 1], ctx);
+  if (cantSacrifice !== null) {
+    if (!cantSacrifice.ok) return stop(cantSacrifice);
+    steps.push({ effects: cantSacrifice.value, replaceable: false });
     return { last: i };
   }
   // "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-642).

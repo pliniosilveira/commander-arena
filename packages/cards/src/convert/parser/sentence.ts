@@ -256,6 +256,8 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
                 'condition.you-dont-put-it-onto-battlefield',
                 // D-411 (Danitha deck group 2): "If you don't, put a +1/+1 counter on this creature." after "You may put a land card from among them into your hand."
                 'condition.if-you-dont',
+                // Eldrazi Monument (CR 701.21a): "If you can't, sacrifice ~." after "sacrifice a creature."
+                'condition.if-you-cant',
                 ...LEAD_CONDITIONS,
               ]
             : ['condition.kicked', ...LEAD_CONDITIONS],

@@ -537,6 +537,89 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
   },
 });
 
+const PUT_SELF_LIBRARY_RULE = 'effect.put-self-library';
+
+/**
+ * `effect.put-self-library`: "put this card from your graveyard on top of your library", "put ~ from your graveyard on the bottom of your library" (CR 113.6b: an ability that works from
+ * the graveyard; CR 401.1, 401.3: the card goes to its owner's library, on top or on the bottom as the text says, and it is a new object there, CR 400.7). The card itself, from its owner's
+ * graveyard: only an activated ability of the card, which the lowering checks.
+ */
+export const EFFECT_PUT_SELF_LIBRARY = defineRule<Clauses>({
+  id: PUT_SELF_LIBRARY_RULE,
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 113.6b (Abilities)',
+    'CR 401.1 (Library)',
+    'CR 401.3 (Library)',
+    'CR 400.7 (General)',
+  ],
+  examples: [
+    'put this card from your graveyard on top of your library',
+    'put this card from your graveyard on the bottom of your library',
+    'put ~ from your graveyard on top of your library',
+  ],
+  rejects: [
+    'put this card from a graveyard on top of your library',
+    'put this card from your graveyard on top of its owner’s library',
+    'put this card from your graveyard into your library',
+    'put this card from your graveyard on top of your library and draw a card',
+    'put this card on top of your library',
+    'put it from your graveyard on top of your library',
+    'put this card from your graveyard onto the battlefield',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('put '),
+      spanned(choice(literal('this card'), literal('~'))),
+      literal(' from your graveyard on '),
+      spanned(
+        choice(
+          map(literal('top'), () => 'top' as const),
+          map(literal('the bottom'), () => 'bottom' as const),
+        ),
+      ),
+      literal(' of your library'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, self, , position] = r.value;
+    const span = { start: pos, end: r.pos };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'self',
+      filter: { raw: self.value },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: self.span,
+      rule: PUT_SELF_LIBRARY_RULE,
+    };
+    const spec: IrZoneSpec = {
+      kind: 'zoneSpec',
+      zone: 'library',
+      from: 'graveyard',
+      whose: 'you',
+      position: position.value,
+      span: position.span,
+      rule: PUT_SELF_LIBRARY_RULE,
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'clause',
+          verb: 'putLibrary',
+          args: { objects, to: spec },
+          optional: false,
+          span,
+          rule: PUT_SELF_LIBRARY_RULE,
+        },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 export const RECURSION_EFFECT_RULES = [
   EFFECT_PUT_LIBRARY_NTH,
   EFFECT_MAY_CAST,
@@ -545,4 +628,5 @@ export const RECURSION_EFFECT_RULES = [
   // Before `effect.return-self`, whose words are a prefix of these (stage P50, D-207).
   EFFECT_RETURN_SELF_ATTACHED,
   EFFECT_RETURN_SELF,
+  EFFECT_PUT_SELF_LIBRARY,
 ];

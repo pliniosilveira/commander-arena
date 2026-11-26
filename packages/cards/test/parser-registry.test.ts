@@ -206,6 +206,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
   'replacement.as-enters-remove-counters': asIs,
+  'replacement.as-enters-remove-all-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
   'static.attached-keywords-if': asIs,
@@ -367,6 +368,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 279 (Curse of the Swine).
   'noun.each-exiled-controller': spell(
     (e) => `Exile X target creatures. ${cap(e)} creates a 2/2 green Boar creature token.`,
+  ),
+  // Terastodon: the sentence after a destroy.
+  'noun.each-graveyarded-controller': spell(
+    (e) =>
+      `Destroy target noncreature permanent. ${cap(e)} creates a 3/3 green Elephant creature token.`,
   ),
   'noun.library-card': spell(
     (e) =>
@@ -749,6 +755,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
   'static.others-enter-with-counters-equal-to': asIs,
+  'static.others-enter-with-x-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
@@ -1420,6 +1427,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
   ),
+  // Eldrazi Monument: the rider of a sacrifice the controller may be unable to make.
+  'condition.if-you-cant': permanent(
+    (e) => `At the beginning of your upkeep, sacrifice a creature. If ${e}, sacrifice ~.`,
+  ),
   'condition.control-or-returned': spell(
     (e) =>
       `Mill four cards. You may put a permanent card from among them into your hand. If ${e}, create a Food token.`,
@@ -1445,6 +1456,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  'noun.target-permanent-and-same-name-others': spell((e) => `Exile ${e}.`),
   // Breaking of the Fellowship: a second target of the controller of the first.
   'noun.another-target-of-same-controller': spell(
     (e) => `Target creature an opponent controls deals damage equal to its power to ${e}.`,
@@ -1497,6 +1509,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,
   ),
   'trigger.self-put-into-graveyard': whenever,
+  'trigger.put-with-self-dies': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   // CR 603.2: a spell cast in a named turn, and two events of one sentence.

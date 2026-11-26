@@ -1081,6 +1081,9 @@ export function lowerCondition(
     case 'youDont':
       // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
       return failure(c, []);
+    case 'youCant':
+      // "If you can't, sacrifice ~" belongs to the pair of sentences of a sacrifice, which the lowering of the sentences reads.
+      return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
       return failure(c, []);

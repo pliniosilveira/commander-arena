@@ -351,6 +351,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                       ),
                     }),
                 // Left out until there is some, so the state of every game that never reads it is what it was.
+                ...(res.thisWay?.destroyedObjects === undefined &&
+                out.thisWay.destroyedObjects === undefined
+                  ? {}
+                  : {
+                      destroyedObjects: [
+                        ...new Set([
+                          ...(res.thisWay?.destroyedObjects ?? []),
+                          ...(out.thisWay.destroyedObjects ?? []),
+                        ]),
+                      ],
+                    }),
+                // Left out until there is some, so the state of every game that never reads it is what it was.
                 ...(res.thisWay?.discardedValue === undefined &&
                 out.thisWay.discardedValue === undefined
                   ? {}
