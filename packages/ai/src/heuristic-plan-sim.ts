@@ -22,7 +22,6 @@ import {
   type GameState,
   type GameView,
   handleDecision,
-  type ObjectId,
   type PendingDecision,
   type PriorityDecision,
   type SeatId,
@@ -30,35 +29,13 @@ import {
 import { withFace } from './casual-priority';
 import type { Budget } from './heuristic-budget';
 import { planLand } from './heuristic-lands';
-import { type BoardPrint, boardPrint } from './heuristic-plan-print';
+import { boardPrint } from './heuristic-plan-print';
+import type { Line, PlanStep, Window } from './heuristic-plan-types';
 import type { PlanCounter } from './heuristic-plan-work';
 import { payHolding } from './heuristic-protect';
 import type { AgentWeights } from './weights';
 
-/** The moments of a turn a plan has steps for. */
-export type Window = 'main1' | 'attack' | 'afterBlocks' | 'main2' | 'theirEnd';
-
 export const MAIN_WINDOWS: readonly Window[] = ['main1', 'main2'];
-
-/** One way to play the turn (see `heuristic-plan-lines.ts`). */
-export interface Line {
-  readonly label: string;
-  /** The agent's actions in each window, in order. */
-  readonly acts: Partial<Record<Window, readonly Action[]>>;
-  /** What the agent does in a window once its actions are used up: pass, or today's rules (the default). */
-  readonly rest: Partial<Record<Window, 'pass' | 'today'>>;
-  /** Removal held for an opponent's attack. */
-  readonly holdRemoval: readonly ObjectId[];
-  /** Mana kept payable when the line's casts are paid (`payHolding`). */
-  readonly reserve: readonly string[] | null;
-}
-
-export interface PlanStep {
-  readonly when: Window;
-  readonly action: Action;
-  readonly expect: BoardPrint;
-  readonly reserve: readonly string[] | null;
-}
 
 /** Inner HeuristicAgents (no sample, no planning): `start` gives a fresh one per seat for one play-out. */
 export interface SimAgents {
@@ -140,6 +117,8 @@ function landNow(view: GameView, d: PriorityDecision, weights: AgentWeights): Ac
   return { kind: 'playLand', object: land.play.obj.id, ...withFace(land.play.face) };
 }
 
+export type { Line, PlanStep, Window } from './heuristic-plan-types';
+
 export interface PlayResult {
   readonly end: GameState;
   readonly steps: readonly PlanStep[];
@@ -183,7 +162,7 @@ export function playLine(
       ctx.work.stop(why);
       return null;
     }
-    ctx.work.steps += 1;
+    ctx.work.step();
     const d = current.pending;
     if (d === null) return { end: current, steps };
     const seat = d.seat;
