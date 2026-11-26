@@ -822,6 +822,17 @@ function destroyedCreaturesByPlayer(
   return Object.keys(by).length === 0 ? {} : { destroyedCreaturesBy: by };
 }
 
+/** `becomeCopy` with the ability that is resolving added to the abilities of the exception (CR 707.9b, 113.7a: the ability exists on the stack with its text). */
+function withResolvingAbility(
+  state: GameState,
+  res: ResolutionContext,
+  effect: Extract<Effect, { kind: 'becomeCopy' }>,
+): Extract<Effect, { kind: 'becomeCopy' }> {
+  const own = state.objects[res.object]?.stack?.ability;
+  if (own === null || own === undefined) return effect;
+  return { ...effect, abilities: [...(effect.abilities ?? []), own] };
+}
+
 function abilityXOf(state: GameState, res: ResolutionContext): number {
   const own = state.objects[res.object]?.stack;
   if (own?.x !== undefined && own.x !== null) return own.x;
@@ -3862,7 +3873,13 @@ function runEffect(
 
     case 'becomeCopy':
       // CR 707.2, 613.2a: a layer 1 effect that gives the object the copiable values of another.
-      return runBecomeCopy(state, effect, ctx, targets);
+      // CR 707.9b: "except it has this ability" adds the ability that is resolving (kept on the stack object, CR 113.7a) to the copiable values, so the copy has it as well.
+      return runBecomeCopy(
+        state,
+        effect.withThisAbility === true ? withResolvingAbility(state, res, effect) : effect,
+        ctx,
+        targets,
+      );
 
     case 'cascade':
       // CR 702.85a: exile until a cheaper nonland card, may cast it free, bottom the rest (rules/cascade.ts).

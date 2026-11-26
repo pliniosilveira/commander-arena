@@ -456,9 +456,12 @@ export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
     'two target creature cards in your graveyard',
     'three target land cards in your graveyard',
     'target card in your graveyard',
+    // Lazav, the Multifarious (CR 107.3a): the mana value of the card is the X of the ability.
+    'target creature card in your graveyard with mana value X',
   ],
   rejects: [
     'target creature card in a graveyard',
+    'target creature card in your graveyard with mana value Y',
     "target creature card in an opponent's graveyard",
     'target creature card from your graveyard',
     'target creature in your graveyard',

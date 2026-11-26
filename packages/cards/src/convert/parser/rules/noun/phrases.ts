@@ -1418,6 +1418,8 @@ export function graveyardPhrase(
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), null),
+      // Lazav, the Multifarious (CR 107.3a, 202.3): "target creature card in your graveyard with mana value X", the mana value said after the graveyard of an "in" phrase.
+      optional(preposition === 'in' ? quiet(MANA_VALUE_X) : fail, false),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
@@ -1442,6 +1444,7 @@ export function graveyardPhrase(
       byOpponent,
       controller,
       putThere,
+      equalsXAfter,
     ] = r.value;
     // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
     if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
@@ -1473,7 +1476,7 @@ export function graveyardPhrase(
             : {}),
           ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
-          ...(equalsX ? { manaValueX: true as const } : {}),
+          ...(equalsX || equalsXAfter ? { manaValueX: true as const } : {}),
           ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
           ...(limitAmount === undefined
             ? {}

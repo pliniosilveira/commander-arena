@@ -326,10 +326,12 @@ function walkEffect(
       }
       if (effect.of.kind === 'target') {
         const zone = selectedFilter(effect.of, targets)?.zone;
-        if (zone !== undefined && zone !== 'battlefield') {
+        // A card of a graveyard is copied as it is there (CR 707.2, D-232: the engine copies the copiable values of a card in any zone): "becomes a copy of target creature card in your graveyard".
+        if (zone !== undefined && zone !== 'battlefield' && zone !== 'graveyard') {
           out.push({
             path: `${path}.of`,
-            message: 'only a permanent on the battlefield can be copied by becoming a copy',
+            message:
+              'only a permanent on the battlefield or a card in a graveyard can be copied by becoming a copy',
           });
         }
       }
