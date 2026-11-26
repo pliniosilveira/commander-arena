@@ -1189,6 +1189,8 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): `what` the permanent
+    | { readonly kind: 'exilePermanent'; readonly what: IrNoun }
     // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
     | {
         readonly kind: 'untapPermanents';

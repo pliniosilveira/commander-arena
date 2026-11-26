@@ -30,3 +30,25 @@ describe('Overgrown Zealot', () => {
     });
   });
 });
+
+describe('Primordial Mist', () => {
+  test('is supported', () => {
+    const imported = real('Primordial Mist');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+  });
+
+  test('its last ability exiles a face-down permanent as the cost and lets its controller play that card', () => {
+    const abilities = real('Primordial Mist').definition.faces[0]?.abilities ?? [];
+    expect(abilities[1]).toMatchObject({
+      kind: 'activated',
+      cost: [
+        {
+          kind: 'exilePermanent',
+          filter: { controller: 'you', facing: 'down' },
+        },
+      ],
+      effect: { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+    });
+  });
+});

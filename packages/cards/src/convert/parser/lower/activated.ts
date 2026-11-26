@@ -1001,7 +1001,11 @@ function lowerOrdinary(written: Activated, ctx: LowerContext): LowerResult<reado
   // The sentences are lowered as the body of any other ability is, so an X that a sentence defines ("..., where X is
   // the number of creatures you control", stage P28) and what "this way" counts are read as they are everywhere.
   ctx.activatedBody = true;
+  // Primordial Mist (CR 400.7): the cost exiled a permanent, so "that card" of the effect is the card it became in exile.
+  const previousExiled = ctx.exiled;
+  if (costs.some((c) => c.kind === 'exilePermanent')) ctx.exiled = 'cards';
   const sentenced = lowerSentences(ability.body.sentences, ctx);
+  ctx.exiled = previousExiled;
   ctx.activatedBody = false;
   ctx.graveyardSource = false;
   const functionsInGraveyard = ctx.usedGraveyardSource;

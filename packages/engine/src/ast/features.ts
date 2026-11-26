@@ -1138,6 +1138,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
+    // Primordial Mist: "Exile a face-down permanent you control face up" as the cost of an activated ability.
+    'exilePermanent',
     // D-185: "Exile this card from your graveyard" (the cost of Encore); D-229: "Exile this artifact" from the battlefield and "Mill a card" as costs.
     'exileThis',
     'mill',
@@ -4015,6 +4017,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   energy: true,
   energyAmount: true,
   returnToHand: true,
+  exilePermanent: true,
 };
 
 /**

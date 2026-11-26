@@ -223,6 +223,12 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         ? ok({ kind: 'tapPermanents', filter: filter.value, count: cost.count })
         : filter;
     }
+    case 'exilePermanent': {
+      // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): the engine's `exilePermanent`, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'exilePermanent', filter: filter.value }) : filter;
+    }
     case 'untapPermanents': {
       // "Untap two tapped creatures you control" (CR 701.26b, 118.3): the engine's `untapPermanents`, a cost of an ordinary activated ability.
       if (options.ordinary !== true) return failure(cost);
@@ -398,6 +404,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:sacrifice',
   'cost:tapPermanents',
   'cost:untapPermanents',
+  'cost:exilePermanent',
   'cost:blight',
   'cost:payLife',
   'cost:payXLife',

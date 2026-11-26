@@ -7,6 +7,10 @@
  * it into the command zone instead (CR 903.9b): the question is asked in the middle of the activation, after the player chose, and the
  * answer goes on with the rest of the cost (`answerBounceCommander`); there is no cancel for that question, as for every question the
  * moves of a cost can raise.
+ *
+ * The cost "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9) is paid the same way with the exile as the destination: the permanent goes to
+ * exile face up (a face-down one is revealed as it moves; a token ceases to exist), the question has the purpose `exileCost`, and the cards the permanents become in exile are written
+ * on the ability on the stack as `StackData.movedBefore`, which `moved` names in its effect (CR 400.7: "that card").
  */
 import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
@@ -48,6 +52,13 @@ function rememberAttack(state: GameState, ability: ObjectId, id: ObjectId): Game
   });
 }
 
+/** Writes the cards the cost exiled on the ability that is being paid for (`StackData.movedBefore`), for `moved` in its effect. */
+function rememberExiled(state: GameState, ability: ObjectId, exiled: readonly ObjectId[]): GameState {
+  const stack = state.objects[ability]?.stack;
+  if (stack == null) return state;
+  return patchObject(state, ability, { stack: { ...stack, movedBefore: [...exiled] } });
+}
+
 /**
  * Moves `queue` to the owners' hands in order. A commander in it asks its owner first (CR 903.9b): the activation stops with that
  * question, the permanents still to return kept in `CastingContext.bounce`.
@@ -63,8 +74,11 @@ function returnAll(
   if (!going) return fail('No activation is in progress');
   const { casting, activation } = going;
   // CR 401.4: "put this creature on the bottom of its owner's library" (`returnToHand.toLibraryBottom`).
-  const toBottom = breakDown(activation.ability.cost, activation.x)?.bounceToLibraryBottom === true;
+  const parts = breakDown(activation.ability.cost, activation.x);
+  const toBottom = parts?.bounceToLibraryBottom === true;
+  const toExile = parts?.bounceToExile === true;
   let current = state;
+  const exiled: ObjectId[] = [];
   let choice = answer;
   for (const [i, id] of queue.entries()) {
     const obj = current.objects[id];
@@ -75,9 +89,11 @@ function returnAll(
     current = rememberAttack(current, casting.object, id);
     const moved = moveObject(
       current,
-      toBottom
-        ? { object: id, to: 'library', position: 'bottom', commanderChoice: choice }
-        : { object: id, to: 'hand', commanderChoice: choice },
+      toExile
+        ? { object: id, to: 'exile', commanderChoice: choice }
+        : toBottom
+          ? { object: id, to: 'library', position: 'bottom', commanderChoice: choice }
+          : { object: id, to: 'hand', commanderChoice: choice },
     );
     choice = null;
     if (moved.kind === 'needsDecision') {
@@ -89,8 +105,10 @@ function returnAll(
     }
     current = moved.state;
     events.push(...moved.events);
+    if (toExile && moved.newObject !== null) exiled.push(moved.newObject);
   }
   const { bounce: _done, ...rest } = current.casting ?? casting;
+  if (toExile) current = rememberExiled(current, casting.object, exiled);
   return next({ ...current, casting: rest }, events);
 }
 
@@ -104,21 +122,24 @@ export function payBounce(state: GameState, events: GameEvent[], next: AfterBoun
   const { casting, activation } = going;
   const costs = breakDown(activation.ability.cost, activation.x);
   if (costs === null || costs.bounce === null) return next(state, events);
+  const purpose = costs.bounceToExile ? 'exileCost' : 'bounce';
   if (costs.bounce === 'this') {
-    return chosen(state, events, [activation.source], true, next);
+    return chosen(state, events, [activation.source], true, next, purpose);
   }
   const legal = controlledCandidates(state, casting.seat, activation.source, costs.bounce);
   if (legal.length < costs.bounceCount) {
     return fail("You do not control enough permanents to return to their owners' hands");
   }
-  if (legal.length === costs.bounceCount) return chosen(state, events, legal, true, next);
+  if (legal.length === costs.bounceCount) {
+    return chosen(state, events, legal, true, next, purpose);
+  }
   const paused: GameState = { ...state, casting: { ...casting, stage: 'bounce' } };
   return ok(
     setPending(collectTriggers(paused, events), {
       kind: 'choosePermanent',
       seat: casting.seat,
       source: casting.object,
-      purpose: 'bounce',
+      purpose,
       min: costs.bounceCount,
       max: costs.bounceCount,
       legal,
@@ -134,6 +155,7 @@ function chosen(
   objects: readonly ObjectId[],
   automatic: boolean,
   next: AfterBounce,
+  purpose: 'bounce' | 'exileCost',
 ): Result {
   const casting = state.casting;
   if (!casting) return fail('No activation is in progress');
@@ -142,7 +164,7 @@ function chosen(
     seat: casting.seat,
     source: casting.object,
     objects,
-    purpose: 'bounce',
+    purpose,
     automatic,
   });
   return returnAll(state, events, objects, null, next);
@@ -157,7 +179,9 @@ export function answerBounceCost(
   if (state.casting?.activation == null || state.casting.stage !== 'bounce') {
     return fail('No permanents are being chosen to return for a cost');
   }
-  return chosen({ ...state, pending: null }, [], objects, false, next);
+  const exile = breakDown(state.casting.activation.ability.cost, state.casting.activation.x)
+    ?.bounceToExile;
+  return chosen({ ...state, pending: null }, [], objects, false, next, exile === true ? 'exileCost' : 'bounce');
 }
 
 /**

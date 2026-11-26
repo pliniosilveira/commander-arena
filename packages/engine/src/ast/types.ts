@@ -2135,7 +2135,15 @@ export type Cost =
        * owner's library instead of their hand (a commander's owner may still put it into the command zone, CR 903.9b). Only with `what` `this`.
        */
       readonly toLibraryBottom?: true;
-    };
+    }
+  /**
+   * "Exile a face-down permanent you control face up" as a cost (Primordial Mist; CR 118.3, 406.3, 708.9, 602.2b): the player chooses one permanent they control on the battlefield that
+   * `filter` matches (with more candidates than one a `choosePermanent` decision of purpose `exileCost` and `forCost` asks; with exactly one the engine takes it) and it goes to
+   * exile, face up (a face-down permanent is revealed as it moves, CR 708.9; a token ceases to exist). The card it becomes in exile is what `moved` names in the effect of the
+   * ability (CR 400.7: "that card"), so a `mayPlay` of `moved` lets its controller play it. Paid with the return cost's pieces, after the sacrifice and before the discard. Only the
+   * cost of an activated ability of a permanent; `filter` names the battlefield and the player's own permanents, no owner or stack kind.
+   */
+  | { readonly kind: 'exilePermanent'; readonly filter: ObjectFilter };
 
 /** The named alternative costs that are paid with mana instead of the mana cost (D-121). */
 export type NamedAlternativeKind =
