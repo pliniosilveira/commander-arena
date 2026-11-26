@@ -1579,7 +1579,9 @@ export function describeEvent(
       // CR 701.17a (D-131): the top cards of a library went to its owner's graveyard.
       return line(
         'major',
-        `${who(event.seat)} ${verb(event.seat, 'mill', 'mills')} ${event.objects.length === 1 ? 'a card' : `${event.objects.length} cards`}.`,
+        `${who(event.seat)} ${verb(event.seat, 'mill', 'mills')} ${event.objects.length === 1 ? 'a card' : `${event.objects.length} cards`}${
+          event.objects.length === 0 ? '' : `: ${event.objects.map(name).join(', ')}`
+        }.`,
         event.seat,
         event.objects,
         'CR 701.17',
