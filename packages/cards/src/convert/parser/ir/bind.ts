@@ -468,6 +468,29 @@ class Binder {
       default:
         break;
     }
+    // Suspended Sentence (CR 109.4, 608.2h): "Destroy target creature an opponent controls. That player loses 3 life.": the text names no player, only "an opponent" who controls the
+    // target, so "that player" is the controller of that target, as "its controller" would say.
+    if (
+      found === undefined &&
+      pronoun?.kind === 'player' &&
+      /^that player$/iu.test(noun.filter.raw.trim())
+    ) {
+      const target = recent.find(
+        (a) =>
+          a.kind === 'object' &&
+          a.noun.det === 'target' &&
+          a.noun.filter.controller === 'opponent' &&
+          !a.noun.plural,
+      );
+      if (target !== undefined) {
+        const of = this.resolveAnaphor({
+          ...noun,
+          filter: { raw: 'it' },
+          itWord: true,
+        });
+        return { ...noun, det: 'controllerOf', of };
+      }
+    }
     if (found === undefined) {
       this.fail(noun);
       return noun;

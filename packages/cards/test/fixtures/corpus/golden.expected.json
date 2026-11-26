@@ -9734,18 +9734,10 @@
     "98641070-93bd-4088-90cb-956c2b21979e": {
       "name": "Suspended Sentence",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Destroy target creature an opponent controls. That player loses 3 life. Exile ~ with three time counters on it.",
-          "reason": "unboundReference",
-          "closestRule": "noun.that-player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "622e4670"
+      "ast": "205c1009"
     },
     "98a2a642-a30a-43e7-b47f-4776c22d1cb0": {
       "name": "Éowyn, Shieldmaiden",
@@ -16486,7 +16478,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1750,
+      "supported": 1751,
       "total": 1770
     }
   }
