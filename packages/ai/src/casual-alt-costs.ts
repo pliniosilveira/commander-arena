@@ -107,6 +107,8 @@ export function chooseNamedAlternative(
   // A foretold card (CR 702.143a, D-128) can only be cast for its foretell cost: it is the cast, so it is chosen.
   if (offered.has('foretell')) return 'foretell';
   if (offered.has('spectacle')) return 'spectacle';
+  // CR 702.173a: the cheaper cost, offered only when it is paid for by combat damage already dealt this turn.
+  if (offered.has('freerunning')) return 'freerunning';
   if (offered.has('overload') && wantsOverload(view, card, ordinary)) return 'overload';
   if (offered.has('dash') && wantsDash(view, card, ordinary)) return 'dash';
   if (offered.has('blitz') && wantsBlitz(view, card)) return 'blitz';

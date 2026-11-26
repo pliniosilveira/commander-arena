@@ -11,6 +11,7 @@ import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
+import { definitionOf } from '../state/ops';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
@@ -51,6 +52,8 @@ export interface FilterSubject {
   readonly modified?: boolean;
   /** Whether the permanent is goaded (`goaded`, CR 701.15b); left out where the caller does not know, which fails the test closed. */
   readonly goaded?: boolean;
+  /** Whether the permanent is face down (`facing`, CR 708.2); left out where the caller does not know, which fails the test closed (a face-up test as well). */
+  readonly isFaceDown?: boolean;
 }
 
 /** D-111: whether `value` satisfies the comparison; an object with no such value satisfies none. */
@@ -376,6 +379,7 @@ export function matchesFilterWith(
   if (!compares(filter.colorCount, d.colors.length)) return false;
   // CR 111.1 (D-133): a token is a permanent that is not represented by a card.
   if (filter.token !== undefined && (obj.token !== null) !== filter.token) return false;
+  // CR 708.2, 701.40a: "face-down creature": the object is a face-down permanent (read through `rules/face-down.ts`).
   // CR 903.3 (D-145): "commander" is a card designated as a player's commander.
   if (filter.commander !== undefined && (d.commander ?? isCommanderObject(state, obj)) !== true)
     return false;
@@ -392,7 +396,21 @@ export function matchesFilterWith(
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.
   if (filter.goaded === true && d.goaded !== true) return false;
+  // CR 708.2, 701.40: "face-down" (true) or "face-up" (false) is the status the permanent has now.
+  if (filter.facing !== undefined && d.isFaceDown !== (filter.facing === 'down')) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
+    return false;
+  }
+  // CR 702.35a (Anje Falkenrath: "if it has madness"): madness is a cost the card lists (`alternativeCosts`), not a keyword ability of the permanent; read from either face of the card.
+  if (
+    filter.hasMadness === true &&
+    !(
+      obj.card !== null &&
+      definitionOf(state, obj.card).faces.some((f) =>
+        f.alternativeCosts?.some((a) => a.kind === 'madness'),
+      )
+    )
+  ) {
     return false;
   }
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;
@@ -618,12 +636,13 @@ export function matchesFilterWith(
   // CR 201.2, 608.2c (Echoing Return): "with the same name as that card": the name of the object the effect names.
   if (filter.sameNameAs !== undefined) {
     const name = ctx.nameLimit;
-    if (name === null || name === undefined || d.name !== name) return false;
+    // CR 201.2a: an object with no name (a face-down permanent, CR 708.2a) has the same name as nothing, not even another object with no name.
+    if (name === null || name === undefined || name === '' || d.name !== name) return false;
   }
   // CR 201.2 (Mocking Doppelganger): "with the same name as this creature": the name of the permanent with the static ability.
   if (filter.sameNameAsSource === true) {
     const name = ctx.sourceName;
-    if (name === undefined || d.name === undefined || d.name !== name) return false;
+    if (name === undefined || name === '' || d.name === undefined || d.name !== name) return false;
   }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {

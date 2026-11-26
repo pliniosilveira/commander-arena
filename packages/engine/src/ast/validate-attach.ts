@@ -129,6 +129,13 @@ export function checkStaticSubject(
       if (s.other !== undefined && typeof s.other !== 'boolean') {
         issue(out, `${path}.other`, 'other must be a boolean');
       }
+      if (s.andThis !== undefined && (s.andThis !== true || !allowPair)) {
+        issue(
+          out,
+          `${path}.andThis`,
+          "'andThis' is true, and for a static ability that changes power and toughness or grants a keyword or an ability only",
+        );
+      }
       break;
     default:
       issue(out, path, `unknown static subject ${kindOf(s)}`);

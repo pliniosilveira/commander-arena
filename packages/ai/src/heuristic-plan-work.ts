@@ -57,7 +57,7 @@ export interface PlanWork {
  * The key of an action for one seat: its JSON, with a field that is present but undefined kept apart from a
  * missing one, and a number JSON cannot write kept apart from null, so two different actions never share it.
  */
-function keyOf(seat: SeatId, action: Action): string {
+export function keyOf(seat: SeatId, action: Action): string {
   const text = JSON.stringify(action, (_, value: unknown) =>
     value === undefined
       ? '\u0000undefined'
@@ -84,6 +84,11 @@ export class PlanCounter {
 
   constructor(engine: Engine) {
     this.engine = engine;
+  }
+
+  /** One engine step of a play-out begins (`playLine`). */
+  step(): void {
+    this.steps += 1;
   }
 
   /** The view of `state` for `seat`: the one kept before, or a new one, counted (and kept, up to `KEEP`). */

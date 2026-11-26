@@ -351,6 +351,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                       ),
                     }),
                 // Left out until there is some, so the state of every game that never reads it is what it was.
+                ...(res.thisWay?.destroyedObjects === undefined &&
+                out.thisWay.destroyedObjects === undefined
+                  ? {}
+                  : {
+                      destroyedObjects: [
+                        ...new Set([
+                          ...(res.thisWay?.destroyedObjects ?? []),
+                          ...(out.thisWay.destroyedObjects ?? []),
+                        ]),
+                      ],
+                    }),
+                // Left out until there is some, so the state of every game that never reads it is what it was.
                 ...(res.thisWay?.discardedValue === undefined &&
                 out.thisWay.discardedValue === undefined
                   ? {}
@@ -359,6 +371,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                         (res.thisWay?.discardedValue ?? 0) + (out.thisWay.discardedValue ?? 0),
                     }),
                 searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
+                // Disorienting Choice: the permanents a `controllersMayExile` named; left out until there are some.
+                ...(res.thisWay?.chosenPermanents === undefined &&
+                out.thisWay.chosenPermanents === undefined
+                  ? {}
+                  : {
+                      chosenPermanents: [
+                        ...new Set([
+                          ...(res.thisWay?.chosenPermanents ?? []),
+                          ...(out.thisWay.chosenPermanents ?? []),
+                        ]),
+                      ],
+                    }),
                 ...mergeTypes(res.thisWay?.discardedTypes, out.thisWay.discardedTypes),
                 // Issue 279: the greatest number one player discarded, not a sum.
                 discardedMost: Math.max(

@@ -193,9 +193,21 @@ describe('Krav, the Unredeemed: "{B}, Sacrifice X creatures: Target player draws
     });
   });
 
+  test('"other" leaves the permanent with the ability out of the creatures sacrificed (SYNTHETIC, CR 109.1)', () => {
+    const [ability] = readAll(
+      '{B}, Sacrifice X other creatures: Draw X cards.',
+      'creature',
+    ).abilities;
+    expect(ability).toMatchObject({
+      cost: [
+        { kind: 'mana', symbols: ['B'] },
+        { kind: 'sacrifice', what: { types: ['creature'], other: true }, countX: true },
+      ],
+    });
+  });
+
   test.each([
     '{B}, Sacrifice X: Draw X cards.',
-    '{B}, Sacrifice X other creatures: Draw X cards.',
     '{B}, Sacrifice X creatures you control: Draw X cards.',
     '{B}, Sacrifice X creature: Draw X cards.',
     '{B}, Sacrifice X target creatures: Draw X cards.',

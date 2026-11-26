@@ -23,9 +23,16 @@ export { countPhrase };
 const UNKNOWN = 'a number';
 
 /** The sentence for a count or a multiple of one: "the number of lands you control". */
-function amountWords(amount: Amount | PtAmount, ctx: AmountContext = {}): string {
+function amountWords(amount: Amount | PtAmount | DefinedPtAmount, ctx: AmountContext = {}): string {
   if (typeof amount === 'number') return String(amount);
   switch (amount.kind) {
+    case 'countersAmong': {
+      // "the number of +1/+1 counters on lands you control" (a characteristic-defining ability, CR 604.3).
+      const group = countPhrase(amount.filter);
+      return group === null
+        ? UNKNOWN
+        : `the number of ${amount.counter ?? ''}${amount.counter === undefined ? '' : ' '}counters on ${group.replace(/^the number of /, '')}`;
+    }
     case 'x':
       return 'X';
     case 'countOf':
@@ -175,7 +182,8 @@ export function ptEffectText(
     : setPtText(effect.power, effect.toughness);
 }
 
-const sameAmount = (a: PtAmount, b: PtAmount): boolean => JSON.stringify(a) === JSON.stringify(b);
+const sameAmount = (a: PtAmount | DefinedPtAmount, b: PtAmount | DefinedPtAmount): boolean =>
+  JSON.stringify(a) === JSON.stringify(b);
 
 /** "has base power and toughness 4/4", "... each equal to the number of lands you control". */
 function setPtText(power: PtAmount, toughness: PtAmount): string {

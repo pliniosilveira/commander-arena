@@ -461,6 +461,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     // there; a kicked spell is a better spell, so the agent pays it. A life part of the cost is
     // weighed like a shock land's (PAY_LIFE_ABOVE): not when it would leave the agent in danger.
     const life = d.cost?.some((c) => c.kind === 'payLife') === true;
+    // A kicker that sacrifices a permanent (CR 701.21a, "Kicker—Sacrifice a creature.") costs the agent a permanent of its own: not paid.
+    if (d.cost?.some((c) => c.kind === 'sacrifice') === true) return { kind: 'declineOptional' };
     return life && ownLife(view) <= PAY_LIFE_ABOVE
       ? { kind: 'declineOptional' }
       : { kind: 'acceptOptional' };

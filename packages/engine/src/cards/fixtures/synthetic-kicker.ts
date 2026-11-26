@@ -160,6 +160,28 @@ export const SYNTHETIC_KICKER_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // A kicker cost that is a sacrifice (CR 702.33a, 118.8, 701.21a): paid after the mana, only when kicked.
+  singleFace({
+    name: 'SYNTHETIC Kicker Sacrifice Draw',
+    manaCost: ['1', 'B'],
+    types: ['sorcery'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'Kicker-Sacrifice a creature. Draw a card. If this spell was kicked, draw three cards instead.',
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: {
+          kind: 'kicker',
+          cost: [{ kind: 'sacrifice', what: { types: ['creature'] } }],
+        },
+      },
+    ],
+    spell: {
+      effect: { kind: 'conditional', condition: KICKED, effect: draw(3), else: draw(1) },
+    },
+  }),
   // A conditional with no kicker at all: the condition is a count of permanents.
   singleFace({
     name: 'SYNTHETIC Rally Cry',

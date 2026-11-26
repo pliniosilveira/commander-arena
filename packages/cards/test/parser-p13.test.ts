@@ -141,12 +141,10 @@ describe('static.additional-cost: "As an additional cost to cast ~, ..." (CR 118
       { stoppedAt: '{2}.', closestRule: 'cost.pay-life', reason: 'unrecognised' },
     ],
     [
-      'As an additional cost to cast this spell, exile a card from your graveyard.',
-      {
-        stoppedAt: 'exile a card from your graveyard.',
-        closestRule: 'static.additional-cost',
-        reason: 'unrecognised',
-      },
+      // A fixed count of cards of a kind in the graveyard is read now (CR 118.8); a variable one is not.
+      'As an additional cost to cast this spell, exile X cards from your graveyard.',
+      // Read, but the engine runs only a fixed count: the card stays unsupported (never half run).
+      { closestRule: 'cost.exile-graveyard-cards', reason: 'notRunnable' },
     ],
   ] as const)('stays unread: %s', (text, expected) => {
     expect(dropped(text, 'sorcery')).toMatchObject(expected);

@@ -572,6 +572,9 @@ function occurrences(
     case 'becomesMonstrous':
       // CR 701.37a, 701.37b: the permanent that became monstrous.
       return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
+    case 'turnedFaceUp':
+      // CR 701.40b, 708.8: the permanent that was turned face up (the same object, now face up), by the player who took the special action.
+      return event.kind === 'turnedFaceUp' ? [{ subject: event.object, seat: event.seat }] : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -740,6 +743,8 @@ function occurrences(
             seat: event.by ?? null,
             counter: event.counter,
             countersPut: event.count,
+            // CR 122.6 ("you gain that much life"): "that much" is the counters this instance of putting put on, one for each trigger of the singular wording.
+            damage: trigger.each === true ? 1 : event.count,
           }))
         : [];
     case 'playerAttacksOpponent': {
@@ -1128,6 +1133,10 @@ function matches(
     case 'becomesBlocked':
     case 'becomesUnblocked':
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'turnedFaceUp':
+      // CR 116.2b: "Whenever you turn a permanent face up": the player who took the special action is the controller of this ability.
+      if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
+      return matchesWhat(state, trigger.what, subject, candidate);
     case 'becomesBlockedBy': {
       // CR 702.25a: "a creature without flanking": the blocker as it is when it is declared.
       const blocker = occ.blocker === undefined ? null : objectOrLki(state, occ.blocker);
@@ -1499,6 +1508,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'abilityTriggered': // CR 603.2 (Aboleth Spawn): "causes a triggered ability to trigger"
     case 'doorUnlocked': // CR 709.5h
     case 'exploited': // CR 702.110b
+    case 'turnedFaceUp': // CR 701.40b, 708.8
     case 'ringTempted':
     case 'dungeonCompleted': // CR 309.7, 701.49c
     case 'classLevelReached':

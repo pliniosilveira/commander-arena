@@ -128,6 +128,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyFromGraveyard',
     // Thieving Varmint: "Spend this mana only to cast spells you don't own." (`ManaAbility.spendOnly.notOwned`)
     'manaSpendOnlyNotOwned',
+    // Overgrown Zealot: "Spend this mana only to turn permanents face up." (`ManaAbility.spendOnly.turnFaceUp`)
+    'manaSpendOnlyTurnFaceUp',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // Empowered Autogenerator: "Put a charge counter on this artifact. Add X mana ..." (`ManaAbility.putCounter`).
@@ -168,6 +170,15 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeKinds',
     // Gonti, Lord of Luxury (CR 401.2, 406.3): "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (`lookAtTop.from`).
     'lookTakeFromPlayer',
+    // Orcish Spy (CR 401.2, 701.20e): "Look at the top three cards of target player's library" (`lookAtTop` with `take.max` 0).
+    'lookTakeNothing',
+    // Cruelclaw's Heist (CR 701.20a, 402.3, 608.2d): "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (`ChooseSelector.revealHand`).
+    'chooseRevealedHand',
+    // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
+    'exileTopRandomOpponent',
+    'mayPlayWhenCast',
+    // Manifest dread (CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the rest into your graveyard" (`lookAtTop` `take.to` `manifest`).
+    'lookTakeManifest',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -176,6 +187,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseFromExileOwnedBy',
     // Yedora, Grave Gardener (CR 708.2, 708.3): "return it to the battlefield face down ... It's a Forest land" (`moveToZone.faceDownAs`).
     'moveFaceDownLand',
+    // CR 701.40a (Scroll of Fate): "Manifest a card from your hand" (`moveToZone.faceDownAs` `manifest` of a `choose` from the hand).
+    'manifestFromHand',
+    // CR 708.2a, 708.3, 702.37e (Deathmist Raptor): "return this card from your graveyard to the battlefield ... face down" as a face-down creature that morph can turn up (`moveToZone.faceDownAs` `morph`).
+    'moveFaceDownMorph',
+    // CR 702.37b (Megamorph): a morph cost that puts a +1/+1 counter on the permanent as it is turned face up (`AlternativeCost.megamorph`).
+    'megamorph',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
     // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
@@ -186,6 +203,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeFromGraveyard',
     // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
     'castFreeCreatureGains',
+    // The Infamous Cruelclaw (CR 118.9, 701.9a): "You may cast that card by discarding a card rather than paying its mana cost" (`castFree.payInstead`).
+    'castFreeDiscardInstead',
     // Grand Larceny deck, group B (Nashi, Moon Sage's Scion): "you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (`mayPlay.oneOf`, `mayPlay.lifeForMana`).
     'mayPlayOneLifeForMana',
     // Grand Larceny deck, group B (Silent-Blade Oni, Extract Brain): "You may cast a spell from among those cards without paying its mana cost" after looking at a hand (`castFree.fromHand`).
@@ -233,6 +252,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escalateTapCost',
     // Grand Larceny deck, group D1: "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): the engine's `kicker` keyword with an {X} in its cost and `xNotZero`.
     'kickerX',
+    // Plunder the Graves deck: "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost, paid after the mana.
+    'kickerSacrifice',
+    // Plunder the Graves deck: "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost, paid after the mana.
+    'kickerSacrifice',
     // Counter Blitz deck, group C: "Each opponent chooses a creature with the greatest mana value among creatures they control. Return those creatures to their owners' hands" (CR 608.2d, 101.4): the engine's `moveToZone` with `player`, and `greatest` or `least` on its `choose`.
     'moveChoosePlayers',
     // Counter Blitz deck, group C: "Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures" (CR 508.1d, 508.1h): the engine's `creaturesCantAttackYou` with `tax`.
@@ -475,6 +498,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // "You take the initiative" (CR 726) and "venture into Undercity" (CR 701.49, 309).
     'takeInitiative',
+    // Avatar: "earthbend N" (a land becomes a 0/0 haste land creature with counters, returning when it dies or is exiled).
+    'earthbend',
     'venture',
     // CR 500.7: "take an extra turn after this one".
     'extraTurn',
@@ -484,6 +509,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mill',
     // D-309: "manifest the top card of your library" (CR 701.40), and the face-down permanent it makes.
     'manifest',
+    // CR 701.40g, 708.8: "turn that creature face up" (`turnFaceUp`), the effect that turns a face-down permanent face up with no cost paid.
+    'turnFaceUp',
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
     'prepare',
@@ -613,6 +640,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayerChoosesDestroy',
     // Ultimate Magic: Meteor: "For each opponent, choose an artifact or land that player controls. Destroy the chosen permanents."
     'chooseOnePerOpponentDestroy',
+    // Disorienting Choice: "For each permanent chosen this way, its controller may exile it."
+    'controllersMayExile',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
     'exileTop',
     'mayPlay',
@@ -665,6 +694,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesUntapped',
     // CR 701.37: "When this creature becomes monstrous".
     'becomesMonstrous',
+    // CR 701.40b, 708.8: "Whenever a permanent you control is turned face up".
+    'turnedFaceUp',
     'discarded',
     'diesBatch',
     'entersBatch',
@@ -1134,6 +1165,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
+    // Primordial Mist: "Exile a face-down permanent you control face up" as the cost of an activated ability.
+    'exilePermanent',
     // D-185: "Exile this card from your graveyard" (the cost of Encore); D-229: "Exile this artifact" from the battlefield and "Mill a card" as costs.
     'exileThis',
     'mill',
@@ -1218,6 +1251,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'firstCastFromExileThisTurn',
     // Most Wanted deck (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast" (`ObjectFilter.manaSpentFromSubtype`, `firstManaSpentFromSubtypeThisTurn`).
     'manaSpentFromSubtype',
+    // Flint deck (Anje Falkenrath): "if it has madness" (`ObjectFilter.hasMadness`).
+    'hasMadness',
     'firstManaSpentFromSubtypeThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
@@ -1306,6 +1341,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moved',
     // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
     'putCountersOn',
+    // CR 608.2c, 400.7: "for each permanent put into a graveyard this way, its controller creates a token" (`ObjectRef` `putIntoGraveyardThisWay`).
+    'putIntoGraveyardThisWay',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
@@ -1472,6 +1509,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modified',
     // CR 701.15b: "a goaded creature" (`ObjectFilter.goaded`).
     'goaded',
+    // CR 708.2: "a face-down permanent", "a face-up creature" (`ObjectFilter.facing`).
+    'faceDown',
   ],
   // Conditions of `entersTapped.unless` (CR 614.12), of the `conditional` effect (CR 608.2c) and of
   // the intervening "if" (CR 603.4): counts of permanents and opponents, "was kicked" (CR 702.33d),
@@ -1518,6 +1557,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
     'triggerPlayerIsOpponent',
     'triggerPlayerStat',
+    // Kianne, Corrupted Memory: "as long as ~'s power is even", read as a permission to cast is used.
+    'thisPowerParity',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
@@ -1584,6 +1625,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'descendedThisTurn',
     'playedLandThisTurn',
     'manaSpentAtLeast',
+    'manaSpentFromSubtype',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
     'wasCast',
@@ -1871,6 +1913,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
     'controllerLifeLostThisTurn',
+    'opponentsLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
     // CR 601.2i (Lifestream's Blessing): "... as you cast this spell", worked out when the spell is cast.
     'asCast',
@@ -1899,6 +1942,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'colorsAmong',
     // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
     'greatestPowerAmong',
+    // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control" (a characteristic-defining ability's amount).
+    'countersAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // Issue 121: "the number of different mana values among instant and sorcery cards in your graveyard" (Eris).
@@ -1990,6 +2035,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dash',
     'bestow',
     'spectacle',
+    'freerunning',
     'escape',
     // CR 702.180: Harmonize.
     'harmonize',
@@ -2198,6 +2244,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyFromGraveyard',
   /** "Spend this mana only to cast spells you don't own" (CR 106.6, 108.3, Thieving Varmint): `ManaAbility.spendOnly.notOwned`. */
   'manaSpendOnlyNotOwned',
+  /** "Spend this mana only to turn permanents face up" (CR 106.6, 701.40b, Overgrown Zealot): `ManaAbility.spendOnly.turnFaceUp`. */
+  'manaSpendOnlyTurnFaceUp',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
@@ -2240,6 +2288,16 @@ export const ABILITY_FEATURES = [
   'lookTakeKinds',
   /** "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, CR 401.2, 406.3): the engine's `lookAtTop` with `from`. */
   'lookTakeFromPlayer',
+  /** "Look at the top three cards of target player's library" (Orcish Spy, CR 401.2, 701.20e): the engine's `lookAtTop` with nothing taken (`take.max` 0, `rest` `top`). */
+  'lookTakeNothing',
+  /** "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3): the engine's `ChooseSelector.revealHand` with `fromHandOf`. */
+  'chooseRevealedHand',
+  /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
+  'exileTopRandomOpponent',
+  /** "When you cast a spell this way, its owner loses life equal to its mana value" (The Ruinous Powers, CR 603.7): the engine's `mayPlay.whenCast`. */
+  'mayPlayWhenCast',
+  /** "Manifest dread" (CR 701.62a): the engine's `lookAtTop` with `take.to` `manifest`, one card of the top two put onto the battlefield face down and the rest into the graveyard. */
+  'lookTakeManifest',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -2248,6 +2306,12 @@ export const ABILITY_FEATURES = [
   'chooseFromExileOwnedBy',
   /** "Return it to the battlefield face down ... It's a Forest land" (Yedora, CR 708.2, 708.3, 613.2b): the engine's `moveToZone.faceDownAs`, a face-down land with the Forest subtype. */
   'moveFaceDownLand',
+  /** "Manifest a card from your hand" (Scroll of Fate, CR 701.40a): the engine's `moveToZone.faceDownAs` `manifest` of a `choose` of a card of the hand. */
+  'manifestFromHand',
+  /** "Return this card from your graveyard to the battlefield face down" (Deathmist Raptor, CR 708.2a, 708.3, 702.37e): the engine's `moveToZone.faceDownAs` `morph`. */
+  'moveFaceDownMorph',
+  /** "Megamorph {4}{G}" (CR 702.37b): the engine's `megamorph` flag of the morph alternative cost, a +1/+1 counter as the permanent is turned face up for it. */
+  'megamorph',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
   'revealUntilCount',
   /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
@@ -2258,6 +2322,8 @@ export const ABILITY_FEATURES = [
   'castFreeFromGraveyard',
   /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
   'castFreeCreatureGains',
+  /** "You may cast that card by discarding a card rather than paying its mana cost" (The Infamous Cruelclaw, CR 118.9): the engine's `castFree` with `payInstead` one discard. */
+  'castFreeDiscardInstead',
   /** "Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (Nashi, Moon Sage's Scion, CR 118.9, 601.2): the engine's `mayPlay.oneOf` and `mayPlay.lifeForMana`. */
   'mayPlayOneLifeForMana',
   /** "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain, CR 608.2g, 402.3): the engine's `castFree.fromHand`. */
@@ -2307,6 +2373,8 @@ export const ABILITY_FEATURES = [
   'escalateTapCost',
   /** "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a, Thieving Skydiver): the engine's `kicker` keyword with an {X} in its cost and `xNotZero`. */
   'kickerX',
+  /** "Kicker—Sacrifice a creature." (CR 702.33a, 118.8, 701.21a): the engine's `kicker` keyword with a `sacrifice` cost of one permanent chosen by a filter, paid after the mana. */
+  'kickerSacrifice',
   /** "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library" (CR 115.1, 108.3, 401.4): a `TargetSpec` `objectOrSpell` with a `card` half, and an `ownerPutsOnLibrary` that moves a spell or a graveyard card. */
   'spellPermanentOrCard',
   'opponentsControlling',
@@ -2444,6 +2512,8 @@ export const SELECTOR_KINDS = [
   'moved',
   /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
   'putCountersOn',
+  /** "For each permanent put into a graveyard this way" (CR 608.2c): the engine's `putIntoGraveyardThisWay`. */
+  'putIntoGraveyardThisWay',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
   'colorChoice',
   /**
@@ -2568,6 +2638,8 @@ export const SELECTOR_KINDS = [
   'firstCastFromExileThisTurn',
   /** "A spell that mana from a Treasure was spent to cast" (CR 601.2h, Rain of Riches): the engine's `ObjectFilter.manaSpentFromSubtype`. */
   'manaSpentFromSubtype',
+  /** "If it has madness" (CR 702.35a, Anje Falkenrath): the engine's `ObjectFilter.hasMadness`. */
+  'hasMadness',
   /** "The first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2i, Rain of Riches): the engine's `ObjectFilter.firstManaSpentFromSubtypeThisTurn`. */
   'firstManaSpentFromSubtypeThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
@@ -2763,6 +2835,8 @@ export const SELECTOR_KINDS = [
   'modified',
   /** "A goaded creature" (CR 701.15b): the engine's `ObjectFilter.goaded`. */
   'goaded',
+  /** "A face-down permanent", "a face-up creature" (CR 708.2): the engine's `ObjectFilter.facing`. */
+  'faceDown',
 ] as const;
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
@@ -2879,6 +2953,8 @@ export const CONDITION_KINDS = [
   'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
+  /** "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h): the engine's `manaSpentFromSubtype`. */
+  'manaSpentFromSubtype',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
   'castFromZone',
   /** "When this creature enters, if you cast it" (CR 603.4): the engine's `wasCast`. */
@@ -2960,6 +3036,8 @@ export const CONDITION_KINDS = [
   /** The intervening "if" of the two abilities soulbond stands for (CR 702.95a, D-286): the engine's `soulbondReady`; built by the engine, refused in card data. */
   'soulbondReady',
   'unlessPays',
+  /** "As long as ~'s power is even" (Kianne, Corrupted Memory, CR 107.1): the engine's `thisPowerParity`. */
+  'thisPowerParity',
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',
@@ -3219,6 +3297,8 @@ export const AMOUNT_KINDS = [
   'lifeGainedThisTurn',
   /** "The amount of life you lost this turn" (Betor, CR 119.3): the engine's `controllerLifeLostThisTurn`, the controller's own life lost, valid anywhere an amount is. */
   'controllerLifeLostThisTurn',
+  /** "Each 1 life your opponents have lost this turn" (Bloodsoaked Insight, CR 119.3): the engine's `opponentsLifeLostThisTurn`, the total the controller's opponents lost. */
+  'opponentsLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
   /** "The greatest power among creatures you controlled as you cast this spell" (CR 601.2i): the engine's `asCast`, worked out when the spell is cast. */
@@ -3256,6 +3336,8 @@ export const AMOUNT_KINDS = [
   'colorsAmong',
   /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
   'greatestPowerAmong',
+  /** "The number of +1/+1 counters on lands you control" (CR 122.1, 604.3): the engine's `countersAmong`, a characteristic-defining ability's amount. */
+  'countersAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "The number of different mana values among instant and sorcery cards in your graveyard" (CR 202.3, issue 121): the engine's `differentManaValuesAmong`. */
@@ -3369,6 +3451,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'escape',
   'harmonize',
   'madness',
@@ -3445,6 +3528,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyNotGeneric: true,
   manaSpendOnlyFromGraveyard: true,
   manaSpendOnlyNotOwned: true,
+  manaSpendOnlyTurnFaceUp: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   manaPutCounter: true,
@@ -3466,15 +3550,24 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseExileUntilLeaves: true,
   lookTakeKinds: true,
   lookTakeFromPlayer: true,
+  lookTakeNothing: true,
+  chooseRevealedHand: true,
+  exileTopRandomOpponent: true,
+  mayPlayWhenCast: true,
+  lookTakeManifest: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   chooseFromExileOwnedBy: true,
   moveFaceDownLand: true,
+  manifestFromHand: true,
+  moveFaceDownMorph: true,
+  megamorph: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
+  castFreeDiscardInstead: true,
   castFreeFromHand: true,
   mayPlayOneLifeForMana: true,
   copySpellPermanentGains: true,
@@ -3499,6 +3592,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   spellPermanentOrCard: true,
   escalateTapCost: true,
   kickerX: true,
+  kickerSacrifice: true,
   moveChoosePlayers: true,
   attackTaxUntil: true,
   sacrificeX: true,
@@ -3536,6 +3630,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   playerCantCastSpells: true,
   mill: true,
   manifest: true,
+  turnFaceUp: true,
   dealDamage: true,
   destroy: true,
   exile: true,
@@ -3656,6 +3751,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   takeInitiative: true,
+  earthbend: true,
   venture: true,
   extraTurn: true,
   loseLifeManaValue: true,
@@ -3731,6 +3827,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   proliferate: true,
   eachPlayerChoosesDestroy: true,
   chooseOnePerOpponentDestroy: true,
+  controllersMayExile: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,
@@ -3763,6 +3860,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   becomesTapped: true,
   becomesUntapped: true,
   becomesMonstrous: true,
+  turnedFaceUp: true,
   discarded: true,
   diesBatch: true,
   entersBatch: true,
@@ -4023,6 +4121,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   energy: true,
   energyAmount: true,
   returnToHand: true,
+  exilePermanent: true,
 };
 
 /**

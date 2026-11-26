@@ -31,7 +31,12 @@ import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { CHOSEN_BY_PLAYER_NOUN_RULES } from './chosen-by-player';
-import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER, NOUN_ITS_OWNER } from './controller';
+import {
+  NOUN_EACH_EXILED_CONTROLLER,
+  NOUN_EACH_GRAVEYARDED_CONTROLLER,
+  NOUN_ITS_CONTROLLER,
+  NOUN_ITS_OWNER,
+} from './controller';
 import { COUNTER_BLITZ_C_NOUN_RULES } from './counter-blitz-c';
 import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
@@ -90,7 +95,7 @@ import { SAME_CONTROLLER_TARGET_NOUN_RULES } from './same-controller-target';
 import { SAME_NAME_NOUN_RULES, SAME_NAME_TOKENS_NOUN_RULES } from './same-name';
 import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_EARLY_NOUN_RULES, STACK_ABILITY_NOUN_RULES } from './stack-ability';
-import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
+import { NOUN_SELF_AND_GROUP, NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -1250,6 +1255,7 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  NOUN_SELF_AND_GROUP,
   // Desert Bloom deck, group G5 (Dune Chanter): "lands you control and land cards you own that aren't on the battlefield", which `noun.plain-permanents` would stop in the middle of.
   ...DESERT_BLOOM_NOUN_RULES,
   // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
@@ -1280,6 +1286,8 @@ export const NOUN_RULES = [
   NOUN_ITS_OWNER,
   // Issue 279 (Curse of the Swine): "for each creature exiled this way, its controller".
   NOUN_EACH_EXILED_CONTROLLER,
+  // Terastodon: "for each permanent put into a graveyard this way, its controller".
+  NOUN_EACH_GRAVEYARDED_CONTROLLER,
   NOUN_ATTACKED_BY_IT,
   ...SUBJECT_NOUN_RULES,
   ...CHOOSE_NOUN_RULES,

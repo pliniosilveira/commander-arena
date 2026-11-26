@@ -643,6 +643,7 @@ class Binder {
       case 'colorsOf':
       case 'toughnessOf':
       case 'countersOn':
+      case 'countersOnGroup':
       case 'aggregate':
       case 'colorsAmong':
       case 'cardTypesAmong':
@@ -921,6 +922,24 @@ class Binder {
         },
       });
     }
+    // Experimental Lab (CR 701.62a, 400.7j): "Manifest dread, then put two +1/+1 counters ... on that creature": "that creature" is the creature manifest dread manifested, which the
+    // engine names `moved`. Pushed after the clause's own nouns, so that it is the most recent object of the text.
+    if (clause.verb === 'manifestDread' || clause.verb === 'manifestDreadTwice') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'creature', types: ['creature'] },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
     if (clause.verb === 'exileChosenCard') {
       this.antecedents.push({
         kind: 'object',
@@ -1084,6 +1103,8 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   'countersAdded',
   // CR 701.37: the permanent has just become monstrous, and is on the battlefield.
   'becomesMonstrous',
+  // CR 701.40b, 708.8: the permanent has just been turned face up, and is on the battlefield.
+  'turnedFaceUp',
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',

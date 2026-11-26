@@ -44,6 +44,13 @@ const EXILE_UNTIL_CAST_FREE: Lowering<IrClause, Effects> = {
       if (!ability.ok) return ability;
       creatureGains = [{ kind: 'keyword', keyword: { kind: 'haste' } }, ability.value];
     }
+    // The Infamous Cruelclaw (CR 118.9, 701.9a): "You may cast that card by discarding a card rather than paying its mana cost".
+    const discard = arg(clause, 'discardInstead');
+    if (discard !== undefined) {
+      const blockedDiscard = missingFeatures(['ability:castFreeDiscardInstead']);
+      if (discard.kind !== 'flag' || creatureGains !== undefined) return failure(clause);
+      if (blockedDiscard.length > 0) return failure(clause, blockedDiscard);
+    }
     const effects: Effect[] = [
       { kind: 'exileUntilFound', players: from.value, filter: filter.value },
       {
@@ -51,6 +58,7 @@ const EXILE_UNTIL_CAST_FREE: Lowering<IrClause, Effects> = {
         objects: { kind: 'moved' },
         filter: filter.value,
         ...(creatureGains === undefined ? {} : { creatureGains }),
+        ...(discard === undefined ? {} : { payInstead: [{ kind: 'discard' as const, count: 1 }] }),
       },
     ];
     return { ok: true, value: effects, rule: clause.rule };

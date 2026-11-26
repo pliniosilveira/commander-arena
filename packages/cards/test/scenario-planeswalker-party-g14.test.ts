@@ -63,3 +63,24 @@ describe('Sarkhan the Masterless', () => {
     attack(2).expect.damage('bear', 0);
   });
 });
+
+// CR 205.1a: "becomes a 4/4 red Dragon creature" sets the card type, so the planeswalker type goes, and with it the subtypes of a planeswalker (CR 205.3d).
+describe('Sarkhan the Masterless +1, the type line', () => {
+  test('a walker becomes a Dragon creature only: its planeswalker subtype is gone with its type', () => {
+    const WALKER = 'SYNTHETIC Loyalty Walker';
+    const g = scenario({ seats: 2 })
+      .define(SARKHAN)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(SARKHAN.name, { counters: { loyalty: 5 } })
+      .battlefield(WALKER, { counters: { loyalty: 3 } })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(SARKHAN.name, { ability: 1 });
+    g.passAll();
+    g.expect.derived(WALKER, { types: ['creature'], subtypes: ['Dragon'] });
+    g.expect.derived(SARKHAN.name, { types: ['creature'], subtypes: ['Dragon'] });
+  });
+});

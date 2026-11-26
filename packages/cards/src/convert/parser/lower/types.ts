@@ -90,6 +90,11 @@ export interface LowerContext {
    */
   madeAToken: boolean;
   /**
+   * True right after manifest dread, and through the counters or the turning face up that follow it (CR 701.62a, 608.2c, 400.7j): "it" and "that creature" are the creature it manifested, the
+   * engine's `moved` (the card put into the graveyard is not what `moved` names). Any other instruction makes it false. Filled by `lowerSentences` as each clause is lowered.
+   */
+  manifestedCreature: boolean;
+  /**
    * True right after an instruction that made the tokens the engine's `moved` names (D-643, Prismari group 1: `createToken`, `createCopies`, `populate`): "They gain haste.",
    * "The token created this way gains haste.", "Exile them at the beginning of the next end step." and "Sacrifice those tokens." are about exactly those tokens, and are lowered only
    * then. Any later instruction that moves, destroys, exiles or sacrifices something else makes it false again. Filled by `lowerSentences` as each clause is lowered.
@@ -499,6 +504,7 @@ export function newContext(
     becomesTargetOf: null,
     removed: new Set(),
     madeAToken: false,
+    manifestedCreature: false,
     tokensMade: false,
     lastToken: null,
     lowered: 0,
