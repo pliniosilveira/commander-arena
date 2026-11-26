@@ -1238,6 +1238,8 @@ export type Instruction =
       readonly seat?: SeatId;
       /** `chooseObjects.perVote` (CR 701.38a): the filter is read for `seat` as "you", and the choice joins what `id` already names instead of replacing it (`first` starts it afresh). */
       readonly asVoter?: { readonly first: boolean };
+      /** `chooseObjects.perPlayer` (CR 101.4): `seat` chooses, the filter is read for the controller, and the choice joins what `id` already names (`first` starts it afresh). */
+      readonly joined?: { readonly first: boolean };
       /** `chooseObjects.perChoice` (CR 101.4): the candidates are the permanents of `seat` the filter matches, `seat` is not the chooser, and the choice joins what `id` already names (`first` starts it afresh). */
       readonly ofPlayer?: { readonly seat: SeatId; readonly first: boolean };
       /** The effect runs as the player asked by a `playersMay` (`runsAs: 'chooser'`, CR 608.2d): the filter is read for `seat` as "you". */

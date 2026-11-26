@@ -6557,6 +6557,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (
         e.chooser === undefined &&
         e.perChoice === undefined &&
+        e.perPlayer === undefined &&
         e.filter.controller !== 'you' &&
         !(e.filter.controller === undefined && e.exactly !== true) &&
         !(e.filter.controller === undefined && e.filter.attachedTo?.kind === 'sacrificedCost')
@@ -6568,6 +6569,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
+      // CR 101.4, 608.2d (Sadistic Shell Game): each player chooses in turn, the filter read for the controller.
+      if (e.perPlayer !== undefined) {
+        if (e.perPlayer !== true)
+          issue(out, `${path}.perPlayer`, 'perPlayer must be true when present');
+        if (
+          e.chooser !== undefined ||
+          e.perVote !== undefined ||
+          e.perChoice !== undefined ||
+          e.anyNumber !== undefined ||
+          e.fromMoved !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.perPlayer`,
+            'perPlayer goes with no chooser, perVote, perChoice, anyNumber or fromMoved',
+          );
+        }
+      }
       // CR 101.4, 608.2d (Seize the Spotlight): "for each player who chose fame, gain control of a creature that player controls": the controller chooses among the permanents of each player who chose.
       if (e.perChoice !== undefined) {
         if (e.chooser !== undefined || e.perVote !== undefined) {

@@ -599,4 +599,36 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "At the beginning of each of your postcombat main phases, look at the top X cards of your library, where X is the total amount of life your opponents lost this turn. Exile one of those
+  //  cards and put the rest on the bottom of your library in a random order. You may play the exiled card this turn."
+  singleFace({
+    name: 'SYNTHETIC Patient Scion',
+    manaCost: ['2', 'B', 'R'],
+    types: ['creature'],
+    subtypes: ['Vampire'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      'At the beginning of each of your postcombat main phases, look at the top X cards of your library, where X is the total amount of life your opponents lost this turn. Exile one of those cards and put the rest on the bottom of your library in a random order. You may play the exiled card this turn.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'main2', whose: 'you' },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'lookAtTop',
+              count: { kind: 'opponentsLifeLostThisTurn' },
+              take: { filter: {}, max: 1, min: 1, to: 'exile' },
+              rest: 'bottomRandom',
+            },
+            { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+          ],
+        },
+      },
+    ],
+  }),
 ];

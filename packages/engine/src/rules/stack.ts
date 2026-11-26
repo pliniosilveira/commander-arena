@@ -448,6 +448,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 // CR 701.38a (`perVote`): the choices of every vote are one set, a permanent chosen for several votes once.
                 [head.id]:
                   (head.asVoter === undefined || head.asVoter.first) &&
+                  (head.joined === undefined || head.joined.first) &&
                   (head.ofPlayer === undefined || head.ofPlayer.first)
                     ? head.chosen
                     : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],

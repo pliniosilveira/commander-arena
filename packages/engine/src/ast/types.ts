@@ -2771,6 +2771,13 @@ export type Effect =
        */
       readonly perChoice?: string;
       /**
+       * "Starting with the next opponent in turn order, each player chooses a creature you don't control" (Sadistic Shell Game; CR 101.4, 608.2d): each player still in the game chooses `count`
+       * permanents the filter matches, one player after the other, in turn order starting with the next opponent of the controller and ending with the controller, each seeing the choices before
+       * theirs. The filter is read for the controller of the ability ("you don't control"), whoever chooses; all the choices are remembered under `id` (a permanent chosen by several players
+       * once). Not with `chooser`, `perVote`, `perChoice`, `anyNumber` or `fromMoved`.
+       */
+      readonly perPlayer?: true;
+      /**
        * "Proliferate, then choose any number of permanents you control that had a counter put on them this way" (Ripples of Potential, CR 608.2d, 701.34a): the controller chooses none, some
        * or all of the candidates, so `count` is not a limit (write 1). Not with `exactly`.
        */

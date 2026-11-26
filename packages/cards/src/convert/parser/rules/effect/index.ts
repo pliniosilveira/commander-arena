@@ -128,6 +128,7 @@ import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLEET_E_EFFECT_RULES } from './fleet-e';
 import { FLICKER_RULES } from './flicker';
 import { FLINT_RIDER_EFFECT_RULES } from './flint-riders';
+import { FLORIAN_EFFECT_RULES } from './florian';
 import { FOOD_D_EFFECT_RULES } from './food-d';
 import { GAIN_RULES } from './gain';
 import { GAIN_KEYWORD_ABILITY_EFFECT_RULES } from './gain-keyword-ability';
@@ -1869,4 +1870,6 @@ export const EFFECT_RULES = [
   // Vial Smasher the Fierce: "choose an opponent at random" and damage to that player or a planeswalker they control; after the rules that read longer sentences starting the same way
   // ("Choose an opponent at random that ~ didn't attack ...").
   ...RANDOM_OPPONENT_EFFECT_RULES,
+  // Florian, Voldaren Scion: the look at the top cards by the life the opponents lost, one exiled and played this turn.
+  ...FLORIAN_EFFECT_RULES,
 ];

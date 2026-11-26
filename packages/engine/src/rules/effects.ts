@@ -1060,6 +1060,28 @@ function runEffect(
           })),
         );
       }
+      // CR 101.4, 608.2d (Sadistic Shell Game): "Starting with the next opponent in turn order, each player chooses a creature you don't control": one choice for each player still in the game, the
+      // next opponent first and the controller last, the filter read for the controller, all remembered under the one id.
+      if (effect.perPlayer === true) {
+        const order = seatsInOrder(state, ctx.controller).filter(
+          (seat) => !getSeat(state, seat).hasLost,
+        );
+        const starting = [...order.slice(1), ...order.slice(0, 1)];
+        return done(
+          state,
+          [],
+          starting.map((seat, i) => ({
+            kind: 'chooseObjects' as const,
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
+            seat,
+            joined: { first: i === 0 },
+            chosen: null,
+          })),
+        );
+      }
       // CR 101.4, 608.2d (Seize the Spotlight): "for each player who chose fame, gain control of a creature that player controls": one choice for each player who chose the option, by the
       // controller, among the permanents the filter matches that player controls, all remembered under the one id.
       if (effect.perChoice !== undefined) {
