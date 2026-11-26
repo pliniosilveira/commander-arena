@@ -328,9 +328,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'exile': {
       // "Exile two creature cards from your graveyard" (stage P72, D-232, CR 118.1, 406.1): the engine's `exileFromGraveyard`, the cost of an ordinary activated ability.
       // CR 702.34a, 107.3a (Summons of Saruman, "Flashback—{3}{U}{R}, Exile X cards from your graveyard"): in a flashback cost only the X announced as the spell is cast.
+      // CR 118.8, 601.2b (Skaab Ruinator, "As an additional cost to cast this spell, exile three creature cards from your graveyard"): a fixed number of the kind, chosen as the spell is cast.
       if (
         options.ordinary !== true &&
-        !(options.flashback === true && cost.what.count?.kind === 'x')
+        !(options.flashback === true && cost.what.count?.kind === 'x') &&
+        !(options.additional === true && cost.what.count?.kind !== 'x')
       )
         return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
@@ -341,7 +343,12 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
       // The engine's flashback cost exiles cards of any kind: a kind of card ("X creature cards") is not read there.
-      if (options.ordinary !== true && filter.ok && Object.keys(filter.value).length > 0)
+      if (
+        options.ordinary !== true &&
+        options.additional !== true &&
+        filter.ok &&
+        Object.keys(filter.value).length > 0
+      )
         return failure(cost);
       return filter.ok
         ? ok({

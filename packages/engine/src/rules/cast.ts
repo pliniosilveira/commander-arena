@@ -1185,6 +1185,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         ...(cost.discardFilter === undefined ? {} : { discardFilter: cost.discardFilter }),
         behold: cost.behold,
         exile: cost.exile,
+        ...(cost.exileGraveyard === undefined ? {} : { exileGraveyard: cost.exileGraveyard }),
         ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),
         tap: cost.tap,
         ...(cost.blight === undefined ? {} : { blight: cost.blight }),

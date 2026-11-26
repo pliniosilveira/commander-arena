@@ -71,6 +71,8 @@ function lowerChoice(
   if (one === undefined || other === undefined || options.length > 3) return failure(ability);
   const costs = options.flat();
   if (costs.some((c) => c.kind === 'payXLife' || c.kind === 'discardX')) return failure(ability);
+  // CR 118.8: the engine pays an exile of graveyard cards only as a cost of its own, not as one way of a choice.
+  if (costs.some((c) => c.kind === 'exileFromGraveyard')) return failure(ability);
   const missing = missingFeatures([
     ...costs.filter((c) => c.kind !== 'behold').map((c): FeatureRef => `cost:${c.kind}`),
     'ability:additionalCostChoice',
