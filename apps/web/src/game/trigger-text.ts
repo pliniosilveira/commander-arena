@@ -89,6 +89,8 @@ const SAYABLE: ReadonlySet<string> = new Set([
   // D-133: nontoken, non-Zombie, colorless, with and without a keyword.
   'token',
   'notSubtypes',
+  // CR 700.12: "outlaw" and "non-outlaw".
+  'outlaw',
   'colorless',
   'notColors',
   'keywords',
@@ -136,6 +138,7 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
     // D-135 (CR 205.4): "a nonbasic land".
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
+    filter.outlaw === true ? 'outlaw' : filter.outlaw === false ? 'non-outlaw' : '',
     filter.colorless === true ? 'colorless' : '',
     (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),
     (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' and '),
