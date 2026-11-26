@@ -1,5 +1,5 @@
 {
-  "parserVersion": 214,
+  "parserVersion": 215,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -1129,6 +1129,14 @@
       "reasons": [],
       "ast": "9f8edb4f"
     },
+    "11a28f60-2456-4ed5-b1cc-03c395f55e59": {
+      "name": "Vulturous Zombie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "35cfe455"
+    },
     "11a46cb6-ab01-4630-9541-782db2ef3b91": {
       "name": "Map the Frontier",
       "group": "acceptance",
@@ -1465,6 +1473,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "63bacb23"
+    },
+    "17975a20-2c13-4325-be1e-0bcda5063a2d": {
+      "name": "Terastodon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "17017803"
     },
     "17a34f8d-a80f-4331-8be5-06cbb9d10d7b": {
       "name": "Terramorph",
@@ -1858,6 +1874,14 @@
       "reasons": [],
       "ast": "47a26a63"
     },
+    "1f4743ed-4e91-4344-9409-c8ede5c4804d": {
+      "name": "Bloodspore Thrinax",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da837c11"
+    },
     "1f91297a-ec2b-4ea8-9198-aa1daac20ff8": {
       "name": "Metallic Mimic",
       "group": "training",
@@ -1881,6 +1905,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "16010b8f"
+    },
+    "1fb5c014-9366-4f9e-9728-303ff766002b": {
+      "name": "Extractor Demon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "729610e6"
     },
     "1fbb2a7c-8093-4729-b8fe-cf032d99470f": {
       "name": "Fell the Mighty",
@@ -3777,6 +3809,14 @@
       "reasons": [],
       "ast": "87ee75cc"
     },
+    "3cbdf37b-7fe3-4791-b33c-8591158b0ce5": {
+      "name": "Primal Growth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "83028fdd"
+    },
     "3cc4d6f4-79b2-4210-84de-a0febf81eb67": {
       "name": "Slash of Light",
       "group": "acceptance",
@@ -4746,6 +4786,14 @@
       "reasons": [],
       "ast": "dc997d74"
     },
+    "4e769107-0f32-4181-9e57-ffebc2228d3a": {
+      "name": "Rise from the Grave",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "96377565"
+    },
     "4eb1414c-ba12-4bae-b410-79d51925d6fa": {
       "name": "Avalanche of Sector 7",
       "group": "acceptance",
@@ -4753,6 +4801,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "aa3ed9d5"
+    },
+    "4edbaac4-dcb3-40b4-abd7-ff2683bd366d": {
+      "name": "Champion of Stray Souls",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fcea107d"
     },
     "4ef583ab-e0a0-4e4b-bd65-af766038b1fd": {
       "name": "Ghost Vacuum",
@@ -8658,6 +8714,14 @@
       "reasons": [],
       "ast": "946512a5"
     },
+    "90629e9c-83c0-4eca-b4ed-d0494ded6704": {
+      "name": "Centaur Vinecrasher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9eca4451"
+    },
     "9070c98b-fd01-4eeb-a4ec-fc464946c7c0": {
       "name": "Stridehangar Automaton",
       "group": "acceptance",
@@ -9105,6 +9169,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "124087ac"
+    },
+    "97d61346-bd53-4eb8-a920-6ae0382eb20d": {
+      "name": "Thief of Blood",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d5397411"
     },
     "97e260c9-3e78-402b-8d97-af4b515b278b": {
       "name": "Hammers of Moradin",
@@ -11191,6 +11263,14 @@
       "reasons": [],
       "ast": "2783dba8"
     },
+    "b9019332-2f02-48d9-be0a-a2b41b79e136": {
+      "name": "Sever the Bloodline",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a914ddeb"
+    },
     "b91b65b3-b35c-460e-a49b-333000a9a519": {
       "name": "Serra Avenger",
       "group": "training",
@@ -12015,6 +12095,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5bbfa373"
+    },
+    "c7ee1b21-d02e-49ef-95d6-d6dbf2f886ae": {
+      "name": "Eldrazi Monument",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e926b807"
     },
     "c7f1a49a-cc22-432f-bf3e-50ba61982b87": {
       "name": "Sewer Nemesis",
@@ -12954,6 +13042,14 @@
       "reasons": [],
       "ast": "1d05c81c"
     },
+    "d7407920-7596-497a-a135-b9343909a0cb": {
+      "name": "Kessig Cagebreakers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "79241754"
+    },
     "d751580b-bb72-4d1d-be27-d0410f883b2a": {
       "name": "Inspired Skypainter // Maestro's Gift",
       "group": "acceptance",
@@ -13610,6 +13706,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4c1e5bba"
+    },
+    "e275cbfb-3d25-4189-84f0-3162eadc7d65": {
+      "name": "Diabolic Servitude",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "51f99e58"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -15363,8 +15467,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1618,
-      "total": 1634
+      "supported": 1631,
+      "total": 1647
     }
   }
 }
