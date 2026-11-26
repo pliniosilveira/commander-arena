@@ -30,7 +30,7 @@ describe('Anje Falkenrath (CR 603.4, 701.9a, 702.35a)', () => {
     expect(validateCard(ANJE)).toEqual([]);
     expect(ANJE.faces[0]?.abilities[2]).toMatchObject({
       kind: 'triggered',
-      trigger: { kind: 'discarded', who: 'you', filter: { keywords: ['madness'] } },
+      trigger: { kind: 'discarded', who: 'you', filter: { hasMadness: true } },
     });
   });
 
@@ -40,7 +40,7 @@ describe('Anje Falkenrath (CR 603.4, 701.9a, 702.35a)', () => {
       .seat(0)
       .library(...FILLER)
       .hand(discard)
-      .battlefield(ANJE.name, { turnsOnBattlefield: 1 })
+      .battlefield(ANJE.name)
       .seat(1)
       .library(...FILLER)
       .at('precombatMain', { active: 0, turn: 3 })

@@ -393,17 +393,17 @@ export function matchesFilterWith(
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.
   if (filter.goaded === true && d.goaded !== true) return false;
+  if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
+    return false;
+  }
+  // CR 702.35a (Anje Falkenrath: "if it has madness"): madness is a cost the card lists (`alternativeCosts`), not a keyword ability of the permanent; read from either face of the card.
   if (
-    filter.keywords &&
-    !filter.keywords.every(
-      (k) =>
-        d.keywords?.includes(k) === true ||
-        // CR 702.35a (Anje Falkenrath: "if it has madness"): madness is a cost the card lists (`alternativeCosts`), not a keyword ability of the permanent; read from either face of the card.
-        (k === 'madness' &&
-          obj.card !== null &&
-          definitionOf(state, obj.card).faces.some((f) =>
-            f.alternativeCosts?.some((a) => a.kind === 'madness'),
-          )),
+    filter.hasMadness === true &&
+    !(
+      obj.card !== null &&
+      definitionOf(state, obj.card).faces.some((f) =>
+        f.alternativeCosts?.some((a) => a.kind === 'madness'),
+      )
     )
   ) {
     return false;

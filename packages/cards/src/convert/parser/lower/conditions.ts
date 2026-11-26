@@ -879,6 +879,9 @@ export function lowerCondition(
         filter: { manaValue: { cmp: 'atLeast', value: test.atLeast } },
       });
     }
+    case 'discardedCardHasKeyword':
+      // Anje Falkenrath: a part of the filter of a discard trigger (`lowerTriggered`), no condition of its own.
+      return failure(c, []);
     case 'manaSpentFromSubtype': {
       // CR 601.2h, 205.3i (Smaug, Wicked Worm): "it" is the spell that caused a cast trigger; in any other text no spell is named, so it is not lowered.
       if (ctx?.castTrigger !== true) return failure(c, []);

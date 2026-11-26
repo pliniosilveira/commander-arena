@@ -907,6 +907,11 @@ export interface ObjectFilter {
    */
   readonly manaSpentFromSubtype?: string;
   /**
+   * "Whenever you discard a card, if it has madness" (Anje Falkenrath, CR 702.35a, 603.4): the card has madness: one of its faces lists a madness cost (`CardFace.alternativeCosts`). Read from
+   * the card itself, so it also reads a card in a graveyard or in exile, where it has no permanent to have a keyword. `true` only.
+   */
+  readonly hasMadness?: true;
+  /**
    * "The first spell you cast each turn that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2i): no other spell its caster cast this turn, before it, had mana spent on
    * it that a source of the subtype `manaSpentFromSubtype` made (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Needs `manaSpentFromSubtype`. Read as `firstXSpellThisTurn` is.
    */

@@ -1216,6 +1216,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'firstCastFromExileThisTurn',
     // Most Wanted deck (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast" (`ObjectFilter.manaSpentFromSubtype`, `firstManaSpentFromSubtypeThisTurn`).
     'manaSpentFromSubtype',
+    // Flint deck (Anje Falkenrath): "if it has madness" (`ObjectFilter.hasMadness`).
+    'hasMadness',
     'firstManaSpentFromSubtypeThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
@@ -2083,8 +2085,6 @@ export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'flash',
   // CR 702.85a (Cascade): "you cast a spell with cascade" (Aurora Phoenix): cascade is printed or granted by an effect that applies as the spell is cast; a filter reads its presence.
   'cascade',
-  // CR 702.35a (Madness): "if it has madness" (Anje Falkenrath): the card a discard trigger is about, in the graveyard or in exile; madness is printed, never granted, so only a filter reads it.
-  'madness',
 ];
 
 /**
@@ -2562,6 +2562,8 @@ export const SELECTOR_KINDS = [
   'firstCastFromExileThisTurn',
   /** "A spell that mana from a Treasure was spent to cast" (CR 601.2h, Rain of Riches): the engine's `ObjectFilter.manaSpentFromSubtype`. */
   'manaSpentFromSubtype',
+  /** "If it has madness" (CR 702.35a, Anje Falkenrath): the engine's `ObjectFilter.hasMadness`. */
+  'hasMadness',
   /** "The first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2i, Rain of Riches): the engine's `ObjectFilter.firstManaSpentFromSubtypeThisTurn`. */
   'firstManaSpentFromSubtypeThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */

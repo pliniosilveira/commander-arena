@@ -469,6 +469,9 @@ export function checkFilter(
   ) {
     issue(out, `${path}.manaSpentFromSubtype`, 'manaSpentFromSubtype must be a subtype name');
   }
+  if (f.hasMadness !== undefined && f.hasMadness !== true) {
+    issue(out, `${path}.hasMadness`, 'hasMadness must be true when present');
+  }
   if (f.firstManaSpentFromSubtypeThisTurn === true && f.manaSpentFromSubtype === undefined) {
     issue(
       out,

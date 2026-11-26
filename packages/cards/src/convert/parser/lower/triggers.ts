@@ -1783,9 +1783,11 @@ function lowerTriggeredAbility(
     if (events.length !== 1 || only?.kind !== 'discarded' || only.batch === true) {
       return failure(ifWritten, []);
     }
+    const blocked = missingFeatures(['selector:hasMadness']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers[0] = {
       ...only,
-      filter: { ...(only.filter ?? {}), keywords: [ifWritten.test.keyword] },
+      filter: { ...(only.filter ?? {}), hasMadness: true },
     };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
