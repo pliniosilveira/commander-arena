@@ -64,7 +64,7 @@ export interface PlanRecord extends PlanWork {
   /** The turn and the window it was made in. */
   readonly turn: number;
   readonly window: Window;
-  /** How many lines were played one turn further (`heuristic-plan-deep.ts`); 0 when the deepening did not run. */
+  /** How many lines were played one turn further on every scenario (`heuristic-plan-deep.ts`; lines the halving dropped or the engine refused do not count); 0 when the deepening did not run. */
   readonly deepLines: number;
   /** Whether the deeper values chose a line other than the one the horizon 1 values chose. */
   readonly deepChanged: boolean;

@@ -14,10 +14,10 @@
  * one, and the benchmark (a logical clock) plays as the web app does, unless the clock cuts it.
  *
  * DEEPENING (step 4). A planning with two players may look one more turn ahead at its best lines
- * (`heuristic-plan-deep.ts`). That phase draws from the same budget with every bound stretched `DEEP_FACTOR`
- * times (`Budget.deep`): the work budget and limit, and the two shares of the clock. So a decision that deepens
- * stops searching at `DEEP_FACTOR * SEARCH_SHARE` of the time budget (6 s of 5 s) and drops a running play-out
- * at `DEEP_FACTOR * HARD_SHARE` of it (7 s), still inside the host's watchdog (SPEC 9, A28).
+ * (`heuristic-plan-deep.ts`). That phase draws from the same budget with the work budget and limit stretched
+ * `DEEP_FACTOR` times (`Budget.deep`) and its own shares of the clock. So a decision that deepens stops
+ * searching at `DEEP_SEARCH_SHARE` of the time budget (5.5 s of 5 s) and drops a running play-out at
+ * `DEEP_HARD_SHARE` of it (6.5 s), a full second inside the host's watchdog at 7.5 s (SPEC 9, A28).
  *
  * CLOCK. The agent never reads a clock itself: `ctx.now` is injected (SPEC 9, A28). It only guards the time
  * limit (SPEC 9: at most 5 s a decision, D-172), far above what a decision normally costs: a search starts no
@@ -81,11 +81,18 @@ export const SEARCH_SHARE = 0.6;
 export const HARD_SHARE = 0.7;
 
 /**
- * How many times the work bounds and the shares of the clock are stretched for the deepening phase of a
- * planning (a bound of the search, not a weight). 2 puts the search's stop at 6 s and the play-out's at 7 s of
- * the 5 s budget, under the host's watchdog at 7.5 s (SPEC 9).
+ * How many times the work bounds are stretched for the deepening phase of a planning (a bound of the
+ * search, not a weight).
  */
 export const DEEP_FACTOR = 2;
+
+/**
+ * The shares of the time budget at which the deepening phase starts no candidate and drops a running
+ * play-out: 5.5 s and 6.5 s of the 5 s budget, so a decision that is cut still has a second before the
+ * host's watchdog at 7.5 s replaces its answer (SPEC 9).
+ */
+export const DEEP_SEARCH_SHARE = 1.1;
+export const DEEP_HARD_SHARE = 1.3;
 
 /** What stops a search or drops a play-out: the safety clock, or the work budget. */
 export type Cut = 'clock' | 'work';
@@ -204,10 +211,11 @@ export function startBudget(
     if (why !== null && first !== 'clock') first = why;
     return why;
   };
-  // One budget over the shared work and clock; `scale` stretches its bounds (1, or `DEEP_FACTOR`).
-  const make = (scale: number): Budget => {
-    const searchMs = scale * SEARCH_SHARE * ctx.budgetMs;
-    const hardMs = scale * HARD_SHARE * ctx.budgetMs;
+  // One budget over the shared work and clock; `scale` stretches its work bounds (1, or `DEEP_FACTOR`),
+  // `shares` are the shares of the time budget of its two clock cutoffs.
+  const make = (scale: number, shares: readonly [number, number]): Budget => {
+    const searchMs = shares[0] * ctx.budgetMs;
+    const hardMs = shares[1] * ctx.budgetMs;
     const budgetUnits = scale * bounds.budget;
     const limitUnits = scale * bounds.limit;
     return {
@@ -237,8 +245,8 @@ export function startBudget(
       deep: () => deeper,
     };
   };
-  const deeper = make(DEEP_FACTOR);
-  return make(1);
+  const deeper = make(DEEP_FACTOR, [DEEP_SEARCH_SHARE, DEEP_HARD_SHARE]);
+  return make(1, [SEARCH_SHARE, HARD_SHARE]);
 }
 
 /** A budget that never runs out and counts nothing (a decision answered from the view alone). */
