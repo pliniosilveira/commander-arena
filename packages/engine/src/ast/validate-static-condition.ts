@@ -315,11 +315,14 @@ export function checkStaticCondition(
   // (`rules/flash-targets.ts`), not by `derive`. A permanent's own `castAsThoughFlash` takes no condition.
   if (s?.kind === 'castAsThoughFlash') {
     if (kindOf(s.spells) !== 'this') {
-      issue(
-        out,
-        `${path}.condition`,
-        'only the spell\'s own permission ("You may cast this spell as though it had flash if ...") takes a condition',
-      );
+      // CR 513.1, 601.3b: a permanent's permission "During each opponent's end step, you may cast spells as though they had flash": read where the permission is used.
+      if (kindOf(condition) !== 'opponentsEndStep') {
+        issue(
+          out,
+          `${path}.condition`,
+          'a permanent\'s castAsThoughFlash takes only the condition opponentsEndStep ("During each opponent\'s end step, ...")',
+        );
+      }
       return;
     }
     checkCondition(condition, `${path}.condition`, out);

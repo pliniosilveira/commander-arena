@@ -552,6 +552,9 @@ export function evaluateCondition(
     case 'yourTurn':
       // CR 611.3a, 613.8 (D-206): it is a turn of the controller.
       return state.turn.activeSeat === ctx.controller;
+    case 'opponentsEndStep':
+      // CR 513.1: the end step of a turn of another player (an opponent of the controller, in any seat count).
+      return state.turn.step === 'end' && state.turn.activeSeat !== ctx.controller;
     case 'yourMainPhase':
       // CR 505.1 (D-187): the precombat main phase or the postcombat main phase, of a turn of the controller.
       return (

@@ -223,6 +223,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   surveils: { kind: 'surveils', who: 'you' },
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
   winsCoinFlip: { kind: 'winsCoinFlip', who: 'you' },
+  winsClash: { kind: 'winsClash', who: 'you' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },

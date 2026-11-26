@@ -1023,6 +1023,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'yourCombatPhase'; readonly first?: true }
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
+    // Revenant Recon deck (Final-Word Phantom, CR 513.1): "during each opponent's end step"
+    | { readonly kind: 'opponentsEndStep' }
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
     // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }

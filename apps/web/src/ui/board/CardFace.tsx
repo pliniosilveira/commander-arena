@@ -265,7 +265,11 @@ export function FaceDownBadge({ object }: { object: ObjectView }) {
       title={faceDownBadgeTitle(object)}
       data-face-down-badge={object.faceDownBy}
     >
-      {object.faceDownBy === 'manifest' ? 'manifested' : 'face down'}
+      {object.faceDownBy === 'manifest'
+        ? 'manifested'
+        : object.faceDownBy === 'cloak'
+          ? 'cloaked'
+          : 'face down'}
     </span>
   );
 }

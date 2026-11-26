@@ -25,6 +25,7 @@ export function manifestTop(
   state: GameState,
   manifesting: SeatId,
   from: SeatId,
+  by: 'manifest' | 'cloak' = 'manifest',
 ): { state: GameState; events: GameEvent[]; manifested: boolean } {
   const top = getSeat(state, from).library[0];
   if (top === undefined) return { state, events: [], manifested: false };
@@ -32,7 +33,7 @@ export function manifestTop(
     object: top,
     to: 'battlefield',
     toSeat: manifesting,
-    entersFaceDown: 'manifest',
+    entersFaceDown: by,
   });
   if (moved.kind !== 'done' || moved.newObject === null) {
     return { state, events: [], manifested: false };
@@ -41,7 +42,13 @@ export function manifestTop(
     state: moved.state,
     events: [
       ...moved.events,
-      { kind: 'manifested', seat: manifesting, from, object: moved.newObject },
+      {
+        kind: 'manifested',
+        seat: manifesting,
+        from,
+        object: moved.newObject,
+        ...(by === 'cloak' ? { cloaked: true as const } : {}),
+      },
     ],
     manifested: true,
   };
@@ -63,7 +70,7 @@ export function runManifest(
         ? [seat]
         : resolvePlayers(state, effect.fromLibraryOf, ctx, targets);
     for (const from of libraries) {
-      const r = manifestTop(next, seat, from);
+      const r = manifestTop(next, seat, from, effect.cloak === true ? 'cloak' : 'manifest');
       next = r.state;
       events.push(...r.events);
       if (r.manifested) count += 1;

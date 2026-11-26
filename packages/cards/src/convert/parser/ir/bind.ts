@@ -359,7 +359,10 @@ class Binder {
                   this.clauseVerb === 'grantKeyword' &&
                   /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
-            (a.thatCardOnly !== true || /^that card$/iu.test(noun.filter.raw.trim())) &&
+            (a.thatCardOnly !== true ||
+              /^that card$/iu.test(noun.filter.raw.trim()) ||
+              // Revenant Recon deck (Twilight Prophet): "Reveal the top card of your library and put it into your hand": "it" is the card revealed, the engine's `moved`.
+              (this.clauseVerb === 'putItIntoHand' && /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             !a.noun.plural &&
             compatible(a.noun.filter, pronoun.type) &&

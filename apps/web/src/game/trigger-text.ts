@@ -493,6 +493,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'winsCoinFlip':
       // CR 705.2 (Setzer): once each time the player wins a coin flip.
       return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a coin flip`;
+    case 'winsClash':
+      // CR 701.30d (Marvo, Deep Operative): once each time the player wins a clash.
+      return `Whenever ${trigger.who === 'you' ? 'you win' : `${BY_WORDS[trigger.who]} wins`} a clash`;
     case 'rollsHighest':
       // CR 706.1a, 706.2 (Galadriel group 3): once for each die the player rolls whose natural result is the most it can show.
       return `Whenever ${trigger.who === 'you' ? 'you roll' : `${BY_WORDS[trigger.who]} rolls`} a die's highest natural result`;

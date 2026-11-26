@@ -159,6 +159,7 @@ describe('the dimensions', () => {
       'yourCombatPhase',
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
+      'opponentsEndStep',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
       'manaSpentAtLeast',

@@ -2903,9 +2903,16 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
-    case 'clash':
+    case 'clash': {
       // CR 701.30b: the controller clashes with an opponent, in stages (rules/clash.ts); who won is what `clashWon` reads.
-      return done(state, [], [newClash()]);
+      if (effect.against === undefined) return done(state, [], [newClash()]);
+      // "Clash with defending player" (CR 508.5, 701.30b): the opponent is named, not chosen; with no defending player (it left combat or the game) there is no clash.
+      const [against] = resolvePlayers(state, effect.against, ctx, targets);
+      if (against === undefined || against === res.controller || getSeat(state, against).hasLost) {
+        return { ...done(state), clashWon: false };
+      }
+      return done(state, [], [newClash(against)]);
+    }
 
     case 'coinFlip': {
       // CR 705.2: the controller flips a coin with the call the option made (the `chooseOne` the player answered); they win the flip when it matches the result.

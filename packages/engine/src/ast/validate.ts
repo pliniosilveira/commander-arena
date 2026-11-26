@@ -1224,6 +1224,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'surveils':
     case 'rollsHighest':
     case 'winsCoinFlip':
+    case 'winsClash':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);

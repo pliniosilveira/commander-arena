@@ -314,10 +314,10 @@ export interface GameObject {
 }
 
 /**
- * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
- * it is turned face up for its morph cost). Megamorph, Disguise and cloak would be more values.
+ * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `cloak` (CR 701.58a: a manifest that also has ward {2}), `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
+ * it is turned face up for its morph cost). Megamorph and Disguise would be more values.
  */
-export type FaceDownBy = 'manifest' | 'morph' | 'forestLand';
+export type FaceDownBy = 'manifest' | 'cloak' | 'morph' | 'forestLand';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {

@@ -423,6 +423,15 @@ export function describeEvent(
         'CR 614.11',
       );
     }
+    case 'clashWon':
+      // CR 701.30d: the player whose revealed card had the greater mana value.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'win', 'wins')} the clash.`,
+        event.seat,
+        [],
+        'CR 701.30d',
+      );
     case 'coinFlipped':
       // CR 705.2: the call, the side that came up and whether the player won the flip.
       return line(
@@ -1720,10 +1729,10 @@ export function describeEvent(
             : `${midPossessiveOf(event.from, viewer, seatCount)} library`;
       return line(
         'major',
-        manifestedLine(who(event.seat), mine, library),
+        manifestedLine(who(event.seat), mine, library, event.cloaked === true),
         event.seat,
         [event.object],
-        'CR 701.40a',
+        event.cloaked === true ? 'CR 701.58a' : 'CR 701.40a',
       );
     }
     case 'turnedFaceUp':
