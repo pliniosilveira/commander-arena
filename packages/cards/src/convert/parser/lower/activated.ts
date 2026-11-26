@@ -361,7 +361,7 @@ function lowerManaAbility(
     if (
       costs.value.some(
         (c) =>
-          (c.kind === 'sacrifice' && !(ownCounters && c.what.kind === 'this')) ||
+          (c.kind === 'sacrifice' && !(ownCounters && 'kind' in c.what && c.what.kind === 'this')) ||
           c.kind === 'removeCounters' ||
           c.kind === 'putCounters',
       )

@@ -76,3 +76,41 @@ describe('sacrificing itself for an amount that counts the counters on it (CR 11
     ).toEqual([expect.stringContaining('counted before the costs are paid')]);
   });
 });
+
+describe('tokensInstead in eachOf mode (CR 614.1a)', () => {
+  const eachOf = (tokens: unknown, extra: object = {}): CardDefinition =>
+    artifact({
+      kind: 'replacement',
+      replacement: {
+        kind: 'tokensInstead',
+        what: { token: true },
+        mode: 'eachOf',
+        tokens,
+        ...extra,
+      } as never,
+    });
+
+  test('two or more different predefined tokens validate', () => {
+    expect(validateCard(eachOf(['Clue', 'Food', 'Treasure']))).toEqual([]);
+    expect(validateCard(eachOf(['Treasure', 'Gold']))).toEqual([]);
+  });
+
+  test('one token, a repeated one, an unknown one or one that needs an object are refused', () => {
+    for (const tokens of [
+      ['Treasure'],
+      ['Treasure', 'Treasure'],
+      ['Treasure', 'Blood'],
+      ['Food', 'Wicked Role'],
+    ]) {
+      expect(messages(eachOf(tokens)), JSON.stringify(tokens)).toEqual([
+        expect.stringContaining('one of each is of at least two different predefined tokens'),
+      ]);
+    }
+  });
+
+  test('it makes no token of its own', () => {
+    expect(
+      messages(eachOf(['Clue', 'Food'], { token: { kind: 'preset', preset: 'Treasure' } })),
+    ).toEqual([expect.stringContaining('makes no token of its own')]);
+  });
+});

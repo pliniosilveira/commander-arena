@@ -499,6 +499,12 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   if (replacement.kind === 'tokensInstead' && replacement.mode === 'double') {
     return 'If one or more tokens would be created under your control, twice that many of those tokens are created instead';
   }
+  // Most Wanted deck (CR 614.1a): "If you would create a Clue, Food, or Treasure token, instead create one of each".
+  if (replacement.kind === 'tokensInstead' && replacement.mode === 'eachOf') {
+    const [last, ...rest] = [...replacement.tokens].reverse();
+    const names = [...rest.reverse(), `or ${last}`].join(', ');
+    return `If you would create a ${names} token, instead create one of each`;
+  }
   // D-417 (CR 702.89a): Umbra armor.
   if (replacement.kind === 'umbraArmor') return umbraArmorWording();
   // D-192 (CR 614.9): "All damage that would be dealt to you and other permanents you control is dealt to this creature instead".
