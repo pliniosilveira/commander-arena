@@ -15,6 +15,13 @@
  * With `record`, every decision of the agent in a window is written down with the board print of its view
  * (`heuristic-plan-print.ts`): the steps of a plan. The copy is never the real game: a refused action or
  * a budget that runs out drops the play-out (null).
+ *
+ * The HORIZON is how many turns of the agent the play-out goes through: 1 (the default) ends when the
+ * agent's next turn starts; 2 plays that turn too, and the opponents' turn after it, and ends when the
+ * agent's turn after that starts. A line's steps belong to the turn it was made in (round 0: that turn of
+ * the agent and the opponents' turns until its next one): in a later round every decision of the agent is
+ * today's rules and nothing is recorded, so a line that passes its main phases does not pass the next
+ * turn's as well.
  */
 import {
   type Action,
@@ -160,24 +167,31 @@ function inWindow(state: GameState, me: SeatId): boolean {
   return step === 'end';
 }
 
-/** Plays `line` on `state` for `me` to the start of its next turn (see the module comment). */
+/** Plays `line` on `state` for `me` to the start of its `horizon`th next turn (see the module comment). */
 export function playLine(
   state: GameState,
   me: SeatId,
   line: Line,
   ctx: PlayContext,
   record: boolean,
+  horizon = 1,
 ): PlayResult | null {
   const start = state.turn.number;
-  const used: Partial<Record<Window, number>> = {};
+  // The round: how many turns of the agent have started since `start` (its extra turns count).
+  let round = 0;
+  let lastTurn = start;
+  const used = new Map<string, number>();
   const steps: PlanStep[] = [];
   let fromLine = false;
   let current = state;
   const handlersOf = ctx.agents.start();
-  for (let i = 0; i < MAX_STEPS; i += 1) {
+  for (let i = 0; i < MAX_STEPS * horizon; i += 1) {
     if (current.result !== null) return { end: current, steps };
-    if (current.turn.activeSeat === me && current.turn.number > start)
-      return { end: current, steps };
+    if (current.turn.activeSeat === me && current.turn.number > lastTurn) {
+      lastTurn = current.turn.number;
+      round += 1;
+      if (round >= horizon) return { end: current, steps };
+    }
     const why = ctx.budget.over();
     if (why !== null) {
       ctx.work.stop(why);
@@ -189,7 +203,7 @@ export function playLine(
     const seat = d.seat;
     // Nothing to do but pass (or tap mana, which no rule of the agent does by hand): pass without building a
     // view, the costliest part of a step on a big board. A recorded window of the agent still needs its print.
-    if (onlyPass(d) && !(record && seat === me && inWindow(current, me))) {
+    if (onlyPass(d) && !(record && round === 0 && seat === me && inWindow(current, me))) {
       const passed = ctx.work.apply(current, seat, { kind: 'pass' });
       if (!passed.ok) return null;
       current = passed.state;
@@ -207,19 +221,23 @@ export function playLine(
         };
       } else {
         const when = windowOf(view, d);
-        const chosen = when === null ? null : lineAction(view, d, when, line, used, ctx.weights);
+        const chosen =
+          when === null ? null : lineAction(view, d, when, line, round, used, ctx.weights);
         if (chosen !== null) {
           action = chosen.action;
           fromLine = chosen.fromLine;
         } else {
           action =
             d.kind === 'priority'
-              ? (heldRemoval(view, d, line) ?? handleDecision(d, handlers))
+              ? ((round === 0 ? heldRemoval(view, d, line) : null) ?? handleDecision(d, handlers))
               : handleDecision(d, handlers);
           if (d.kind === 'priority')
-            fromLine = action.kind === 'castSpell' && line.holdRemoval.includes(action.object);
+            fromLine =
+              round === 0 &&
+              action.kind === 'castSpell' &&
+              line.holdRemoval.includes(action.object);
         }
-        if (record && when !== null) {
+        if (record && round === 0 && when !== null) {
           steps.push({
             when,
             action,
@@ -245,7 +263,8 @@ function lineAction(
   d: PendingDecision,
   when: Window,
   line: Line,
-  used: Partial<Record<Window, number>>,
+  round: number,
+  used: Map<string, number>,
   weights: AgentWeights,
 ): { action: Action; fromLine: boolean } | null {
   if (d.kind !== 'priority') return null;
@@ -253,14 +272,17 @@ function lineAction(
     const land = landNow(view, d, weights);
     if (land !== null) return { action: land, fromLine: false };
   }
+  // The line speaks for the turn it was made in only; later the agent plays by today's rules.
+  if (round > 0) return null;
   const acts = line.acts[when] ?? [];
-  for (let i = used[when] ?? 0; i < acts.length; i += 1) {
+  const key = `${round}:${when}`;
+  for (let i = used.get(key) ?? 0; i < acts.length; i += 1) {
     const a = acts[i] as Action;
     if (!isListed(a, d)) continue;
-    used[when] = i + 1;
+    used.set(key, i + 1);
     return { action: a, fromLine: true };
   }
-  used[when] = acts.length;
+  used.set(key, acts.length);
   return (line.rest[when] ?? 'today') === 'pass'
     ? { action: { kind: 'pass' }, fromLine: false }
     : null;
