@@ -889,6 +889,18 @@ export interface ObjectFilter {
    */
   readonly firstCastFromExileThisTurn?: true;
   /**
+   * "A spell that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2h, 106.1, 205.3i): the spell on the stack had mana spent on it that a source with this subtype made
+   * ("Treasure": a Treasure token, an artifact with the subtype), as the mana of `StackData.manaSpent` records it (a copy was not cast, CR 707.10, and has none; a spell cast without
+   * paying its mana cost has none). Read from the spell itself once it has been paid, so only a spell is matched, and only as it is cast or after (a cost reduction or an alternative
+   * cost is worked out before the mana is paid: not read there). A subtype name, as `subtypes` has them.
+   */
+  readonly manaSpentFromSubtype?: string;
+  /**
+   * "The first spell you cast each turn that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2i): no other spell its caster cast this turn, before it, had mana spent on
+   * it that a source of the subtype `manaSpentFromSubtype` made (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Needs `manaSpentFromSubtype`. Read as `firstXSpellThisTurn` is.
+   */
+  readonly firstManaSpentFromSubtypeThisTurn?: true;
+  /**
    * "The second spell you cast each turn" (Alisaie Leveilleur, CR 601.2f, 601.2i, 604.2): the spell is the `nthSpellThisTurn`th spell its caster casts this turn, that is, exactly
    * `nthSpellThisTurn - 1` other spells were cast by that caster before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10, and the spell itself is left out of the count
    * whether or not it is logged yet). A whole number of 2 or more. Read from the turn log, so it is read as the cost is determined (a cost reduction, where the spell is not yet

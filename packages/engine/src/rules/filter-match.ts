@@ -519,6 +519,30 @@ export function matchesFilterWith(
   ) {
     return false;
   }
+  // CR 601.2h (Rain of Riches): "a spell that mana from a Treasure was spent to cast": a spell on the stack that was paid, in part, with mana a source of the subtype made.
+  if (
+    filter.manaSpentFromSubtype !== undefined &&
+    !(
+      obj.zone === 'stack' &&
+      obj.stack?.kind === 'spell' &&
+      (obj.stack.manaSpent?.fromSubtypes?.[filter.manaSpentFromSubtype] ?? 0) > 0
+    )
+  ) {
+    return false;
+  }
+  // CR 601.2i (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast": no other spell the caster cast this turn so far was paid so.
+  if (
+    filter.firstManaSpentFromSubtypeThisTurn === true &&
+    filter.manaSpentFromSubtype !== undefined &&
+    state.turnLog.castSpells.some(
+      (e) =>
+        e.manaSubtypes?.includes(filter.manaSpentFromSubtype ?? '') === true &&
+        e.seat === controllerOf(state, obj) &&
+        e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
   // CR 601.2i (Alisaie Leveilleur): "the second spell you cast each turn": exactly one other spell cast by the caster this turn so far (a copy is not cast, CR 707.10).
   if (
     filter.nthSpellThisTurn !== undefined &&

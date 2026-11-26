@@ -114,3 +114,32 @@ describe('tokensInstead in eachOf mode (CR 614.1a)', () => {
     ).toEqual([expect.stringContaining('makes no token of its own')]);
   });
 });
+
+describe('the spells that mana from a Treasure was spent to cast (CR 601.2h, 601.2i)', () => {
+  const grant = (what: object): CardDefinition =>
+    artifact({
+      kind: 'static',
+      static: {
+        kind: 'grantKeywordToSpells',
+        what: { controller: 'you', ...what },
+        keyword: { kind: 'cascade' },
+      } as never,
+    });
+
+  test('the first such spell each turn validates', () => {
+    expect(
+      validateCard(
+        grant({ manaSpentFromSubtype: 'Treasure', firstManaSpentFromSubtypeThisTurn: true }),
+      ),
+    ).toEqual([]);
+  });
+
+  test('"first" needs the subtype, and the subtype is a name', () => {
+    expect(messages(grant({ firstManaSpentFromSubtypeThisTurn: true }))).toEqual([
+      expect.stringContaining('needs manaSpentFromSubtype'),
+    ]);
+    expect(messages(grant({ manaSpentFromSubtype: '' }))).toEqual([
+      expect.stringContaining('must be a subtype name'),
+    ]);
+  });
+});

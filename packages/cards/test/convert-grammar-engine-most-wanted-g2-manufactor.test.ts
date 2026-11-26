@@ -24,9 +24,14 @@ function real(name: string): CardDefinition {
 
 const FILLER = Array.from({ length: 8 }, () => 'Island');
 const MANUFACTOR = real('Academy Manufactor');
-const TREASURE_MAKER = parsed('SYNTHETIC Treasure Maker', 'Sorcery', 'Create two Treasure tokens.', {
-  manaCost: '{R}',
-});
+const TREASURE_MAKER = parsed(
+  'SYNTHETIC Treasure Maker',
+  'Sorcery',
+  'Create two Treasure tokens.',
+  {
+    manaCost: '{R}',
+  },
+);
 const SOLDIER_MAKER = parsed(
   'SYNTHETIC Soldier Maker',
   'Sorcery',

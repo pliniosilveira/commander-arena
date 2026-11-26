@@ -486,6 +486,10 @@ export interface IrFilter {
   readonly firstXSpellThisTurn?: true;
   /** "the first spell you cast from exile each turn" (Wild-Magic Sorcerer, CR 601.2i): the first spell the caster cast from exile this turn (the engine's `firstCastFromExileThisTurn`). */
   readonly firstCastFromExileThisTurn?: true;
+  /** "that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2h): the spell was paid in part with mana made by a source of this subtype (the engine's `manaSpentFromSubtype`). */
+  readonly manaSpentFromSubtype?: string;
+  /** "the first spell you cast each turn that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstManaSpentFromSubtypeThisTurn`). */
+  readonly firstManaSpentFromSubtypeThisTurn?: true;
   /** "the second spell you cast each turn" (Alisaie Leveilleur, CR 601.2i): the spell is the nth (2 or more) its caster cast this turn (the engine's `nthSpellThisTurn`). */
   readonly nthSpellThisTurn?: number;
   /** "the first artifact spell you cast each turn" (Artifact Class, CR 601.2i): the spell is the first of its caster's this turn that has one of `types` (the engine's `firstOfTypeThisTurn`). */

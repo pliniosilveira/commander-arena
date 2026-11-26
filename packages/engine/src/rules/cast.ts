@@ -1929,6 +1929,10 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
             // Wild-Magic Sorcerer: "the first spell you cast from exile each turn".
             ...(obj.stack.castFrom === 'exile' ? { fromExile: true as const } : {}),
+            // Rain of Riches (CR 601.2h): the subtypes of the sources whose mana paid for the spell.
+            ...(obj.stack.manaSpent?.fromSubtypes === undefined
+              ? {}
+              : { manaSubtypes: Object.keys(obj.stack.manaSpent.fromSubtypes) }),
           },
         ],
       },
