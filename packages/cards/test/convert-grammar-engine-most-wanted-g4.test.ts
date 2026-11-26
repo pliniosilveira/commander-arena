@@ -1,10 +1,10 @@
 // Most Wanted deck, group 4 (Mistmeadow Skulk, Rankle, Misfortune Teller, Massacre Girl): the Oracle text of each card read through the grammar only (SYNTHETIC names,
 // the real text) and played through applyAction. Pins: CR 702.16a (protection from a quality: a mana value), 702.16b (targeting), 702.16e (damage), 702.16f (blocking),
 // CR 202.3 and 202.3e (the mana value of a spell counts its X). Stand-ins are the engine's real fixtures.
-import type { GameState } from '@commander-arena/engine';
+import type { GameState, ObjectId } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { parsed } from './convert-grammar-helpers';
+import { parseOnly, parsed, spellCard } from './convert-grammar-helpers';
 
 const SKULK = parsed(
   'SYNTHETIC Mistmeadow Skulk',
@@ -13,7 +13,7 @@ const SKULK = parsed(
   { manaCost: '{2}{W}', power: '3', toughness: '1', colors: ['W'] },
 );
 
-const targetsOf = (state: GameState): number[] => {
+const targetsOf = (state: GameState): ObjectId[] => {
   const d = state.pending;
   if (d?.kind !== 'targets') throw new Error(`expected targets, got ${d?.kind}`);
   return (d.specs[0]?.legal ?? []).flatMap((t) => (t.kind === 'object' ? [t.id] : []));
@@ -96,6 +96,145 @@ describe('Mistmeadow Skulk: lifelink, protection from mana value 3 or greater', 
     g.passAll();
     g.expect.zone(SKULK.name, 'battlefield', { seat: 0 });
     expect(g.object(SKULK.name).damage).toBe(0);
+    g.expect.invariants();
+  });
+});
+
+const RANKLE = parsed(
+  'SYNTHETIC Rankle, Master of Pranks',
+  'Legendary Creature — Faerie Rogue',
+  'Flying, haste\nWhenever ~ deals combat damage to a player, choose any number —\n• Each player discards a card.\n• Each player loses 1 life and draws a card.\n• Each player sacrifices a creature of their choice.',
+  { manaCost: '{2}{B}{B}', power: '3', toughness: '3', colors: ['B'] },
+);
+
+describe('Rankle: whenever it deals combat damage to a player, choose any number of three modes', () => {
+  test('reads as a modal triggered ability that chooses none, some or all of its three modes (CR 700.2b)', () => {
+    const trigger = (RANKLE.faces[0]?.abilities ?? []).find((a) => a.kind === 'triggered');
+    if (trigger?.kind !== 'triggered') throw new Error('no triggered ability');
+    expect(trigger.modes?.length).toBe(3);
+    expect(trigger.chooseModes).toEqual({ min: 0, max: 3 });
+  });
+
+  test('a spell that chooses any number of modes is not read: it could choose none (CR 700.2a)', () => {
+    const spell = parseOnly(
+      spellCard(
+        'SYNTHETIC Any Number',
+        'Choose any number —\n• Each player discards a card.\n• Each player loses 1 life and draws a card.',
+      ),
+    );
+    expect(spell.support.status).toBe('unsupported');
+  });
+
+  const LIB = Array.from({ length: 10 }, () => 'Plains');
+  const game = () =>
+    scenario({ seats: 3 })
+      .define(RANKLE)
+      .seat(0)
+      .library(...LIB)
+      .hand('Island', 'Plains')
+      .battlefield(RANKLE.name, 'Llanowar Elves')
+      .seat(1)
+      .library(...LIB)
+      .hand('Forest', 'Swamp')
+      .battlefield('Grizzly Bears', 'Giant Spider')
+      .seat(2)
+      .library(...LIB)
+      .hand('Mountain', 'Forest')
+      .battlefield('Serra Angel')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  const hit = (g: ReturnType<typeof game>) => {
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(RANKLE.name, { player: 1 });
+    g.advanceTo('declareBlockers');
+    g.act(1).noBlocks();
+    g.passAll();
+  };
+
+  test('the controller is asked for the modes as the trigger goes on the stack; none removes it (CR 700.2b)', () => {
+    const g = game();
+    hit(g);
+    g.expect.pending('chooseModes', 0);
+    g.act(0).chooseModes();
+    g.passAll();
+    g.expect.life(1, 37);
+    expect(g.state.seats[1]?.hand.length).toBe(2);
+    g.expect.invariants();
+  });
+
+  /** Answers every pending decision of the kind with its first legal choice and returns the seats asked, in order. */
+  const answerAll = (g: ReturnType<typeof game>, kind: 'chooseCards' | 'choosePermanent') => {
+    const asked: number[] = [];
+    for (let i = 0; i < 10 && g.state.pending?.kind === kind; i++) {
+      const d = g.state.pending;
+      if (d?.kind !== 'chooseCards' && d?.kind !== 'choosePermanent') break;
+      asked.push(d.seat);
+      const pick = d.legal[0];
+      if (pick === undefined) break;
+      const answer =
+        kind === 'chooseCards'
+          ? ({ kind: 'chooseCards', objects: [pick] } as const)
+          : ({ kind: 'choosePermanents', objects: [pick] } as const);
+      expect(g.act(d.seat).try.action(answer).ok).toBe(true);
+    }
+    return asked;
+  };
+
+  test('discard mode: each player discards a card, the active player choosing first, then the others in turn order (CR 101.4)', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(0);
+    g.passAll();
+    const asked = answerAll(g, 'chooseCards');
+    expect(asked.join()).toBe('0,1,2');
+    for (const seat of [0, 1, 2]) expect(g.state.seats[seat]?.hand.length).toBe(1);
+    g.expect.invariants();
+  });
+
+  test('life and draw mode: each player loses 1 life and draws a card, the damaged player too', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(1);
+    g.passAll();
+    // Seat 1 was dealt 3 combat damage first.
+    g.expect.life(0, 39);
+    g.expect.life(1, 36);
+    g.expect.life(2, 39);
+    expect(g.state.seats.map((x) => x.hand.length)).toEqual([3, 3, 3]);
+    g.expect.invariants();
+  });
+
+  test('sacrifice mode: each player sacrifices a creature of their choice, a player with one has no choice', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(2);
+    g.passAll();
+    const asked = answerAll(g, 'choosePermanent');
+    // Seat 0 (Rankle, Llanowar Elves) and seat 1 (Grizzly Bears, Giant Spider) choose; seat 2 has one creature.
+    expect(asked.join()).toBe('0,1');
+    for (const seat of [0, 1, 2]) {
+      const creatures = g.state.battlefield.filter((id) => {
+        const o = g.state.objects[id];
+        return o !== undefined && o.owner === seat;
+      });
+      expect(creatures.length).toBe(seat === 0 ? 1 : seat === 1 ? 1 : 0);
+    }
+    g.expect.invariants();
+  });
+
+  test('all three modes are performed in printed order (discard, then life and draw, then sacrifice)', () => {
+    const g = game();
+    hit(g);
+    g.act(0).chooseModes(0, 1, 2);
+    g.passAll();
+    answerAll(g, 'chooseCards');
+    // The discard is done before the draw: each player discarded from two cards, then drew one.
+    expect(g.state.seats.map((x) => x.hand.length)).toEqual([2, 2, 2]);
+    expect(g.state.seats.map((x) => x.graveyard.length)).toEqual([1, 1, 1]);
+    g.expect.life(0, 39);
+    g.expect.life(2, 39);
+    answerAll(g, 'choosePermanent');
     g.expect.invariants();
   });
 });

@@ -7,8 +7,9 @@
  *
  * "Choose three. You may choose the same mode more than once." (D-344, CR 700.2d) is read by `modal.choose-repeatable`.
  *
- * Not read, because the engine does not run them (D-114): "Choose three —" on its own, "Choose up to one", "Choose
- * any number —", "Choose X —", a choice made by another player (CR 700.2e), a mode with a cost before its
+ * "Choose any number —" (CR 700.2b) is read as 0 to all of the modes; only a triggered ability may choose none, so a spell with it is refused by the lowering.
+ *
+ * Not read, because the engine does not run them (D-114): "Choose three —" on its own, "Choose X —", a choice made by another player (CR 700.2e), a mode with a cost before its
  * effect (CR 700.2h: Spree, and Escalate and Entwine, whose keyword lines have no rule) and pawprint modes (CR 700.2i).
  */
 import { literal, pattern, sequence } from '../../combinators';
@@ -24,6 +25,8 @@ const CHOICES: ReadonlyMap<string, IrModeChoice> = new Map([
   ['one or more', { min: 1, max: 'all' }],
   // D-524 (CR 700.2b): "choose up to one": no mode is allowed, which removes a triggered ability from the stack; only a triggered ability may say it (the lowering).
   ['up to one', { min: 0, max: 1 }],
+  // CR 700.2, 700.2b: "choose any number": none, some or all of the modes; with none a triggered ability is removed from the stack (the lowering refuses a spell, which needs one).
+  ['any number', { min: 0, max: 'all' }],
 ]);
 
 /**
@@ -51,13 +54,16 @@ export const MODAL_CHOOSE = defineRule<IrModeHeader>({
     'choose one —',
     // D-524: Dreamshackle Geist.
     'choose up to one —',
+    // CR 700.2b: Rankle, Master of Pranks.
+    'Choose any number —',
   ],
   rejects: [
     'Choose one',
     'Choose one -',
     'Choose three —',
     'Choose up to two —',
-    'Choose any number —',
+    'Choose any number',
+    'Choose any number of —',
     'Choose X —',
     'Choose one at random —',
     'Choose a creature type —',
@@ -66,7 +72,7 @@ export const MODAL_CHOOSE = defineRule<IrModeHeader>({
     'Choose one or both or more —',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/choose (one or both|one or more|up to one|one|two) —$/i)(ctx, pos);
+    const r = pattern(/choose (one or both|one or more|up to one|any number|one|two) —$/i)(ctx, pos);
     if (!r.ok) return r;
     const choose = CHOICES.get((r.value[1] ?? '').toLowerCase());
     if (choose === undefined) return { ok: false };
