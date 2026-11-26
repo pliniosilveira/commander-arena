@@ -115,6 +115,9 @@ export const FREE_SUFFIX = ' without paying its mana cost';
 /** The chip and badge of a graveyard card that its own text lets the player cast (D-133). */
 export const GRAVEYARD_CAST = 'Cast from graveyard';
 
+/** The chip and badge of a land card in the graveyard that an effect lets the player play (CR 305.1, 604.1). */
+export const GRAVEYARD_PLAY = 'Play from graveyard';
+
 /**
  * What a card of the viewer's graveyard can be used for now, as the words of its buttons, in the
  * order of the menu: "Flashback {2}{B}", "Escape {G}{G}{U}{U}, exile 5 other cards" (D-124, from
@@ -143,6 +146,8 @@ export function graveyardLabels(
       // CR 702.133a: the cost is the mana cost and a card of the hand; the card is exiled afterwards.
       else if (o.alternative === 'jumpStart') labels.push('Jump-start: discard a card');
       else if (isGraveyardPermission(o, card)) labels.push(GRAVEYARD_CAST);
+    } else if (o.kind === 'playLand' && o.object === card.id) {
+      labels.push(GRAVEYARD_PLAY);
     } else if (o.kind === 'activate' && o.object === card.id) {
       const entry = card.activated?.find((a) => a.abilityIndex === o.abilityIndex);
       labels.push(

@@ -502,6 +502,12 @@ describe('the graveyard', () => {
     expect(graveyardBadge(d, index, 'o1')).toBe(label);
   });
 
+  test('a land an effect lets the player play is "Play from graveyard" (issue 695)', () => {
+    const land = view(3, 'SYNTHETIC Plain Land', { zone: 'graveyard', types: ['land'] });
+    const d = decision([{ kind: 'playLand', object: 'o3' }]);
+    expect(graveyardLabels(d, land)).toEqual(['Play from graveyard']);
+  });
+
   test('a card an effect lets the player cast is "Cast from graveyard"', () => {
     const d = decision([{ kind: 'castSpell', object: 'o2' }]);
     expect(graveyardLabels(d, zombie)).toEqual(['Cast from graveyard']);

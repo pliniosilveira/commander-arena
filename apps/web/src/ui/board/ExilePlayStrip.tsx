@@ -5,7 +5,7 @@
  * decision layer sends the cast with its `alternative` or `face`.
  */
 import type { GameView, ObjectId, ObjectView } from '@commander-arena/engine';
-import { GRAVEYARD_CAST, graveyardLabels } from '../decisions/flashback';
+import { GRAVEYARD_CAST, GRAVEYARD_PLAY, graveyardLabels } from '../decisions/flashback';
 import { CAST_FROM_LIBRARY, exileBadge, libraryBadge } from '../decisions/layouts';
 import { playableObjects } from '../decisions/priority';
 import { useDraggable } from '../dnd/DragProvider';
@@ -46,7 +46,9 @@ function PlayTile({
 
 /** The graveyard label, with the zone first unless the label already names it ("Cast from graveyard"). */
 const graveyardTileLabel = (labels: string): string =>
-  labels.startsWith(GRAVEYARD_CAST) ? labels : `Graveyard: ${labels}`;
+  labels.startsWith(GRAVEYARD_CAST) || labels.startsWith(GRAVEYARD_PLAY)
+    ? labels
+    : `Graveyard: ${labels}`;
 
 /**
  * `playable` is the list the board already computed; without it the strip computes its own. The strip sits
