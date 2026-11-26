@@ -11,6 +11,7 @@ import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
+import { definitionOf } from '../state/ops';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
@@ -392,7 +393,19 @@ export function matchesFilterWith(
   if (filter.modified === true && d.modified !== true) return false;
   // CR 701.15b: "goaded": a creature some player's goad effect still holds.
   if (filter.goaded === true && d.goaded !== true) return false;
-  if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
+  if (
+    filter.keywords &&
+    !filter.keywords.every(
+      (k) =>
+        d.keywords?.includes(k) === true ||
+        // CR 702.35a (Anje Falkenrath: "if it has madness"): madness is a cost the card lists (`alternativeCosts`), not a keyword ability of the permanent; read from either face of the card.
+        (k === 'madness' &&
+          obj.card !== null &&
+          definitionOf(state, obj.card).faces.some((f) =>
+            f.alternativeCosts?.some((a) => a.kind === 'madness'),
+          )),
+    )
+  ) {
     return false;
   }
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;

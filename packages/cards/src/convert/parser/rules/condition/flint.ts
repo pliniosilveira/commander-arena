@@ -47,4 +47,44 @@ export const CONDITION_TREASURE_MANA_SPENT = defineRule<IrCondition>({
   },
 });
 
-export const FLINT_CONDITION_RULES = [CONDITION_TREASURE_MANA_SPENT];
+const DISCARD_KEYWORD_ID = 'condition.discarded-card-has-madness';
+
+/**
+ * `condition.discarded-card-has-madness`: "it has madness" (Anje Falkenrath; CR 603.4, 702.35a), the intervening "if" of a trigger about a card that was discarded. The card is the one the
+ * discard was about, as it is where it went; the lowering makes it a part of the filter of that one trigger (`discarded` with `keywords`). Not read: another keyword, "it had madness", "that
+ * card has madness", "if ~ has madness", a second condition.
+ */
+export const CONDITION_DISCARDED_CARD_HAS_MADNESS = defineRule<IrCondition>({
+  id: DISCARD_KEYWORD_ID,
+  family: 'condition',
+  leading: ['it'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 702.35a (Madness)'],
+  examples: ['it has madness'],
+  rejects: [
+    'it has flying',
+    'it had madness',
+    'that card has madness',
+    'it has madness.',
+    'it has madness and flying',
+    '~ has madness',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/it has madness(?![\p{L}\p{N}.])(?! and\b)/iu)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'discardedCardHasKeyword', keyword: 'madness' },
+        span: { start: pos, end: r.pos },
+        rule: DISCARD_KEYWORD_ID,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const FLINT_CONDITION_RULES = [
+  CONDITION_TREASURE_MANA_SPENT,
+  CONDITION_DISCARDED_CARD_HAS_MADNESS,
+];

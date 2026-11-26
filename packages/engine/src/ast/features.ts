@@ -2083,6 +2083,8 @@ export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'flash',
   // CR 702.85a (Cascade): "you cast a spell with cascade" (Aurora Phoenix): cascade is printed or granted by an effect that applies as the spell is cast; a filter reads its presence.
   'cascade',
+  // CR 702.35a (Madness): "if it has madness" (Anje Falkenrath): the card a discard trigger is about, in the graveyard or in exile; madness is printed, never granted, so only a filter reads it.
+  'madness',
 ];
 
 /**

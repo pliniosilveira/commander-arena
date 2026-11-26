@@ -1131,6 +1131,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
     // Flint deck (issue 685, CR 601.2h): "mana from a Treasure was spent to cast it": the spell of a cast trigger was paid in part with mana a source of this subtype made.
     | { readonly kind: 'manaSpentFromSubtype'; readonly subtype: string }
+    // Flint deck (issue 685, Anje Falkenrath, CR 603.4, 702.35): "if it has madness": the card a discard trigger is about has the keyword; a part of the filter of that trigger.
+    | { readonly kind: 'discardedCardHasKeyword'; readonly keyword: string }
     // Prismari deck, group 3 (D-661, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
     // only after an instruction that exiled cards.
     | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }

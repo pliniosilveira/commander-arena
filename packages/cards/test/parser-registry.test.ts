@@ -1214,6 +1214,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),
   // Flint deck (issue 685): the intervening "if" of a trigger about a spell that was cast.
+  'condition.discarded-card-has-madness': permanent(
+    (e) => `Whenever you discard a card, if ${e}, you gain 1 life.`,
+  ),
   'condition.treasure-mana-spent': permanent(
     (e) => `Whenever you cast a spell, if ${e}, you gain 1 life.`,
   ),
