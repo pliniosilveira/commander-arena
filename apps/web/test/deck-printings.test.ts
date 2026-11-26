@@ -20,35 +20,42 @@ test('the commander line that names a printing gives its set and collector numbe
 
 test('a registered printing is found by the commander name, without case or back face', () => {
   setGamePrintings(['Commander\n1x Two Faced (abc) 9\n']);
-  expect(printingOf('TWO FACED // Other Side')).toEqual({
+  expect(printingOf('TWO FACED // Other Side', 0)).toEqual({
     set: 'abc',
     collector: '9',
   });
-  expect(printingOf('Never Registered')).toBeNull();
+  expect(printingOf('Never Registered', 0)).toBeNull();
 });
 
 test('every card of the commander and main deck that names a printing is registered, and no other', () => {
   setGamePrintings([
     'Commander\n1x Lead Card (abc) 1\n\nMainboard\n1x Main Card (abc) 2\n1x Plain Card\n\nSideboard\n1x Side Card (abc) 3',
   ]);
-  expect(printingOf('Lead Card')).toEqual({ set: 'abc', collector: '1' });
-  expect(printingOf('Main Card')).toEqual({ set: 'abc', collector: '2' });
-  expect(printingOf('Plain Card')).toBeNull();
-  expect(printingOf('Side Card')).toBeNull();
+  expect(printingOf('Lead Card', 0)).toEqual({ set: 'abc', collector: '1' });
+  expect(printingOf('Main Card', 0)).toEqual({ set: 'abc', collector: '2' });
+  expect(printingOf('Plain Card', 0)).toBeNull();
+  expect(printingOf('Side Card', 0)).toBeNull();
 });
 
-test('on a card both decks name, a basic land above all, the last list is the one drawn, and a game leaves nothing for the next', () => {
+test('each player is drawn in the printings of their own deck, a basic land above all, and a game leaves nothing for the next', () => {
+  const mine = 'Commander\n1x My Leader (abc) 2\n\nMainboard\n30x Plains (bbb) 2 ^Chosen printing^';
   const opponent =
     'Commander\n1x Opp Leader (abc) 1\n\nMainboard\n30x Plains (old) 5\n1x Opp Only (old) 7';
-  const mine = 'Commander\n1x My Leader (abc) 2\n\nMainboard\n30x Plains (bbb) 2 ^Chosen printing^';
-  setGamePrintings([opponent, mine]);
-  expect(printingOf('Plains')).toEqual({ set: 'bbb', collector: '2' });
-  expect(printingOf('Opp Only')).toEqual({ set: 'old', collector: '7' });
+  const third = 'Commander\n1x Third Leader (abc) 3\n\nMainboard\n30x Plains';
+  // The index of a list is the seat of its player: the human is seat 0.
+  setGamePrintings([mine, opponent, third]);
+  expect(printingOf('Plains', 0)).toEqual({ set: 'bbb', collector: '2' });
+  expect(printingOf('Plains', 1)).toEqual({ set: 'old', collector: '5' });
+  // A deck whose list names no printing of the card draws it by name: never another player's printing.
+  expect(printingOf('Plains', 2)).toBeNull();
+  expect(printingOf('Opp Only', 1)).toEqual({ set: 'old', collector: '7' });
+  expect(printingOf('Opp Only', 0)).toBeNull();
+  expect(printingOf('My Leader', 1)).toBeNull();
   // The next game starts from nothing: the opponent's printing of a card the new decks do not name is gone.
   setGamePrintings([mine]);
-  expect(printingOf('Opp Only')).toBeNull();
+  expect(printingOf('Opp Only', 1)).toBeNull();
   setGamePrintings([]);
-  expect(printingOf('Plains')).toBeNull();
+  expect(printingOf('Plains', 0)).toBeNull();
 });
 
 const queueOf = (json: unknown, urls: string[] = []) => ({

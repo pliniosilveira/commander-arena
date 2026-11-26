@@ -38,6 +38,7 @@ import {
   tapFilterOf,
 } from './mana-abilities';
 import {
+  acceptedCombination,
   isCombinationProduction,
   productionOutcomes,
   sameCombination,
@@ -144,6 +145,8 @@ function pickOutcome(
   outcomes: readonly (readonly ManaColor[])[],
   color: ManaColor | null,
   combination: readonly ManaColor[] | null,
+  /** The combination named, when the ability lists only a few of its many (`acceptedCombination`, issue 632). */
+  named: readonly ManaColor[] | null = null,
 ): { chosen: ManaColor[] } | { error: string } {
   if (outcomes.length === 0) return refuse(`${name} makes no mana`);
   if (isCombinationProduction(ability.production)) {
@@ -155,6 +158,7 @@ function pickOutcome(
       if (outcomes.length === 1 && only !== undefined) return { chosen: [...only] };
       return refuse(`${name} makes one of ${listCombinations(outcomes)}: say which`);
     }
+    if (named !== null) return { chosen: [...named] };
     const found = outcomes.find((o) => sameCombination(o, combination));
     return found === undefined
       ? refuse(
@@ -178,6 +182,24 @@ function pickOutcome(
     );
   }
   return { chosen: [...found] };
+}
+
+/**
+ * Whether a mana activation names a combination of an ability that lists only a few of its many (`acceptedCombination`, issue 632): it is not among the priority
+ * options, which hold the few, but `activateManaAbility` takes it, and refuses it for any other reason (the cost, the timing) as it does a listed one.
+ */
+export function namesUnlistedCombination(
+  state: GameState,
+  source: ObjectId,
+  abilityIndex: number,
+  combination: readonly ManaColor[] | undefined,
+): boolean {
+  const obj = state.objects[source];
+  if (obj === undefined || combination === undefined) return false;
+  const found = manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === abilityIndex);
+  return (
+    found !== undefined && acceptedCombination(state, obj, found.ability, combination) !== null
+  );
 }
 
 /**
@@ -240,6 +262,7 @@ export function activateManaAbility(
     productionOutcomes(state, obj, found.ability),
     color,
     combination,
+    combination === null ? null : acceptedCombination(state, obj, found.ability, combination),
   );
   if ('error' in picked) return picked;
   const chosen = picked.chosen;
@@ -293,7 +316,8 @@ export function activateManaAbility(
           made,
           spendRestrictionOf(found.ability, obj),
           spentRiderOf(found.ability, source),
-          derive(state, obj).types,
+          // D-183: the card types and (Cataclysmic Prospecting, "mana from a Desert") the subtypes of the source, as they were when the mana was made.
+          [...derive(state, obj).types, ...derive(state, obj).subtypes],
         ),
       ),
     },

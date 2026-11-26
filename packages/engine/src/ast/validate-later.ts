@@ -108,15 +108,25 @@ export function checkDelayedTrigger(
   // tokens of `createToken`, `createCopies` or `populate`), as they are when the ability is created; sacrificed by the controller of the ability.
   if (kind === 'sacrifice') {
     const sacrifice = inner as Extract<Effect, { kind: 'sacrifice' }>;
-    if (!exiledAvailable || kindOf(sacrifice.objects) !== 'moved') {
+    // Depthshaker Titan (CR 603.7c): "Sacrifice them at the beginning of the next end step" after "any number of target ... become ...": the targets of the spell or ability (the slot is
+    // checked where the effect is, as any `target` selector is).
+    const ofTarget = kindOf(sacrifice.objects) === 'target';
+    if (!ofTarget && (!exiledAvailable || kindOf(sacrifice.objects) !== 'moved')) {
       issue(
         out,
         `${path}.effect.objects`,
-        "a delayed sacrifice names the objects an effect before it made: 'moved' after a token is created",
+        "a delayed sacrifice names the objects an effect before it made: 'moved' after a token is created, or the targets of the ability",
       );
     }
     if (sacrifice.byController !== undefined || sacrifice.player !== undefined) {
       issue(out, `${path}.effect`, 'a delayed sacrifice is a plain sacrifice of those objects');
+    }
+    return;
+  }
+  // Vronos, Masked Inquisitor (CR 603.7c, 702.26a): "... phase out at the beginning of the next end step", about the targets of the ability as they are when it is created.
+  if (kind === 'phaseOut') {
+    if (kindOf((inner as Extract<Effect, { kind: 'phaseOut' }>).objects) !== 'target') {
+      issue(out, `${path}.effect.objects`, 'a delayed phase out names the targets of the ability');
     }
     return;
   }
@@ -193,6 +203,27 @@ export function checkDelayedTrigger(
     }
     if (e.at?.step !== 'nextMain' && e.at?.whose !== 'you') {
       issue(out, `${path}.at`, "a delayed mana effect is added in the controller's own turn");
+    }
+    return;
+  }
+  // Plasm Capture (CR 603.7c, 106.1b, 202.3): "At the beginning of your next first main phase, add X mana in any combination of colors, where X is that spell's mana value": the mana value
+  // of the spell the ability targets, fixed as the ability is created; the controller chooses the colors as it resolves.
+  if (kind === 'addManaCombination') {
+    const amount = (inner as Extract<Effect, { kind: 'addManaCombination' }>).amount;
+    const ofTarget =
+      typeof amount === 'object' &&
+      amount !== null &&
+      amount.kind === 'manaValueOf' &&
+      kindOf(amount.of) === 'target';
+    if (!ofTarget) {
+      issue(
+        out,
+        `${path}.effect.amount`,
+        'a delayed mana combination adds as many mana as the mana value of the spell it targets',
+      );
+    }
+    if (e.at?.whose !== 'you') {
+      issue(out, `${path}.at`, "a delayed mana combination is added in the controller's own turn");
     }
     return;
   }

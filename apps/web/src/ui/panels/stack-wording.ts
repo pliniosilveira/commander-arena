@@ -8,7 +8,7 @@ import { withAnnouncedX } from '../../game/amount-text';
 import { copyAbilityWords } from '../../game/copy-text';
 import { sharesText } from '../../game/dinosaurs-text';
 import { delayedWording, dropYou, laterAbilityWords } from '../../game/later-text';
-import { inherentWording, isInherentAbility } from '../../game/monarch-text';
+import { inherentWording, isInherentAbility, showsRuleText } from '../../game/monarch-text';
 import { triggerCondition, triggerGist } from '../decisions/ability-label';
 import { chosenModesLine } from '../decisions/modes-picker';
 import { targetLabel } from './objects';
@@ -43,9 +43,12 @@ export function stackWording(
   // What set a triggered ability off, and what it does: "At the beginning of combat on your turn,
   // you gain 1 life". A shape the words do not know shows nothing (the source's name is above).
   const source = item.abilitySource === undefined ? undefined : index.get(item.abilitySource);
+  // The initiative's and the dungeon's carry their words in the object (their trigger is never read).
   const monarchWords =
     inherent && item.ability !== undefined
-      ? inherentWording(item.ability, item.controller === viewer)
+      ? showsRuleText(item.name)
+        ? item.oracleText
+        : inherentWording(item.ability, item.controller === viewer)
       : null;
   // Suspend's and Madness's abilities are the engine's own (D-128): "Remove a time counter from Name."
   // A delayed trigger of an effect says "the next turn's upkeep" (CR 603.7).

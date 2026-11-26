@@ -50,14 +50,16 @@ describe('mayPlay with anyManaType and exileInstead', () => {
     ).toEqual([]);
   });
 
-  test.each(['anyManaType', 'exileInstead'])(
-    '%s is about the spell: it needs castOnly',
-    (rider) => {
-      expect(
-        messages(sorcery(play({ [rider]: true }))).some((m) => m.includes('needs castOnly')),
-      ).toBe(true);
-    },
-  );
+  test('exileInstead is about the spell: it needs castOnly', () => {
+    expect(
+      messages(sorcery(play({ exileInstead: true }))).some((m) => m.includes('needs castOnly')),
+    ).toBe(true);
+  });
+
+  test('anyManaType goes with a permission to play too (Lidless Gaze: a land card among the cards is played as usual)', () => {
+    expect(messages(sorcery(play({ anyManaType: true })))).toEqual([]);
+    expect(messages(sorcery(play({ anyManaType: true, free: true }))).length).toBeGreaterThan(0);
+  });
 
   test('anyManaType must be true, and a free play spends no mana', () => {
     expect(

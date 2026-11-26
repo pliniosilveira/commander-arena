@@ -49,4 +49,53 @@ export const EFFECT_MANA_NOT_GENERIC = defineRule<Clauses>({
   },
 });
 
-export const MANA_NOT_GENERIC_EFFECT_RULES = [EFFECT_MANA_NOT_GENERIC];
+/**
+ * `effect.spend-only-turn-face-up`: "Spend this mana only to turn permanents face up." (CR 106.6, 701.40b; Overgrown Zealot): the mana can pay only the cost of the special
+ * action of turning a face-down permanent face up. It says something about the mana ability before it: the lowering gives the engine's `spendOnly` with `turnFaceUp`; anywhere
+ * else it is read and not run. Not read: another thing to turn ("creatures face up", "a permanent face up"), another verb, a sentence with more after it.
+ */
+export const EFFECT_SPEND_ONLY_TURN_FACE_UP = defineRule<Clauses>({
+  id: 'effect.spend-only-turn-face-up',
+  family: 'effect',
+  leading: ['spend'],
+  cites: [
+    'CR 106.6 (Mana)',
+    'CR 701.40b (Manifest)',
+    'CR 116.2b (Special Actions)',
+    'CR 605.1a (Mana Abilities)',
+  ],
+  examples: ['spend this mana only to turn permanents face up'],
+  rejects: [
+    'spend this mana only to turn creatures face up',
+    'spend this mana only to turn a permanent face up',
+    'spend this mana only to turn permanents face down',
+    'spend this mana only to cast permanents face up',
+    'spend this mana only to turn permanents face up and draw a card',
+    'spend that mana only to turn permanents face up',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.spend-only-turn-face-up';
+    const r = spanned(
+      pattern(new RegExp(`spend this mana only to turn permanents face up${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { span } = r.value;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'spendOnly',
+          { turnFaceUp: { kind: 'flag' as const, value: true, span, rule: id } },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const MANA_NOT_GENERIC_EFFECT_RULES = [
+  EFFECT_MANA_NOT_GENERIC,
+  EFFECT_SPEND_ONLY_TURN_FACE_UP,
+];

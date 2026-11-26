@@ -469,7 +469,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature has flying, first strike and vigilance.',
     "Enchanted creature can't attack or block alone.",
     "Enchanted creature can't attack you or planeswalkers.",
-    "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack your opponents.",
     'Enchanted creature loses flying and flying.',
     'Enchanted creature loses.',
     "Enchanted creature can attack as though it didn't have defender.",
@@ -512,13 +512,20 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'All creatures have haste.',
     'All Slivers have flying.',
     'Lands you control have "{T}: Add {G}."',
+    // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): the cards you own outside the battlefield too.
+    "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types.",
     'Other creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.',
     "Juggernauts you control can't be blocked by Walls.",
     // Issue 133 (Shifting Sliver, CR 509.1b): the blockers are the creatures that are not of the type.
     "Slivers can't be blocked except by Slivers.",
+    // Silhana Ledgewalker (CR 509.1b, 702.9b): the blockers are the creatures that do not have flying.
+    "Slivers can't be blocked except by creatures with flying.",
     'Creatures you control are Zombies in addition to their other creature types.',
+    "Creatures you control but don't own are Mercenaries in addition to their other types.",
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
+    // CR 702.101b (Extort): a keyword whose instances each trigger, given to a group.
+    'Other creatures you control have extort.',
     'Other commanders you control get +2/+2 and have lifelink.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
@@ -534,7 +541,6 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Creatures you control can attack as though they didn't have flying.",
     'Creatures you control assigns combat damage equal to their toughness rather than their power.',
     'Creatures you control assign combat damage equal to their power rather than their toughness.',
-    "Slivers can't be blocked except by creatures with flying.",
     "Slivers can't be blocked except by Slivers you control.",
     'Zombie tokens you control have flash.',
     'Zombie token you control has haste.',
@@ -558,10 +564,13 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Nontoken creatures you control are Desert lands in addition to their other types.',
     'Nontoken creatures you control are Forest land in addition to their other types.',
     'Creatures you control that are Zombies or tokens get +1/+1.',
+    "Lands you control and land cards you own that aren't on the battlefield are Deserts.",
   ],
   parse: statement(
     'static.permanents',
     [
+      // Desert Bloom deck, group G5 (Dune Chanter): before `noun.plain-permanents`, which would stop after "lands you control".
+      'noun.permanents-and-cards-off-battlefield',
       'noun.plain-permanents',
       // Issue 345 (Tavern Brawler): "Commander creatures you own have ...".
       'noun.commander-creatures-you-own',
@@ -583,6 +592,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.subtype-token-permanents',
       // Dancer's Chakrams (CR 903.3): "Other commanders you control get +2/+2 and have lifelink." (the ability that card gives, read as its own).
       'noun.other-commanders-you-control',
+      // Laughing Jasper Flint (issue 685): "Creatures you control but don't own are Mercenaries in addition to their other types."
+      'noun.creatures-you-control-but-dont-own',
     ],
     'plural',
   ),

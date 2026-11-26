@@ -349,7 +349,8 @@ describe('Remove a counter (CR 122.1, 118.3)', () => {
 
 describe('a cost the engine cannot pay is never offered (CR 118.3)', () => {
   test('costs the engine does not pay are not activations', () => {
-    for (const cost of [{ kind: 'untap' }] as const) {
+    // {Q} is paid now (Order of Whiteclay); exert is only the cost of a mana ability.
+    for (const cost of [{ kind: 'exert' }] as const) {
       const card = singleFace({
         name: 'SYNTHETIC Test Unpayable',
         manaCost: ['1'],

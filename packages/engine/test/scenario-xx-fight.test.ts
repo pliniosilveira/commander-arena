@@ -151,7 +151,7 @@ describe('"For each creature your opponents control, create a 4/4 Beast. Each of
   };
 
   test('one Beast for each creature they control, all under my control', () => {
-    const g = cast([V22, V33, V55]);
+    const g = cast([V22, V22, V33]);
     expect(beasts(g).filter((o) => o.controller === 0)).toHaveLength(3);
   });
 
@@ -162,22 +162,8 @@ describe('"For each creature your opponents control, create a 4/4 Beast. Each of
     expect(fights(g.eventsSince(0))).toHaveLength(1);
   });
 
-  test('with three, the controller chooses for the first Beast among all three, for the second among the other two, the third is forced', () => {
+  test('with three, nothing is asked: the Beasts are identical, so every creature is fought at once', () => {
     const g = cast([V22, V33, V55]);
-    const first = choosePermanentDecision(g);
-    expect(first.purpose).toBe('fight');
-    expect(first.min).toBe(1);
-    expect(first.max).toBe(1);
-    expect(first.seat).toBe(0);
-    expect(first.legal).toHaveLength(3);
-    expect(beasts(g).map((o) => o.id)).toContain(first.subject);
-    g.act(0).choosePermanents({ name: V55, seat: 1 });
-    const second = choosePermanentDecision(g);
-    expect(second.legal).toHaveLength(2);
-    expect(second.legal).not.toContain(g.id(V55));
-    expect(second.subject).not.toBe(first.subject);
-    g.act(0).choosePermanents({ name: V22, seat: 1 });
-    // The third creature is the only one left: it is paired without a question.
     g.expect.pending('priority', 0);
     expect(fights(g.eventsSince(0))).toHaveLength(3);
     // Each creature fought a 4/4: the 2/2 and the 3/3 died, the 5/5 took 4 damage.
@@ -187,31 +173,18 @@ describe('"For each creature your opponents control, create a 4/4 Beast. Each of
     g.expect.invariants();
   });
 
-  test('the choice decides who fights whom: the Beast chosen for the 5/5 takes 5 and dies', () => {
+  test('with two, every creature is fought and only the Beast that met the 5/5 is lost', () => {
     const g = cast([V33, V55]);
-    g.act(0).choosePermanents({ name: V55, seat: 1 });
-    // Two Beasts: the one paired with the 5/5 died, the other fought the 3/3.
+    g.expect.pending('priority', 0);
     expect(beasts(g)).toHaveLength(1);
     g.expect.zone(V33, 'graveyard', { seat: 1 });
     g.expect.damage(V55, 4);
-  });
-
-  test('a creature that cannot be chosen twice: the second answer cannot name the first creature again', () => {
-    const g = cast([V22, V33, V55]);
-    g.act(0).choosePermanents({ name: V55, seat: 1 });
-    const r = g.act(0).try.action({ kind: 'choosePermanents', objects: [g.id(V55)] });
-    expect(r.ok).toBe(false);
   });
 
   test('no creature on their side: no Beast and nothing to fight', () => {
     const g = cast([]);
     expect(beasts(g)).toHaveLength(0);
     g.expect.zone(SWARM, 'graveyard', { seat: 0 });
-  });
-
-  test('the opponent never chooses: only the controller of the spell is asked', () => {
-    const g = cast([V22, V33]);
-    expect(choosePermanentDecision(g).seat).toBe(0);
   });
 });
 

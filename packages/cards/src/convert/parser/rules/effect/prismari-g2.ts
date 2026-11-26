@@ -10,7 +10,7 @@
  * - `effect.exile-copy-cast`: "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (CR 707.12, 608.2g): the two
  *   sentences of one instruction, joined by `segment.ts`. The engine's `exile` of the target and `copyCardAndCast` of the card exiled.
  */
-import { fail, literal, pattern, sequence } from '../../combinators';
+import { fail, literal, map, pattern, sequence } from '../../combinators';
 import type {
   IrAmount,
   IrBasePt,
@@ -385,10 +385,67 @@ export const EFFECT_LEAD_BECOMES_LAND_CREATURE = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.switch-self-pt`: "Switch ~'s power and toughness until end of turn" (Wandering Fumarole's granted ability; CR 613.4d, 611.2a, 514.2): the object's own power and toughness are
+ * switched until the turn ends, a layer 7d effect (the engine's `switchPt`). Only `~` itself, only "until end of turn". Not read: another subject, a missing or other duration, "its",
+ * a target.
+ */
+export const EFFECT_SWITCH_SELF_PT = defineRule<Clauses>({
+  id: 'effect.switch-self-pt',
+  family: 'effect',
+  leading: ['switch'],
+  cites: [
+    'CR 613.4d (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 514.2 (Cleanup Step)',
+  ],
+  examples: [
+    "switch ~'s power and toughness until end of turn",
+    'Switch ~’s power and toughness until end of turn',
+  ],
+  rejects: [
+    "switch ~'s power and toughness",
+    "switch ~'s power and toughness until your next turn",
+    "switch target creature's power and toughness until end of turn",
+    "switch ~'s power and toughness until end of turn and draw a card",
+    "switch ~'s power and toughness until end of turns",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('switch '),
+      // Read here and not as `noun.self`: the rules of the noun family are found by the word they start with, and "~'s" is not "~".
+      map(
+        spanned(literal('~')),
+        ({ span }): IrNoun => ({
+          kind: 'noun',
+          det: 'self',
+          filter: { raw: '~' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span,
+          rule: 'effect.switch-self-pt',
+        }),
+      ),
+      pattern(/['’]s power and toughness /iu),
+      family<IrDuration>('duration', { only: ['duration.until-end-of-turn'] }),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, subject, , duration] = r.value;
+    const span = { start: pos, end: r.pos };
+    const clause: IrClause = {
+      ...makeClause('effect.switch-self-pt', 'switchPt', { objects: subject }, span),
+      duration,
+    };
+    return { ok: true, value: [clause], pos: r.pos };
+  },
+});
+
 export const PRISMARI_G2_EFFECT_RULES = [
   EFFECT_CREATE_TOKENS_PER_OPPONENT_ATTACKING,
   EFFECT_ADD_MANA_STAYS,
   EFFECT_EXILE_SELF_TIME_COUNTERS,
   EFFECT_EXILE_COPY_CAST,
   EFFECT_LEAD_BECOMES_LAND_CREATURE,
+  EFFECT_SWITCH_SELF_PT,
 ];

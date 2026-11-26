@@ -30,12 +30,19 @@ export type ManaRestriction =
    */
   | { readonly kind: 'notGeneric' }
   /**
+   * "Spend this mana only to turn permanents face up" (CR 106.6, 701.40b, 702.37e; Overgrown Zealot): it may be spent only on the cost of the special action that turns a
+   * face-down permanent face up (a morph cost or the mana cost of a manifested creature card), never on a spell or an ability.
+   */
+  | { readonly kind: 'turnFaceUp' }
+  /**
    * May be spent only on spells (never on abilities) that match (CR 106.6; D-149: "Spend this mana only to cast an Angel spell"): the spell
    * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
    */
   | {
       readonly kind: 'spellMatch';
       readonly types?: readonly string[];
+      /** "Spend this mana only to cast a noncreature spell" (CR 106.6): the spell has none of these card types. */
+      readonly notTypes?: readonly string[];
       readonly subtypes?: readonly string[];
       /**
        * D-151: "Spend this mana only to cast Dragon spells or activate abilities of Dragons": the mana may also pay for an activated ability of a permanent that
@@ -57,6 +64,8 @@ export type ManaRestriction =
       readonly monocolored?: readonly string[];
       /** "Spend this mana only to cast a spell from your graveyard" (issue 102, CR 106.6, 601.2a): the spell is cast from a graveyard. Never with `alsoAbilities`. */
       readonly fromGraveyard?: true;
+      /** "Spend this mana only to cast spells you don't own" (Thieving Varmint, CR 106.6, 108.3): the spell's owner is not the player who casts it. Never with `alsoAbilities`. */
+      readonly notOwned?: true;
     };
 
 /**

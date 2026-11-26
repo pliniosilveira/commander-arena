@@ -19,7 +19,7 @@
  *   enters, whatever put it there (a resolving spell, an effect, a land played from the hand); the
  *   caller asks and calls again with `entersChosen` set, and the answer is stored on the new object.
  */
-import type { Ability, Zone } from '../ast/types';
+import type { Ability, EntryCounter, Zone } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type {
@@ -62,6 +62,7 @@ import { quietFlow } from './damage-order';
 import { entersTransformed } from './day-night';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
+import { characteristicPtOf } from './derive-count';
 import { dieReplacementFor } from './die-replacement';
 import {
   entersAsSaga,
@@ -75,7 +76,12 @@ import {
   entersWithCounters,
   lifeOf,
 } from './enters';
-import { becomeCopyAsItEnters, copyCandidates } from './enters-copy';
+import {
+  becomeCopyAsItEnters,
+  copiesFromGraveyard,
+  copyCandidates,
+  copyPairOthers,
+} from './enters-copy';
 import {
   addCounterMaps,
   enteredTappedByEffect,
@@ -92,7 +98,14 @@ import {
   riotDecision,
   riotGivesHaste,
   riotInstances,
+  sunburstCounters,
 } from './enters-keywords';
+import {
+  entersRemoveCountersOf,
+  removeAllCountersAsEntering,
+  removeCountersCandidates,
+  removeCountersDecision,
+} from './enters-remove-counters';
 import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
@@ -101,10 +114,12 @@ import { opponentGraveyardReplacement } from './graveyard-replacement';
 import { timesKickedOf } from './kicks';
 import { isRoomDefinition } from './layouts';
 import { gainLife } from './life-gain';
+import { manaSpentOf } from './mana-spent';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
+import { recordSacrificed } from './sacrifice-log';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -134,6 +149,8 @@ export interface MoveRequest {
    * copies, or null for none. Absent means "not asked yet". Ignored for a permanent that asks nothing.
    */
   readonly entersCopy?: ObjectId | null;
+  /** The answer to the second question of `entersAsCopy.exileTwoFromGraveyards` (The Mimeoplasm): the other card exiled, whose power is the number of counters. Absent means "not asked yet". */
+  readonly entersCopyOther?: ObjectId;
   /**
    * The controller's answer to "its controller chooses a player to be its protector" as a battle enters (CR 310.9a), once asked. Absent means "not asked yet". Ignored for a permanent
    * that is not a battle, and for a battle with one legal protector, which asks nothing.
@@ -144,6 +161,13 @@ export interface MoveRequest {
    * the permanent enters, possibly none. Absent means "not asked yet". Ignored for a permanent without devour.
    */
   readonly entersDevour?: readonly ObjectId[];
+  /**
+   * The controller's answer to "remove all counters from any number of artifacts, creatures, and enchantments" as the permanent enters (`asEntersRemoveCounters`, Sin, Unending Cataclysm), once
+   * asked: the permanents the counters come off, possibly none. Absent means "not asked yet". Ignored for a permanent without that ability.
+   */
+  readonly entersRemoved?: readonly ObjectId[];
+  /** Set by `moveObject` itself: how many counters came off the permanents of `entersRemoved`, which the permanent's `countersRemovedAsEntered` counters read. */
+  readonly countersRemoved?: number;
   /**
    * The controller's answers to riot (CR 702.136a, 702.136b, D-185) so far, one for each instance asked: `counter` or `haste`. The permanent is
    * asked again while there are fewer answers than instances. Ignored for a permanent without riot.
@@ -160,7 +184,7 @@ export interface MoveRequest {
    * The permanent enters with counters on it (CR 122.6, 614.1c): "return it to the battlefield with a -1/-1
    * counter on it" (Persist). Only for a move to the battlefield; the counters are on it as it enters.
    */
-  readonly withCounters?: { readonly counter: string; readonly count: number };
+  readonly withCounters?: EntryCounter | readonly EntryCounter[];
   /**
    * The face the new object has up, when it is not simply carried over: the face being cast when a
    * card moves to the stack (CR 709.3, 712.11b, 715.3), the face of a modal double-faced card played
@@ -362,6 +386,18 @@ export function isCommanderCard(state: GameState, obj: GameObject): boolean {
  * so by the time it is answered nothing else can need a decision and the sacrifices are never done twice.
  */
 export function moveObject(state: GameState, request: MoveRequest): MoveResult {
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this enters, remove all counters from any number of ...": the counters come off before the permanent is on the battlefield, and the
+  // move then counts them. Asked after devour, so nothing else is left to ask by now. None chosen is still an answer: the move counts 0.
+  if (
+    request.to === 'battlefield' &&
+    request.entersRemoved !== undefined &&
+    request.countersRemoved === undefined
+  ) {
+    const removed = removeAllCountersAsEntering(state, request.entersRemoved);
+    const moved = moveObject(removed.state, { ...request, countersRemoved: removed.count });
+    if (moved.kind !== 'done') return moved;
+    return { ...moved, events: [...removed.events, ...moved.events] };
+  }
   const chosen = request.entersDevour ?? [];
   if (request.to !== 'battlefield' || chosen.length === 0 || request.devoured !== undefined) {
     return moveOne(state, request);
@@ -408,7 +444,7 @@ export function sacrificeForDevour(
       ...(going.length > 1 ? { lkiRecorded: true as const } : {}),
     });
     if (moved.kind !== 'done') continue;
-    state = moved.state;
+    state = recordSacrificed(state, moved.state, obj, seat);
     events.push(...moved.events, { kind: 'sacrificed', permanent: id, controller: seat });
     count += 1;
   }
@@ -470,6 +506,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     old.zone === 'battlefield' &&
     (old.alt === 'unearth' || old.exileIfLeaves === true) &&
     to !== 'exile'
+  ) {
+    to = 'exile';
+    toSeat = null;
+  }
+  // CR 614.1a, 614.6 (Chandra, Awakened Inferno): "If a permanent dealt damage this way would die this turn, exile it instead": the permanent the effect marked this turn.
+  if (
+    old.zone === 'battlefield' &&
+    to === 'graveyard' &&
+    old.exileIfDiesTurn !== undefined &&
+    old.exileIfDiesTurn === state.turn.number
   ) {
     to = 'exile';
     toSeat = null;
@@ -654,6 +700,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           entering === null ? undefined : entersColorExcept(entering.abilities),
           // CR 119.4, 119.8: a player whose life total cannot change can pay only 0.
           lifeTotalIsLocked(before, enterController) ? 0 : getSeat(before, enterController).life,
+          { state: before, seat: enterController },
         ),
         source: old.id,
         sourceName: info?.name ?? '',
@@ -688,6 +735,31 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           min: copyRule.optional === true ? 0 : 1,
           max: 1,
           legal,
+        },
+      };
+    }
+  }
+
+  // CR 614.12, 707.9b (The Mimeoplasm): "you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards": after the card to copy, the other one,
+  // whose power gives the counters. Asked only when more than one card is left to choose (with one left it is that one). Nothing has moved yet.
+  if (
+    copyRule?.exileTwoFromGraveyards !== undefined &&
+    request.entersCopy != null &&
+    request.entersCopyOther === undefined
+  ) {
+    const others = copyPairOthers(before, enterController, copyRule, request.entersCopy, old.id);
+    if (others.length > 1) {
+      return {
+        kind: 'needsDecision',
+        decision: {
+          kind: 'choosePermanent',
+          seat: enterController,
+          source: old.id,
+          subject: old.id,
+          purpose: 'entersCopyOther',
+          min: 1,
+          max: 1,
+          legal: others,
         },
       };
     }
@@ -753,6 +825,21 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       return {
         kind: 'needsDecision',
         decision: devourDecision(enterController, old.id, legal, quality),
+      };
+    }
+  }
+
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this creature enters, remove all counters from any number of artifacts, creatures, and enchantments": the last question, asked only
+  // when there is a permanent with a counter that matches (the permanent is not on the battlefield, so it is not one of them).
+  const removeRule = entersRemoveCountersOf(faceAbilities);
+  if (removeRule !== null && to === 'battlefield' && request.entersRemoved === undefined) {
+    const legal = removeCountersCandidates(before, enterController, removeRule.filter, old.id);
+    // Thief of Blood (CR 614.12, 122.1): "remove all counters from all permanents" asks nothing; every permanent with a counter loses them, as if all had been chosen.
+    if (removeRule.all) return moveObject(state, { ...request, entersRemoved: legal });
+    if (legal.length > 0) {
+      return {
+        kind: 'needsDecision',
+        decision: removeCountersDecision(enterController, old.id, legal),
       };
     }
   }
@@ -842,14 +929,22 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       castX,
       escaped,
       (a) =>
-        a.kind === 'diedThisTurn'
-          ? historyCount(nextBefore, a, enterController)
-          : a.kind === 'aggregate'
-            ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
-              amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
-            : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+        a.kind === 'manaSpent'
+          ? // Converge (CR 105.1, 601.2h, 614.12): the mana spent on the spell this permanent came from; nothing for a card that was not cast.
+            manaSpentOf(old, a.fromType, a.snow === true, a.colors === true)
+          : a.kind === 'diedThisTurn'
+            ? historyCount(nextBefore, a, enterController)
+            : a.kind === 'aggregate'
+              ? // CR 614.12 (Towering Titan): the total of a stat over the permanents on the battlefield without this one, read as it enters.
+                amountOf(nextBefore, a, { controller: enterController, source: newId }, [])
+              : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
+      request.countersRemoved ?? 0,
     );
+    // CR 614.1c, 122.6 (Yuna, Grand Summoner): "that creature enters with two additional +1/+1 counters on it", from the effect the spell used up as it was cast.
+    if (old.zone === 'stack' && old.stack?.entersWithCounters !== undefined) {
+      counters = addCounterMaps(counters, old.stack.entersWithCounters);
+    }
     // CR 714.3a: a Saga enters with a lore counter.
     counters = entersAsSaga(
       face?.subtypes ?? [],
@@ -858,8 +953,21 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       request.entersChosen ?? null,
     );
     if (request.withCounters !== undefined) {
-      const { counter, count } = request.withCounters;
-      counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
+      // Semester's End: an entry with `ifType` counts only when the permanent has the type as it enters (its card's types: a copy or an effect is not on it yet).
+      const entering = definitionOf(state, old.card ?? ('' as never)).faces[faceIndex];
+      const arrived = new Set(entering?.types ?? []);
+      for (const entry of Array.isArray(request.withCounters)
+        ? request.withCounters
+        : [request.withCounters as EntryCounter]) {
+        if (entry.ifType !== undefined && !arrived.has(entry.ifType)) continue;
+        // Gilraen (CR 122.6): `also` are more kinds of counter it enters with.
+        for (const each of [
+          { counter: entry.counter, count: entry.count },
+          ...(entry.also ?? []),
+        ]) {
+          counters = { ...counters, [each.counter]: (counters[each.counter] ?? 0) + each.count };
+        }
+      }
     }
     // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
     // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
@@ -872,6 +980,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     counters = addCounterMaps(
       counters,
       keywordEntryCounters(abilities, riotAnswers, request.devoured ?? 0),
+    );
+    // CR 702.44a, 702.44b (Sunburst): counters for the colors of the mana spent on the spell this permanent came from; a creature gets +1/+1 counters, any other permanent charge counters.
+    counters = addCounterMaps(
+      counters,
+      sunburstCounters(abilities, old, face?.types.includes('creature') === true),
     );
     if (revealRule !== null && !tapped && !untappedByEffect) {
       if (mayReveal && request.entersPaid === true) {
@@ -1029,6 +1142,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
     // CR 702.84a (D-124): a permanent returned by unearth remembers it.
     ...(to === 'battlefield' && request.alt !== undefined ? { alt: request.alt } : {}),
+    // CR 702.84a, 613.1f: the Unearth was one a static ability gave the card in the graveyard, which its face does not have.
+    ...(to === 'battlefield' &&
+    request.alt === 'unearth' &&
+    printed !== null &&
+    definitionOf(next, printed).faces[faceIndex]?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'unearth',
+    ) !== true
+      ? { unearthGranted: true as const }
+      : {}),
     // CR 702.136a (D-185): an instance of riot that chose haste ("If you don't, it gains haste").
     ...(to === 'battlefield' && riotGivesHaste(riotAnswers) ? { riotHaste: true as const } : {}),
     // CR 715.3d: an Adventure that resolved is exiled, and its owner may cast the card from there.
@@ -1101,12 +1223,47 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   if (
     to === 'battlefield' &&
     copyRule !== null &&
-    copiedObject?.zone === (copyRule.fromGraveyard === true ? 'graveyard' : 'battlefield')
+    copiedObject?.zone === (copiesFromGraveyard(copyRule) ? 'graveyard' : 'battlefield')
   ) {
+    // CR 707.2, 707.9b: the values of the card are taken as it is in the graveyard, before the cards are exiled.
+    const pairOther =
+      copyRule.exileTwoFromGraveyards === undefined
+        ? undefined
+        : (request.entersCopyOther ??
+          copyPairOthers(before, controller, copyRule, copiedObject.id, old.id)[0]);
+    // CR 208.2, 604.3: the power of the card in the graveyard: the printed one, or what its characteristic-defining ability gives a `*` (it works in every zone).
+    const otherValues =
+      pairOther === undefined ? undefined : copiableValues(next, getObject(next, pairOther));
+    const printedPower = otherValues?.characteristics.power ?? 0;
+    let otherPower = 0;
+    if (printedPower !== '*') otherPower = printedPower;
+    else if (pairOther !== undefined && otherValues !== undefined) {
+      otherPower =
+        characteristicPtOf(next, getObject(next, pairOther), otherValues.abilities)?.power ?? 0;
+    }
     const became = becomeCopyAsItEnters(next, newId, copyRule, copiedObject.id, controller);
     next = became.state;
     events.push(...became.events);
     copyEvents.push(...became.counterEvents);
+    // CR 614.12, 707.9b, 122.6 (The Mimeoplasm): both cards are exiled as it enters, and it enters with as many counters as the power of the other one.
+    if (copyRule.exileTwoFromGraveyards !== undefined && pairOther !== undefined) {
+      for (const card of [copiedObject.id, pairOther]) {
+        if (next.objects[card]?.zone !== 'graveyard') continue;
+        const exiled = moveObject(next, { object: card, to: 'exile', commanderChoice: false });
+        if (exiled.kind !== 'done') continue;
+        next = exiled.state;
+        events.push(...exiled.events);
+      }
+      if (otherPower > 0) {
+        const kind = copyRule.exileTwoFromGraveyards.counter;
+        counters = { ...counters, [kind]: (counters[kind] ?? 0) + otherPower };
+        const copy = getObject(next, newId);
+        next = setObject(next, {
+          ...copy,
+          counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + otherPower },
+        });
+      }
+    }
     // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters": the X of the spell it came from, 0 for a permanent that was not cast.
     if (copyRule.withX !== undefined) {
       const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
@@ -1119,6 +1276,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + castX },
         });
       }
+    }
+  }
+  // CR 707.9b, 614.12, 122.6 (Spark Double): "except it enters with an additional +1/+1 counter on it if it's a creature, ... an additional loyalty counter on it if it's a planeswalker".
+  if (to === 'battlefield' && copyRule?.extraCounters !== undefined && copiedObject !== undefined) {
+    const types = derive(next, getObject(next, newId)).types;
+    for (const extra of copyRule.extraCounters) {
+      if (!types.includes(extra.type)) continue;
+      counters = { ...counters, [extra.counter]: (counters[extra.counter] ?? 0) + 1 };
+      const copy = getObject(next, newId);
+      next = setObject(next, {
+        ...copy,
+        counters: { ...copy.counters, [extra.counter]: (copy.counters[extra.counter] ?? 0) + 1 },
+      });
     }
   }
   if (to === 'battlefield') {
@@ -1159,6 +1329,17 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       ],
     };
   }
+  // CR 400.7a (Eight-and-a-Half-Tails): an effect that changed the color of a permanent spell on the stack goes on applying to the permanent the spell becomes.
+  if (to === 'battlefield' && old.zone === 'stack') {
+    next = {
+      ...next,
+      continuousEffects: next.continuousEffects.map((e) =>
+        e.change.kind === 'setColors' && e.objects.includes(old.id)
+          ? { ...e, objects: [...e.objects, newId] }
+          : e,
+      ),
+    };
+  }
   // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ...": the permanent a creature spell with that rider becomes has the abilities.
   if (
     to === 'battlefield' &&
@@ -1167,6 +1348,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     derive(state, old).types.includes('creature')
   ) {
     next = applyCreatureGains(next, newId, old.stack.creatureGains);
+  }
+  // Nalfeshnee (CR 707.10f, 613.1f): the token a copy of a permanent spell becomes has the abilities the copy carried.
+  if (to === 'battlefield' && old.zone === 'stack' && old.stack?.permanentGains !== undefined) {
+    next = applyCreatureGains(next, newId, old.stack.permanentGains);
   }
   // D-232: "If you cast a spell this way, that artifact enters tapped" / "If you do, it gains ...": what the permission of a permanent gives the permanent.
   if (to === 'battlefield' && old.zone === 'stack' && old.stack?.graveyardPlay !== undefined) {
@@ -1281,6 +1466,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: {
         ...next.turnLog,
         discardedOrFromLibrary: [...(next.turnLog.discardedOrFromLibrary ?? []), newId],
+        graveyardedFromLibrary: [...(next.turnLog.graveyardedFromLibrary ?? []), newId],
       },
     };
   }

@@ -15,6 +15,7 @@ import type {
   StackAbility,
 } from '@commander-arena/engine';
 import { unlessCostText } from './cost-text';
+import { seatNameOf } from './seat-name';
 
 type PayOptionsDecision = Extract<PendingDecision, { kind: 'choosePayOptions' }>;
 type ConfirmDecision = Extract<PendingDecision, { kind: 'confirmOptional' }>;
@@ -44,7 +45,8 @@ function joined(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-const who = (seat: SeatId, viewer: SeatId): string => (seat === viewer ? 'You' : 'Opponent');
+const who = (seat: SeatId, viewer: SeatId, seatCount = 2): string =>
+  seatNameOf(seat, viewer, seatCount);
 
 const RULES = {
   convoke: 'CR 702.51a',
@@ -97,7 +99,7 @@ export function payOptionsLine(
   const { decision, objects } = found;
   const spell = name(decision.source);
   const seatOf = decision.seat;
-  const subject = who(seatOf, viewer);
+  const subject = who(seatOf, viewer, before.seats?.length ?? 2);
   const text =
     decision.mechanism === 'delve'
       ? `${subject} exile${seatOf === viewer ? '' : 's'} ${objects.length} card${objects.length === 1 ? '' : 's'} to delve ${spell}.`
@@ -144,7 +146,7 @@ export function keywordAnswerLine(
 ): KeywordLine | null {
   const asked = keywordQuestion(before, event.source);
   if (asked === null) return null;
-  const subject = who(event.seat, viewer);
+  const subject = who(event.seat, viewer, before.seats?.length ?? 2);
   const you = event.seat === viewer;
   if (asked.purpose === 'cascade') {
     const card =
@@ -184,7 +186,7 @@ export function mayPayCancelLine(
   }
   const mana = asked.totalCost.map((s) => `{${s}}`).join('');
   return {
-    text: `${who(asked.seat, viewer)} ${asked.seat === viewer ? "don't" : "doesn't"} pay ${mana}.`,
+    text: `${who(asked.seat, viewer, before.seats?.length ?? 2)} ${asked.seat === viewer ? "don't" : "doesn't"} pay ${mana}.`,
     seat: asked.seat,
     objects: [],
     rule: 'CR 702.101a',

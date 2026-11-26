@@ -32,7 +32,9 @@ const LOOK_TAKE_WORDS = {
   hand: ' to reveal and put into your hand',
   battlefield: ' to reveal and put onto the battlefield',
   exileFaceDown: ' to exile face down',
+  exile: ' to exile',
   top: ' to put on top of your library',
+  manifest: ' to manifest', // CR 701.62a, manifest dread
 } as const;
 
 /**

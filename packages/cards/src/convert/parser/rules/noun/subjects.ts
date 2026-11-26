@@ -164,6 +164,8 @@ export const NOUN_OTHER_SUBTYPE_PERMANENTS = defineRule<IrNoun>({
     'other nontoken Zombies you control',
     'other non-Zombie Wizards you control',
     'other Mice you control',
+    // CR 700.12: outlaw is the group of the five creature types Assassin, Mercenary, Pirate, Rogue and Warlock.
+    'other outlaws you control',
   ],
   rejects: [
     'other elves you control',
@@ -180,7 +182,8 @@ export const NOUN_OTHER_SUBTYPE_PERMANENTS = defineRule<IrNoun>({
     'noun.other-subtype-permanents',
     satisfy(
       map(sequence(literal('other '), permanentPhrase(true, 'all')), ([, filter]) => filter),
-      (filter) => (filter.subtypes?.length ?? 0) > 0,
+      // CR 700.12 (Vihaan, Goldwaker): "other outlaws you control" names a group by its creature types too, though outlaw is no subtype.
+      (filter) => (filter.subtypes?.length ?? 0) > 0 || filter.outlaw === true,
     ),
     (filter) => bare('each', filter, { plural: true, other: true }),
   ),
@@ -232,6 +235,51 @@ export const NOUN_SUBTYPE_UNION = defineRule<IrNoun>({
         ...bare('each', { zone: 'battlefield', anyOf: members, raw }, { plural: true }),
         span: { start: pos, end: r.pos },
         rule: 'noun.subtype-union',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `noun.self-and-group`: "~ and land creatures you control", "~ and other Elves you control" is not read: the permanent itself and the plural group a phrase of permanents names, with a
+ * controller (CR 611.3a, 613.4c; Sylvan Advocate). The IR noun is `selfAndGroup`: the lowering gives the group's filter and marks the subject as including the source, whether or not
+ * the group's filter matches it. The group must say who controls it ("you control"), so "~ and creatures" (all creatures) is not read.
+ */
+export const NOUN_SELF_AND_GROUP = defineRule<IrNoun>({
+  id: 'noun.self-and-group',
+  family: 'noun',
+  leading: ['~'],
+  cites: ['CR 611.3a (Continuous Effects)', 'CR 613.4c (Interaction of Continuous Effects)'],
+  examples: [
+    '~ and land creatures you control',
+    '~ and creatures you control',
+    '~ and Elves you control',
+    '~ and artifact creatures you control',
+  ],
+  rejects: [
+    '~',
+    '~ and ',
+    '~ and creatures',
+    '~ and other creatures you control',
+    '~ and target creature you control',
+    '~ and creature you control',
+    '~ or creatures you control',
+    '~ and enchanted creature',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('~ and '),
+      satisfy(permanentPhrase(true, 'all'), (filter) => filter.controller !== undefined),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const filter = r.value[1];
+    return {
+      ok: true,
+      value: {
+        ...bare('selfAndGroup', { ...filter, raw: ctx.text.slice(pos, r.pos) }, { plural: true }),
+        span: { start: pos, end: r.pos },
+        rule: 'noun.self-and-group',
       },
       pos: r.pos,
     };

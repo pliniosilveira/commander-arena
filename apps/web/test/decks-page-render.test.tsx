@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import type { DeckChoice } from '../src/precons';
-import { type EditingPrecon, InputPanel } from '../src/ui/import/InputPanel';
+import { InputPanel } from '../src/ui/import/InputPanel';
 import { PreconDecksView } from '../src/ui/import/PreconDecksView';
 
 const precon = (over: Partial<DeckChoice> = {}): DeckChoice => ({
@@ -67,9 +67,9 @@ describe('the precons on the decks page (issue 93)', () => {
   });
 });
 
-describe('the editor on a precon', () => {
-  const panel = (precon: EditingPrecon | null) =>
-    renderToStaticMarkup(
+describe('the import panel', () => {
+  test('has one button, Import, which also saves, and no precon banner', () => {
+    const out = renderToStaticMarkup(
       <InputPanel
         text="1 x"
         name="SYNTHETIC Zombies"
@@ -79,35 +79,10 @@ describe('the editor on a precon', () => {
         onText={() => {}}
         onName={() => {}}
         onImport={() => {}}
-        onExample={null}
-        onSave={() => {}}
-        precon={precon}
       />,
     );
-
-  test('the name is fixed, the banner explains and Save keeps your version', () => {
-    const out = panel({
-      name: 'SYNTHETIC Zombies',
-      edited: false,
-      onReset: () => {},
-      onStop: () => {},
-    });
-    expect(out).toContain('Editing the built-in deck');
-    expect(out).toContain('readOnly=""');
-    expect(out).toContain('Save my version');
-    expect(out).toContain('Reset to default');
-    expect(out).toContain('Stop editing this precon');
-    expect(out).toContain('still the list that came with the app');
-  });
-
-  test('a precon you already changed says which list the menu uses', () => {
-    const out = panel({ name: 'X', edited: true, onReset: () => {}, onStop: () => {} });
-    expect(out).toContain('the one the menu uses');
-  });
-
-  test('a plain import has no banner and saves a deck', () => {
-    const out = panel(null);
     expect(out).not.toContain('Editing the built-in deck');
-    expect(out).toContain('Save deck');
+    expect(out).not.toContain('Save deck');
+    expect(out).toContain('>Import<');
   });
 });

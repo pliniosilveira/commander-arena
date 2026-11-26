@@ -5,7 +5,7 @@
  */
 import type { ObjectId } from '../ids';
 import type { AttackTarget } from '../state/combat-types';
-import { getObject } from '../state/ops';
+import { getObject, playerToRightOf, seatsInOrder } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -47,13 +47,48 @@ export function withoutBannedTargets(
       .map((a) => a.player);
     allowed = allowed.filter((t) => t.kind !== 'player' || !already.includes(t.seat));
   }
+  // CR 508.1a (Elrond of the White Council): "This creature can't attack its owner": the player who owns it may not be attacked by it (planeswalkers they control still may be).
+  if (
+    derive(state, obj).abilities.some(
+      (a) => a.kind === 'static' && a.static.kind === 'cantAttackItsOwner',
+    )
+  ) {
+    allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== obj.owner);
+  }
   // CR 508.1a, 611.2c (Chronomantic Escape): "Until your next turn, creatures can't attack you": the creatures the filter matches now may not attack that player.
   for (const e of state.continuousEffects) {
     if (e.change.kind !== 'creaturesCantAttackPlayer') continue;
     const ctx = { controller: e.change.controller, source: null };
+    if (e.change.of !== undefined && controllerOf(state, obj) !== e.change.of) continue;
     if (!matchesFilter(state, obj, { ...e.change.filter, zone: 'battlefield' }, ctx)) continue;
     const protectedSeat = e.change.controller;
     allowed = allowed.filter((t) => t.kind !== 'player' || t.seat !== protectedSeat);
+  }
+  // CR 508.1a, 611.2a (Teyo, Geometric Tactician): "each player may attack only the nearest opponent in the last chosen direction and planeswalkers controlled by that opponent": the
+  // nearest player still in the game, going left (the player whose turn comes next) or right (the one whose turn came just before), who is not the controller of the attacker.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'attackOnlyNearest') continue;
+    const attackerSeat = controllerOf(state, obj);
+    const nearest =
+      e.change.direction === 'left'
+        ? (seatsInOrder(state, attackerSeat)[1] ?? null)
+        : playerToRightOf(state, attackerSeat);
+    allowed = allowed.filter((t) => {
+      if (nearest === null) return false;
+      if (t.kind === 'player') return t.seat === nearest;
+      const attacked = getObject(state, t.object);
+      return (
+        derive(state, attacked).types.includes('planeswalker') &&
+        controllerOf(state, attacked) === nearest
+      );
+    });
+  }
+  // CR 508.1a, 611.2a (Call for Aid): "You can't attack that player this turn": the creatures the player controls now may not attack the players named, whatever the creature is.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'controllerCantAttackPlayers') continue;
+    if (controllerOf(state, obj) !== e.change.seat) continue;
+    const barred = e.change.players;
+    allowed = allowed.filter((t) => t.kind !== 'player' || !barred.includes(t.seat));
   }
   // CR 508.1a (Promise of Loyalty): the continuous effects `cantAttackPlayer` bar their objects from the player and the planeswalkers that player controls.
   for (const e of state.continuousEffects) {

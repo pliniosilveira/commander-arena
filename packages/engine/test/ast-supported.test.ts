@@ -78,6 +78,7 @@ const EXECUTABLE_KEYWORDS = [
   'flanking', // ast-abzan-armor-validate
   'extort', // scenario-xx-keywords2-extort
   'affinity', // scenario-xx-keywords2-affinity
+  'undaunted', // scenario-xx-undaunted, scenario-undaunted
   'convoke', // scenario-xx-pay-options
   'improvise', // scenario-xx-pay-options
   'delve', // scenario-xx-pay-options
@@ -85,6 +86,7 @@ const EXECUTABLE_KEYWORDS = [
   'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'jumpStart', // scenario-xx-jump-start
+  'exploit', // scenario-xx-exploit
   'plot', // scenario-xx-plot
   'compleated', // convert-grammar-engine-blight-curse-oneoffs-b
   'aftermath', // scenario-xx-aftermath
@@ -94,6 +96,7 @@ const EXECUTABLE_KEYWORDS = [
   'embalm', // scenario-xx-embalm
   'devour', // scenario-xx-devour-riot
   'riot', // scenario-xx-devour-riot
+  'sunburst', // convert-grammar-engine-sunburst (Counter Intelligence deck, group 1)
   'echo', // scenario-xx-echo
   'suspend', // scenario-xx-suspend
   'cumulativeUpkeep', // scenario-xx-cumulative-upkeep
@@ -105,6 +108,7 @@ const EXECUTABLE_KEYWORDS = [
   'jobSelect', // convert-grammar-engine-p49 (Job select, D-206)
   'readAhead', // scenario-xx-read-ahead
   'rebound', // convert-grammar-engine-scions-e
+  'cipher', // scenario-xx-cipher
   'reconfigure', // scenario-xx-reconfigure
   'dethrone', // scenario-xx-extra-combat
   'melee', // convert-grammar-engine-limit-break-g4 (Tifa, Martial Artist)
@@ -206,6 +210,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   flanking: { kind: 'flanking' },
   extort: { kind: 'extort' },
   affinity: { kind: 'affinity', filter: { types: ['artifact'] } },
+  undaunted: { kind: 'undaunted' },
   convoke: { kind: 'convoke' },
   improvise: { kind: 'improvise' },
   delve: { kind: 'delve' },
@@ -213,6 +218,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   demonstrate: { kind: 'demonstrate' },
   retrace: { kind: 'retrace' },
   jumpStart: { kind: 'jumpStart' },
+  exploit: { kind: 'exploit' },
   plot: { kind: 'plot', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   compleated: { kind: 'compleated' },
   aftermath: { kind: 'aftermath' },
@@ -222,6 +228,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   embalm: { kind: 'embalm', cost: [{ kind: 'mana', symbols: ['5', 'W'] }] },
   devour: { kind: 'devour', count: 2 },
   riot: { kind: 'riot' },
+  sunburst: { kind: 'sunburst' },
   echo: { kind: 'echo', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
   suspend: { kind: 'suspend', count: 2, cost: [{ kind: 'mana', symbols: ['R'] }] },
   cumulativeUpkeep: { kind: 'cumulativeUpkeep', cost: [{ kind: 'mana', symbols: ['1'] }] },
@@ -237,6 +244,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   melee: { kind: 'melee' },
   readAhead: { kind: 'readAhead' },
   rebound: { kind: 'rebound' },
+  cipher: { kind: 'cipher' },
   reconfigure: { kind: 'reconfigure', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   myriad: { kind: 'myriad' },
   decayed: { kind: 'decayed' },
@@ -314,7 +322,7 @@ describe('supported feature gate', () => {
                             : kind === 'reconfigure'
                               ? // CR 702.151: an Equipment creature.
                                 syntheticCard('SYNTHETIC Reconfigure Blade')
-                              : kind === 'rebound'
+                              : kind === 'rebound' || kind === 'cipher'
                                 ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
                                 : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
@@ -360,6 +368,7 @@ describe('supported feature gate', () => {
         'becomesTapped',
         'becomesUntapped',
         'becomesTarget',
+        'becomesUnblocked',
         'blocks',
         'castSpell',
         'cycled',
@@ -379,19 +388,24 @@ describe('supported feature gate', () => {
         // CR 709.5h: "When you unlock this door".
         'doorUnlocked',
         'drawn',
+        'dungeonCompleted',
         'endStep',
         'entersBatch',
         'entersBattlefield',
+        'entersCausesTrigger',
         // Glorybringer: "When you do" after exerting.
         'exerted',
         'exiledFromLibraryOrGraveyard',
+        'exploits',
         'landfall',
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
         'lifeLost',
+        'milled',
         'noncombatDamageDealt',
         'dealtDamageToPlayer',
+        'damageToPlayerPrevented',
         'permanentSacrificed',
         'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".
@@ -410,9 +424,11 @@ describe('supported feature gate', () => {
         'tappedForMana',
         'tapsForMana',
         'tokenCreated',
+        'turnedFaceUp',
         'playsCard',
         'unblockedAttackBatch',
         'upkeep',
+        'votingFinished',
         'winsCoinFlip',
         'winsClash',
       ].sort(),
@@ -426,6 +442,7 @@ describe('supported feature gate', () => {
       'each',
       'moved',
       'putWithThis',
+      'triggerSubject',
     ]);
     expect(SUPPORTED_FEATURES.tokenPresets).toEqual([
       'Treasure',
@@ -438,6 +455,7 @@ describe('supported feature gate', () => {
       'Lander',
       'Wicked Role',
       'Junk',
+      'Blood',
     ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',
@@ -460,7 +478,11 @@ describe('supported feature gate', () => {
       // Issue 102: "enters from a graveyard" and "leaves your graveyard during your turn".
       'entersBattlefieldFromGraveyard',
       'entersBattlefieldFromYourGraveyard',
+      // Exit from Exile precon (issue 168): "a land you control enters from exile".
+      'entersBattlefieldFromExile',
       'leftGraveyardDuringYourTurn',
+      // Szarel, Genesis Shepherd: "Whenever you sacrifice another nontoken permanent during your turn".
+      'sacrificedDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',
@@ -476,6 +498,9 @@ describe('supported feature gate', () => {
       'lifeLostBatch',
       // Whispering Snitch: "Whenever you surveil for the first time each turn".
       'surveilsFirstEachTurn',
+      'stepMonarch',
+      'dealtDamageNoncombat',
+      'dealtDamageExcess',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

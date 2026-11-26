@@ -95,8 +95,7 @@ test('a player’s own deck lists the printings of a card, and a chosen one is s
   await page.getByLabel(/^Decklist/).fill(supportedList());
   await page.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText('Saved "SYNTHETIC Mine".')).toBeVisible();
+  await expect(page.getByText('Imported and saved "SYNTHETIC Mine".')).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
   await page.getByRole('button', { name: 'My decks' }).click();
   const open = async () => {
@@ -182,5 +181,52 @@ test.describe('a built-in deck', () => {
     await expect(dialog.locator('img.deck-card-large')).toBeVisible();
     await expect(dialog.getByRole('radio')).toHaveCount(0);
     await expect(dialog.getByRole('button', { name: 'Use in this deck' })).toHaveCount(0);
+  });
+});
+
+test.describe('the special-frame commander art option of the import screen', () => {
+  async function importWith(page: Page, on: boolean): Promise<string> {
+    await fakeScryfall(page);
+    await page.route(/api\.scryfall\.com\/cards\/search/, (route) =>
+      route.fulfill({
+        status: 200,
+        headers: CORS,
+        contentType: 'application/json',
+        body: JSON.stringify({ object: 'list', data: PRINTS }),
+      }),
+    );
+    await images(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'My decks' }).click();
+    await page.getByRole('button', { name: 'Paste a list' }).click();
+    const option = page.getByLabel(/special-frame art for my commander/);
+    // Off until the player turns it on.
+    await expect(option).not.toBeChecked();
+    if (on) await option.check();
+    await page.getByLabel('Deck name').fill('SYNTHETIC Nice');
+    await page.getByLabel(/^Decklist/).fill(supportedList());
+    await page.getByRole('button', { name: 'Import', exact: true }).click();
+    await expect(page.getByText('Imported and saved "SYNTHETIC Nice".')).toBeVisible({
+      timeout: 30_000,
+    });
+    return page.getByLabel(/^Decklist/).inputValue();
+  }
+
+  test('on: the commander line gets the newest special printing, and the choice is remembered', async ({
+    page,
+  }) => {
+    const text = await importWith(page, true);
+    // PRINTS[0] has a plain frame; PRINTS[1] is borderless: the one written on the line.
+    expect(text).toContain('1 SYNTHETIC Commander (bbb) 2 ^Chosen printing^');
+    await page.reload();
+    await page.getByRole('button', { name: 'My decks' }).click();
+    await page.getByRole('button', { name: 'Paste a list' }).click();
+    await expect(page.getByLabel(/special-frame art for my commander/)).toBeChecked();
+  });
+
+  test('off: the list is imported as it was', async ({ page }) => {
+    const text = await importWith(page, false);
+    expect(text).toContain('1 SYNTHETIC Commander\n');
+    expect(text).not.toContain('Chosen printing');
   });
 });

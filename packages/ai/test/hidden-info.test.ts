@@ -260,13 +260,15 @@ function auditView(state: GameState, viewer: SeatId, audit: Audit): void {
     }
   }
 
-  // No library contents or order: the view has no library field at all, and no library object.
+  // No library contents or order: the view has no library field at all, and no library object. The
+  // check is for the key `"library":`: a zone named in a visible card's ability (a search of
+  // "library" and "graveyard", say) is not library contents.
   const withoutTop = (v: unknown) =>
     JSON.stringify(v, (key, value) => (key === 'libraryTop' ? undefined : value));
   expect(
     searching === null && arranging === null ? withoutTop(view) : withoutTop(outsideTheChoice),
     at,
-  ).not.toContain('"library"');
+  ).not.toContain('"library":');
   expect(text, at).not.toContain('"libraryOrder"');
 
   // One assertion for all secrets: thousands of per-id expectations would dominate the runtime.
@@ -640,11 +642,12 @@ describe('the sample handed to an agent (A31, D-161)', () => {
           if (realCards.length >= 8) {
             checked += 1;
             expect(sampleCards, at).not.toEqual(realCards);
-            // Neither zone alone is the real one in order (a zone of one or two cards can match by chance).
-            if (real.hand.length >= 4) {
+            // Neither zone alone is the real one in order. A zone of n cards matches by chance with probability 1/n!, so only zones of six or more (1 in 720 or less) are
+            // compared: a random shuffle of four cards repeats the real order one time in 24, which a seeded game of hundreds of decisions reaches by luck.
+            if (real.hand.length >= 6) {
               expect(cardIdsOf(sample, got.hand), at).not.toEqual(cardIdsOf(state, real.hand));
             }
-            if (real.library.length >= 4) {
+            if (real.library.length >= 6) {
               expect(cardIdsOf(sample, got.library), at).not.toEqual(
                 cardIdsOf(state, real.library),
               );

@@ -22,6 +22,7 @@ import { layoutRow, type RowSpec } from './layout';
 import { useMeasure } from './measure';
 import { type CombatRole, type RowKind, roleKey } from './resolve';
 import { GAP, PAD_Y, type RowProps } from './row-shape';
+import { stackShape } from './stack-shape';
 import { Tile } from './Tile';
 
 /**
@@ -105,6 +106,8 @@ function GroupTile({
     // biome-ignore lint/a11y/noStaticElementInteractions: hover only widens what the button shows
     <span
       className="board-group"
+      // The cards behind the front one stand beside the tile: the group keeps that room clear.
+      style={{ marginRight: stackShape(objects.length).extraW }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

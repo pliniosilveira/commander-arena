@@ -26,7 +26,7 @@
  * Both stages are one instruction (`Instruction` `copySpell`) so that a decision can be asked in the middle of a resolution
  * (CR 903.9b, 608.2d) and the resolution go on with the answer.
  */
-import type { ObjectFilter } from '../ast/types';
+import type { Ability, ObjectFilter } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { TargetsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
@@ -128,6 +128,7 @@ function copyObject(
   timestamp: number,
   controller: GameObject['controller'],
   retarget?: ObjectId,
+  gains?: readonly Ability[],
 ): GameObject | null {
   const card = printedCard(original);
   const stack = original.stack;
@@ -193,6 +194,8 @@ function copyObject(
       // CR 707.10: the alternative cost the spell was cast for is copied (overload changes the text, evoke and dash what
       // the permanent does). Flashback, "free" and the suspend cast are about how it was cast, which a copy is not.
       ...(stack.alt === undefined ? {} : { alt: stack.alt }),
+      // Nalfeshnee (CR 707.10f, 613.1f): what the token the copy becomes has.
+      ...(gains === undefined ? {} : { permanentGains: gains }),
     },
   };
 }
@@ -208,7 +211,7 @@ function makeCopy(
   const [timestamp, s2] = allocateTimestamp(s1);
   // D-438 (CR 707.10): "that player copies that spell": the copy belongs to the player who has it put onto the stack.
   const copier = ins.controller ?? res.controller;
-  const copy = copyObject(original, id, timestamp, copier, ins.retarget);
+  const copy = copyObject(original, id, timestamp, copier, ins.retarget, ins.gains);
   if (copy === null) return done(state);
   const next = addToZone(setObject(s2, copy), 'stack', null, id);
   const events: GameEvent[] = [

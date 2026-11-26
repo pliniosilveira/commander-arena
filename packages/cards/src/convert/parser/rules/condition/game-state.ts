@@ -18,7 +18,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrComparison, IrCondition, IrNoun } from '../../ir/types';
-import { counted } from '../amount/count';
+import { counted, countedAre } from '../amount/count';
 import { quantity } from '../amount/index';
 import { defineRule, spanned } from '../registry';
 
@@ -31,11 +31,14 @@ function condition(
   return { kind: 'condition', test, span: { start, end }, rule };
 }
 
-/** "N or more", "N or greater", "N or less", "N or fewer": the comparison of a whole number (CR 107.1). */
-function numberCompare(): Parser<IrComparison> {
+/** "thirty": the one number word above twenty that a count of counters uses (Lux Artillery); `quantity` reads one to twenty and one hundred. */
+const THIRTY: Parser<number> = map(pattern(/thirty(?![\p{L}\p{N}])/iu), () => 30);
+
+/** "N or more", "N or greater", "N or less", "N or fewer": the comparison of a whole number (CR 107.1). With `wide`, "thirty" too. */
+function numberCompare(wide = false): Parser<IrComparison> {
   return map(
     sequence(
-      satisfy(quantity, (n) => n >= 1),
+      satisfy(wide ? choice(THIRTY, quantity) : quantity, (n) => n >= 1),
       pattern(/ or (more|greater|less|fewer)(?![\p{L}\p{N}])/iu),
     ),
     ([value, word]): IrComparison => ({
@@ -46,7 +49,7 @@ function numberCompare(): Parser<IrComparison> {
 }
 
 const DESIGNATION =
-  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing)(?![\p{L}\p{N}])/iu;
+  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing|(you have|you don['’]t have|an opponent has|a player has) the initiative|(there is no) monarch)(?![\p{L}\p{N}])/iu;
 
 /**
  * `condition.designation`: "you're the monarch", "you are the monarch", "an opponent is the monarch", "a player is
@@ -60,7 +63,7 @@ const DESIGNATION =
 export const CONDITION_DESIGNATION = defineRule<IrCondition>({
   id: 'condition.designation',
   family: 'condition',
-  leading: ['you', 'you’re', "you're", 'an', 'a'],
+  leading: ['you', 'you’re', "you're", 'an', 'a', 'there'],
   cites: [
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
@@ -83,8 +86,17 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     'you don’t have the city’s blessing',
     "an opponent has the city's blessing",
     "a player has the city's blessing",
+    // Sarevok's Tome (CR 726.1): the initiative.
+    'you have the initiative',
+    'an opponent has the initiative',
+    "you don't have the initiative",
+    // Archivist of Gondor, Crown of Gondor (CR 725.1, 603.4): nobody is the monarch, the negation of "a player is the monarch".
+    'there is no monarch',
   ],
   rejects: [
+    'there is no monarch of the realm',
+    "there's no monarch",
+    'there is no city’s blessing',
     'you become the monarch',
     "you're the monarch.",
     "you're monarch",
@@ -101,12 +113,22 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     "an opponent doesn't have the city's blessing",
     "each opponent has the city's blessing",
     'you have the blessing',
+    'you have initiative',
+    'the initiative',
   ],
   parse: (ctx, pos) => {
     const r = spanned(pattern(DESIGNATION))(ctx, pos);
     if (!r.ok) return r;
     const blessing = r.value.value[2] !== undefined;
-    const words = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
+    // Sarevok's Tome (CR 726.1): "you have the initiative", the designation of at most one player.
+    const initiative = r.value.value[3] !== undefined;
+    const words = (
+      r.value.value[1] ??
+      r.value.value[2] ??
+      r.value.value[3] ??
+      r.value.value[4] ??
+      ''
+    ).toLowerCase();
     const det = words.startsWith('you')
       ? 'you'
       : words.startsWith('an opponent')
@@ -126,9 +148,9 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     const has = condition('condition.designation', pos, r.pos, {
       kind: 'designation',
       who,
-      designation: blessing ? 'citysBlessing' : 'monarch',
+      designation: blessing ? 'citysBlessing' : initiative ? 'initiative' : 'monarch',
     });
-    const negative = /(?: not|aren['’]t|don['’]t have)$/.test(words);
+    const negative = /(?: not|aren['’]t|don['’]t have|there is no)$/.test(words);
     return {
       ok: true,
       value: negative
@@ -195,6 +217,53 @@ export const CONDITION_AMOUNT_COUNT = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.amount-count-are`: "seven or more land cards are in your graveyard" (Scouring Swarm, CR 603.4, 608.2c): the count of `condition.amount-count`, said with the cards first and
+ * "are in" a zone. The engine's `amountIs` of the `countOf` those cards. Not read: "there are" or "you have" (the other rule), one card ("is in"), a number with no "or more".
+ */
+export const CONDITION_AMOUNT_COUNT_ARE = defineRule<IrCondition>({
+  id: 'condition.amount-count-are',
+  family: 'condition',
+  leading: [],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'seven or more land cards are in your graveyard',
+    'four or more creature cards are in your graveyard',
+    '3 or more cards are in your graveyard',
+    'two or fewer cards are in your hand',
+  ],
+  rejects: [
+    'seven or more land cards are in your graveyard.',
+    'seven land cards are in your graveyard',
+    'zero or more land cards are in your graveyard',
+    'seven or more land cards are in a graveyard',
+    'seven or more land cards in your graveyard',
+    'seven or more land cards are on the battlefield',
+    'seven or more creatures are in your graveyard',
+    'there are seven or more land cards in your graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      numberCompare(),
+      literal(' '),
+      countedAre('condition.amount-count-are'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [compare, , of] = r.value;
+    if (of.filter.card !== true) return fail(ctx, pos);
+    const amount: IrAmount = { kind: 'countOf', of, span: of.span };
+    return {
+      ok: true,
+      value: condition('condition.amount-count-are', pos, r.pos, {
+        kind: 'amountIs',
+        amount,
+        compare,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.total-stat`: "creatures you control have total power 8 or greater", "creatures you control have total
  * toughness 10 or greater" (CR 208.1: the sum of the stat over the group, now; a creature with no such stat counts
  * nothing). The engine's `amountIs` of an `aggregate`.
@@ -238,6 +307,53 @@ export const CONDITION_TOTAL_STAT = defineRule<IrCondition>({
     return {
       ok: true,
       value: condition('condition.total-stat', pos, r.pos, { kind: 'amountIs', amount, compare }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.counters-among`: "there are thirty or more counters among artifacts and creatures you control" (Lux Artillery, CR 122.1, 603.4): the counters of every kind on the objects a
+ * group names, added together, compared with a number. The engine's `amountIs` of an `aggregate` of the stat `counters`, read as the ability triggers and again as it resolves
+ * (CR 603.4). Not read: "a" counter, a kind of counter ("+1/+1 counters"), a number alone, a group that is not plural, more words after the group.
+ */
+export const CONDITION_COUNTERS_AMONG = defineRule<IrCondition>({
+  id: 'condition.counters-among',
+  family: 'condition',
+  leading: ['there'],
+  cites: ['CR 122.1 (Counters)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    'there are thirty or more counters among artifacts and creatures you control',
+    'there are 30 or more counters among creatures you control',
+    'there are five or fewer counters among permanents you control',
+  ],
+  rejects: [
+    'there are thirty or more counters',
+    'there are thirty counters among artifacts and creatures you control',
+    'there are thirty or more +1/+1 counters among creatures you control',
+    'there is one or more counter among creatures you control',
+    'there are thirty or more counters among artifacts and creatures you control.',
+    'there are zero or more counters among creatures you control',
+    'you have thirty or more counters among creatures you control',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('there are '),
+      numberCompare(true),
+      literal(' counters among '),
+      counted('condition.counters-among', true),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, compare, , of] = r.value;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = { kind: 'aggregate', how: 'total', stat: 'counters', of, span };
+    return {
+      ok: true,
+      value: condition('condition.counters-among', pos, r.pos, {
+        kind: 'amountIs',
+        amount,
+        compare,
+      }),
       pos: r.pos,
     };
   },
@@ -348,11 +464,64 @@ export const CONDITION_OPPONENT_CARDS_IN_GRAVEYARD = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.completed-dungeon`: "you've completed a dungeon", "you have completed a dungeon" (CR 309.7, 701.49c): the player has completed a dungeon at some time in the game. The
+ * engine's `completedDungeon`. Not read: another player, "a dungeon" counted ("two dungeons"), a named dungeon, "this turn".
+ */
+export const CONDITION_COMPLETED_DUNGEON = defineRule<IrCondition>({
+  id: 'condition.completed-dungeon',
+  family: 'condition',
+  leading: ['you', 'you’ve', "you've"],
+  cites: ['CR 309.7 (Dungeons)', 'CR 701.49c (Venture)'],
+  examples: [
+    "you've completed a dungeon",
+    'you’ve completed a dungeon',
+    'you have completed a dungeon',
+  ],
+  rejects: [
+    "you've completed two dungeons",
+    "you've completed a dungeon this turn",
+    "an opponent's completed a dungeon",
+    "you've completed Undercity",
+    "you've not completed a dungeon",
+    'you completed a dungeon',
+    'completed a dungeon',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/you(?:['’]ve| have) completed a dungeon(?![\p{L}\p{N}])(?! this turn)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const who: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: 'condition.completed-dungeon',
+    };
+    return {
+      ok: true,
+      value: condition('condition.completed-dungeon', pos, r.pos, {
+        kind: 'completedDungeon',
+        who,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const GAME_STATE_CONDITION_RULES = [
+  CONDITION_COMPLETED_DUNGEON,
   CONDITION_DESIGNATION,
   CONDITION_AMOUNT_COUNT,
+  CONDITION_AMOUNT_COUNT_ARE,
   CONDITION_OPPONENT_CARDS_IN_GRAVEYARD,
   CONDITION_TOTAL_STAT,
+  CONDITION_COUNTERS_AMONG,
   CONDITION_OPPONENT_HAS_MORE,
 ];
 

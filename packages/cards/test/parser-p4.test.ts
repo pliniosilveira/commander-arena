@@ -120,10 +120,10 @@ describe('keyword.kicker: "Kicker {M}" and "Kicker—Pay N life" (CR 702.33a)', 
   });
 
   test('a cost the engine does not pay for kicker is read and refused, naming the rule', () => {
-    expect(dropped('Kicker—Sacrifice a creature')).toMatchObject({
+    expect(dropped('Kicker—Discard a card')).toMatchObject({
       reason: 'notRunnable',
       closestRule: 'keyword.kicker',
-      recognised: expect.arrayContaining(['keyword.kicker', 'cost.sacrifice']),
+      recognised: expect.arrayContaining(['keyword.kicker', 'cost.discard']),
     });
   });
 
@@ -736,10 +736,10 @@ describe('Food and Clue lower (CR 111.10b, 111.10f)', () => {
     );
   });
 
-  test('Blood still needs what the engine lacks', () => {
-    expect(dropped('Create a Blood token.')).toMatchObject({
+  test('Blood runs since CR 111.10g; a mana ability that discards still needs what the engine lacks', () => {
+    expect(dropped('{T}, Discard a card: Add {R}{R}.', 'creature')).toMatchObject({
       reason: 'notRunnable',
-      needs: ['token:Blood'],
+      needs: ['manaCost:discard'],
     });
   });
 });

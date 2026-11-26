@@ -80,6 +80,10 @@ export const REASONS = [
   'companion',
   /** A loyalty ability of a planeswalker of the agent's was activated (D-203). */
   'loyalty',
+  /** A step of the turn plan, taken because the board is the one the plan expected (`heuristic-plan.ts`). */
+  'plan',
+  /** The first step of a new plan, made because the board was not the one the old plan expected. */
+  'replan',
   /** The decision was answered by the casual handlers (choices, targets, payments, ...). */
   'delegated',
 ] as const;

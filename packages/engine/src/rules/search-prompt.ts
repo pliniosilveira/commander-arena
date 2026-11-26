@@ -79,6 +79,8 @@ function whereWords(d: SearchEffect['destinations'][number]): string {
       return 'into your graveyard';
     case 'library':
       return 'on top of your library';
+    case 'exile':
+      return 'is exiled';
     default: {
       const unreachable: never = d.zone;
       return unreachable;

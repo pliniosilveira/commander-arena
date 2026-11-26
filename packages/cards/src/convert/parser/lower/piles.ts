@@ -4,7 +4,7 @@
  * chosen goes (the hand; the other pile goes to the graveyard).
  */
 import type { IrClause } from '../ir/types';
-import { amountArg, type Effects } from './clauses';
+import { amountArg, arg, type Effects } from './clauses';
 import type { Lowering } from './types';
 
 const REVEAL_AND_SEPARATE: Lowering<IrClause, Effects> = {
@@ -22,7 +22,7 @@ const REVEAL_AND_SEPARATE: Lowering<IrClause, Effects> = {
           count: count.value,
           separator: 'opponent',
           chosenTo: 'hand',
-          otherTo: 'graveyard',
+          otherTo: arg(clause, 'bottom')?.kind === 'flag' ? 'libraryBottom' : 'graveyard',
         },
       ],
       rule: clause.rule,

@@ -17,7 +17,17 @@ export function hasSingleTarget(obj: GameObject | undefined): obj is GameObject 
 export function changeTargetInstructions(
   state: GameState,
   ids: readonly ObjectId[],
+  to?: ObjectId,
 ): ChangeTargetInstruction[] {
+  if (to !== undefined) {
+    // "Change a target of ..." (CR 115.7b): a spell or ability on the stack with at least one target, changed to `to`.
+    return ids.flatMap((id) => {
+      const o = state.objects[id];
+      return o?.zone === 'stack' && (o.stack?.chosenTargets.length ?? 0) > 0
+        ? [{ kind: 'changeTarget' as const, object: id, to }]
+        : [];
+    });
+  }
   return ids.flatMap((id) =>
     hasSingleTarget(state.objects[id]) ? [{ kind: 'changeTarget' as const, object: id }] : [],
   );

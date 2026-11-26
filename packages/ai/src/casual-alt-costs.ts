@@ -107,6 +107,8 @@ export function chooseNamedAlternative(
   // A foretold card (CR 702.143a, D-128) can only be cast for its foretell cost: it is the cast, so it is chosen.
   if (offered.has('foretell')) return 'foretell';
   if (offered.has('spectacle')) return 'spectacle';
+  // CR 702.173a: the cheaper cost, offered only when it is paid for by combat damage already dealt this turn.
+  if (offered.has('freerunning')) return 'freerunning';
   if (offered.has('overload') && wantsOverload(view, card, ordinary)) return 'overload';
   if (offered.has('dash') && wantsDash(view, card, ordinary)) return 'dash';
   if (offered.has('blitz') && wantsBlitz(view, card)) return 'blitz';
@@ -120,6 +122,8 @@ export function chooseNamedAlternative(
     const life = card.alternativeCosts?.find((a) => a.kind === 'payLife')?.life ?? 0;
     if (ownLife(view) - life > PAY_LIFE_ABOVE) return 'payLife';
   }
+  // CR 118.9 (Baleful Mastery): "You may pay {1}{B} rather than pay this spell's mana cost", chosen when the ordinary cast cannot be paid (the ordinary cast is the one without a drawback).
+  if (offered.has('payMana') && !ordinary) return 'payMana';
   // CR 702.37c (Morph): a face-down 2/2 for {3} when the ordinary cast cannot be paid; it is turned face up later for its morph cost (`casual-face-down.ts`).
   if (offered.has('morph') && !ordinary) return 'morph';
   return undefined;

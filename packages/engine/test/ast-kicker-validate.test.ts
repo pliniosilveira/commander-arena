@@ -94,9 +94,48 @@ describe('kicker', () => {
     }
   });
 
+  test('a kicker may sacrifice one permanent by a filter ("Kicker—Sacrifice a creature.", CR 702.33a, 701.21a)', () => {
+    const sac = (extra: object = {}): Cost =>
+      ({ kind: 'sacrifice', what: { types: ['creature'] }, ...extra }) as Cost;
+    expect(validateCard(spell([kicker(sac())], kickedGain))).toEqual([]);
+    const bad = 'a kicker sacrifice names one permanent by a filter';
+    expect(
+      structure(spell([kicker({ kind: 'sacrifice', what: { kind: 'this' } })], kickedGain)),
+    ).toEqual([bad]);
+    expect(structure(spell([kicker(sac({ count: 2 }))], kickedGain))).toEqual([bad]);
+    expect(structure(spell([kicker(sac({ countX: true }))], kickedGain))).toEqual([bad]);
+    expect(structure(spell([kicker(sac({ anyNumber: true }))], kickedGain))).toEqual([bad]);
+    expect(structure(spell([kicker(sac(), sac())], kickedGain))).toContain(
+      'a kicker cost has one sacrifice',
+    );
+  });
+
+  test('a multikicker never sacrifices, and a kicker sacrifice does not go with another sacrifice of the cast', () => {
+    const sac: Cost = { kind: 'sacrifice', what: { types: ['creature'] } };
+    expect(
+      structure(
+        spell([{ kind: 'keyword', keyword: { kind: 'multikicker', cost: [sac] } }], kickedGain),
+      ),
+    ).toContain('a kicker cost may be mana or life only');
+    const withAdditional = singleFace({
+      name: 'SYNTHETIC Test Card',
+      manaCost: ['1'],
+      types: ['sorcery'],
+      colors: [],
+      colorIdentity: [],
+      oracleText: 'text',
+      abilities: [kicker(sac)],
+      additionalCosts: [sac],
+      spell: kickedGain,
+    });
+    expect(structure(withAdditional)).toContain(
+      'a kicker sacrifice with another sacrifice in the cost of the spell is not supported',
+    );
+  });
+
   test('other costs, X, an empty cost and a zero life cost are not', () => {
     expect(structure(spell([kicker({ kind: 'tap' })], kickedGain))).toEqual([
-      'a kicker cost may be mana or life only',
+      'a kicker cost may be mana, life or a sacrifice only',
     ]);
     expect(structure(spell([kicker(mana('X'))], kickedGain))).toEqual([
       'X in a kicker cost is not supported',
@@ -332,7 +371,7 @@ describe('flashback', () => {
       'life paid must be at least 1',
     ]);
     expect(structure(spell([flashback({ kind: 'discard', count: 1 })], draw))).toEqual([
-      'a flashback cost may be mana, life or a sacrifice only',
+      'a flashback cost may be mana, life, a sacrifice or an exile of X graveyard cards only',
     ]);
     expect(structure(spell([flashback(mana('X'))], draw))).toEqual([
       'X in a flashback cost is not supported',
@@ -361,6 +400,20 @@ describe('flashback', () => {
     expect(structure(spell([flashback(sac(), sac())], draw))).toContain(
       'a flashback cost has one sacrifice',
     );
+  });
+
+  test('"Flashback—{3}{U}{R}, Exile X cards from your graveyard" is fine (CR 702.34a, 107.3a); a fixed number, a kind of card or two of them are not', () => {
+    const exileX = (extra: object = {}): Cost =>
+      ({ kind: 'exileFromGraveyard', filter: {}, count: 1, countX: true, ...extra }) as Cost;
+    expect(structure(spell([flashback(mana('3', 'U', 'R'), exileX())], draw))).toEqual([]);
+    const bad = 'a flashback exile of graveyard cards is X cards of any kind';
+    expect(structure(spell([flashback(exileX({ countX: undefined, count: 2 }))], draw))).toEqual([
+      bad,
+    ]);
+    expect(
+      structure(spell([flashback(exileX({ filter: { types: ['creature'] } }))], draw)),
+    ).toEqual([bad]);
+    expect(structure(spell([flashback(exileX(), exileX())], draw))).toContain(bad);
   });
 
   test('not on a permanent (CR 702.34a)', () => {

@@ -222,6 +222,7 @@ export function riderOf(
     ...(source.entersTapped && !asLand ? { entersTapped: true as const } : {}),
     ...(source.gains === undefined ? {} : { gains: source.gains }),
     ...(source.exileOthers === undefined || asLand ? {} : { exileOthers: source.exileOthers }),
+    ...(source.sacrifice === undefined || asLand ? {} : { sacrifice: source.sacrifice }),
   };
 }
 

@@ -21,6 +21,19 @@ import {
 } from './validate-parts';
 import { checkPlainCondition } from './validate-static-condition';
 
+/** The predefined tokens a replacement of "one of each" may make: the ones that enter with no question and need no object (a Wicked Role is attached to a creature). */
+const EACH_OF_TOKENS: readonly string[] = [
+  'Treasure',
+  'Food',
+  'Clue',
+  'Gold',
+  'Map',
+  'Gingerbrute',
+  'Incubator',
+  'Lander',
+  'Junk',
+];
+
 /** The trigger kinds D-149 adds. True when `t` is one of them (it was checked here). */
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
   switch (t?.kind) {
@@ -88,14 +101,117 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           'attackedEnchantedPlayer is true when present',
         );
       }
+      if (t.attackedYou !== undefined && t.attackedYou !== true) {
+        issue(out, `${path}.attackedYou`, 'attackedYou is true when present');
+      }
+      if (
+        t.attackedYou === true &&
+        (t.attackedEnchantedPlayer === true || t.eachAttackedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedYou`,
+          'attackedYou does not go with attackedEnchantedPlayer or eachAttackedPlayer',
+        );
+      }
+      if (t.attackedYouOrPlaneswalkers !== undefined && t.attackedYouOrPlaneswalkers !== true) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is true when present',
+        );
+      }
+      if (
+        t.attackedYouOrPlaneswalkers === true &&
+        (t.attackedYou === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackedInitiativeHolder === true ||
+          t.eachAttackedPlayer === true ||
+          t.eachAttackedOpponent === true ||
+          t.who === 'you')
+      ) {
+        issue(
+          out,
+          `${path}.attackedYouOrPlaneswalkers`,
+          'attackedYouOrPlaneswalkers is about the attackers of another player and does not go with attackedYou, attackedEnchantedPlayer, attackedInitiativeHolder, eachAttackedPlayer or eachAttackedOpponent',
+        );
+      }
+      if (t.attackedInitiativeHolder !== undefined && t.attackedInitiativeHolder !== true) {
+        issue(
+          out,
+          `${path}.attackedInitiativeHolder`,
+          'attackedInitiativeHolder is true when present',
+        );
+      }
+      if (
+        t.attackedInitiativeHolder === true &&
+        (t.attackedYou === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.eachAttackedPlayer === true ||
+          t.eachAttackedOpponent === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedInitiativeHolder`,
+          'attackedInitiativeHolder does not go with attackedYou, attackedEnchantedPlayer, eachAttackedPlayer or eachAttackedOpponent',
+        );
+      }
       if (t.eachAttackedPlayer !== undefined && t.eachAttackedPlayer !== true) {
         issue(out, `${path}.eachAttackedPlayer`, 'eachAttackedPlayer is true when present');
+      }
+      if (t.attackedYou !== undefined && t.attackedYou !== true) {
+        issue(out, `${path}.attackedYou`, 'attackedYou is true when present');
+      }
+      if (
+        t.attackedYou === true &&
+        (t.eachAttackedPlayer === true || t.attackedEnchantedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackedYou`,
+          'attackedYou does not go with eachAttackedPlayer or attackedEnchantedPlayer',
+        );
       }
       if (t.eachAttackedPlayer === true && t.attackedEnchantedPlayer === true) {
         issue(
           out,
           `${path}.eachAttackedPlayer`,
           'eachAttackedPlayer does not go with attackedEnchantedPlayer',
+        );
+      }
+      if (t.eachAttackedOpponent !== undefined && t.eachAttackedOpponent !== true) {
+        issue(out, `${path}.eachAttackedOpponent`, 'eachAttackedOpponent is true when present');
+      }
+      if (
+        t.eachAttackedOpponent === true &&
+        (t.eachAttackedPlayer === true ||
+          t.attackedEnchantedPlayer === true ||
+          t.attackingYourOpponents === true ||
+          t.who !== 'you')
+      ) {
+        issue(
+          out,
+          `${path}.eachAttackedOpponent`,
+          "eachAttackedOpponent is about the creatures of 'you' and does not go with eachAttackedPlayer, attackedEnchantedPlayer or attackingYourOpponents",
+        );
+      }
+      if (t.includesSource !== undefined && t.includesSource !== true) {
+        issue(out, `${path}.includesSource`, 'includesSource is true when present');
+      }
+      if (t.includesSource === true && t.who !== 'you') {
+        issue(out, `${path}.includesSource`, "includesSource is about the creatures of 'you'");
+      }
+      if (t.attackingYourOpponents !== undefined && t.attackingYourOpponents !== true) {
+        issue(out, `${path}.attackingYourOpponents`, 'attackingYourOpponents is true when present');
+      }
+      if (
+        t.attackingYourOpponents === true &&
+        (t.eachAttackedPlayer === true || t.attackedEnchantedPlayer === true)
+      ) {
+        issue(
+          out,
+          `${path}.attackingYourOpponents`,
+          'attackingYourOpponents does not go with eachAttackedPlayer or attackedEnchantedPlayer',
         );
       }
       if (t.what !== undefined) {
@@ -156,6 +272,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'lifeGainDouble':
+    case 'proliferateDouble':
       return true;
     case 'countersPlus':
       // CR 614.1a, 122.6: the permanents that get more counters of one kind, and how many more.
@@ -170,10 +287,28 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
-      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double'])) {
+      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double', 'eachOf'])) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }
-      if (r.mode === 'double') {
+      if (r.mode === 'eachOf') {
+        // CR 614.1a (Academy Manufactor): "instead create one of each": at least two different predefined tokens that make themselves with no question or target.
+        const kinds: unknown = (r as { tokens?: unknown }).tokens;
+        if (
+          !Array.isArray(kinds) ||
+          kinds.length < 2 ||
+          new Set(kinds).size !== kinds.length ||
+          !kinds.every((k) => isOneOf(k, EACH_OF_TOKENS))
+        ) {
+          issue(
+            out,
+            `${path}.tokens`,
+            `one of each is of at least two different predefined tokens among ${EACH_OF_TOKENS.join(', ')}`,
+          );
+        }
+        if ((r as { token?: unknown }).token !== undefined) {
+          issue(out, `${path}.token`, 'a replacement of one of each makes no token of its own');
+        }
+      } else if (r.mode === 'double') {
         // D-378 (CR 614.1a): "twice that many of those tokens" makes more of the tokens `what` names, not a token of its own.
         if ((r as { token?: unknown }).token !== undefined) {
           issue(out, `${path}.token`, 'a doubling of tokens makes no token of its own');
@@ -196,6 +331,19 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       if (['countOf', 'enteredThisTurn', 'diedThisTurn'].includes(kindOf(r.count))) {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'toughnessOf' || kindOf(r.count) === 'countersOn') {
+        // Arwen (CR 614.12): the toughness of the permanent with the ability; Bloodspore Thrinax (CR 122.1): its counters.
+        if (kindOf((r.count as { of?: unknown }).of) !== 'this') {
+          issue(
+            out,
+            `${path}.count.of`,
+            'an enters-with count reads the toughness or the counters of this permanent only',
+          );
+        }
+        const kind = (r.count as { counter?: unknown }).counter;
+        if (kind !== undefined && (typeof kind !== 'string' || kind === '')) {
+          issue(out, `${path}.count.counter`, 'counter name must be non-empty');
+        }
       } else if (kindOf(r.count) === 'manaSpent') {
         // D-183: the mana spent to cast the entering permanent, all of it or from sources of a card type.
         checkManaSpentType(
@@ -230,6 +378,16 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       if (!Number.isInteger(r.count) || r.count < 2) {
         issue(out, `${path}.count`, 'the draws made instead are a whole number of two or more');
       }
+      if (r.exceptFirstInDrawStep !== true) {
+        issue(
+          out,
+          `${path}.exceptFirstInDrawStep`,
+          'only a replacement of every draw but the first of the draw step is run',
+        );
+      }
+      return true;
+    case 'drawRedirect':
+      // CR 614.1a, 614.11 (Notion Thief): the draws of the opponents but the first of each of their draw steps (the only form the engine runs).
       if (r.exceptFirstInDrawStep !== true) {
         issue(
           out,
@@ -283,14 +441,42 @@ function checkEnteringFilter(what: ObjectFilter, path: string, out: AstIssue[]):
 export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]): boolean {
   switch (s?.kind) {
     case 'preventDamageToThis':
-      if (kindOf(s.subject) !== 'this') {
-        issue(out, `${path}.subject`, 'preventDamageToThis is about the permanent itself ("this")');
+      if (kindOf(s.subject) !== 'this' && kindOf(s.subject) !== 'attached') {
+        issue(
+          out,
+          `${path}.subject`,
+          'preventDamageToThis is about the permanent itself ("this") or the permanent it is attached to ("attached")',
+        );
+      }
+      if (kindOf(s.subject) === 'attached' && s.removeCounter !== undefined) {
+        issue(
+          out,
+          `${path}.removeCounter`,
+          'a prevention of the attached permanent removes no counter',
+        );
       }
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
       }
       if (s.removeCounter !== undefined && !isOneOf(s.removeCounter, ['+1/+1', '-1/-1'])) {
         issue(out, `${path}.removeCounter`, 'removeCounter is a +1/+1 or a -1/-1 counter');
+      }
+      return true;
+    case 'preventDamageAround':
+      if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
+        issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
+      }
+      if (
+        !isOneOf(s.events, [
+          'dealtByThis',
+          'dealtToYouAndYourOtherPermanents',
+          'dealtToYouAndYourPlaneswalkers',
+        ])
+      ) {
+        issue(out, `${path}.events`, `unknown events ${JSON.stringify(s.events)}`);
+      }
+      if (s.keep !== undefined && (!isCount(s.keep) || s.keep < 1)) {
+        issue(out, `${path}.keep`, 'the damage left is a whole number of at least 1');
       }
       return true;
     case 'blockTax':
@@ -311,6 +497,27 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         );
       }
       return true;
+    case 'combatCreatureLimit':
+      if (s.what !== 'attack' && s.what !== 'block') {
+        issue(out, `${path}.what`, 'combatCreatureLimit limits attackers or blockers');
+      }
+      if (!isCount(s.max) || s.max < 1) {
+        issue(out, `${path}.max`, 'the most creatures is a whole number of at least 1');
+      }
+      return true;
+    case 'drawLimit':
+      // CR 121.2b: the opponents of the controller, or every player, and a whole number of cards of at least 1.
+      if (s.who !== 'opponents' && s.who !== 'players') {
+        issue(
+          out,
+          `${path}.who`,
+          'drawLimit is said of the opponents of the controller or of the players',
+        );
+      }
+      if (!isCount(s.max) || s.max < 1) {
+        issue(out, `${path}.max`, 'the most cards drawn in a turn is a whole number of at least 1');
+      }
+      return true;
     case 'cantGainLife':
       // CR 119.7 (D-363): the opponents of the controller, or every player.
       if (s.who !== 'opponents' && s.who !== 'players') {
@@ -323,6 +530,15 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       return true;
     case 'damageCantBePrevented':
     case 'damageAsThoughWither':
+      return true;
+    case 'opponentSearchTopOnly':
+      if (!isCount(s.count) || s.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'opponentSearchTopOnly searches a whole number of cards, one or more',
+        );
+      }
       return true;
     case 'cantBeSacrificed':
       // CR 701.21a: said of the permanent itself, with nothing to check.
@@ -351,7 +567,11 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) === 'creatureAttacks' || kindOf(s.cause) === 'permanentEnters') {
+        if (
+          kindOf(s.cause) === 'creatureAttacks' ||
+          kindOf(s.cause) === 'creatureDealsCombatDamageToPlayer' ||
+          kindOf(s.cause) === 'permanentEnters'
+        ) {
           // Issue 81 (CR 603.2d): a creature attacking, no parameter. Issue 105: the entering permanent may be limited to card types.
           const entering = (s.cause as { entering?: unknown }).entering;
           if (
@@ -367,7 +587,7 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
           issue(
             out,
             `${path}.cause`,
-            'the cause of an additional trigger is castOrCopySpell, creatureAttacks or permanentEnters',
+            'the cause of an additional trigger is castOrCopySpell, creatureAttacks, creatureDealsCombatDamageToPlayer or permanentEnters',
           );
         } else {
           const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;

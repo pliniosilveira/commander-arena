@@ -60,7 +60,7 @@ export const PUMP: Lowering<IrClause, Effects> = {
 
 /**
  * "Search your library for ..." (CR 701.23): the searcher is you, or the player the clause names
- * ("Its controller may search their library ...": `player` and a `may` flag, CR 701.23a, 608.2d),
+ * ("Its controller may search their library ...": `player` and a `may` flag, CR 701.23a, 608.2d; "Each player searches their library ..." has the flag false),
  * the filter is the noun
  * without its zone (the engine looks in the searcher's own library), and the cards found go to the
  * destinations in the order they were chosen. The counts must add up to the most cards that can
@@ -144,7 +144,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     const zonesArg = arg(clause, 'zones');
     let zones: readonly ('graveyard' | 'hand' | 'library')[] | undefined;
     if (zonesArg !== undefined) {
-      if (zonesArg.kind !== 'destinations' || reveal.value || shuffle.value) return failure(clause);
+      if (zonesArg.kind !== 'destinations' || shuffle.value) return failure(clause);
       const needs = missingFeatures(['selector:searchZones']);
       if (needs.length > 0) return { ok: false, needs, at: zonesArg.span, rule: zonesArg.rule };
       const names: ('graveyard' | 'hand' | 'library')[] = [];
@@ -185,10 +185,13 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).
     const who = arg(clause, 'player');
     const may = arg(clause, 'may');
-    if ((who === undefined) !== (may === undefined)) return failure(clause);
+    // `may` is said only with a player ("its controller may search ..."); a player with no "may" (Field of Ruin: "each player searches ...") searches as an instruction.
+    if (who === undefined && may !== undefined) return failure(clause);
     let player: PlayerSelector = { kind: 'you' };
     if (who !== undefined) {
-      if (who.kind !== 'noun' || may?.kind !== 'flag' || !may.value) return failure(clause);
+      if (who.kind !== 'noun' || (may !== undefined && (may.kind !== 'flag' || !may.value))) {
+        return failure(clause);
+      }
       const selector = playerSelectorOf(who, ctx);
       if (!selector.ok) return selector;
       player = selector.value;
@@ -199,7 +202,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
         {
           kind: 'search',
           player,
-          ...(who === undefined ? {} : { optional: true as const }),
+          ...(may === undefined ? {} : { optional: true as const }),
           filter: limit === undefined ? filter.value : { ...filter.value, manaValueAtMost: limit },
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),

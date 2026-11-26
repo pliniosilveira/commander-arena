@@ -38,6 +38,8 @@ const DIALOG_LABELS: Readonly<
   exileMore: 'Exile another card',
   exert: 'Exert',
   clash: 'Clash',
+  openingHand: 'Opening hand',
+  searchPut: 'Search',
 };
 
 /**

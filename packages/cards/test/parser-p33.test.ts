@@ -1433,8 +1433,9 @@ describe('a card put back by an effect and a test of the permanent that triggere
     `${RETURN} If that land is Plains, you may return that nonland permanent card to the battlefield instead.`,
     `${RETURN} If that land is a Plains, you may return that permanent to the battlefield instead.`,
     'Whenever a land you control enters, you may return target creature from the battlefield to your hand. If that land is a Plains, you may return that card to the battlefield instead.',
-    'Whenever a land you control enters, exile target creature you control. Return that card to the battlefield.',
-    'Whenever a land you control enters, exile target creature you control. If that land is a Plains, return that card to the battlefield.',
+    // "Exile target creature you control. Return that card to the battlefield." is read since Gilraen (the card the exile moved), so the card here is one no exile moved.
+    'Whenever a land you control enters, tap target creature you control. Return that card to the battlefield.',
+    'Whenever a land you control enters, tap target creature you control. If that land is a Plains, return that card to the battlefield.',
   ])('is not read: %s', (text) => {
     expect(drop(text)).toMatchObject({
       reason: expect.stringMatching(/unrecognised|notRunnable|unboundReference/),
@@ -1511,7 +1512,7 @@ describe('a grant to the creatures that have a keyword, and an alternative cost 
   );
 
   test.each([
-    "You may pay {W} rather than pay ~'s mana cost.",
+    "You may pay {W} and discard a card rather than pay ~'s mana cost.",
     "You may tap four untapped creatures you control with flying rather than pay ~'s mana cost.",
     "You may pay {W} and tap four untapped creatures with flying rather than pay ~'s mana cost.",
     "You may pay {X} and tap four untapped creatures you control rather than pay ~'s mana cost.",

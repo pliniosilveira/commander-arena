@@ -18,7 +18,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrArg, IrFilter, IrNoun } from '../../ir/types';
+import type { IrAmount, IrArg, IrFilter, IrNoun } from '../../ir/types';
 import { countAmount } from '../amount/count';
 import {
   CARD_TYPES,
@@ -335,7 +335,24 @@ export const PLAIN_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
  * The card a look at the top cards lets the player take: one list of card types or subtypes ("an artifact card", "a creature or land card", "a Dragon
  * card"), or a list of both kinds, "an instant, sorcery, or Dragon card" (issue 25).
  */
+/**
+ * "a noncreature, nonland card" (Narset, Parter of Veils; CR 205.2a): a card that has none of the card types the "non" words name. Two or more "non" words, joined by a comma, or one.
+ */
+const NON_TYPE_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
+  const r = pattern(
+    /an? ((?:non(?:creature|land|artifact|enchantment|instant|sorcery|planeswalker)(?:, | ))+)card(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (!r.ok) return r;
+  const types = (r.value[1] ?? '')
+    .split(/,\s*|\s+/)
+    .filter((w) => w.length > 0)
+    .map((w) => w.toLowerCase().slice('non'.length));
+  if (new Set(types).size !== types.length) return fail(ctx, pos);
+  return takenNoun(ctx, pos, pos + r.value[0].length, { notTypes: types });
+};
+
 export const TAKEN_CARD: Parser<IrNoun> = choice(
+  NON_TYPE_TAKEN_CARD,
   PERMANENT_TAKEN_CARD,
   PLAIN_TAKEN_CARD,
   MIXED_TAKEN_CARD,
@@ -427,6 +444,8 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
   leading: ['look'],
   cites: ['CR 401.2 (Library)', 'CR 701.20a (Reveal)', 'CR 401.4 (Library)'],
   examples: [
+    // Narset, Parter of Veils (CR 205.2a): a card that is none of the types the "non" words name.
+    'look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top four cards of your library. You may reveal a creature card from among them and put it into your hand. Put the rest into your graveyard',
     'look at the top five cards of your library. You may reveal a creature or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
@@ -443,7 +462,8 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     // Sliver Swarm deck, group C: the creature type the permanent chose as it entered, or the effect chose as it resolved.
     'look at the top three cards of your library. You may reveal a creature card of the chosen type from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in a random order',
-    'look at the top four cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in any order',
+    'look at the top four cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand. Put the rest on the bottom of your library in any order', // Seismic Sense: X is the number of lands you control.
+    'look at the top X cards of your library, where X is the number of lands you control. You may reveal a creature or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
   ],
   rejects: [
     'look at the top six cards of your library. You may reveal any number of cards of the chosen type from among them and put the revealed cards onto the battlefield. Put the rest on the bottom of your library in a random order',
@@ -457,6 +477,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     'look at the top six cards of your library. You may reveal an artifact card from among them and put those cards into your hand. Put the rest on the bottom of your library in any order',
     'look at the top card of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top X cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top X cards of your library, where X is the number of lands you control. You may reveal an artifact card from among them and put it into your hand',
     'look at the top six cards of your library. You may reveal an instant, sorcery or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an instant, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an instant, sorcery, or dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
@@ -468,8 +489,21 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     'effect.look-take',
     sequence(
       literal('look at the top '),
-      AT_LEAST(2),
-      literal(' cards of your library. you may reveal '),
+      // "X cards of your library, where X is the number of lands you control" (Seismic Sense): X is read as the effect resolves.
+      choice(
+        map(
+          sequence(AT_LEAST(2), literal(' cards of your library. you may reveal ')),
+          ([n]): IrArg => n,
+        ),
+        map(
+          sequence(
+            literal('x cards of your library, '),
+            family<IrAmount>('amount', { only: ['amount.where-x'] }),
+            literal('. you may reveal '),
+          ),
+          ([, n]): IrArg => n,
+        ),
+      ),
       TAKE_CLAUSE,
       literal('. put the rest '),
       spanned(
@@ -488,7 +522,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
         ),
       ),
     ),
-    ([, count, , { take, atMost, where, anyNumber }, , rest]) => ({
+    ([, count, { take, atMost, where, anyNumber }, , rest]) => ({
       verb: 'lookTake',
       args: {
         count,
@@ -549,13 +583,15 @@ export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
   examples: [
     'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may put a creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    // CR 110.2a, 614.1c (Elvish Rejuvenator): the card put onto the battlefield enters tapped.
+    'look at the top five cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order',
   ],
   rejects: [
+    'look at the top five cards of your library. You may put a land card from among them onto the battlefield untapped. Put the rest on the bottom of your library in a random order',
     'look at the top eight cards of your library. You may put a Dragon creature card from among them into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in any order',
     'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest into your graveyard',
     'look at the top card of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
-    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order',
   ],
   parse: single(
     'effect.look-put-onto',
@@ -564,15 +600,28 @@ export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
       AT_LEAST(2),
       literal(' cards of your library. you may put '),
       TAKEN_CARD,
-      literal(
-        ' from among them onto the battlefield. put the rest on the bottom of your library in a random order',
+      literal(' from among them onto the battlefield'),
+      optional(
+        map(literal(' tapped'), () => true as const),
+        false as boolean,
       ),
+      literal('. put the rest on the bottom of your library in a random order'),
     ),
-    ([, count, , take]) => ({
+    ([, count, , take, , tapped]) => ({
       verb: 'lookTake',
       args: {
         count,
         take,
+        ...(tapped
+          ? {
+              tapped: {
+                kind: 'flag' as const,
+                value: true,
+                span: take.span,
+                rule: 'effect.look-put-onto',
+              },
+            }
+          : {}),
         toGraveyard: { kind: 'flag', value: false, span: take.span, rule: 'effect.look-put-onto' },
         ontoBattlefield: {
           kind: 'flag',

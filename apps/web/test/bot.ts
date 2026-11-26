@@ -5,6 +5,7 @@
 import {
   type Action,
   defaultDivision,
+  enumerateParties,
   type GameView,
   type PendingDecision,
 } from '@commander-arena/engine';
@@ -91,6 +92,9 @@ export function chooseAction(view: GameView, decision: PendingDecision): Action 
     case 'choosePayOptions':
       // The engine's own suggestion: what its payment planner would tap or exile.
       return { kind: 'choosePayOptions', objects: decision.suggested };
+    case 'chooseParty':
+      // The fullest party the engine lists: the first of its answers.
+      return { kind: 'chooseParty', party: enumerateParties(decision.slots, 1)[0] ?? [] };
     case 'arrangeCards':
       // Everything stays on top, in the order it was looked at.
       return { kind: 'arrangeCards', top: decision.cards, other: [] };

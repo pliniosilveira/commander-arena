@@ -32,6 +32,12 @@ export interface PaymentSource {
   readonly abilityIndex: number;
   /** Each inner array is one possible outcome: Forest [["G"]], Command Tower [["W"],["U"]]. */
   readonly produces: readonly (readonly ManaColor[])[];
+  /**
+   * "Add X mana in any combination of colors" with more combinations than are listed (issue 632): X. `produces` then holds only a few of the combinations, which
+   * the planner reads for the colors and the most mana the source makes; the combinations it tries for a cost are the ones that differ for that cost
+   * (`any-combination.ts`), and a tap of the source gives the number of the combination it tried, not an index into `produces`.
+   */
+  readonly anyCombination?: number;
   readonly tier: 'land' | 'creature' | 'artifact' | 'sacrifice';
   readonly snow: boolean;
   readonly restriction: ManaRestriction | null;

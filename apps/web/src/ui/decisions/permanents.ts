@@ -19,7 +19,12 @@ import {
   tappedWhat,
 } from '../../game/cost-text';
 import { thingsPhrase } from '../../game/filter-text';
-import { devourDetail, devourPrompt } from '../../game/keywords-text';
+import {
+  devourDetail,
+  devourPrompt,
+  removeCountersDetail,
+  removeCountersPrompt,
+} from '../../game/keywords-text';
 import { namesSeveral } from '../../game/player-text';
 import { triggerGist } from './ability-label';
 import { type Index, nameOf, plural, stackName } from './lookup';
@@ -134,6 +139,13 @@ export function isDevour(decision: Pick<ChoosePermanentDecision, 'purpose'>): bo
   return decision.purpose === 'devour';
 }
 
+/** True for "As this enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12): the permanents that lose every counter, none being fine. */
+export function isEntersRemoveCounters(
+  decision: Pick<ChoosePermanentDecision, 'purpose'>,
+): boolean {
+  return decision.purpose === 'entersRemoveCounters';
+}
+
 /** The bar's second line: the running total for a crew, else what to click. */
 export function permanentsDetail(
   chosen: readonly ObjectId[],
@@ -147,6 +159,7 @@ export function permanentsDetail(
     return `Keeping ${plural(chosen.length, 'creature')}, total power ${crewTotal(chosen, decision)} of at most ${decision.maxTotalPower ?? 0}. The others are sacrificed.`;
   }
   if (decision.purpose === 'devour') return devourDetail(chosen.length, decision.devourQuality);
+  if (decision.purpose === 'entersRemoveCounters') return removeCountersDetail(chosen.length);
   // D-139: "you may tap any number of untapped Myr you control".
   if (decision.purpose === 'effect' && decision.min === 0) {
     return chosen.length === 0
@@ -223,6 +236,26 @@ export function isEffectChoice(decision: Pick<ChoosePermanentDecision, 'purpose'
 /** True for the cost of an ability that returns permanents to their owners' hands (D-139). */
 export function isBounceCost(decision: Pick<ChoosePermanentDecision, 'purpose'>): boolean {
   return decision.purpose === 'bounce';
+}
+
+/** True for the cost of an ability that exiles a permanent the player controls (Primordial Mist, CR 118.3, 406.3). */
+export function isExileCost(decision: Pick<ChoosePermanentDecision, 'purpose'>): boolean {
+  return decision.purpose === 'exileCost';
+}
+
+/** "Exile a face-down permanent you control face up to pay for X's ability." (CR 602.2b): the words of the exile cost of the ability on the stack. */
+export function exileCostPrompt(
+  decision: Pick<ChoosePermanentDecision, 'source'>,
+  index: Index,
+): string {
+  const source = index.get(decision.source);
+  const ability = source?.ability;
+  const cost =
+    ability?.kind === 'activated'
+      ? ability.cost.find((c) => c.kind === 'exilePermanent')
+      : undefined;
+  const pay = `to pay for ${stackName(index, decision.source)}`;
+  return `${cost === undefined ? 'Exile a permanent you control' : activationCostPart(cost)} ${pay}.`;
 }
 
 /**
@@ -312,6 +345,7 @@ export function chosenBadge(
   if (isFight(decision)) return 'Fights it';
   if (isTapCost(decision)) return 'Tap';
   if (isBounceCost(decision)) return 'Return';
+  if (isExileCost(decision)) return 'Exile';
   const { source } = decision;
   if (index !== undefined && source !== undefined) {
     if (tapEffectOf({ purpose: decision.purpose, source }, index) !== null) return 'Tap';
@@ -349,7 +383,8 @@ export function effectDestination(oracleText: string): string | null {
 
 /** "Choose a land you control to return to its owner's hand." / "Choose a land you control for Name." */
 function effectPrompt(
-  decision: Pick<ChoosePermanentDecision, 'min' | 'max' | 'source' | 'legal'>,
+  decision: Pick<ChoosePermanentDecision, 'min' | 'max' | 'source' | 'legal'> &
+    Partial<Pick<ChoosePermanentDecision, 'seat'>>,
   index: Index,
 ): string {
   const noun = legalNoun(decision.legal, index);
@@ -358,7 +393,11 @@ function effectPrompt(
       ? `${/^[aeiou]/.test(noun) ? 'an' : 'a'} ${noun}`
       : permanentRange(decision.min, decision.max).replace('permanent', noun);
   const where = effectDestination(index.get(decision.source)?.oracleText ?? '');
-  return `Choose ${what} you control ${where ?? `for ${nameOf(index, decision.source)}`}.`;
+  // Mount Doom (CR 608.2d): "choose up to two creatures" among everyone's: "you control" only when every one listed is the chooser's own.
+  const own =
+    decision.seat === undefined ||
+    decision.legal.every((id) => index.get(id)?.controller === decision.seat);
+  return `Choose ${what}${own ? ' you control' : ''} ${where ?? `for ${nameOf(index, decision.source)}`}.`;
 }
 
 /**
@@ -397,6 +436,15 @@ export function choosePermanentPrompt(
         : nameOf(index, decision.source);
     return devourPrompt(entering, decision.devourQuality);
   }
+  if (isEntersRemoveCounters(decision)) {
+    // A token has no object yet: the question is about the token that the ability on the stack makes.
+    const source = index.get(decision.source);
+    return removeCountersPrompt(
+      source?.zone === 'stack' && source.ability !== undefined
+        ? `the token ${source.name} creates`
+        : nameOf(index, decision.source),
+    );
+  }
   if (isSpare(decision)) return sparePrompt(decision);
   if (isCrew(decision)) {
     return `Tap creatures with total power ${crewNeeded(decision)} or greater to crew ${nameOf(index, decision.source)}.`;
@@ -412,6 +460,7 @@ export function choosePermanentPrompt(
   }
   if (isTapCost(decision)) return tapPrompt(decision, index);
   if (isBounceCost(decision)) return bouncePrompt(decision, index);
+  if (isExileCost(decision)) return exileCostPrompt(decision, index);
   const source = nameOf(index, decision.source);
   if (isSpellCost(decision, index)) {
     return `Sacrifice ${spellSacrificeWhat(decision, index)} as an additional cost to cast ${source}.`;

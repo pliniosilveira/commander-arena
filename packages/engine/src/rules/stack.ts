@@ -10,7 +10,7 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import { isPermanentType } from '../characteristics';
+import { isPermanentType, type PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat, patchObject } from '../state/ops';
@@ -25,11 +25,13 @@ import { giftEffectOf } from './cast-gift';
 import { runChangeTarget } from './change-target';
 import { DECLINE_OPTION } from './choose-one';
 import { asksWhichOpponent } from './choose-opponent';
+import { cipherCandidates, ciphers, encodeOn } from './cipher';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
 import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
+import { roomChosen } from './dungeon';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
@@ -46,6 +48,7 @@ import {
   discardUnless,
   payUnlessMana,
   runCounterUnlessPays,
+  sacrificeUnless,
   type UnlessAnswer,
 } from './pay-unless';
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
@@ -55,6 +58,7 @@ import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { TIME_COUNTER } from './time-counter';
 import { collectTriggers } from './triggers';
+import { tallyCast } from './vote-options';
 import { moveObject } from './zones';
 
 export interface ResolveOutcome {
@@ -181,6 +185,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedAsCost === undefined
         ? {}
         : { costSacrificed: obj.stack.sacrificedAsCost }),
+      ...(obj.stack?.discardedAsCost === undefined
+        ? {}
+        : { costDiscarded: obj.stack.discardedAsCost }),
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
@@ -192,6 +199,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { costReturnedAttack: obj.stack.returnedAttack }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
+      // CR 701.38a (Erestor of the Council): a `votingFinished` ability reads the vote that finished as if it had just been made.
+      ...(obj.stack?.triggerVotes === undefined
+        ? {}
+        : { voteCast: obj.stack.triggerVotes, votes: tallyCast(obj.stack.triggerVotes) }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").
       ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
@@ -270,6 +281,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(out.lifeLost === undefined ? {} : { lifeLost: (res.lifeLost ?? 0) + out.lifeLost }),
         // D-194: the tally of a vote that is finished, for "twice the number of profit votes" (a later vote of the resolution replaces it).
         ...(out.votes === undefined ? {} : { votes: out.votes }),
+        // CR 701.38a: who voted for what, for the amounts and selectors that read the votes of a player.
+        ...(out.voteCast === undefined ? {} : { voteCast: out.voteCast }),
         // D-131: what this instruction did, for "for each creature sacrificed this way" and the like.
         ...(out.thisWay === undefined
           ? {}
@@ -282,6 +295,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 returned: (res.thisWay?.returned ?? 0) + (out.thisWay.returned ?? 0),
                 exiledCreatures:
                   (res.thisWay?.exiledCreatures ?? 0) + (out.thisWay.exiledCreatures ?? 0),
+                exiledCreatureCards:
+                  (res.thisWay?.exiledCreatureCards ?? 0) + (out.thisWay.exiledCreatureCards ?? 0),
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
@@ -296,6 +311,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 milledValue: (res.thisWay?.milledValue ?? 0) + (out.thisWay.milledValue ?? 0),
                 milledCreature:
                   (res.thisWay?.milledCreature ?? 0) + (out.thisWay.milledCreature ?? 0),
+                milledLand: (res.thisWay?.milledLand ?? 0) + (out.thisWay.milledLand ?? 0),
                 discardedCreature:
                   (res.thisWay?.discardedCreature ?? 0) + (out.thisWay.discardedCreature ?? 0),
                 discardedNoncreature:
@@ -312,10 +328,39 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                       discardedNonland:
                         (res.thisWay?.discardedNonland ?? 0) + (out.thisWay.discardedNonland ?? 0),
                     }),
+                ...(res.thisWay?.landCardsToGraveyard === undefined &&
+                out.thisWay.landCardsToGraveyard === undefined
+                  ? {}
+                  : {
+                      landCardsToGraveyard:
+                        (res.thisWay?.landCardsToGraveyard ?? 0) +
+                        (out.thisWay.landCardsToGraveyard ?? 0),
+                    }),
                 ...(res.thisWay?.countersPut === undefined && out.thisWay.countersPut === undefined
                   ? {}
                   : {
                       countersPut: (res.thisWay?.countersPut ?? 0) + (out.thisWay.countersPut ?? 0),
+                    }),
+                ...(res.thisWay?.countersPutOn === undefined &&
+                out.thisWay.countersPutOn === undefined
+                  ? {}
+                  : {
+                      countersPutOn: mergePutOn(
+                        res.thisWay?.countersPutOn,
+                        out.thisWay.countersPutOn,
+                      ),
+                    }),
+                // Left out until there is some, so the state of every game that never reads it is what it was.
+                ...(res.thisWay?.destroyedObjects === undefined &&
+                out.thisWay.destroyedObjects === undefined
+                  ? {}
+                  : {
+                      destroyedObjects: [
+                        ...new Set([
+                          ...(res.thisWay?.destroyedObjects ?? []),
+                          ...(out.thisWay.destroyedObjects ?? []),
+                        ]),
+                      ],
                     }),
                 // Left out until there is some, so the state of every game that never reads it is what it was.
                 ...(res.thisWay?.discardedValue === undefined &&
@@ -326,6 +371,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                         (res.thisWay?.discardedValue ?? 0) + (out.thisWay.discardedValue ?? 0),
                     }),
                 searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
+                // Disorienting Choice: the permanents a `controllersMayExile` named; left out until there are some.
+                ...(res.thisWay?.chosenPermanents === undefined &&
+                out.thisWay.chosenPermanents === undefined
+                  ? {}
+                  : {
+                      chosenPermanents: [
+                        ...new Set([
+                          ...(res.thisWay?.chosenPermanents ?? []),
+                          ...(out.thisWay.chosenPermanents ?? []),
+                        ]),
+                      ],
+                    }),
                 ...mergeTypes(res.thisWay?.discardedTypes, out.thisWay.discardedTypes),
                 // Issue 279: the greatest number one player discarded, not a sum.
                 discardedMost: Math.max(
@@ -385,7 +442,17 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
         ...(head.kind === 'chooseObjects' && head.chosen !== null
-          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          ? {
+              chosenObjects: {
+                ...res.chosenObjects,
+                // CR 701.38a (`perVote`): the choices of every vote are one set, a permanent chosen for several votes once.
+                [head.id]:
+                  (head.asVoter === undefined || head.asVoter.first) &&
+                  (head.ofPlayer === undefined || head.ofPlayer.first)
+                    ? head.chosen
+                    : [...new Set([...(res.chosenObjects?.[head.id] ?? []), ...head.chosen])],
+              },
+            }
           : {}),
         // The Black Gate: the player chosen is what "that player" means for the rest of the resolution.
         ...(head.kind === 'choosePlayer' && head.chosen !== null
@@ -404,9 +471,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     }
     if (
       (head.kind === 'move' || head.kind === 'enterToken') &&
-      state.resolution?.entersCopy !== undefined
+      (state.resolution?.entersCopy !== undefined ||
+        state.resolution?.entersCopyOther !== undefined)
     ) {
-      const { entersCopy: _answered, ...rest } = state.resolution;
+      const { entersCopy: _answered, entersCopyOther: _other, ...rest } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // The opponent chosen belongs to the one effect that asked for it (rules/choose-opponent.ts): once that effect has started, the next one asks again.
@@ -434,9 +502,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     // D-185: the answers of devour and riot belong to the one move that asked for them, too.
     if (
       head.kind === 'move' &&
-      (state.resolution?.entersDevour !== undefined || state.resolution?.entersRiot !== undefined)
+      (state.resolution?.entersDevour !== undefined ||
+        state.resolution?.entersRiot !== undefined ||
+        state.resolution?.entersRemoved !== undefined)
     ) {
-      const { entersDevour: _devoured, entersRiot: _riot, ...rest } = state.resolution;
+      const {
+        entersDevour: _devoured,
+        entersRiot: _riot,
+        entersRemoved: _removed,
+        ...rest
+      } = state.resolution;
       state = { ...state, resolution: rest };
     }
     events.push(...out.events);
@@ -446,6 +521,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
 
 /** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
 /** The card types of two `thisWay` tallies of discarded cards, each type once (CR 205.2a: a type counts once however many cards have it). */
+/** The objects counters were put on, by kind of counter: each kind's objects joined, each once. */
+function mergePutOn(
+  a: Readonly<Record<string, readonly ObjectId[]>> | undefined,
+  b: Readonly<Record<string, readonly ObjectId[]>> | undefined,
+): Readonly<Record<string, readonly ObjectId[]>> {
+  const out: Record<string, readonly ObjectId[]> = { ...a };
+  for (const [kind, ids] of Object.entries(b ?? {})) {
+    out[kind] = [...new Set([...(out[kind] ?? []), ...ids])];
+  }
+  return out;
+}
+
 function mergeTypes(
   a: readonly string[] | undefined,
   b: readonly string[] | undefined,
@@ -546,12 +633,38 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       permanent,
       elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen,
     });
+    // CR 702.99 (Cipher): after its other effects, the controller of the spell may choose a creature they control to encode the card on; the card is then exiled instead of
+    // going to the graveyard. Asked once, with a creature to choose; a spell that another effect or keyword already places keeps that place.
+    const cipherable = ciphers(faceOf(next, obj), obj, {
+      permanent,
+      elsewhere: adventure || exiled || timeCounters !== null || boughtBack || omen || rebound,
+    });
+    if (cipherable && res.cipherOn === undefined) {
+      const legal = cipherCandidates(next, obj);
+      if (legal.length > 0) {
+        return {
+          state: setPending(collectTriggers(state, events), {
+            kind: 'choosePermanent',
+            seat: controllerOf(state, obj),
+            source: res.object,
+            subject: res.object,
+            purpose: 'cipher',
+            min: 0,
+            max: 1,
+            legal,
+          }),
+          events,
+          paused: true,
+        };
+      }
+    }
+    const encodedOn = cipherable && res.cipherOn != null ? res.cipherOn : null;
     const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled || timeCounters !== null || rebound
+        : adventure || exiled || timeCounters !== null || rebound || encodedOn !== null
           ? 'exile'
           : boughtBack
             ? 'hand'
@@ -564,8 +677,10 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
+      ...(res.entersCopyOther === undefined ? {} : { entersCopyOther: res.entersCopyOther }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
+      ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       ...(adventure && timeCounters === null ? { onAdventure: true as const } : {}),
@@ -648,6 +763,14 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
           ],
         };
       }
+      // CR 702.99 (Cipher): the card exiled as it resolved is encoded on the creature, which has the ability to copy it and cast the copy for as long as it stays on the battlefield.
+      if (
+        encodedOn !== null &&
+        moved.newObject !== null &&
+        next.objects[encodedOn]?.zone === 'battlefield'
+      ) {
+        next = encodeOn(next, moved.newObject, encodedOn);
+      }
       // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {
         const back = returnExiledSpell(obj, moved.newObject);
@@ -695,6 +818,16 @@ export function answerResolutionChoice(
     const answer = blightUnless(state, res, head, d.seat, chosen);
     return answer === null ? null : continueUnless(answer, res);
   }
+  // Ward—Sacrifice a legendary creature (CR 701.21a): the payer chose the permanents they sacrifice for the cost they accepted (rules/pay-unless.ts).
+  if (
+    (head.kind === 'counterUnlessPays' || head.kind === 'unlessPays') &&
+    head.stage === 'sacrifice'
+  ) {
+    const d = state.pending;
+    if (d?.kind !== 'choosePermanent') return null;
+    const answer = sacrificeUnless(state, res, head, d.seat, chosen);
+    return answer === null ? null : continueUnless(answer, res);
+  }
   // D-668 (CR 303.4f): the permanent a token that is an Aura enters enchanting.
   if (
     head.kind === 'enterToken' &&
@@ -737,7 +870,9 @@ export function answerResolutionChoice(
   const asked = state.pending;
   if (
     head.kind === 'chooseSacrifice' &&
-    (head.keepPowerAtMost !== undefined || head.keepCountAtMost !== undefined)
+    (head.keepPowerAtMost !== undefined ||
+      head.keepCountAtMost !== undefined ||
+      head.keepCountExactly !== undefined)
   ) {
     if (asked?.kind !== 'choosePermanent' || asked.purpose !== 'keep') return null;
     const sacrificed = asked.legal.filter(
@@ -757,6 +892,27 @@ export function answerResolutionChoice(
     head.kind === 'proliferate' ? { ...head, chosen, players } : { ...head, chosen };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to a chooseParty decision (CR 700.8d) on the `chooseParty` instruction that asked, then continues. Null when no such question is pending. The caller has checked
+ * the answer against the decision.
+ */
+export function answerResolutionParty(
+  state: GameState,
+  party: readonly { readonly type: PartyType; readonly object: ObjectId }[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'chooseParty') return null;
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: { ...res, queue: [{ ...head, chosen: party }, ...res.queue.slice(1)] },
+    },
     [],
   );
 }
@@ -792,6 +948,7 @@ export function answerResolutionCards(
       head.kind !== 'lookSplit' &&
       head.kind !== 'pileSeparate' &&
       head.kind !== 'opponentChoosesCard' &&
+      head.kind !== 'handCards' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
@@ -938,6 +1095,27 @@ export function answerResolutionSearchMay(
 }
 
 /**
+ * Records the answer to "you may put that card onto the battlefield" of a search (CR 608.2d, 701.23; `search.mayPut`): the card found goes onto the battlefield when accepted and to the
+ * hand when declined. Null when no such question is waiting.
+ */
+export function answerResolutionSearchPut(
+  state: GameState,
+  accept: boolean,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (!res || head?.kind !== 'search' || head.put !== null || d?.kind !== 'confirmOptional') {
+    return null;
+  }
+  const events: GameEvent[] = [
+    { kind: 'optionalAnswered', seat: d.seat, source: res.source, accepted: accept },
+  ];
+  const queue: readonly Instruction[] = [{ ...head, put: accept }, ...res.queue.slice(1)];
+  return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
+}
+
+/**
  * Records the answer to "you may pay ... or it enters tapped" (CR 614.12) for the permanent that
  * asked, which is the head of the queue when it is a move, or the spell resolving when the queue is
  * empty, then continues. Null when no such question is waiting.
@@ -1054,6 +1232,33 @@ export function answerResolutionRiot(state: GameState, option: string): ResolveO
 }
 
 /**
+ * Records the answer to "As this enters, remove all counters from any number of ..." (Sin, Unending Cataclysm, CR 614.12) for the permanent that asked, as `answerResolutionDevour` does
+ * for devour, then continues. Null when no such question is waiting.
+ */
+export function answerResolutionRemoveCounters(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'entersRemoveCounters') return null;
+  const head = res.queue[0];
+  if (head?.kind === 'enterToken' && d.source === res.object) {
+    const updated: Instruction = { ...head, removed: chosen };
+    return continueResolution(
+      { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+      [],
+    );
+  }
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source) return null;
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, entersRemoved: chosen } },
+    [],
+  );
+}
+
+/**
  * Records the answer to devour's "you may sacrifice any number of creatures" (CR 702.82a, D-185) for the permanent that asked, as
  * `answerResolutionRiot` does for riot, then continues. Null when no such question is waiting.
  */
@@ -1090,7 +1295,13 @@ export function answerResolutionEntersCopy(
 ): ResolveOutcome | null {
   const res = state.resolution;
   const d = state.pending;
-  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'entersCopy') return null;
+  if (
+    !res ||
+    d?.kind !== 'choosePermanent' ||
+    (d.purpose !== 'entersCopy' && d.purpose !== 'entersCopyOther')
+  ) {
+    return null;
+  }
   const head = res.queue[0];
   // A token that is a copy of a permanent that may enter as a copy asks about the spell or ability that creates it (D-225).
   const entering =
@@ -1102,8 +1313,30 @@ export function answerResolutionEntersCopy(
           ? res.object
           : null;
   if (entering !== d.source) return null;
+  // The Mimeoplasm (CR 707.9b): the second question of "exile two creature cards from graveyards" names the other card, whose power gives the counters.
+  const answered =
+    d.purpose === 'entersCopyOther'
+      ? chosen[0] === undefined
+        ? res
+        : { ...res, entersCopyOther: chosen[0] }
+      : { ...res, entersCopy: chosen[0] ?? null };
+  return continueResolution({ ...state, pending: null, resolution: answered }, []);
+}
+
+/**
+ * Records the creature the controller of a resolving spell with Cipher chose to encode the card on (CR 702.99; none is a legal answer), then continues: the spell is then put into exile
+ * or the graveyard. Null when no such question waits.
+ */
+export function answerResolutionCipher(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'cipher') return null;
+  if (d.source !== res.object) return null;
   return continueResolution(
-    { ...state, pending: null, resolution: { ...res, entersCopy: chosen[0] ?? null } },
+    { ...state, pending: null, resolution: { ...res, cipherOn: chosen[0] ?? null } },
     [],
   );
 }
@@ -1254,6 +1487,43 @@ export function answerResolutionChooseOpponent(
     return null;
   }
   const updated: Instruction = { ...head, chosen: Number(option.slice('seat:'.length)) };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [event],
+  );
+}
+
+/**
+ * Records the room a venturing player chose among the arrows leaving the room their venture marker is on (CR 701.49b, 309.5a) on the instruction that asked, and continues. Null when no such
+ * question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionDungeonRoom(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'venture' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'dungeonRoom' ||
+    !d.options.includes(option)
+  ) {
+    return null;
+  }
+  const room = roomChosen(option);
+  if (room === null) return null;
+  const updated: Instruction = { ...head, chosen: room };
   const event: GameEvent = {
     kind: 'optionChosen',
     seat: d.seat,

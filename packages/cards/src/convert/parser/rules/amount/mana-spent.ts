@@ -12,11 +12,15 @@ import { defineRule } from '../registry';
 /** The card types a source of mana may be named by ("from an artifact source", "from a creature source"). */
 const TYPE_WORDS = 'artifact|creature|enchantment|land|planeswalker';
 
+/** The land types a source of mana may be named by ("from a Desert", CR 205.3i); the source is the land, not a card type. */
+const LAND_WORDS =
+  'Desert|Cave|Gate|Lair|Locus|Mine|Tower|Town|Forest|Island|Mountain|Plains|Swamp';
+
 const THE_AMOUNT = /the amount of mana spent to cast (it|~|that spell)(?![\p{L}\p{N}])/iu;
 /** "the number of colors of mana spent to cast ~" (Converge, issue 310, CR 105.1, 601.2h). */
 const THE_COLORS = /the number of colors of mana spent to cast (it|~|that spell)(?![\p{L}\p{N}])/iu;
 const FOR_EACH = new RegExp(
-  `for each (?:mana(?: from an? (${TYPE_WORDS}) source)?|(\\{S\\})) spent to cast (it|~)(?![\\p{L}\\p{N}])`,
+  `for each (?:mana(?: from an? (${TYPE_WORDS}) source| from an? (${LAND_WORDS}))?|(\\{S\\})) spent to cast (it|~)(?![\\p{L}\\p{N}])`,
   'iu',
 );
 
@@ -59,6 +63,8 @@ export const AMOUNT_FOR_EACH_MANA_SPENT = defineRule<IrAmount>({
     'for each {S} spent to cast it',
   ],
   rejects: [
+    'for each mana from a Treasure spent to cast it',
+    'for each mana from a Desert source spent to cast it',
     'for each mana',
     'for each mana spent',
     'for each mana spent to cast',
@@ -83,15 +89,66 @@ export const AMOUNT_FOR_EACH_MANA_SPENT = defineRule<IrAmount>({
   parse: (ctx, pos) => {
     const r = pattern(FOR_EACH)(ctx, pos);
     if (!r.ok) return r;
-    const fromType = r.value[1]?.toLowerCase();
+    // "from an artifact source": a card type, in lower case; "from a Desert": a land type (CR 205.3i), as the engine names it.
+    const landWord = r.value[2];
+    const fromType =
+      landWord === undefined
+        ? r.value[1]?.toLowerCase()
+        : landWord.charAt(0).toUpperCase() + landWord.slice(1).toLowerCase();
     return {
       ok: true,
       value: {
         kind: 'manaSpent',
         ...(fromType === undefined ? {} : { fromType }),
         // D-260: "for each {S} spent to cast ~" (CR 107.4h): the mana that a snow source made.
-        ...(r.value[2] === undefined ? {} : { snow: true as const }),
-        who: r.value[3] === '~' ? 'self' : 'it',
+        ...(r.value[3] === undefined ? {} : { snow: true as const }),
+        who: r.value[4] === '~' ? 'self' : 'it',
+        span: { start: pos, end: r.pos },
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+const FOR_EACH_COLOR = /for each color of mana spent to cast (it|~)(?![\p{L}\p{N}])/iu;
+
+/**
+ * `amount.for-each-color-spent`: "for each color of mana spent to cast it" (Converge, CR 105.1, 601.2h, 614.12): after a quantity of counters ("~ enters with a +1/+1 counter on it for each
+ * color of mana spent to cast it"), the number of the five colors the mana spent on the spell had, whatever the amount of each (colorless is no color). "It" is the permanent that enters, read from
+ * the spell it came from. The engine's `manaSpent` with `colors`. Not read: "that spell", "for each mana", "colors" in the plural, a spell that is not the one that enters.
+ */
+export const AMOUNT_FOR_EACH_COLOR_SPENT = defineRule<IrAmount>({
+  id: 'amount.for-each-color-spent',
+  family: 'amount',
+  leading: ['for'],
+  cites: [
+    'CR 105.1 (Colors)',
+    'CR 601.2h (Casting Spells)',
+    'CR 614.12 (Replacement Effects)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: ['for each color of mana spent to cast it', 'for each color of mana spent to cast ~'],
+  rejects: [
+    'for each color of mana',
+    'for each color of mana spent',
+    'for each color of mana spent to cast',
+    'for each color of mana spent to cast that spell',
+    'for each colors of mana spent to cast it',
+    'for each color spent to cast it',
+    'for each color of mana spent to cast its',
+    'for each color of mana from an artifact source spent to cast it',
+    'for each color of mana spent to cast it.',
+    'each color of mana spent to cast it',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(FOR_EACH_COLOR)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'manaSpent',
+        colors: true,
+        who: r.value[1] === '~' ? 'self' : 'it',
         span: { start: pos, end: r.pos },
       },
       pos: r.pos,

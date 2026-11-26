@@ -178,7 +178,7 @@ const DAMAGE: readonly Line[] = [
   {
     kind: 'creature',
     text: 'Whenever a creature you control leaves the battlefield, if it had counters on it, put those counters on ~.',
-    expect: no('those counters on ~.', 'effect.add-counters-distinct-targets'),
+    expect: no('those counters on ~.', 'effect.put-that-number-counters'),
     note: 'replay: 1 card; "if it had counters" is not a condition the grammar reads (the engine refuses a look-back condition that counts)',
   },
   {

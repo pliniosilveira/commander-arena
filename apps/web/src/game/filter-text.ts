@@ -58,6 +58,8 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   // D-133.
   'token',
   'notSubtypes',
+  // CR 700.12: "outlaw" and "non-outlaw".
+  'outlaw',
   'colorless',
   'notColors',
   'keywords',
@@ -191,6 +193,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
   // D-149: "your commander" is a card the player owns and designated, wherever it is controlled: not a "commanders you control".
   if (filter.commander === 'yours') return null;
   const who = filter.controller ?? 'any';
+  // CR 607.2d (Sewer Nemesis): "the chosen player's graveyard" is said by the card's own text, not here.
+  if (who === 'chosenPlayer') return null;
   const subtypeList = filter.subtypes ?? [];
   // D-151 (CR 205.3i): "you control a Mountain": a basic land type with no card type names lands.
   const types =
@@ -217,6 +221,7 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
     // D-135 (CR 205.4): "nonbasic lands", "nonlegendary creatures".
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
+    filter.outlaw === true ? 'outlaw' : filter.outlaw === false ? 'non-outlaw' : '',
     filter.colorless === true ? 'colorless' : '',
     // CR 105.2: "nonblack creatures".
     (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),

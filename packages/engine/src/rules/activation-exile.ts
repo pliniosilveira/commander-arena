@@ -8,7 +8,7 @@ import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { zoneList } from '../state/ops';
+import { opponentsOf, zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { opponentOf } from './choose-opponent';
 import { moveInstructions } from './effect-support';
@@ -32,6 +32,100 @@ export function exileCostCandidates(
       matchesFilter(state, card, { ...described, zone: 'graveyard' }, { controller: seat, source })
     );
   });
+}
+
+/**
+ * The cards the permanent `source` exiled with its linked ability (CR 607.2a) that are still in exile and that `filter` matches, for the cost "Put a creature card exiled with ~ into
+ * its owner's graveyard". The link is the permanent's own (a source that left has none).
+ */
+export function linkedExileCandidates(
+  state: GameState,
+  source: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const permanent = state.objects[source];
+  const { controller: _you, ...described } = filter;
+  return (permanent?.linkedExile ?? []).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card?.zone === 'exile' &&
+      matchesFilter(
+        state,
+        card,
+        { ...described, zone: 'exile' },
+        { controller: card.owner, source },
+      )
+    );
+  });
+}
+
+/**
+ * The face-up cards in exile that an opponent of `seat` owns and that `filter` matches, for the cost "Put a card an opponent owns from exile into that player's graveyard" (CR 108.3,
+ * 118.3): a card exiled face down is not chosen (it may not be looked at, CR 406.3), and nobody has a card of a player who left the game in exile (CR 800.4a).
+ */
+export function opponentExileCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const { controller: _you, ...described } = filter;
+  return zoneList(state, 'exile', null).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      card.owner !== seat &&
+      opponentsOf(state, seat).includes(card.owner) &&
+      card.exiledFaceDown !== true &&
+      matchesFilter(
+        state,
+        card,
+        { ...described, zone: 'exile' },
+        { controller: card.owner, source },
+      )
+    );
+  });
+}
+
+/** The question "which card do you put into its owner's graveyard?" for a cost: exactly one of `legal`, public, and `cancel` rewinds the activation (CR 733). */
+export function activationLinkedExileDecision(
+  seat: SeatId,
+  source: ObjectId,
+  legal: readonly ObjectId[],
+  opponents = false,
+): NewDecision {
+  return {
+    kind: 'chooseCards',
+    seat,
+    source,
+    purpose: 'exile',
+    zone: 'exile',
+    legal,
+    min: 1,
+    max: 1,
+    reveal: true,
+    prompt: opponents
+      ? 'Put a card an opponent owns from exile into its owner’s graveyard.'
+      : 'Put a card exiled with this permanent into its owner’s graveyard.',
+    forCost: true,
+  };
+}
+
+/** Puts the chosen cards of the exile into their owners' graveyards: the state and the events. Null when a card is not in exile. */
+export function linkedExileToGraveyard(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): { state: GameState; events: GameEvent[] } | null {
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const id of chosen) {
+    if (next.objects[id]?.zone !== 'exile') return null;
+    const moved = moveObject(next, { object: id, to: 'graveyard' });
+    if (moved.kind !== 'done') return null;
+    next = moved.state;
+    events.push(...moved.events);
+  }
+  return { state: next, events };
 }
 
 /** The question "which cards do you exile?" for a cost: exactly `count` of `legal`, public, and `cancel` rewinds the activation (CR 733). */

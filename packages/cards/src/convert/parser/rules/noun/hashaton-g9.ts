@@ -47,5 +47,42 @@ export const NOUN_THAT_SOURCES_CONTROLLER = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.that-spells-controller`: "that spell's controller" (Bonecrusher Giant; CR 109.4, 113.7a, 603.2): the player the event of a trigger about a spell is about, here the controller of
+ * the spell that targeted the permanent. Left to the binding pass like "that source's controller". Not read: "that spell's owner", "that spell", "that spells's controller", "its controller".
+ */
+export const NOUN_THAT_SPELLS_CONTROLLER = defineRule<IrNoun>({
+  id: 'noun.that-spells-controller',
+  family: 'noun',
+  leading: ['that'],
+  cites: ['CR 109.4 (Objects)', 'CR 113.7a (Abilities)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: ["that spell's controller", 'that spell’s controller', "That spell's controller"],
+  rejects: [
+    "that spell's owner",
+    'that spell',
+    "that spells' controller",
+    "that spell's controllers",
+    "that source's controller",
+    'that spell controller',
+    "that spell's",
+    'its controller',
+  ],
+  parse: node<RegExpExecArray, IrNoun>(
+    'noun.that-spells-controller',
+    pattern(new RegExp(`that spell['’]s controller${BOUNDARY}`, 'iu')),
+    (m): Bare => ({
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: m[0] },
+      upTo: false,
+      plural: false,
+      other: false,
+    }),
+  ),
+});
+
 /** Quiet, like the effect rules that read it: a line that starts "That ..." and is something else stops where it always did. */
-export const HASHATON_G9_NOUN_RULES = [quietly(NOUN_THAT_SOURCES_CONTROLLER)];
+export const HASHATON_G9_NOUN_RULES = [
+  quietly(NOUN_THAT_SOURCES_CONTROLLER),
+  quietly(NOUN_THAT_SPELLS_CONTROLLER),
+];

@@ -113,9 +113,11 @@ describe('what stays unread (never guessed)', () => {
     expect(parsed.spell?.effect ?? null, text).toBeNull();
   };
 
-  test('manifest dread (CR 701.62) and cloak (CR 701.58) are other instructions', () => {
-    unread('Manifest dread.');
-    unread('Cloak the top card of your library.');
+  // Manifest dread (CR 701.62) is read now (parser-manifest-dread.test.ts), and so is cloaking the top card of your library (convert-grammar-engine-revenant-misc.test.ts).
+  test('cloak (CR 701.58) is read only for the top card of your library', () => {
+    unread('Cloak the top two cards of your library.');
+    unread("Cloak the top card of target opponent's library.");
+    unread('Cloak.');
   });
 
   test('several cards, another library, face up, a bare verb', () => {

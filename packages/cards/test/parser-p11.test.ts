@@ -199,9 +199,10 @@ describe('"Put ... onto the battlefield" from a graveyard (CR 400.7, 110.2a)', (
       'Put target creature card from a graveyard onto the battlefield under his control.',
       'under his control.',
     ],
+    // The counter it enters with is read since From the Catacombs (CR 122.6): one counter only.
     [
-      'Put target creature card from a graveyard onto the battlefield with a +1/+1 counter on it.',
-      'with a +1/+1 counter on it.',
+      'Put target creature card from a graveyard onto the battlefield with two +1/+1 counters on it.',
+      'with two +1/+1 counters on it.',
     ],
     ['Put target creature card from a graveyard into your hand.', 'into your hand.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {
@@ -371,8 +372,8 @@ describe('"Its controller may search their library ..." (CR 701.23a, 608.2d, 110
   test.each([
     [
       'Exile target creature. Its controller searches their library for a basic land card, put it onto the battlefield, then shuffle.',
-      'searches their library for a basic land card, put it onto the battlefield, then shuffle.',
-      'effect.player',
+      ', put it onto the battlefield, then shuffle.',
+      'effect.player.search',
     ],
     [
       'Exile target creature. Its controller may search their library for a basic land card, reveal it, put it onto the battlefield, then shuffle.',
@@ -381,7 +382,7 @@ describe('"Its controller may search their library ..." (CR 701.23a, 608.2d, 110
     ],
     [
       'Exile target creature. Its controller may search their library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.',
-      'land cards, put them onto the battlefield tapped, then shuffle.',
+      ', put them onto the battlefield tapped, then shuffle.',
       'effect.search-by',
     ],
     [

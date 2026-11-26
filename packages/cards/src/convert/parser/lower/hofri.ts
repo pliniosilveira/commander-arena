@@ -189,15 +189,23 @@ const RETURN_FROM_DESTROYED: Lowering<IrClause, Effects> = {
 };
 
 /**
- * "Each opponent attacking that player does the same." (issue 159, CR 508.6, 111.2): the `createToken` the clause before it lowered to, for every opponent of the controller who
+ * "Each opponent attacking that player does the same." (issue 159, CR 508.6, 111.2; Curse of Verbosity: after "you draw a card" it is the same draw, for those players): the `createToken` the clause before it lowered to, for every opponent of the controller who
  * controls a creature attacking the player the trigger is about (`opponentsAttackingTriggerPlayer`). After any other clause "the same" names something this lowering does not know
  * (CR 608.2c).
  */
 const ATTACKERS_DO_SAME: Lowering<IrClause, Effects> = {
   head: 'attackersDoSame',
   id: 'lower.attackers-do-same',
-  needs: ['effect:createToken'],
+  needs: ['effect:createToken', 'effect:draw'],
   lower(clause, ctx) {
+    const drew = ctx.drewCards;
+    if (drew !== null) {
+      return {
+        ok: true,
+        value: [{ ...drew, player: { kind: 'opponentsAttackingTriggerPlayer' } }],
+        rule: clause.rule,
+      };
+    }
     const token = ctx.createdToken;
     if (token === null) return failure(clause);
     return {
@@ -282,6 +290,47 @@ const LOOK_PUT_TOTAL: Lowering<IrClause, Effects> = {
             to: 'battlefield',
             totalManaValue: total.value,
           },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Look at the top seven cards of your library. Put up to two planeswalker cards from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+ * (Deploy the Gatewatch; CR 401.2, 701.20): the engine's `lookAtTop` taking up to that many cards of the type onto the battlefield, the rest to the bottom in a random order.
+ */
+const LOOK_PUT_UP_TO: Lowering<IrClause, Effects> = {
+  head: 'lookPutUpTo',
+  id: 'lower.look-put-up-to',
+  needs: ['effect:lookAtTop'],
+  lower: (clause) => {
+    const count = arg(clause, 'count');
+    const most = arg(clause, 'most');
+    const cardType = arg(clause, 'cardType');
+    if (count?.kind !== 'number' || most?.kind !== 'number' || cardType?.kind !== 'keywordName') {
+      return failure(clause);
+    }
+    const type = cardType.name;
+    if (
+      type !== 'artifact' &&
+      type !== 'creature' &&
+      type !== 'enchantment' &&
+      type !== 'land' &&
+      type !== 'planeswalker' &&
+      type !== 'battle'
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: { types: [type] }, max: most.value, to: 'battlefield' },
           rest: 'bottomRandom',
         },
       ],
@@ -484,6 +533,25 @@ export function lowerGraveyardPlayStatic(
     if (!lowered.ok) return lowered;
     cast = lowered.value;
   }
+  // Exploration Broodship (CR 601.2b, 118.8): the permanent a spell cast this way sacrifices as an additional cost.
+  let sacrifice: ObjectFilter | undefined;
+  if (effect.sacrifice !== undefined) {
+    const { zone, stackKind, ...described } = effect.sacrifice;
+    void zone;
+    void stackKind;
+    const lowered = lowerFilter({
+      kind: 'noun',
+      det: 'a',
+      filter: described,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: ability.span,
+      rule: ability.rule,
+    });
+    if (!lowered.ok) return lowered;
+    sacrifice = lowered.value;
+  }
   let gains: Ability | undefined;
   if (effect.gains !== undefined) {
     const own = lowerTokenAbility(effect.gains, [], [], ctx);
@@ -502,6 +570,7 @@ export function lowerGraveyardPlayStatic(
           ...(effect.entersTapped ? { entersTapped: true as const } : {}),
           ...(gains === undefined ? {} : { gains }),
           ...(effect.exileOthers === undefined ? {} : { exileOthers: effect.exileOthers }),
+          ...(sacrifice === undefined ? {} : { sacrifice }),
           ...(effect.putElsewhereThisTurn === true ? { putElsewhereThisTurn: true as const } : {}),
         },
       },
@@ -592,6 +661,7 @@ export const HOFRI_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EACH_EXILES_THEN_COUNTERS,
   CREATE_LINKED_EXILE_TOKEN,
   LOOK_PUT_TOTAL,
+  LOOK_PUT_UP_TO,
   CREATE_COPY_TOKEN,
   PLAYER_ADDS_MANA,
   COPY_THIS_SPELL,

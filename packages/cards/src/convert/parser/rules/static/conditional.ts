@@ -9,6 +9,7 @@
  */
 import { choice, fail, literal, type Parser, pattern, sequence } from '../../combinators';
 import type { IrCondition, IrNoun, IrStatic, IrStaticPart } from '../../ir/types';
+import { spellPhrase } from '../noun/phrases';
 import { defineRule, family } from '../registry';
 import { SELF_BECOMES_UNIT } from './dragons';
 import { endsInQuote, predicate, type StaticUnit, unit } from './grants';
@@ -19,6 +20,8 @@ import { OPPONENTS_CANT_CAST_UNIT } from './korvold';
 const STATIC_CONDITIONS = [
   // Ahoy Mateys deck, group 8: "as long as you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   'condition.control-at-least-subtypes',
+  // Augur of Autumn (coven): "you control three or more creatures with different powers".
+  'condition.control-different-powers',
   'condition.control-at-least',
   'condition.control-a',
   'condition.control-at-most',
@@ -48,14 +51,20 @@ const STATIC_CONDITIONS = [
   'condition.this-entered-this-turn',
   // Lyse Hext (CR 601.2i, 611.3a): "you've cast two or more noncreature spells this turn", a read of the turn log.
   'condition.spells-cast-this-turn',
+  // Arixmethes, Slumbering Isle: "~ has a slumber counter on it", a plain test of the layer 4 effect that makes it a land.
+  'condition.this-has-counter',
   // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
   'condition.this-has-counter-count',
   // Quest for the Goblin Lord (CR 122.1, 611.3a): "~ has five or more quest counters on it".
   // Issue 145 (Voice of the Blessed): "~ has four or more +1/+1 counters on it".
   'condition.this-counter-count',
+  // CR 700.8c (Multiclass Baldric): "you have a full party".
+  'condition.full-party',
+  // Kianne, Corrupted Memory: "as long as ~'s power is even".
+  'condition.this-power-parity',
 ] as const;
 
-const CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
+export const STATIC_CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
   only: STATIC_CONDITIONS,
 });
 
@@ -66,6 +75,8 @@ const GROUP = [
   'noun.other-subtype-permanents',
   'noun.subtype-union',
   'noun.all-permanents',
+  // Sylvan Advocate: "~ and land creatures you control get +2/+2".
+  'noun.self-and-group',
 ];
 
 /** `~` alone, with what it gets or has; a group; each permanent of a kind. */
@@ -145,6 +156,37 @@ const CAST_TYPE_FROM_TOP_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   };
 };
 
+/**
+ * "you may cast noncreature spells as though they had flash" (Kianne, Corrupted Memory; CR 601.3b, 702.8a): the controller's permission to cast the spells the words name at the timing of an
+ * instant, said as one unit with no period. Only read after a condition ("As long as ~'s power is even, ..."), where the lowering gives the permission that condition. The spells are the
+ * phrase `static.cast-as-though-flash` reads; "any player" is not.
+ */
+const CAST_AS_THOUGH_FLASH_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const r = sequence(
+    literal('you may cast '),
+    spellPhrase(true),
+    literal(' as though they had flash'),
+  )(ctx, pos);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    value: {
+      noun: {
+        kind: 'noun',
+        det: 'you',
+        filter: { raw: 'You' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: pos + 3 },
+        rule: 'static.conditional-prefix',
+      },
+      effects: [{ kind: 'castAsThoughFlash', spells: r.value[1] }],
+    },
+    pos: r.pos,
+  };
+};
+
 const ANY_UNIT: Parser<StaticUnit> = choice(
   SELF_BECOMES_UNIT,
   // Stage P68 (D-229): "~ isn't a creature".
@@ -158,6 +200,7 @@ const ANY_UNIT: Parser<StaticUnit> = choice(
   ATTACHED_UNIT,
   PLAY_FROM_TOP_UNIT,
   CAST_TYPE_FROM_TOP_UNIT,
+  CAST_AS_THOUGH_FLASH_UNIT,
 );
 
 /**
@@ -208,6 +251,35 @@ const SELF_PRONOUN_UNIT: Parser<StaticUnit> = (ctx, pos) => {
     rule: 'static.conditional-prefix',
   };
   return { ok: true, value: { noun, effects: r.value }, pos: r.pos };
+};
+
+/**
+ * "it's a land" after a condition about the counters on `~` (Arixmethes, Slumbering Isle; CR 613.1d, 205.1a): the card types of the permanent are replaced by the one named
+ * (layer 4), so it is no longer a creature. The reminder "(It's not a creature.)" is not part of the Oracle rules text read here.
+ */
+const SELF_PRONOUN_IS_TYPE_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const r = pattern(/it['’]s an? (artifact|creature|enchantment|land)(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const noun: IrNoun = {
+    kind: 'noun',
+    det: 'self',
+    filter: { raw: 'it' },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start: pos, end: pos + 2 },
+    rule: 'static.conditional-prefix',
+  };
+  return {
+    ok: true,
+    value: {
+      noun,
+      effects: [
+        { kind: 'replaceTypes', cardTypes: [(r.value[1] ?? '').toLowerCase()], subtypes: [] },
+      ],
+    },
+    pos: r.pos,
+  };
 };
 
 /** The word a condition about the permanent an attachment is on says ("enchanted", "equipped"), or undefined for any other condition. */
@@ -326,6 +398,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     // Stage P34 (D-152): the ability of a card in its owner's graveyard, and what ~ is while permanents entered this turn.
     'As long as this card is in your graveyard and you control a Mountain, creatures you control have haste.',
     'As long as this card is in your graveyard, creatures you control get +1/+0.',
+    // Dearly Departed (CR 113.6b, 614.12): a group that enters with counters, working from the graveyard.
+    'As long as ~ is in your graveyard, each Human creature you control enters with an additional +1/+1 counter on it.',
     'As long as two or more nonland permanents entered the battlefield under your control this turn, ~ is a Dragon with base power and toughness 4/4, flying, and "{R}: Dragons you control get +1/+0 until end of turn."',
     'As long as a creature entered the battlefield under your control this turn, ~ is an Elf with base power and toughness 2/2.',
     // D-427 (Danitha group 3): what an Aura gives while the creature is of a color, while another Aura is on it, or the turn it entered.
@@ -345,6 +419,9 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',
     'As long as this card is in your graveyard, you control a Mountain, creatures you control have haste.',
     'As long as this card is in your hand, creatures you control have haste.',
+    'As long as ~ is in your hand, each Human creature you control enters with an additional +1/+1 counter on it.',
+    'As long as ~ is in your graveyard and you control a Mountain, each Human creature you control enters with an additional +1/+1 counter on it.',
+    'As long as ~ is in your graveyard, each Human creature enters with an additional +1/+1 counter on it.',
     'As long as this card is in your graveyard or you control a Mountain, creatures you control have haste.',
     'As long as two or more nonland permanents entered the battlefield under your control this turn, ~ is a Dragon.',
     'As long as you control your commander, ~ gets +2/+2',
@@ -396,7 +473,9 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     }
     // "As long as this card is in your graveyard and you control a Mountain, ..." (stage P34, D-152, CR 113.6b): the ability works from the
     // graveyard, which the engine says as `functionsIn`; what follows "and" is the condition of the engine.
-    const grave = literal('this card is in your graveyard')(ctx, lead.pos);
+    const grave = pattern(/(?:this card|~) is in your graveyard/iu)(ctx, lead.pos);
+    // "~" in place of "this card" is read only before the enters-with-counters group below; every other ability keeps its own words.
+    const tildeGrave = grave.ok && ctx.text.slice(lead.pos, grave.pos).startsWith('~');
     let condition: IrCondition | undefined;
     let at: number;
     if (grave.ok) {
@@ -404,17 +483,38 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
       if (alone.ok) {
         at = alone.pos;
       } else {
-        const more = sequence(literal(' and '), CONDITION, literal(', '))(ctx, grave.pos);
+        const more = sequence(literal(' and '), STATIC_CONDITION, literal(', '))(ctx, grave.pos);
         if (!more.ok) return more;
         condition = more.value[1];
         at = more.pos;
       }
     } else {
-      const head = sequence(CONDITION, literal(', '))(ctx, lead.pos);
+      const head = sequence(STATIC_CONDITION, literal(', '))(ctx, lead.pos);
       if (!head.ok) return head;
       condition = head.value[0];
       at = head.pos;
     }
+    // Dearly Departed (CR 113.6b, 614.12): "As long as ~ is in your graveyard, each Human creature you control enters with an additional +1/+1 counter on it.": a group of permanents
+    // that enter with counters, a replacement of the card that works from the graveyard (`functionsIn`).
+    if (grave.ok && condition === undefined) {
+      const enters = family<IrStatic>('static', { only: ['static.others-enter-with-counters'] })(
+        ctx,
+        at,
+      );
+      if (enters.ok) {
+        return {
+          ok: true,
+          value: {
+            ...enters.value,
+            functionsIn: 'graveyard' as const,
+            span: { start: pos, end: enters.pos },
+            rule: 'static.conditional-prefix',
+          },
+          pos: enters.pos,
+        };
+      }
+    }
+    if (tildeGrave) return fail(ctx, at);
     const tax = family<IrStatic>('static', { only: ['static.attack-tax'] })(ctx, at);
     if (tax.ok) {
       if (condition === undefined) return fail(ctx, at);
@@ -432,14 +532,18 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     // D-427: after a condition about the host of an attachment, "it" is that permanent.
     const via = hostWordOf(condition);
     // Issue 145: after a condition about the counters on ~, "it" is ~.
-    const aboutSelfCounters = condition?.rule === 'condition.this-counter-count';
+    const aboutSelfCounters =
+      condition?.rule === 'condition.this-counter-count' ||
+      (condition?.rule === 'condition.this-has-counter' &&
+        condition.test.kind === 'thisMatches' &&
+        condition.test.who === 'self');
     const read = units(
       ctx,
       at,
       via !== undefined
         ? choice(hostPronounUnit(via), ANY_UNIT)
         : aboutSelfCounters
-          ? choice(SELF_PRONOUN_UNIT, ANY_UNIT)
+          ? choice(SELF_PRONOUN_UNIT, SELF_PRONOUN_IS_TYPE_UNIT, ANY_UNIT)
           : ANY_UNIT,
     );
     if (!read.ok) return read;
@@ -504,7 +608,7 @@ export const STATIC_CONDITIONAL_SUFFIX = defineRule<IrStatic>({
       choice(ANY_UNIT, CAST_FROM_GRAVEYARD_UNIT),
       // Federation Fleet deck, group E (Geordi La Forge): "~ can't be blocked if you control a Spacecraft." says the same as "as long as" (CR 611.3a).
       choice(literal(' as long as '), literal(' if ')),
-      CONDITION,
+      STATIC_CONDITION,
     )(ctx, pos);
     if (!read.ok) return read;
     const [part, , condition] = read.value;

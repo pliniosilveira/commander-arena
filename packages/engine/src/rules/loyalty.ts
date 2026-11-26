@@ -29,7 +29,9 @@ export function isLoyaltyAbility(costs: readonly Cost[]): boolean {
  * and came back is a new object (CR 400.7), so its entries are not the old one's.
  */
 export function loyaltyActivationsThisTurn(state: GameState, object: ObjectId): number {
-  return state.turnLog.activated.filter((a) => a.object === object && a.loyalty === true).length;
+  return state.turnLog.activated.filter(
+    (a) => a.object === object && a.loyalty === true && a.forgotten !== true,
+  ).length;
 }
 
 /**

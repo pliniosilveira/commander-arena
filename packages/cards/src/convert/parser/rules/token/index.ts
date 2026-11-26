@@ -22,6 +22,7 @@ import type { IrAmount, IrNoun, IrQuotedAbility, IrToken } from '../../ir/types'
 import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
+import { PROTECTION_COLORS } from '../keyword/protection';
 import { defineRule, family, node, spanned } from '../registry';
 import {
   namedTokenQuotedAbility,
@@ -29,7 +30,13 @@ import {
   TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
 } from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
-import { TOKEN_COPIES_HALF_PT, TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
+import {
+  TOKEN_COPIES_EXCEPT_ADDITIVE,
+  TOKEN_COPIES_HALF_PT,
+  TOKEN_COPY_EXCEPT,
+  TOKEN_COPY_EXCEPT_ADDITIVE,
+} from './copy-except';
+import { TOKEN_COPY_EXCEPT_PT } from './copy-except-pt';
 import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
@@ -72,7 +79,7 @@ const COUNT = choice(
   // which `validateCard` allows only in a trigger that has damage; the tokens are plural.
   map(
     spanned(pattern(/that many(?![\p{L}\p{N}])/iu)),
-    ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+    ({ span }): IrAmount => ({ kind: 'triggerDamage', thatMany: true, span }),
   ),
 );
 
@@ -200,8 +207,17 @@ const CHANGELING_WORD: Parser<string> = map(
   () => 'changeling',
 );
 
-/** The words a token's own description may name as keywords: those the engine can grant, and changeling. */
-const TOKEN_KEYWORD_WORD: Parser<string> = choice(KEYWORD_WORD, CHANGELING_WORD);
+/**
+ * "protection from black" (CR 702.16a, 111.4): a token's own keyword, one word that carries its colors ("protection from black and from red"); the lowering reads it back into the
+ * engine's protection from colors. Other qualities (a card type, multicolored, a player) are not read.
+ */
+const PROTECTION_WORD: Parser<string> = map(
+  PROTECTION_COLORS,
+  (colors) => `protection from ${colors.join(' and from ')}`,
+);
+
+/** The words a token's own description may name as keywords: those the engine can grant, changeling and protection from colors. */
+const TOKEN_KEYWORD_WORD: Parser<string> = choice(KEYWORD_WORD, CHANGELING_WORD, PROTECTION_WORD);
 const TOKEN_KEYWORD_WORDS: Parser<string[]> = keywordWordsOf(TOKEN_KEYWORD_WORD);
 
 /**
@@ -247,6 +263,15 @@ const tokenWith = (
         ),
       ),
       ([keywords, one]) => ({ keywords, abilities: one === null ? [] : [one] }),
+    ),
+    // Pursued Whale (CR 111.4, 113.1): "with \"~ can't block\" and \"Creatures you control attack each combat if able.\"": two static abilities in quotes, no two alike.
+    map(
+      satisfy(
+        sequence(quoted, literal(' and '), quoted),
+        ([a, , b]) =>
+          a.ability.kind === 'static' && b.ability.kind === 'static' && a.text !== b.text,
+      ),
+      ([a, , b]) => ({ keywords: [] as string[], abilities: [a, b] }),
     ),
     map(quoted, (one) => ({ keywords: [] as string[], abilities: [one] })),
   );
@@ -445,6 +470,10 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a tapped 2/2 black Zombie creature token',
     'thirteen tapped 2/2 black Zombie creature tokens',
     'two 2/2 black Zombie Knight creature tokens with menace',
+    // CR 702.16a (Hunted Horror): a token that has protection from a color.
+    'two 3/3 green Centaur creature tokens with protection from black',
+    'a 2/2 white Knight creature token with protection from red and from blue',
+    'a 1/1 white Soldier creature token with flying and protection from black',
     // Stage P35 (D-176, CR 111.4, 113.1): an ability the token has, in quotes, alone or after keywords; a quote inside the quote is the ability of
     // the token it makes.
     'a 0/1 colorless Eldrazi Spawn creature token with "Sacrifice ~: Add {C}."',
@@ -465,6 +494,9 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 2/2 blue Shapeshifter creature token with changeling',
     'a 1/1 white Soldier creature token with changeling and flying',
     'a 1/1 white Soldier creature token with flying, changeling, and "{T}: You gain 1 life."',
+    // CR 111.4, 113.1, 508.1d (Goblin Spymaster, Pursued Whale): static abilities in quotes, the second after "and".
+    'a 1/1 red Goblin creature token with "Creatures you control attack each combat if able."',
+    'a 1/1 red Pirate creature token with "~ can\'t block" and "Creatures you control attack each combat if able."',
     // CR 508.4, 110.5b: a token that enters tapped and attacking (after an attack batch trigger the lowering names the player).
     "a 1/1 red Goblin creature token that's tapped and attacking",
     'a 1/1 red Goblin creature token that’s tapped and attacking',
@@ -502,6 +534,8 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token with flying and "Sacrifice ~: Draw a card"',
     'a 1/1 white Soldier creature token with "Flying" and "{T}: You gain 1 life."',
     'a 1/1 white Soldier creature token with "{T}: You gain 1 life." and "{T}: You gain 1 life."',
+    'a 1/1 red Pirate creature token with "~ can\'t block" and "~ can\'t block"',
+    'a 1/1 red Pirate creature token with "~ can\'t block" and "{T}: You gain 1 life."',
     'a 1/1 white Soldier creature token tapped',
     'a 1/1 Soldier creature token',
     'a white Soldier creature token',
@@ -851,12 +885,27 @@ export const TOKEN_COPY = defineRule<IrToken>({
     "a token that's a copy of target creature",
     'a token that’s a copy of target creature you control',
     "a token that's a copy of ~",
+    // Scouring Swarm (CR 110.5b): the token enters tapped.
+    "a tapped token that's a copy of ~",
+    "a tapped token that's a copy of target creature you control",
     "a token that's a copy of it",
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
+    // Flamerush Rider (CR 508.4, 110.5b, 707.2): a copy that enters tapped and attacking.
+    "a token that's a copy of another target attacking creature and that's tapped and attacking",
+    'a token that’s a copy of target creature you control and that’s tapped and attacking',
   ],
   rejects: [
+    "a token that's a copy of target creature and that's tapped",
+    "a tapped tapped token that's a copy of ~",
+    "a token tapped that's a copy of ~",
+    "a untapped token that's a copy of ~",
+    'two tapped tokens that are copies of target creature',
+    "a token that's a copy of target creature and that's attacking",
+    "a token that's a copy of target creature and that's untapped and attacking",
+    "a token that's a copy of target creature and that's tapped and attacking a player",
+    'two tokens that are copies of target creature and that are tapped and attacking',
     "a token that's a copy of target creature, except it's a 1/1",
     "a token that's a copy of target token you control",
     "a token that's a copy of equipped creature",
@@ -875,10 +924,23 @@ export const TOKEN_COPY = defineRule<IrToken>({
       map(
         sequence(
           map(spanned(article), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
-          pattern(/ token that['’]s a copy of /i),
+          pattern(/( tapped)? token that['’]s a copy of /i),
           COPY_SOURCE,
+          optional(
+            pattern(
+              / and that['’]s tapped and attacking(?![\p{L}\p{N}'’]|\s+(?:a|that|and|or)(?![\p{L}\p{N}]))/iu,
+            ),
+            null,
+          ),
         ),
-        ([count, , copyOf]): Bare => ({ kind: 'token', copyOf, count }),
+        ([count, head, copyOf, attacking]): Bare => ({
+          kind: 'token',
+          copyOf,
+          count,
+          // Scouring Swarm (CR 110.5b): "a tapped token that's a copy of ~": the token enters tapped.
+          ...(head[1] === undefined ? {} : { tapped: true as const }),
+          ...(attacking === null ? {} : { tappedAndAttacking: true as const }),
+        }),
       ),
       map(
         sequence(
@@ -946,10 +1008,12 @@ export const TOKEN_RULES = [
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,
   TOKEN_COPY_EXCEPT_ADDITIVE,
+  TOKEN_COPIES_EXCEPT_ADDITIVE,
   // Aetherdrift energy deck (issue 105): "a 5/5 artifact creature in addition to its other types and has haste".
   TOKEN_COPY_EXCEPT_ADDITIVE_TYPES,
   // Espers to Magicite: "..., except it's an artifact and it loses all other card types".
   TOKEN_COPY_EXCEPT_SET_TYPES,
+  TOKEN_COPY_EXCEPT_PT,
   // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.

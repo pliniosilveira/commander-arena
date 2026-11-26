@@ -39,7 +39,10 @@ export function canTurnFaceUp(state: GameState, seat: SeatId, obj: GameObject): 
   if (controllerOf(state, obj) !== seat) return false;
   const symbols = turnUpSymbols(state, obj);
   if (symbols === null) return false;
-  return symbols.length === 0 || planFor(state, seat, symbols, { ability: true }) !== null;
+  return (
+    symbols.length === 0 ||
+    planFor(state, seat, symbols, { ability: true, turnFaceUp: true }) !== null
+  );
 }
 
 /** The face-down permanents `seat` may turn face up now, in battlefield order. */

@@ -38,14 +38,25 @@ describe('keyword.morph (CR 702.37a)', () => {
     expect(parsed.abilities).toHaveLength(1);
   });
 
-  test('a morph cost that is not plain mana is not read, and neither are Megamorph and Disguise', () => {
+  test('a morph cost that is not plain mana is not read, and neither is Disguise', () => {
     for (const text of [
       'Morph—Reveal a blue card in your hand.',
       'Morph {X}{R}',
-      'Megamorph {2}{G}',
+      'Megamorph—Pay 3 life.',
       'Disguise {3}{W}',
     ]) {
       expect(read(text, 'creature').alternativeCosts).toEqual([]);
     }
+  });
+});
+
+describe('keyword.megamorph (CR 702.37b)', () => {
+  test('"Megamorph {4}{G}" is a morph cost with the megamorph flag, reminder text dropped (Deathmist Raptor)', () => {
+    const parsed = readAll(
+      'Megamorph {4}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)',
+      'creature',
+    );
+    expect(parsed.alternativeCosts).toEqual([{ ...morph('4', 'G'), megamorph: true }]);
+    expect(parsed.abilities).toEqual([]);
   });
 });

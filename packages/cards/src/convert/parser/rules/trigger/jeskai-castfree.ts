@@ -25,6 +25,7 @@ export const TRIGGER_CAST_FIRST_OF_KIND = defineRule<IrTrigger>({
     'you cast your first instant or sorcery spell each turn',
     'you cast your first creature spell each turn',
     'you cast your first noncreature spell each turn',
+    'you cast your first outlaw spell each turn',
   ],
   rejects: [
     'you cast your first spell each turn',
@@ -35,6 +36,8 @@ export const TRIGGER_CAST_FIRST_OF_KIND = defineRule<IrTrigger>({
     'you cast your first Dragon spell each turn',
     'you cast your first instant or sorcery spell each turn and',
     'you cast your first instant or sorcery spell during each opponent’s turn',
+    'you cast your first non-outlaw spell each turn',
+    'you cast your first non-outlaw creature spell each turn',
     'you cast a first instant or sorcery spell each turn',
   ],
   parse: (ctx, pos) => {
@@ -54,10 +57,16 @@ export const TRIGGER_CAST_FIRST_OF_KIND = defineRule<IrTrigger>({
         filter.anyOf.length > 0 &&
         filter.anyOf.every((m) => m.types !== undefined && m.subtypes === undefined));
     const bare = Object.keys(filter).every(
-      (k) => ['raw', 'zone', 'stackKind', 'types', 'anyOf'].includes(k) || k === 'notTypes',
+      (k) =>
+        ['raw', 'zone', 'stackKind', 'types', 'anyOf'].includes(k) ||
+        k === 'notTypes' ||
+        k === 'outlaw',
     );
-    if (!kinded && filter.notTypes === undefined) return fail(ctx, pos);
-    if (!bare) return fail(ctx, pos);
+    // Discreet Retreat (CR 700.12): "your first outlaw spell each turn", the outlaws among the spells.
+    const outlawKind = filter.outlaw === true && filter.types === undefined;
+    if (!kinded && filter.notTypes === undefined && !outlawKind) return fail(ctx, pos);
+    // "Non-outlaw" is not read (the engine's first-of-kind counts the outlaws or the card types, not the others).
+    if (!bare || filter.outlaw === false) return fail(ctx, pos);
     const actor = makeNoun(id, { start: lead.span.start, end: lead.span.start + 3 }, 'you', {
       raw: 'you',
     });

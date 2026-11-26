@@ -21,6 +21,7 @@ import { setAttackTarget } from './attack';
 import { attackTaxDetail, taxRows, taxRowText, taxRowWarning } from './attack-tax';
 import { BarButtons } from './BarButtons';
 import { blockCostRow, blockCostText, blockCostWarning, blockTaxDetail } from './block-tax';
+import { CardNameDialog } from './CardNameDialog';
 import { CardPickerPanel } from './CardPickerPanel';
 import { toggleCard } from './cards';
 import { commanderZoneDetail } from './commander-zone';
@@ -36,6 +37,7 @@ import { NamedOptionDialog } from './NamedOptionDialog';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
+import { PartyDialog } from './PartyDialog';
 import { PassingDamagePanel } from './PassingDamagePanel';
 import { PayOptionsDialog } from './PayOptionsDialog';
 import { PermanentPanel } from './PermanentPanel';
@@ -242,10 +244,14 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       ) : d.purpose === 'lifePaid' ? (
         // CR 119.4, 614.12: "As this artifact enters, pay any amount of life": a number from 0 to the life total, not a list of buttons.
         <LifePaidDialog key={d.id} d={d} act={act} />
+      ) : d.purpose === 'cardName' ? (
+        // CR 201.2, 614.12a: "choose a nonland card name" is typed, with the names the game shows as suggestions.
+        <CardNameDialog key={d.id} d={d} act={act} />
       ) : d.purpose === 'pile' ? (
         // D-303 (CR 700.3): the two piles the other player made, with their cards.
         <PilesDialog key={d.id} d={d} view={view} act={act} />
       ) : d.purpose === 'option' ||
+        d.purpose === 'player' ||
         d.purpose === 'cardType' ||
         d.purpose === 'effect' ||
         d.purpose === 'riot' ||
@@ -270,6 +276,11 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
 
     choosePayOptions: (d) => (
       <PayOptionsDialog key={d.id} d={d} view={view} ui={ui} model={model} update={update} />
+    ),
+
+    // CR 700.8d (Stick Together): the party is chosen in a dialog of its own.
+    chooseParty: (d) => (
+      <PartyDialog key={d.id} d={d} view={view} ui={ui} model={model} update={update} />
     ),
 
     // The division of combat damage is a dock panel, so the board stays visible (issue 92).
@@ -306,6 +317,8 @@ export function DockPanel(props: OverlayProps): ReactNode {
     chooseModes: none,
     // The creatures, artifacts or graveyard cards are a modal: their cards do not fit the dock.
     choosePayOptions: none,
+    // The party is a modal: a row of creatures for each type does not fit the dock.
+    chooseParty: none,
     // The arrangement is a modal: card faces in two rows do not fit the dock.
     arrangeCards: none,
 

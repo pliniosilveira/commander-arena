@@ -22,6 +22,7 @@ import { colorLetter, itemsOf, lowerFilter, objectSelectorOf } from './nouns';
 import type { Lowering, LowerResult } from './types';
 
 const END = 'untilEndOfTurn' as const;
+const NEXT_TURN = 'untilYourNextTurn' as const;
 
 /** "It" may be the permanent whose event caused the trigger (D-133): the continuous effects read it. */
 const TRIGGER_SUBJECT = { triggerSubject: true } as const;
@@ -75,7 +76,14 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
       const protection = word.protection;
       let keyword: Keyword;
-      if ('choice' in protection) {
+      if ('cardTypes' in protection) {
+        // Seasoned Dungeoneer (CR 702.16a, 205.2a): "gains protection from creatures", the engine's protection from card types.
+        keyword = {
+          kind: 'protection',
+          from: 'cardType',
+          types: protection.cardTypes as CardType[],
+        };
+      } else if ('choice' in protection) {
         // D-514 (CR 702.16a, 608.2d): the card type of the controller's choice, asked as the effect resolves, as the color is.
         keyword = {
           kind: 'protection',
@@ -149,14 +157,23 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     const whileRemains = scope === 'whileSelfRemains';
     // "attacks this combat if able" (issue 144, CR 506.1, 508.1d): the requirement of one combat, the engine's `thisCombat`.
     const thisCombat = scope === 'thisCombat';
+    // "Until your next turn, target creature can't be blocked" (Sly Instigator, CR 611.2a, 500.1): the engine's `untilYourNextTurn`, with `cantBeBlocked` only.
+    const nextTurn = scope === 'untilYourNextTurn';
     if (
       scope !== 'thisTurn' &&
       scope !== 'untilEndOfTurn' &&
       !whileControlling &&
       !whileRemains &&
-      !thisCombat
+      !thisCombat &&
+      !nextTurn
     ) {
       return failure(clause);
+    }
+    if (nextTurn) {
+      if (given.restriction !== 'cantBeBlocked') return failure(clause);
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     if (thisCombat) {
       if (given.restriction !== 'attacksEachCombat') return failure(clause);
@@ -253,7 +270,9 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
             ? 'forAsLongAsThisRemains'
             : thisCombat
               ? 'thisCombat'
-              : END,
+              : nextTurn
+                ? 'untilYourNextTurn'
+                : END,
       }),
       'objects',
       // "That token attacks this combat if able": the token the sentence before made (the noun is bound by the earlier instruction).
@@ -271,9 +290,13 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     // "... for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): the duration of an ability of a permanent.
     const whileRemains = clause.duration?.scope === 'whileSelfRemains';
-    if (!endsWithTurn(clause) && !whileRemains) return failure(clause);
-    if (whileRemains) {
-      const blocked = missingFeatures(['duration:forAsLongAsThisRemains']);
+    // "Until your next turn, up to two target creatures each have base power and toughness 0/3 and lose all abilities" (Will Kenrith, CR 611.2a, 500.1).
+    const nextTurn = endsWithYourNextTurn(clause);
+    if (!endsWithTurn(clause) && !whileRemains && !nextTurn) return failure(clause);
+    if (whileRemains || nextTurn) {
+      const blocked = missingFeatures([
+        whileRemains ? 'duration:forAsLongAsThisRemains' : 'duration:untilYourNextTurn',
+      ]);
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
@@ -283,7 +306,11 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
       (objects) => ({
         kind: 'loseAllAbilities',
         objects,
-        duration: whileRemains ? ('forAsLongAsThisRemains' as const) : END,
+        duration: whileRemains
+          ? ('forAsLongAsThisRemains' as const)
+          : nextTurn
+            ? ('untilYourNextTurn' as const)
+            : END,
       }),
       'objects',
       TRIGGER_SUBJECT,
@@ -321,7 +348,16 @@ export const SET_PT: Lowering<IrClause, Effects> = {
     const noun = arg(clause, 'objects');
     const lasting =
       clause.duration === undefined && noun?.kind === 'noun' && noun.det === 'anaphor';
-    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting)) return failure(clause);
+    // Will Kenrith (CR 611.2a, 500.1): "until your next turn" ends as the next turn of the controller begins.
+    const nextTurn = endsWithYourNextTurn(clause);
+    if (base?.kind !== 'basePt' || (!endsWithTurn(clause) && !lasting && !nextTurn)) {
+      return failure(clause);
+    }
+    if (nextTurn) {
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
     let power: PtAmount = base.power;
     let toughness: PtAmount = base.toughness;
@@ -348,7 +384,7 @@ export const SET_PT: Lowering<IrClause, Effects> = {
         objects,
         power,
         toughness,
-        duration: lasting ? 'permanent' : END,
+        duration: lasting ? 'permanent' : nextTurn ? 'untilYourNextTurn' : END,
       }),
       'objects',
       // Ahoy Mateys deck, Admiral Brass (CR 400.7): "it" after "return target ... to the battlefield" is the permanent that came back, a new object, which the engine's `moved` names.
@@ -392,12 +428,70 @@ export const BECOMES: Lowering<IrClause, Effects> = {
     const types = arg(clause, 'types');
     const colors = arg(clause, 'colors');
     const base = arg(clause, 'basePt');
-    if (subject === undefined || !endsWithTurn(clause)) return failure(clause);
+    const nextTurn = endsWithYourNextTurn(clause);
+    if (subject === undefined || (!endsWithTurn(clause) && !nextTurn)) return failure(clause);
     if (types !== undefined && types.kind !== 'typeList') return failure(clause);
     if (colors !== undefined && colors.kind !== 'colorSpec') return failure(clause);
     if (base !== undefined && base.kind !== 'basePt') return failure(clause);
+    // CR 611.2a, 500.1 (Sylvan Awakening): "until your next turn" is run for the types and the base power and toughness (`setTypes`, `setPt`); the engine's `setColors` ends with the turn only.
+    if (nextTurn) {
+      if (colors !== undefined || types?.allCreatureTypes === true) return failure(clause);
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     const letters: Color[] = [];
     for (const word of colors?.colors ?? []) {
+      const letter = colorLetter(word);
+      if (letter === undefined) return failure(clause);
+      letters.push(letter);
+    }
+    // "becomes an X/X ... creature, where X is ..." (Cactus Preserve, CR 107.3a, 613.4b): the X the sentence defines, worked out as the effect resolves.
+    let pt: { power: PtAmount; toughness: PtAmount } | undefined;
+    if (base?.amount !== undefined) {
+      const x = lowerAmount(base.amount, ctx, clause.rule);
+      if (!x.ok) return x;
+      pt = { power: x.value, toughness: x.value };
+    } else if (base?.x === true) {
+      const x = lowerAmount({ kind: 'x', span: base.span }, ctx, clause.rule);
+      if (!x.ok) return x;
+      pt = { power: x.value, toughness: x.value };
+    } else if (base !== undefined) {
+      pt = { power: base.power, toughness: base.toughness };
+    }
+    const effects: Effect[] = [];
+    for (const item of itemsOf(subject)) {
+      const objects = objectSelectorOf(item, ctx, TRIGGER_SUBJECT);
+      if (!objects.ok) return objects;
+      effects.push(
+        ...becoming(objects.value, types, colors && letters, pt, nextTurn ? NEXT_TURN : END),
+      );
+    }
+    return { ok: true, value: effects, rule: clause.rule };
+  },
+};
+
+/**
+ * "Until end of turn, each planeswalker you control becomes a 4/4 red Dragon creature" (Sarkhan the Masterless; CR 613.1d, 613.1e, 613.4b, 611.2a, 205.1a): the group is fixed as each
+ * effect begins, so the colors come before the types (the objects are still the planeswalkers then), and the types, with the base power and toughness, are one effect that replaces the card types
+ * (the permanent is no longer a planeswalker, and keeps its loyalty counters and abilities).
+ */
+export const BECOMES_CREATURE_GROUP: Lowering<IrClause, Effects> = {
+  head: 'becomesCreatureGroup',
+  id: 'lower.becomes-creature-group',
+  needs: ['effect:setTypes', 'effect:setColors', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const subject = operand(clause, 'objects');
+    const types = arg(clause, 'types');
+    const colors = arg(clause, 'colors');
+    const base = arg(clause, 'basePt');
+    if (subject === undefined || !endsWithTurn(clause)) return failure(clause);
+    if (types?.kind !== 'typeList' || colors?.kind !== 'colorSpec' || base?.kind !== 'basePt') {
+      return failure(clause);
+    }
+    const letters: Color[] = [];
+    for (const word of colors.colors) {
       const letter = colorLetter(word);
       if (letter === undefined) return failure(clause);
       letters.push(letter);
@@ -406,7 +500,18 @@ export const BECOMES: Lowering<IrClause, Effects> = {
     for (const item of itemsOf(subject)) {
       const objects = objectSelectorOf(item, ctx, TRIGGER_SUBJECT);
       if (!objects.ok) return objects;
-      effects.push(...becoming(objects.value, types, colors && letters, base));
+      if (objects.value.kind !== 'each') return failure(clause);
+      effects.push(
+        { kind: 'setColors', objects: objects.value, colors: letters, duration: END },
+        {
+          kind: 'setTypes',
+          objects: objects.value,
+          types: (types.cardTypes ?? []) as CardType[],
+          ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
+          basePt: { power: base.power, toughness: base.toughness },
+          duration: END,
+        },
+      );
     }
     return { ok: true, value: effects, rule: clause.rule };
   },
@@ -416,7 +521,8 @@ function becoming(
   objects: ObjectSelector,
   types: IrTypeList | undefined,
   colors: readonly Color[] | undefined,
-  base: { power: number; toughness: number } | undefined,
+  base: { power: PtAmount; toughness: PtAmount } | undefined,
+  duration: typeof END | typeof NEXT_TURN,
 ): Effect[] {
   const out: Effect[] = [];
   // "Each noncreature artifact you control becomes a 4/4 artifact creature" (stage P64, D-217, CR 611.2c, 613.4b): a group is fixed once, as the effect begins, so its
@@ -425,16 +531,20 @@ function becoming(
     types?.cardTypes?.includes('creature') === true &&
     base !== undefined &&
     objects.kind === 'each' &&
-    colors === undefined
+    colors === undefined &&
+    typeof base.power === 'number' &&
+    typeof base.toughness === 'number'
   ) {
     return [
       {
         kind: 'setTypes',
         objects,
         types: types.cardTypes as CardType[],
+        // "... 3/3 Construct Assassin artifact creatures in addition to their other types" (Vihaan, Goldwaker): the creature types come with the card types, in the same effect.
+        ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
         ...(types.additive === true ? { additive: true as const } : {}),
         basePt: { power: base.power, toughness: base.toughness },
-        duration: END,
+        duration,
       },
     ];
   }
@@ -447,8 +557,12 @@ function becoming(
       ...(types.cardTypes === undefined ? {} : { types: types.cardTypes as CardType[] }),
       ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
       ...(types.additive === true ? { additive: true as const } : {}),
-      duration: END,
+      duration,
     });
+    // CR 205.3m, 613.1d: "with all creature types" is the layer 4 effect of its own (the engine keeps it apart from the types listed).
+    if (types.allCreatureTypes === true) {
+      out.push({ kind: 'setTypes', objects, allCreatureTypes: true, duration });
+    }
   }
   if (colors !== undefined) out.push({ kind: 'setColors', objects, colors, duration: END });
   if (base !== undefined) {
@@ -457,7 +571,7 @@ function becoming(
       objects,
       power: base.power,
       toughness: base.toughness,
-      duration: END,
+      duration,
     });
   }
   return out;

@@ -40,6 +40,69 @@ const LIFE_PRESS: CardDefinition = {
   support: 'supported',
 } as unknown as CardDefinition;
 
+/** A SYNTHETIC creature of the given types, for the party question. */
+const creature = (name: string, subtypes: readonly string[]): CardDefinition =>
+  ({
+    oracleId: null,
+    name,
+    layout: 'normal',
+    faces: [
+      {
+        name,
+        manaCost: ['1'],
+        supertypes: [],
+        types: ['creature'],
+        subtypes,
+        colors: [],
+        power: 1,
+        toughness: 1,
+        loyalty: null,
+        defense: null,
+        oracleText: 'SYNTHETIC',
+        abilities: [],
+        spell: null,
+      },
+    ],
+    colorIdentity: [],
+    support: 'supported',
+  }) as unknown as CardDefinition;
+
+/** "Each player chooses a party from among creatures they control, then sacrifices the rest." (SYNTHETIC) */
+const PARTY_PURGE: CardDefinition = {
+  oracleId: null,
+  name: 'SYNTHETIC Party Purge',
+  layout: 'normal',
+  faces: [
+    {
+      name: 'SYNTHETIC Party Purge',
+      manaCost: ['1'],
+      supertypes: [],
+      types: ['sorcery'],
+      subtypes: [],
+      colors: [],
+      power: null,
+      toughness: null,
+      loyalty: null,
+      defense: null,
+      oracleText:
+        'Each player chooses a party from among creatures they control, then sacrifices the rest.',
+      abilities: [],
+      spell: { effect: { kind: 'chooseParty', players: { kind: 'eachPlayer' } } },
+    },
+  ],
+  colorIdentity: [],
+  support: 'supported',
+} as unknown as CardDefinition;
+
+const PARTY_MEMBERS: readonly CardDefinition[] = [
+  creature('SYNTHETIC Cleric', ['Human', 'Cleric']),
+  creature('SYNTHETIC Second Cleric', ['Human', 'Cleric']),
+  creature('SYNTHETIC Rogue', ['Human', 'Rogue']),
+  creature('SYNTHETIC Warrior', ['Human', 'Warrior']),
+  creature('SYNTHETIC Wizard', ['Human', 'Wizard']),
+  creature('SYNTHETIC Bear', ['Bear']),
+];
+
 const PILE = 'SYNTHETIC Pile Reading';
 const PILE_TOP = ['Grizzly Bears', 'Giant Spider', 'Serra Angel', 'Lightning Bolt', 'Sol Ring'];
 
@@ -114,6 +177,42 @@ export const STATES: Record<string, () => GameView> = {
       .at('end', { active: 1, turn: 2 })
       .build();
     g.advanceTo('untap', { turn: 'next' });
+    return getView(g.state, 0);
+  },
+  /** "As this artifact enters, choose a nonland card name": a text box with suggestions. */
+  'card-name': () => {
+    const g = scenario()
+      .seat(0)
+      .hand('SYNTHETIC Name Chooser')
+      .battlefield('Island', 'Island', 'Grizzly Bears', 'Sol Ring')
+      .library(...FILLER)
+      .seat(1)
+      .battlefield('Serra Angel')
+      .library(...FILLER)
+      .build();
+    g.act(0).cast('SYNTHETIC Name Chooser', { pay: true });
+    g.passAll();
+    return getView(g.state, 0);
+  },
+  /** "Choose a party from among creatures you control": a row for each of the four party types. */
+  party: () => {
+    let b = scenario();
+    for (const card of [PARTY_PURGE, ...PARTY_MEMBERS]) b = b.define(card);
+    const me = b
+      .seat(0)
+      .life(20)
+      .library(...FILLER)
+      .hand(PARTY_PURGE.name)
+      .battlefield('Plains');
+    for (const card of PARTY_MEMBERS) me.battlefield(card.name);
+    const g = b
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(PARTY_PURGE.name, { pay: true });
+    g.passAll();
     return getView(g.state, 0);
   },
   /** No decision: a graveyard with cards, to open the zone viewer from the board. */

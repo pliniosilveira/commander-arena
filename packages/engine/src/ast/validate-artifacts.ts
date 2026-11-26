@@ -73,8 +73,21 @@ function checkSoulbondFace(face: CardFace, path: string, out: AstIssue[]): void 
 function choosesFromExile(e: unknown): boolean {
   if (Array.isArray(e)) return e.some(choosesFromExile);
   if (typeof e !== 'object' || e === null) return false;
-  const o = e as { kind?: unknown; filter?: { zone?: unknown }; fromMoved?: unknown };
-  if (o.kind === 'choose' && o.filter?.zone === 'exile' && o.fromMoved !== true) return true;
+  const o = e as {
+    kind?: unknown;
+    filter?: { zone?: unknown };
+    fromMoved?: unknown;
+    fromExileOf?: unknown;
+  };
+  // Oblivion Sower: the cards of one player in exile (`fromExileOf`), whoever exiled them, read no linked exile either.
+  if (
+    o.kind === 'choose' &&
+    o.filter?.zone === 'exile' &&
+    o.fromMoved !== true &&
+    o.fromExileOf === undefined
+  ) {
+    return true;
+  }
   return Object.values(e).some(choosesFromExile);
 }
 
@@ -85,6 +98,8 @@ function readsLinkedExile(e: unknown): boolean {
     choosesFromExile(e) ||
     // D-230: "return the exiled card": the `linkedExile` reference (Fiend Hunter, Skyclave Apparition, the token Hofri makes).
     text.includes('"kind":"linkedExile"') ||
+    // Journey to the Lost City (CR 607.2a): "Put all permanent cards exiled with this enchantment onto the battlefield": an `each` selector of the cards the permanent exiled.
+    text.includes('"exiledWithSource":true') ||
     // Furious Rise (CR 607.2a): "You may play that card until you exile another card with this enchantment": the permission is read from the card the linked exile made.
     text.includes('"lasts":"untilSourceExilesAnother"')
   );
@@ -118,8 +133,13 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
     (a) =>
       (a?.kind === 'static' &&
         (a.static?.kind === 'takeFromLinkedExile' ||
+          // Evendo Brushrazer (CR 607.2a): "you may play cards exiled with this creature".
+          a.static?.kind === 'playFromLinkedExile' ||
           // Issue 102 (Steward of the Harvest): "all activated abilities of all land cards exiled with ~".
           a.static?.kind === 'grantActivatedAbilitiesOfLinkedExile')) ||
+      // Shelob, Dread Weaver (CR 607.2a): "Put a creature card exiled with ~ into its owner's graveyard" as a cost reads the cards the permanent exiled.
+      (a?.kind === 'activated' &&
+        JSON.stringify(a.cost ?? null).includes('"putLinkedExileInGraveyard"')) ||
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.

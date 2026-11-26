@@ -9,16 +9,19 @@
  */
 import type { Amount, Effect, PlayUntil } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
-import { allocateTimestamp, getSeat, patchObject } from '../state/ops';
+import { allocateTimestamp, getSeat, opponentsOf, patchObject } from '../state/ops';
 import type {
   ChosenTarget,
   ContinuousEffect,
+  DelayedTrigger,
   EffectEnd,
   GameState,
   ResolutionContext,
 } from '../state/types';
+import { pickRandom } from './attack-random-opponent';
+import { derive } from './derive';
 import { amountOf, moveInstructions, moving } from './effect-support';
-import { resolveObjects, resolvePlayers, type SelectContext } from './select';
+import { matchesFilter, resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** The steps of a turn that come before its end step (CR 500.1): "your next end step" is this turn's while one of them is current. */
@@ -60,20 +63,39 @@ export function runExileTop(
   // D-187: "the top two cards of target opponent's library": the library of the one player the selector names, a target that is gone (or no longer
   // legal) exiles nothing (CR 608.2b).
   // Issue 279 (Etali, Primal Storm): "the top card of each player's library": every player the selector names (`eachPlayer`), in the order it gives, has their own top cards exiled.
-  const owners =
-    effect.from === undefined ? [res.controller] : resolvePlayers(state, effect.from, ctx, targets);
+  // The Ruinous Powers (CR 101.4, 701.13): "Choose an opponent at random": one opponent still in the game, picked by the seeded generator; the choice is made even when the library is empty.
+  let drawn = state;
+  let owners: readonly SeatId[];
+  if (effect.randomOpponent === true) {
+    const opponents = opponentsOf(state, res.controller);
+    if (opponents.length === 0) return moving(state, []);
+    const [one, rng] = pickRandom(opponents, state.rng);
+    drawn = { ...state, rng };
+    owners = [one];
+  } else {
+    owners =
+      effect.from === undefined
+        ? [res.controller]
+        : resolvePlayers(state, effect.from, ctx, targets);
+  }
   if (owners.length === 0) return moving(state, []);
   const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
-  const moves = moveInstructions(top, 'exile');
+  // CR 608.2c (Journey to the Lost City): a creature card that really goes to exile counts, "for each creature card among those cards" (a card in a library is never a token).
+  const moves = moveInstructions(top, 'exile').map((m) => {
+    const card = m.kind === 'move' ? state.objects[m.object] : undefined;
+    return card !== undefined && derive(state, card).types.includes('creature')
+      ? { ...m, countsCreatureCard: true as const }
+      : m;
+  });
   // CR 607.2a, 611.2a (Furious Rise): "until you exile another card with this enchantment": exiling another card with the permanent's linked ability ends the permission to play the one before.
   const exiling =
     effect.linked === true && res.source !== null && top.length > 0 ? res.source : null;
   const current: GameState =
     exiling === null
-      ? state
+      ? drawn
       : {
-          ...state,
-          continuousEffects: state.continuousEffects.filter(
+          ...drawn,
+          continuousEffects: drawn.continuousEffects.filter(
             (e) =>
               !(e.change.kind === 'playPermission' && e.change.endsWhenExilesAnother === exiling),
           ),
@@ -121,11 +143,32 @@ export function runMayPlay(
       : (res.lastMoved ?? []);
   const cards = named.filter((id) => {
     const card = state.objects[id];
-    return card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller);
+    if (
+      !(card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller))
+    ) {
+      return false;
+    }
+    // Narset, Enlightened Master: only the cards the filter describes get the permission.
+    return (
+      effect.cards === undefined ||
+      matchesFilter(
+        state,
+        card,
+        { ...effect.cards, zone: card.zone },
+        { controller: res.controller, source: res.source },
+      )
+    );
   });
   const until = playEnd(state, res.controller, effect.lasts);
   let next = state;
   const created: ContinuousEffect[] = [];
+  // Nashi, Moon Sage's Scion: "you may play one of those cards": the permissions of this effect share a key, which the card played ends the others by.
+  let oneOf: string | undefined;
+  if (effect.oneOf === true && cards.length > 0) {
+    const [stamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    oneOf = `one${stamp}`;
+  }
   for (const id of cards) {
     // CR 406.3 (D-187): "you may look at and play those cards": the controller may look at each card that is face down, until it leaves exile.
     if (effect.lookAt === true && next.objects[id]?.exiledFaceDown === true) {
@@ -159,6 +202,13 @@ export function runMayPlay(
         ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
         // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast".
         ...(effect.lessGeneric === undefined ? {} : { lessGeneric: effect.lessGeneric }),
+        // Durnan of the Yawning Portal (CR 702.125a): "That spell has undaunted".
+        ...(effect.undaunted === true ? { undaunted: true as const } : {}),
+        // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell".
+        ...(effect.creatureSpellsOnly === true ? { creatureSpellsOnly: true as const } : {}),
+        // Nashi, Moon Sage's Scion (CR 118.9): "pay life equal to its mana value rather than paying its mana cost", and "play one of those cards".
+        ...(effect.lifeForMana === true ? { lifeForMana: true as const } : {}),
+        ...(oneOf === undefined ? {} : { oneOf }),
         // Furious Rise (CR 607.2a): "until you exile another card with this enchantment".
         ...(effect.lasts === 'untilSourceExilesAnother' && res.source !== null
           ? { endsWhenExilesAnother: res.source }
@@ -166,7 +216,38 @@ export function runMayPlay(
       },
     });
   }
-  return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });
+  // The Ruinous Powers (CR 603.7, 603.7a): "When you cast a spell this way, its owner loses life equal to its mana value": a delayed triggered ability of the controller for the cast of each card
+  // of this permission this turn (the spell is its `triggerSubject`), created with the permission.
+  const delayed: DelayedTrigger[] =
+    effect.whenCast === undefined
+      ? []
+      : cards.flatMap((id) => {
+          const card = state.objects[id]?.card ?? null;
+          return card === null
+            ? []
+            : [
+                {
+                  source: res.source,
+                  controller: res.controller,
+                  ability: {
+                    kind: 'triggered' as const,
+                    trigger: {
+                      kind: 'castSpell' as const,
+                      filter: { stackKind: 'spell' as const },
+                      by: 'you' as const,
+                    },
+                    effect: effect.whenCast as Effect,
+                  },
+                  untilEndOfTurn: true as const,
+                  watchedCard: card,
+                },
+              ];
+        });
+  return done({
+    ...next,
+    continuousEffects: [...next.continuousEffects, ...created],
+    ...(delayed.length === 0 ? {} : { delayedTriggers: [...next.delayedTriggers, ...delayed] }),
+  });
 }
 
 /** `amount` with each "those cards that are still exiled" replaced by the cards `ids` (`cardsStillExiled`). */

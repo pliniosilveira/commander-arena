@@ -55,10 +55,10 @@ function additional(cost: IrCost): LowerResult<Cost> {
 function lowerChoice(
   ability: Static,
   first: readonly IrCost[],
-  second: readonly IrCost[],
+  others: readonly (readonly IrCost[])[],
 ): LowerResult<FaceCosts> {
   const options: Cost[][] = [];
-  for (const way of [first, second]) {
+  for (const way of [first, ...others]) {
     const lowered: Cost[] = [];
     for (const ir of way) {
       const cost = additional(ir);
@@ -68,21 +68,24 @@ function lowerChoice(
     options.push(lowered);
   }
   const [one, other] = options;
-  if (one === undefined || other === undefined) return failure(ability);
-  const costs = [...one, ...other];
+  if (one === undefined || other === undefined || options.length > 3) return failure(ability);
+  const costs = options.flat();
   if (costs.some((c) => c.kind === 'payXLife' || c.kind === 'discardX')) return failure(ability);
+  // CR 118.8: the engine pays an exile of graveyard cards only as a cost of its own, not as one way of a choice.
+  if (costs.some((c) => c.kind === 'exileFromGraveyard')) return failure(ability);
   const missing = missingFeatures([
     ...costs.filter((c) => c.kind !== 'behold').map((c): FeatureRef => `cost:${c.kind}`),
     'ability:additionalCostChoice',
   ]);
   if (missing.length > 0) return failure(ability, missing);
   // Two ways that are the same kind of cost ("sacrifice a creature or sacrifice an artifact") are one cost of a wider description, not a choice.
-  if (one.length === 1 && other.length === 1 && one[0]?.kind === other[0]?.kind) {
+  const kinds = options.map((way) => (way.length === 1 ? way[0]?.kind : undefined));
+  if (kinds.every((k) => k !== undefined) && new Set(kinds).size !== kinds.length) {
     return failure(ability);
   }
   return {
     ok: true,
-    value: { ...NONE, additionalCostChoice: [one, other] },
+    value: { ...NONE, additionalCostChoice: options },
     rule: ability.rule,
   };
 }
@@ -111,7 +114,12 @@ function lowerAdditional(
       ? failure(ability, blocked)
       : { ok: true, value: { ...NONE, additionalCosts: [cost.value] }, rule: ability.rule };
   }
-  if (orCosts !== undefined) return lowerChoice(ability, costs, orCosts);
+  if (orCosts !== undefined)
+    return lowerChoice(
+      ability,
+      costs,
+      orCosts.map((c) => [c]),
+    );
   const lowered: Cost[] = [];
   for (const ir of costs) {
     const cost = additional(ir);
@@ -219,6 +227,26 @@ function lowerLifeAlternative(
     if (!lowered.ok) return lowered;
     entry = { ...entry, condition: lowered.value };
   }
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
+ * "You may pay {1}{B} rather than pay ~'s mana cost." (Baleful Mastery, CR 118.9, 601.2b, 601.2f): the engine's alternative cost `payMana`: the mana is paid in place of the mana cost, with
+ * no other effect on the spell. The mana is plain (no X, no hybrid), as for the named alternative costs.
+ */
+function lowerManaAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'manaAlternative';
+  },
+): LowerResult<FaceCosts> {
+  if (effect.cost.length === 0) return failure(ability);
+  const blocked = missingFeatures(['castAlternative:payMana', 'cost:mana']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'payMana',
+    cost: [{ kind: 'mana', symbols: [...effect.cost] }],
+  };
   return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
 }
 
@@ -356,6 +384,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
   if (effect.kind === 'lifeAlternative') return lowerLifeAlternative(ability, effect);
+  if (effect.kind === 'manaAlternative') return lowerManaAlternative(ability, effect);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
   if (effect.kind === 'graveyardSacrificeAlternative') {
     return lowerGraveyardSacrificeAlternative(ability, effect);
@@ -374,6 +403,7 @@ const NAMED_ALTERNATIVES = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'escape',
   'harmonize',
   'madness',
@@ -402,8 +432,11 @@ const isNamedAlternative = (name: string): name is NamedAlternative =>
  * as an ability).
  */
 export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering | null {
-  if (!isNamedAlternative(ability.name)) return null;
-  const kind = ability.name;
+  // CR 702.37b: Megamorph is a variant of morph, lowered to the morph alternative cost with the engine's `megamorph` flag.
+  const megamorph = ability.name === 'megamorph';
+  const name = megamorph ? 'morph' : ability.name;
+  if (!isNamedAlternative(name)) return null;
+  const kind = name;
   const [only, ...more] = ability.cost ?? [];
   if (kind === 'evoke' && only?.kind === 'exileFromHand') {
     return more.length > 0 || ability.params.length > 0
@@ -439,7 +472,11 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
   // A hybrid symbol or an {X} is refused here, as the engine's own check would; Miracle's cost may have an {X} (D-274, CR 107.3a).
   const cost = lowerCost(only, { x: kind === 'miracle' || kind === 'harmonize' });
   if (!cost.ok) return cost;
-  const blocked = missingFeatures([`castAlternative:${kind}`, `cost:${cost.value.kind}`]);
+  const blocked = missingFeatures([
+    `castAlternative:${kind}`,
+    `cost:${cost.value.kind}`,
+    ...(megamorph ? (['ability:megamorph'] as const) : []),
+  ]);
   if (blocked.length > 0) return failure(ability, blocked);
   const entry: AlternativeCost =
     kind === 'escape'
@@ -448,11 +485,13 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
         ? { kind, cost: [cost.value], counters: exile }
         : kind === 'blitz'
           ? { kind, cost: [cost.value], ...(exile > 0 ? { discard: exile } : {}) }
-          : { kind, cost: [cost.value] };
+          : kind === 'morph' && megamorph
+            ? { kind, cost: [cost.value], megamorph: true as const }
+            : { kind, cost: [cost.value] };
   return {
     ok: true,
     value: { ...NONE, alternativeCosts: [entry] },
-    rule: `keyword.${kind}`,
+    rule: megamorph ? 'keyword.megamorph' : `keyword.${kind}`,
   };
 }
 
@@ -463,12 +502,14 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:dash',
   'castAlternative:bestow',
   'castAlternative:spectacle',
+  'castAlternative:freerunning',
   'castAlternative:escape',
   'castAlternative:harmonize',
   'castAlternative:madness',
   'castAlternative:miracle',
   'castAlternative:foretell',
   'castAlternative:morph',
+  'ability:megamorph',
   'castAlternative:impending',
   'castAlternative:blitz',
   // Snuff Out: "you may pay 4 life rather than pay ~'s mana cost".

@@ -335,6 +335,70 @@ export const TRIGGER_STATE = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.state-has`: "~ has twenty or more charge counters on it" (Darksteel Reactor; CR 603.8, 122.1: the same state trigger as `trigger.state`, said of the permanent first). The state
+ * read is the number of counters of one kind on the permanent itself, compared with a number. Not read: another permanent, "exactly", no "or more", the counters on a player.
+ */
+export const TRIGGER_STATE_HAS = defineRule<IrTrigger>({
+  id: 'trigger.state-has',
+  family: 'trigger',
+  leading: ['~'],
+  cites: ['CR 603.8 (Handling Triggered Abilities)', 'CR 122.1 (Counters)'],
+  examples: [
+    '~ has twenty or more charge counters on it',
+    '~ has three or more +1/+1 counters on it',
+    '~ has 20 or more charge counters on it',
+  ],
+  rejects: [
+    '~ has twenty charge counters on it',
+    '~ has twenty or more charge counters on target artifact',
+    '~ has no charge counters on it',
+    '~ has twenty or more charge counters',
+    'target artifact has twenty or more charge counters on it',
+    '~ has twenty or more charge counters on it, you win the game',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.state-has';
+    const r = sequence(
+      spanned(literal('~')),
+      literal(' has '),
+      spanned(
+        sequence(
+          satisfy(quantity, (n) => n >= 1),
+          literal(' or more '),
+          pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
+          literal(' counters on it'),
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [self, , amountWords] = r.value;
+    const [value, , counter] = amountWords.value;
+    const span = { start: pos, end: r.pos };
+    const of = makeNoun(id, self.span, 'self', { raw: '~' });
+    const condition: IrCondition = {
+      kind: 'condition',
+      test: {
+        kind: 'amountIs',
+        amount: {
+          kind: 'countersOn',
+          of,
+          counter: counter[0].toLowerCase(),
+          span: amountWords.span,
+        },
+        compare: { cmp: 'atLeast', value },
+      },
+      span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: { kind: 'trigger', event: 'state', subject: of, condition, args: {}, span, rule: id },
+      pos: r.pos,
+    };
+  },
+});
+
 type CombatStep = NonNullable<IrTrigger['during']>;
 
 /** The steps of combat by their names (CR 506.1). */
@@ -398,5 +462,6 @@ export const ARTIFACT_TRIGGER_RULES = [
   TRIGGER_COMBAT_DAMAGE_BATCH_TO_YOU,
   TRIGGER_TAPPED_FOR_MANA,
   TRIGGER_STATE,
+  TRIGGER_STATE_HAS,
   TRIGGER_ENTERS_DURING,
 ];

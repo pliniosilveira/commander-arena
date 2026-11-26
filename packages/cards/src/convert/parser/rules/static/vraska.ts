@@ -10,7 +10,7 @@ import { statement } from './grants';
  * `static.during-your-turn`: "During your turn, equipped creature has flying." (CR 611.3a, 613.8: the effect applies only while it is your turn, which is
  * looked at all the time and which no layer changes). The statement after the comma is one of an attached permanent (`static.attached`: "equipped
  * creature gets +1/+0 and has flying"), so the condition is that of the whole statement. Not read: another turn ("during an opponent's turn"), a
- * condition after the statement ("equipped creature has flying during your turn"), a subject that is not the attached permanent, `~` or "each creature" (`static.each`, Baldin: "During your turn,
+ * condition after the statement ("equipped creature has flying during your turn"), a subject that is not the attached permanent, `~`, a group of permanents (`static.permanents`) or "each creature" (`static.each`, Baldin: "During your turn,
  * each creature assigns combat damage equal to its toughness rather than its power.").
  */
 export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
@@ -26,12 +26,15 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     // CR 510.1a, 609.4 (Baldin, Century Herdmaster): each creature, whoever controls it, while it is your turn.
     'During your turn, each creature assigns combat damage equal to its toughness rather than its power.',
     'During your turn, each creature you control gets +1/+0.',
+    // Flint deck (issue 685, At Knifepoint): a group of permanents, while it is your turn.
+    'During your turn, creatures you control have flying.',
+    'During your turn, outlaws you control have first strike.',
   ],
   rejects: [
     'During your turn, equipped creature has flying',
     "During an opponent's turn, equipped creature has flying.",
     'During your turn equipped creature has flying.',
-    'During your turn, creatures you control have flying.',
+    'During your turn, creatures you control have flying',
     'During your turn, each creature assigns combat damage equal to its toughness rather than its power',
     'During your turn, each creature assign combat damage equal to its toughness rather than its power.',
     'During your turn, ~ has banana.',
@@ -45,7 +48,9 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     const own = statement('static.during-your-turn', ['noun.self'], 'selfGrant')(ctx, lead.pos);
     const inner = own.ok
       ? own
-      : family<IrStatic>('static', { only: ['static.attached', 'static.each'] })(ctx, lead.pos);
+      : family<IrStatic>('static', {
+          only: ['static.attached', 'static.each', 'static.permanents'],
+        })(ctx, lead.pos);
     if (!inner.ok) return inner;
     if (inner.value.condition !== undefined) return fail(ctx, pos);
     return {

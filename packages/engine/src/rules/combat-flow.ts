@@ -35,14 +35,15 @@ import {
 import {
   attackCandidates,
   blockCandidates,
+  minBlockersOf,
   requiredAttackers,
   validateAttacks,
   validateBlocks,
 } from './combat-legality';
+import { blockersLeft, combatCreatureLimit } from './combat-limits';
 import { askingFlow } from './damage-order';
 import { attackerDefender } from './defending';
 import { applyExerts, canExert, type ExertAttack } from './exert';
-import { hasKeyword } from './keywords';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
 import { type ManualTap, payByTapping } from './pay-manual';
 import { grantPriority, type Outcome } from './priority';
@@ -100,6 +101,9 @@ export function declareAttackersDecision(
     seat,
     candidates,
     mustAttack: requiredAttackers(state, candidates),
+    ...(combatCreatureLimit(state, 'attack') === null
+      ? {}
+      : { maxAttackers: combatCreatureLimit(state, 'attack') as number }),
     ...(attackCosts.length === 0 ? {} : { attackCosts }),
   };
 }
@@ -236,7 +240,7 @@ function blockDecision(
     .map((a) => ({
       attacker: a.object,
       target: a.target,
-      minBlockers: hasKeyword(state, getObject(state, a.object), 'menace') ? 2 : 1,
+      minBlockers: minBlockersOf(state, getObject(state, a.object)),
       // CR 509.1b (D-133): "can't be blocked by more than one creature".
       ...(hasRestriction(state, getObject(state, a.object), 'cantBeBlockedByMoreThanOne')
         ? { maxBlockers: 1 }
@@ -253,6 +257,7 @@ function blockDecision(
     seat: defender,
     attackers,
     candidates,
+    ...(blockersLeft(state) === null ? {} : { maxBlockers: blockersLeft(state) as number }),
     ...(tax.source === null
       ? {}
       : {
@@ -410,7 +415,12 @@ function finishAttackers(state: GameState, seat: SeatId, attacks: readonly Exert
       [],
     );
   }
-  const declared = declareAttackers({ ...state, pending: null }, seat, attacks);
+  const declared = declareAttackers(
+    { ...state, pending: null },
+    seat,
+    attacks,
+    requiredAttackers(state, attackCandidates(state, seat)),
+  );
   // CR 701.43a, 508.1g: the exerted attackers do not untap next turn, and the abilities linked to the exert ability trigger with the declaration.
   const exerted = applyExerts(declared.state, seat, attacks);
   const events = [...declared.events, ...exerted.events];
@@ -439,7 +449,12 @@ export function answerAttackPayment(
     return ok(setPending({ ...state, pending: null }, asked), []);
   }
   const symbols = attackTaxSymbols(state, attacks);
-  const declared = declareAttackers({ ...state, pending: null }, seat, attacks);
+  const declared = declareAttackers(
+    { ...state, pending: null },
+    seat,
+    attacks,
+    requiredAttackers(state, attackCandidates(state, seat)),
+  );
   let paid: { state: GameState; events: GameEvent[] };
   if (action.kind === 'payManual') {
     const r = payByTapping(declared.state, seat, symbols, { ability: true }, action.taps);

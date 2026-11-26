@@ -31,6 +31,7 @@ export {
 export { TOKEN_PRESETS } from './cards/tokens';
 export * from './characteristics';
 export { CREATURE_TYPES } from './data/creature-types';
+export { isOutlaw, OUTLAW_CREATURE_TYPES } from './data/outlaw';
 export { PLANESWALKER_TYPES } from './data/planeswalker-types';
 export { determinize } from './determinize';
 export { stateHash } from './hash';
@@ -45,9 +46,18 @@ export type * from './rng/types';
 export { coversCardTypes } from './rules/card-types-choice';
 export { defaultDivision } from './rules/combat-flow';
 export type { ControlEnd } from './rules/control';
+export { DUNGEONS } from './rules/dungeon-data';
 export { faceDownLabel } from './rules/face-down';
 export { KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
+export type { PartyMember, PartySlot } from './rules/party';
+export {
+  assignParty,
+  enumerateParties,
+  isLegalParty,
+  PARTY_TYPES,
+  partySizeOf,
+} from './rules/party';
 export { distinctAssignments } from './rules/sacrifice-groups';
 export type { DeckConfig, GameConfig, StartingEmblem } from './rules/setup';
 export { createGame } from './rules/setup';
@@ -63,6 +73,7 @@ export { ENGINE_VERSION } from './version';
 export type {
   AlternativeCostView,
   CombatView,
+  DungeonView,
   FaceView,
   GameView,
   MeldView,

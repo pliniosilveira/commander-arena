@@ -265,6 +265,28 @@ export const SYNTHETIC_LIFE_GAIN_LIST: readonly CardDefinition[] = [
     ],
     'Whenever you put one or more counters on a creature you control, you gain 1 life.',
   ),
+  // "Whenever you put one or more +1/+1 counters on a creature, you may gain that much life. Do this only once each turn." (CR 122.6, 603.2h)
+  angel(
+    'SYNTHETIC Counter Healer',
+    ['2', 'W'],
+    1,
+    1,
+    [
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'countersAdded',
+          what: { types: ['creature'] },
+          counter: '+1/+1',
+          by: 'you',
+        },
+        optional: true,
+        effect: { kind: 'gainLife', player: YOU, amount: { kind: 'triggerDamage' } },
+        doOnlyOnceEachTurn: true,
+      },
+    ],
+    'Whenever you put one or more +1/+1 counters on a creature, you may gain that much life. Do this only once each turn.',
+  ),
   // "Whenever one or more +1/+1 counters are put on a creature, each opponent loses 1 life." (whoever puts them)
   angel(
     'SYNTHETIC Counter Collector',

@@ -205,10 +205,34 @@ function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
     }
     // CR 115.3: a slot that must differ from earlier ones takes none of their targets (the engine refuses a repeat), so the next best target fills it.
     const taken = [spec.differentFrom, ...(spec.differentFromAll ?? [])];
+    // CR 115.1, 109.4 (`sameControllerAs`): the slot takes only targets of the controller of the target already chosen for the slot it names; that slot takes only a target whose
+    // controller has another legal target for the slot that depends on it (the engine refuses any other answer).
+    const groupOf = (t: ChosenTarget): number | undefined =>
+      t.kind === 'object' ? t.group : undefined;
+    const dependent = d.specs.find((s) => s.sameControllerAs === spec.specId);
+    const mateSpec = d.specs.find((s) => s.specId === spec.sameControllerAs);
+    const mate = targets.find((o) => o.specId === spec.sameControllerAs);
+    const mateGroup =
+      mate?.kind === 'object'
+        ? groupOf(mateSpec?.legal.find((l) => l.kind === 'object' && l.id === mate.id) ?? mate)
+        : undefined;
+    const candidates =
+      spec.sameControllerAs !== undefined
+        ? spec.legal.filter((l) => mateGroup !== undefined && groupOf(l) === mateGroup)
+        : dependent === undefined
+          ? spec.legal
+          : spec.legal.filter((l) =>
+              dependent.legal.some(
+                (o) =>
+                  groupOf(o) === groupOf(l) &&
+                  groupOf(o) !== undefined &&
+                  !(o.kind === 'object' && l.kind === 'object' && o.id === l.id),
+              ),
+            );
     const legal =
       spec.differentFrom === undefined
-        ? spec.legal
-        : spec.legal.filter(
+        ? candidates
+        : candidates.filter(
             (l) =>
               !targets.some(
                 (o) =>

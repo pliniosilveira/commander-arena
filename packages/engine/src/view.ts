@@ -4,11 +4,13 @@
  */
 import type {
   Cost,
+  DungeonId,
   NamedAlternativeKind,
   ObjectFilter,
   PermanentAlternativeKind,
   Restriction,
   TokenDefinition,
+  UndercityRoom,
 } from './ast/types';
 import type { CardLayout } from './cards/definition';
 import type { CardType, Characteristics, Color, Subtype, Supertype } from './characteristics';
@@ -20,6 +22,7 @@ import { alternativeCostsOf, castCostOf } from './rules/cast-cost';
 import { type ControlEnd, controlEndOf, controllerOf } from './rules/control';
 import { copiableValues } from './rules/copiable';
 import { derive, oracleTextOf } from './rules/derive';
+import { DUNGEONS } from './rules/dungeon-data';
 import { faceDownBy, faceDownLabel, withoutFaceDown } from './rules/face-down';
 import { turnUpSymbols } from './rules/face-down-legality';
 import { goadersOf } from './rules/goad';
@@ -360,7 +363,7 @@ export interface ObjectView {
    * "Sacrifice an artifact or creature or pay {4}" (CR 118.8, D-181): the two ways the caster may pay an additional cost, as the card says them
    * (`CardFace.additionalCostChoice`); the caster is asked as the card is cast. Public, like `additionalCosts`. Absent when there is no such choice.
    */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /**
    * For a card in its owner's graveyard with a printed flashback (CR 702.34a): the flashback cost, as the card says it ("Flashback—Sacrifice three creatures": a sacrifice and no mana),
    * so a player or an agent can tell what the cast would give up. Public, like `oracleText`. Absent for any other card.
@@ -477,6 +480,36 @@ export interface CompanionView {
   readonly brought: boolean;
 }
 
+/** A player's dungeon (CR 309, 701.49): the dungeon card in their command zone and the room their venture marker is on, with the names the card prints (CR 309.4b). */
+export interface DungeonView {
+  readonly dungeon: DungeonId;
+  /** The name of the dungeon card. */
+  readonly name: string;
+  readonly room: UndercityRoom;
+  /** The name of the room the venture marker is on. */
+  readonly roomName: string;
+  /** The text of the room ability of that room (CR 309.4c). */
+  readonly roomText: string;
+  /** Whether the marker is on the bottommost room: the next venture completes the dungeon (CR 701.49c). */
+  readonly bottom: boolean;
+}
+
+function dungeonViewOf(d: {
+  readonly dungeon: DungeonId;
+  readonly room: UndercityRoom;
+}): DungeonView {
+  const card = DUNGEONS[d.dungeon];
+  const room = card.rooms[d.room];
+  return {
+    dungeon: d.dungeon,
+    name: card.name,
+    room: d.room,
+    roomName: room.name,
+    roomText: room.text,
+    bottom: room.exits.length === 0,
+  };
+}
+
 export interface SeatView {
   readonly id: SeatId;
   readonly life: number;
@@ -515,6 +548,8 @@ export interface SeatView {
   readonly ringTempted?: number;
   /** This player has the city's blessing (CR 702.131c, D-264): public, kept for the rest of the game. Absent until they get it. */
   readonly citysBlessing?: true;
+  /** The dungeon this player is in and the room their venture marker is on (CR 309.4, 701.49): public. Absent while they are in none. */
+  readonly dungeon?: DungeonView;
   /** This player's speed (CR 702.179b): 1 to 4. Public. Absent until they have one. */
   readonly speed?: number;
   /** The energy counters this player has (CR 107.14, D-209). Public. Absent until the first time. */
@@ -550,6 +585,8 @@ export interface GameView {
   readonly seats: readonly SeatView[];
   /** The monarch (CR 725.1, D-127): public. Null while nobody has the designation. */
   readonly monarch: SeatId | null;
+  /** The player with the initiative (CR 726.1): public. Absent while nobody has the designation. */
+  readonly initiative?: SeatId;
   /** The game's day or night designation (CR 731.1): public. Null while it is neither. */
   readonly dayNight: 'day' | 'night' | null;
   readonly battlefield: readonly ObjectView[];
@@ -595,6 +632,7 @@ export interface GameView {
       | 'separate'
       | 'pile'
       | 'opponentChoice'
+      | 'handChoice'
       | 'behold'
       | 'additionalExile'
       | 'reveal'
@@ -637,7 +675,7 @@ function castCostFields(
   castCost?: readonly string[];
   castCostLife?: number;
   additionalCosts?: readonly Cost[];
-  additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  additionalCostChoice?: readonly (readonly Cost[])[];
   alternativeCosts?: readonly AlternativeCostView[];
   flashbackCost?: readonly Cost[];
 } {
@@ -757,6 +795,17 @@ function specialActionFields(
 function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView {
   const obj = getObject(state, id);
   if (isFaceDownTo(state, obj, viewer)) return faceDownView(state, obj);
+  // CR 602.2b, 702.29a (Cycling): an ability activated from a hand is on the stack while its costs are still to be paid (an {X} is chosen first), and its source card is still in that hand:
+  // nobody but its owner may learn what the card is yet, so the other seats see a face-down placeholder.
+  // Only while the activation is being made (`state.casting`): once it is on the stack for good, a triggered ability from a revealed hand card (Miracle, CR 702.94b) is public.
+  if (
+    obj.stack?.kind === 'ability' &&
+    state.casting?.object === obj.id &&
+    state.casting.fromZone === 'hand' &&
+    state.casting.seat !== viewer
+  ) {
+    return faceDownView(state, obj);
+  }
   const d = derive(state, obj);
   const shown = printedCard(obj);
   const def = shown === null ? null : definitionOf(state, shown);
@@ -1049,6 +1098,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       ...companionViewOf(state, s.id),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
+      ...(s.dungeon === undefined ? {} : { dungeon: dungeonViewOf(s.dungeon) }),
       ...(s.speed === undefined ? {} : { speed: s.speed }),
       ...(s.energy === undefined ? {} : { energy: s.energy }),
       ...(s.experience === undefined ? {} : { experience: s.experience }),
@@ -1100,6 +1150,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
     prioritySeat: state.turn.prioritySeat,
     seats,
     monarch: state.monarch,
+    ...(state.initiative === undefined ? {} : { initiative: state.initiative }),
     dayNight: state.dayNight ?? null,
     battlefield: state.battlefield.map((id) => objectView(state, id, viewer)),
     exile: state.exile.map((id) => objectView(state, id, viewer)),

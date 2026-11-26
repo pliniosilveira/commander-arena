@@ -5,7 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
-import { isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
+import { CARD_TYPES, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -46,12 +46,17 @@ export function checkDragonsEffect(
           owner !== 'eachPlayer' &&
           owner !== 'triggerPlayer' &&
           owner !== 'triggerDamagedPlayers' &&
-          owner !== 'eachOpponent'
+          owner !== 'eachOpponent' &&
+          // Mind's Dilation (CR 608.2h): "that player exiles the top card of their library" in a cast trigger: the controller of the spell that was cast, from last-known information.
+          !(
+            e.from.kind === 'controllerOf' &&
+            kindOf((e.from as { of: unknown }).of as never) === 'triggerSubject'
+          )
         ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer') or the opponents a batch damaged ('triggerDamagedPlayers')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent'), the player of the event ('triggerPlayer'), the controller of the spell that caused the trigger or the opponents a batch damaged ('triggerDamagedPlayers')",
           );
         }
       }
@@ -128,6 +133,23 @@ export function checkDragonsEffect(
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
       }
+      // The Ruinous Powers (CR 603.7, 119.3): "When you cast a spell this way, its owner loses life equal to its mana value": the one effect a cast rider of a play permission has.
+      if (
+        e.whenCast !== undefined &&
+        (e.lasts !== 'endOfTurn' ||
+          JSON.stringify(e.whenCast) !==
+            JSON.stringify({
+              kind: 'loseLife',
+              player: { kind: 'ownerOf', of: { kind: 'triggerSubject' } },
+              amount: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+            }))
+      ) {
+        issue(
+          out,
+          `${path}.whenCast`,
+          'a cast rider of a play permission is "its owner loses life equal to its mana value" (loseLife of the ownerOf the triggerSubject, the manaValueOf the triggerSubject), for a permission that lasts until end of turn',
+        );
+      }
       // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": generic mana off the cost, so a cost that is not free.
       if (e.lessGeneric !== undefined) {
         if (!isCount(e.lessGeneric) || e.lessGeneric < 1) {
@@ -135,6 +157,58 @@ export function checkDragonsEffect(
         }
         if (e.free === true) {
           issue(out, `${path}.lessGeneric`, 'a free play has no cost to reduce');
+        }
+      }
+      // Durnan (CR 702.125a): "That spell has undaunted": a cost reduction, so a cost that is not free.
+      if (e.undaunted !== undefined) {
+        if (e.undaunted !== true)
+          issue(out, `${path}.undaunted`, 'undaunted must be true when present');
+        if (e.free === true) issue(out, `${path}.undaunted`, 'a free play has no cost to reduce');
+      }
+      // Nashi, Moon Sage's Scion (CR 118.9, 601.2): "pay life equal to its mana value rather than paying its mana cost" and "play one of those cards".
+      if (e.lifeForMana !== undefined) {
+        if (
+          e.lifeForMana !== true ||
+          e.free !== undefined ||
+          e.lessGeneric !== undefined ||
+          e.undaunted !== undefined ||
+          e.anyManaColor !== undefined ||
+          e.anyManaType !== undefined ||
+          kindOf(e.objects) !== 'moved'
+        ) {
+          issue(
+            out,
+            `${path}.lifeForMana`,
+            "lifeForMana is true, on the cards an effect before moved ('moved'), with no free, lessGeneric, undaunted, anyManaColor or anyManaType (a spell paid for with life has no mana cost to change)",
+          );
+        }
+      }
+      if (e.oneOf !== undefined) {
+        if (e.oneOf !== true || kindOf(e.objects) !== 'moved' || e.lasts !== 'endOfTurn') {
+          issue(
+            out,
+            `${path}.oneOf`,
+            "oneOf is true, on the cards an effect before moved ('moved'), for a permission that lasts until end of turn",
+          );
+        }
+      }
+      if (e.creatureSpellsOnly !== undefined) {
+        if (e.creatureSpellsOnly !== true || e.castOnly !== true) {
+          issue(
+            out,
+            `${path}.creatureSpellsOnly`,
+            'creatureSpellsOnly is true and is about the spell that is cast: needs castOnly',
+          );
+        }
+      }
+      // Narset, Enlightened Master: only the cards the filter describes, and only to cast them.
+      if (e.cards !== undefined) {
+        checkFilter(e.cards, `${path}.cards`, out);
+        if (e.castOnly !== true) {
+          issue(out, `${path}.cards`, 'a filter of the cards that may be cast needs castOnly');
+        }
+        if (e.cards.zone !== undefined || e.cards.controller !== undefined) {
+          issue(out, `${path}.cards`, 'the filter of the cards names no zone or controller');
         }
       }
       // Lorehold group 1: "you may cast it this turn".
@@ -168,7 +242,9 @@ export function checkDragonsEffect(
       for (const rider of ['anyManaType', 'exileInstead'] as const) {
         if (e[rider] === undefined) continue;
         if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
-        if (e.castOnly !== true) {
+        // Lidless Gaze ("you may play those cards, and mana of any type can be spent to cast those spells"): `anyManaType` is about the spells cast, so it also goes with a permission to
+        // play (a land card among the cards is played as usual); `exileInstead` is the rider of one spell and needs `castOnly`.
+        if (rider === 'exileInstead' && e.castOnly !== true) {
           issue(
             out,
             `${path}.${rider}`,
@@ -195,6 +271,42 @@ export function checkDragonsEffect(
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       return true;
+    case 'playerSpellsCostLess': {
+      // CR 601.2f, 118.7a, 611.2a (Will Kenrith): the players named, the spells being cast (no zone, nothing the spell targets), a whole number of generic mana, until the controller's next turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      const { targetsObject, ...spell } = (e.spells ?? {}) as ObjectFilter;
+      if (e.spells === undefined || e.spells === null) {
+        issue(out, `${path}.spells`, 'playerSpellsCostLess names the spells it applies to');
+      } else {
+        checkFilter(spell, `${path}.spells`, out);
+        if (targetsObject !== undefined) {
+          issue(out, `${path}.spells`, 'playerSpellsCostLess cannot read what the spell targets');
+        }
+        if (
+          filterSome(
+            spell,
+            (f) =>
+              f.zone !== undefined ||
+              f.stackKind !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.spells`,
+            'the filter describes a spell being cast: no zone, stackKind, controller or owner (the player is `player`)',
+          );
+        }
+      }
+      if (!Number.isInteger(e.amount) || e.amount < 1) {
+        issue(out, `${path}.amount`, 'a whole number of generic mana, at least 1');
+      }
+      if (e.duration !== 'untilYourNextTurn') {
+        issue(out, `${path}.duration`, 'this lasts until the next turn of the controller');
+      }
+      return true;
+    }
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: no fields: the controller's next spell this turn may be cast by paying life equal to its mana value.
       return true;
@@ -527,6 +639,7 @@ export function checkDragonsEffect(
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
       if (
         scope.attackTrigger !== true &&
+        scope.exertTrigger !== true &&
         scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
         scope.combatPhaseCondition !== true
@@ -592,6 +705,43 @@ export function checkDragonsEffect(
 export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[]): void {
   const where = (a as { functionsIn?: unknown }).functionsIn;
   if (where === undefined) return;
+  if (where === 'exile') {
+    // CR 113.6b, 702.62b (Nihilith): a triggered ability of a card in exile, which needs the card suspended (the card has no other way to be in exile with its abilities running).
+    // Greater Gargadon (CR 113.6b, 602.5b, 702.62b): or an activated ability that can be activated only while its card is suspended.
+    if (a.kind === 'activated') {
+      if (!JSON.stringify(a.activateOnlyIf ?? null).includes('"thisSuspended"')) {
+        issue(
+          out,
+          `${path}.functionsIn`,
+          "an activated ability that works from exile needs 'activateOnlyIf' thisSuspended",
+        );
+      }
+      return;
+    }
+    if (a.kind !== 'triggered') {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        'only a triggered or an activated ability works from exile here',
+      );
+      return;
+    }
+    if (!JSON.stringify(a.interveningIf ?? null).includes('"thisSuspended"')) {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        "a triggered ability that works from exile needs the intervening if 'thisSuspended'",
+      );
+    }
+    if (a.trigger?.kind !== 'putIntoGraveyard' || a.trigger.self === true) {
+      issue(
+        out,
+        `${path}.trigger`,
+        'a trigger that works from exile is read for a card put into a graveyard only (the engine finds its card in exile for no other event)',
+      );
+    }
+    return;
+  }
   if (where !== 'graveyard') {
     issue(
       out,
@@ -641,11 +791,20 @@ export function checkGraveyardAbility(a: Ability, path: string, out: AstIssue[])
         'a trigger that works from the graveyard is not a cast trigger of the spell itself',
       );
     }
+  } else if (a.kind === 'replacement') {
+    // CR 113.6b, 614.12 (Dearly Departed): the permanents that enter are not the card, so a group replacement may work from the graveyard.
+    if (a.replacement?.kind !== 'othersEnterWithCounters') {
+      issue(
+        out,
+        `${path}.functionsIn`,
+        `a replacement that works from the graveyard is a group that enters with counters, not ${String(a.replacement?.kind)}`,
+      );
+    }
   } else {
     issue(
       out,
       `${path}.functionsIn`,
-      'only a static or a triggered ability works from the graveyard here',
+      'only a static, a replacement or a triggered ability works from the graveyard here',
     );
   }
 }
@@ -790,7 +949,9 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
     case 'playFromGraveyardEachType':
       return true;
     case 'playSurveiledFromGraveyard':
-      // CR 701.25a (Eye of Duskmantle): no parameters; the permanent's own ability.
+    // CR 701.25a (Eye of Duskmantle): no parameters; the permanent's own ability.
+    case 'playFromLinkedExile':
+      // CR 607.2a, 601.2a (Evendo Brushrazer): no parameters; the cards are the ones the permanent exiled with its linked ability (checked by `checkLinkedExile`).
       return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.
@@ -803,6 +964,14 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
         (!Number.isSafeInteger(s.exileOthers) || s.exileOthers < 1 || s.cast === undefined)
       ) {
         issue(out, `${path}.exileOthers`, 'exileOthers is a whole number from 1, only with cast');
+      }
+      // CR 601.2b, 118.8 (Exploration Broodship): "by sacrificing a land in addition to paying its other costs": the permanent the spell cast this way sacrifices.
+      if (s.sacrifice !== undefined) {
+        if (s.cast === undefined) issue(out, `${path}.sacrifice`, 'sacrifice is only with cast');
+        else checkFilter(s.sacrifice, `${path}.sacrifice`, out);
+        if (filterSome(s.sacrifice, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(out, `${path}.sacrifice.zone`, 'the permanent to sacrifice is on the battlefield');
+        }
       }
       if (s.cast !== undefined) {
         checkFilter(s.cast, `${path}.cast`, out);
@@ -862,7 +1031,11 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
     filterSome(
       r.what,
       (f) =>
-        (f.zone !== undefined && !(r.fromGraveyard === true && f.zone === 'graveyard')) ||
+        (f.zone !== undefined &&
+          !(
+            (r.fromGraveyard === true || r.exileTwoFromGraveyards !== undefined) &&
+            f.zone === 'graveyard'
+          )) ||
         f.stackKind !== undefined ||
         f.attacking !== undefined ||
         f.attackingYou !== undefined ||
@@ -882,6 +1055,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
   if (r.fromGraveyard === true && r.what?.zone !== 'graveyard') {
     issue(out, `${path}.what`, 'what names the zone graveyard when the copy is of a card there');
   }
+  // The Mimeoplasm (CR 614.12, 707.9b, 122.6): "exile two creature cards from graveyards ... a copy of one of those cards with additional +1/+1 counters equal to the power of the other".
+  if (r.exileTwoFromGraveyards !== undefined) {
+    const x = r.exileTwoFromGraveyards;
+    if (typeof x !== 'object' || x === null || typeof x.counter !== 'string' || x.counter === '') {
+      issue(
+        out,
+        `${path}.exileTwoFromGraveyards.counter`,
+        'exileTwoFromGraveyards names a counter',
+      );
+    }
+    if (r.what?.zone !== 'graveyard' || r.fromGraveyard !== undefined) {
+      issue(
+        out,
+        `${path}.what`,
+        'the cards exiled from graveyards are in the zone graveyard, and the copy is not of one in the graveyard of the controller (fromGraveyard)',
+      );
+    }
+    if (r.optional !== true || r.duration !== 'permanent') {
+      issue(out, `${path}`, 'exiling two cards is a "may" and the copy lasts for good');
+    }
+  }
   if (r.keepName !== undefined && r.keepName !== true) {
     issue(out, `${path}.keepName`, 'keepName is true when present');
   }
@@ -890,6 +1084,27 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
     } else {
       checkEnumList(out, `${path}.addSupertypes`, r.addSupertypes, SUPERTYPES, 'supertype');
+    }
+  }
+  if (r.notLegendary !== undefined && r.notLegendary !== true) {
+    issue(out, `${path}.notLegendary`, 'notLegendary is true when present');
+  }
+  if (r.extraCounters !== undefined) {
+    if (!Array.isArray(r.extraCounters) || r.extraCounters.length === 0) {
+      issue(out, `${path}.extraCounters`, 'extraCounters is a non-empty list when present');
+    } else {
+      r.extraCounters.forEach((c, i) => {
+        if (!isOneOf(c?.type, ['creature', 'planeswalker'])) {
+          issue(
+            out,
+            `${path}.extraCounters[${i}].type`,
+            'the card type is creature or planeswalker',
+          );
+        }
+        if (typeof c?.counter !== 'string' || c.counter === '') {
+          issue(out, `${path}.extraCounters[${i}].counter`, 'a kind of counter');
+        }
+      });
     }
   }
   if (r.optional !== undefined && r.optional !== true) {
@@ -960,7 +1175,37 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
   ) {
     issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
   }
+  // CR 707.9b (Phyrexian Metamorph): "except it's an artifact in addition to its other types".
+  if (r.addTypes !== undefined) {
+    if (!Array.isArray(r.addTypes) || r.addTypes.length === 0) {
+      issue(out, `${path}.addTypes`, 'addTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.addTypes`, r.addTypes, CARD_TYPES, 'card type');
+    }
+  }
   return true;
+}
+
+/** The abilities of the tokens a spell describes (`createToken` of a described token), wherever the effect is nested. */
+function tokenAbilitiesOf(value: unknown): Ability[] {
+  const found: Ability[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (node === null || typeof node !== 'object') return;
+    const record = node as Record<string, unknown>;
+    if (
+      record.kind === 'custom' &&
+      Array.isArray((record.definition as { abilities?: unknown })?.abilities)
+    ) {
+      found.push(...(record.definition as { abilities: Ability[] }).abilities);
+    }
+    Object.values(record).forEach(walk);
+  };
+  walk(value);
+  return found;
 }
 
 /**
@@ -1035,7 +1280,21 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
       );
     }
   });
-  const spell = JSON.stringify(face.spell ?? null);
+  // CR 111.4, 113.1 (Wake the Dragon): a token a spell creates has abilities of its own, triggered ones too: they are checked as the abilities they are, and the words of the
+  // spell are read without them.
+  const withoutTokenAbilities = (value: unknown): string =>
+    JSON.stringify(value ?? null, (key, v: unknown) => (key === 'abilities' ? undefined : v));
+  tokenAbilitiesOf(face.spell).forEach((a, i) => {
+    if (!JSON.stringify(a ?? null).includes('"controller":"triggerPlayer"')) return;
+    if (a?.kind !== 'triggered' || !triggerHasPlayer(a.trigger)) {
+      issue(
+        out,
+        `${path}.spell.token.abilities[${i}]`,
+        "controller 'triggerPlayer' needs a triggered ability whose event is about a player",
+      );
+    }
+  });
+  const spell = withoutTokenAbilities(face.spell);
   if (
     spell.includes('"controller":"triggerPlayer"') ||
     spell.includes('"controller":"defendingPlayer"') ||

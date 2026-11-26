@@ -20,10 +20,13 @@ import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
+import { evaluateCondition } from './conditions';
 import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
+import { searchTopLimit } from './global-statics';
+import { landCardsToGraveyard } from './graveyard-lands';
 import { discardOne } from './madness';
 import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
@@ -69,10 +72,13 @@ export function searchCandidates(
   zones: readonly SearchZone[] = ['library'],
 ): ObjectId[] {
   const found: { id: ObjectId; name: string }[] = [];
+  // CR 701.23, 614.1a (Aven Mindcensor): an opponent of the controller of such a permanent searches only the top cards of the library.
+  const topOnly = searchTopLimit(state, seat);
   // CR 701.23a: the cards of every zone searched ("your graveyard, hand, and/or library") that match, in one list.
   for (const zone of zones) {
     const scoped: ObjectFilter = { ...filter, zone };
-    for (const id of getSeat(state, seat)[zone]) {
+    const cards = getSeat(state, seat)[zone];
+    for (const id of zone === 'library' && topOnly !== null ? cards.slice(0, topOnly) : cards) {
       const obj = state.objects[id];
       if (obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source })) {
         found.push({ id, name: derive(state, obj).name });
@@ -93,7 +99,7 @@ function landTypesOf(state: GameState, id: ObjectId): string[] {
 
 function moveInstruction(
   object: ObjectId,
-  to: 'battlefield' | 'hand' | 'graveyard' | 'library',
+  to: 'battlefield' | 'hand' | 'graveyard' | 'library' | 'exile',
   tapped: boolean,
 ): Instruction {
   return { kind: 'move', object, to, position: 'top', tapped, commanderChoice: null };
@@ -134,14 +140,17 @@ export function runSearch(
   res: ResolutionContext,
   instruction: SearchInstruction,
 ): StepOutcome {
-  const { search, seat } = instruction;
-  const shuffle: Instruction[] = search.shuffle ? [{ kind: 'shuffle', seat }] : [];
+  const { search } = instruction;
+  // The library is `instruction.seat`'s; with `byController` the controller of the effect makes every choice (CR 701.23a, Jace, Architect of Thought).
+  const libraryOf = instruction.seat;
+  const seat = search.byController === true ? res.controller : instruction.seat;
+  const shuffle: Instruction[] = search.shuffle ? [{ kind: 'shuffle', seat: libraryOf }] : [];
   // CR 701.23i, 101.4 (`together`): what this player decided is held until the last player has; then the cards of every player who searched move and their libraries are shuffled, in
   // the order the players decided.
   const group = instruction.together;
   const hold = (accepted: boolean, cards: readonly ObjectId[]): StepOutcome => {
     if (group === undefined) throw new Error('A search with no group cannot be held');
-    const held = [...group.held, { seat, accepted, chosen: cards }];
+    const held = [...group.held, { seat: libraryOf, accepted, chosen: cards }];
     const next = group.later[0];
     if (next !== undefined) {
       return done(
@@ -186,7 +195,7 @@ export function runSearch(
     };
   }
   if (instruction.chosen === null) {
-    const legal = searchCandidates(state, seat, res.source, search.filter, search.zones);
+    const legal = searchCandidates(state, libraryOf, res.source, search.filter, search.zones);
     // CR 701.23c: with nothing to find the player still searched (and shuffles if told to).
     if (legal.length === 0 || search.max <= 0) {
       // CR 701.23c: in a group the player who searched and found nothing is held as one who found no card, and shuffles with the others.
@@ -249,19 +258,22 @@ export function runSearch(
   const found = instruction.chosen;
   // CR 701.23a: "found" counts the cards of the library alone for the event of a library search.
   const searched = searchedLibrary(state, search, found);
-  const events: GameEvent[] = searched
-    ? [
-        {
-          kind: 'librarySearched',
-          seat,
-          found:
-            search.zones === undefined
-              ? found.length
-              : found.filter((id) => state.objects[id]?.zone === 'library').length,
-        },
-      ]
-    : [];
-  if (search.reveal && found.length > 0) {
+  // `put` is set once the search and the reveal have been done and the question of `mayPut` came after them: nothing is announced twice.
+  const announced = instruction.put !== undefined;
+  const events: GameEvent[] =
+    searched && !announced
+      ? [
+          {
+            kind: 'librarySearched',
+            seat,
+            found:
+              search.zones === undefined
+                ? found.length
+                : found.filter((id) => state.objects[id]?.zone === 'library').length,
+          },
+        ]
+      : [];
+  if (search.reveal && found.length > 0 && !announced) {
     const cards = found.flatMap((id) => {
       const obj = state.objects[id];
       return obj?.card == null ? [] : [{ card: obj.card, name: derive(state, obj).name }];
@@ -271,14 +283,62 @@ export function runSearch(
       seat,
       cards: cards.map((c) => c.card),
       names: cards.map((c) => c.name),
-      from: 'library',
+      // CR 701.23a, 701.20a: the zone the cards were found in (a search of several zones may find one in the graveyard or the hand).
+      from: found.every((id) => state.objects[id]?.zone === 'graveyard')
+        ? 'graveyard'
+        : found.every((id) => state.objects[id]?.zone === 'hand')
+          ? 'hand'
+          : 'library',
     });
+  }
+  // CR 608.2c, 608.2d (`mayPut`): "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand." The condition is
+  // read after the search and the reveal, which are done first; when it holds the searching player is asked, and a "no" leaves the card to the hand of `destinations`.
+  const mayPut = search.mayPut;
+  if (mayPut !== undefined && found.length > 0 && instruction.put === undefined) {
+    const asks = evaluateCondition(state, mayPut.condition, {
+      controller: res.controller,
+      source: res.source,
+    });
+    if (asks) return done(state, events, [{ ...instruction, put: null }]);
+  }
+  if (mayPut !== undefined && found.length > 0 && instruction.put === null) {
+    const info = sourceInfo(state, res.source);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'confirmOptional',
+        seat,
+        source: res.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+        purpose: 'searchPut',
+        ...(found[0] === undefined ? {} : { subject: found[0] }),
+      },
+    };
   }
   // CR 701.24b (D-405): "then shuffle and put that card on top": the shuffle leaves the found cards out, then they go on top (the last one first,
   // so the first found ends on top).
-  const placed = placeFound(search, found);
+  const placed = placeFound(
+    instruction.put === true && mayPut !== undefined
+      ? {
+          ...search,
+          destinations: [
+            { zone: 'battlefield', ...(mayPut.tapped === true ? { tapped: true } : {}), count: 1 },
+          ],
+        }
+      : search,
+    found,
+  );
   const shuffled: Instruction[] = search.shuffle
-    ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
+    ? [
+        {
+          kind: 'shuffle',
+          seat: libraryOf,
+          ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}),
+        },
+      ]
     : [];
   const top = [...placed.onTop].reverse().map((id) => moveInstruction(id, 'library', false));
   return {
@@ -298,8 +358,29 @@ export function runDiscard(
   const hand = getSeat(state, seat).hand;
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
   // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
+  // Nantuko Cultivator: "discard any number of land cards": only the cards of the hand the filter matches may be chosen.
+  const offered =
+    instruction.cards === undefined
+      ? hand
+      : hand.filter((id) => {
+          const card = state.objects[id];
+          return (
+            card !== undefined &&
+            matchesFilter(
+              state,
+              card,
+              { ...instruction.cards, zone: 'hand' },
+              { controller: seat, source: res.source },
+            )
+          );
+        });
   const count =
-    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
+    instruction.anyNumber === true || instruction.hand === true
+      ? offered.length
+      : instruction.leave !== undefined
+        ? // CR 701.9 (Magus of the Balance): all but the cards the player keeps.
+          Math.max(0, hand.length - instruction.leave)
+        : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined
@@ -333,12 +414,14 @@ export function runDiscard(
     instruction.chosen ??
     random?.cards ??
     (anyNumber || upTo
-      ? hand.length === 0
+      ? offered.length === 0
         ? []
         : null
-      : hand.length <= count && !choice
-        ? hand
-        : null);
+      : instruction.leave !== undefined && count === 0
+        ? []
+        : hand.length <= count && !choice
+          ? hand
+          : null);
   if (chosen === null) {
     const max = Math.min(count, hand.length);
     const decision: Omit<ChooseCardsDecision, 'id'> = {
@@ -347,9 +430,9 @@ export function runDiscard(
       source: res.object,
       purpose: 'discard',
       zone: 'hand',
-      legal: hand,
+      legal: offered,
       min: anyNumber || upTo ? 0 : choice ? 1 : count,
-      max: anyNumber ? hand.length : upTo ? max : choice ? max : count,
+      max: anyNumber ? offered.length : upTo ? max : choice ? max : count,
       reveal: true,
       prompt: anyNumber
         ? 'Discard any number of cards'
@@ -471,6 +554,8 @@ export function runDiscard(
       });
     }
   }
+  // CR 701.9, 608.2c (Eumidian Wastewaker): "for each land card put into a graveyard this way", read in the graveyard.
+  const landsToGraveyard = landCardsToGraveyard(next, events);
   // D-135: "if you do" counts the cards actually discarded (an empty hand discards nothing).
   return {
     ...done(next, events),
@@ -481,6 +566,7 @@ export function runDiscard(
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
       ...(discardedNonlands > 0 ? { discardedNonland: discardedNonlands } : {}),
+      ...(landsToGraveyard > 0 ? { landCardsToGraveyard: landsToGraveyard } : {}),
       discardedInstantOrSorcery: discardedSpells,
       ...(discardedCards > 0 ? { discardedValue } : {}),
       ...(discardedCards > 0 ? { discardedTypes, discardedTypeCount: discardedTypes.length } : {}),

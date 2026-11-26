@@ -178,7 +178,7 @@ describe('a search for a card with mana value X or less is read only where the s
       'Search your library and/or graveyard for a creature card with mana value 3 or less and put it onto the battlefield. If you search your library this way, shuffle.',
       'Search your library and/or graveyard for a creature card with mana value X and put it onto the battlefield. If you search your library this way, shuffle.',
       'Search your library and/or graveyard for creature cards with mana value X or less and put them onto the battlefield. If you search your library this way, shuffle.',
-      'Search your library and/or graveyard for a creature card with mana value X or less, reveal it, and put it onto the battlefield.',
+      'Search your library and/or graveyard for a creature card with mana value X or less, then reveal it and put it onto the battlefield.',
       'Search your library and/or graveyard and/or hand for a creature card with mana value X or less and put it onto the battlefield.',
     ]) {
       expect(withText(FINALE, text).support.status, text).toBe('unsupported');

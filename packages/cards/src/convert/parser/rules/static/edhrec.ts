@@ -327,6 +327,65 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_TYPES = defineRule<IrStati
 });
 
 /**
+ * `static.triggers-additional-time-entering-land` (Ancient Greenwarden): "If a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers an
+ * additional time." (CR 603.2d, 603.6a: the cause is a land entering the battlefield, whoever controls it; the abilities that trigger on that event, a landfall ability or an enters
+ * ability of the permanent, trigger once more). Not read: another card type, a plural, another player's permanents, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_LAND = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-entering-land',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 603.6a (Enters-the-Battlefield Abilities)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If a land entering causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If a land entering causes a triggered ability of a creature you control to trigger, that ability triggers an additional time.',
+    'If a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+    'If a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
+    'If lands entering cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a nonland permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-entering-land';
+    const r = sequence(
+      literal(
+        'if a land entering causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        subject,
+        [{ kind: 'doubleTriggers', causeEnters: true, causeEntersTypes: ['land'] }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `static.triggers-additional-time-entering` (Yarok, the Desecrated): "If a permanent entering causes a triggered ability of a permanent you control to trigger, that
  * ability triggers an additional time." (CR 603.2d, 603.6a: the cause is any permanent entering the battlefield; the abilities that trigger on that event trigger once more).
  * The permanents are "a permanent you control". Not read: another kind of entering permanent, another player's permanents, "enters" as a verb, another number of times, a second sentence.
@@ -380,10 +439,69 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.triggers-additional-time-combat-damage` (Felix Five-Boots): "If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to
+ * trigger, that ability triggers an additional time." (CR 603.2d, 510.2: the cause is a creature of the controller dealing combat damage to a player; the abilities that trigger on that damage
+ * trigger once more). Not read: another player's creatures, another kind of damage, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_COMBAT_DAMAGE = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-combat-damage',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 510.2 (Combat Damage Step)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If a creature dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If a creature you control dealing damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-combat-damage';
+    const r = sequence(
+      literal(
+        'if a creature you control dealing combat damage to a player causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        subject,
+        [{ kind: 'doubleTriggers', causeCombatDamage: true }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const EDHREC_STATIC_RULES = [
+  STATIC_TRIGGERS_ADDITIONAL_TIME_COMBAT_DAMAGE,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_TYPES,
+  STATIC_TRIGGERS_ADDITIONAL_TIME_ENTERING_LAND,
   STATIC_TRIGGERS_ADDITIONAL_TIME,
   STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER,
   STATIC_TRIGGERS_ADDITIONAL_TIME_CAUSE,

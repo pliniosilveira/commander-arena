@@ -288,6 +288,19 @@ const CRAFTED: { [K in DecisionKind]: Extract<PendingDecision, { kind: K }> } = 
       ['o50', 'o51', 'o52'],
     ],
   },
+  // Stick Together (CR 700.8d): a Cleric Wizard and a Rogue.
+  chooseParty: {
+    kind: 'chooseParty',
+    id: 'd18',
+    seat: 0,
+    source: 'o60',
+    slots: [
+      { type: 'Cleric', legal: ['o61'] },
+      { type: 'Rogue', legal: ['o62'] },
+      { type: 'Warrior', legal: [] },
+      { type: 'Wizard', legal: ['o61'] },
+    ],
+  },
 };
 
 describe('handler map', () => {

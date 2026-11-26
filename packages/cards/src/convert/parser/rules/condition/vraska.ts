@@ -3,7 +3,7 @@
  * (CR 400.7) and "~ was cast from a graveyard" (CR 601.2a). Each is read as the intervening "if" of a triggered ability or as the condition of an
  * "if" sentence of a spell; the engine refuses where no spell, event or source exists to ask.
  */
-import { fail, map, pattern, sequence } from '../../combinators';
+import { fail, map, optional, pattern, sequence } from '../../combinators';
 import type { IrCondition, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { BOUNDARY, permanentPhrase, withoutZone } from '../noun/phrases';
@@ -263,6 +263,8 @@ export const CONDITION_IT_TARGETS = defineRule<IrCondition>({
     // Danitha deck (D-408, CR 903.3): a commander is a card a player designated.
     'it targets a commander',
     'it targets a creature commander',
+    // Bitter Downfall (CR 120.3): a creature dealt damage this turn.
+    'it targets a creature that was dealt damage this turn',
   ],
   rejects: [
     'it targets a tapped creature.',
@@ -276,6 +278,11 @@ export const CONDITION_IT_TARGETS = defineRule<IrCondition>({
     'it targets your commander',
     'it targets a commander you control',
     'it targets a nonland commander',
+    'it targets a creature that was dealt damage',
+    'it targets a creature that was dealt damage this turn or last turn',
+    'it targets a creature that was dealt combat damage this turn',
+    'it targets a creature that dealt damage this turn',
+    'it targets creatures that were dealt damage this turn',
   ],
   parse: (ctx, pos) => {
     // D-408 (CR 903.3): "it targets a commander", "it targets a creature commander": the commander is a card, wherever it is; the engine's `commander: true`.
@@ -312,10 +319,16 @@ export const CONDITION_IT_TARGETS = defineRule<IrCondition>({
     const r = sequence(
       pattern(/it targets an? /iu),
       map(spanned(map(permanentPhrase(false, 'all'), withoutZone)), (p) => p),
+      // Bitter Downfall (CR 120.3, 601.2c): "that was dealt damage this turn", read from the turn log as the cost is determined.
+      optional(
+        map(pattern(new RegExp(` that was dealt damage this turn${BOUNDARY}`, 'iu')), () => true),
+        false,
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     const phrase = r.value[1];
     if (phrase.value.controller !== undefined) return fail(ctx, pos);
+    if (r.value[2]) phrase.value = { ...phrase.value, dealtDamageThisTurn: true };
     const noun: IrNoun = {
       kind: 'noun',
       det: 'a',

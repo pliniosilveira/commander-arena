@@ -8,7 +8,7 @@
  * red Dwarf creature token, then attach ~ to it", CR 111.2, 400.7j), which the binding pass finds as the token of the clause before it and the
  * lowering reads as the engine's `moved`; where nothing made a token, "it" is an unbound reference and the line is not read.
  */
-import { choice, literal, map, pattern, refuseAt, sequence } from '../../combinators';
+import { choice, literal, map, pattern, refuseAt, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
@@ -55,9 +55,13 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
     'attach up to one target Equipment you control to it',
     'attach any number of target Equipment to it',
     'attach target Equipment to target creature',
+    // Thieving Skydiver (CR 701.3): the permanent with the ability is what the Equipment is attached to.
+    'attach it to ~',
   ],
   rejects: [
     'attach ~ to ~',
+    'attach it to ~ and ~',
+    'attach target Equipment to ~ or ~',
     'attach ~',
     'attach ~ to each creature you control',
     'attach ~ to two target creatures',
@@ -72,25 +76,31 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
   ],
   parse: single(
     'effect.attach',
-    sequence(
-      literal('attach '),
-      // Limit Break deck, group 1 (CR 701.3, 115.1): the Equipment may be targets, "attach up to one target Equipment you control to target Rebel you control",
-      // "attach any number of target Equipment to it".
-      family<IrNoun>('noun', {
-        only: ['noun.self', 'noun.it', 'noun.target-permanent', 'noun.any-number-targets'],
-      }),
-      literal(' to '),
-      // One object: an Equipment moves to one creature.
-      choice(
-        refuseAt(
-          family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
-          (n) => !n.plural,
-          (_n, _ctx, start) => start,
+    satisfy(
+      sequence(
+        literal('attach '),
+        // Limit Break deck, group 1 (CR 701.3, 115.1): the Equipment may be targets, "attach up to one target Equipment you control to target Rebel you control",
+        // "attach any number of target Equipment to it".
+        family<IrNoun>('noun', {
+          only: ['noun.self', 'noun.it', 'noun.target-permanent', 'noun.any-number-targets'],
+        }),
+        literal(' to '),
+        // One object: an Equipment moves to one creature.
+        choice(
+          refuseAt(
+            family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+            (n) => !n.plural,
+            (_n, _ctx, start) => start,
+          ),
+          // D-406: "attach ~ to that creature": the object an earlier part of the text named, which the binding pass makes the permanent the trigger is about.
+          family<IrNoun>('noun', { only: ['noun.that-object'] }),
+          IT_AS_TOKEN,
+          // Thieving Skydiver (CR 701.3, 701.3b): "attach it to ~": the permanent with the ability is what the Equipment is attached to; `~` itself is not attached to itself.
+          family<IrNoun>('noun', { only: ['noun.self'] }),
         ),
-        // D-406: "attach ~ to that creature": the object an earlier part of the text named, which the binding pass makes the permanent the trigger is about.
-        family<IrNoun>('noun', { only: ['noun.that-object'] }),
-        IT_AS_TOKEN,
       ),
+      // `~` is the destination only of another object ("attach ~ to ~" is no instruction the game can follow).
+      ([, object, , to]) => !(object.rule === 'noun.self' && to.rule === 'noun.self'),
     ),
     ([, object, , to]) => ({ verb: 'attach', args: { object, to } }),
   ),

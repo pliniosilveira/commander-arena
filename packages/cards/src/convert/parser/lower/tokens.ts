@@ -81,12 +81,15 @@ export function lowerTokenAbility(
   if (!lowered.ok) return failure(quoted, lowered.needs);
   const [only, ...more] = lowered.value;
   if (only === undefined || more.length > 0) return failure(quoted);
-  // D-543 (CR 208.2a, 604.3): the one static ability a token reads is its own characteristic-defining ability of power and toughness; and (Galadriel group 3, CR 702.122a)
+  // D-543 (CR 208.2a, 604.3): the static abilities a token reads are its own characteristic-defining ability of power and toughness; and (Galadriel group 3, CR 702.122a)
   // the bonus to the power it counts for a crew cost.
   if (only.kind === 'static') {
     return only.static.kind === 'characteristicPt' ||
       only.static.kind === 'crewSaddleBonus' ||
-      (only.static.kind === 'restriction' && only.static.restriction === 'cantBlock')
+      (only.static.kind === 'restriction' &&
+        (only.static.restriction === 'cantBlock' ||
+          // CR 508.1d (Goblin Spymaster, Pursued Whale): the token's "Creatures you control attack each combat if able."
+          only.static.restriction === 'attacksEachCombat'))
       ? { ok: true, value: only, rule: quoted.rule }
       : failure(quoted);
   }

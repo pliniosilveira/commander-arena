@@ -55,7 +55,7 @@ const face = z.strictObject({
   artist: nullableText,
 });
 
-const card = z.strictObject({
+export const snapshotCardSchema = z.strictObject({
   oracleId: z.string().min(1),
   scryfallId: z.string().min(1),
   name: z.string().min(1),
@@ -79,7 +79,7 @@ const snapshot = z.strictObject({
   decklist: z.string().min(1),
   set: z.string().min(1).optional(),
   year: z.number().int().min(1993).optional(),
-  cards: z.array(card),
+  cards: z.array(snapshotCardSchema),
 });
 
 export type SnapshotParse =
