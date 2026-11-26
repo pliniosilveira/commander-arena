@@ -1,8 +1,8 @@
 /**
  * The game Worker (SPEC 4.1, D-016): hosts the engine and the AI off the main thread and exposes
  * `GameClient` through Comlink. It owns the only copy of the real `GameState`. It also owns the pool of
- * workers that play out the AI's plannings in parallel (`play-out-pool.ts`, issue 653), started when the AI
- * first plans.
+ * workers that play out the AI's plannings in parallel (`play-out-pool.ts`, issue 653), started when a game
+ * against the heuristic opponent begins.
  */
 import { expose } from 'comlink';
 import { GameHost } from './host';

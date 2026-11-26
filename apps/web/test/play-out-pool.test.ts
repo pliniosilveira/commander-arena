@@ -152,13 +152,18 @@ describe('the pool', () => {
     for (const w of busy) expect(w.received.filter((m) => m.t === 'close')).toHaveLength(1);
   });
 
-  test('workers start on the first planning, not before', async () => {
+  test('workers start when asked or on the first planning, not before, and once', async () => {
     const workers: FakeWorker[] = [];
     const pool = new WorkerPlayOutPool({ size: 2, spawn: spawnOf(workers) });
     expect(workers).toHaveLength(0);
+    pool.warm();
+    expect(workers).toHaveLength(2);
     const { spec } = await planningOf();
     pool.open(spec);
     expect(workers).toHaveLength(2);
+    const lazy: FakeWorker[] = [];
+    new WorkerPlayOutPool({ size: 2, spawn: spawnOf(lazy) }).open(spec);
+    expect(lazy).toHaveLength(2);
   });
 
   test('a group of play-outs stays on one worker while the other has work of its own', async () => {
@@ -290,4 +295,14 @@ describe('a game on the host with the pool', () => {
     // The workers did play out lines of the AI's turns.
     expect(workers.flatMap((w) => w.received).some((m) => m.t === 'run')).toBe(true);
   }, 120_000);
+
+  test('starts the workers when the game against the heuristic opponent begins, and not for the casual one', async () => {
+    const started: FakeWorker[] = [];
+    const pool = new WorkerPlayOutPool({ size: 2, spawn: spawnOf(started) });
+    const base = { seed: 7, humanDeck: 'white-knights', aiDeck: 'swamp-forest' } as const;
+    await new GameHost({ clock: () => 0, playOuts: pool }).newGame({ ...base, ai: 'casual' });
+    expect(started).toHaveLength(0);
+    await new GameHost({ clock: () => 0, playOuts: pool }).newGame({ ...base, ai: 'normal' });
+    expect(started).toHaveLength(2);
+  }, 60_000);
 });

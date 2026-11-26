@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 /**
  * Parallel play-outs in the built app (issue 653, step 2c): the game Worker starts child Workers that play out
- * the AI's plannings when it first plans, `?workers=<n>` sets how many, and the game goes on as without them.
+ * the AI's plannings when a game against it begins, `?workers=<n>` sets how many, and the game goes on as without them.
  * Children of a Worker are not the page's own Workers, so they are counted through the browser's targets.
  */
 const primary = (page: Page) => page.locator('[data-dec-primary]');
@@ -45,7 +45,7 @@ async function playTurns(page: Page, workers: number, seed: number): Promise<str
   return errors;
 }
 
-test('?workers=2 starts two play-out workers once the AI plans, and the game goes on', async ({
+test('?workers=2 starts two play-out workers with the game, and the game goes on', async ({
   page,
 }) => {
   test.setTimeout(120_000);

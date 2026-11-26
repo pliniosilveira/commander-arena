@@ -168,6 +168,10 @@ export class WorkerPlayOutPool implements PlayOutPool {
     return slot;
   }
 
+  warm(): void {
+    this.start();
+  }
+
   open(spec: PlanJobSpec): PlayOutJob {
     const slots = this.start();
     if (!slots.some((s) => s.alive)) throw new Error('no play-out worker is running');

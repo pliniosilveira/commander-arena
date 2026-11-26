@@ -94,4 +94,6 @@ export interface PlayOutPool {
   /** How many play-outs run at once. */
   readonly size: number;
   open(spec: PlanJobSpec): PlayOutJob;
+  /** Starts the workers before the first planning needs them (a host calls it when a game with the AI begins). */
+  warm?(): void;
 }

@@ -302,6 +302,8 @@ export class GameHost implements GameClient {
     for (let seat = 1; seat <= opponents.length; seat++) {
       this.agents.set(seat, this.makeAgent(agentSeed(options.seed, seat), options.ai ?? 'casual'));
     }
+    // The play-out workers load their code while the player looks at the opening hand.
+    if (options.ai === 'normal') this.playOuts?.warm?.();
     const created = createGame(config);
     this.state = created.state;
     const log = this.logFor(created.state, created.state, created.events);
