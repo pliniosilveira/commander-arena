@@ -2565,6 +2565,8 @@ export interface IrKeyword extends IrNode {
   readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
+  /** "Protection from mana value 3 or greater" (Mistmeadow Skulk, CR 702.16a, 202.3): the comparison and the number of the quality. */
+  readonly manaValue?: { readonly cmp: 'atLeast' | 'atMost' | 'equal'; readonly value: number };
   /** "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability, as that of `IrRestriction.costReduction`. */
   readonly costReducedIf?: { readonly amount: IrAmount; readonly condition: IrCondition };
 }

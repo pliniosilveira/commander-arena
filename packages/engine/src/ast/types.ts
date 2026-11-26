@@ -7023,6 +7023,18 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'multicolored' }
   /**
+   * "Protection from mana value 3 or greater" (CR 702.16a, 202.3; Mistmeadow Skulk): protection from every source whose mana value compares as stated: `atLeast` ("N or
+   * greater"), `atMost` ("N or less") or `equal` ("mana value N"). The mana value of a source is read as it is, or as it last was (CR 113.7a, 608.2h): a spell on the stack
+   * counts the X it was cast with (CR 202.3e), a token or a land has 0. Read where protection is read (`rules/protection.ts`). Only a printed keyword or a static
+   * `grantKeyword` may carry it.
+   */
+  | {
+      readonly kind: 'protection';
+      readonly from: 'manaValue';
+      readonly cmp: 'atLeast' | 'atMost' | 'equal';
+      readonly value: number;
+    }
+  /**
    * "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (CR 702.16a, 607.2d, D-652; Flickering Ward): protection from the
    * color the permanent that gives the keyword chose as it entered (needs `asEntersChoose` `color`); it chose none: nothing is given. `exceptSource`: the Aura that gives
    * it is not stopped by it (an Aura of the chosen color stays attached, CR 702.16d, 704.5m).

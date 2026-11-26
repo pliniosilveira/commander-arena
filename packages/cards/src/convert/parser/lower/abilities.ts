@@ -600,6 +600,26 @@ function lowerProtection(ability: IrKeyword): LowerResult<readonly Ability[]> {
       rule: 'keyword.line',
     };
   }
+  if (ability.manaValue !== undefined && ability.colors === undefined) {
+    // CR 702.16a, 202.3: protection from sources whose mana value compares as stated.
+    const blockedValue = gate(ability, ['ability:keyword', 'keyword:protection']);
+    if (blockedValue !== null) return blockedValue;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: {
+            kind: 'protection',
+            from: 'manaValue',
+            cmp: ability.manaValue.cmp,
+            value: ability.manaValue.value,
+          },
+        },
+      ],
+      rule: 'keyword.line',
+    };
+  }
   const words = ability.colors ?? [];
   const colors = words.map((w) => colorLetter(w));
   if (colors.length === 0 || colors.some((c) => c === undefined) || ability.params.length > 0) {
