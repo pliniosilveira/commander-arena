@@ -93,6 +93,13 @@ describe('formatPlanning', () => {
     ).toContain('deepened 66.7%: 8.0 deep play-outs, 4000.0 work units each');
   });
 
+  test('counts the deepened plannings whose choice the deeper values changed', () => {
+    const record = { ...work({ deepPlayOuts: 4, deepUnits: 100 }), deepChanged: true };
+    expect(
+      formatPlanning('heuristic', [record, work({ deepPlayOuts: 4, deepUnits: 100 })]),
+    ).toContain('50.0% of them changed the choice');
+  });
+
   test('says nothing for an agent that never planned', () => {
     expect(formatPlanning('greedy', [])).toBeNull();
   });

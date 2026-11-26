@@ -95,6 +95,8 @@ export function formatPlanning(label: string, works: readonly PlanWork[]): strin
   const mean = (of: (w: PlanWork) => number, digits = 1): string =>
     (works.reduce((sum, w) => sum + of(w), 0) / n).toFixed(digits);
   const deep = works.filter((w) => w.deepPlayOuts > 0);
+  // A planning that ended in a plan is a `PlanRecord`, which also says whether the deeper values changed its choice.
+  const changed = deep.filter((w) => 'deepChanged' in w && w.deepChanged === true).length;
   const deepMean = (of: (w: PlanWork) => number): string =>
     (deep.reduce((sum, w) => sum + of(w), 0) / deep.length).toFixed(1);
   return [
@@ -110,7 +112,7 @@ export function formatPlanning(label: string, works: readonly PlanWork[]): strin
     ...(deep.length === 0
       ? []
       : [
-          `deepened ${pct(deep.length, n)}: ${deepMean((w) => w.deepPlayOuts)} deep play-outs, ${deepMean((w) => w.deepUnits)} work units each`,
+          `deepened ${pct(deep.length, n)}: ${deepMean((w) => w.deepPlayOuts)} deep play-outs, ${deepMean((w) => w.deepUnits)} work units each, ${pct(changed, deep.length)} of them changed the choice`,
         ]),
   ].join('; ');
 }
