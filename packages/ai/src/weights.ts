@@ -74,11 +74,21 @@ export interface AttackWeights {
   readonly desperation: number;
   /** The library size at which an agent that decks first is at full urgency. */
   readonly urgentLibrary: number;
+  /**
+   * Combat look-ahead (`heuristic-combat-look.ts`, two players): "no attack" and the best two other attacks whose
+   * score is within this many points of the best are played on to the start of the agent's next turn.
+   */
+  readonly lookMargin: number;
 }
 
 export interface BlockWeights {
   /** A block must beat not blocking by this much. */
   readonly margin: number;
+  /**
+   * Combat look-ahead (`heuristic-combat-look.ts`, two players): "no block" and the best two block plans whose
+   * score is within this many points of the best are played on to the start of the agent's next turn.
+   */
+  readonly lookMargin: number;
 }
 
 export interface DangerWeights {
@@ -252,8 +262,9 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     crackDanger: 3,
     desperation: 1,
     urgentLibrary: 14,
+    lookMargin: 3,
   },
-  blocks: { margin: 0.05 },
+  blocks: { margin: 0.05, lookMargin: 3 },
   danger: { life: 6, poison: 7, commander: 15 },
   main: {
     trickMargin: 0.5,

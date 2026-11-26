@@ -128,6 +128,18 @@ describe('formatSearches', () => {
     );
   });
 
+  test('says how often the combat look-ahead ran and changed the choice', () => {
+    const searches = [
+      search({ kind: 'declareAttackers', look: { playOuts: 4, changed: true } }),
+      search({ kind: 'declareBlockers', look: { playOuts: 2, changed: false } }),
+      search(),
+    ];
+    expect(formatSearches('heuristic', searches)).toContain(
+      'combat look-ahead 2 times (3.0 play-outs each), 50.0% of them changed the choice',
+    );
+    expect(formatSearches('heuristic', [search()])).not.toContain('combat look-ahead');
+  });
+
   test('says nothing for an agent that never searched', () => {
     expect(formatSearches('greedy', [])).toBeNull();
   });

@@ -128,10 +128,19 @@ export function formatSearches(label: string, searches: readonly SearchWork[]): 
   const count = (cut: SearchWork['cut']): number => searches.filter((s) => s.cut === cut).length;
   const mean = (of: (s: SearchWork) => number, digits = 1): string =>
     (searches.reduce((sum, s) => sum + of(s), 0) / n).toFixed(digits);
+  // The combat decisions whose look-ahead ran (issue 653, step 5), and how often it changed the choice.
+  const looked = searches.filter((s) => s.look !== undefined);
+  const changed = looked.filter((s) => s.look?.changed === true).length;
+  const playOuts = looked.reduce((sum, s) => sum + (s.look?.playOuts ?? 0), 0);
   return [
     `searches ${label}: ${n} decisions searched`,
     `cut by the clock ${pct(count('clock'), n)}, by the work budget ${pct(count('work'), n)}`,
     `per decision: ${mean((s) => s.calls)} engine calls, ${mean((s) => s.units, 0)} work units, ${mean((s) => s.ms, 2)} ms`,
+    ...(looked.length === 0
+      ? []
+      : [
+          `combat look-ahead ${looked.length} times (${(playOuts / looked.length).toFixed(1)} play-outs each), ${pct(changed, looked.length)} of them changed the choice`,
+        ]),
   ].join('; ');
 }
 

@@ -10,8 +10,9 @@
  * `heuristic-threats.ts`: haste, or flash), in the share of the chance that the opponent holds one. A deck with
  * no such creature it can pay for is feared for its battlefield alone.
  */
-import type { GameView, ObjectView, SeatId } from '@commander-arena/engine';
-import { LOSS, lifeValue } from './evaluate';
+import type { GameView, ObjectId, ObjectView, SeatId } from '@commander-arena/engine';
+import { hasKeyword } from './casual-view';
+import { creatureValue, LOSS, lifeValue } from './evaluate';
 import { breakthrough, futureAttackers, untappedCreatures, verdict } from './heuristic-danger';
 import type { HiddenAttacker } from './heuristic-threats';
 import type { AgentWeights } from './weights';
@@ -73,4 +74,42 @@ export function attackShare(view: GameView, attacker: SeatId, me: SeatId): numbe
   const total = targets.reduce((sum, s) => sum + weight(s.life), 0);
   const mine = targets.find((s) => s.id === me);
   return mine === undefined || total === 0 ? 1 : weight(mine.life) / total;
+}
+
+/**
+ * The view-only attack: the safe attackers, fewer of them while the crack-back would leave the agent in
+ * danger. The creature given up is the one that is worth most (the best blocker stays home); a creature
+ * that must attack is never given up.
+ */
+export function guardHome<C extends { readonly attacker: ObjectId; readonly object: ObjectView }>(
+  view: GameView,
+  me: SeatId,
+  safe: readonly C[],
+  required: ReadonlySet<ObjectId>,
+  weights: AgentWeights,
+): C[] {
+  let going = [...safe];
+  const opps = view.seats.filter((s) => s.id !== me && !s.hasLost).map((s) => s.id);
+  while (opps.length > 0 && going.length > 0) {
+    const out = new Set(going.map((c) => c.attacker));
+    const home = untappedCreatures(view, me).filter(
+      (o) => !out.has(o.id) || hasKeyword(o, 'vigilance'),
+    );
+    const inDanger = opps.some(
+      (opp) =>
+        verdict(view, me, breakthrough(view, futureAttackers(view, opp), home), weights.danger)
+          .danger,
+    );
+    if (!inDanger) break;
+    const best = going
+      .filter((c) => !required.has(c.attacker))
+      .sort(
+        (x, y) =>
+          creatureValue(y.object, weights) - creatureValue(x.object, weights) ||
+          (x.attacker < y.attacker ? -1 : x.attacker > y.attacker ? 1 : 0),
+      )[0];
+    if (best === undefined) break;
+    going = going.filter((c) => c !== best);
+  }
+  return going;
 }
