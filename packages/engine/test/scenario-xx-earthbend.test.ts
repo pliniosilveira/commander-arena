@@ -99,7 +99,9 @@ function game(seats: 2 | 3 = 2): ScenarioGame {
 }
 
 const forest = (g: ScenarioGame) =>
-  getView(g.state, 0).battlefield.find((o) => o.name === 'Forest' && (o.counters['+1/+1'] ?? 0) > 0);
+  getView(g.state, 0).battlefield.find(
+    (o) => o.name === 'Forest' && (o.counters['+1/+1'] ?? 0) > 0,
+  );
 
 describe('earthbend: the land becomes a 0/0 haste creature with counters', () => {
   test('it is a land creature N/N with haste that still taps for mana', () => {
