@@ -1341,6 +1341,7 @@ describe('unmatched abilities', () => {
       'effect.lead-becomes-target',
       'effect.have-base-pt',
       'effect.becomes-while-counter',
+      'effect.have-group-become',
       'effect.lead-group-base-pt',
       'effect.group-base-pt',
       'effect.have-group-base-pt-source',
