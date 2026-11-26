@@ -17,6 +17,7 @@ import {
 } from './combinators';
 import type { IrAmount, IrClause, IrCondition, IrNoun, IrSentence } from './ir/types';
 import { CHOSEN_PLAYER_CONDITION_RULES } from './rules/condition/chosen-player';
+import { CONDITION_THIS_HAS_COUNTER_COUNT } from './rules/condition/counter-count';
 import { LEAD_GAME_STATE_CONDITIONS } from './rules/condition/game-state';
 import { CLAUSE_JOIN, connectorOf, listWithJoins } from './rules/effect/operands';
 import { spellPhrase, withoutZone } from './rules/noun/phrases';
@@ -379,6 +380,11 @@ interface SentenceOptions {
    */
   readonly afterReveal?: boolean;
   /**
+   * "When you do, if it has four or more quest counters on it, ..." may start the sentence (Earthbender Ascension, CR 603.12, 603.4): the reflexive ability of the counter put by the sentence
+   * before it. Only the body of a triggered ability asks for it, where the lowering joins the two.
+   */
+  readonly afterCounters?: boolean;
+  /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
    * text of a spell asks for it, where the lowering of the whole text (`lowerSentences`) joins the roll and its rows.
@@ -598,6 +604,26 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let afterDiscard: IrSentence['afterDiscard'];
     let afterExile = false;
     let afterReveal: string | undefined;
+    let afterCounters: IrSentence['afterCounters'];
+    if (options.afterCounters === true) {
+      const lead = sequence(
+        literal('when you do, if '),
+        CONDITION_THIS_HAS_COUNTER_COUNT.parse,
+        literal(', '),
+      )(ctx, start);
+      const test = lead.ok ? lead.value[1].test : undefined;
+      if (
+        lead.ok &&
+        test?.kind === 'amountIs' &&
+        test.amount.kind === 'countersOn' &&
+        test.amount.counter !== undefined &&
+        test.compare.cmp === 'atLeast'
+      ) {
+        reflexive = true;
+        afterCounters = { counter: test.amount.counter, atLeast: test.compare.value };
+        at = lead.pos;
+      }
+    }
     if (options.afterReveal === true) {
       const lead = pattern(/when you reveal an? ([a-z]+) card this way, /iu)(ctx, start);
       if (lead.ok) {
@@ -776,10 +802,15 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined && !afterExile && afterReveal === undefined
+        ...(reflexive &&
+        afterDiscard === undefined &&
+        !afterExile &&
+        afterReveal === undefined &&
+        afterCounters === undefined
           ? { reflexive: true as const }
           : {}),
         ...(afterReveal === undefined ? {} : { afterReveal }),
+        ...(afterCounters === undefined ? {} : { afterCounters }),
         ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
@@ -857,4 +888,6 @@ export const TRIGGER_SENTENCE: Parser<IrSentence> = sentenceParser({
   delayed: true,
   // Cait Sith, Fortune Teller: "When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is that card's mana value."
   afterExile: true,
+  // Earthbender Ascension: "Put a quest counter on ~. When you do, if it has four or more quest counters on it, put a +1/+1 counter on target creature you control."
+  afterCounters: true,
 });

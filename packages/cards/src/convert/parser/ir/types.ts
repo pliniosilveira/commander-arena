@@ -1782,6 +1782,12 @@ export interface IrSentence extends IrNode {
    */
   readonly afterReveal?: string;
   /**
+   * "When you do, if it has four or more quest counters on it, ..." (Earthbender Ascension, CR 603.12, 603.4, 122.1): a reflexive triggered ability created when the counter put by the instruction
+   * before it was put, with the intervening "if" about the counters of the kind on the source ("it" is the permanent the ability is on). Not `reflexive`: the lowering reads it alone, and
+   * refuses it where no counter of the kind was put on the source before.
+   */
+  readonly afterCounters?: { readonly counter: string; readonly atLeast: number };
+  /**
    * "Each player may discard a card." and "Target opponent may have you draw three cards." (stage P52, D-210, CR 608.2d, 101.4): the players the sentence asks
    * whether to do its clauses. `haveYou` says that the clauses are done by the controller ("may have you draw"), otherwise by the player asked. The clauses are
    * not `optional`: the question is this node's. Only in the body of a triggered ability.

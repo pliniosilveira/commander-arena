@@ -15,6 +15,7 @@ import type {
   TriggeredAbility,
 } from '../state/types';
 import { thisWayCount } from './amounts';
+import { evaluateCondition } from './conditions';
 import { runContinuous } from './continuous';
 import { derive } from './derive';
 import { playEnd } from './impulse';
@@ -53,6 +54,16 @@ export function runReflexive(
       return done(state);
     }
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
+  // CR 603.4 (Earthbender Ascension): the intervening "if" of the reflexive ability decides whether it is created at all, then is read again as it resolves.
+  if (
+    effect.interveningIf !== undefined &&
+    !evaluateCondition(state, effect.interveningIf, {
+      controller: res.controller,
+      source: res.source,
+    })
+  ) {
+    return done(state);
+  }
   // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, or (Loamcrafter Faun) the cards it discarded, fixed now.
   const sacrificedCount = res.sacrificed?.length ?? 0;
   const discardedCount = res.thisWay?.discarded ?? 0;
@@ -71,6 +82,7 @@ export function runReflexive(
     trigger: REFLEXIVE_TRIGGER,
     ...(targets === undefined ? {} : { targets }),
     effect: effect.effect,
+    ...(effect.interveningIf === undefined ? {} : { interveningIf: effect.interveningIf }),
     // D-511 (CR 603.12, 700.2b): "When you do, choose one —": the modes are chosen as the reflexive ability goes on the stack (CR 603.3c).
     ...(effect.modes === undefined ? {} : { modes: effect.modes }),
     ...(effect.chooseModes === undefined ? {} : { chooseModes: effect.chooseModes }),
