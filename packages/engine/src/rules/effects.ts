@@ -1295,8 +1295,19 @@ function runEffect(
             resolvePlayers(state, sel.players, ctx, targets),
           );
           if (first === undefined) return { ...done(state), lastMoved: [] };
+          // CR 610.3a, 610.3b (Foreboding Steamboat): "until ~ leaves the battlefield": if it has left already, as the exile would happen, nothing is exiled.
+          if (
+            effect.until === 'sourceLeaves' &&
+            (res.source === null || state.objects[res.source]?.zone !== 'battlefield')
+          ) {
+            return { ...done(state), lastMoved: [] };
+          }
           const returning = {
             kind: 'chooseMove' as const,
+            ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+            ...(effect.until === 'sourceLeaves' && res.source !== null
+              ? { untilLeaves: res.source }
+              : {}),
             filter: sel.filter,
             count: amountOf(state, sel.count ?? 1, ctx, targets),
             to: effect.to,

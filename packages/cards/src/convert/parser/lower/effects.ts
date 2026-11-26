@@ -81,6 +81,7 @@ import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
+import { EACH_PLAYER_CHOOSES_EXILE_LOWERINGS } from './each-player-chooses-exile';
 import { EACH_RETURNS_LOWERINGS } from './each-returns';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
@@ -315,7 +316,7 @@ function simple(
       eachObject(
         clause,
         ctx,
-        (objects) =>
+        (objects): Effect =>
           // "... until ~ leaves the battlefield" (stage P33, D-150, CR 610.3): the cards return when the permanent with the ability leaves.
           verb === 'exile' && clause.args.until !== undefined
             ? { kind: verb, objects, until: 'sourceLeaves' }
@@ -2891,6 +2892,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...POPULATE_LOWERINGS,
   ...CLOAK_LOWERINGS,
   ...EACH_RETURNS_LOWERINGS,
+  ...EACH_PLAYER_CHOOSES_EXILE_LOWERINGS,
   ...BLIGHT_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.

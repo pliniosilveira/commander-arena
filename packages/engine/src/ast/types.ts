@@ -2285,7 +2285,8 @@ export interface ChooseSelector {
    * "Each opponent returns a nonland permanent they control with the greatest mana value among permanents they control to its owner's hand" (Discovery // Dispersal, CR 608.2d, 101.4,
    * 701.21a's wording for a return): each player the selector names chooses among the permanents they control that `filter` matches (`filter.controller` is `you`, read for each chooser)
    * and the permanents chosen move together once the last has chosen, the players choosing in APNAP order; with `greatest` the choice is among the ties for the greatest value of that stat
-   * among the matching permanents. Only for `moveToZone` to the hand with a `filter.zone` of the battlefield (left out), no `optional` and no other quantity than `count`.
+   * among the matching permanents. Only for `moveToZone` to the hand, or to exile (Foreboding Steamboat: "each player chooses two nontoken, non-Vehicle creatures they control. Exile them
+   * until ~ leaves the battlefield", with `count` 2: a player who controls fewer chooses all of them, CR 608.2d), with a `filter.zone` of the battlefield (left out), no `optional` and no other quantity than `count`.
    */
   readonly players?: PlayerSelector;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
@@ -3605,6 +3606,12 @@ export type Effect =
        * belongs to, as `exile.linked` does, for `linkedExile`. Only with `to` `exile` and a `choose` selector, in an ability of a permanent.
        */
       readonly linked?: true;
+      /**
+       * "Each player chooses two nontoken, non-Vehicle creatures they control. Exile them until this Vehicle leaves the battlefield" (Foreboding Steamboat, CR 610.3, 610.3a, 610.3c, 101.4): as
+       * `exile.until`, the cards are returned to the battlefield under their owners' control when the permanent the ability belongs to leaves it, and nothing is exiled when it has left
+       * already as the exile would happen. Only with `to` `exile` and a `choose` selector with `players` (the cards chosen are exiled from the battlefield), in an ability of a permanent.
+       */
+      readonly until?: 'sourceLeaves';
       /**
        * For library: `top`, `bottom`, or a number N of 2 or more, "Nth from the top" ("third from the top" is 3): the card
        * goes below the first N - 1 cards, or on the bottom when the library has fewer than N cards (CR 401.7, D-135).

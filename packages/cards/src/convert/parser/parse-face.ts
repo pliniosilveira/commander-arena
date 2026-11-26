@@ -426,6 +426,15 @@ function exilesIn(effect: Effect): number {
     // CR 607.2a (Valakut Exploration): "exile the top card of your library" whose card another ability reads as "exiled with ~" (one card, a face-up exile of the controller's own library).
     case 'exileTop':
       return effect.count === 1 && effect.faceDown !== true && effect.from === undefined ? 1 : 0;
+    // CR 607.2a, 610.3 (Foreboding Steamboat): "each player chooses two creatures they control. Exile them until ~ leaves the battlefield": the creatures the players chose are what
+    // "a card exiled with it" names.
+    case 'moveToZone':
+      return effect.to === 'exile' &&
+        effect.objects.kind === 'choose' &&
+        effect.objects.players !== undefined &&
+        effect.until !== undefined
+        ? 1
+        : 0;
     // "you may exile that card from your graveyard" (stage P50, D-207).
     case 'may':
       return exilesIn(effect.effect);
@@ -533,6 +542,8 @@ function linkedEffect(effect: Effect): Effect {
       return { ...effect, linked: true };
     case 'exileTop':
       return { ...effect, linked: true };
+    case 'moveToZone':
+      return exilesIn(effect) > 0 ? { ...effect, linked: true } : effect;
     case 'may':
       return { ...effect, effect: linkedEffect(effect.effect) };
     case 'sequence':
