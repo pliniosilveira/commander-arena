@@ -26,17 +26,21 @@ const PUT_EXILED_WITH: Lowering<IrClause, Effects> = {
   head: 'putExiledWith',
   id: 'lower.put-exiled-with',
   needs: ['effect:moveToZone', 'selector:choose'],
-  lower: (clause) => ({
-    ok: true,
-    value: [
-      {
-        kind: 'moveToZone',
-        objects: { kind: 'choose', filter: { zone: 'exile', controller: 'you' } },
-        to: 'graveyard',
-      },
-    ],
-    rule: clause.rule,
-  }),
+  lower: (clause, ctx) =>
+    // "... exiled with it" (Foreboding Steamboat): "it" is the permanent of the ability only in a trigger about that permanent alone (`itIsSelf`).
+    clause.args.viaIt !== undefined && !ctx.itIsSelf
+      ? failure(clause)
+      : {
+          ok: true,
+          value: [
+            {
+              kind: 'moveToZone',
+              objects: { kind: 'choose', filter: { zone: 'exile', controller: 'you' } },
+              to: 'graveyard',
+            },
+          ],
+          rule: clause.rule,
+        },
 };
 
 /**

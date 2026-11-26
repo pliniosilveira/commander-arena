@@ -224,7 +224,16 @@ export function runChooseMove(
       ).map((i) => {
         if (i.kind !== 'move') return i;
         // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
-        if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
+        if (instruction.linkTo !== undefined || instruction.untilLeaves !== undefined) {
+          return {
+            ...i,
+            ...(instruction.linkTo === undefined ? {} : { linkTo: instruction.linkTo }),
+            // CR 610.3 (Foreboding Steamboat): "until this Vehicle leaves the battlefield".
+            ...(instruction.untilLeaves === undefined
+              ? {}
+              : { untilLeaves: instruction.untilLeaves }),
+          };
+        }
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
@@ -342,6 +351,11 @@ export function runChooseMove(
           : instruction.filter.zone === 'command'
             ? 'command'
             : 'hand';
+    // CR 400.3 (Foreboding Steamboat): a card exiled by another player goes to its owner's graveyard, not the chooser's.
+    const where =
+      zone === 'exile' && instruction.to === 'graveyard'
+        ? "into its owner's graveyard"
+        : WHERE[instruction.to];
     return {
       state,
       events: [],
@@ -397,7 +411,7 @@ export function runChooseMove(
                                 : instruction.handOf !== undefined
                                   ? 'from their hand'
                                   : `from your ${zone}`
-                  } to put ${WHERE[instruction.to]}`.replace(
+                  } to put ${where}`.replace(
                     'from among the cards put into your graveyard',
                     instruction.anyOwner === true
                       ? 'from among the cards put into a graveyard'

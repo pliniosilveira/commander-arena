@@ -765,6 +765,14 @@ const BOTTOM_RIDER =
   /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
 
 /**
+ * "When ~ enters, each player chooses two nontoken, non-Vehicle creatures they control. Exile them until ~ leaves the battlefield." (Foreboding Steamboat, CR 610.3, 101.4, 608.2d): the
+ * second sentence says what is done with the creatures the first has each player choose, so the two are one instruction (`effect.each-player-chooses-exile-until`).
+ */
+const EACH_PLAYER_CHOOSES_CREATURES =
+  /(?:^|, )each player chooses \w+ [^.]*creatures they control\.$/i;
+const EXILE_THEM_UNTIL_LEAVES = /^exile them until ~ leaves the battlefield\.$/i;
+
+/**
  * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 118.9): the second sentence says what the
  * flashback the first gives costs, so the two are one instruction (`effect.gain-flashback-from-mana-cost`).
  */
@@ -1276,6 +1284,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)) ||
+        (said(a, EACH_PLAYER_CHOOSES_CREATURES) && said(b, EXILE_THEM_UNTIL_LEAVES)) ||
         (said(a, GAINS_FLASHBACK) && said(b, FLASHBACK_COST_IS_MANA_COST)))
     ) {
       out.push({ start: a.start, end: b.end });

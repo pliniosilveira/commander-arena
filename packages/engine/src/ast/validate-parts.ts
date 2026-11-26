@@ -6885,6 +6885,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       ) {
         issue(out, `${path}.random`, "random is true, with to 'library' and position 'bottom'");
       }
+      // CR 610.3 (Foreboding Steamboat): "exile them until ~ leaves the battlefield": the permanent chosen by each player, exiled by an ability of a permanent.
+      if (e.until !== undefined) {
+        if (e.until !== 'sourceLeaves') {
+          issue(out, `${path}.until`, `unknown end ${JSON.stringify(e.until)}`);
+        }
+        if (
+          e.to !== 'exile' ||
+          kindOf(e.objects) !== 'choose' ||
+          (e.objects as ChooseSelector).players === undefined
+        ) {
+          issue(
+            out,
+            `${path}.until`,
+            "until is only for a choice by each player (players) exiled ('exile')",
+          );
+        }
+        if (scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.until`,
+            'only an ability of a permanent can last until it leaves the battlefield',
+          );
+        }
+      }
       if (kindOf(e.objects) === 'triggerCard') {
         // D-230: "return that card to the battlefield" of a dies trigger.
         if (scope.triggerSubject !== 'permanent') {
@@ -6897,8 +6921,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       } else if (kindOf(e.objects) === 'choose') {
         checkChooseMove(e.objects as ChooseSelector, `${path}.objects`, scope, out);
-        if ((e.objects as ChooseSelector).players !== undefined && e.to !== 'hand') {
-          issue(out, `${path}.to`, "a choice by each player is put into the hand ('hand')");
+        if (
+          (e.objects as ChooseSelector).players !== undefined &&
+          e.to !== 'hand' &&
+          e.to !== 'exile'
+        ) {
+          issue(
+            out,
+            `${path}.to`,
+            "a choice by each player is put into the hand ('hand') or exiled ('exile')",
+          );
         }
         // A chosen permanent would enter under a control the choice does not settle: only a card chosen from the hand or the
         // graveyard (D-139) is put onto the battlefield, by the controller of the effect. A card that could be an Aura would need to
@@ -7015,12 +7047,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         const chosen = kindOf(e.objects) === 'choose' ? (e.objects as ChooseSelector) : null;
         if (
           chosen === null ||
-          (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard')
+          // CR 101.4, 608.2d (Foreboding Steamboat): "each player chooses two creatures they control. Exile them ...": each player's choice among the permanents they control.
+          (chosen.players === undefined &&
+            chosen.filter?.zone !== 'hand' &&
+            chosen.filter?.zone !== 'graveyard')
         ) {
           issue(
             out,
             `${path}.to`,
-            "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
+            "moveToZone puts into exile only a choice of cards in the hand or the graveyard, or the permanents each player chooses; exile anything else with the 'exile' effect",
           );
         }
       }

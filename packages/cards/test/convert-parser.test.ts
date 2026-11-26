@@ -920,6 +920,7 @@ describe('unmatched abilities', () => {
       'effect.populate',
       'effect.cloak',
       'effect.each-returns',
+      'effect.each-player-chooses-exile-until',
       'effect.cast-free-hand-value',
       'effect.blight',
       'effect.each-enters-with-additional-counters',

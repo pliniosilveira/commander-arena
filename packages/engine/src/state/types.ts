@@ -1534,6 +1534,8 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "Exile them until this Vehicle leaves the battlefield" (`moveToZone.until`, CR 610.3): the permanent whose leaving returns the cards exiled. */
+      readonly untilLeaves?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
