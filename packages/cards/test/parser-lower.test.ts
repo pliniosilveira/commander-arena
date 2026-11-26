@@ -80,9 +80,14 @@ describe('the dimension test: every feature a lowering names exists', () => {
 
   test('missingFeatures lists what the engine does not run, in order, once each', () => {
     expect(
-      missingFeatures(['effect:draw', 'token:Blood', 'duration:permanent', 'token:Blood']),
-    ).toEqual(['token:Blood', 'duration:permanent']);
-    expect(isRunnable('token:Blood')).toBe(false);
+      missingFeatures([
+        'effect:draw',
+        'manaCost:discard',
+        'duration:permanent',
+        'manaCost:discard',
+      ]),
+    ).toEqual(['manaCost:discard', 'duration:permanent']);
+    expect(isRunnable('manaCost:discard')).toBe(false);
     expect(isRunnable('keyword:flying')).toBe(true);
   });
 
