@@ -200,7 +200,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
         issue(
           out,
           `${path}.amount`,
-          "a static ability's condition compares a count of objects (countOf), the devotion or the card types among cards (cardTypesAmong) with a number",
+          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong), or the devotion",
         );
         return;
       }
