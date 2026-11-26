@@ -25,7 +25,7 @@ scope.onmessage = ({ data }) => {
       scope.postMessage({
         t: 'done',
         id: data.id,
-        trace: service.run(data.job, data.line, data.scenario, data.record),
+        trace: service.run(data.job, data.line, data.scenario, data.record, data.horizon),
       });
     } catch (error) {
       scope.postMessage({

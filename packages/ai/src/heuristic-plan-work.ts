@@ -31,8 +31,12 @@ export const KEEP = 1000;
 export interface PlanWork {
   /** Whether the planning ended in a plan (false: today's line could not be scored, or no planning ran). */
   readonly planned: boolean;
-  /** How many play-outs were started. */
+  /** How many play-outs were started (a deepening's are counted apart, in `deepPlayOuts`). */
   readonly playOuts: number;
+  /** How many play-outs of the deepening phase (one turn further, `heuristic-plan-deep.ts`) were started. */
+  readonly deepPlayOuts: number;
+  /** The work units the deepening phase used (`Budget.used`), 0 when it did not run. */
+  readonly deepUnits: number;
   /** The engine steps of all its play-outs (a step taken again from what was kept counts as a step). */
   readonly steps: number;
   /** The views it built (`getView`); a view it already had is not built again. */
@@ -70,6 +74,8 @@ export class PlanCounter {
   views = 0;
   applies = 0;
   playOuts = 0;
+  deepPlayOuts = 0;
+  deepUnits = 0;
   cut: Cut | null = null;
   /** The decision's engine: what the planning has not kept it asks of it, counted there. */
   private readonly engine: Engine;
@@ -127,6 +133,8 @@ export class PlanCounter {
     return {
       planned,
       playOuts: this.playOuts,
+      deepPlayOuts: this.deepPlayOuts,
+      deepUnits: this.deepUnits,
       steps: this.steps,
       views: this.views,
       applies: this.applies,

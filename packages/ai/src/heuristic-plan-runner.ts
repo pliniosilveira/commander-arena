@@ -81,8 +81,11 @@ export class PlanRunner {
     this.agents = agents;
   }
 
-  /** Plays line `line` on scenario `scenario` to the agent's next turn and answers the trace. */
-  run(line: number, scenario: number, record: boolean): PlayOutTrace {
+  /**
+   * Plays line `line` on scenario `scenario` to the start of the agent's `horizon`th next turn (1: its next
+   * turn, 2: the one after, for the deepening phase) and answers the trace.
+   */
+  run(line: number, scenario: number, record: boolean, horizon = 1): PlayOutTrace {
     const { me, weights, lines, scenarios } = this.spec;
     const rec = this.recorder;
     rec.moves = [];
@@ -97,6 +100,7 @@ export class PlanRunner {
       played,
       { agents: this.agents, budget: NO_BUDGET, weights, work: rec },
       record,
+      horizon,
     );
     const moves: readonly TraceMove[] = rec.moves;
     if (result === null) return { outcome: rec.stopped === 'work' ? 'maxsteps' : 'dropped', moves };
@@ -126,10 +130,10 @@ export class PlanService {
     this.jobs.set(id, new PlanRunner(spec, this.agentsOf(spec.weights)));
   }
 
-  run(id: number, line: number, scenario: number, record: boolean): PlayOutTrace {
+  run(id: number, line: number, scenario: number, record: boolean, horizon = 1): PlayOutTrace {
     const runner = this.jobs.get(id);
     if (runner === undefined) throw new Error(`no planning ${id} is open`);
-    return runner.run(line, scenario, record);
+    return runner.run(line, scenario, record, horizon);
   }
 
   close(id: number): void {

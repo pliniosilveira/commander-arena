@@ -85,8 +85,8 @@ export function formatTimes(times: readonly DecisionTimes[], budgetMs: number): 
 
 /**
  * The plannings of one agent's turn planner (issue 653): how many it ran, how many ended in a plan, the share
- * the decision's clock cut (rather than a bound of the work) and the mean work of one planning. Null when the
- * agent has no planner.
+ * the decision's clock cut (rather than a bound of the work) and the mean work of one planning, and, when any
+ * planning looked a turn further (step 4), how many did and what that cost. Null when the agent has no planner.
  */
 export function formatPlanning(label: string, works: readonly PlanWork[]): string | null {
   const n = works.length;
@@ -94,6 +94,11 @@ export function formatPlanning(label: string, works: readonly PlanWork[]): strin
   const count = (keep: (w: PlanWork) => boolean): number => works.filter(keep).length;
   const mean = (of: (w: PlanWork) => number, digits = 1): string =>
     (works.reduce((sum, w) => sum + of(w), 0) / n).toFixed(digits);
+  const deep = works.filter((w) => w.deepPlayOuts > 0);
+  // A planning that ended in a plan is a `PlanRecord`, which also says whether the deeper values changed its choice.
+  const changed = deep.filter((w) => 'deepChanged' in w && w.deepChanged === true).length;
+  const deepMean = (of: (w: PlanWork) => number): string =>
+    (deep.reduce((sum, w) => sum + of(w), 0) / deep.length).toFixed(1);
   return [
     `planning ${label}: ${n} plannings, ${count((w) => w.planned)} with a plan`,
     `cut by the clock ${pct(
@@ -104,6 +109,11 @@ export function formatPlanning(label: string, works: readonly PlanWork[]): strin
       n,
     )}`,
     `per planning: ${mean((w) => w.views)} views, ${mean((w) => w.applies)} engine actions, ${mean((w) => w.playOuts)} play-outs, ${mean((w) => w.steps)} steps, ${mean((w) => w.ms, 2)} ms`,
+    ...(deep.length === 0
+      ? []
+      : [
+          `deepened ${pct(deep.length, n)}: ${deepMean((w) => w.deepPlayOuts)} deep play-outs, ${deepMean((w) => w.deepUnits)} work units each, ${pct(changed, deep.length)} of them changed the choice`,
+        ]),
   ].join('; ');
 }
 

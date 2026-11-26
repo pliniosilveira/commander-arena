@@ -71,6 +71,8 @@ export type PoolRequest =
       readonly line: number;
       readonly scenario: number;
       readonly record: boolean;
+      /** The turns of the agent the play-out goes through (1, or 2 for the planner's deepening phase). */
+      readonly horizon: number;
     }
   | { readonly t: 'close'; readonly job: number };
 
@@ -102,6 +104,7 @@ interface Pending {
   readonly scenario: number;
   readonly record: boolean;
   readonly group: number;
+  readonly horizon: number;
   readonly resolve: (trace: PlayOutTrace) => void;
   readonly reject: (error: Error) => void;
 }
@@ -182,7 +185,7 @@ export class WorkerPlayOutPool implements PlayOutPool {
       id,
       closed: false,
       owners: new Map(),
-      run: (line, scenario, record, group) =>
+      run: (line, scenario, record, group, horizon) =>
         new Promise<PlayOutTrace>((resolve, reject) => {
           if (job.closed) return;
           if (!(this.slots ?? []).some((slot) => slot.alive)) {
@@ -197,6 +200,7 @@ export class WorkerPlayOutPool implements PlayOutPool {
             scenario,
             record,
             group,
+            horizon,
             resolve,
             reject,
           });
@@ -276,6 +280,7 @@ export class WorkerPlayOutPool implements PlayOutPool {
         line: request.line,
         scenario: request.scenario,
         record: request.record,
+        horizon: request.horizon,
       });
     } catch (error) {
       this.fail(slot, error instanceof Error ? error.message : String(error));

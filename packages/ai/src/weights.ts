@@ -125,6 +125,17 @@ export interface PlanWeights {
   readonly aggroOpenMana: number;
   /** How much of the gap between a line's weighted mean and its worst scenario is taken off its value. */
   readonly riskAversion: number;
+  /**
+   * Selective deepening (two players only, `heuristic-plan-deep.ts`): the lines whose value is within this many
+   * points of the best line's (today's line always) are played one turn further, to the start of the agent's
+   * turn after next. The more, the more lines are looked at and the more work it costs.
+   */
+  readonly deepMargin: number;
+  /**
+   * How much the deeper value counts in a deepened line's value: `(1 - deepBlend) * v1 + deepBlend * v2`, with
+   * v1 the value to the next turn and v2 the value to the turn after. 0 turns the deepening off.
+   */
+  readonly deepBlend: number;
 }
 
 export interface RemovalWeights {
@@ -256,7 +267,14 @@ export const DEFAULT_WEIGHTS: AgentWeights = deepFreeze({
     spellPerMana: 0.8,
     counterMinValue: 2,
   },
-  plan: { margin: 0.5, minThreatChance: 0.1, aggroOpenMana: 2, riskAversion: 0.25 },
+  plan: {
+    margin: 0.5,
+    minThreatChance: 0.1,
+    aggroOpenMana: 2,
+    riskAversion: 0.25,
+    deepMargin: 1.5,
+    deepBlend: 0.5,
+  },
   removal: { nearEqual: 0.8, walkerBase: 6, walkerLoyalty: 0.6 },
   threat: { commander: 2, lethal: 20 },
   protection: { margin: 0.5, commanderBonus: 4, permanentValue: 3, saveValue: 6 },

@@ -27,11 +27,13 @@ class InProcessPool implements PlayOutPool {
     const service = new PlanService(simAgentsOf);
     service.open(1, structuredClone(spec));
     return {
-      run: async (line, scenario, record) => {
+      run: async (line, scenario, record, _group, horizon) => {
         this.runs += 1;
         this.calls += 1;
         for (let i = 0; i < (this.calls * 7) % 5; i += 1) await Promise.resolve();
-        return JSON.parse(JSON.stringify(service.run(1, line, scenario, record))) as PlayOutTrace;
+        return JSON.parse(
+          JSON.stringify(service.run(1, line, scenario, record, horizon)),
+        ) as PlayOutTrace;
       },
       close: () => service.close(1),
     };

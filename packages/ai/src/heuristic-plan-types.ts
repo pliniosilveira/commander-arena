@@ -59,6 +59,30 @@ export interface PlayOutTrace {
   readonly plan?: readonly PlanStep[];
 }
 
+/**
+ * What the planner asks its driver for: the start states of its scenarios, then one play-out at a time. A
+ * play-out of `horizon` 2 belongs to the deepening phase (`heuristic-plan-deep.ts`): its driver plays it on
+ * `Budget.deep` and settles it there. `ahead` only tells the driver which play-outs of the deepening phase it
+ * is about to ask (a pool may start them; the answer is nothing).
+ */
+export type PlanRequest =
+  | { readonly kind: 'open'; readonly states: readonly GameState[] }
+  | {
+      readonly kind: 'play';
+      readonly line: number;
+      readonly scenario: number;
+      /** Whether the play-out writes down its steps (the base scenario's: they become the plan). */
+      readonly record: boolean;
+      /** The turns of the agent the play-out goes through: 1, or 2 in the deepening phase. */
+      readonly horizon: number;
+    }
+  | {
+      readonly kind: 'ahead';
+      /** The scenario the deepening phase is about to play the lines on, at horizon 2. */
+      readonly scenario: number;
+      readonly lines: readonly number[];
+    };
+
 /** What a settled play-out gives the planner: the score of its end and the steps it took. */
 export interface PlayScore {
   readonly score: number;
@@ -80,7 +104,13 @@ export interface PlayOutJob {
    * `group` says which play-outs share what a worker keeps of them (the same scenario and lines that start
    * with the same action): the pool gives a group to one worker while it can, so that worker's memo is used.
    */
-  run(line: number, scenario: number, record: boolean, group: number): Promise<PlayOutTrace>;
+  run(
+    line: number,
+    scenario: number,
+    record: boolean,
+    group: number,
+    horizon: number,
+  ): Promise<PlayOutTrace>;
   /** The planning is over: play-outs not started are dropped and the workers' copies of the states freed. */
   close(): void;
 }

@@ -7,8 +7,11 @@
  * the pool is asked for all of them the planning can use at once, in that order, and each carries a GROUP
  * (the same scenario, and lines that start with the same action), so the pool can keep a group on one worker
  * and use what that worker's memo kept: a planning shares much of its work between lines, and workers that
- * played the lines in turn would each do it again. The play-outs asked ahead that the budget then stops are
- * never settled: the workers' work on them is lost, and nothing else. A play-out the pool fails to answer is played on this thread with the same runner, so a
+ * played the lines in turn would each do it again. The deepening phase (`heuristic-plan-deep.ts`) asks its
+ * play-outs the same way: a request of horizon 2 is played by the same code on a worker and settled on
+ * `Budget.deep`, and the planner says which lines it is about to play on a scenario so they start together.
+ * The play-outs asked ahead that the budget then stops are never settled: the workers' work on them is lost,
+ * and nothing else. A play-out the pool fails to answer is played on this thread with the same runner, so a
  * pool that crashes slows the planning down and never changes it.
  */
 import type { GameView } from '@commander-arena/engine';
@@ -70,19 +73,23 @@ export async function choosePlanOn(
     local ??= new PlanRunner(spec, agents);
     return local;
   };
-  const ask = (k: number): Promise<PlayOutTrace> => {
+  // A play-out of horizon 1 is asked of the pool as `k = line * width + scenario`; one of the deepening phase
+  // (horizon 2) as that number plus all the play-outs of horizon 1 there can be.
+  const keyOf = (line: number, scenario: number, horizon: number): number =>
+    line * width + scenario + (horizon > 1 ? lines.length * width : 0);
+  const ask = (line: number, scenario: number, horizon: number): Promise<PlayOutTrace> => {
+    const k = keyOf(line, scenario, horizon);
     const kept = asked.get(k);
     if (kept !== undefined) return kept;
-    const line = Math.floor(k / width);
-    const scenario = k % width;
-    const record = scenario === 0;
-    const own = (): PlayOutTrace => ownRunner().run(line, scenario, record);
+    // Only a play-out of the first turn writes down the steps of a plan, and only on the base scenario.
+    const record = scenario === 0 && horizon === 1;
+    const own = (): PlayOutTrace => ownRunner().run(line, scenario, record, horizon);
     let answer: Promise<PlayOutTrace>;
     try {
       answer =
         job === null
           ? Promise.resolve().then(own)
-          : job.run(line, scenario, record, groupOf(line, scenario)).catch(own);
+          : job.run(line, scenario, record, groupOf(line, scenario), horizon).catch(own);
     } catch {
       answer = Promise.resolve().then(own);
     }
@@ -107,12 +114,18 @@ export async function choosePlanOn(
         step = gen.next();
         continue;
       }
+      if (request.kind === 'ahead') {
+        for (const line of request.lines) ask(line, request.scenario, 2);
+        step = gen.next();
+        continue;
+      }
       // The pool is asked for every play-out the planning can use at once, in the planner's order: a worker
       // works through its group while the planner settles the first answers.
       const total = Math.min(lines.length * width, MAX_PLAY_OUTS);
-      for (let a = 0; a < total; a += 1) ask(a);
-      const trace = await ask(request.line * width + request.scenario);
-      step = gen.next(settle(work, think.budget, me, roots[request.scenario] as TraceNode, trace));
+      for (let a = 0; a < total; a += 1) ask(Math.floor(a / width), a % width, 1);
+      const trace = await ask(request.line, request.scenario, request.horizon);
+      const on = request.horizon > 1 ? think.budget.deep() : think.budget;
+      step = gen.next(settle(work, on, me, roots[request.scenario] as TraceNode, trace));
     }
     return step.value;
   } finally {

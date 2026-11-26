@@ -96,13 +96,13 @@ class FakePool implements PlayOutPool {
     const service = new PlanService(simAgentsOf);
     service.open(1, structuredClone(spec));
     return {
-      run: async (line, scenarioIndex, record) => {
+      run: async (line, scenarioIndex, record, _group, horizon) => {
         this.runs += 1;
         // Out of order: the later the call, the fewer ticks it waits (some of them).
         this.next += 1;
         for (let i = 0; i < (this.next * 7) % 5; i += 1) await Promise.resolve();
         if (this.fail === 'run') throw new Error('worker crashed');
-        const trace = service.run(1, line, scenarioIndex, record);
+        const trace = service.run(1, line, scenarioIndex, record, horizon);
         return JSON.parse(JSON.stringify(trace)) as PlayOutTrace;
       },
       close: () => {
@@ -207,6 +207,55 @@ describe('the planner on a pool of workers', () => {
       // The pool did the play-outs: the comparison is not of two empty plannings.
       expect(compared).toBeGreaterThan(10);
     },
+  );
+
+  test.each(positions)(
+    '%s: a planning that deepens is the same on a pool: plan, work, deep play-outs and cuts, out of order',
+    async (_, make) => {
+      let deepened = 0;
+      let cutInside = 0;
+      for (const seed of [1]) {
+        // A clock that moves with every read: the planner (and `settle`) read it at the same places on one
+        // thread and on a pool, so a cut by the clock inside the deepening must come at the same play-out.
+        const reads = { n: 0 };
+        decisionOf(make(), seed).single(
+          startBudget({ budgetMs: 5000, now: () => (reads.n += 1) }, UNBOUNDED),
+        );
+        const clockBudget = (tick: number): Budget => {
+          let t = 0;
+          return startBudget({ budgetMs: 5000, now: () => (t += tick) }, UNBOUNDED);
+        };
+        const shares = Array.from({ length: 25 }, (_, i) => 0.38 + i * 0.01);
+        const ticks = [0, ...shares, 0.8, 1].map((f) => (f * 5500) / reads.n);
+        const bounds: WorkBounds[] = [UNBOUNDED];
+        const probe = decisionOf(make(), seed).single(budgetOf(UNBOUNDED));
+        const wk = probe.planning.work;
+        // Work bounds that end the deepening after its first play-out (its stretched bounds are twice these).
+        const before = probe.used - wk.deepUnits;
+        bounds.push({ budget: before + 1, limit: before + 1 }, { budget: before, limit: before });
+        for (const b of bounds) {
+          const pool = new FakePool(3);
+          const one = decisionOf(make(), seed).single(budgetOf(b));
+          const many = await decisionOf(make(), seed).pooled(budgetOf(b), pool);
+          expect(outcome(many)).toEqual(outcome(one));
+          expect(pool.closed).toBe(pool.opened);
+          if (one.planning.work.deepPlayOuts > 0) deepened += 1;
+        }
+        for (const tick of ticks) {
+          const pool = new FakePool(3);
+          const one = decisionOf(make(), seed).single(clockBudget(tick));
+          const many = await decisionOf(make(), seed).pooled(clockBudget(tick), pool);
+          expect(outcome(many)).toEqual(outcome(one));
+          const work = one.planning.work;
+          if (work.deepPlayOuts > 0) deepened += 1;
+          if (work.deepPlayOuts > 0 && work.cut !== null) cutInside += 1;
+        }
+      }
+      // The pool played deep play-outs, and the clock cut a planning inside the deepening.
+      expect(deepened).toBeGreaterThan(5);
+      expect(cutInside).toBeGreaterThan(0);
+    },
+    60_000,
   );
 
   test('a pool that fails to open or to answer changes nothing: the play-outs are played on this thread', async () => {

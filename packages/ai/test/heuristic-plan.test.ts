@@ -256,7 +256,17 @@ describe('the work of a planning (issue 653)', () => {
     });
     expect(agent.plans).toHaveLength(0);
     expect(agent.plannings).toEqual([
-      { planned: false, playOuts: 0, steps: 0, views: 0, applies: 0, cut: 'clock', ms: 0 },
+      {
+        planned: false,
+        playOuts: 0,
+        deepPlayOuts: 0,
+        deepUnits: 0,
+        steps: 0,
+        views: 0,
+        applies: 0,
+        cut: 'clock',
+        ms: 0,
+      },
     ]);
   });
 });
