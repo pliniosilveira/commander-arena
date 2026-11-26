@@ -1,5 +1,5 @@
 {
-  "parserVersion": 219,
+  "parserVersion": 220,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -1016,6 +1016,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a9c07550"
+    },
+    "0e8adf34-0834-4027-9cda-18df69239e2b": {
+      "name": "Embodiment of Fury",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4d9e427e"
     },
     "0ec5a688-a884-410c-adee-ab784789d6e8": {
       "name": "Green Slime",
@@ -2042,6 +2050,14 @@
       "reasons": [],
       "ast": "2dffbc49"
     },
+    "2084a7f6-226b-4fb4-a30e-703f674d33b4": {
+      "name": "Badgermole",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8fc1928"
+    },
     "20a6d576-a5b2-43b4-8be9-75be001e567d": {
       "name": "Treasure Nabber",
       "group": "acceptance",
@@ -2762,6 +2778,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7122c83e"
+    },
+    "2ce20f43-9357-448f-bb40-7315feb08433": {
+      "name": "Toph, the Blind Bandit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b649c6af"
     },
     "2d47a98b-5700-4096-b080-32df4d79910c": {
       "name": "Travel Through Caradhras",
@@ -5864,6 +5888,14 @@
       "reasons": [],
       "ast": "48dd05c9"
     },
+    "5e113f0f-4469-4276-82e1-0a804f3de444": {
+      "name": "Earthbending Lesson",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0fe3e490"
+    },
     "5e15ff93-99a0-4000-918e-4bd2c257188d": {
       "name": "Combat Celebrant",
       "group": "acceptance",
@@ -6504,6 +6536,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cdda8239"
+    },
+    "66b46257-b64c-4672-bf47-12bf0bcd6f8f": {
+      "name": "Sylvan Awakening",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3a94fff0"
     },
     "66e42be3-5125-41b4-9efe-8a6a66899bb6": {
       "name": "Ringsight",
@@ -8777,6 +8817,14 @@
       "reasons": [],
       "ast": "e08406c0"
     },
+    "8c1c0117-6fc0-43c5-a4c8-6472de6503d9": {
+      "name": "Toph, Hardheaded Teacher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "531716a1"
+    },
     "8c1fda45-09f1-4b58-a487-e11c868e1357": {
       "name": "Ainok Strike Leader",
       "group": "acceptance",
@@ -9937,6 +9985,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "88e3d15c"
+    },
+    "9d586c74-b1dd-4fcb-a24a-c703d250fa63": {
+      "name": "Seismic Sense",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e092528"
     },
     "9d6fdbd4-ba51-4df1-b383-9b709b36a8d7": {
       "name": "Retrieve the Esper",
@@ -12015,6 +12071,14 @@
       "reasons": [],
       "ast": "bd51f054"
     },
+    "beaf7a85-426a-4a33-80c8-33ad01614ad3": {
+      "name": "Sylvan Advocate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ddc83d9d"
+    },
     "bec6fb31-60a3-432f-ba36-aebf172f8b27": {
       "name": "Growing Ranks",
       "group": "acceptance",
@@ -13258,6 +13322,14 @@
       "reasons": [],
       "ast": "6d0089b6"
     },
+    "d1ecfad3-e79a-447b-a932-68ef728eaf1f": {
+      "name": "Rockalanche",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cedbe8c1"
+    },
     "d22ea32b-2128-4dcc-8b1c-c4c52f0b2f45": {
       "name": "Rejoin the Fight",
       "group": "acceptance",
@@ -13313,6 +13385,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2e12ae48"
+    },
+    "d33ee141-a880-4368-a274-a6ae2f2c624b": {
+      "name": "The Boulder, Ready to Rumble",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b738d171"
     },
     "d3576617-7867-4c3d-aa31-d6742483465b": {
       "name": "Chandra's Emberling",
@@ -13473,6 +13553,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6ee4c5bb"
+    },
+    "d5314006-afe0-4cdc-88f0-ff1f7d85fba9": {
+      "name": "Cracked Earth Technique",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "59d167bd"
     },
     "d55f6c70-321f-4fb4-bd33-0850ae1a7c36": {
       "name": "Narset's Reversal",
@@ -14403,6 +14491,14 @@
       "reasons": [],
       "ast": "2c2c1a15"
     },
+    "e43c31ee-1bac-4f96-8b74-334b3238ab73": {
+      "name": "Earth Kingdom General",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ed8fc358"
+    },
     "e4402d21-bb7f-4777-bc8d-b24bf2faccb0": {
       "name": "Old Fat Spider Can't See Me",
       "group": "acceptance",
@@ -14658,6 +14754,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dd5c5499"
+    },
+    "e9a24ed8-e844-4c50-b386-bc28da9989b1": {
+      "name": "Bitter Work",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "18b1499b"
     },
     "e9b6a394-691c-425a-9307-76d8edc7375e": {
       "name": "Otawara, Soaring City",
@@ -14931,6 +15035,14 @@
       "reasons": [],
       "ast": "d70e6c44"
     },
+    "ee1c7532-dc97-432d-964f-1c4087ab5248": {
+      "name": "Embodiment of Insight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7976e302"
+    },
     "ee1db746-f5c1-4dce-82eb-24b273cc9507": {
       "name": "Witherbloom Charm",
       "group": "acceptance",
@@ -15099,6 +15211,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "545cd952"
+    },
+    "f04a7763-5fba-42e5-a45a-b3dc2daba902": {
+      "name": "Earth Rumble",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "94296a74"
     },
     "f0587c55-06c1-4930-a62e-668f37464ce9": {
       "name": "Jegantha, the Wellspring",
@@ -16139,8 +16259,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1715,
-      "total": 1731
+      "supported": 1730,
+      "total": 1746
     }
   }
 }
