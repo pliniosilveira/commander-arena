@@ -194,7 +194,9 @@ export function runCastFree(
                 ? 'by paying its mana cost'
                 : ins.payInstead === undefined
                   ? 'without paying its mana cost'
-                  : 'by paying its alternative cost'
+                  : ins.payInstead.some((c) => c.kind === 'discard')
+                    ? 'by discarding a card rather than paying its mana cost'
+                    : 'by paying its alternative cost'
             }`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${

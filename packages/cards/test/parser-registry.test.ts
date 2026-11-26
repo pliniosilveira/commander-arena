@@ -149,6 +149,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.bestow': asIs,
   // Stage P23: Spectacle, Unearth and Escape are lines of their own.
   'keyword.spectacle': asIs,
+  'keyword.freerunning': asIs,
   'keyword.unearth': asIs,
   // Stage P40: Encore is a line of its own, like Unearth.
   'keyword.encore': asIs,
@@ -269,6 +270,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
+  // Flint deck (issue 685): the count of the spell's own cost reduction.
+  'amount.for-each-opponents-life-lost': spell((e) => `~ costs {1} less to cast ${e}.`),
   // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
   'amount.for-each-scried': permanent(
     (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
@@ -1089,6 +1092,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,
+  'trigger.play-card-from-exile': whenever,
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
@@ -1225,6 +1229,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.mana-spent-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
+  ),
+  // Flint deck (issue 685): the rider of the permission before it (the sentence leads with "When", which reads as a trigger alone).
+  'effect.owner-loses-life-for-spell-cast-this-way': spell(
+    (e) =>
+      `Exile the top card of your library. Until end of turn, you may play that card. ${e[0]?.toUpperCase()}${e.slice(1)}.`,
+  ),
+  // Flint deck (issue 685): the intervening "if" of a trigger about a spell that was cast.
+  'condition.discarded-card-has-madness': permanent(
+    (e) => `Whenever you discard a card, if ${e}, you gain 1 life.`,
+  ),
+  'condition.treasure-mana-spent': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, you gain 1 life.`,
   ),
   // Prismari deck, group 2 (D-646): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spell-mana-value-or-more': permanent(
@@ -1612,6 +1628,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Ahoy Mateys deck, group 4.
   'noun.each-creature-that-is-subtype-or-subtype': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
+  // Laughing Jasper Flint (issue 685): the same group in the plural, as a static ability.
+  'noun.creatures-you-control-but-dont-own': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} get +1/+1.`,
   ),
   'noun.each-creature-you-control-but-dont-own': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,

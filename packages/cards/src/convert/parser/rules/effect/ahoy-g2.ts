@@ -2,7 +2,7 @@
  * Effect rules of group 2 of the Ahoy Mateys deck (Hostage Taker, Dire Fleet Daredevil, King Narfi's Betrayal): permission to cast the cards an earlier instruction exiled, with the riders that
  * belong to the spell that is cast, and the choice of one card from each graveyard.
  */
-import { pattern } from '../../combinators';
+import { fail, pattern } from '../../combinators';
 import type { IrDuration, IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, quietly, spanned } from '../registry';
@@ -33,6 +33,7 @@ export const EFFECT_MAY_CAST_ANY_TYPE = defineRule<Clauses>({
     'you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell',
     'you may cast it this turn, and mana of any type can be spent to cast that spell',
     'cast that card this turn, and mana of any type can be spent to cast that spell',
+    'you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast it',
   ],
   rejects: [
     'you may cast that card for as long as it remains exiled',
@@ -50,7 +51,7 @@ export const EFFECT_MAY_CAST_ANY_TYPE = defineRule<Clauses>({
     const r = spanned(
       pattern(
         new RegExp(
-          `(?:you may )?cast (?:that card|it) (this turn|for as long as it remains exiled), and mana of any type can be spent to cast that spell(\\. if that spell would be put into a graveyard, exile it instead)?${BOUNDARY}(?!,| and\\b| then\\b)`,
+          `(?:you may )?cast (?:that card|it) (this turn|for as long as it remains exiled), and mana of any type can be spent to cast (that spell|it)(\\. if that spell would be put into a graveyard, exile it instead)?${BOUNDARY}(?!,| and\\b| then\\b)`,
           'iu',
         ),
       ),
@@ -58,7 +59,11 @@ export const EFFECT_MAY_CAST_ANY_TYPE = defineRule<Clauses>({
     if (!r.ok) return r;
     const { span } = r.value;
     const match = r.value.value;
-    const exileInstead = match[2] !== undefined;
+    // Cruelclaw's Heist (issue 685): "for as long as it remains exiled, and mana of any type can be spent to cast it"; "this turn ... cast it" stays unread.
+    if (match[2]?.toLowerCase() === 'it' && match[1]?.toLowerCase() === 'this turn') {
+      return fail(ctx, pos);
+    }
+    const exileInstead = match[3] !== undefined;
     const duration: IrDuration = {
       kind: 'duration',
       scope: match[1]?.toLowerCase() === 'this turn' ? 'thisTurn' : 'whileExiled',

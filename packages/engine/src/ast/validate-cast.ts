@@ -251,6 +251,14 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'spectacle') && face.types.includes('land')) {
     issue(out, `${path}.alternativeCosts`, 'spectacle is on a spell, not on a land (CR 702.137a)');
   }
+  // CR 702.173a: freerunning is a way to cast a spell, so it is on a card that is not a land.
+  if (alternatives.some((a) => a?.kind === 'freerunning') && face.types.includes('land')) {
+    issue(
+      out,
+      `${path}.alternativeCosts`,
+      'freerunning is on a spell, not on a land (CR 702.173a)',
+    );
+  }
   // CR 702.138a: escape casts a card from the graveyard, so it is on a card that is not a land, and it exiles
   // cards from the graveyard itself, which Delve would also do for the same cards (D-124 refuses the pair).
   if (alternatives.some((a) => a?.kind === 'escape')) {

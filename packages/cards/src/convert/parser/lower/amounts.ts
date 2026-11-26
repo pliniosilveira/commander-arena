@@ -383,6 +383,7 @@ export function lowerAmount(
     }
     case 'lifeGainedOrLostThisTurn':
     case 'controllerLifeLostThisTurn':
+    case 'opponentsLifeLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -1300,6 +1301,7 @@ export const AMOUNT_NEEDS = [
   'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
   'amount:controllerLifeLostThisTurn',
+  'amount:opponentsLifeLostThisTurn',
   'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',

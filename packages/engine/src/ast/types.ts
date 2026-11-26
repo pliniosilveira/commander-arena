@@ -181,6 +181,11 @@ export type Amount =
    */
   | { readonly kind: 'controllerLifeLostThisTurn' }
   /**
+   * "Each 1 life your opponents have lost this turn" (Bloodsoaked Insight, CR 119.3, 102.2): the total of the life that the controller's opponents who are still in the game have lost this
+   * turn (`SeatState.lifeLostThisTurn` of each: damage, life loss and life paid), read as the amount is counted. Valid anywhere an amount is.
+   */
+  | { readonly kind: 'opponentsLifeLostThisTurn' }
+  /**
    * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
    * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
    */
@@ -919,6 +924,11 @@ export interface ObjectFilter {
    * cost is worked out before the mana is paid: not read there). A subtype name, as `subtypes` has them.
    */
   readonly manaSpentFromSubtype?: string;
+  /**
+   * "Whenever you discard a card, if it has madness" (Anje Falkenrath, CR 702.35a, 603.4): the card has madness: one of its faces lists a madness cost (`CardFace.alternativeCosts`). Read from
+   * the card itself, so it also reads a card in a graveyard or in exile, where it has no permanent to have a keyword. `true` only.
+   */
+  readonly hasMadness?: true;
   /**
    * "The first spell you cast each turn that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2i): no other spell its caster cast this turn, before it, had mana spent on
    * it that a source of the subtype `manaSpentFromSubtype` made (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Needs `manaSpentFromSubtype`. Read as `firstXSpellThisTurn` is.
@@ -2206,6 +2216,7 @@ export type NamedAlternativeKind =
   | 'dash'
   | 'bestow'
   | 'spectacle'
+  | 'freerunning'
   | 'escape'
   | 'harmonize'
   | 'madness'
@@ -2256,6 +2267,8 @@ export type PermanentAlternativeKind =
  *   opponent lost life this turn. The engine reads that condition itself (`GameState` seats'
  *   `lifeLostThisTurn`, at the first casting step), so the card lists only the cost; a `condition` of the
  *   card is read as well.
+ * - `freerunning` (CR 702.173a, 118.9, 601.2b, Petty Larceny): the `cost` is paid instead of the mana cost of a spell, but only if the caster dealt combat damage to a player this turn
+ *   with an Assassin or a commander they controlled. The engine reads that condition itself (`TurnLog.combatDamaged`, at the first casting step), so the card lists only the cost.
  * - `escape` (D-124, CR 702.138): the card is cast from its owner's graveyard (the only alternative that is
  *   cast from there besides flashback), paying `cost` (mana only) instead of the mana cost and exiling `exile`
  *   other cards from that graveyard as part of the cost; the caster chooses them (`chooseCards`, purpose
@@ -2638,6 +2651,11 @@ export interface ChooseSelector {
    * and no `fromMoved` or `alsoGraveyard`. The chooser sees only the cards they can choose (`docs/ROADMAP.md`).
    */
   readonly fromHandOf?: PlayerSelector;
+  /**
+   * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3, 608.2d): with `fromHandOf`, the hand is revealed to every
+   * player (one public `cardsRevealed` event) before the choice. Only with `fromHandOf`.
+   */
+  readonly revealHand?: true;
   /**
    * "You may put any number of land cards that player owns from exile onto the battlefield under your control" (Oblivion Sower, CR 608.2d, 108.3, 406.3): the candidates are the matching
    * cards in exile that the player this selector names owns, whoever exiled them and whenever (not only the cards an earlier effect moved); the chooser still makes the choice. Only for
@@ -3290,6 +3308,11 @@ export type Effect =
       readonly kind: 'exileTop';
       readonly count: Amount;
       /**
+       * "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13, 401.1, 101.4): the library is that of one opponent of the controller who is still
+       * in the game, picked by the game's seeded generator as the effect runs (nothing is exiled when there is none). Not with `from`.
+       */
+      readonly randomOpponent?: true;
+      /**
        * "Exile the top two cards of target opponent's library face down" (CR 406.3, 701.13, D-187): whose library, a selector that names exactly one player
        * (a target or an opponent); left out, the controller's own. The cards belong to that player (a card is exiled from its owner's library).
        * Issue 279 (Etali, Primal Storm): `eachPlayer` ("exile the top card of each player's library") names every player: the top `count` cards of each library are exiled, one player after
@@ -3702,6 +3725,12 @@ export type Effect =
        * the permissions of the others (`rules/play-permission-one.ts`).
        */
       readonly oneOf?: true;
+      /**
+       * "When you cast a spell this way, its owner loses life equal to its mana value." (The Ruinous Powers, CR 603.7, 603.7a, 603.2, 118.4): a delayed triggered ability of the controller for
+       * each card of `objects`, created with the permission, that triggers once when that card is cast this turn (the spell is its `triggerSubject`) and ends with the turn. Its effect is
+       * exactly `loseLife` of the `ownerOf` the spell, an amount of the `manaValueOf` the spell. Needs `lasts` `endOfTurn`.
+       */
+      readonly whenCast?: Effect;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -5444,7 +5473,7 @@ export type Effect =
        * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, Lord of Luxury,
        * CR 401.2, 406.3, 608.2d): whose library is looked at, a selector that names exactly one player (a target or an opponent); left out, the controller's own. The controller looks at
        * the cards and chooses; the cards belong to the owner of the library, which is where the rest go (the bottom). Only with `take.to` `exileFaceDownUnlinked`, `hand`... (see
-       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom` (Thief of Sanity: `graveyard`, "then put the rest into their graveyard").
+       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` (equal: with `from`, any number of cards, Black Cat, Cunning Thief "exile two of them face down"; without `from`, 1), and `rest` `bottomRandom` (Thief of Sanity: `graveyard`, "then put the rest into their graveyard").
        */
       readonly from?: PlayerSelector;
       /**
@@ -5456,6 +5485,7 @@ export type Effect =
       readonly revealAll?: true;
       readonly take: {
         readonly filter: ObjectFilter;
+        /** The most cards taken. 0 with `rest` `top` (Orcish Spy, "Look at the top three cards of target player's library"): the cards are looked at and none may be taken; `from` may then name any player. */
         readonly max: number;
         /**
          * Where the cards taken go (D-145): into the hand (the default), or onto the battlefield under the controller's control,
@@ -5472,7 +5502,7 @@ export type Effect =
         // `exile` (Durnan of the Yawning Portal, CR 406.3, 701.13): "You may exile a creature card from among them": the card taken is exiled face up (no permanent remembers it); it is what `moved` names
         // afterwards, for a `mayPlay` of it (`whileExiled`). `min` and `max` of 1 or `max` of 1 with "you may"; the rest goes where `rest` says.
         // `exileFaceDownUnlinked` (Gonti, CR 406.3): exiled face down as `exileFaceDown` is, but no permanent remembers the card: it is what `moved` names afterwards, for a `mayPlay` of it
-        // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` and `max` of 1, and the rest on the bottom in a random order.
+        // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` equal to `max`, and the rest on the bottom in a random order.
         // `manifest` (Manifest dread, CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the cards you looked at that were not manifested this way into your
         // graveyard." The card taken is put onto the battlefield face down as a manifested 2/2 creature under the controller's control (CR 701.40a), unrevealed (nobody sees it, CR 708.5); what
         // `moved` names afterwards is that permanent. `min` and `max` of 1 and `hidden`, with `rest` the graveyard (a single card is manifested with no question, CR 701.62a).
@@ -5666,6 +5696,13 @@ export type Effect =
        * and its card stays its owner's. Only with `objects` a `moved` reference, and with no `play`, `max`, `perOwner`, `player`, `remember`, `paying` or `creatureGains`.
        */
       readonly fromHand?: true;
+      /**
+       * "You may cast that card by discarding a card rather than paying its mana cost" (The Infamous Cruelclaw, CR 118.9, 601.2b, 601.2h, 701.9a): the spell is cast as this resolves, with the
+       * alternative cost named instead of its mana cost: here one `discard` cost of 1, a card of the hand the caster chooses (the spell cast is in exile, never in the hand). A card is
+       * offered only when the caster has a card to discard. Only with `objects` a `moved` reference, and with no `play`, `max`, `perOwner`, `player`, `remember`, `paying`, `fromHand`
+       * or `creatureGains`.
+       */
+      readonly payInstead?: readonly Cost[];
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -8222,6 +8259,12 @@ export type Condition =
    * for `manaSpent`). Only in the intervening "if" of a `castSpell` trigger.
    */
   | { readonly kind: 'manaSpentAtLeast'; readonly count: number }
+  /**
+   * "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h, 603.4, 205.3i): the spell that caused a cast trigger (its `triggerSubject`) was paid, in part, with
+   * mana that a source with the subtype `subtype` made (`StackData.manaSpent.fromSubtypes`, as the filter `manaSpentFromSubtype` reads it). A copy of a spell was not cast and has none
+   * (CR 707.10). Only in the intervening "if" of a `castSpell` trigger, or "if" of its effect, like `manaSpentAtLeast`.
+   */
+  | { readonly kind: 'manaSpentFromSubtype'; readonly subtype: string }
   /**
    * "If this spell was cast from a graveyard" (CR 601.2, 603.4, D-206): the source, a spell on the stack (or what it was as it left it), was cast from
    * `zone`: a card cast with Flashback or any other permission from its owner's graveyard is cast from the graveyard.

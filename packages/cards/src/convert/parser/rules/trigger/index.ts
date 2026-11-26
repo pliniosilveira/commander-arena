@@ -54,6 +54,7 @@ import { ENTERS_AND_ATTACKS_TRIGGER_RULES } from './enters-and-attacks';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
 import { EXILE_CAST_TRIGGER_RULES } from './exile-cast';
+import { FLINT_TRIGGER_RULES } from './flint';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
@@ -1710,6 +1711,7 @@ export const TRIGGER_RULES = [
   ...GISA_G2_TRIGGER_RULES,
   // Death Toll deck, group D: "you play a card with two or more card types".
   ...DEATH_TOLL_D_TRIGGER_RULES,
+  ...FLINT_TRIGGER_RULES,
   // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
   ...ACTIVATES_ABILITY_TRIGGER_RULES,
   // Limit Break deck, group 4 (Professor Hojo): "one or more creatures you control become the target of an activated ability".

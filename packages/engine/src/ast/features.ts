@@ -170,6 +170,13 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeKinds',
     // Gonti, Lord of Luxury (CR 401.2, 406.3): "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (`lookAtTop.from`).
     'lookTakeFromPlayer',
+    // Orcish Spy (CR 401.2, 701.20e): "Look at the top three cards of target player's library" (`lookAtTop` with `take.max` 0).
+    'lookTakeNothing',
+    // Cruelclaw's Heist (CR 701.20a, 402.3, 608.2d): "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (`ChooseSelector.revealHand`).
+    'chooseRevealedHand',
+    // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
+    'exileTopRandomOpponent',
+    'mayPlayWhenCast',
     // Manifest dread (CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the rest into your graveyard" (`lookAtTop` `take.to` `manifest`).
     'lookTakeManifest',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
@@ -196,6 +203,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeFromGraveyard',
     // Strago and Relm (CR 608.2g, 613.1f): "If you cast a creature spell this way, it gains haste and ..." (`castFree.creatureGains`).
     'castFreeCreatureGains',
+    // The Infamous Cruelclaw (CR 118.9, 701.9a): "You may cast that card by discarding a card rather than paying its mana cost" (`castFree.payInstead`).
+    'castFreeDiscardInstead',
     // Grand Larceny deck, group B (Nashi, Moon Sage's Scion): "you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (`mayPlay.oneOf`, `mayPlay.lifeForMana`).
     'mayPlayOneLifeForMana',
     // Grand Larceny deck, group B (Silent-Blade Oni, Extract Brain): "You may cast a spell from among those cards without paying its mana cost" after looking at a hand (`castFree.fromHand`).
@@ -1242,6 +1251,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'firstCastFromExileThisTurn',
     // Most Wanted deck (Rain of Riches): "the first spell you cast each turn that mana from a Treasure was spent to cast" (`ObjectFilter.manaSpentFromSubtype`, `firstManaSpentFromSubtypeThisTurn`).
     'manaSpentFromSubtype',
+    // Flint deck (Anje Falkenrath): "if it has madness" (`ObjectFilter.hasMadness`).
+    'hasMadness',
     'firstManaSpentFromSubtypeThisTurn',
     // Scions of Spellcraft deck: "the second spell you cast each turn" (`ObjectFilter.nthSpellThisTurn`).
     'nthSpellThisTurn',
@@ -1614,6 +1625,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'descendedThisTurn',
     'playedLandThisTurn',
     'manaSpentAtLeast',
+    'manaSpentFromSubtype',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
     'wasCast',
@@ -1901,6 +1913,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
     'controllerLifeLostThisTurn',
+    'opponentsLifeLostThisTurn',
     'lifeGainedOrLostThisTurn',
     // CR 601.2i (Lifestream's Blessing): "... as you cast this spell", worked out when the spell is cast.
     'asCast',
@@ -2022,6 +2035,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dash',
     'bestow',
     'spectacle',
+    'freerunning',
     'escape',
     // CR 702.180: Harmonize.
     'harmonize',
@@ -2274,6 +2288,14 @@ export const ABILITY_FEATURES = [
   'lookTakeKinds',
   /** "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, CR 401.2, 406.3): the engine's `lookAtTop` with `from`. */
   'lookTakeFromPlayer',
+  /** "Look at the top three cards of target player's library" (Orcish Spy, CR 401.2, 701.20e): the engine's `lookAtTop` with nothing taken (`take.max` 0, `rest` `top`). */
+  'lookTakeNothing',
+  /** "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3): the engine's `ChooseSelector.revealHand` with `fromHandOf`. */
+  'chooseRevealedHand',
+  /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
+  'exileTopRandomOpponent',
+  /** "When you cast a spell this way, its owner loses life equal to its mana value" (The Ruinous Powers, CR 603.7): the engine's `mayPlay.whenCast`. */
+  'mayPlayWhenCast',
   /** "Manifest dread" (CR 701.62a): the engine's `lookAtTop` with `take.to` `manifest`, one card of the top two put onto the battlefield face down and the rest into the graveyard. */
   'lookTakeManifest',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
@@ -2300,6 +2322,8 @@ export const ABILITY_FEATURES = [
   'castFreeFromGraveyard',
   /** "If you cast a creature spell this way, it gains haste and \"At the beginning of the end step, sacrifice this creature.\"" (Strago and Relm, CR 608.2g, 613.1f): the engine's `castFree.creatureGains`. */
   'castFreeCreatureGains',
+  /** "You may cast that card by discarding a card rather than paying its mana cost" (The Infamous Cruelclaw, CR 118.9): the engine's `castFree` with `payInstead` one discard. */
+  'castFreeDiscardInstead',
   /** "Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost" (Nashi, Moon Sage's Scion, CR 118.9, 601.2): the engine's `mayPlay.oneOf` and `mayPlay.lifeForMana`. */
   'mayPlayOneLifeForMana',
   /** "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain, CR 608.2g, 402.3): the engine's `castFree.fromHand`. */
@@ -2614,6 +2638,8 @@ export const SELECTOR_KINDS = [
   'firstCastFromExileThisTurn',
   /** "A spell that mana from a Treasure was spent to cast" (CR 601.2h, Rain of Riches): the engine's `ObjectFilter.manaSpentFromSubtype`. */
   'manaSpentFromSubtype',
+  /** "If it has madness" (CR 702.35a, Anje Falkenrath): the engine's `ObjectFilter.hasMadness`. */
+  'hasMadness',
   /** "The first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2i, Rain of Riches): the engine's `ObjectFilter.firstManaSpentFromSubtypeThisTurn`. */
   'firstManaSpentFromSubtypeThisTurn',
   /** "The second spell you cast each turn" (CR 601.2i, Alisaie Leveilleur): the engine's `ObjectFilter.nthSpellThisTurn`. */
@@ -2927,6 +2953,8 @@ export const CONDITION_KINDS = [
   'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
+  /** "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h): the engine's `manaSpentFromSubtype`. */
+  'manaSpentFromSubtype',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
   'castFromZone',
   /** "When this creature enters, if you cast it" (CR 603.4): the engine's `wasCast`. */
@@ -3269,6 +3297,8 @@ export const AMOUNT_KINDS = [
   'lifeGainedThisTurn',
   /** "The amount of life you lost this turn" (Betor, CR 119.3): the engine's `controllerLifeLostThisTurn`, the controller's own life lost, valid anywhere an amount is. */
   'controllerLifeLostThisTurn',
+  /** "Each 1 life your opponents have lost this turn" (Bloodsoaked Insight, CR 119.3): the engine's `opponentsLifeLostThisTurn`, the total the controller's opponents lost. */
+  'opponentsLifeLostThisTurn',
   /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
   'lifeGainedOrLostThisTurn',
   /** "The greatest power among creatures you controlled as you cast this spell" (CR 601.2i): the engine's `asCast`, worked out when the spell is cast. */
@@ -3421,6 +3451,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'escape',
   'harmonize',
   'madness',
@@ -3519,6 +3550,10 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseExileUntilLeaves: true,
   lookTakeKinds: true,
   lookTakeFromPlayer: true,
+  lookTakeNothing: true,
+  chooseRevealedHand: true,
+  exileTopRandomOpponent: true,
+  mayPlayWhenCast: true,
   lookTakeManifest: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
@@ -3532,6 +3567,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilEachPlayer: true,
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
+  castFreeDiscardInstead: true,
   castFreeFromHand: true,
   mayPlayOneLifeForMana: true,
   copySpellPermanentGains: true,

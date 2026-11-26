@@ -40,6 +40,13 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
     }
     const faceDown = arg(clause, 'faceDown');
     if (faceDown !== undefined && faceDown.kind !== 'flag') return failure(clause);
+    // The Ruinous Powers (CR 101.4, 701.13): "Choose an opponent at random. Exile the top card of that player's library."
+    const random = arg(clause, 'randomOpponent');
+    if (random !== undefined) {
+      const blockedRandom = missingFeatures(['ability:exileTopRandomOpponent']);
+      if (random.kind !== 'flag' || from !== undefined) return failure(clause);
+      if (blockedRandom.length > 0) return failure(clause, blockedRandom);
+    }
     // Lobelia, Defender of Bag End (CR 607.2a, 406.3): "look at the top card of each opponent's library and exile those cards face down": remembered by the permanent, and looked at.
     const linked = arg(clause, 'linked');
     const lookAt = arg(clause, 'lookAt');
@@ -55,6 +62,7 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
           kind: 'exileTop',
           count: count.value,
           ...(from === undefined ? {} : { from }),
+          ...(random === undefined ? {} : { randomOpponent: true as const }),
           ...(faceDown?.value === true ? { faceDown: true as const } : {}),
           ...(linked?.value === true ? { linked: true as const } : {}),
           ...(lookAt?.value === true ? { lookAt: true as const } : {}),

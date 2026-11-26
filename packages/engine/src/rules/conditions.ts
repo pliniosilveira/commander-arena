@@ -582,6 +582,12 @@ export function evaluateCondition(
         ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
       return manaSpentOf(spell) >= condition.count;
     }
+    case 'manaSpentFromSubtype': {
+      // CR 601.2h, 205.3i: the spell that caused the cast trigger, as it is on the stack or as it last was; a copy was not cast and has no mana spent on it (CR 707.10).
+      const spell =
+        ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
+      return (spell?.stack?.manaSpent?.fromSubtypes?.[condition.subtype] ?? 0) > 0;
+    }
     case 'spellTargets': {
       if (ctx.spellTargetsMayHold === true) return true;
       // CR 601.2c, 601.2f (D-207): a target the source spell chose that the filter matches.

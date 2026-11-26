@@ -22,6 +22,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   // CR 702.103: cast as an Aura spell that enchants a creature.
   bestow: 'Bestow',
   spectacle: 'Spectacle',
+  // CR 702.173a: cheaper after combat damage to a player by an Assassin or a commander.
+  freerunning: 'Freerunning',
   escape: 'Escape',
   harmonize: 'Harmonize',
   madness: 'Madness',
@@ -113,6 +115,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
     text: 'spectacle',
     title: 'Cast for its spectacle cost: an opponent lost life this turn.',
     fact: 'Cast for its spectacle cost',
+  },
+  freerunning: {
+    text: 'freerunning',
+    title:
+      'Cast for its freerunning cost: you dealt combat damage to a player this turn with an Assassin or commander.',
+    fact: 'Cast for its freerunning cost',
   },
   escape: {
     text: 'escaped',

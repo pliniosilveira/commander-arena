@@ -220,6 +220,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'escape',
   'harmonize',
   'impending',

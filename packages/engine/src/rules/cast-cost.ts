@@ -151,6 +151,7 @@ export function isNamedAlternative(
     alternative === 'dash' ||
     alternative === 'bestow' ||
     alternative === 'spectacle' ||
+    alternative === 'freerunning' ||
     alternative === 'escape' ||
     alternative === 'harmonize' ||
     alternative === 'madness' ||
@@ -567,6 +568,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
+  // CR 118.9, 601.2b (The Infamous Cruelclaw: "You may cast that card by discarding a card rather than paying its mana cost"): the cards of the hand a free cast's alternative cost discards.
+  for (const c of payInstead ?? []) if (c.kind === 'discard') discard += c.count;
   // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
   if (alternative === 'retrace' || alternative === 'jumpStart') discard += 1;
   // CR 702.152a, 118.9 ("Blitz—{2}{R}{R}, Discard a card."): the cards of the hand a blitz cost discards are part of the alternative cost.

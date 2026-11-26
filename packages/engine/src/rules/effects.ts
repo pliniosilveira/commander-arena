@@ -1549,13 +1549,35 @@ function runEffect(
         if (choosers !== undefined && choosers.length === 0)
           return { ...done(state), lastMoved: [] };
         const [firstChooser, ...laterChoosers] = choosers ?? [];
+        // Cruelclaw's Heist (CR 701.20a, 402.3): "Target opponent reveals their hand": every card of that hand is shown to all players before the choice.
+        const revealEvents: GameEvent[] = [];
+        if (sel.revealHand === true && sel.fromHandOf !== undefined) {
+          const [owner] = resolvePlayers(state, sel.fromHandOf, ctx, targets);
+          const shown = (owner === undefined ? [] : (state.seats[owner]?.hand ?? [])).flatMap(
+            (id) => {
+              const card = state.objects[id];
+              return card?.card == null
+                ? []
+                : [{ card: card.card, name: derive(state, card).name }];
+            },
+          );
+          if (owner !== undefined && shown.length > 0) {
+            revealEvents.push({
+              kind: 'cardsRevealed',
+              seat: owner,
+              cards: shown.map((c) => c.card),
+              names: shown.map((c) => c.name),
+              from: 'hand',
+            });
+          }
+        }
         // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
         const graveyards =
           sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
         return {
           ...done(
             state,
-            [],
+            revealEvents,
             graveyards.map((graveyard) => ({
               kind: 'chooseMove' as const,
               ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
@@ -4332,6 +4354,7 @@ function runEffect(
             ...(fixed === undefined ? {} : { cards: fixed, cardsZone: 'exile' as const }),
             ...(effect.creatureGains === undefined ? {} : { creatureGains: effect.creatureGains }),
             ...(effect.fromHand === true ? { fromHand: true as const } : {}),
+            ...(effect.payInstead === undefined ? {} : { payInstead: effect.payInstead }),
             chosen: null,
           },
         ],

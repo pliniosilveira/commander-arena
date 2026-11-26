@@ -1167,6 +1167,22 @@ const CAST_THIS_WAY_PAY_LIFE =
 const PLAYER_EXILES_UNTIL_CAST =
   /^(?:target (?:opponent|player) exiles cards from the top of their library until they exile|exile cards from the top of your library until you exile) [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
+/**
+ * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, issue 685, CR 701.20a, 402.3, 608.2d): "it" is the hand the first sentence
+ * reveals and "that card" the one the second chooses, so the three sentences are one instruction (`effect.reveal-hand-choose-exile`).
+ */
+const REVEALS_THEIR_HAND = /^target (?:opponent|player) reveals their hand\.$/i;
+const YOU_CHOOSE_NONLAND_FROM_IT = /^you choose a nonland card from it\.$/i;
+const EXILE_THAT_CARD = /^exile that card\.$/i;
+/**
+ * "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, issue 685, CR 101.4, 701.13): "that player" is the opponent the first sentence chooses, so
+ * the two are one instruction (`effect.choose-random-opponent-exile-top`).
+ */
+const CHOOSE_RANDOM_OPPONENT_PLAIN = /^choose an opponent at random\.$/i;
+const EXILE_TOP_THAT_PLAYERS_LIBRARY = /^exile the top card of that player['’]s library\.$/i;
+/** The Infamous Cruelclaw (issue 685): the cast of the card found, with a card discarded rather than the mana cost paid. */
+const MAY_CAST_THAT_CARD_DISCARD =
+  /^you may cast that card by discarding a card rather than paying its mana cost\.$/i;
 const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
 /** Chaos Wand (CR 401.4): "Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." closes the three sentences of the exile of a target player. */
 const THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY =
@@ -1288,12 +1304,36 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 1;
       continue;
     }
+    // The Ruinous Powers (issue 685): the opponent chosen at random and the exile from their library are one instruction.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, CHOOSE_RANDOM_OPPONENT_PLAIN) &&
+      said(b, EXILE_TOP_THAT_PLAYERS_LIBRARY)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
+    // Cruelclaw's Heist (issue 685): the hand revealed, the card chosen from it and its exile are one instruction.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      c !== undefined &&
+      said(a, REVEALS_THEIR_HAND) &&
+      said(b, YOU_CHOOSE_NONLAND_FROM_IT) &&
+      said(c, EXILE_THAT_CARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
     // Strago and Relm (issue 97): the exile until a card is found, the free cast of it and, when there is one, what a creature spell gains.
     if (
       a !== undefined &&
       b !== undefined &&
       said(a, PLAYER_EXILES_UNTIL_CAST) &&
-      said(b, MAY_CAST_THAT_CARD_FREE)
+      (said(b, MAY_CAST_THAT_CARD_FREE) || said(b, MAY_CAST_THAT_CARD_DISCARD))
     ) {
       const last =
         c !== undefined &&
@@ -1850,11 +1890,14 @@ export function splitSentences(text: string, start: number, end: number): Span[]
       // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
       // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
       // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).
+      // Issue 685 (At Knifepoint): `... create a token with "..." This ability triggers only once each turn.` is the same, the last sentence being the limit of the trigger.
       // The same after a quoted enchant ability (issue 89, Animate Dead, CR 702.5a): `... gains "enchant creature put onto the battlefield with ~." Return ...`.
       if (
         closes &&
         /\.['’]?$/u.test(text.slice(from, i)) &&
-        (/^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end)) ||
+        (/^\s+(?:activate\b|this ability costs\b|this ability triggers only once each turn\b)/iu.test(
+          text.slice(i + 1, end),
+        ) ||
           // Issue 81 (White Sun's Twilight): a token's quoted ability ends with its period and the next sentence is the condition on X: `... "This token can't block." If X is 5 or more, ...`.
           /^\s+if x is\b/iu.test(text.slice(i + 1, end)) ||
           (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&
