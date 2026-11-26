@@ -114,6 +114,10 @@ const ACTIVATED_CAST_EXILED_RIDER =
 const LEAVE_EXILE_RIDER =
   /\. if it would leave the battlefield, exile it instead of putting it anywhere else\./i;
 
+/** "choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead." (Mission Briefing): the permission with its rider. */
+const CHOSEN_CAST_RIDER =
+  /(?:^|, then )choose an? [^.:]+ card in your graveyard\. you may cast it this turn\. if that spell would be put into your graveyard, exile it instead\./i;
+
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
 }
@@ -748,6 +752,14 @@ const WHEN_CAST_IT_GAINS_ABILITIES =
  * the three sentences (or the first two, with no rider) are one instruction (`effect.cast-exiled-with-self`).
  */
 const CHOOSE_EXILED_WITH = /(?:^|: )choose target card exiled with ~\.$/i;
+
+/**
+ * "Surveil 2, then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead." (Mission Briefing, CR 608.2d,
+ * 601.2, 614.1a): "it" is the card chosen by the first sentence and "that spell" the one cast with the permission of the second, so the three sentences (or the first two, with no rider) are one
+ * instruction (`effect.choose-graveyard-card-may-cast-it`).
+ */
+const CHOOSE_GRAVEYARD_CARD_SENTENCE = /(?:^|, then )choose an? [^.:]+ card in your graveyard\.$/i;
+const MAY_CAST_IT_THIS_TURN = /^you may cast it this turn\.$/i;
 const MAY_CAST_THAT_FREE = /^you may cast that card this turn without paying its mana cost\.$/i;
 const BOTTOM_RIDER =
   /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
@@ -1119,6 +1131,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, CHOOSE_GRAVEYARD_CARD_SENTENCE) &&
+      said(b, MAY_CAST_IT_THIS_TURN) &&
+      said(c, EXILE_THAT_SPELL_INSTEAD_YOUR)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
@@ -1222,6 +1243,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
+        (said(a, CHOOSE_GRAVEYARD_CARD_SENTENCE) && said(b, MAY_CAST_IT_THIS_TURN)) ||
         (said(a, LOOK_AT_TOP) &&
           (said(b, PUT_HAND_REST_BOTTOM) ||
             said(b, PUT_HAND_REST_TOP) ||
@@ -1716,6 +1738,12 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
   // Finale of Promise (issue 121): "If a spell cast this way would be put into your graveyard, exile it instead." belongs to the permission the first sentence gives, not to a replacement
   // effect of a permanent: the text is a spell of four sentences.
   if (FINALE_CAST.test(text.split(/(?<=\.) /u)[0] ?? '')) {
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  // Mission Briefing (CR 608.2d, 614.1a): "..., then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it
+  // instead.": the rider belongs to the permission the sentence before it gives, so the text is a spell and not a replacement effect of a permanent.
+  if (CHOSEN_CAST_RIDER.test(text) && costColon(text) <= 0) {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 

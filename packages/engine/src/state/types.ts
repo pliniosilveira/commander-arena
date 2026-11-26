@@ -1498,7 +1498,11 @@ export type Instruction =
       /** The choice in `chosen` was made by the engine (there were no more candidates than needed): the event says so. */
       readonly automatic?: true;
       /** Issue 102 (Dauthi Voidwalker): the card chosen is not moved; the controller may play it this turn (`mayPlay`), without paying its mana cost when `free`. */
-      readonly permit?: { readonly free?: true };
+      readonly permit?: {
+        readonly free?: true;
+        /** Mission Briefing (CR 608.2d, 601.2): the card chosen in the graveyard may be cast this turn (`mayCast` of what was chosen), its spell exiled instead of going to a graveyard when `exileInstead`. */
+        readonly cast?: { readonly exileInstead?: true };
+      };
       /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
       readonly decider?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */

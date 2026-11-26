@@ -7401,7 +7401,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
-        checkFilter(choose.filter, `${path}.objects.filter`, out);
+        // Counterpoint (CR 608.2g, 202.3, 608.2h): "with mana value less than or equal to that spell's mana value": the limit is the mana value of a target of this spell, worked out as the effect
+        // starts (`rules/effects.ts`), so the rest of the filter is checked without it.
+        const limit = choose.filter?.manaValueAtMost;
+        if (
+          limit !== undefined &&
+          typeof limit === 'object' &&
+          limit.kind === 'manaValueOf' &&
+          kindOf(limit.of) === 'target'
+        ) {
+          const { manaValueAtMost: _limit, ...rest } = choose.filter;
+          void _limit;
+          if (choose.filter.zone !== 'graveyard') {
+            issue(
+              out,
+              `${path}.objects.filter.manaValueAtMost`,
+              'the mana value of a target is the limit only of a card chosen from the graveyard',
+            );
+          }
+          checkAmount(limit, `${path}.objects.filter.manaValueAtMost`, scope, out);
+          checkFilter(rest, `${path}.objects.filter`, out);
+        } else {
+          checkFilter(choose.filter, `${path}.objects.filter`, out);
+        }
         // Issue 102 (Diviner of Mist): or from the controller's graveyard, with the rider that exiles the spell.
         if (choose.filter?.zone !== 'hand' && choose.filter?.zone !== 'graveyard') {
           issue(
@@ -8417,8 +8439,42 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (scope.triggerSubject !== 'permanent') {
           issue(out, `${path}.objects`, "'triggerCard' needs a trigger about a permanent");
         }
+      } else if (kindOf(e.objects) === 'choose') {
+        // Mission Briefing (CR 608.2d): "choose an instant or sorcery card in your graveyard. You may cast it this turn": one card of the controller's graveyard, chosen as the effect resolves.
+        const choose = e.objects as ChooseSelector;
+        checkFilter(choose.filter, `${path}.objects.filter`, out);
+        if (
+          choose.filter?.zone !== 'graveyard' ||
+          e.from !== undefined ||
+          e.adventure !== undefined ||
+          e.anyGraveyard !== undefined ||
+          e.whenCast !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.objects`,
+            'a card chosen for a cast permission is one of the controller\'s graveyard: the filter says zone "graveyard", and the permission has no from, adventure, anyGraveyard or whenCast',
+          );
+        }
+        if (
+          choose.count !== undefined ||
+          choose.anyNumber !== undefined ||
+          choose.optional !== undefined ||
+          choose.atLeastOne !== undefined ||
+          choose.greatest !== undefined ||
+          choose.least !== undefined ||
+          choose.chosenBy !== undefined ||
+          choose.alsoGraveyard !== undefined ||
+          filterSome(choose.filter, (f) => f.owner !== undefined || f.stackKind !== undefined)
+        ) {
+          issue(
+            out,
+            `${path}.objects`,
+            'one card is chosen: no count, anyNumber, optional, greatest, least, chosenBy, alsoGraveyard, owner or stackKind',
+          );
+        }
       } else if (kindOf(e.objects) !== 'target') {
-        issue(out, `${path}.objects`, 'a cast permission names a target card');
+        issue(out, `${path}.objects`, 'a cast permission names a target or a chosen card');
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
       }

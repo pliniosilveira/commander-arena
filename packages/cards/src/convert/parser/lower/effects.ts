@@ -111,6 +111,7 @@ import { GRAVECAST_LOWERINGS } from './gravecast';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
+import { GYCAST_LOWERINGS } from './gycast';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
@@ -968,6 +969,8 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       },
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
+      // "... to the battlefield with a finality counter on it" (CR 122.6): the counter it enters with.
+      ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
     };
     // "... onto the battlefield tapped and attacking" (stage P34, D-152, CR 508.4): the creature joins the combat, never declared as an
     // attacker, so nothing triggers from the declaration; the engine's `enterAttacking` of what was just put.
@@ -2853,6 +2856,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUICK_DRAW_LOWERINGS,
   ...KEFKA_LOWERINGS,
   ...F144_LOWERINGS,
+  ...GYCAST_LOWERINGS,
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
   ...REVEAL_CHOSEN_TYPE_LOWERINGS,

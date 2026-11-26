@@ -168,6 +168,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFreeCreatureGains',
     // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
     'castPayingFromLinkedExile',
+    // Counterpoint (CR 608.2g, 202.3, 608.2h): "cast a spell from your graveyard with mana value less than or equal to that spell's mana value without paying its mana cost" (`castFree` of a `choose` from the graveyard whose `manaValueAtMost` reads the mana value of a target).
+    'castFreeManaValueOfTarget',
+    // Mission Briefing (CR 608.2d, 601.2, 611.2a): "choose an instant or sorcery card in your graveyard. You may cast it this turn" (`mayCast` of a `choose` selector of the graveyard).
+    'mayCastChosenFromGraveyard',
     // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
     'chosenByOpponent',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
@@ -1960,6 +1964,10 @@ export const ABILITY_FEATURES = [
   'castFreeCreatureGains',
   /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
   'castPayingFromLinkedExile',
+  /** "Cast a spell from your graveyard with mana value less than or equal to that spell's mana value without paying its mana cost" (Counterpoint, CR 608.2g, 202.3, 608.2h): the engine's `castFree` of a graveyard `choose` with the mana value of a target as its limit. */
+  'castFreeManaValueOfTarget',
+  /** "Choose an instant or sorcery card in your graveyard. You may cast it this turn" (Mission Briefing, CR 608.2d, 601.2, 611.2a): the engine's `mayCast` of a `choose` selector of the graveyard. */
+  'mayCastChosenFromGraveyard',
   /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
   'chosenByOpponent',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
@@ -2997,6 +3005,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   castFreeFromGraveyard: true,
   castFreeCreatureGains: true,
   castPayingFromLinkedExile: true,
+  castFreeManaValueOfTarget: true,
+  mayCastChosenFromGraveyard: true,
   chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,

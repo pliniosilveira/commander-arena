@@ -409,8 +409,12 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     "up to one target instant or sorcery card from defending player's graveyard",
     // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
     'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
+    // Mirko, Obsessive Theorist (CR 208.1): less than the power of the permanent with the ability.
+    "target creature card with power less than ~'s from your graveyard",
   ],
   rejects: [
+    "target creature card with power less than ~'s",
+    "target creature card with power less than ~'s power from your graveyard",
     "target creature card with mana value equal to that card's mana value from your graveyard",
     "target creature card with mana value equal to that spell's mana value",
     "target instant or sorcery card from the defending player's graveyard",
@@ -437,7 +441,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   ],
   parse: targetOf(ID.targetGraveyard, (plural) =>
     // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
-    graveyardPhrase(plural, 'from', graveyardLimit),
+    graveyardPhrase(plural, 'from', graveyardLimit, false, false, false, true),
   ),
 });
 

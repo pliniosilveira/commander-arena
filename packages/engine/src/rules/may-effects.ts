@@ -142,6 +142,8 @@ export function runMayCast(
   // Lorehold group 2 (CR 601.2, 118.9, 614.1a): "Choose target card exiled with this creature. You may cast that card this turn without paying its mana cost": a card in
   // exile, whoever owns it (the effect names it), is given a permission to be cast (never played as a land), free and with the library rider when the effect says so.
   const fromExile = effect.from === 'exile';
+  // A card chosen as the effect resolves (Mission Briefing) is chosen first (`rules/effects.ts`, `rules/move-choice.ts`), and the permission is then given to it as `moved`.
+  if (effect.objects.kind === 'choose') return done(state);
   const cards = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
     const card = state.objects[id];
     // Issue 159: "a creature card in a graveyard": a card of any player's graveyard; otherwise only the controller's ("from your graveyard").
