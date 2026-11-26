@@ -64,14 +64,12 @@ describe('the cards are valid', () => {
           },
         ],
       }) as never;
-    const clue = { kind: 'preset', preset: 'Clue' };
-    const food = { kind: 'preset', preset: 'Food' };
+    const clue = 'Clue';
+    const food = 'Food';
     expect(validateCard(withRule({ mode: 'eachOf', tokens: [clue, food] }))).toEqual([]);
     expect(validateCard(withRule({ mode: 'eachOf', tokens: [clue] }))).not.toEqual([]);
     expect(validateCard(withRule({ mode: 'eachOf' }))).not.toEqual([]);
-    expect(
-      validateCard(withRule({ mode: 'eachOf', tokens: [clue, { kind: 'copyOf' }] })),
-    ).not.toEqual([]);
+    expect(validateCard(withRule({ mode: 'eachOf', tokens: [clue, 'Dragon'] }))).not.toEqual([]);
   });
 });
 

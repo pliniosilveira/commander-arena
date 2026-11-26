@@ -18,6 +18,7 @@ import { withoutBannedTargets } from './attack-bans';
 import { attackTargets } from './attack-targets';
 import { payableAttackTax, untaxedTargets } from './attack-tax';
 import { payableBlockTax } from './block-tax';
+import { blockersLeft, combatCreatureLimit } from './combat-limits';
 import { controllerOf } from './control';
 import { attackerDefender } from './defending';
 import { derive } from './derive';
@@ -223,9 +224,17 @@ export function validateAttacks(
     seen.add(a.attacker);
     if (!candidate.targets.some((t) => sameTarget(t, a.target))) return 'That cannot be attacked';
   }
+  // CR 508.1c, 604.1 (Silent Arbiter): "No more than one creature can attack each combat" is a restriction on the declaration.
+  const limit = combatCreatureLimit(state, 'attack');
+  if (limit !== null && attacks.length > limit) {
+    return `No more than ${limit} creature${limit === 1 ? '' : 's'} can attack each combat`;
+  }
   // CR 508.1d: a requirement that could be obeyed must be: a creature that attacks each combat if
-  // able and is able to attack has to be declared.
-  if (requiredAttackers(state, candidates).some((id) => !seen.has(id))) {
+  // able and is able to attack has to be declared. With a limit on the attackers the requirements are obeyed as far as it lets them be: a full declaration leaves the others out.
+  if (
+    (limit === null || attacks.length < limit) &&
+    requiredAttackers(state, candidates).some((id) => !seen.has(id))
+  ) {
     return 'A creature that attacks each combat if able must attack';
   }
   // CR 508.1h: the cost of attacking ("can't attack you unless their controller pays") must be payable once the
@@ -252,6 +261,17 @@ function controlsLandWalked(state: GameState, defender: SeatId, landType: string
 }
 
 /**
+ * How many creatures must block `attacker` if any do: two for menace (CR 702.111b), three for "can't be blocked except by three or more creatures" (CR 509.1b), otherwise one;
+ * the larger when it has both.
+ */
+export function minBlockersOf(state: GameState, attacker: GameObject): number {
+  const menace = hasKeyword(state, attacker, 'menace') ? 2 : 1;
+  return hasRestriction(state, attacker, 'cantBeBlockedExceptByThreeOrMore')
+    ? Math.max(menace, 3)
+    : menace;
+}
+
+/**
  * The evasion and "can't be blocked" restrictions of CR 509.1b that look at the attacker: a creature
  * that can't be blocked, landwalk (CR 702.14c), fear (CR 702.36b), intimidate (CR 702.13b),
  * skulk (CR 702.118b) and shadow (CR 702.28b, both directions). Different evasion abilities are cumulative (CR 509.1b).
@@ -262,7 +282,8 @@ function evades(state: GameState, blocker: GameObject, attacker: GameObject): bo
   // CR 509.1b, 702.111b (D-133): menace needs two blockers and the restriction allows one, so nothing can block it.
   if (
     a.restrictions.includes('cantBeBlockedByMoreThanOne') &&
-    abilitiesHaveKeyword(a.abilities, 'menace')
+    (abilitiesHaveKeyword(a.abilities, 'menace') ||
+      a.restrictions.includes('cantBeBlockedExceptByThreeOrMore'))
   ) {
     return true;
   }
@@ -396,7 +417,7 @@ function unmetBlockRequirements(
     .filter((c) => hasRestriction(state, getObject(state, c.blocker), 'mustBlock'))
     .map((c) => c.blocker);
   if (required.length === 0 && requiredBlockers.length === 0) return false;
-  const need = (a: ObjectId) => (hasKeyword(state, getObject(state, a), 'menace') ? 2 : 1);
+  const need = (a: ObjectId) => minBlockersOf(state, getObject(state, a));
   const attackerRules = [...new Set(candidates.flatMap((c) => c.canBlock))].map((attacker) => ({
     attacker,
     min: need(attacker),
@@ -483,6 +504,9 @@ export function validateBlocks(
     if (!candidate.canBlock.includes(b.attacker)) return 'That creature cannot block that attacker';
     perAttacker.set(b.attacker, (perAttacker.get(b.attacker) ?? 0) + 1);
   }
+  // CR 509.1b, 604.1 (Silent Arbiter): "No more than one creature can block each combat": the blockers of every defending player together.
+  const room = blockersLeft(state);
+  if (room !== null && seen.size > room) return 'Too many creatures would block this combat';
   // CR 509.1b (D-133): "can't be blocked by more than one creature".
   for (const [attacker, count] of perAttacker) {
     if (
@@ -492,10 +516,13 @@ export function validateBlocks(
       return 'That attacker cannot be blocked by more than one creature';
     }
   }
-  // CR 509.1b, 702.111b: a creature with menace can't be blocked except by two or more creatures.
+  // CR 509.1b, 702.111b: a creature with menace can't be blocked except by two or more creatures, and one that "can't be blocked except by three or more creatures" needs three.
   for (const [attacker, count] of perAttacker) {
-    if (count === 1 && hasKeyword(state, getObject(state, attacker), 'menace')) {
-      return 'A creature with menace needs two or more blockers';
+    const need = minBlockersOf(state, getObject(state, attacker));
+    if (count < need) {
+      return need === 2
+        ? 'A creature with menace needs two or more blockers'
+        : `That attacker needs ${need} or more blockers`;
     }
   }
   // CR 509.1c (D-206): "must be blocked if able": the declaration obeys as many of these requirements as any legal declaration could.

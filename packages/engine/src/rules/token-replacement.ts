@@ -170,15 +170,18 @@ function applyEffect(
   if (effect.replacement.mode === 'double') {
     return batch.map((part) => (hit.includes(part) ? { ...part, count: part.count * 2 } : part));
   }
-  // CR 614.1a (Academy Manufactor): each matching part, of n tokens, becomes n of each of the listed tokens.
+  // CR 614.1a, 614.5 (Academy Manufactor): "instead create one of each": each matching part is replaced by as many of every named token as it had of its own.
   if (effect.replacement.mode === 'eachOf') {
-    const tokens = effect.replacement.tokens.map((t) => TOKEN_PRESETS[t.preset]);
-    return [
-      ...batch.filter((part) => !hit.includes(part)),
-      ...hit.flatMap((part) =>
-        tokens.map((definition) => ({ definition, count: part.count, original: false })),
-      ),
-    ];
+    const kinds = effect.replacement.tokens;
+    return batch.flatMap((part) =>
+      hit.includes(part)
+        ? kinds.map((kind) => ({
+            definition: TOKEN_PRESETS[kind],
+            count: part.count,
+            original: false,
+          }))
+        : [part],
+    );
   }
   const made = madeBy(effect);
   if (made === null) return batch;
@@ -327,7 +330,7 @@ export function describeBatch(batch: readonly TokenBatch[]): readonly string[] {
 const effectText = (effect: TokenEffect): string => {
   const made = madeBy(effect);
   if (effect.replacement.mode === 'eachOf') {
-    return `Create one of each (${effect.replacement.tokens.map((t) => t.preset).join(', ')}) instead`;
+    return `Create one of each of ${effect.replacement.tokens.join(', ')} instead`;
   }
   if (made === null) return 'Create twice that many of those tokens instead';
   const name = made.name;

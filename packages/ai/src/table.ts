@@ -2,13 +2,15 @@
  * The table harness (issue 482): the match harness of `arena.ts` for three or four seats. One agent factory for each seat of the first game; every seed is played once for each
  * rotation of the agents, so each agent sits in every seat on the same shuffles (the two-seat harness swaps; a table rotates). With the same deck in every seat (a mirror), the
  * rotation balances seats and deals, as the swap does. Deterministic as `playMatch` is: the game seed of seed `i` is `baseSeed + i`, the deck is `decks[i % decks.length]` and the
- * seed of agent `k` is derived from the game seed and `k`, the same for every rotation of a seed. A game that ends without a result is `unfinished`, not a draw.
+ * agent seed of each seat is derived from the game seed and the seat, whichever agent sits there, so copies of one agent play the same game in every rotation (common random numbers, as in
+ * `playMatch`). A game that ends without a result is `unfinished`, not a draw.
  */
 import type { DeckConfig, SeatId } from '@commander-arena/engine';
 import type { Agent } from './agent';
 import { type AgentFactory, MATCH_LIMITS, type ReasonCounts } from './arena';
 import { isExplaining, type Reason, type ReasonRecord, reasonHistogram } from './reasons';
 import { type EndReason, type RunOptions, runGame } from './runner';
+import { type TableEvent, TableObserver } from './table-events';
 
 /** One deck for every seat (a mirror), or one deck for each seat, in seat order (issue 527: a precon for each seat). */
 export type TableDeck = DeckConfig | readonly DeckConfig[];
@@ -26,6 +28,8 @@ export interface TableOptions {
   readonly budget?: number;
   readonly now?: () => number;
   readonly limits?: Pick<RunOptions, 'maxTurns' | 'maxActions'>;
+  /** Keep the events of every game in `TableGame.events` (what `table-report.ts` reads). Off by default. */
+  readonly trace?: boolean;
 }
 
 export interface TableGame {
@@ -39,6 +43,15 @@ export interface TableGame {
   readonly end: EndReason;
   readonly drew: boolean;
   readonly turns: number;
+  /**
+   * The place each SEAT finished in (1 is the winner; the first out of four is 4; every survivor of a game
+   * without a winner shares 1), by seat. Use `rotation` to find the agent: agent `k` sat in seat `(k + rotation) % seats`.
+   */
+  readonly places: readonly number[];
+  /** The seat that took the first turn (drawn at random by the engine), or null when no action was taken. */
+  readonly startingSeat: SeatId | null;
+  /** The events of the game, only when `TableOptions.trace` is on. */
+  readonly events?: readonly TableEvent[];
 }
 
 export interface TableResult {
@@ -104,13 +117,20 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
     const entry = options.decks[deckIndex] as TableDeck;
     const decks = decksOf(entry, seats);
     for (let rotation = 0; rotation < seats; rotation += 1) {
-      const made = options.agents.map((factory, k) => factory.create(seats * seed + k + 1));
+      // The seed goes with the seat of agent k, not with the agent (see the header).
+      const made = options.agents.map((factory, k) =>
+        factory.create(seats * seed + ((k + rotation) % seats) + 1),
+      );
       // Agent k sits in seat (k + rotation) % seats.
       const bySeatAgent = Array.from({ length: seats }, (_, seat) => {
         const k = (seat - rotation + seats) % seats;
         return made[k] as Agent;
       });
-      const game = await runGame({ seed, decks }, bySeatAgent, run);
+      const observer = new TableObserver(seats);
+      const game = await runGame({ seed, decks }, bySeatAgent, {
+        ...run,
+        onAction: (step) => observer.observe(step),
+      });
       turns += game.state.turn.number;
       fallbacks += game.counters.fallbacks;
       rejectedActions += game.counters.rejectedActions;
@@ -146,6 +166,9 @@ export async function playTable(options: TableOptions): Promise<TableResult> {
         end: game.reason,
         drew: game.result?.kind === 'draw',
         turns: game.state.turn.number,
+        places: observer.placements(),
+        startingSeat: observer.startingSeat(),
+        ...(options.trace ? { events: observer.events } : {}),
       });
     }
   }

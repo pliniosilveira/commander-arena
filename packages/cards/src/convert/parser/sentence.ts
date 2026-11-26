@@ -17,6 +17,7 @@ import {
 } from './combinators';
 import type { IrAmount, IrClause, IrCondition, IrNoun, IrSentence } from './ir/types';
 import { CHOSEN_PLAYER_CONDITION_RULES } from './rules/condition/chosen-player';
+import { CONDITION_THIS_HAS_COUNTER_COUNT } from './rules/condition/counter-count';
 import { LEAD_GAME_STATE_CONDITIONS } from './rules/condition/game-state';
 import { CLAUSE_JOIN, connectorOf, listWithJoins } from './rules/effect/operands';
 import { spellPhrase, withoutZone } from './rules/noun/phrases';
@@ -38,12 +39,13 @@ const SENTENCE_END: Parser<string> = choice(literal('.'), QUOTE_ENDS_SENTENCE);
 /**
  * The bare comma between the instructions of a list of three or more ("Shuffle your graveyard into your library, draw X cards, untap up to five lands, and you
  * have no maximum hand size", CR 608.2c: followed in the order written): only when the sentence goes on to a closing ", and " (the last join of the list), so a
- * comma that ends an instruction before something else ("..., where X is ...") is not taken for one.
+ * comma that ends an instruction before something else ("..., where X is ...") is not taken for one. The list may close with ", then " as well
+ * ("Amass Orcs 5, mill five cards, then return a creature card from your graveyard to the battlefield", CR 608.2c).
  */
 const LIST_COMMA: Parser<string> = (ctx, pos) => {
   const comma = literal(', ')(ctx, pos);
   if (!comma.ok) return comma;
-  return /^[^.]*, and /u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
+  return /^[^.]*, (?:and |then )/u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
 };
 
 const CLAUSE_ITEM = family<readonly IrClause[]>('effect');
@@ -79,6 +81,10 @@ const CLAUSES_WITH_OFFER: Parser<{ items: (readonly IrClause[])[]; joins: string
 const RECURSION_LEAD_CONDITIONS = [
   'condition.exiled-this-way',
   'condition.it-matches',
+  // Uglúk of the White Hand: "If that creature was a Goblin or Orc, put two +1/+1 counters on ~ instead."
+  'condition.that-was-either',
+  // Moria Scavenger (CR 602.2b, 701.9a): "If the discarded card was a creature card, amass Orcs 1." in the body of an activated ability whose cost discards.
+  'condition.discarded-card-matches',
   // D-298: "If its mana value was 3 or less, scry 1."
   'condition.its-mana-value',
   'condition.gift-promised',
@@ -96,6 +102,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.foretold',
   // Burning Curiosity (CR 118.8, 701.68a): "If this spell's additional cost was paid, exile the top three cards instead."
   'condition.additional-cost-paid',
+  // Baleful Mastery (CR 118.9): "If the {1}{B} cost was paid, an opponent draws a card."
+  'condition.alt-cost-paid',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
@@ -151,6 +159,8 @@ const TURN_CONDITIONS = [
   'condition.first-combat-phase',
   // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
   'condition.entered-this-turn',
+  // Mind Flayarrrs deck (River of Tears): "{T}: Add {U}. If you played a land this turn, add {B} instead." (CR 305.1, 605.3b).
+  'condition.played-land-this-turn',
 ] as const;
 
 /**
@@ -164,7 +174,7 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  * "If the result is 1, ..." (D-271, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
  * instruction; the lowering reads it only after a roll of the same text.
  */
-const DIE_CONDITIONS = ['condition.die-result'] as const;
+const DIE_CONDITIONS = ['condition.die-result', 'condition.die-result-range'] as const;
 
 /**
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
@@ -210,6 +220,8 @@ const LEAD_CONDITIONS = [
   'condition.put-counters-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
+  // Elven Council deck: "If time gets more votes, ..." after a vote.
+  'condition.vote-result',
   // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.
   'condition.two-milled-cards-share-all-types',
   // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
@@ -222,6 +234,8 @@ const LEAD_CONDITIONS = [
   'condition.there-are-counters-on-self',
   // Kes, Evolving Telepath: "Then if she has nine or more time counters on her, sacrifice her." (CR 122.1, 608.2c).
   'condition.this-counter-count',
+  // Incubation Druid: "If ~ has a +1/+1 counter on it, add three mana of that type instead." (CR 122.1, 608.2c).
+  'condition.this-has-counter',
   // Fevered Visions: "If the player is your opponent and has four or more cards in hand, ~ deals 2 damage to that player." (CR 603.2b, 402.1, 608.2c).
   'condition.the-player-is-opponent-with-cards',
   // Transpose (CR 702.88a): "If this spell was cast from your hand, ..." in the text of a spell.
@@ -264,6 +278,8 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
                 'condition.you-dont-put-it-onto-battlefield',
                 // D-411 (Danitha deck group 2): "If you don't, put a +1/+1 counter on this creature." after "You may put a land card from among them into your hand."
                 'condition.if-you-dont',
+                // Eldrazi Monument (CR 701.21a): "If you can't, sacrifice ~." after "sacrifice a creature."
+                'condition.if-you-cant',
                 ...LEAD_CONDITIONS,
               ]
             : ['condition.kicked', ...LEAD_CONDITIONS],
@@ -313,8 +329,16 @@ const TRAILING_CONDITIONS = [
   'condition.it-was-attacking',
   // Selvala, Heart of the Wilds: "its controller may draw a card if its power is greater than each other creature's power" (CR 608.2c).
   'condition.its-stat-greater-than-each-other',
+  // Shelinda, Yevon Acolyte: "put a +1/+1 counter on that creature if its power is less than ~'s power" (CR 608.2c).
+  'condition.its-power-less-than-self',
   // Limit Break deck, group 4 (Vincent, Vengeful Atoner): "it deals that much damage to each other opponent if ~'s power is 7 or greater".
   'condition.this-power',
+  // Summoner's Sending: "put a +1/+1 counter on it if the exiled card's mana value is 4 or greater".
+  'condition.exiled-mana-value-at-least',
+  // Descend upon the Sinful, Unholy Heat (CR 207.2c, 205.2a): "Create a 4/4 ... token if there are four or more card types among cards in your graveyard." (Delirium).
+  'condition.card-types-among',
+  // Zimone, Mystery Unraveler: "manifest dread if this is the first time this ability has resolved this turn. Otherwise, ..." (CR 608.2c).
+  'condition.resolved-times',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -372,6 +396,15 @@ interface SentenceOptions {
    * of a triggered ability asks for it, where the lowering joins the two.
    */
   readonly afterExile?: boolean;
+  /**
+   * "When you reveal a creature card this way, ..." may start the sentence (Yuna's Whistle, CR 603.12): the reflexive ability the "reveal cards until" before it creates. The text of a spell asks for it.
+   */
+  readonly afterReveal?: boolean;
+  /**
+   * "When you do, if it has four or more quest counters on it, ..." may start the sentence (Earthbender Ascension, CR 603.12, 603.4): the reflexive ability of the counter put by the sentence
+   * before it. Only the body of a triggered ability asks for it, where the lowering joins the two.
+   */
+  readonly afterCounters?: boolean;
   /**
    * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
@@ -458,6 +491,21 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
         whose: 'you' as const,
       }),
     ),
+    // Forth Eorlingas! (CR 603.7, 603.2c, 510.2): the creatures that deal combat damage in one event to players, this turn.
+    map(
+      literal(
+        'whenever one or more creatures you control deal combat damage to one or more players this turn, ',
+      ),
+      () => ({
+        step: 'combatDamageBatch' as const,
+        whose: 'you' as const,
+      }),
+    ),
+    // Massacre Girl (CR 603.7, 603.10a, 700.4): the creatures that die, any player's, for the rest of the turn.
+    map(literal('whenever a creature dies this turn, '), () => ({
+      step: 'creatureDies' as const,
+      whose: 'you' as const,
+    })),
     // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
     EACH_CAST_LEAD,
@@ -576,6 +624,35 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let reflexive = false;
     let afterDiscard: IrSentence['afterDiscard'];
     let afterExile = false;
+    let afterReveal: string | undefined;
+    let afterCounters: IrSentence['afterCounters'];
+    if (options.afterCounters === true) {
+      const lead = sequence(
+        literal('when you do, if '),
+        CONDITION_THIS_HAS_COUNTER_COUNT.parse,
+        literal(', '),
+      )(ctx, start);
+      const test = lead.ok ? lead.value[1].test : undefined;
+      if (
+        lead.ok &&
+        test?.kind === 'amountIs' &&
+        test.amount.kind === 'countersOn' &&
+        test.amount.counter !== undefined &&
+        test.compare.cmp === 'atLeast'
+      ) {
+        reflexive = true;
+        afterCounters = { counter: test.amount.counter, atLeast: test.compare.value };
+        at = lead.pos;
+      }
+    }
+    if (options.afterReveal === true) {
+      const lead = pattern(/when you reveal an? ([a-z]+) card this way, /iu)(ctx, start);
+      if (lead.ok) {
+        reflexive = true;
+        afterReveal = (lead.value[1] ?? '').toLowerCase();
+        at = lead.pos;
+      }
+    }
     if (options.afterDiscard === true) {
       // "When you discard a card this way, ..." (Summon: Kujata) is made by any card, the nonland one by a card that is not a land.
       const lead = choice(
@@ -672,7 +749,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
                       options.may === 'afterTest'
                         ? pattern(
                             condition === undefined
-                              ? /(?=you may search )/iu
+                              ? /(?=you may (?:search |return that card to the battlefield ))/iu
                               : /(?=you may (?:add|search ))/iu,
                           )(c, p)
                         : undefined;
@@ -751,9 +828,15 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
-        ...(reflexive && afterDiscard === undefined && !afterExile
+        ...(reflexive &&
+        afterDiscard === undefined &&
+        !afterExile &&
+        afterReveal === undefined &&
+        afterCounters === undefined
           ? { reflexive: true as const }
           : {}),
+        ...(afterReveal === undefined ? {} : { afterReveal }),
+        ...(afterCounters === undefined ? {} : { afterCounters }),
         ...(afterExile ? { afterExile: true as const } : {}),
         ...(afterDiscard === undefined ? {} : { afterDiscard }),
         ...(delayed === undefined ? {} : { delayed }),
@@ -783,6 +866,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   dieRows: true,
   // Tip the Scales (CR 603.12): "Sacrifice a creature. When you do, ...": the lowering reads a reflexive ability only after an instruction it can tell was done.
   reflexive: true,
+  // Yuna's Whistle: "When you reveal a creature card this way, put X +1/+1 counters on target creature you control, where X is the mana value of that card."
+  afterReveal: true,
 });
 
 /**
@@ -812,6 +897,8 @@ export const LOYALTY_SENTENCE: Parser<IrSentence> = sentenceParser({
   unless: true,
   ifYouDo: true,
   reflexive: true,
+  // Narset of the Ancient Way: "Draw a card, then you may discard a card. When you discard a nonland card this way, ~ deals damage equal to that card's mana value to target creature or planeswalker."
+  afterDiscard: true,
   delayed: true,
 });
 
@@ -827,4 +914,6 @@ export const TRIGGER_SENTENCE: Parser<IrSentence> = sentenceParser({
   delayed: true,
   // Cait Sith, Fortune Teller: "When you exile a card this way, target creature you control gets +X/+0 until end of turn, where X is that card's mana value."
   afterExile: true,
+  // Earthbender Ascension: "Put a quest counter on ~. When you do, if it has four or more quest counters on it, put a +1/+1 counter on target creature you control."
+  afterCounters: true,
 });

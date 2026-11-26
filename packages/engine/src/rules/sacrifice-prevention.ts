@@ -5,13 +5,25 @@
  */
 import type { ObjectId } from '../ids';
 import type { GameState } from '../state/types';
+import { controllerOf } from './control';
 import { derive } from './derive';
 import { mayHaveStatic } from './printed-statics';
 
 /** Whether the permanent `id` has the ability `cantBeSacrificed` as `derive` has it now (a cheap check of its printed abilities comes first). */
 export function cantBeSacrificed(state: GameState, id: ObjectId): boolean {
   const obj = state.objects[id];
-  if (obj === undefined || !mayHaveStatic(state, obj, 'cantBeSacrificed')) return false;
+  if (obj === undefined) return false;
+  // CR 701.21a, 101.2 (Call for Aid): "You can't sacrifice those creatures this turn": the player who made the effect, while they control the permanent (only its controller can sacrifice it).
+  for (const e of state.continuousEffects) {
+    if (
+      e.change.kind === 'controllerCantSacrifice' &&
+      e.objects.includes(id) &&
+      controllerOf(state, obj) === e.change.seat
+    ) {
+      return true;
+    }
+  }
+  if (!mayHaveStatic(state, obj, 'cantBeSacrificed')) return false;
   return derive(state, obj).abilities.some(
     (a) => a.kind === 'static' && a.static.kind === 'cantBeSacrificed',
   );

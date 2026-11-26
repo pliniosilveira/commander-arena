@@ -25,7 +25,11 @@ describe('the trigger "putIntoGraveyard"', () => {
   test.each([
     { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
     { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', filter: land },
+    // Yuma, Proud Protector: a land type of the card in the graveyard (CR 205.3i).
+    { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', filter: { subtypes: ['Desert'] } },
     { kind: 'putIntoGraveyard', who: 'you', from: 'library', batch: true },
+    // Nihilith: a card put into an opponent's graveyard, one trigger for each card.
+    { kind: 'putIntoGraveyard', who: 'opponent', from: 'anywhere' },
     // Syr Konrad, the Grim: any player's graveyard, from any zone but the battlefield.
     { kind: 'putIntoGraveyard', who: 'any', from: 'notBattlefield', filter: creature },
     // Insidious Roots and Syr Konrad: the creature cards that leave your graveyard, in a batch or each.
@@ -45,7 +49,12 @@ describe('the trigger "putIntoGraveyard"', () => {
   });
 
   test.each([
-    [{ kind: 'putIntoGraveyard', who: 'opponent', from: 'anywhere' }, 'unknown player'],
+    // "An opponent's graveyard" is read since Nihilith; another player word is still unknown.
+    [{ kind: 'putIntoGraveyard', who: 'everyone', from: 'anywhere' }, 'unknown player'],
+    [
+      { kind: 'putIntoGraveyard', who: 'opponent', from: 'anywhere', batch: true },
+      'goes with a trigger for each card',
+    ],
     [{ kind: 'putIntoGraveyard', who: 'you', from: 'hand' }, 'from must be'],
     [
       {

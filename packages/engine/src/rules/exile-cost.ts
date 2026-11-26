@@ -4,6 +4,8 @@
  * holds exactly that many besides the spell); each goes from the graveyard to exile, a `zoneChanged` event
  * apiece. The cards are public, like those discarded, since they go to a public zone.
  */
+
+import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
@@ -17,6 +19,15 @@ export function exilePrompt(count: number): string {
   return `Exile ${n} other ${count === 1 ? 'card' : 'cards'} from your graveyard.`;
 }
 
+/** "Exile three creature cards from your graveyard.": the question of a cost that names a kind of card. */
+export function exileKindPrompt(count: number, filter: ObjectFilter): string {
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+  const n = words[count] ?? String(count);
+  const kind = (filter.types ?? []).join(' or ');
+  const noun = `${kind === '' ? '' : `${kind} `}${count === 1 ? 'card' : 'cards'}`;
+  return `Exile ${n} ${noun} from your graveyard.`;
+}
+
 /**
  * The question "which other cards do you exile?" for an escape cost: exactly `count` of `graveyard`, public. It
  * is always a cost being paid, so `cancel` rewinds the cast (CR 733).
@@ -26,6 +37,8 @@ export function exileCostDecision(
   source: ObjectId,
   graveyard: readonly ObjectId[],
   count: number,
+  /** The words of the question when the cost names a kind of card ("Exile three creature cards from your graveyard."); the escape wording by default. */
+  prompt: string = exilePrompt(count),
 ): NewDecision {
   return {
     kind: 'chooseCards',
@@ -37,7 +50,7 @@ export function exileCostDecision(
     min: count,
     max: count,
     reveal: true,
-    prompt: exilePrompt(count),
+    prompt,
     forCost: true,
   };
 }

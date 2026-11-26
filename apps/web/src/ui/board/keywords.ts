@@ -14,6 +14,7 @@ import {
   ENCORE_REMINDER,
   NINJUTSU_REMINDER,
   RIOT_REMINDER,
+  SUNBURST_REMINDER,
 } from '../../game/keywords-text';
 
 const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> = {
@@ -74,7 +75,10 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // CR 702.25a (Flanking).
   flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
+  // Exploit (CR 702.110a).
+  exploit: ['Exp', 'Exploit (When this creature enters, you may sacrifice a creature.)'],
   affinity: ['Aff', 'Affinity'],
+  undaunted: ['Und', 'Undaunted'],
   convoke: ['Cvk', 'Convoke'],
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],
@@ -101,6 +105,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   replicate: ['Rep', 'Replicate'],
   // Rebound (CR 702.88a): on an instant or a sorcery.
   rebound: ['Rbd', 'Rebound'],
+  cipher: ['Cph', 'Cipher'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
   // Gift a card (D-135).
@@ -134,6 +139,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   ninjutsu: ['Nin', `Ninjutsu (${NINJUTSU_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
+  // CR 702.44a: Sunburst.
+  sunburst: ['Sun', `Sunburst (${SUNBURST_REMINDER})`],
 };
 
 /**
@@ -273,6 +280,7 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
     'NoAtk',
     "Can't attack a player it has already attacked this turn",
   ],
+  cantBeBlockedExceptByThreeOrMore: ['Unbl3', "Can't be blocked except by three or more creatures"],
   cantBeBlockedByMoreThanOne: ['Blk≤1', "Can't be blocked by more than one creature"],
   attacksEachCombat: ['Atk!', 'Attacks each combat'],
   mustBeBlocked: ['Blk!', 'Must be blocked if able'],

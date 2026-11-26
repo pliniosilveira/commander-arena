@@ -11,6 +11,7 @@ import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { tapCandidates } from './sacrifice';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
+import { runChooseTurnUp } from './turn-face-up';
 import { untapPermanent } from './untap';
 
 type ChooseTapInstruction = Extract<Instruction, { kind: 'chooseTap' }>;
@@ -76,6 +77,8 @@ export function runChooseTap(
     purpose: 'effect',
     automatic,
   });
+  // Zimone, Mystery Unraveler: "you may turn a permanent you control face up" (`turnFaceUp` of a `choose` selector).
+  if (instruction.turnUp === true) return runChooseTurnUp(state, res, instruction);
   if (instruction.untap === true) {
     if (instruction.chosen !== null) {
       const r = untapAll(state, instruction.chosen);

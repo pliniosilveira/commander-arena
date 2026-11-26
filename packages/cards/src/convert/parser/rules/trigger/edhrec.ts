@@ -31,6 +31,7 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     'one or more artifact creatures you control attack',
     'one or more Angels you control attack',
     'one or more Demons you control attack a player',
+    'one or more Dragons you control attack an opponent',
   ],
   rejects: [
     'one or more creatures attack you',
@@ -47,6 +48,11 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     'one or more Demons you control attack a player and',
     'one or more Demons you control attack a player or',
     'one or more Demons you control attack a players',
+    'one or more Dragons you control attack an opponents',
+    'one or more Dragons you control attack an opponent and',
+    'one or more Dragons you control attack an opponent or',
+    'one or more Dragons attack an opponent',
+    'one or more creatures attack an opponent',
   ],
   parse: (ctx, pos) => {
     const id = 'trigger.attack-one-or-more';
@@ -61,6 +67,11 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     if (!verb.ok) return verb;
     // Death Toll deck group B (CR 508.1b, 508.6): "attack a player": once for each player attacked as a player; said only of the creatures of "you control".
     const player = pattern(/ a player(?![\p{L}\p{N}])(?!\s+(?:and|or)(?![\p{L}\p{N}]))/iu)(
+      ctx,
+      verb.pos,
+    );
+    // Firkraag (CR 508.1b, 508.6): "attack an opponent": once for each opponent attacked, said only of the creatures of "you control".
+    const opponent = pattern(/ an opponent(?![\p{L}\p{N}])(?!\s+(?:and|or)(?![\p{L}\p{N}]))/iu)(
       ctx,
       verb.pos,
     );
@@ -79,9 +90,11 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     // "One or more artifact creatures attack" with nobody named would be any player's: the engine's batch is the attackers of one player at a time, so only
     // "creatures" alone is said of every player; a kind of creature is said of "you control".
     if (!yours && !bare) return fail(ctx, pos);
-    if (player.ok && !yours) return fail(ctx, pos);
+    if ((player.ok || opponent.ok) && !yours) return fail(ctx, pos);
     // " a player" followed by more words (" a players") is not read.
     if (!player.ok && /^ a player/iu.test(ctx.text.slice(verb.pos))) return fail(ctx, pos);
+    if (!opponent.ok && /^ an opponent/iu.test(ctx.text.slice(verb.pos))) return fail(ctx, pos);
+    const end = player.ok ? player.pos : opponent.ok ? opponent.pos : verb.pos;
     const actor: IrNoun = yours
       ? makeNoun(id, { start: pos, end: pos }, 'you', { raw: '' })
       : makeNoun(id, { start: pos, end: pos }, 'eachPlayer', { raw: '' });
@@ -95,11 +108,12 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
         atLeast: 1,
         ...(bare ? {} : { subject }),
         ...(player.ok ? { eachAttackedPlayer: true as const } : {}),
+        ...(opponent.ok ? { eachAttackedOpponent: true as const } : {}),
         args: {},
-        span: { start: pos, end: player.ok ? player.pos : verb.pos },
+        span: { start: pos, end: end },
         rule: id,
       },
-      pos: player.ok ? player.pos : verb.pos,
+      pos: end,
     };
   },
 });

@@ -118,6 +118,20 @@ function bestSweepNumber(view: GameView, d: ChooseXDecision): number {
   return best;
 }
 
+/**
+ * "Add X mana in any combination of colors" (Plasm Capture, CR 106.1b): the color it wants the most is the one its hand spends the most colored symbols of (the first color asked
+ * on a tie, and with no colored symbol at all, the last, which takes what is left); the mana is all that color, so the answer for a color is every mana left or none.
+ */
+function manaColorAnswer(view: GameView, d: ChooseXDecision): number {
+  const hand = view.seats.find((s) => s.id === view.viewer)?.hand ?? [];
+  const spent = (color: string) =>
+    hand.reduce((sum, o) => sum + (o.manaCost ?? []).filter((s) => s === color).length, 0);
+  const wanted = ['W', 'U', 'B', 'R', 'G'].reduce((best, color) =>
+    spent(color) > spent(best) ? color : best,
+  );
+  return spent(wanted) > 0 && d.manaColor === wanted ? d.max : d.min;
+}
+
 /** The value to announce for the X of the spell or ability the decision is about. */
 export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   if (d.purpose === 'multikicker') return chooseKicksAnswer(view, d);
@@ -127,6 +141,9 @@ export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   // D-217: "may draw up to two cards": drawing is a gain, so as many as it may.
   if (d.purpose === 'drawUpTo') return { kind: 'chooseX', value: d.max };
   // CR 608.2d (Expel the Interlopers): "choose a number between 0 and 10": the number that destroys the most of what the opponents have and the least of its own.
+  if (d.purpose === 'chooseNumber' && d.manaColor !== undefined) {
+    return { kind: 'chooseX', value: manaColorAnswer(view, d) };
+  }
   if (d.purpose === 'chooseNumber') return { kind: 'chooseX', value: bestSweepNumber(view, d) };
   const source = findObject(view, d.source);
   const text = source?.oracleText ?? '';

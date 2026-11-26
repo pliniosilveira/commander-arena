@@ -5,6 +5,7 @@ import type {
   TargetChoiceSpec,
   TargetsDecision,
 } from '@commander-arena/engine';
+import { possessiveOf, seatNameOf } from '../../game/seat-name';
 import { targetZoneToOpen } from '../board/target-zone';
 import { keptDivisionText, keptTargets, shareLabel } from './copy-division';
 import { bumpShare, divisionLine, shareOf, sharesLeft, withEvenShares } from './divide';
@@ -25,8 +26,8 @@ import { useZoneGate } from './zone-decision';
 
 type Update = (change: (ui: UiState) => UiState) => void;
 
-const targetLabel = (t: ChosenTarget, index: Index, viewer: SeatId): string =>
-  t.kind === 'object' ? nameOf(index, t.id) : viewer === t.seat ? 'You' : 'Opponent';
+const targetLabel = (t: ChosenTarget, index: Index, viewer: SeatId, seatCount = 2): string =>
+  t.kind === 'object' ? nameOf(index, t.id) : seatNameOf(t.seat, viewer, seatCount);
 
 const targetKey = (t: ChosenTarget): string => (t.kind === 'object' ? t.id : `p${t.seat}`);
 
@@ -114,7 +115,7 @@ export function TargetsPanel({
                         }))
                       }
                     >
-                      {targetLabel(t, index, view.viewer)}
+                      {targetLabel(t, index, view.viewer, view.seats.length)}
                     </button>
                   </li>
                 ))}
@@ -138,6 +139,7 @@ export function TargetsPanel({
         specs={d.specs}
         index={index}
         viewer={view.viewer}
+        seatCount={view.seats.length}
         ui={ui}
         update={update}
         hoverProps={hoverProps}
@@ -150,6 +152,7 @@ export function TargetsPanel({
           spec={spec}
           index={index}
           viewer={view.viewer}
+          seatCount={view.seats.length}
           ui={ui}
           update={update}
         />
@@ -163,6 +166,7 @@ function PlainList({
   specs,
   index,
   viewer,
+  seatCount,
   ui,
   update,
   hoverProps,
@@ -171,6 +175,7 @@ function PlainList({
   specs: readonly TargetChoiceSpec[];
   index: Index;
   viewer: SeatId;
+  seatCount: number;
   ui: UiState;
   update: Update;
   hoverProps: HoverOf;
@@ -188,7 +193,7 @@ function PlainList({
         {groups.map((seat) => (
           <div key={`g${seat}`} className="dec-target-group" data-group={seat}>
             <h4 className="dec-target-group-title">
-              {seat === viewer ? 'Your' : "Opponent's"} permanents: up to one
+              {possessiveOf(seat, viewer, seatCount)} permanents: up to one
             </h4>
             <ul className="dec-target-list">
               {grouped.legal
@@ -208,7 +213,7 @@ function PlainList({
                         }))
                       }
                     >
-                      {targetLabel(t, index, viewer)}
+                      {targetLabel(t, index, viewer, seatCount)}
                     </button>
                   </li>
                 ))}
@@ -241,7 +246,7 @@ function PlainList({
                         }))
                       }
                     >
-                      {targetLabel(t, index, viewer)}
+                      {targetLabel(t, index, viewer, seatCount)}
                     </button>
                   </li>
                 ))}
@@ -265,7 +270,7 @@ function PlainList({
             aria-pressed={t.kind === 'object' ? pickedObjects.has(t.id) : pickedSeats.has(t.seat)}
             onClick={() => update((u) => ({ ...u, targets: toggleTarget(specs, u.targets, t) }))}
           >
-            {targetLabel(t, index, viewer)}
+            {targetLabel(t, index, viewer, seatCount)}
           </button>
         </li>
       ))}
@@ -316,6 +321,7 @@ function DivisionSection({
   spec,
   index,
   viewer,
+  seatCount,
   ui,
   update,
 }: {
@@ -323,6 +329,7 @@ function DivisionSection({
   spec: TargetChoiceSpec;
   index: Index;
   viewer: SeatId;
+  seatCount: number;
   ui: UiState;
   update: Update;
 }) {
@@ -346,7 +353,7 @@ function DivisionSection({
       ) : (
         <ul className="dec-damage-rows">
           {mine.map((t) => {
-            const name = targetLabel(t, index, viewer);
+            const name = targetLabel(t, index, viewer, seatCount);
             const amount = shareOf(ui.targets, t, spec.specId);
             return (
               <li key={targetKey(t)} className="dec-damage-row">

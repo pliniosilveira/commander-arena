@@ -119,6 +119,24 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
         : failure(cost);
+    case 'removeAnyCounters': {
+      // CR 118.3, 122.1, 602.2b: counters of any kind, the player choosing which. "Remove a counter from ~" is also the cost of a keyword's ability (Equip); every other reading is the cost of an
+      // ordinary activated ability, where the engine asks which counters.
+      if (cost.what === null && !cost.x) {
+        return cost.count >= 1 ? ok({ kind: 'removeCounters', count: cost.count }) : failure(cost);
+      }
+      if (options.ordinary !== true || cost.count < 1) return failure(cost);
+      const filter = cost.what === null ? null : lowerFilter(cost.what);
+      if (filter !== null && !filter.ok) return filter;
+      if (cost.fromOne && filter === null) return failure(cost);
+      return ok({
+        kind: 'removeCounters',
+        count: cost.count,
+        ...(cost.x ? { countX: true as const } : {}),
+        ...(filter === null ? {} : { among: filter.value }),
+        ...(cost.fromOne ? { fromOne: true as const } : {}),
+      });
+    }
     case 'removeCountersAmong': {
       // "Remove two +1/+1 counters from among creatures you control" (CR 118.3, 122.1): the engine's `removeCounters` with `among`, a cost of an ordinary activated ability.
       if (options.ordinary !== true) return failure(cost);
@@ -130,6 +148,7 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         counter: cost.counter,
         count: cost.count,
         among: filter.value,
+        ...(cost.anyKind === true ? { anyKind: true as const } : {}),
       });
     }
     case 'sacrifice': {
@@ -140,6 +159,17 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3): a different permanent for each part, the cost of an ordinary activated ability.
       if (cost.also !== undefined) {
         if (options.ordinary !== true) return failure(cost);
+        // "Sacrifice ~ and a legendary artifact" (Mount Doom): the permanent itself is the first part, a different permanent pays each of the others.
+        if (what.det === 'self') {
+          const others: ObjectFilter[] = [];
+          for (const part of cost.also) {
+            if (part.det !== 'a' || part.count !== undefined) return failure(cost);
+            const filter = lowerFilter(part);
+            if (!filter.ok) return filter;
+            others.push(filter.value);
+          }
+          return ok({ kind: 'sacrifice', what: { kind: 'this' }, alongside: others });
+        }
         const parts = [what, ...cost.also];
         if (parts.some((part) => part.det !== 'a' || part.count !== undefined)) {
           return failure(cost);
@@ -156,8 +186,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       }
       // "Sacrifice X creatures" (D-488, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
       if (what.det === 'a' && what.count?.kind === 'x') {
-        if ((options.ordinary !== true && options.discardX !== true) || what.other)
-          return failure(cost);
+        // "Sacrifice X other creatures" (Champion of Stray Souls, CR 109.1): the permanent with the ability is not one of them, the filter's `other`.
+        if (options.ordinary !== true && options.discardX !== true) return failure(cost);
+        if (what.other && options.ordinary !== true) return failure(cost);
         const { count: _counted, ...described } = what;
         const filter = lowerFilter(described);
         return filter.ok ? ok({ kind: 'sacrifice', what: filter.value, countX: true }) : filter;
@@ -192,6 +223,12 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return filter.ok
         ? ok({ kind: 'tapPermanents', filter: filter.value, count: cost.count })
         : filter;
+    }
+    case 'exilePermanent': {
+      // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): the engine's `exilePermanent`, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'exilePermanent', filter: filter.value }) : filter;
     }
     case 'untapPermanents': {
       // "Untap two tapped creatures you control" (CR 701.26b, 118.3): the engine's `untapPermanents`, a cost of an ordinary activated ability.
@@ -245,8 +282,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (cost.filter === undefined && cost.named === undefined) {
         return ok({ kind: 'discard', count: cost.amount.value });
       }
-      // D-207 (stage P50): "Discard a legendary card", "Discard another card named ~": the cost of an ordinary activated ability.
-      if (options.ordinary !== true) return failure(cost);
+      // D-207 (stage P50): "Discard a legendary card", "Discard another card named ~": the cost of an ordinary activated ability. A filter alone ("discard a land card")
+      // is also an additional cost of a spell (CR 118.8, 701.9): the engine's `discardFilter` of the cast.
+      if (options.ordinary !== true && !(options.additional === true && cost.named !== true)) {
+        return failure(cost);
+      }
       if (cost.named === true)
         return ok({ kind: 'discard', count: cost.amount.value, named: true });
       const narrowed = lowerFilter({
@@ -294,7 +334,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         : failure(cost);
     case 'exile': {
       // "Exile two creature cards from your graveyard" (stage P72, D-232, CR 118.1, 406.1): the engine's `exileFromGraveyard`, the cost of an ordinary activated ability.
-      if (options.ordinary !== true) return failure(cost);
+      // CR 702.34a, 107.3a (Summons of Saruman, "Flashback—{3}{U}{R}, Exile X cards from your graveyard"): in a flashback cost only the X announced as the spell is cast.
+      // CR 118.8, 601.2b (Skaab Ruinator, "As an additional cost to cast this spell, exile three creature cards from your graveyard"): a fixed number of the kind, chosen as the spell is cast.
+      if (
+        options.ordinary !== true &&
+        !(options.flashback === true && cost.what.count?.kind === 'x') &&
+        !(options.additional === true && cost.what.count?.kind !== 'x')
+      )
+        return failure(cost);
       const blocked = missingFeatures(['cost:exileFromGraveyard']);
       if (blocked.length > 0) return failure(cost, blocked);
       // Issue 102 (Necropolis Fiend, CR 107.3a, 602.2b): "Exile X cards from your graveyard" is the X announced as the ability is activated.
@@ -302,6 +349,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       const many = cost.what.count?.kind === 'number' ? cost.what.count.value : 1;
       const { count: _counted, ...described } = cost.what;
       const filter = lowerFilter(described);
+      // The engine's flashback cost exiles cards of any kind: a kind of card ("X creature cards") is not read there.
+      if (
+        options.ordinary !== true &&
+        options.additional !== true &&
+        filter.ok &&
+        Object.keys(filter.value).length > 0
+      )
+        return failure(cost);
       return filter.ok
         ? ok({
             kind: 'exileFromGraveyard',
@@ -310,6 +365,22 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
             ...(countX ? { countX: true as const } : {}),
           })
         : filter;
+    }
+    case 'putLinkedExile': {
+      // "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a, 118.3): the engine's `putLinkedExileInGraveyard`, the cost of an ordinary activated ability of a permanent.
+      if (options.ordinary !== true) return failure(cost);
+      const blocked = missingFeatures(['cost:putLinkedExileInGraveyard']);
+      if (blocked.length > 0) return failure(cost, blocked);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'putLinkedExileInGraveyard', filter: filter.value }) : filter;
+    }
+    case 'putOpponentExile': {
+      // "Put a card an opponent owns from exile into that player's graveyard" (CR 108.3, 118.3): the engine's `putOpponentExileInGraveyard`, the cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const blocked = missingFeatures(['cost:putOpponentExileInGraveyard']);
+      if (blocked.length > 0) return failure(cost, blocked);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'putOpponentExileInGraveyard', filter: filter.value }) : filter;
     }
     case 'exileFromHand': {
       if (options.additional !== true || cost.what.anyNumber !== true) return failure(cost);
@@ -334,12 +405,15 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:sacrifice',
   'cost:tapPermanents',
   'cost:untapPermanents',
+  'cost:exilePermanent',
   'cost:blight',
   'cost:payLife',
   'cost:payXLife',
   'cost:discardX',
   'cost:discard',
   'cost:exileFromGraveyard',
+  'cost:putLinkedExileInGraveyard',
+  'cost:putOpponentExileInGraveyard',
   'cost:exileFromHand',
   'cost:removeCounters',
   'cost:energy',

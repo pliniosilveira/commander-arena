@@ -99,7 +99,7 @@ describe('Gate to the Afterlife: a search of the graveyard, the hand and/or the 
 
   test.each([
     `${COST}Search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, put it onto the battlefield, then shuffle.`,
-    `${COST}Search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield.`,
+    `${COST}Search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, then put it onto the battlefield.`,
     `${COST}Search your graveyard, hand, and library for a card named God-Pharaoh's Gift and put it onto the battlefield.`,
     `${COST}Search your graveyard, hand, and/or library for up to two cards named God-Pharaoh's Gift and put them onto the battlefield.`,
     `${COST}Search your graveyard, hand, and/or library for a creature card named God-Pharaoh's Gift and put it onto the battlefield.`,

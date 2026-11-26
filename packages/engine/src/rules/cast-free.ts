@@ -47,6 +47,7 @@ export function freeCandidates(
     | 'payInstead'
     | 'paying'
     | 'anyManaType'
+    | 'fromHand'
   >,
 ): ObjectId[] {
   // "... then they may cast that card": the player the effect names casts it, not always its controller.
@@ -96,6 +97,8 @@ export function freeCandidates(
     ) {
       return false;
     }
+    // Silent-Blade Oni, Extract Brain (CR 402.3): a card looked at in a hand is cast from there while it is still in it.
+    if (ins.fromHand === true && card.zone !== 'hand') return false;
     if (isLandCard(state, id)) return ins.play === true && canPlayLandByEffect(state, seat, card);
     // CR 118.9: a card of a graveyard (`perOwner`) is cast from there, whoever's it is.
     return canCastDuringResolution(
@@ -106,6 +109,7 @@ export function freeCandidates(
       ins.paying === true ? 'normal' : card.zone === 'graveyard' ? 'freeGraveyard' : 'free',
       ins.anyManaType === true,
       ins.payInstead,
+      ins.fromHand === true,
     );
   });
 }
@@ -163,6 +167,12 @@ export function runCastFree(
       min: 0,
       max: 1,
       reveal: false,
+      // CR 402.3, 608.2g: the controller looks at the cards of the hand, all of them (`looked`), though only the ones that can be cast are offered.
+      ...(ins.fromHand === true
+        ? {
+            looked: (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'hand'),
+          }
+        : {}),
       prompt:
         ins.remaining === undefined
           ? `You may ${ins.play ? 'play' : 'cast'} ${
@@ -170,19 +180,23 @@ export function runCastFree(
                 ? 'the target card from your graveyard'
                 : ins.cardsZone === 'graveyard'
                   ? 'a card that player milled'
-                  : ins.cards !== undefined
-                    ? 'a card from among those you looked at'
-                    : ins.objects.kind === 'choose'
-                      ? ins.objects.filter.zone === 'graveyard'
-                        ? 'a card from your graveyard'
-                        : 'a card from your hand'
-                      : 'the exiled card'
+                  : ins.fromHand === true
+                    ? 'a card from among the cards you looked at in their hand'
+                    : ins.cards !== undefined
+                      ? 'a card from among those you looked at'
+                      : ins.objects.kind === 'choose'
+                        ? ins.objects.filter.zone === 'graveyard'
+                          ? 'a card from your graveyard'
+                          : 'a card from your hand'
+                        : 'the exiled card'
             } ${
               ins.paying === true
                 ? 'by paying its mana cost'
                 : ins.payInstead === undefined
                   ? 'without paying its mana cost'
-                  : 'by paying its alternative cost'
+                  : ins.payInstead.some((c) => c.kind === 'discard')
+                    ? 'by discarding a card rather than paying its mana cost'
+                    : 'by paying its alternative cost'
             }`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${

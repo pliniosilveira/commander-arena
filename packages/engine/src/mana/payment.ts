@@ -50,6 +50,7 @@
  */
 import type { Color } from '../characteristics';
 import type { ObjectId } from '../ids';
+import { classCombinations } from './any-combination';
 import { activationDemands, costedCandidates, hasCost, selections } from './costed';
 
 export type { PaymentRequest, PaymentSource };
@@ -72,7 +73,7 @@ import type { HybridOption, ManaColor, ManaCost, ManaObject, ManaRestriction } f
 export interface PaymentPlan {
   /** Indices into request.pool that are spent. */
   readonly fromPool: readonly number[];
-  /** Sources to tap; `outcome` indexes PaymentSource.produces. */
+  /** Sources to tap; `outcome` indexes PaymentSource.produces (for a source with `anyCombination`, the number of the combination the plan tried). */
   readonly taps: readonly { object: ObjectId; abilityIndex: number; outcome: number }[];
   readonly lifePaid: number;
   /**
@@ -116,6 +117,10 @@ const TIER_COMPONENT: Record<PaymentSource['tier'], number> = {
 
 interface Entry {
   readonly abilityIndex: number;
+  /** The source the entry is an outcome of, numbered within the items: the entries of one source share their cost vector and flags (`distinctEntries`). */
+  readonly source: number;
+  /** The payment source itself (none for pool mana): `distinctEntries` keeps its results for it across plans. */
+  readonly from?: PaymentSource;
   readonly outcome: number;
   readonly colors: readonly ManaColor[];
   readonly snow: boolean;
@@ -132,6 +137,8 @@ interface Entry {
   readonly types: readonly string[];
   /** Issue 144 (CR 609.4b): its mana of a color pays any colored symbol of the spell, as the spell may be paid with mana as though it were of any color. */
   readonly anyColor: boolean;
+  /** Grell Philosopher (CR 609.4b): only its blue mana pays any colored symbol of the cost. */
+  readonly blueAnyColor: boolean;
 }
 
 interface Item {
@@ -149,19 +156,31 @@ interface Profile {
   readonly life: number;
 }
 
+/**
+ * A set of unit indexes of one outcome, as a linked list: adding a unit costs one node and the set has no size limit (an outcome
+ * can make more than 31 mana, which a 32-bit mask cannot hold; issue 634).
+ */
+type UnitSet = { readonly unit: number; readonly rest: UnitSet } | null;
+
+const unitsOf = (set: UnitSet): ReadonlySet<number> => {
+  const units = new Set<number>();
+  for (let n = set; n !== null; n = n.rest) units.add(n.unit);
+  return units;
+};
+
 interface Node {
   readonly cost: readonly number[];
   /** Entry index tapped, -1 to skip the item, -2 when nothing more is needed. */
   readonly choice: number;
   readonly next: number;
-  /** Bit j set when unit j of the tapped outcome pays a demand (clear bits are leftover). */
-  readonly usedMask: number;
-  /** Bit j set when unit j pays the activation cost of a costed mana ability and not the cost of the spell (D-183). */
-  readonly actMask: number;
+  /** The units of the tapped outcome that pay a demand (the others are leftover). */
+  readonly used: UnitSet;
+  /** The units that pay the activation cost of a costed mana ability and not the cost of the spell (D-183). */
+  readonly act: UnitSet;
 }
 
 const ZERO: readonly number[] = new Array<number>(COMPONENTS).fill(0);
-const DONE: Node = { cost: ZERO, choice: -2, next: 0, usedMask: 0, actMask: 0 };
+const DONE: Node = { cost: ZERO, choice: -2, next: 0, used: null, act: null };
 
 function less(a: readonly number[], b: readonly number[]): boolean {
   for (let i = 0; i < a.length; i++) {
@@ -287,10 +306,26 @@ function spendsAnyColor(request: PaymentRequest): boolean {
   return 'anyColor' in request.spell && request.spell.anyColor === true;
 }
 
-function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]): Item[] {
+/** Grell Philosopher (CR 609.4b): only blue mana is spent as though it were mana of any color. */
+function spendsBlueAsAnyColor(request: PaymentRequest): boolean {
+  return 'ability' in request.spell && request.spell.blueAsAnyColor === true;
+}
+
+/** What `buildItems` needs to build the combinations of an "any combination" source for the cost: the most demand on each dimension over every way to pay it, and the hybrid halves. */
+interface Demanded {
+  readonly envelope: readonly number[];
+  readonly flex: readonly (readonly ManaColor[])[];
+}
+
+function buildItems(
+  request: PaymentRequest,
+  selection: readonly PaymentSource[],
+  demanded: Demanded,
+): Item[] {
   const reserve = new Set<ManaColor>(request.reserve ?? []);
   const items: Item[] = [];
   const only = onlyColorOf(request);
+  let sourceCount = 0;
 
   // Pool mana first: free in every tier component (SPEC 10 "spend pool mana first").
   request.pool.forEach((mana, poolIndex) => {
@@ -304,17 +339,22 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
       entries: [
         {
           abilityIndex: 0,
+          source: -1,
           outcome: 0,
           colors: [mana.color],
           snow: mana.snow,
           restriction: mana.restriction,
           vec,
           // An activation cost is paid for an ability, which restricted mana may not be spent on.
-          payAct: restrictionAllows(mana.restriction, { ability: true }),
+          payAct: restrictionAllows(
+            mana.restriction,
+            'ability' in request.spell ? request.spell : { ability: true },
+          ),
           genericOnly: false,
           notGeneric: mana.restriction?.kind === 'notGeneric',
           types: mana.sourceTypes ?? [],
           anyColor: spendsAnyColor(request),
+          blueAnyColor: spendsBlueAsAnyColor(request),
         },
       ],
       maxYield: 1,
@@ -353,10 +393,13 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
     }
     const entries: Entry[] = [];
     for (const source of sources) {
-      source.produces.forEach((colors, outcome) => {
-        if (colors.length === 0) return;
-        if (!restrictionAllows(source.restriction, request.spell)) return;
-        if (only !== undefined && colors.some((c) => c !== only)) return;
+      const sourceNumber = sourceCount;
+      sourceCount += 1;
+      const makeEntry = (
+        colors: readonly ManaColor[],
+        outcome: number,
+        from: PaymentSource,
+      ): Entry => {
         const vec = new Array<number>(COMPONENTS).fill(0);
         vec[TIER_COMPONENT[source.tier]] = 1;
         vec[C_RESERVE] = reserveColors.size;
@@ -370,8 +413,10 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
                 (source.energyCost ?? 0) > 0
               ? 1
               : 0;
-        entries.push({
+        return {
           abilityIndex: source.abilityIndex,
+          source: sourceNumber,
+          from,
           outcome,
           colors,
           snow: source.snow,
@@ -382,84 +427,274 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           notGeneric: source.restriction?.kind === 'notGeneric',
           types: source.types ?? [],
           anyColor: spendsAnyColor(request),
+          blueAnyColor: spendsBlueAsAnyColor(request),
+        };
+      };
+      const usable = (colors: readonly ManaColor[]): boolean =>
+        colors.length > 0 &&
+        restrictionAllows(source.restriction, request.spell) &&
+        (only === undefined || colors.every((c) => c === only));
+      if (source.anyCombination === undefined) {
+        source.produces.forEach((colors, outcome) => {
+          if (usable(colors)) entries.push(makeEntry(colors, outcome, source));
         });
+        continue;
+      }
+      // Issue 632: one combination for each class of outcome against this cost. The entries are kept for this request only (a fresh `from`): which combinations
+      // there are, and so their numbers, depend on the demand.
+      const from = { ...source };
+      const proto = makeEntry([], 0, from);
+      const colorsOf = COLOR_DIMS.slice(0, 5).map((color) => unitDims(proto, color, demanded.flex));
+      const shared = colorsOf[0]?.filter((d) => colorsOf.every((dims) => dims.includes(d))) ?? [];
+      const own = colorsOf.map((dims) =>
+        dims
+          .filter((d) => !shared.includes(d) && (demanded.envelope[d] ?? 0) > 0)
+          .sort((x, y) => x - y),
+      );
+      const keys: string[] = [];
+      const caps: number[] = [];
+      const kindOfColor = own.map((dims) => {
+        const key = dims.join('.');
+        let kind = keys.indexOf(key);
+        if (kind < 0) {
+          kind = keys.length;
+          keys.push(key);
+          caps.push(dims.reduce((n, d) => n + (demanded.envelope[d] ?? 0), 0));
+        }
+        return kind;
+      });
+      classCombinations(source.anyCombination, kindOfColor, caps).forEach((colors, outcome) => {
+        if (usable(colors)) entries.push(makeEntry(colors, outcome, from));
       });
     }
     if (entries.length === 0) continue;
+    // A loop, not a spread: "X mana in any combination of colors" can have more outcomes than one call takes as arguments (issue 632).
+    let maxYield = 0;
+    for (const entry of entries) maxYield = Math.max(maxYield, entry.colors.length);
     items.push({
       poolIndex: -1,
       object,
       entries,
-      maxYield: Math.max(...entries.map((e) => e.colors.length)),
+      maxYield,
       mandatory,
     });
   }
   return items;
 }
 
+/** The demands one unit of mana of `color` from `entry` may pay (`assignUnits`), before leaving it over. */
+function unitDims(
+  entry: Entry,
+  color: ManaColor,
+  flex: readonly (readonly ManaColor[])[],
+): number[] {
+  // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
+  const dims = entry.genericOnly ? [] : [colorDim(color)];
+  // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
+  if (
+    (entry.anyColor || (entry.blueAnyColor && color === 'U')) &&
+    !entry.genericOnly &&
+    color !== 'C'
+  ) {
+    for (const other of COLOR_DIMS) {
+      if (other !== 'C' && other !== color) dims.push(colorDim(other));
+    }
+  }
+  if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
+  if (!entry.notGeneric) dims.push(GENERIC_DIM);
+  // Mana of a source with no mana cost may instead pay an activation cost (one level only).
+  if (entry.payAct) {
+    dims.push(ACT_BASE + colorDim(color));
+    if (!entry.notGeneric) dims.push(ACT_GENERIC);
+    // A hybrid symbol of a costed ability that this color is one half of (CR 107.4e).
+    flex.forEach((colors, k) => {
+      if (colors.includes(color)) dims.push(TOTAL_DIMS + k);
+    });
+  }
+  return dims;
+}
+
+/**
+ * The entries among `among` (indices into the item's entries, in order) worth trying against the remaining demand `state` (issue 632). `assignUnits` gives each unit one of the open
+ * demands it may pay or leaves it over, so what an entry can reach depends only on how many units it has of each kind (the open demands a
+ * unit may pay), and no more units of a kind are ever used than those demands add up to: the rest are left over whatever happens. Two
+ * entries of the same source (so the same cost vector and flags), with as many units, that have the same count of each kind once capped
+ * that way reach the same remaining demands with as much mana left over, so they offer the same plans at the same cost: the later one can
+ * never be strictly better (`solve` keeps the first of equal plans) and is left out, which changes no plan. "Add X mana in any combination
+ * of colors" has C(X + 4, 4) outcomes, but against a demand of a few mana only a few of them differ.
+ */
+function distinctEntries(
+  item: Item,
+  among: readonly number[],
+  state: readonly number[],
+  flex: readonly (readonly ManaColor[])[],
+): number[] {
+  // By source: the kind of a unit of each color (the open demands it may pay) and, by kind, how many units could be used at most.
+  const shapes = new Map<number, { kindOfColor: number[]; caps: number[] }>();
+  const shapeOf = (entry: Entry): { kindOfColor: number[]; caps: number[] } => {
+    let shape = shapes.get(entry.source);
+    if (shape === undefined) {
+      const keys: string[] = [];
+      const caps: number[] = [];
+      const kindOfColor: number[] = [];
+      for (const color of COLOR_DIMS) {
+        const dims = unitDims(entry, color, flex)
+          .filter((d) => (state[d] ?? 0) > 0)
+          .sort((x, y) => x - y);
+        const key = dims.join('.');
+        let kind = keys.indexOf(key);
+        if (kind < 0) {
+          kind = keys.length;
+          keys.push(key);
+          caps.push(dims.reduce((n, d) => n + (state[d] ?? 0), 0));
+        }
+        kindOfColor.push(kind);
+      }
+      shape = { kindOfColor, caps };
+      shapes.set(entry.source, shape);
+    }
+    return shape;
+  };
+  // The key of an entry is its number of units and its capped count of each kind, as the digits of one number in base `maxYield + 1` (a
+  // count is at most `maxYield`), within each source; a string when that number could pass the safe integers.
+  const base = item.maxYield + 1;
+  const seen = new Map<number, Set<number | string>>();
+  const perKind = COLOR_DIMS.map(() => 0);
+  const kept: number[] = [];
+  for (const index of among) {
+    const entry = item.entries[index] as Entry;
+    const { kindOfColor, caps } = shapeOf(entry);
+    perKind.fill(0);
+    const counts = colorCounts(entry.colors);
+    for (let c = 0; c < counts.length; c += 1) {
+      const kind = kindOfColor[c] as number;
+      perKind[kind] = (perKind[kind] ?? 0) + (counts[c] ?? 0);
+    }
+    let key: number | string = entry.colors.length;
+    if (base ** (caps.length + 1) <= Number.MAX_SAFE_INTEGER) {
+      for (let k = 0; k < caps.length; k += 1) {
+        key = key * base + Math.min(perKind[k] ?? 0, caps[k] ?? 0);
+      }
+    } else {
+      key = `${key}#${caps.map((cap, k) => Math.min(perKind[k] ?? 0, cap)).join(',')}`;
+    }
+    let keys = seen.get(entry.source);
+    if (keys === undefined) {
+      keys = new Set();
+      seen.set(entry.source, keys);
+    }
+    if (keys.has(key)) continue;
+    keys.add(key);
+    kept.push(index);
+  }
+  return kept;
+}
+
+const countsOf = new WeakMap<readonly ManaColor[], readonly number[]>();
+
+/** How many units of each type (in the order of `COLOR_DIMS`) an outcome holds, kept for the outcome: the payment sources of a state are kept, and so are their outcomes. */
+function colorCounts(colors: readonly ManaColor[]): readonly number[] {
+  let counts = countsOf.get(colors);
+  if (counts === undefined) {
+    const fresh = COLOR_DIMS.map(() => 0);
+    for (const color of colors) {
+      const c = colorDim(color);
+      fresh[c] = (fresh[c] ?? 0) + 1;
+    }
+    counts = fresh;
+    countsOf.set(colors, counts);
+  }
+  return counts;
+}
+
 /**
  * Ways to spend the units of one outcome on the remaining demand: each unit pays its own color,
  * a snow demand (when the source is snow), a generic demand, or is left over. Returns one entry
- * per distinct resulting state with a mask of the units that paid something.
+ * per distinct resulting state with the set of the units that paid something.
  */
 function assignUnits(
   state: readonly number[],
   entry: Entry,
   flex: readonly (readonly ManaColor[])[],
-): Map<string, { state: number[]; usedMask: number; actMask: number }> {
-  type Level = Map<string, { state: number[]; usedMask: number; actMask: number }>;
+  encode: (s: readonly number[]) => number,
+): Map<number, { state: number[]; used: UnitSet; act: UnitSet }> {
+  // A state is keyed by `solveProfile`'s number for the remaining demand.
+  type Level = Map<number, { state: number[]; used: UnitSet; act: UnitSet }>;
   let level: Level = new Map();
-  level.set(state.join(','), { state: state.slice(), usedMask: 0, actMask: 0 });
+  level.set(encode(state), { state: state.slice(), used: null, act: null });
   entry.colors.forEach((color, j) => {
     const nextLevel: Level = new Map();
-    const put = (s: number[], used: number, act: number) => {
-      const key = s.join(',');
-      if (!nextLevel.has(key)) nextLevel.set(key, { state: s, usedMask: used, actMask: act });
+    const put = (s: number[], used: UnitSet, act: UnitSet) => {
+      const key = encode(s);
+      if (!nextLevel.has(key)) nextLevel.set(key, { state: s, used, act });
     };
-    for (const { state: s, usedMask, actMask } of level.values()) {
-      // Mana that pays generic mana only (Improvise, Delve, a colorless creature's convoke).
-      const dims = entry.genericOnly ? [] : [colorDim(color)];
-      // CR 609.4b (issue 144): mana as though it were mana of any color pays a symbol of any color, not {C}; colorless mana is no color.
-      if (entry.anyColor && !entry.genericOnly && color !== 'C') {
-        for (const other of COLOR_DIMS) {
-          if (other !== 'C' && other !== color) dims.push(colorDim(other));
-        }
-      }
-      if (entry.snow && !entry.genericOnly) dims.push(SNOW_DIM);
-      if (!entry.notGeneric) dims.push(GENERIC_DIM);
-      // Mana of a source with no mana cost may instead pay an activation cost (one level only).
-      if (entry.payAct) {
-        dims.push(ACT_BASE + colorDim(color));
-        if (!entry.notGeneric) dims.push(ACT_GENERIC);
-        // A hybrid symbol of a costed ability that this color is one half of (CR 107.4e).
-        flex.forEach((colors, k) => {
-          if (colors.includes(color)) dims.push(TOTAL_DIMS + k);
-        });
-      }
+    const dims = unitDims(entry, color, flex);
+    for (const { state: s, used, act } of level.values()) {
       for (const d of dims) {
         if ((s[d] ?? 0) > 0) {
           const t = s.slice();
           t[d] = (t[d] ?? 0) - 1;
           // D-183: a dimension from ACT_BASE on is the activation cost of a costed ability, not the cost of the spell.
-          put(t, usedMask | (1 << j), d >= ACT_BASE ? actMask | (1 << j) : actMask);
+          put(t, { unit: j, rest: used }, d >= ACT_BASE ? { unit: j, rest: act } : act);
         }
       }
-      put(s, usedMask, actMask); // unit not used by the cost (leftover)
+      put(s, used, act); // unit not used by the cost (leftover)
     }
     level = nextLevel;
   });
   return level;
 }
 
+/** The entries of one source within an item: a run of its entries, in order. */
+interface EntryGroup {
+  readonly from: PaymentSource | undefined;
+  /** What the entries' kept outcomes depend on besides the demand: their flags, the hybrid halves and the request's `only` color. */
+  readonly key: string;
+  readonly indices: readonly number[];
+  readonly indexOfOutcome: ReadonlyMap<number, number>;
+}
+
+/** The outcomes `distinctEntries` keeps for a source, by `EntryGroup.key` and the capped demand (issue 632). */
+const keptOutcomes = new WeakMap<PaymentSource, Map<string, readonly number[]>>();
+
+function entryGroups(
+  item: Item,
+  flex: readonly (readonly ManaColor[])[],
+  only: string,
+): EntryGroup[] {
+  const out: {
+    from: PaymentSource | undefined;
+    key: string;
+    indices: number[];
+    indexOfOutcome: Map<number, number>;
+  }[] = [];
+  item.entries.forEach((entry, index) => {
+    let group = out.at(-1);
+    if (group === undefined || item.entries[index - 1]?.source !== entry.source) {
+      group = {
+        from: entry.from,
+        key: `${only}|${JSON.stringify(flex)}|${entry.genericOnly}|${entry.notGeneric}|${entry.snow}|${entry.payAct}|${entry.anyColor}|${entry.blueAnyColor}`,
+        indices: [],
+        indexOfOutcome: new Map(),
+      };
+      out.push(group);
+    }
+    group.indices.push(index);
+    group.indexOfOutcome.set(entry.outcome, index);
+  });
+  return out;
+}
+
 interface Solution {
   readonly cost: readonly number[];
-  readonly picks: { item: Item; entry: Entry; usedMask: number; actMask: number }[];
+  readonly picks: { item: Item; entry: Entry; used: UnitSet; act: UnitSet }[];
 }
 
 function solveProfile(
   items: readonly Item[],
   demand: readonly number[],
   flex: readonly (readonly ManaColor[])[],
+  only: string,
 ): Solution | null {
   const radix = demand.map((d) => d + 1);
   const mult: number[] = [];
@@ -478,6 +713,59 @@ function solveProfile(
     mandatoryFrom[i] = (mandatoryFrom[i + 1] ?? false) || items[i]?.mandatory === true;
   }
   const memo: Map<number, Node | null>[] = items.map(() => new Map());
+  // `distinctEntries` of each item, by the demand capped at the most mana one of its entries makes (a demand past that caps no count further).
+  // It is found for each source of the item and kept for the source (`keptOutcomes`) under everything else it depends on: the flags of its
+  // entries, the hybrid halves `flex`, and `only`, which decides which of its outcomes are entries.
+  const tried: Map<string, readonly number[]>[] = items.map(() => new Map());
+  const groups: (readonly EntryGroup[] | undefined)[] = items.map(() => undefined);
+  const entriesToTry = (i: number, item: Item, state: readonly number[]): readonly number[] => {
+    if (item.entries.length === 1) return [0];
+    const capped = state.map((v) => Math.min(v, item.maxYield));
+    const cappedKey = `${item.maxYield}|${capped.join(',')}`;
+    const table = tried[i] as Map<string, readonly number[]>;
+    const hit = table.get(cappedKey);
+    if (hit !== undefined) return hit;
+    let itemGroups = groups[i];
+    if (itemGroups === undefined) {
+      itemGroups = entryGroups(item, flex, only);
+      groups[i] = itemGroups;
+    }
+    // The groups are runs of the entries in order, so their kept entries, one group after the other, are in order too.
+    const kept: number[] = [];
+    for (const group of itemGroups) {
+      if (group.from === undefined || group.indices.length === 1) {
+        for (const index of group.indices) kept.push(index);
+        continue;
+      }
+      let byKey = keptOutcomes.get(group.from);
+      if (byKey === undefined) {
+        byKey = new Map();
+        keptOutcomes.set(group.from, byKey);
+      }
+      const outcomesOf = (indices: readonly number[]): number[] =>
+        indices.map((index) => (item.entries[index] as Entry).outcome);
+      // First against the whole demand of the profile, which every remaining demand is at most: entries alike there are alike against any
+      // remaining demand too (fewer open demands only merge kinds, and lower caps only cap more), so the second step, against `state`,
+      // starts from the first step's survivors and keeps what it would keep from all the entries.
+      const whole = demand.map((v) => Math.min(v, item.maxYield));
+      const firstKey = `${group.key}|${item.maxYield}|${whole.join(',')}`;
+      let first = byKey.get(firstKey);
+      if (first === undefined) {
+        first = outcomesOf(distinctEntries(item, group.indices, whole, flex));
+        byKey.set(firstKey, first);
+      }
+      const key = `${group.key}|${cappedKey}`;
+      let outcomes = byKey.get(key);
+      if (outcomes === undefined) {
+        const among = first.map((outcome) => group.indexOfOutcome.get(outcome) as number);
+        outcomes = outcomesOf(distinctEntries(item, among, capped, flex));
+        byKey.set(key, outcomes);
+      }
+      for (const outcome of outcomes) kept.push(group.indexOfOutcome.get(outcome) as number);
+    }
+    table.set(cappedKey, kept);
+    return kept;
+  };
 
   const solve = (i: number, code: number): Node | null => {
     // Nothing left to pay is only a plan if every costed source chosen for it has been used.
@@ -490,11 +778,13 @@ function solveProfile(
     const total = state.reduce((a, b) => a + b, 0);
     let best: Node | null = null;
     if (total <= (suffixCap[i] ?? 0)) {
-      item.entries.forEach((entry, entryIndex) => {
-        for (const { state: after, usedMask, actMask } of assignUnits(
+      for (const entryIndex of entriesToTry(i, item, state)) {
+        const entry = item.entries[entryIndex] as Entry;
+        for (const { state: after, used, act } of assignUnits(
           state,
           entry,
           flex,
+          encode,
         ).values()) {
           const afterCode = encode(after);
           if (afterCode === code) continue; // tapping without paying anything is never useful
@@ -505,15 +795,15 @@ function solveProfile(
           own[C_WASTE] = entry.colors.length - assigned;
           const cost = add(sub.cost, own);
           if (best === null || less(cost, best.cost)) {
-            best = { cost, choice: entryIndex, next: afterCode, usedMask, actMask };
+            best = { cost, choice: entryIndex, next: afterCode, used, act };
           }
         }
-      });
+      }
       const skipped = item.mandatory ? null : solve(i + 1, code);
       // Taps are tried first and only strictly better plans replace them, so ties prefer
       // tapping earlier items (lower object id), then lower ability index and outcome.
       if (skipped !== null && (best === null || less(skipped.cost, (best as Node).cost))) {
-        best = { cost: skipped.cost, choice: -1, next: code, usedMask: 0, actMask: 0 };
+        best = { cost: skipped.cost, choice: -1, next: code, used: null, act: null };
       }
     }
     table.set(code, best);
@@ -532,8 +822,8 @@ function solveProfile(
       picks.push({
         item,
         entry: item.entries[node.choice] as Entry,
-        usedMask: node.usedMask,
-        actMask: node.actMask,
+        used: node.used,
+        act: node.act,
       });
     }
     code = node.next;
@@ -591,6 +881,22 @@ function demandUnits(demand: readonly number[]): number {
   return n;
 }
 
+/** The most demand on each dimension, over every profile of the cost and every way to pay the activation costs: what no search below asks for more of. */
+function demandEnvelope(
+  profiles: readonly Profile[],
+  vectors: readonly (readonly number[])[],
+): number[] {
+  const envelope: number[] = [];
+  for (const profile of profiles) {
+    for (const vector of vectors) {
+      [...profile.demand, ...vector].forEach((v, i) => {
+        envelope[i] = Math.max(envelope[i] ?? 0, v);
+      });
+    }
+  }
+  return envelope;
+}
+
 function planOnce(request: PaymentRequest): PaymentPlan | null {
   const profiles = buildProfiles(
     request.cost,
@@ -610,13 +916,21 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
   let best: { solution: Solution; life: number } | null = null;
   // Each subset of costed abilities is a separate search (the empty one first); see the header.
   for (const selection of selections(costedCandidates(request))) {
-    const items = buildItems(request, selection);
     // CR 107.4e: a hybrid symbol in a costed ability's cost is paid with either half.
     const { flex, vectors } = activationDemands(selection);
+    const items = buildItems(request, selection, {
+      envelope: demandEnvelope(profiles, vectors),
+      flex,
+    });
     for (const activation of vectors) {
       for (const profile of profiles) {
         if (best !== null && profile.life > best.life) break; // profiles are sorted by life
-        const solution = solveProfile(items, [...profile.demand, ...activation], flex);
+        const solution = solveProfile(
+          items,
+          [...profile.demand, ...activation],
+          flex,
+          String(onlyColorOf(request)),
+        );
         if (solution === null) continue;
         const cost = solution.cost.slice();
         cost[C_LIFE] = profile.life;
@@ -634,10 +948,12 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
   const spentTypes: (readonly string[])[] = [];
   const spentColors: ManaColor[] = [];
   let spentSnow = 0;
-  for (const { item, entry, usedMask, actMask } of best.solution.picks) {
+  for (const { item, entry, used, act } of best.solution.picks) {
+    const usedUnits = unitsOf(used);
+    const actUnits = unitsOf(act);
     // D-183: a unit that is used and does not pay the activation cost of a costed ability is spent on the cost of the spell.
     entry.colors.forEach((color, j) => {
-      if ((usedMask & (1 << j)) === 0 || (actMask & (1 << j)) !== 0) return;
+      if (!usedUnits.has(j) || actUnits.has(j)) return;
       spentTypes.push(entry.types);
       spentColors.push(color);
       if (entry.snow) spentSnow += 1;
@@ -648,7 +964,7 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
     }
     taps.push({ object: item.object, abilityIndex: entry.abilityIndex, outcome: entry.outcome });
     entry.colors.forEach((color, j) => {
-      if ((usedMask & (1 << j)) === 0) {
+      if (!usedUnits.has(j)) {
         leftover.push({
           color,
           snow: entry.snow,

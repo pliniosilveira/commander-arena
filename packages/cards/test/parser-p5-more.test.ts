@@ -251,18 +251,14 @@ describe('the pronoun "it" in a trigger about ~ is ~ (D-082 follow-up)', () => {
     ]);
   });
 
-  test('"that creature" is not read as a noun: after ~ or after another subject', () => {
-    expect(
-      dropped('When ~ enters, put a +1/+1 counter on that creature.', 'creature'),
-    ).toMatchObject({
+  // Counters now read "that creature" (Lulu, Stern Guardian: "Choose target creature attacking you. Put a stun counter on that creature."); a sacrifice still does not.
+  test('"that creature" is not read as a noun by every verb: after ~ or after another subject', () => {
+    expect(dropped('When ~ enters, sacrifice that creature.', 'creature')).toMatchObject({
       reason: 'unrecognised',
       stoppedAt: 'that creature.',
     });
     expect(
-      dropped(
-        'Whenever another creature you control enters, put a +1/+1 counter on that creature.',
-        'creature',
-      ),
+      dropped('Whenever another creature you control enters, sacrifice that creature.', 'creature'),
     ).toMatchObject({ reason: 'unrecognised', stoppedAt: 'that creature.' });
   });
 

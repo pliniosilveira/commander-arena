@@ -61,15 +61,43 @@ const TAIL_ALL = tail(true);
  * The creatures that are targets of a restriction (CR 115.1): one creature (a spell's "target" is a creature), "up to N" of them (CR 115.2) or "one
  * or two" (D-295, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
  */
-const targetCreatures = refuseAt(
+/**
+ * "target Goblin, Orc, or Pirate" (Corsairs of Umbar, CR 205.3m, 115.1): one target permanent of one of several creature types, which the noun rule reads as the `anyOf` of
+ * one type each. No other quality, no number, no "up to".
+ */
+function isSubtypeList(n: IrNoun): boolean {
+  const { raw: _raw, zone, anyOf, ...rest } = n.filter;
+  return (
+    n.det === 'target' &&
+    !n.plural &&
+    !n.upTo &&
+    !n.other &&
+    n.upToThatMany !== true &&
+    n.minTargets === undefined &&
+    zone === 'battlefield' &&
+    anyOf !== undefined &&
+    anyOf.length >= 2 &&
+    anyOf.every(
+      (m) =>
+        m.subtypes?.length === 1 &&
+        Object.entries(m).every(
+          ([key, value]) => key === 'subtypes' || key === 'raw' || value === undefined,
+        ),
+    ) &&
+    Object.values(rest).every((value) => value === undefined)
+  );
+}
+
+export const targetCreatures = refuseAt(
   family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.target-creature-token'] }),
   (n) =>
-    (!n.plural || n.minTargets !== undefined || n.upTo) &&
-    n.upToThatMany !== true &&
-    n.det === 'target' &&
-    n.filter.anyOf === undefined &&
-    n.filter.types?.length === 1 &&
-    n.filter.types[0] === 'creature',
+    isSubtypeList(n) ||
+    ((!n.plural || n.minTargets !== undefined || n.upTo) &&
+      n.upToThatMany !== true &&
+      n.det === 'target' &&
+      n.filter.anyOf === undefined &&
+      n.filter.types?.length === 1 &&
+      n.filter.types[0] === 'creature'),
   (_n, _ctx, start) => start,
 );
 
@@ -94,6 +122,8 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature with power 3 or less can't be blocked this turn",
     // Quandrix Unlimited deck, group G (Deekah): a creature token.
     "target creature token can't be blocked this turn",
+    // Hosts of Mordor deck, control group (Corsairs of Umbar): one target permanent of one of three creature types.
+    "target Goblin, Orc, or Pirate can't be blocked this turn",
     // Stage P49 (D-206): "up to one target creature" (Key to the City).
     "up to one target creature can't be blocked this turn",
     // D-295 (CR 601.2c): the creatures of a slot of one to two, or of none to N.
@@ -109,6 +139,8 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature can't block",
     "target creature can't be blocked until end of turn",
     "target creature can't be blocked this turn except by creatures with flying",
+    "target Goblin, Orc, or Pirate can't be blocked",
+    "target Goblin, Orc, or Pirate can't attack this turn",
     "target creature can't block this turn and draw a card",
     "target creature can't attack this turn",
     "target creatures can't block this turn",

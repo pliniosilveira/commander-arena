@@ -42,22 +42,27 @@ export type SimpleKeyword = Extract<
   | 'flanking'
   | 'evolve'
   | 'extort'
+  | 'exploit'
   | 'convoke'
   | 'improvise'
   | 'delve'
+  | 'undaunted'
   | 'cascade'
   | 'compleated'
   | 'demonstrate'
   | 'retrace'
   | 'jumpStart'
+  | 'undaunted'
   | 'aftermath'
   | 'rebound'
+  | 'cipher'
   | 'readAhead'
   | 'dethrone'
   | 'melee'
   | 'myriad'
   | 'decayed'
   | 'riot'
+  | 'sunburst'
   | 'ascend'
   | 'soulbond'
   | 'daybound'
@@ -124,9 +129,13 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['flanking', 'flanking'],
   ['evolve', 'evolve'],
   ['extort', 'extort'],
+  // CR 702.110 (Exploit): a printed ability with no parameter, never granted; the engine expands it into "When this creature enters, you may sacrifice a creature".
+  ['exploit', 'exploit'],
   ['convoke', 'convoke'],
   ['improvise', 'improvise'],
   ['delve', 'delve'],
+  // CR 702.125a (Undaunted): a printed ability of a spell with no parameter, never granted.
+  ['undaunted', 'undaunted'],
   ['cascade', 'cascade'],
   // CR 702.150a (Compleated): a printed ability on a planeswalker, never granted; the engine reads the life paid for its Phyrexian mana as it enters.
   ['compleated', 'compleated'],
@@ -135,10 +144,14 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['retrace', 'retrace'],
   // CR 702.133a (Jump-start): a printed ability with no parameter, never granted.
   ['jump-start', 'jumpStart'],
+  // CR 702.125a (Undaunted): a printed ability with no parameter, never granted.
+  ['undaunted', 'undaunted'],
   // CR 702.127a (Aftermath): printed on the second half of a split card, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['aftermath', 'aftermath'],
   // CR 702.88a (Rebound): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
   ['rebound', 'rebound'],
+  // CR 702.99 (Cipher): printed on an instant or a sorcery, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
+  ['cipher', 'cipher'],
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],
@@ -149,6 +162,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['decayed', 'decayed'],
   // Stage P40 (D-186, CR 702.136a): Riot is a printed ability and, as a static ability's grant to a group, "Nontoken creatures you control have riot" (the engine lists it in its GRANTABLE_KEYWORDS; its validators refuse every other way of giving it).
   ['riot', 'riot'],
+  // CR 702.44a: Sunburst is printed on a permanent (the reminder text is stripped before the line is read); it is gained only by a spell ("it gains sunburst", `effect.spell-gains-sunburst`), so the engine's GRANTABLE_KEYWORDS does not list it.
+  ['sunburst', 'sunburst'],
   // D-264 (CR 702.131b): Ascend on a permanent is a printed static ability that gives the city's blessing; the engine does not let it be granted.
   ['ascend', 'ascend'],
   // D-286 (CR 702.95a): Soulbond is printed on a creature and stands for two triggered abilities the engine builds; it can not be granted (the engine's
@@ -192,6 +207,8 @@ export const LANDWALKS: readonly (readonly [string, string])[] = [
   ['swampwalk', 'Swamp'],
   ['mountainwalk', 'Mountain'],
   ['forestwalk', 'Forest'],
+  // CR 702.14a: the land type may be any land type; Desert is one (Hazezon, Shaper of Sand).
+  ['desertwalk', 'Desert'],
   ['nonbasic landwalk', 'nonbasic'],
 ];
 

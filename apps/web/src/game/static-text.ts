@@ -40,7 +40,7 @@ import {
   entersOptionText,
   unspentManaText,
 } from './dragons-text';
-import { drawInsteadWording, skipDrawWording } from './draw-skip-text';
+import { drawInsteadWording, drawRedirectWording, skipDrawWording } from './draw-skip-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
@@ -82,6 +82,10 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
   cantAttackPlayersAlreadyAttacked: {
     one: "can't attack a player it has already attacked this turn",
     many: "can't attack a player they have already attacked this turn",
+  },
+  cantBeBlockedExceptByThreeOrMore: {
+    one: "can't be blocked except by three or more creatures",
+    many: "can't be blocked except by three or more creatures",
   },
   cantBeBlockedByMoreThanOne: {
     one: "can't be blocked by more than one creature",
@@ -490,9 +494,16 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   if (replacement.kind === 'skipDraw') return skipDrawWording(replacement);
   // D-379 (CR 614.11, 504.1): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead".
   if (replacement.kind === 'drawInstead') return drawInsteadWording(replacement);
+  if (replacement.kind === 'drawRedirect') return drawRedirectWording();
   // D-378 (CR 614.1a, 614.5): "If one or more tokens would be created under your control, twice that many of those tokens are created instead".
   if (replacement.kind === 'tokensInstead' && replacement.mode === 'double') {
     return 'If one or more tokens would be created under your control, twice that many of those tokens are created instead';
+  }
+  // Most Wanted deck (CR 614.1a): "If you would create a Clue, Food, or Treasure token, instead create one of each".
+  if (replacement.kind === 'tokensInstead' && replacement.mode === 'eachOf') {
+    const [last, ...rest] = [...replacement.tokens].reverse();
+    const names = [...rest.reverse(), `or ${last}`].join(', ');
+    return `If you would create a ${names} token, instead create one of each`;
   }
   // D-417 (CR 702.89a): Umbra armor.
   if (replacement.kind === 'umbraArmor') return umbraArmorWording();

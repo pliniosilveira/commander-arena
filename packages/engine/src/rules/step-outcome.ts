@@ -1,6 +1,6 @@
 /** What running one instruction of a resolving spell or ability produced. */
 import type { ObjectId } from '../ids';
-import type { NewDecision } from '../state/decisions';
+import type { NewDecision, VoteCast } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction, ThisWayCounts } from '../state/types';
 
@@ -26,6 +26,8 @@ export interface StepOutcome {
   readonly sacrificed?: readonly ObjectId[];
   /** The tally of a vote this instruction finished, which becomes `ResolutionContext.votes` for the amount `votesFor` (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /** Who voted for what in a vote this instruction finished, which becomes `ResolutionContext.voteCast` (CR 701.38a). */
+  readonly voteCast?: readonly VoteCast[];
   /** How much this instruction did, added to `ResolutionContext.performed` for `didPrevious` and `reflexive` (D-135). */
   readonly performed?: number;
   /** The result of a die this instruction rolled, which becomes `ResolutionContext.dieResult` (D-271). */

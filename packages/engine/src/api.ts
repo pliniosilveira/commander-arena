@@ -14,6 +14,7 @@ import {
   answerDiscardCost,
   answerExileCost,
   answerRemoveCounters,
+  answerRemoveCountersKind,
   answerReturnCommander,
   answerReturnCost,
   answerSacrificeCost,
@@ -84,21 +85,24 @@ import {
   riderOf,
   slotOf,
 } from './rules/graveyard-play';
+import { initiativeAfterLoss } from './rules/initiative';
 import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
-import { activateManaAbility } from './rules/mana-engine';
+import { activateManaAbility, namesUnlistedCombination } from './rules/mana-engine';
 import { sameCombination } from './rules/mana-outcomes';
 import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
+import { isLegalParty } from './rules/party';
 import { answerResolutionPile } from './rules/pile-answer';
+import { endOneOfPermissions } from './rules/play-permission-one';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
 import { matchesGroups } from './rules/sacrifice-groups';
 import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
-import { bottomCards, keepHand, takeMulligan } from './rules/setup';
+import { answerOpeningHand, bottomCards, keepHand, takeMulligan } from './rules/setup';
 import { sharesLandType } from './rules/share-type';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
@@ -109,6 +113,7 @@ import {
   answerResolutionChooseOne,
   answerResolutionChooseOpponent,
   answerResolutionChoosePlayer,
+  answerResolutionCipher,
   answerResolutionClash,
   answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
@@ -116,19 +121,23 @@ import {
   answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionDredge,
+  answerResolutionDungeonRoom,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
   answerResolutionOptional,
+  answerResolutionParty,
   answerResolutionPayAmount,
   answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
   answerResolutionProtector,
+  answerResolutionRemoveCounters,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
   answerResolutionRiot,
   answerResolutionSearchMay,
+  answerResolutionSearchPut,
   answerResolutionUnlessConfirm,
   answerResolutionUnlessPayment,
   continueResolution,
@@ -292,6 +301,8 @@ function playLand(
   let next = patchSeat(moved.state, seat, {
     landsPlayedThisTurn: getSeat(moved.state, seat).landsPlayedThisTurn + 1,
   });
+  // Nashi (CR 305.1): "you may play one of those cards": playing one of them from exile ends the permissions for the others.
+  if (obj.zone === 'exile') next = endOneOfPermissions(next, seat, object);
   if (graveyardUse !== null) {
     // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
     if (graveyardUse.unlimited !== true) {
@@ -327,9 +338,15 @@ function concede(state: GameState, seat: SeatId): Result {
   // CR 725.4 (D-127): a monarch who concedes hands the designation on at once.
   const left = leaveGame(next, [seat]);
   events.push(...left.events);
-  const handed = monarchAfterLoss(left.state);
+  const monarchHanded = monarchAfterLoss(left.state);
+  events.push(...monarchHanded.events);
+  // CR 726.4: a player with the initiative who concedes hands it on at once (and the player who takes it ventures, CR 726.2).
+  const handed = initiativeAfterLoss(monarchHanded.state);
   events.push(...handed.events);
-  const end = evaluateGameEnd(handed.state);
+  // CR 726.4: the same for the initiative.
+  const initiative = initiativeAfterLoss(handed.state);
+  events.push(...initiative.events);
+  const end = evaluateGameEnd(initiative.state);
   events.push(...end.events);
   if (end.state.result) return ok(end.state, events);
   // CR 800.4j: the game goes on without the seat that left; the next seat in turn order gets priority.
@@ -426,6 +443,11 @@ function answerConfirm(
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
+  // CR 103.6: "begin the game with this card on the battlefield?", asked after the mulligans and before the first turn.
+  if (d.purpose === 'openingHand') {
+    const r = answerOpeningHand(state, accept);
+    return r === null ? fail('The card cannot begin on the battlefield') : ok(r.state, r.events);
+  }
   // CR 701.30c: "put the card you revealed on the bottom of your library?", asked of each clashing player as the clash resolves.
   if (d.purpose === 'clash') return finishResolutionAnswer(answerResolutionClash(state, accept));
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
@@ -477,6 +499,9 @@ function answerConfirm(
   // CR 608.2d, 701.23: "may search" is answered by the player who would search.
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
+  // CR 608.2d, 701.23 (`search.mayPut`): "you may put that card onto the battlefield", else it goes into the hand.
+  if (d.purpose === 'searchPut')
+    return finishResolutionAnswer(answerResolutionSearchPut(state, accept));
   const head = state.resolution?.queue[0]?.kind;
   if (
     head === 'confirmOptional' ||
@@ -549,6 +574,11 @@ function answerChooseOption(
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOpponent(state, option));
   }
+  if (d.purpose === 'dungeonRoom') {
+    // CR 701.49b, 309.5a: the room a player venturing chose among the arrows leaving their room.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionDungeonRoom(state, option));
+  }
   if (d.purpose === 'protector') {
     // CR 310.9a, 310.12a: the protector the controller of a battle chose as it entered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
@@ -592,6 +622,11 @@ function answerChooseOption(
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
   }
+  if (d.purpose === 'counterPick' && d.forCost === true) {
+    // CR 118.3, 122.1, 602.2b: the counter the activating player picks to remove for the cost of an ability.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return answerRemoveCountersKind(state, option);
+  }
   if (d.purpose === 'counterPick') {
     // CR 122.1, 122.5, 608.2d: the counter the controller takes (or "Done") for "remove any number of counters" and "move a counter".
     if (!d.options.includes(option)) return fail('That is not one of the options');
@@ -628,7 +663,10 @@ function answerChooseOption(
     return ok(played.state, [answered, ...played.events]);
   }
   const chosen = chosenFromOption(d.purpose, option, d.options);
-  if (chosen === null || !d.options.includes(option)) return fail('That is not one of the options');
+  // CR 201.2: a card name is typed, so the options of that question are only suggestions; every other choice is one of the options.
+  if (chosen === null || (d.purpose !== 'cardName' && !d.options.includes(option))) {
+    return fail('That is not one of the options');
+  }
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
@@ -845,7 +883,13 @@ function resumeResolution(result: Result): Result {
 function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Action): Result {
   switch (d.kind) {
     case 'priority': {
-      if (!isOffered(d.options, action)) {
+      if (
+        !isOffered(d.options, action) &&
+        !(
+          action.kind === 'activateAbility' &&
+          namesUnlistedCombination(state, action.source, action.abilityIndex, action.combination)
+        )
+      ) {
         // An activation that is not on offer says why (a cost it cannot pay, the wrong timing).
         if (action.kind === 'activate') {
           const obj = state.objects[action.object];
@@ -1099,7 +1143,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
       if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
-      if (d.purpose === 'bounce') return answerReturnCost(state, action.objects);
+      if (d.purpose === 'bounce' || d.purpose === 'exileCost') {
+        return answerReturnCost(state, action.objects);
+      }
       if (d.forCost) {
         // The sacrifice of a cost: of an ability being activated, or an additional cost of a spell.
         return state.casting?.activation == null
@@ -1107,8 +1153,13 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           : answerSacrificeCost(state, action.objects);
       }
       // CR 614.1c / 707.9 (D-151): the creature an artifact enters as a copy of.
-      if (d.purpose === 'entersCopy')
+      if (d.purpose === 'cipher')
+        return finishResolutionAnswer(answerResolutionCipher(state, action.objects));
+      if (d.purpose === 'entersCopy' || d.purpose === 'entersCopyOther')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
+      // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
+      if (d.purpose === 'entersRemoveCounters')
+        return finishResolutionAnswer(answerResolutionRemoveCounters(state, action.objects));
       // CR 702.82a (D-185): the creatures sacrificed as a permanent with devour enters.
       if (d.purpose === 'devour')
         return finishResolutionAnswer(answerResolutionDevour(state, action.objects));
@@ -1201,6 +1252,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       return fail('Accept or decline');
     }
     case 'chooseOption': {
+      // CR 733: the counters removed to pay a cost can be taken back with `cancel`, which rewinds the activation.
+      if (d.forCost === true && action.kind === 'cancel') return cancelCast(state);
       if (action.kind !== 'chooseOption') return fail('Choose one of the options');
       return answerChooseOption(state, seat, d, action.option);
     }
@@ -1247,6 +1300,12 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (!isLegalModeSet(d.sets, action.modes)) return fail('That is not a legal choice of modes');
       if (d.forTrigger === true) return answerTriggerModeChoice(state, action.modes);
       return answerModes(state, action.modes);
+    }
+    case 'chooseParty': {
+      // CR 700.8d, 101.4 (Stick Together): the party the player chose among the creatures they control.
+      if (action.kind !== 'chooseParty') return fail('Choose a party');
+      if (!isLegalParty(d.slots, action.party)) return fail('That is not a legal party');
+      return finishResolutionAnswer(answerResolutionParty(state, action.party));
     }
     case 'choosePayOptions': {
       // CR 601.2f-h, 702.51a, 702.126a, 702.66a (D-120): what is tapped or exiled for the cost of a spell being

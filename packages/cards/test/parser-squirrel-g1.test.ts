@@ -39,11 +39,7 @@ describe('"If you would create a Clue, Food, or Treasure token, instead create o
             anyOf: [{ subtypes: ['Clue'] }, { subtypes: ['Food'] }, { subtypes: ['Treasure'] }],
           },
           mode: 'eachOf',
-          tokens: [
-            { kind: 'preset', preset: 'Clue' },
-            { kind: 'preset', preset: 'Food' },
-            { kind: 'preset', preset: 'Treasure' },
-          ],
+          tokens: ['Clue', 'Food', 'Treasure'],
         },
       },
     ]);

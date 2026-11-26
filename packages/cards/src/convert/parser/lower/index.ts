@@ -21,10 +21,16 @@ import { ATTACHMENT_NEEDS } from './attachments';
 import { AURA_GRAVEYARD_NEEDS } from './aura-graveyard';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
+import { COUNCIL_VOTES_NEEDS } from './council-votes';
+import { COUNTER_BLITZ_G_NEEDS } from './counter-blitz-g';
+import { COUNTER_GROUP_A_NEEDS } from './counter-group-a';
+import { COUNTER_INTELLIGENCE_G2_NEEDS } from './counter-intelligence-g2';
+import { COUNTER_INTELLIGENCE_G3_NEEDS } from './counter-intelligence-g3';
 import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
+import { ELVEN_COUNCIL_REVEAL_NEEDS } from './elven-council-reveal';
 import { EXILED_WITH_NEEDS } from './exiled-with';
 import type { FeatureRef } from './features';
 import { FINALE_NEEDS } from './finale';
@@ -37,15 +43,24 @@ import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS, MODE_CHOICE_NEEDS, MODE_COST_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
+import { PLAYER_CHOICES_NEEDS } from './player-choices';
 import { REVEAL_TOP_CARD_NEEDS } from './reveal-top-card';
 import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
-import { COMBAT_DAMAGE_TO_PLAYER_NEEDS, NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
+import { SECRET_VOTES_NEEDS } from './secret-votes';
+import {
+  COMBAT_DAMAGE_BATCH_NEEDS,
+  COMBAT_DAMAGE_TO_PLAYER_NEEDS,
+  NEXT_CAST_NEEDS,
+  SENTENCE_NEEDS,
+} from './sentences';
 import { usesSharesWithSource } from './sliver-d';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
+import { THEN_MAY_RETURN_NEEDS } from './then-may-return';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
 import { TROYAN_G4_NEEDS } from './troyan-g4';
 import type { FaceCosts, LowerContext, LowerResult, SpellParts } from './types';
+import { VOTE_PERMANENTS_NEEDS } from './vote-permanents';
 import { WIN_GAME_NEEDS } from './win-game';
 
 // The clause that creates a token with an ability in quotes lowers that ability with these two (stage P35, D-176; `late.ts`).
@@ -165,14 +180,24 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...LOCKE_NEEDS,
     ...AURA_GRAVEYARD_NEEDS,
     ...LIMIT_BREAK_G1_NEEDS,
+    ...COUNTER_BLITZ_G_NEEDS,
+    ...COUNTER_GROUP_A_NEEDS,
+    ...COUNTER_INTELLIGENCE_G2_NEEDS,
+    ...COUNTER_INTELLIGENCE_G3_NEEDS,
     ...DRAGON_NEEDS,
     ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,
+    ...COUNCIL_VOTES_NEEDS,
+    ...SECRET_VOTES_NEEDS,
+    ...VOTE_PERMANENTS_NEEDS,
+    ...PLAYER_CHOICES_NEEDS,
     ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,
+    ...ELVEN_COUNCIL_REVEAL_NEEDS,
     ...REVEAL_TOP_CARD_NEEDS,
     ...PLANESWALKER_NEEDS,
+    ...THEN_MAY_RETURN_NEEDS,
     ...DESTINY_NEEDS,
     ...WIN_GAME_NEEDS,
     ...MELD_NEEDS,
@@ -182,6 +207,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...SENTENCE_NEEDS,
     ...NEXT_CAST_NEEDS,
     ...COMBAT_DAMAGE_TO_PLAYER_NEEDS,
+    ...COMBAT_DAMAGE_BATCH_NEEDS,
     ...AMOUNT_NEEDS,
     ...(Object.values(SELECTOR_NEEDS) as FeatureRef[]),
     'token:Treasure',

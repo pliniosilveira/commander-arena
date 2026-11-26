@@ -156,6 +156,12 @@ export const STATIC_CANT_LOSE_WIN = defineRule<IrStatic>({
 
 const SCOPE_WORDS = '(all|all combat|all noncombat) damage';
 
+/** The scope a `SCOPE_WORDS` match says. */
+function scopeOf(word: string | undefined): 'all' | 'combat' | 'noncombat' {
+  const w = (word ?? '').toLowerCase();
+  return w === 'all combat' ? 'combat' : w === 'all noncombat' ? 'noncombat' : 'all';
+}
+
 /**
  * `static.prevent-damage-to-self`: "Prevent all combat damage that would be dealt to ~.", "Prevent all damage that would be dealt to ~.",
  * "Prevent all noncombat damage that would be dealt to ~." (CR 615.1, 615.6: damage that would be dealt is not dealt; a static ability of
@@ -206,6 +212,271 @@ export const STATIC_PREVENT_DAMAGE_TO_SELF = defineRule<IrStatic>({
         'static.prevent-damage-to-self',
         subjectNoun('self', '~', self.span, 'static.prevent-damage-to-self'),
         [{ kind: 'preventDamageToThis', scope }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.prevent-damage-around`: "Prevent all combat damage that would be dealt by ~.", "Prevent all combat damage that would be dealt to and dealt by ~.", "Prevent all noncombat
+ * damage that would be dealt to you and other permanents you control." (CR 615.1, 615.6, 604.1; Planeswalker Party deck: Fog Bank, The Wanderer): static prevention of the
+ * damage a permanent deals, or of the damage dealt to its controller and their other permanents. "to and dealt by ~" is the two statics, the prevention to the permanent and
+ * the one by it. Only all of it, with no duration. Not read: "the next 3 damage", a recipient other than "you and other permanents you control", "dealt by creatures",
+ * a duration (that is `effect.prevent-all`), "to you and permanents you control" (this one included: a different statement) and a condition.
+ */
+export const STATIC_PREVENT_DAMAGE_AROUND = defineRule<IrStatic>({
+  id: 'static.prevent-damage-around',
+  family: 'static',
+  leading: ['prevent'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Prevent all combat damage that would be dealt by ~.',
+    'Prevent all damage that would be dealt by ~.',
+    'Prevent all combat damage that would be dealt to and dealt by ~.',
+    'Prevent all damage that would be dealt to and dealt by ~.',
+    'Prevent all noncombat damage that would be dealt to you and other permanents you control.',
+    'Prevent all damage that would be dealt to you and other permanents you control.',
+  ],
+  rejects: [
+    'Prevent all combat damage that would be dealt by ~',
+    'Prevent all combat damage that would be dealt by ~ this turn.',
+    'Prevent all combat damage that would be dealt by creatures.',
+    'Prevent the next 3 damage that would be dealt by ~.',
+    'Prevent all noncombat damage that would be dealt to you and other permanents you control this turn.',
+    'Prevent all noncombat damage that would be dealt to you and permanents you control.',
+    'Prevent all noncombat damage that would be dealt to you and other creatures you control.',
+    'Prevent all combat damage that would be dealt to and dealt by ~ and draw a card.',
+    'Prevent all combat damage that would be dealt to ~.',
+  ],
+  parse: (ctx, pos) => {
+    const byThis = sequence(
+      pattern(new RegExp(`prevent ${SCOPE_WORDS} that would be dealt (to and dealt )?by `, 'iu')),
+      spanned(literal('~')),
+      PERIOD,
+    )(ctx, pos);
+    if (byThis.ok) {
+      const [head, self] = byThis.value;
+      const scope = scopeOf(head[1]);
+      const around = {
+        kind: 'preventDamageAround' as const,
+        scope,
+        events: 'dealtByThis' as const,
+      };
+      return {
+        ok: true,
+        value: staticOf(
+          'static.prevent-damage-around',
+          subjectNoun('self', '~', self.span, 'static.prevent-damage-around'),
+          head[2] === undefined ? [around] : [{ kind: 'preventDamageToThis', scope }, around],
+          pos,
+          byThis.pos,
+        ),
+        pos: byThis.pos,
+      };
+    }
+    const toYou = sequence(
+      pattern(
+        new RegExp(
+          `prevent ${SCOPE_WORDS} that would be dealt to you and other permanents you control`,
+          'iu',
+        ),
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!toYou.ok) return byThis;
+    const [head] = toYou.value;
+    return {
+      ok: true,
+      value: staticOf(
+        'static.prevent-damage-around',
+        subjectNoun('self', '~', { start: pos, end: toYou.pos }, 'static.prevent-damage-around'),
+        [
+          {
+            kind: 'preventDamageAround',
+            scope: scopeOf(head[1]),
+            events: 'dealtToYouAndYourOtherPermanents',
+          },
+        ],
+        pos,
+        toYou.pos,
+      ),
+      pos: toYou.pos,
+    };
+  },
+});
+
+/**
+ * `static.prevent-all-but`: "If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage." (Ajani Steadfast's emblem; CR 615.1, 120.3, 114.4): the damage
+ * dealt to the controller or to a planeswalker they control is prevented but for one point. The engine's `preventDamageAround` with `keep`. Not read: another number, "all of that damage",
+ * another recipient, "this turn", a condition.
+ */
+export const STATIC_PREVENT_ALL_BUT = defineRule<IrStatic>({
+  id: 'static.prevent-all-but',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 120.3 (Damage)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage.',
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 2 of that damage.',
+  ],
+  rejects: [
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage',
+    'If a source would deal damage to you or a planeswalker you control, prevent all of that damage.',
+    'If a source would deal damage to you, prevent all but 1 of that damage.',
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 0 of that damage.',
+    'If a source would deal damage to you or a creature you control, prevent all but 1 of that damage.',
+    'If a source would deal damage to you or a planeswalker you control, prevent all but 1 of that damage this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(
+        pattern(
+          /if a source would deal damage to you or a planeswalker you control, prevent all but ([1-9]\d*) of that damage(?![\p{L}\p{N}])/iu,
+        ),
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [found] = r.value;
+    const keep = Number(found.value[1]);
+    return {
+      ok: true,
+      value: staticOf(
+        'static.prevent-all-but',
+        subjectNoun('self', '~', found.span, 'static.prevent-all-but'),
+        [
+          {
+            kind: 'preventDamageAround',
+            scope: 'all',
+            events: 'dealtToYouAndYourPlaneswalkers',
+            keep,
+          },
+        ],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.combat-creature-limit`: "No more than one creature can attack each combat." and "No more than one creature can block each combat." (Silent Arbiter; CR 508.1c, 509.1b, 604.1): a
+ * restriction on how many creatures are declared as attackers or as blockers. The engine's `combatCreatureLimit`. Only "creature" and "each combat" and a number of one to three, in
+ * words or digits. Not read: another span ("each turn"), "creatures you control", "no more than zero", a condition.
+ */
+export const STATIC_COMBAT_CREATURE_LIMIT = defineRule<IrStatic>({
+  id: 'static.combat-creature-limit',
+  family: 'static',
+  leading: ['no'],
+  cites: [
+    'CR 508.1c (Declare Attackers Step)',
+    'CR 509.1b (Declare Blockers Step)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'No more than one creature can attack each combat.',
+    'No more than one creature can block each combat.',
+    'No more than two creatures can attack each combat.',
+    'No more than 1 creature can block each combat.',
+  ],
+  rejects: [
+    'No more than one creature can attack each combat',
+    'No more than one creature can attack each turn.',
+    'No more than one creature you control can attack each combat.',
+    'No more than zero creatures can attack each combat.',
+    'No more than one creature can attack or block each combat.',
+    'No more than one creatures can attack each combat.',
+    'No more than one creature can attack each combat unless you control a Wizard.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(
+        pattern(
+          /no more than (one|two|three|1|2|3) (creature|creatures) can (attack|block) each combat(?![\p{L}\p{N}])/iu,
+        ),
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [found] = r.value;
+    const word = (found.value[1] ?? '').toLowerCase();
+    const max = word === 'one' || word === '1' ? 1 : word === 'two' || word === '2' ? 2 : 3;
+    if ((max === 1) !== ((found.value[2] ?? '').toLowerCase() === 'creature'))
+      return fail(ctx, pos);
+    const what = (found.value[3] ?? '').toLowerCase() === 'attack' ? 'attack' : 'block';
+    return {
+      ok: true,
+      value: staticOf(
+        'static.combat-creature-limit',
+        subjectNoun('self', '~', found.span, 'static.combat-creature-limit'),
+        [{ kind: 'combatCreatureLimit', what, max }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.draw-limit`: "Each opponent can't draw more than one card each turn." (Narset, Parter of Veils; CR 121.2b, 604.1): the opponents of the controller draw at most that many cards
+ * in a turn. The engine's `drawLimit`. Only "each opponent" or "your opponents" and a number of cards written as a word or a digit; "each player" is `players`. Not read: "more than one card
+ * each turn" with another span ("each combat"), "you can't draw", "can't draw cards", a condition, "unless".
+ */
+export const STATIC_DRAW_LIMIT = defineRule<IrStatic>({
+  id: 'static.draw-limit',
+  family: 'static',
+  leading: ['each', 'your', 'players'],
+  cites: ['CR 121.2b (Drawing a Card)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    "Each opponent can't draw more than one card each turn.",
+    'Each opponent can’t draw more than one card each turn.',
+    "Your opponents can't draw more than one card each turn.",
+    "Each player can't draw more than two cards each turn.",
+  ],
+  rejects: [
+    "Each opponent can't draw more than one card each turn",
+    "Each opponent can't draw more than one card each combat.",
+    "Each opponent can't draw more than one card.",
+    "Each opponent can't draw more than zero cards each turn.",
+    "You can't draw more than one card each turn.",
+    "Each opponent can't draw more than one card each turn unless you control a Wizard.",
+    "Each opponent can't draw more than one cards each turn.",
+    "Each opponent can't draw cards each turn.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(pattern(/(each opponent|your opponents|each player)(?![\p{L}\p{N}])/iu)),
+      pattern(
+        /\s+can['’]t draw more than (one|two|three|1|2|3) (card|cards) each turn(?![\p{L}\p{N}])/iu,
+      ),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [who, tail] = r.value;
+    const word = (tail[1] ?? '').toLowerCase();
+    const max = word === 'one' || word === '1' ? 1 : word === 'two' || word === '2' ? 2 : 3;
+    // "one card" and "N cards" agree (CR 121.2b is about the number of cards).
+    if ((max === 1) !== ((tail[2] ?? '').toLowerCase() === 'card')) return fail(ctx, pos);
+    const group = (who.value[1] ?? '').toLowerCase() === 'each player' ? 'players' : 'opponents';
+    return {
+      ok: true,
+      value: staticOf(
+        'static.draw-limit',
+        subjectNoun('self', '~', who.span, 'static.draw-limit'),
+        [{ kind: 'drawLimit', who: group, max }],
         pos,
         r.pos,
       ),
@@ -364,6 +635,10 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_PLAYER_HEXPROOF,
   STATIC_CANT_LOSE_WIN,
   STATIC_PREVENT_DAMAGE_TO_SELF,
+  STATIC_PREVENT_DAMAGE_AROUND,
+  STATIC_DRAW_LIMIT,
+  STATIC_COMBAT_CREATURE_LIMIT,
+  STATIC_PREVENT_ALL_BUT,
   STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
 ].map(quietly);

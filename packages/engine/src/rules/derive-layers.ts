@@ -27,6 +27,7 @@ import {
   isNonCreatureSubtype,
   LAND_TYPES,
   type Subtype,
+  subtypeFitsTypes,
 } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ContinuousChange, ContinuousEffect } from '../state/types';
@@ -61,7 +62,7 @@ export interface TypeLine {
  * - New card types replace the old ones, except that an instant or sorcery stays one (CR 205.1a).
  * - New subtypes replace the creature types and keep the others (CR 205.1a, 205.3d).
  * - A card type that is gone takes its correlated subtypes with it (CR 205.1a): without creature or
- *   kindred, no creature type stays.
+ *   kindred, no creature type stays, and a planeswalker that is no longer one loses its planeswalker type.
  * - An `additive` effect ("becomes an artifact creature", "in addition to its other types", CR
  *   205.1b) replaces nothing: it adds its card types and subtypes to everything the object has. A
  *   Vehicle that is crewed is the case (CR 702.122a); it keeps the Vehicle subtype and its artifact
@@ -84,9 +85,7 @@ export function applyTypeLayer(
       // CR 205.1a (D-229): a card type is removed; the subtypes of that type go unless another type the object has still allows them.
       const gone = e.change.remove;
       types = types.filter((t) => !gone.includes(t));
-      if (!types.includes('creature') && !types.includes('kindred')) {
-        subtypes = subtypes.filter(isNonCreatureSubtype);
-      }
+      subtypes = subtypes.filter((s) => subtypeFitsTypes(s, types));
       continue;
     }
     if (e.change.additive === true) {
@@ -106,9 +105,8 @@ export function applyTypeLayer(
         ? [...new Set([...subtypes.filter((s) => !LAND_TYPES.includes(s)), ...e.change.subtypes])]
         : [...new Set([...subtypes.filter(isNonCreatureSubtype), ...e.change.subtypes])];
     }
-    if (!types.includes('creature') && !types.includes('kindred')) {
-      subtypes = subtypes.filter(isNonCreatureSubtype);
-    }
+    // CR 205.1a (Sarkhan the Masterless): a card type that was replaced takes its subtypes with it, a planeswalker's too, unless another type the object has allows them.
+    subtypes = subtypes.filter((s) => subtypeFitsTypes(s, types));
   }
   return types === base.types && subtypes === base.subtypes ? base : { types, subtypes };
 }
@@ -213,6 +211,9 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   // CR 702.189a: each instance of firebending is its own triggered ability (the ruling: "Multiple instances of firebending on the same creature trigger separately").
   'firebending',
   'myriad',
+  'extort',
+  // CR 702.121b: if a creature has multiple instances of melee, each triggers separately.
+  'melee',
   'demonstrate',
   'storm',
   'cascade',
@@ -221,9 +222,13 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability; CR 702.56a: a Replicate given to a spell, with its trigger). */
 const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = [
   'decayed',
+  // CR 702.93a (Undying): a granted undying is the triggered ability the keyword stands for.
+  'undying',
   'cycling',
   'replicate',
   'encore',
+  // CR 702.84a: Unearth given to a card of a graveyard (Solemn Doomguide) is the activated ability it stands for.
+  'unearth',
   // CR 702.6a: a granted equip is the activated ability it stands for ("Treasures you control have equip {3}").
   'equip',
 ];
@@ -390,5 +395,8 @@ export function applyPtLayers(
     addPower += e.change.power;
     addToughness += e.change.toughness;
   }
-  return { power: power + addPower, toughness: toughness + addToughness };
+  const sums = { power: power + addPower, toughness: toughness + addToughness };
+  // CR 613.4d (layer 7d): switching power and toughness applies after every other effect, whatever the timestamps; each switch switches again.
+  const switches = ofKind(effects, 'switchPt').length;
+  return switches % 2 === 1 ? { power: sums.toughness, toughness: sums.power } : sums;
 }

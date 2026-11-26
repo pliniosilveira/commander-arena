@@ -19,9 +19,11 @@ import { hasteActivationSources } from './derive-statics';
 import { exertPermanent } from './exert';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
+import { putOwnCounters } from './mana-put-counter';
 import { additionalManaOptions } from './mana-triggers';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
+import { activationLockedByName } from './name-locks';
 import { lifeTotalIsLocked } from './player-lock';
 import { hasRestriction } from './restrictions';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
@@ -227,7 +229,9 @@ export function counterCostsOf(
   ability: ManaAbility,
 ): readonly { readonly counter: string; readonly count: number }[] {
   return ability.cost.flatMap((c) =>
-    c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+    c.kind === 'removeCounters' && c.counter !== undefined
+      ? [{ counter: c.counter, count: c.count }]
+      : [],
   );
 }
 
@@ -337,6 +341,10 @@ export function physicalRefusal(
     return `${name} is not yours`;
   // CR 602.5, 605.1a (Galadriel group 3): "Its activated abilities can't be activated this turn" includes the mana abilities.
   if (hasRestriction(state, obj, 'cantActivateAbilities')) {
+    return `${name}'s activated abilities cannot be activated`;
+  }
+  // CR 602.5, 605.1a, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated" includes the mana abilities.
+  if (activationLockedByName(state, obj)) {
     return `${name}'s activated abilities cannot be activated`;
   }
   if (hasCost(ability, 'tap') && !canTapForMana(state, obj, seat)) {
@@ -474,6 +482,10 @@ export function payManaAbilityCosts(
       events.push(...sacrificed.events);
     }
   }
+  // CR 605.3b, 122.6 (Empowered Autogenerator): the ability's first instruction, the counters it puts on its own permanent, before the mana is added.
+  const put = putOwnCounters(next, id, ability, seat);
+  next = put.state;
+  events.push(...put.events);
   return { state: next, events };
 }
 

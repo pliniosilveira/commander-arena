@@ -184,8 +184,9 @@ describe('countersOn with no kind of counter (CR 122.1)', () => {
     expect(validateCard(enchantment(triggered(CREATURE_DIES, gain)))).toEqual([]);
   });
 
-  test('a static ability condition reads one kind it names', () => {
-    const card = singleFaceCard({
+  // CR 122.1, 613.8: the counters on this permanent belong to no layer; a kind may be left out to count every kind (Gavel of the Righteous), and a kind that is no name is refused.
+  const staticProbe = (counter?: unknown) =>
+    singleFaceCard({
       name: 'SYNTHETIC Static Counter Probe',
       manaCost: ['1'],
       types: ['creature'],
@@ -204,13 +205,23 @@ describe('countersOn with no kind of counter (CR 122.1)', () => {
           },
           condition: {
             kind: 'amountIs',
-            amount: { kind: 'countersOn', of: { kind: 'this' } },
+            amount: {
+              kind: 'countersOn',
+              of: { kind: 'this' },
+              ...(counter === undefined ? {} : { counter }),
+            },
             compare: { cmp: 'atLeast', value: 1 },
           },
         } as unknown as Ability,
       ],
     });
-    expect(messages(card).join('\n')).toMatch(/names the kind of counter/);
+
+  test('a static ability condition with no kind of counter counts every kind', () => {
+    expect(messages(staticProbe())).toEqual([]);
+  });
+
+  test('a static ability condition whose kind is no name is refused', () => {
+    expect(messages(staticProbe(5)).join('\n')).toMatch(/the kind of counter is a name/);
   });
 });
 

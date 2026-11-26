@@ -24,7 +24,7 @@ function bare(det: IrNoun['det'], raw: string, extra: Partial<Bare> = {}): Bare 
  * opponent is the second player; "you and each opponent" is "each player" in other words, and is not read. Since
  * D-269 the second player may also be "that player" ("you and that player each gain that much life"), the player a trigger or an earlier
  * target names; the binding pass points it at that player (and refuses a text that names none), and the lowering at what the engine can
- * name (`triggerPlayer` or the target).
+ * name (`triggerPlayer` or the target). Or "defending player" (CR 508.5, Eumidian Wastewaker: "you and defending player each discard a card or sacrifice a permanent").
  */
 export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
   id: 'noun.you-and-player',
@@ -35,8 +35,11 @@ export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
     'you and target opponent each',
     'you and target player each',
     'you and that player each',
+    'you and defending player each',
   ],
   rejects: [
+    'you and the defending player each',
+    'you and defending players each',
     'you and that player',
     'you and that players each',
     'you and those players each',
@@ -57,14 +60,15 @@ export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
   parse: (ctx, pos) => {
     const you = spanned(pattern(/you and /i))(ctx, pos);
     if (!you.ok) return you;
-    const other = family<IrNoun>('noun', { only: ['noun.player', 'noun.that-player'] })(
-      ctx,
-      you.pos,
-    );
+    const other = family<IrNoun>('noun', {
+      only: ['noun.player', 'noun.that-player', 'noun.defending-player'],
+    })(ctx, you.pos);
     if (!other.ok) return other;
     // The second player is chosen as a target or is the player the text already names ("that player"); "each opponent" and "you" are other readings.
     const named = other.value.det === 'anaphor' && /^that player$/iu.test(other.value.filter.raw);
-    if (other.value.det !== 'target' && !named) return fail(ctx, you.pos);
+    if (other.value.det !== 'target' && other.value.det !== 'defendingPlayer' && !named) {
+      return fail(ctx, you.pos);
+    }
     const each = pattern(new RegExp(` each${END}`, 'iu'))(ctx, other.pos);
     if (!each.ok) return each;
     const youNoun: IrNoun = {
@@ -125,6 +129,25 @@ export const NOUN_DEFENDING_PLAYER = defineRule<IrNoun>({
   rejects: ['defending players', 'the defending player', 'defending', 'defending creature'],
   parse: phrase('noun.defending-player', new RegExp(`defending player${END}`, 'iu'), (raw) =>
     bare('defendingPlayer', raw),
+  ),
+});
+
+/**
+ * `noun.entered-chosen-player`: "the chosen player" (CR 614.12a, 607.2d; Stuffy Doll): the player the permanent chose as it entered, by the linked "As ~ enters, choose a
+ * player". The engine's `PlayerSelector` `enteredChosenPlayer`; a face without that choice refuses it (`validateCard`). Not read: "the chosen creature type" or any other
+ * chosen thing, "chosen player" without "the", the plural.
+ */
+export const NOUN_ENTERED_CHOSEN_PLAYER = defineRule<IrNoun>({
+  id: 'noun.entered-chosen-player',
+  family: 'noun',
+  leading: ['the'],
+  cites: ['CR 614.12a (Replacement Effects)', 'CR 607.2d (Linked Abilities)'],
+  examples: ['the chosen player', 'The chosen player'],
+  rejects: ['the chosen players', 'chosen player', 'the chosen player’s', 'the chosen color'],
+  parse: phrase(
+    'noun.entered-chosen-player',
+    new RegExp(`the chosen player(?!['’]|s)${END}`, 'iu'),
+    (raw) => bare('enteredChosenPlayer', raw),
   ),
 });
 
@@ -264,12 +287,57 @@ export const NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER = defineRule<IrNoun>({
   },
 });
 
+/**
+ * `noun.each-of-its-controllers-opponents`: "each of its controller's opponents" (Bounty Board: "Whenever a creature with a bounty counter on it dies, each of its controller's opponents draws a
+ * card and gains 2 life."; CR 102.2, 109.4, 608.2h): the opponents of the controller of an object an earlier part of the text named, read from its last-known information when it has left. In a
+ * game of free-for-all Commander every player but that controller is their opponent, so the lowering names the engine's `eachPlayerExcept` of that controller, as it does for "each player
+ * other than its controller". Not read: "each of your opponents" (`you`), "each of its owner's opponents", "each of its controllers' opponents", "each of its controller's opponent", "each of
+ * that creature's controller's opponents", a missing "of".
+ */
+export const NOUN_EACH_OF_ITS_CONTROLLERS_OPPONENTS = defineRule<IrNoun>({
+  id: 'noun.each-of-its-controllers-opponents',
+  family: 'noun',
+  leading: ['each'],
+  cites: ['CR 102.2 (Players)', 'CR 109.4 (Objects)', 'CR 608.2h (Resolving Spells and Abilities)'],
+  examples: ["each of its controller's opponents", 'Each of its controller’s opponents'],
+  rejects: [
+    'each of your opponents',
+    "each of its owner's opponents",
+    "each of its controllers' opponents",
+    "each of its controller's opponent",
+    "each of that creature's controller's opponents",
+    "its controller's opponents",
+    "each of its controller's",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/each of its controller['’]s opponents(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    const text = ctx.text.slice(pos, r.pos);
+    const itsStart = pos + 'each of '.length;
+    const controller: IrNoun = {
+      ...bare('controllerOf', "its controller's", {
+        of: possessedNoun('noun.each-of-its-controllers-opponents', 'its', itsStart),
+      }),
+      span: { start: itsStart, end: r.pos },
+      rule: 'noun.each-of-its-controllers-opponents',
+    };
+    const noun: IrNoun = {
+      ...bare('eachPlayer', text, { of: controller }),
+      span: { start: pos, end: r.pos },
+      rule: 'noun.each-of-its-controllers-opponents',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
 export const PLAYER_NOUN_RULES = [
   NOUN_YOU_AND_PLAYER,
   NOUN_EACH_OTHER_PLAYER,
   NOUN_EACH_PLAYER_OTHER_THAN_ITS_CONTROLLER,
+  NOUN_EACH_OF_ITS_CONTROLLERS_OPPONENTS,
   NOUN_DEFENDING_PLAYER,
   NOUN_PLAYER_TO_YOUR_RIGHT,
+  NOUN_ENTERED_CHOSEN_PLAYER,
   NOUN_THAT_PLAYER,
   NOUN_THAT_ATTACKING_PLAYER,
   NOUN_THEY,

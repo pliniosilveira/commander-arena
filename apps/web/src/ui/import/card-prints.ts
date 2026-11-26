@@ -16,9 +16,13 @@ export interface CardPrint {
   /** Extra frames that make a printing look different: "Borderless", "Showcase", "Extended art", "Full art". */
   readonly frames: readonly string[];
   readonly foilOnly: boolean;
+  /** The printing shows another name than the card's own (a Universes Beyond reprint): drawn on the table it would look like another card. */
+  readonly renamed: boolean;
   readonly small: string | null;
   readonly normal: string;
   readonly large: string;
+  /** The cropped art, which the board draws on a small tile; null when Scryfall gives none. */
+  readonly artCrop: string | null;
 }
 
 export function cardPrintsUrl(name: string): string {
@@ -51,6 +55,7 @@ export function parseCardPrints(answer: unknown): readonly CardPrint[] {
     const large = str(uris?.large) || normal;
     if (!HOST.test(normal) || !HOST.test(large)) continue;
     const small = str(uris?.small);
+    const artCrop = str(uris?.art_crop);
     const frameEffects = Array.isArray(card.frame_effects) ? card.frame_effects : [];
     const frames = [
       card.border_color === 'borderless' && 'Borderless',
@@ -67,9 +72,11 @@ export function parseCardPrints(answer: unknown): readonly CardPrint[] {
       rarity: str(card.rarity),
       frames,
       foilOnly: card.nonfoil === false,
+      renamed: str(card.printed_name) !== '' && str(card.printed_name) !== str(card.name),
       small: HOST.test(small) ? small : null,
       normal,
       large,
+      artCrop: HOST.test(artCrop) ? artCrop : null,
     });
   }
   return prints;
@@ -88,15 +95,23 @@ const queue = createRequestQueue({
 });
 const cache = new Map<string, Promise<readonly CardPrint[]>>();
 
-function loadPrints(name: string): Promise<readonly CardPrint[]> {
+/** The printings of the card `name`, one search per card. A failure that says nothing about the card (offline, rate limited) is not remembered. */
+export function findPrints(name: string): Promise<readonly CardPrint[]> {
   const url = cardPrintsUrl(name);
   let result = cache.get(url);
   if (result === undefined) {
-    result = queue
+    const fresh: Promise<readonly CardPrint[]> = queue
       .request({ url })
-      .then((r) => (r.kind === 'response' && r.ok ? parseCardPrints(r.json) : []))
-      .catch(() => []);
-    cache.set(url, result);
+      .then((r) => {
+        if (r.kind === 'failure') cache.delete(url);
+        return r.kind === 'response' && r.ok ? parseCardPrints(r.json) : [];
+      })
+      .catch(() => {
+        cache.delete(url);
+        return [];
+      });
+    cache.set(url, fresh);
+    result = fresh;
   }
   return result;
 }
@@ -110,7 +125,7 @@ export function useCardPrints(name: string): PrintsState {
   const [found, setFound] = useState<{ name: string; prints: readonly CardPrint[] } | null>(null);
   useEffect(() => {
     let alive = true;
-    void loadPrints(name).then((prints) => {
+    void findPrints(name).then((prints) => {
       if (alive) setFound({ name, prints });
     });
     return () => {

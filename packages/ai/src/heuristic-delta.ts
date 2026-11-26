@@ -4,20 +4,17 @@
  * turn, and `evaluate` scores it for the agent. The delta of a play is that score minus the score of
  * passing on the same sample. The engine decides what dies, what survives and what triggers, so no text
  * filter is needed to tell a good board wipe from a bad one. The real game is never touched
- * (`applyAction` is pure), a refused step drops the candidate (null) instead of guessing, and the budget
- * (`Think.budget`) stops the search: a play the search did not reach is kept, as it was before.
+ * (`applyAction` is pure), a refused step drops the candidate (null) instead of guessing, and the decision's
+ * budget (`Think.budget`, which counts these engine calls) stops the search: a play the search did not reach
+ * is kept, as it was before.
  */
 import type { Action, GameView, PendingDecision } from '@commander-arena/engine';
-import { getView } from '@commander-arena/engine';
 import type { Play } from './casual-priority';
 import { evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
-import { applyOrNull, playOut } from './heuristic-sim';
+import { applyOrNull, playOut, within } from './heuristic-sim';
 
 export type Answer = (view: GameView, pending: PendingDecision) => Action;
-
-/** A play whose delta is below minus this is not made (score points; a card in hand is worth 1.2). */
-export const DELTA_FLOOR = 0.5;
 
 /** Casts `play` on the sample and plays the follow-up questions and the rest of the turn out; the score or null. */
 export function scoreCast(
@@ -25,12 +22,13 @@ export function scoreCast(
   me: number,
   play: Action | null,
   answer: Answer,
-  budget: Think['budget'],
+  think: Pick<Think, 'budget' | 'weights'>,
 ): number | null {
   if (sample === undefined) return null;
+  const engine = think.budget.engine;
   let state = sample;
   if (play !== null) {
-    const cast = applyOrNull(state, me, play);
+    const cast = applyOrNull(state, me, play, engine);
     if (cast === null) return null;
     state = cast;
     for (let i = 0; i < 12; i += 1) {
@@ -38,7 +36,7 @@ export function scoreCast(
       if (pending === null || pending.seat !== me || pending.kind === 'priority') break;
       let next: ReturnType<typeof applyOrNull>;
       try {
-        next = applyOrNull(state, me, answer(getView(state, me), pending));
+        next = applyOrNull(state, me, answer(engine.view(state, me), pending), engine);
       } catch {
         return null;
       }
@@ -52,16 +50,16 @@ export function scoreCast(
   const end = playOut(
     state,
     me,
-    { abort: budget.over },
+    within(think.budget),
     (s) => s.result !== null || s.turn.number > turn,
     200,
   );
-  return end === null ? null : evaluate(getView(end, me), me).score;
+  return end === null ? null : evaluate(engine.view(end, me), me, think.weights).score;
 }
 
 /**
  * The plays of `ordered` (best first) that do not leave the board clearly worse than passing. A play is
- * dropped only when its delta is below `-DELTA_FLOOR`: `evaluate` does not count mana or what a card
+ * dropped only when its delta is below `-main.deltaFloor` (`weights.ts`): `evaluate` does not count mana or what a card
  * draws later, so a play that is slightly negative on the board is kept. With no sample, no budget left
  * or a candidate the engine refuses, the play is kept as the plan made it.
  */
@@ -74,16 +72,17 @@ export function vetPlays(
 ): Play[] {
   const sample = think.sample();
   if (sample === undefined || sample.pending?.kind !== 'priority') return [...ordered];
-  const base = scoreCast(sample, view.viewer, null, answer, think.budget);
+  const search = think.budget.search();
+  const base = scoreCast(sample, view.viewer, null, answer, think);
   if (base === null) return [...ordered];
   const kept: Play[] = [];
   for (const [i, play] of ordered.entries()) {
-    if (think.budget.expired(i + 1)) {
+    if (search.expired(i + 1) !== null) {
       kept.push(...ordered.slice(i));
       break;
     }
-    const score = scoreCast(sample, view.viewer, castAction(play), answer, think.budget);
-    if (score === null || score - base >= -DELTA_FLOOR) kept.push(play);
+    const score = scoreCast(sample, view.viewer, castAction(play), answer, think);
+    if (score === null || score - base >= -think.weights.main.deltaFloor) kept.push(play);
   }
   return kept;
 }

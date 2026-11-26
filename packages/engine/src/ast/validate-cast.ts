@@ -8,18 +8,54 @@ import { type CardType, isPermanentType } from '../characteristics';
 import type { Ability, AlternativeCost, Cost, SpellText } from './types';
 import { type AstIssue, checkCosts, issue } from './validate-parts';
 
-/** CR 702.33a: the kicker cost is mana, life, or both; X is not a cost the engine can ask for. */
-export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
+/**
+ * CR 702.33a: the kicker cost is mana, life, or both; X is not a cost the engine can ask for. A plain kicker (not Multikicker) may also sacrifice one permanent
+ * ("Kicker—Sacrifice a creature.", CR 118.8, 701.21a): a filter of the caster's permanents, paid after the mana as an additional cost's sacrifice is.
+ */
+export function checkKickerCost(
+  cost: readonly Cost[],
+  path: string,
+  out: AstIssue[],
+  /**
+   * "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): only the kicker keyword (`kicker: true`) may have an {X} in its cost, and then its `xNotZero` says so (an X announced as 0 is not
+   * built); a multikicker never has one.
+   */
+  kicker?: { readonly xNotZero: unknown },
+): void {
   checkCosts(cost, path, out);
   if (!Array.isArray(cost)) return;
+  const hasX = cost.some((c) => c?.kind === 'mana' && c.symbols?.includes('X'));
+  if (kicker?.xNotZero !== undefined && (kicker.xNotZero !== true || !hasX)) {
+    issue(out, path, 'xNotZero is true, for a kicker cost with an {X}');
+  }
   cost.forEach((c, i) => {
     if (c?.kind === 'mana') {
-      if (c.symbols?.includes('X'))
+      if (c.symbols?.includes('X') && kicker?.xNotZero !== true)
         issue(out, `${path}[${i}]`, 'X in a kicker cost is not supported');
     } else if (c?.kind === 'payLife') {
       if (c.amount < 1) issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');
+    } else if (c?.kind === 'sacrifice' && kicker !== undefined) {
+      if (
+        'kind' in c.what ||
+        c.count !== undefined ||
+        c.countX === true ||
+        c.anyNumber === true ||
+        c.atLeastOne === true ||
+        c.alongside !== undefined
+      ) {
+        issue(out, `${path}[${i}]`, 'a kicker sacrifice names one permanent by a filter');
+      }
+      if (cost.filter((o) => o?.kind === 'sacrifice').length > 1) {
+        issue(out, `${path}[${i}]`, 'a kicker cost has one sacrifice');
+      }
     } else {
-      issue(out, `${path}[${i}]`, 'a kicker cost may be mana or life only');
+      issue(
+        out,
+        `${path}[${i}]`,
+        kicker === undefined
+          ? 'a kicker cost may be mana or life only'
+          : 'a kicker cost may be mana, life or a sacrifice only',
+      );
     }
   });
 }
@@ -55,8 +91,22 @@ export function checkFlashbackCost(cost: readonly Cost[], path: string, out: Ast
       if (cost.filter((o) => o?.kind === 'sacrifice').length > 1) {
         issue(out, `${path}[${i}]`, 'a flashback cost has one sacrifice');
       }
+    } else if (c?.kind === 'exileFromGraveyard') {
+      // CR 702.34a, 107.3a, 118.9: "Flashback—{3}{U}{R}, Exile X cards from your graveyard": the X announced as the spell is cast, one such cost, of cards of any kind.
+      if (
+        c.countX !== true ||
+        c.count !== 1 ||
+        Object.keys(c.filter).length > 0 ||
+        cost.filter((o) => o?.kind === 'exileFromGraveyard').length > 1
+      ) {
+        issue(out, `${path}[${i}]`, 'a flashback exile of graveyard cards is X cards of any kind');
+      }
     } else if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana, life or a sacrifice only');
+      issue(
+        out,
+        `${path}[${i}]`,
+        'a flashback cost may be mana, life, a sacrifice or an exile of X graveyard cards only',
+      );
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }
@@ -88,6 +138,15 @@ function mentionsEscaped(node: unknown): boolean {
   const record = node as Record<string, unknown>;
   if (record.kind === 'escaped' || record.ifEscaped === true) return true;
   return Object.values(record).some(mentionsEscaped);
+}
+
+/** True when `node` (any JSON) holds a condition node of kind `castForAlternative`. */
+function mentionsCastForAlternative(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsCastForAlternative);
+  if (node === null || typeof node !== 'object') return false;
+  const record = node as Record<string, unknown>;
+  if (record.kind === 'castForAlternative') return true;
+  return Object.values(record).some(mentionsCastForAlternative);
 }
 
 /** True when `node` (any JSON) holds a condition node of kind `foretold`. */
@@ -152,7 +211,11 @@ function mentionsTimesKicked(node: unknown): boolean {
 export function checkCastFace(
   abilities: readonly Ability[],
   spell: SpellText | null,
-  face: { readonly types: readonly CardType[]; readonly additionalCosts?: readonly Cost[] },
+  face: {
+    readonly types: readonly CardType[];
+    readonly additionalCosts?: readonly Cost[];
+    readonly additionalCostChoice?: readonly (readonly Cost[])[];
+  },
   path: string,
   out: AstIssue[],
   alternatives: readonly AlternativeCost[] = [],
@@ -188,6 +251,14 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'spectacle') && face.types.includes('land')) {
     issue(out, `${path}.alternativeCosts`, 'spectacle is on a spell, not on a land (CR 702.137a)');
   }
+  // CR 702.173a: freerunning is a way to cast a spell, so it is on a card that is not a land.
+  if (alternatives.some((a) => a?.kind === 'freerunning') && face.types.includes('land')) {
+    issue(
+      out,
+      `${path}.alternativeCosts`,
+      'freerunning is on a spell, not on a land (CR 702.173a)',
+    );
+  }
   // CR 702.138a: escape casts a card from the graveyard, so it is on a card that is not a land, and it exiles
   // cards from the graveyard itself, which Delve would also do for the same cards (D-124 refuses the pair).
   if (alternatives.some((a) => a?.kind === 'escape')) {
@@ -200,6 +271,17 @@ export function checkCastFace(
   } else if (mentionsEscaped(abilities) || mentionsEscaped(spell)) {
     // CR 702.138b: without an escape cost nothing can have escaped; the condition would never hold.
     issue(out, path, 'the escaped condition and "escapes with" need an escape cost (CR 702.138b)');
+  }
+  // CR 118.9: without the alternative cost no spell can have been cast for it; the condition would never hold.
+  if (
+    !alternatives.some((a) => a?.kind === 'payMana') &&
+    (mentionsCastForAlternative(abilities) || mentionsCastForAlternative(spell))
+  ) {
+    issue(
+      out,
+      path,
+      'the castForAlternative condition needs a payMana alternative cost (CR 118.9)',
+    );
   }
   // CR 702.143a: without a foretell cost no spell can have been foretold; the condition would never hold.
   if (
@@ -317,6 +399,12 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'morph') && !face.types.includes('creature')) {
     issue(out, `${path}.alternativeCosts`, 'morph is on a creature card (CR 702.37a)');
   }
+  // CR 702.37b: megamorph is a variant of morph, so the flag is only on a morph cost.
+  for (const a of alternatives) {
+    if (a !== undefined && 'megamorph' in a && a.megamorph === true && a.kind !== 'morph') {
+      issue(out, `${path}.alternativeCosts`, 'megamorph is only on a morph cost (CR 702.37b)');
+    }
+  }
   // CR 702.62a (D-128): suspend exiles the card to cast it later, so it is on a card that is not a land, and a face
   // has at most one.
   const suspends = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'suspend');
@@ -369,8 +457,9 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound') =>
-    abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
+  const has = (
+    kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound' | 'cipher',
+  ) => abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
   }
@@ -390,6 +479,29 @@ export function checkCastFace(
       'a flashback sacrifice with an additional sacrifice is not supported',
     );
   }
+  // The cast pays one sacrifice: a kicker sacrifice cannot go with another sacrifice of the same cast (additional cost, either way of a cost choice, or a flashback cost).
+  const kickerAbility = abilities.find((a) => a.kind === 'keyword' && a.keyword.kind === 'kicker');
+  const sacrifices = (costs: readonly Cost[] | undefined): boolean =>
+    (costs ?? []).some((c) => c?.kind === 'sacrifice');
+  if (
+    kickerAbility?.kind === 'keyword' &&
+    kickerAbility.keyword.kind === 'kicker' &&
+    sacrifices(kickerAbility.keyword.cost) &&
+    (sacrifices(face.additionalCosts) ||
+      alternatives.some(
+        (a) => a.kind === 'sacrificeFromGraveyard' || a.kind === 'sacrificePermanents',
+      ) ||
+      (face.additionalCostChoice ?? []).some((way) => sacrifices(way)) ||
+      (flashbackAbility?.kind === 'keyword' &&
+        flashbackAbility.keyword.kind === 'flashback' &&
+        sacrifices(flashbackAbility.keyword.cost)))
+  ) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'a kicker sacrifice with another sacrifice in the cost of the spell is not supported',
+    );
+  }
   // D-667 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
   if (has('retrace') && face.types.includes('land')) {
     issue(out, `${path}.abilities`, 'retrace is on a card that is cast, not a land (CR 702.81a)');
@@ -402,10 +514,40 @@ export function checkCastFace(
   if (has('rebound') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'rebound is on an instant or a sorcery (CR 702.88a)');
   }
+  // CR 702.99: "Cipher appears on some instants and sorceries".
+  if (has('cipher') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
+    issue(out, `${path}.abilities`, 'cipher is on an instant or a sorcery (CR 702.99)');
+  }
   // D-129: "if a replicate cost was paid for it" needs a replicate ability to pay.
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');
   if (!replicable && (mentionsReplicated(abilities) || mentionsReplicated(spell))) {
     issue(out, path, 'the replicated condition needs a replicate ability (CR 702.56a)');
+  }
+  // CR 702.56a (Psionic Ritual): a replicate cost that taps permanents is paid with the cost of tapping permanents the cast already has (a `tapPermanents` alternative cost, convoke, improvise
+  // or delve), which the engine does not combine.
+  const tapsReplicate = abilities.some(
+    (a) =>
+      a.kind === 'keyword' &&
+      a.keyword.kind === 'replicate' &&
+      Array.isArray(a.keyword.cost) &&
+      a.keyword.cost.some((c) => c?.kind === 'tapPermanents'),
+  );
+  if (
+    tapsReplicate &&
+    (alternatives.some((a) => a?.kind === 'tapPermanents') ||
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      ))
+  ) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'a replicate cost that taps permanents with a tapPermanents alternative cost, convoke, improvise or delve is not supported',
+    );
   }
   // D-135, CR 702.174: "Gift a card" is on a card that is cast (a permanent or an instant or sorcery); the conditions and
   // selectors that read the gift need a gift to be promised.

@@ -5,6 +5,7 @@
  */
 
 import { applyAction, getLegalActions } from '../api';
+import { PARTY_TYPES } from '../characteristics';
 import { stateHash } from '../hash';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import { checkInvariants } from '../invariants';
@@ -406,6 +407,16 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
         run({
           kind: 'choosePermanents',
           objects: cards.map((c) => resolveObject(ctx, c, { zones: ['battlefield'], seat }).id),
+        }),
+      chooseParty: (party) =>
+        run({
+          kind: 'chooseParty',
+          party: PARTY_TYPES.flatMap((type) => {
+            const card = party[type];
+            return card === undefined
+              ? []
+              : [{ type, object: resolveObject(ctx, card, { zones: ['battlefield'], seat }).id }];
+          }),
         }),
       orderTriggers(...order) {
         const d = state.pending;

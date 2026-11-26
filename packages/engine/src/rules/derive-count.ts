@@ -23,12 +23,15 @@ import type { GameObject, GameState } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
+import { countersOfKind } from './counters-of-kind';
 import { basePtOf } from './derive-layers';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
 import { effectsOn } from './effects-on';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
+import { cardsOf } from './melded';
+import { partySizeOf } from './party';
 
 /**
  * How many objects in the filter's zone match it, for an ability whose source is `source`: "you" is
@@ -149,6 +152,22 @@ function countFresh(
 }
 
 /**
+ * CR 700.8: the number of creatures in the party of the controller of `source`, read through `typeViewOf` like a count (layers 1, 4 and 5 and nothing of layer 7), so a
+ * characteristic-defining ability that counts it cannot loop (CR 613.8).
+ */
+export function partySizeForSource(state: GameState, source: GameObject): number {
+  const you = controllerOf(state, source);
+  const creatures: (readonly string[])[] = [];
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) !== you) continue;
+    const view = typeViewOf(state, obj);
+    if (view.types.includes('creature')) creatures.push(view.subtypes);
+  }
+  return partySizeOf(creatures);
+}
+
+/**
  * CR 105.2 (D-179): "the number of colors among permanents you control": how many of the five colors the objects the filter matches have between
  * them, each once; colorless is no color. Read through `typeViewOf` like a count, so it follows layers 1, 4 and 5 and nothing of layer 7.
  */
@@ -219,9 +238,25 @@ export function cardTypesAmongForSource(
  * (the front face of a double-faced card, CR 712.8a, 202.3b), the largest of them; 0 with no commander. It reads the card, not the
  * permanent: no layer can change it, which keeps layer 7 free of loops (CR 613.8).
  */
-export function commandersManaValue(state: GameState, seat: GameObject['controller']): number {
+export function commandersManaValue(
+  state: GameState,
+  seat: GameObject['controller'],
+  zones?: readonly ('battlefield' | 'command')[],
+): number {
   let best = 0;
   for (const card of getSeat(state, seat).commanders) {
+    // CR 903.3, 108.3 (Visions of Glory): only a commander of the player (a card they own) that is now in one of the zones counts.
+    if (
+      zones !== undefined &&
+      !Object.values(state.objects).some(
+        (o) =>
+          cardsOf(o).includes(card) &&
+          (o.zone === 'battlefield' || o.zone === 'command') &&
+          zones.includes(o.zone),
+      )
+    ) {
+      continue;
+    }
     const cost = definitionOf(state, card).faces[0]?.manaCost ?? null;
     if (cost !== null) best = Math.max(best, manaValue(cost));
   }
@@ -262,6 +297,34 @@ function greatestPrintedPowerFor(
   return best;
 }
 
+/**
+ * CR 122.1, 604.3 (Toph, the Blind Bandit: "the number of +1/+1 counters on lands you control"): the counters of the kind (every kind when none is named) on the battlefield permanents
+ * the filter matches, "you" being the controller of the source, added together. The permanents are matched through layers 1, 4 and 5 (`typeViewOf`); counters belong to no layer, so no
+ * count loops (CR 613.8).
+ */
+export function countersAmongForSource(
+  state: GameState,
+  filter: ObjectFilter,
+  counter: string | undefined,
+  source: GameObject,
+): number {
+  const chosen = chosenOf(state, source.id);
+  const ctx = {
+    controller: controllerOf(state, source),
+    source: source.id,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+  };
+  let total = 0;
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const view = typeViewOf(state, obj);
+    if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
+    total += countersOfKind(obj.counters, counter);
+  }
+  return total;
+}
+
 /** CR 903.8 (D-229): the times the commanders of `seat` were cast from the command zone this game, all of them added. */
 export function commandersCastCount(state: GameState, seat: GameObject['controller']): number {
   let total = 0;
@@ -291,23 +354,37 @@ export function staticAmountOf(
   if (amount.kind === 'unspentMana')
     return getSeat(state, controllerOf(state, source)).manaPool.length;
   // CR 122.1, 613.4c (Call for Unity): the counters of the kind on the permanent that has the ability.
-  if (amount.kind === 'countersOnSource') return source.counters[amount.counter] ?? 0;
+  // Gavel of the Righteous: with no kind named, the counters of every kind on it added together.
+  if (amount.kind === 'countersOnSource') return countersOfKind(source.counters, amount.counter);
   if (amount.kind === 'commanderManaValue')
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')
     return commandersCastCount(state, controllerOf(state, source));
+  if (amount.kind === 'partySize') return partySizeForSource(state, source);
   if (amount.kind === 'colorsAmong') return colorsAmongForSource(state, amount.filter, source);
+  if (amount.kind === 'countersAmong')
+    return countersAmongForSource(state, amount.filter, amount.counter, source);
   if (amount.kind === 'greatestPowerAmong')
     return greatestPrintedPowerFor(state, amount.filter, source);
   if (amount.kind === 'times')
     return amount.factor * countForSource(state, amount.of.filter, source, keywordsOf);
   // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".
+  // CR 604.3, 208.2a: and "1 plus the number of card types among cards in your opponents' graveyards" (a number, a count of card types).
   if (amount.kind === 'sum') {
-    return amount.of.reduce(
-      (n, part) => n + countForSource(state, part.filter, source, keywordsOf),
+    return amount.of.reduce<number>(
+      (n, part) =>
+        n +
+        (typeof part === 'number'
+          ? part
+          : part.kind === 'cardTypesAmong'
+            ? cardTypesAmongForSource(state, part.filter, source)
+            : countForSource(state, part.filter, source, keywordsOf)),
       0,
     );
   }
+  // CR 205.2a, 604.3: the card types among the cards of a zone other than the battlefield.
+  if (amount.kind === 'cardTypesAmong')
+    return cardTypesAmongForSource(state, amount.filter, source);
   return countForSource(state, amount.filter, source, keywordsOf);
 }
 

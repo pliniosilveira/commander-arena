@@ -22,6 +22,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   // CR 702.103: cast as an Aura spell that enchants a creature.
   bestow: 'Bestow',
   spectacle: 'Spectacle',
+  // CR 702.173a: cheaper after combat damage to a player by an Assassin or a commander.
+  freerunning: 'Freerunning',
   escape: 'Escape',
   harmonize: 'Harmonize',
   madness: 'Madness',
@@ -41,14 +43,16 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   sacrificePermanents: 'Sacrifice a creature',
   // CR 118.9, 118.4 (Snuff Out): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost".
   payLife: 'Pay life',
+  // CR 118.9 (Baleful Mastery): "You may pay {1}{B} rather than pay this spell's mana cost".
+  payMana: 'Pay alternative cost',
   // Issue 81 (CR 702.176a): enters with time counters and is not a creature until the last is removed.
   impending: 'Impending',
   // CR 702.152a: haste, "When this creature dies, draw a card", sacrificed at the beginning of the next end step.
   blitz: 'Blitz',
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (Marshland Bloodcaster).
   lifeForMana: 'Pay life',
-  // Issue 105 (CR 118.9, 107.14, Nissa, Worldsoul Speaker): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
-  energyGrant: 'Pay energy',
+  // Issue 105 (CR 118.9, 107.14, Nissa, Worldsoul Speaker): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." Tlincalli Hunter: "you may pay {0} rather than pay the mana cost for a creature spell you cast from exile" (no energy).
+  energyGrant: 'Pay alternative cost',
 };
 
 /** True for the alternatives whose cost the card's view carries: overload, evoke, dash, spectacle, escape. */
@@ -66,6 +70,8 @@ export function alternativeLogWords(kind: NamedAlternative): string {
   if (kind === 'sacrificePermanents') return 'by sacrificing creatures';
   // CR 118.9, 118.4: the life is the card's own number, which the cast event does not carry.
   if (kind === 'payLife') return 'by paying life rather than mana';
+  // CR 118.9: the cost is the card's own, which the cast event does not carry.
+  if (kind === 'payMana') return 'for its alternative cost';
   // CR 702.37c, 708.4: the card is the face-down spell; it pays {3}, not its morph cost (that turns it face up).
   if (kind === 'morph') return 'face down';
   // CR 118.9: the life is the spell's mana value, which the cast event does not carry: the log says how the cost was paid.
@@ -109,6 +115,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
     text: 'spectacle',
     title: 'Cast for its spectacle cost: an opponent lost life this turn.',
     fact: 'Cast for its spectacle cost',
+  },
+  freerunning: {
+    text: 'freerunning',
+    title:
+      'Cast for its freerunning cost: you dealt combat damage to a player this turn with an Assassin or commander.',
+    fact: 'Cast for its freerunning cost',
   },
   escape: {
     text: 'escaped',

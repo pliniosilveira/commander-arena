@@ -26,6 +26,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { colorSetAmongForSource } from './derive-count';
+import { putOwnCounters } from './mana-put-counter';
 import { matchesFilter } from './select';
 
 /** The mana types in the order a player is shown them: the five colors, then colorless (CR 106.1b). */
@@ -65,8 +66,12 @@ export function spendRestrictionOf(
   }
   // Issue 102 (Lord of the Forsaken, CR 106.6, 601.2a): "Spend this mana only to cast a spell from your graveyard".
   if (only.fromGraveyard === true) return { kind: 'spellMatch', fromGraveyard: true };
+  // CR 106.6, 108.3 (Thieving Varmint): "Spend this mana only to cast spells you don't own".
+  if (only.notOwned === true) return { kind: 'spellMatch', notOwned: true };
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
+  // CR 106.6, 701.40b (Overgrown Zealot): "Spend this mana only to turn permanents face up".
+  if (only.turnFaceUp === true) return { kind: 'turnFaceUp' };
   // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."
   if (only.notGeneric === true) return { kind: 'notGeneric' };
   // CR 106.6 (issue 345): "Spend this mana only to activate abilities".
@@ -84,6 +89,7 @@ export function spendRestrictionOf(
   return {
     kind: 'spellMatch',
     ...(only.types === undefined ? {} : { types: [...only.types] }),
+    ...(only.notTypes === undefined ? {} : { notTypes: [...only.notTypes] }),
     ...(subtypes === undefined ? {} : { subtypes }),
     ...(only.alsoAbilities === true ? { alsoAbilities: true as const } : {}),
     ...(only.qualities === undefined ? {} : { qualities: only.qualities.map((q) => ({ ...q })) }),
@@ -149,12 +155,62 @@ export function isCombinationProduction(production: ManaProduction): boolean {
 }
 
 /**
+ * Issue 632: the most combinations of "Add X mana in any combination of colors" that are listed as choices. There are C(X + 4, 4) of them (CR 106.1b): 495 for
+ * X = 8 but 249,900 for X = 47 (Selvala, Heart of the Wilds beside a 47-power creature), and every priority grant of the game weighed each one. Past the limit the
+ * ability lists `representativeCombinations` instead, accepts any combination of X mana of the five colors that is named (`acceptedCombination`), and the payment
+ * planner builds only the combinations that differ for the cost it pays (`PaymentSource.anyCombination`).
+ */
+export const MAX_LISTED_COMBINATIONS = 500;
+
+/** How many ways there are to choose `count` mana of the five colors, C(count + 4, 4). */
+export function combinationCount(count: number): number {
+  return ((count + 1) * (count + 2) * (count + 3) * (count + 4)) / 24;
+}
+
+/** Whether "X mana in any combination of colors" has too many combinations to list them (`MAX_LISTED_COMBINATIONS`). */
+export const isTooManyCombinations = (count: number): boolean =>
+  combinationCount(count) > MAX_LISTED_COMBINATIONS;
+
+/**
+ * The combinations of `count` mana a player is shown when there are too many to list: all of one color, then every pair of colors split as evenly as
+ * possible (the first of the pair has the odd mana) and all five colors as evenly as possible, in the order W, U, B, R, G.
+ */
+export function representativeCombinations(count: number): ManaColor[][] {
+  const split = (colors: readonly ManaColor[]): ManaColor[] => {
+    const each = Math.floor(count / colors.length);
+    const extra = count % colors.length;
+    return colors.flatMap((c, i) => Array.from({ length: each + (i < extra ? 1 : 0) }, () => c));
+  };
+  const out: ManaColor[][] = [];
+  const seen = new Set<string>();
+  const add = (colors: readonly ManaColor[]): void => {
+    const combination = canonicalCombination(split(colors));
+    const key = combination.join('');
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(combination);
+  };
+  for (const c of COLORS) add([c]);
+  for (let i = 0; i < COLORS.length; i += 1) {
+    for (let j = i + 1; j < COLORS.length; j += 1)
+      add([COLORS[i] as ManaColor, COLORS[j] as ManaColor]);
+  }
+  add(COLORS);
+  return out;
+}
+
+/**
  * Every way to choose `count` mana of the five colors, each as a combination in `TYPE_ORDER` (D-151). With `distinct` (D-319, "two mana of different
  * colors") only the sets of different colors: the next pick starts after the last one, so no color is picked twice; colorless is not one of the five
  * (CR 105.1, 106.1b).
  */
-function colorMultisets(count: number, distinct: boolean): ManaColor[][] {
-  const colors = COLORS as readonly ManaColor[];
+function colorMultisets(
+  count: number,
+  distinct: boolean,
+  among: readonly ManaColor[] = COLORS,
+): ManaColor[][] {
+  // `among` keeps the order of `COLORS`, so the next pick never goes back (a multiset, not a sequence).
+  const colors = (COLORS as readonly ManaColor[]).filter((c) => among.includes(c));
   const out: ManaColor[][] = [];
   const build = (from: number, picked: ManaColor[]): void => {
     if (picked.length === count) {
@@ -199,13 +255,14 @@ function plainOutcomes(
       return [[...p.mana]];
     }
     case 'anyCombination':
-      // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
-      return colorMultisets(p.count, p.distinct === true);
+      // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors, or of the `colors` the text lists (Relic of Sauron).
+      return colorMultisets(p.count, p.distinct === true, p.colors);
     case 'anyCombinationAmount': {
       // CR 106.1b, 605.3b: "Add X mana in any combination of colors, where X is ...": every multiset of X of the five colors, X read for the controller with the permanent as "this"
       // (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
       const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
-      return colorMultisets(n, false);
+      // Issue 632: too many combinations to list (`MAX_LISTED_COMBINATIONS`): a few of them, the others accepted when named (`acceptedCombination`).
+      return isTooManyCombinations(n) ? representativeCombinations(n) : colorMultisets(n, false);
     }
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
@@ -263,6 +320,37 @@ function plainOutcomes(
       return unreachable;
     }
   }
+}
+
+/**
+ * The types of mana in any outcome of a production that does not look at other permanents: the union of `plainOutcomes`, without listing
+ * them (issue 632). "Add X mana in any combination of colors" has one outcome per multiset of X of the five colors, C(X + 4, 4) of them,
+ * which grows past millions for a large X (Selvala, Heart of the Wilds with a big creature), while the types they hold are just the colors
+ * a combination can use (CR 106.1b, 106.7).
+ */
+function plainTypes(
+  state: GameState,
+  obj: GameObject,
+  p: Exclude<ManaProduction, { kind: 'couldProduce' }>,
+): Set<ManaColor> {
+  if (p.kind === 'anyCombination') {
+    // `colorMultisets`: no mana for a count of 0, and none when `distinct` asks for more different colors than there are to pick from.
+    const colors = COLORS.filter((c) => p.colors === undefined || p.colors.includes(c));
+    const none = p.count <= 0 || (p.distinct === true && p.count > colors.length);
+    return new Set(none ? [] : colors);
+  }
+  if (p.kind === 'anyCombinationAmount') {
+    const n = amountOf(
+      state,
+      p.amount,
+      { controller: controllerOf(state, obj), source: obj.id },
+      [],
+    );
+    return new Set(n > 0 ? COLORS : []);
+  }
+  const types = new Set<ManaColor>();
+  for (const outcome of plainOutcomes(state, obj, p)) for (const m of outcome) types.add(m);
+  return types;
 }
 
 type CouldProduce = Extract<ManaProduction, { kind: 'couldProduce' }>;
@@ -331,9 +419,7 @@ function computeTypes(state: GameState): ReadonlyMap<ObjectId, ReadonlySet<ManaC
           anyType: a.production.anyType === true,
         });
       } else {
-        for (const outcome of plainOutcomes(state, obj, a.production)) {
-          for (const m of outcome) types.add(m);
-        }
+        for (const m of plainTypes(state, obj, a.production)) types.add(m);
       }
     }
     entries.set(id, { abilities, types });
@@ -409,7 +495,8 @@ function couldProduceOutcomes(
     for (const t of types.get(id) ?? []) found.add(t);
   }
   if (p.anyType !== true) found.delete('C');
-  return inTypeOrder(found).map((t) => [t]);
+  // Incubation Druid: `count` mana, all of the one type chosen.
+  return inTypeOrder(found).map((t) => Array.from({ length: p.count ?? 1 }, () => t));
 }
 
 /**
@@ -424,7 +511,58 @@ export function productionOutcomes(
 ): ManaColor[][] {
   const p = effectiveManaAbility(state, obj, ability).production;
   if (p.kind === 'couldProduce') return couldProduceOutcomes(state, obj, p);
+  // CR 605.3b (Empowered Autogenerator): the ability puts its counters first, so an amount counts after them.
+  if (ability.putCounter !== undefined) {
+    const put = putOwnCounters(state, obj.id, ability, controllerOf(state, obj));
+    const after = put.state.objects[obj.id];
+    if (after !== undefined) return plainOutcomes(put.state, after, p);
+  }
   return plainOutcomes(state, obj, p);
+}
+
+/**
+ * How much mana "Add X mana in any combination of colors" makes now, when it makes too many combinations to list (`MAX_LISTED_COMBINATIONS`): X, read as
+ * `productionOutcomes` reads it. Null for any other ability and for a small X, whose combinations are all listed.
+ */
+export function unlistedCombinationSize(
+  state: GameState,
+  obj: GameObject,
+  ability: ManaAbility,
+): number | null {
+  const p = effectiveManaAbility(state, obj, ability).production;
+  if (p.kind !== 'anyCombinationAmount') return null;
+  let at = state;
+  let source = obj;
+  // CR 605.3b (Empowered Autogenerator): the ability puts its counters first, so an amount counts after them.
+  if (ability.putCounter !== undefined) {
+    const put = putOwnCounters(state, obj.id, ability, controllerOf(state, obj));
+    const after = put.state.objects[obj.id];
+    if (after !== undefined) {
+      at = put.state;
+      source = after;
+    }
+  }
+  const n = Math.max(
+    0,
+    amountOf(at, p.amount, { controller: controllerOf(at, source), source: source.id }, []),
+  );
+  return isTooManyCombinations(n) ? n : null;
+}
+
+/**
+ * The combination a player names for an ability that makes too many combinations to list (`unlistedCombinationSize`): any `size` mana of the five colors
+ * (CR 106.1b, 605.3b), in the order of `TYPE_ORDER`; null when the ability lists all its combinations or the one named is not one.
+ */
+export function acceptedCombination(
+  state: GameState,
+  obj: GameObject,
+  ability: ManaAbility,
+  combination: readonly ManaColor[],
+): ManaColor[] | null {
+  const size = unlistedCombinationSize(state, obj, ability);
+  if (size === null || combination.length !== size) return null;
+  const colors: readonly ManaColor[] = COLORS;
+  return combination.every((c) => colors.includes(c)) ? canonicalCombination(combination) : null;
 }
 
 /**
@@ -438,9 +576,7 @@ export function landManaTypes(state: GameState, obj: GameObject): ManaColor[] {
   const found = new Set<ManaColor>();
   for (const a of manaAbilities(state, obj)) {
     if (a.production.kind === 'couldProduce') continue;
-    for (const outcome of plainOutcomes(state, obj, a.production)) {
-      for (const m of outcome) found.add(m);
-    }
+    for (const m of plainTypes(state, obj, a.production)) found.add(m);
   }
   return inTypeOrder(found);
 }

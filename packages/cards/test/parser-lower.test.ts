@@ -82,12 +82,12 @@ describe('the dimension test: every feature a lowering names exists', () => {
     expect(
       missingFeatures([
         'effect:draw',
-        'selector:colorChoice',
-        'searchDestination:exile',
-        'selector:colorChoice',
+        'manaCost:discard',
+        'duration:permanent',
+        'manaCost:discard',
       ]),
-    ).toEqual(['selector:colorChoice', 'searchDestination:exile']);
-    expect(isRunnable('selector:colorChoice')).toBe(false);
+    ).toEqual(['manaCost:discard', 'duration:permanent']);
+    expect(isRunnable('manaCost:discard')).toBe(false);
     expect(isRunnable('keyword:flying')).toBe(true);
   });
 

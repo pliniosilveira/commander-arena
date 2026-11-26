@@ -26,6 +26,8 @@ export const EFFECT_MAY_PLAY_WHILE_EXILED = defineRule<Clauses>({
   examples: [
     'you may play that card for as long as it remains exiled',
     'you may play those cards for as long as they remain exiled',
+    // Black Cat, Cunning Thief (issue 685): the cards the instruction before it exiled.
+    'you may play the exiled cards for as long as they remain exiled',
     // The "you may" of a triggered ability's sentence is read before the clauses.
     'play that card for as long as it remains exiled',
   ],
@@ -46,7 +48,7 @@ export const EFFECT_MAY_PLAY_WHILE_EXILED = defineRule<Clauses>({
     const r = spanned(
       pattern(
         new RegExp(
-          `(?:you may )?play (?:that card for as long as it remains|those cards for as long as they remain) exiled${BOUNDARY}(?!,| and\\b| then\\b)`,
+          `(?:you may )?play (?:that card for as long as it remains|(?:those|the exiled) cards for as long as they remain) exiled${BOUNDARY}(?!,| and\\b| then\\b)`,
           'iu',
         ),
       ),

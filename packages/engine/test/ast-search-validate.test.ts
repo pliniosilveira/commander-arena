@@ -123,20 +123,20 @@ describe('search', () => {
     );
   });
 
-  test('tapped only applies to the battlefield; zones are the supported four (the library is the top of it, D-405)', () => {
+  test('tapped only applies to the battlefield; the zones are the supported ones (the library is the top of it, D-405)', () => {
     expect(
       issues(dest({ zone: 'hand', tapped: true, count: 1 }, { zone: 'hand', count: 'rest' })),
     ).toEqual([
       'faces[0].spell.effect.destinations[0].tapped: tapped is only valid, as a boolean, for the battlefield',
     ]);
-    // D-405: the library is a destination (the card goes on top, after the shuffle); exile is not one yet.
+    // D-405: the library is a destination (the card goes on top, after the shuffle); exile is one only for a search by the controller (Jace, Architect of Thought); the command zone is not.
     expect(
       issues(dest({ zone: 'library', count: 1 }, { zone: 'hand', count: 'rest' })).some((m) =>
         m.includes('cannot go to zone'),
       ),
     ).toBe(false);
     expect(
-      issues(dest({ zone: 'exile' as never, count: 1 }, { zone: 'hand', count: 'rest' })).some(
+      issues(dest({ zone: 'command' as never, count: 1 }, { zone: 'hand', count: 'rest' })).some(
         (m) => m.includes('cannot go to zone'),
       ),
     ).toBe(true);

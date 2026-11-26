@@ -94,7 +94,7 @@ describe('costs and abilities that are malformed or not executable', () => {
   });
 
   test('an unknown functionsIn or timing is malformed', () => {
-    expect(structure(activated([{ kind: 'tap' }], { functionsIn: 'exile' as never }))).toEqual([
+    expect(structure(activated([{ kind: 'tap' }], { functionsIn: 'library' as never }))).toEqual([
       expect.stringContaining('unknown zone'),
     ]);
     expect(structure(activated([{ kind: 'tap' }], { timing: 'later' as never }))).toEqual([
@@ -112,7 +112,7 @@ describe('costs and abilities that are malformed or not executable', () => {
   });
 
   test('costs the engine does not pay are rejected as supported, but fine as structure', () => {
-    for (const [cost, kind] of [[{ kind: 'untap' }, 'untap']] as const) {
+    for (const [cost, kind] of [[{ kind: 'exert' }, 'exert']] as const) {
       expect(structure(activated([cost])), kind).toEqual([]);
       expect(gate(activated([cost])), kind).toEqual([
         expect.stringContaining(`cost "${kind}" is not implemented`),

@@ -210,12 +210,12 @@ describe('createToken', () => {
       kind: 'custom',
       definition: {
         ...definition,
-        // "Untap this" as a cost is not one the engine pays yet (SUPPORTED_FEATURES.costKinds).
-        abilities: [{ kind: 'activated', cost: [{ kind: 'untap' }], effect: gain }],
+        // "Exert this" as an activation cost is not one the engine pays (SUPPORTED_FEATURES.costKinds).
+        abilities: [{ kind: 'activated', cost: [{ kind: 'exert' }], effect: gain }],
       },
     });
     expect(validateCardStructure(c)).toEqual([]);
-    expect(messages(c)).toEqual([expect.stringContaining('cost "untap"')]);
+    expect(messages(c)).toEqual([expect.stringContaining('cost "exert"')]);
   });
 
   test('a planeswalker token is not executable yet', () => {

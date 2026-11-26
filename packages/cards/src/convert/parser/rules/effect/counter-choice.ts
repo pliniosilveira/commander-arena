@@ -104,7 +104,8 @@ export const EFFECT_REMOVE_CHOSEN_COUNTERS = defineRule<Clauses>({
 /**
  * `effect.move-counter`: "Move a counter from target permanent you control onto a second target permanent" (CR 122.5, 115.3, 608.2d): one counter of a kind the controller chooses as the
  * effect resolves. The two permanents are two targets; "a second target" and "another target" both read (CR 122.5: moving a counter from a permanent onto itself does nothing, so the
- * second need not differ). Not read: a kind of counter, "all counters" (`effect.move-all-counters`), "any number of", plural or "up to" targets, "~", a trailing clause.
+ * second need not differ). "Move any number of counters from ... onto ..." (Resourceful Defense) lets the controller move as many as they like, or none (`anyNumber`). Not read: a kind of
+ * counter, "all counters" (`effect.move-all-counters`), "up to" a number, plural or "up to" targets, "~", a trailing clause.
  */
 export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
   id: MOVE_ID,
@@ -119,58 +120,89 @@ export const EFFECT_MOVE_COUNTER = defineRule<Clauses>({
     'move a counter from target permanent you control onto a second target permanent',
     'move a counter from target creature onto a second target creature',
     'move a counter from target permanent onto another target permanent',
+    // Resourceful Defense: as many as the controller likes, one at a time, or none.
+    'move any number of counters from target permanent you control onto a second target permanent you control',
+    'move any number of counters from target creature onto another target creature',
+    'move a counter from target creature an opponent controls onto target creature you control',
   ],
   rejects: [
     'move a counter from target permanent onto target permanent',
+    'move a counter from target creature you control onto target creature you control',
+    'move a counter from target creature onto target creature you control',
     'move a +1/+1 counter from target creature onto a second target creature',
     'move a counter from ~ onto a second target permanent',
     'move a counter from target permanent you control onto ~',
     'move two counters from target permanent onto a second target permanent',
     'move all counters from target permanent onto a second target permanent',
-    'move any number of counters from target permanent onto a second target permanent',
     'move a counter from target permanents onto a second target permanent',
     'move a counter from target permanent onto a second target permanents',
     'move a counter from up to one target permanent onto a second target permanent',
     'move a counter from target permanent onto a second target permanent and draw a card',
     'move a counter from target permanent onto a third target permanent',
+    'move any number of +1/+1 counters from target permanent onto a second target permanent',
+    'move any number of counters from ~ onto a second target permanent',
+    'move any number of counters from target permanent onto ~',
+    'move any number of counters from target permanent onto target permanent',
+    'move any number of counters from target permanents onto a second target permanent',
+    'move any number of counters from target permanent onto a second target permanent and draw a card',
+    'move any number of counters from target permanent onto a third target permanent',
+    'move up to two counters from target permanent onto a second target permanent',
   ],
   parse: (ctx, pos) => {
     const first = satisfy(
       family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
       (n) => oneTarget(n) && !n.other,
     );
-    const second = choice(
-      map(
-        sequence(
-          literal('a second '),
+    const secondFor = (from: IrNoun) =>
+      choice(
+        map(
+          sequence(
+            literal('a second '),
+            satisfy(
+              family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+              (n) => oneTarget(n) && !n.other,
+            ),
+          ),
+          ([, n]): IrNoun => n,
+        ),
+        // "another target permanent" is a different target (CR 115.3), not "other than the source".
+        map(
           satisfy(
             family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
-            (n) => oneTarget(n) && !n.other,
+            (n) => oneTarget(n) && n.other,
           ),
+          (n): IrNoun => ({ ...n, other: false, otherTarget: true }),
         ),
-        ([, n]): IrNoun => n,
-      ),
-      // "another target permanent" is a different target (CR 115.3), not "other than the source".
-      map(
+        // "from target creature an opponent controls onto target creature you control" (Rikku): a plain second "target" that no one permanent can be both of, because the two name
+        // different controllers (CR 115.3: each use of the word is its own target).
         satisfy(
           family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
-          (n) => oneTarget(n) && n.other,
+          (n) =>
+            oneTarget(n) &&
+            !n.other &&
+            from.filter.controller !== undefined &&
+            n.filter.controller !== undefined &&
+            from.filter.controller !== n.filter.controller,
         ),
-        (n): IrNoun => ({ ...n, other: false, otherTarget: true }),
-      ),
-    );
-    const r = sequence(
-      literal('move a counter from '),
+      );
+    const head = sequence(
+      choice(literal('move a counter from '), literal('move any number of counters from ')),
       first,
       literal(' onto '),
-      second,
-      pattern(/(?=\.|$)/u),
     )(ctx, pos);
-    if (!r.ok) return r;
-    const [, from, , to] = r.value;
+    if (!head.ok) return head;
+    const tail = sequence(secondFor(head.value[1]), pattern(/(?=\.|$)/u))(ctx, head.pos);
+    if (!tail.ok) return tail;
+    const r = { pos: tail.pos };
+    const lead = head.value[0];
+    const from = head.value[1];
+    const to = tail.value[0];
+    // CR 122.5, 608.2d: "any number of" lets the controller move none, one or more, one at a time.
+    const verb =
+      lead.toLowerCase() === 'move a counter from ' ? 'moveCounter' : 'moveAnyNumberOfCounters';
     return {
       ok: true,
-      value: [makeClause(MOVE_ID, 'moveCounter', { from, to }, { start: pos, end: r.pos })],
+      value: [makeClause(MOVE_ID, verb, { from, to }, { start: pos, end: r.pos })],
       pos: r.pos,
     };
   },

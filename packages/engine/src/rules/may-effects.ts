@@ -2,7 +2,8 @@
  * Effects of the "you may" family (D-135): the reflexive triggered ability of CR 603.12 ("When you do, ...") and the permission to
  * cast a card from the graveyard this turn.
  */
-import type { Effect, Trigger } from '../ast/types';
+import type { Effect, TargetSpec, Trigger } from '../ast/types';
+import type { ObjectId } from '../ids';
 import { allocateTimestamp, setObject } from '../state/ops';
 import type {
   ChosenTarget,
@@ -13,10 +14,12 @@ import type {
   ResolutionContext,
   TriggeredAbility,
 } from '../state/types';
+import { thisWayCount } from './amounts';
+import { evaluateCondition } from './conditions';
 import { runContinuous } from './continuous';
 import { derive } from './derive';
 import { playEnd } from './impulse';
-import { resolveObjects, type SelectContext } from './select';
+import { matchesFilter, resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /**
@@ -39,26 +42,47 @@ export function runReflexive(
 ): StepOutcome {
   // CR 603.12 (D-231): "When one or more nonland cards are exiled this way": created when this resolution counted one, not when it merely did something.
   if (effect.ifThisWay !== undefined) {
-    if ((res.thisWay?.[effect.ifThisWay] ?? 0) <= 0) return done(state);
+    if (thisWayCount(state, res.thisWay, effect.ifThisWay) <= 0) return done(state);
   } else if (effect.ifMoved === true) {
     // CR 603.12 (Cait Sith, Espers to Magicite): "When you exile a card this way", "When you do" after an exile: created when the instruction before it moved a card.
     if ((res.lastMoved ?? []).length === 0) return done(state);
+    // CR 603.12, 701.20 (Yuna's Whistle): "When you reveal a creature card this way": only the cards that moved and match the filter make it, and it carries them.
+    if (
+      effect.ifMovedMatches !== undefined &&
+      matchedMoved(state, res, effect.ifMovedMatches).length === 0
+    ) {
+      return done(state);
+    }
   } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
-  // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, fixed now.
+  // CR 603.4 (Earthbender Ascension): the intervening "if" of the reflexive ability decides whether it is created at all, then is read again as it resolves.
+  if (
+    effect.interveningIf !== undefined &&
+    !evaluateCondition(state, effect.interveningIf, {
+      controller: res.controller,
+      source: res.source,
+    })
+  ) {
+    return done(state);
+  }
+  // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, or (Loamcrafter Faun) the cards it discarded, fixed now.
   const sacrificedCount = res.sacrificed?.length ?? 0;
-  if (sacrificedCount === 0 && effect.targets?.some((spec) => spec.upToThatMany === true)) {
+  const discardedCount = res.thisWay?.discarded ?? 0;
+  const thatMany = (spec: TargetSpec): number =>
+    spec.upToThatMany === 'discarded' ? discardedCount : sacrificedCount;
+  if (effect.targets?.some((spec) => spec.upToThatMany !== undefined && thatMany(spec) === 0)) {
     return done(state);
   }
   const targets = effect.targets?.map((spec) => {
-    if (spec.upToThatMany !== true) return spec;
+    if (spec.upToThatMany === undefined) return spec;
     const { upToThatMany: _fixed, ...rest } = spec;
-    return { ...rest, min: 0, max: sacrificedCount };
+    return { ...rest, min: 0, max: thatMany(spec) };
   });
   const ability: TriggeredAbility = {
     kind: 'triggered',
     trigger: REFLEXIVE_TRIGGER,
     ...(targets === undefined ? {} : { targets }),
     effect: effect.effect,
+    ...(effect.interveningIf === undefined ? {} : { interveningIf: effect.interveningIf }),
     // D-511 (CR 603.12, 700.2b): "When you do, choose one —": the modes are chosen as the reflexive ability goes on the stack (CR 603.3c).
     ...(effect.modes === undefined ? {} : { modes: effect.modes }),
     ...(effect.chooseModes === undefined ? {} : { chooseModes: effect.chooseModes }),
@@ -78,9 +102,36 @@ export function runReflexive(
       ? {}
       : { sacrificedBefore: res.sacrificed }),
     // Issue 89 (CR 603.12, 400.7j): "When you do, return ... attached to that token": the objects this resolution made, fixed as the ability is created.
-    ...(effect.carriesMoved === true ? { movedBefore: res.lastMoved ?? [] } : {}),
+    ...(effect.carriesMoved === true
+      ? {
+          movedBefore:
+            effect.ifMovedMatches === undefined
+              ? (res.lastMoved ?? [])
+              : matchedMoved(state, res, effect.ifMovedMatches),
+        }
+      : {}),
   };
   return done({ ...state, pendingTriggers: [...state.pendingTriggers, pending] });
+}
+
+/** The objects this resolution moved that match `filter`, read where they are now (the filter names no zone). */
+function matchedMoved(
+  state: GameState,
+  res: ResolutionContext,
+  filter: NonNullable<Extract<Effect, { kind: 'reflexive' }>['ifMovedMatches']>,
+): readonly ObjectId[] {
+  return (res.lastMoved ?? []).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(
+        state,
+        card,
+        { ...filter, zone: card.zone },
+        { controller: res.controller, source: res.source },
+      )
+    );
+  });
 }
 
 /**
@@ -252,7 +303,21 @@ export function runGainActivatedAbilitiesOf(
   const object = state.objects[fromId];
   const abilities =
     object !== undefined ? derive(state, object).abilities : (state.lki[fromId]?.abilities ?? []);
-  const gained = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  const own = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  // Grell Philosopher (CR 609.4b, 602.2b): "You may spend blue mana as though it were mana of any color to activate those abilities": the copies given carry it on their mana costs.
+  const gained =
+    effect.blueAsAnyColor === true
+      ? own.map((a) =>
+          a.kind === 'activated'
+            ? {
+                ...a,
+                cost: a.cost.map((c) =>
+                  c.kind === 'mana' ? { ...c, blueAsAnyColor: true as const } : c,
+                ),
+              }
+            : a,
+        )
+      : own;
   if (gained.length === 0) return done(state);
   return runContinuous(
     state,

@@ -40,6 +40,13 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
     }
     const faceDown = arg(clause, 'faceDown');
     if (faceDown !== undefined && faceDown.kind !== 'flag') return failure(clause);
+    // The Ruinous Powers (CR 101.4, 701.13): "Choose an opponent at random. Exile the top card of that player's library."
+    const random = arg(clause, 'randomOpponent');
+    if (random !== undefined) {
+      const blockedRandom = missingFeatures(['ability:exileTopRandomOpponent']);
+      if (random.kind !== 'flag' || from !== undefined) return failure(clause);
+      if (blockedRandom.length > 0) return failure(clause, blockedRandom);
+    }
     // Lobelia, Defender of Bag End (CR 607.2a, 406.3): "look at the top card of each opponent's library and exile those cards face down": remembered by the permanent, and looked at.
     const linked = arg(clause, 'linked');
     const lookAt = arg(clause, 'lookAt');
@@ -47,6 +54,7 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
     if (lookAt !== undefined && lookAt.kind !== 'flag') return failure(clause);
     ctx.exiled = 'top';
     ctx.exiledFaceDown = faceDown?.value === true;
+    ctx.exiledLookedAt = false;
     return {
       ok: true,
       value: [
@@ -54,6 +62,7 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
           kind: 'exileTop',
           count: count.value,
           ...(from === undefined ? {} : { from }),
+          ...(random === undefined ? {} : { randomOpponent: true as const }),
           ...(faceDown?.value === true ? { faceDown: true as const } : {}),
           ...(linked?.value === true ? { linked: true as const } : {}),
           ...(lookAt?.value === true ? { lookAt: true as const } : {}),
@@ -86,22 +95,47 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
   acceptsOptional: true,
   lower(clause, ctx) {
     const lasts = clause.duration === undefined ? undefined : PLAY_UNTIL[clause.duration.scope];
+    // CR 601.2, 611.2a, 400.7 (Emry, Lurker of the Loch): "Choose target artifact card in your graveyard. You may cast that card this turn.": right after a choice of one target card of the
+    // controller's own graveyard (the only instruction before it, which makes no effect), "that card" is that target: the engine's `mayCast` until end of turn. The permission is the offer.
+    const [chosen, ...others] = ctx.targets;
+    if (
+      ctx.exiled === null &&
+      ctx.lastEffectKind === null &&
+      lasts === 'endOfTurn' &&
+      arg(clause, 'castOnly')?.kind === 'flag' &&
+      chosen?.what.kind === 'object' &&
+      others.length === 0 &&
+      chosen.what.filter.zone === 'graveyard' &&
+      chosen.what.filter.controller === 'you'
+    ) {
+      const blocked = missingFeatures([
+        'effect:mayCast',
+        'selector:target',
+        'duration:untilEndOfTurn',
+      ]);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'mayCast',
+            objects: { kind: 'target', id: chosen.id },
+            duration: 'untilEndOfTurn',
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     if (
       lasts === undefined ||
       (ctx.exiled !== 'top' && ctx.exiled !== 'milled' && ctx.exiled !== 'cards')
     ) {
       return failure(clause);
     }
-    // Lorehold group 1: the card an `exile` of the text exiled is face up where it was and nobody looks at it: never "while exiled" (CR 406.3 asks cards exiled face down).
-    // Hostage Taker (CR 609.4b, 611.2b): "you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell": a card exiled face up where it was
-    // stays castable for as long as it stays in exile (a card that leaves exile is a new object, CR 400.7).
-    const whileExiledCast = lasts === 'whileExiled' && arg(clause, 'anyManaType') !== undefined;
-    if (
-      ctx.exiled === 'cards' &&
-      ((lasts === 'whileExiled' && !whileExiledCast) || arg(clause, 'lookAt') !== undefined)
-    ) {
-      return failure(clause);
-    }
+    // Lorehold group 1: the card an `exile` of the text exiled is face up where it was and nobody looks at it: "look at" is never read of it (CR 406.3 asks cards exiled face down).
+    // Hostage Taker (CR 609.4b, 611.2b), Savvy Trader: "you may play that card for as long as it remains exiled": a card exiled face up where it was stays playable for as long as it
+    // stays in exile (a card that leaves exile is a new object, CR 400.7).
+    if (ctx.exiled === 'cards' && arg(clause, 'lookAt') !== undefined) return failure(clause);
     // D-327 (CR 601.2, 305.1): the cards the controller milled are in their graveyard, face up: the permission lasts this turn or the next, never "while exiled",
     // and there is nothing to look at.
     if (ctx.exiled === 'milled') {
@@ -112,8 +146,26 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
     // "You may look at and play those cards for as long as they remain exiled" (stage P41, D-188, CR 406.3): the cards must have been exiled face down.
     const look = arg(clause, 'lookAt');
     if (look !== undefined && (look.kind !== 'flag' || !ctx.exiledFaceDown)) return failure(clause);
+    // Thief of Sanity, Gonti (CR 406.3): the card the controller looked at as a `lookAtTop` exiled it face down is one they may go on looking at, so "you may play that card for as long as it
+    // remains exiled" needs no "look at".
+    const lookedAtOnExile = look === undefined && ctx.exiledFaceDown && ctx.exiledLookedAt;
     // "You may play that card for as long as it remains exiled" (CR 406.3): cards exiled face down stay hidden without "look at", so the permission to play them alone is not read.
-    if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown) return failure(clause);
+    if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown && !lookedAtOnExile) {
+      return failure(clause);
+    }
+    // Nashi: a permission for one card, the spell paid for with life.
+    if (arg(clause, 'oneOf') !== undefined || arg(clause, 'lifeForMana') !== undefined) {
+      const blocked = missingFeatures(['ability:mayPlayOneLifeForMana']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      if (
+        arg(clause, 'oneOf')?.kind !== 'flag' ||
+        arg(clause, 'lifeForMana')?.kind !== 'flag' ||
+        lasts !== 'endOfTurn'
+      ) {
+        return failure(clause);
+      }
+    }
+    ctx.mayPlayLasts = lasts;
     return {
       ok: true,
       value: [
@@ -121,7 +173,7 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           kind: 'mayPlay',
           objects: { kind: 'moved' },
           lasts,
-          ...(look === undefined ? {} : { lookAt: true as const }),
+          ...(look === undefined && !lookedAtOnExile ? {} : { lookAt: true as const }),
           // "You may cast it this turn" (Lorehold group 1): the permission is to cast, a land card is not played.
           ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),
           // Issue 144 (Grenzo): "you may spend mana as though it were mana of any color to cast that spell".
@@ -131,6 +183,9 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           ...(arg(clause, 'exileInstead')?.kind === 'flag' ? { exileInstead: true as const } : {}),
           // Issue 101 (Gix): "you may play lands and cast spells from among cards exiled this way without paying their mana costs".
           ...(arg(clause, 'free')?.kind === 'flag' ? { free: true as const } : {}),
+          // Nashi, Moon Sage's Scion (CR 118.9, 601.2): "you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost".
+          ...(arg(clause, 'oneOf')?.kind === 'flag' ? { oneOf: true as const } : {}),
+          ...(arg(clause, 'lifeForMana')?.kind === 'flag' ? { lifeForMana: true as const } : {}),
           // Issue 101 (Neriv): "during any turn you attacked with a commander, you may play those cards".
           ...(arg(clause, 'duringCommanderAttackTurns')?.kind === 'flag'
             ? { duringTurnsAttackedWithCommander: true as const }

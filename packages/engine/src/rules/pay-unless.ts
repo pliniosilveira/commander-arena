@@ -16,6 +16,8 @@
  * 3. accept: the life is paid now (CR 119.4); a discard cost (Ward—Discard a card, D-095) is paid next:
  *    with exactly as many cards in hand as asked they all go, with more the instruction goes to stage
  *    'discard' and the payer gets a `chooseCards` decision (no `cancel`: they accepted); if the cost
+ *    has a sacrifice (Ward—Sacrifice a legendary artifact or legendary creature, CR 701.21a) the payer sacrifices permanents they control that match: with exactly as many as asked they all go,
+ *    with more the instruction goes to stage 'sacrifice' and the payer gets a `choosePermanent` decision (no `cancel`); if the cost
  *    has mana the instruction goes to stage 'pay' and the payer gets a `payMana` decision (the same
  *    purpose) for the mana, the same decision and the same payment code as a spell's cost, with the
  *    sources they may tap now (CR 605.3a). `cancel` there means "do not pay": it is countered.
@@ -25,7 +27,7 @@
  * this module asks for it itself. Mana in the payer's pool counts; mana restricted to spells does
  * not (CR 106.6: the payment is not for a spell).
  */
-import type { Cost } from '../ast/types';
+import type { Cost, ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchSeat } from '../state/ops';
@@ -39,6 +41,8 @@ import { lifeOf } from './enters';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
 import { type ManualTap, payByTapping } from './pay-manual';
 import { lifeTotalIsLocked } from './player-lock';
+import { sacrificeCandidates, sacrificePermanent } from './sacrifice';
+import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -98,6 +102,18 @@ export function blightOf(cost: readonly Cost[]): number {
   return cost.reduce((n, c) => n + (c.kind === 'blight' ? c.count : 0), 0);
 }
 
+/** The permanents the cost sacrifices (Ward—Sacrifice a creature, CR 701.21a): the filter and how many, or null when it sacrifices none. Only a filter is run (`validateCard`, `supported.ts`). */
+export function sacrificeOf(
+  cost: readonly Cost[],
+): { readonly filter: ObjectFilter; readonly count: number } | null {
+  for (const c of cost) {
+    if (c.kind === 'sacrifice' && !('kind' in c.what)) {
+      return { filter: c.what, count: c.count ?? 1 };
+    }
+  }
+  return null;
+}
+
 /** The energy counters the cost removes (CR 107.14, D-209): the sum of its `energy` costs. */
 export function energyOf(cost: readonly Cost[]): number {
   return cost.reduce((n, c) => n + (c.kind === 'energy' ? c.count : 0), 0);
@@ -109,7 +125,12 @@ export function energyOf(cost: readonly Cost[]): number {
  * and their untapped sources after the life is paid. Only `mana`, `payLife` and `discard` costs
  * exist here (`validateCard`); any other kind cannot be paid.
  */
-export function canPayUnless(state: GameState, payer: SeatId, cost: readonly Cost[]): boolean {
+export function canPayUnless(
+  state: GameState,
+  payer: SeatId,
+  cost: readonly Cost[],
+  source: ObjectId | null = null,
+): boolean {
   if (
     cost.some(
       (c) =>
@@ -117,13 +138,22 @@ export function canPayUnless(state: GameState, payer: SeatId, cost: readonly Cos
         c.kind !== 'payLife' &&
         c.kind !== 'discard' &&
         c.kind !== 'energy' &&
-        c.kind !== 'blight',
+        c.kind !== 'blight' &&
+        c.kind !== 'sacrifice',
     )
   ) {
     return false;
   }
   // CR 701.68b: a player with no creature that can take the counters can't choose to blight, so can't pay (CR 118.3).
   if (blightOf(cost) > 0 && blightCandidates(state, payer).length === 0) return false;
+  // CR 701.21a, 118.3: the payer sacrifices permanents they control, so they need that many that match (and that can be sacrificed).
+  const sacrifice = sacrificeOf(cost);
+  if (
+    sacrifice !== null &&
+    sacrificeCandidates(state, payer, source, sacrifice.filter).length < sacrifice.count
+  ) {
+    return false;
+  }
   const life = lifeOf(cost);
   const seat = getSeat(state, payer);
   if (life > 0 && (seat.life < life || lifeTotalIsLocked(state, payer))) return false;
@@ -171,7 +201,9 @@ export function runCounterUnlessPays(
   }
   if (instruction.stage === 'ask') {
     // CR 118.3: a cost that cannot be paid is not paid, so nobody is asked.
-    if (!canPayUnless(state, payer, instruction.cost)) return notPaid(state, instruction);
+    if (!canPayUnless(state, payer, instruction.cost, res.source)) {
+      return notPaid(state, instruction);
+    }
     const info = sourceInfo(state, res.source);
     return {
       state,
@@ -204,6 +236,25 @@ export function runCounterUnlessPays(
         min: 1,
         max: 1,
         legal: blightCandidates(state, payer),
+      },
+    };
+  }
+  if (instruction.stage === 'sacrifice') {
+    // CR 701.21a: the permanents of the payer that are sacrificed; they accepted, so no `cancel`.
+    const cost = sacrificeOf(instruction.cost);
+    const legal = cost === null ? [] : sacrificeCandidates(state, payer, res.source, cost.filter);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat: payer,
+        source: res.object,
+        purpose: 'sacrifice',
+        min: cost?.count ?? 0,
+        max: cost?.count ?? 0,
+        legal,
       },
     };
   }
@@ -309,6 +360,26 @@ export function acceptUnless(
       events.push(blightChosenEvent(payer, res.object, [only], true), ...put.events);
     }
   }
+  // CR 701.21a (Ward—Sacrifice a legendary creature): with exactly as many permanents that match as are asked for the engine chooses them, with more the payer chooses (stage 'sacrifice').
+  const sacrifice = sacrificeOf(head.cost);
+  if (sacrifice !== null) {
+    const legal = sacrificeCandidates(next, payer, res.source, sacrifice.filter);
+    if (legal.length > sacrifice.count) {
+      return { state: next, events, queue: [{ ...head, stage: 'sacrifice' }, ...rest] };
+    }
+    const gone = sacrificeAll(next, payer, res, legal, true);
+    if (gone === null) {
+      // The permanent was gone between the question and the payment: nothing was paid.
+      const out = notPaid(next, head);
+      return {
+        state: out.state,
+        events: [...events, ...out.events],
+        queue: [...out.front, ...rest],
+      };
+    }
+    next = gone.state;
+    events.push(...gone.events);
+  }
   const discard = discardOf(head.cost);
   const hand = getSeat(next, payer).hand;
   if (discard > 0 && hand.length > discard) {
@@ -322,6 +393,37 @@ export function acceptUnless(
     }
   }
   return { state: next, events, queue: afterDiscard(head, rest) };
+}
+
+/**
+ * Sacrifices `ids`, permanents of `payer`, together as the payment of a cost (CR 701.21a, 603.10a): the `permanentsChosen` event, then each `sacrificed`. Null when one can't be sacrificed
+ * now (it is gone or can't be sacrificed): the caller checked the answer against the decision, so this is the rare change of state between the question and the answer.
+ */
+function sacrificeAll(
+  state: GameState,
+  payer: SeatId,
+  res: ResolutionContext,
+  ids: readonly ObjectId[],
+  automatic: boolean,
+): { readonly state: GameState; readonly events: GameEvent[] } | null {
+  const events: GameEvent[] = [
+    {
+      kind: 'permanentsChosen',
+      seat: payer,
+      source: res.object,
+      objects: ids,
+      purpose: 'sacrifice',
+      automatic,
+    },
+  ];
+  let next = recordObjectsTogether(state, ids);
+  for (const id of ids) {
+    const done = sacrificePermanent(next, id, payer, ids.length > 1);
+    if (done === null) return null;
+    next = done.state;
+    events.push(...done.events);
+  }
+  return { state: next, events };
 }
 
 /** What is left of the cost once the life and the cards are paid: the mana, or nothing. */
@@ -370,6 +472,30 @@ export function blightUnless(
   return {
     state: put.state,
     events: [blightChosenEvent(payer, res.object, [id], false), ...put.events],
+    queue: afterDiscard(head, res.queue.slice(1)),
+  };
+}
+
+/**
+ * The payer chose the permanents to sacrifice (stage 'sacrifice', CR 701.21a): they are sacrificed together, then what is left of the cost. Null when the answer is not
+ * as many of the permanents that can be sacrificed as the cost asks (the caller checked the answer against the decision).
+ */
+export function sacrificeUnless(
+  state: GameState,
+  res: ResolutionContext,
+  head: UnlessInstruction,
+  payer: SeatId,
+  chosen: readonly ObjectId[],
+): UnlessAnswer | null {
+  const cost = sacrificeOf(head.cost);
+  if (cost === null || chosen.length !== cost.count) return null;
+  const legal = sacrificeCandidates(state, payer, res.source, cost.filter);
+  if (!chosen.every((id) => legal.includes(id))) return null;
+  const gone = sacrificeAll(state, payer, res, chosen, false);
+  if (gone === null) return null;
+  return {
+    state: gone.state,
+    events: gone.events,
     queue: afterDiscard(head, res.queue.slice(1)),
   };
 }

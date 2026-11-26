@@ -46,7 +46,8 @@ import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
-import { isCommanderCardId } from './melded';
+import { linkedExilePlayPermitted } from './linked-exile-play';
+import { isCommanderCardId, isCommanderObject } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { mayPayLifeForMana } from './next-spell-life';
 import { hasGrantedFlashCasting } from './player-flash';
@@ -54,7 +55,7 @@ import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
-import { flashSlotOf, slotCanBeFilled } from './target-choice';
+import { flashSlotOf, sameControllerFillable, slotCanBeFilled } from './target-choice';
 import { hasX, spellXCost } from './x-value';
 
 export type { CastAlternative, CastFrom };
@@ -146,6 +147,12 @@ function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): bool
   return flashPermissionSources(state).some(
     (source) =>
       (source.anyPlayer || controllerOf(state, source.object) === seat) &&
+      // Kianne, Corrupted Memory: the permission of a permanent applies "as long as" its condition holds, for the controller of the permanent.
+      (source.condition === undefined ||
+        evaluateCondition(state, source.condition, {
+          controller: controllerOf(state, source.object),
+          source: source.object.id,
+        })) &&
       matchesFilter(
         state,
         spell,
@@ -216,21 +223,32 @@ export function mayPlayFromExile(
    * default) for one that lets it be cast paying its cost. A card with both is cast either way.
    */
   free = false,
+  /**
+   * Nashi (CR 118.9): `true` asks for a permission whose spell is cast by paying life equal to its mana value (`mayPlay.lifeForMana`), the alternative cost `lifeForMana` and no other way;
+   * `false` (the default) for one that lets it be cast another way.
+   */
+  life = false,
 ): boolean {
   return (
     obj.zone === 'exile' &&
-    state.continuousEffects.some(
-      (e) =>
-        e.change.kind === 'playPermission' &&
-        e.change.seat === seat &&
-        e.objects.includes(obj.id) &&
-        // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
-        (asLand || (e.change.free === true) === free) &&
-        // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
-        !(asLand && e.change.castOnly === true) &&
-        // Issue 101 (Neriv, CR 903.3): "during any turn you attacked with a commander".
-        (e.change.whenAttackedWithCommander !== true || attackedWithCommanderThisTurn(state, seat)),
-    )
+    // CR 607.2a, 601.2a (Evendo Brushrazer): "you may play cards exiled with this creature", a permission of a static ability that pays the ordinary cost: no free or life alternative.
+    ((!free && !life && linkedExilePlayPermitted(state, seat, obj)) ||
+      state.continuousEffects.some(
+        (e) =>
+          e.change.kind === 'playPermission' &&
+          e.change.seat === seat &&
+          e.objects.includes(obj.id) &&
+          // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
+          (asLand || (e.change.free === true) === free) &&
+          (asLand || (e.change.lifeForMana === true) === life) &&
+          // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
+          !(asLand && e.change.castOnly === true) &&
+          // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell": the permission is for a creature card only.
+          (e.change.creatureSpellsOnly !== true || derive(state, obj).types.includes('creature')) &&
+          // Issue 101 (Neriv, CR 903.3): "during any turn you attacked with a commander".
+          (e.change.whenAttackedWithCommander !== true ||
+            attackedWithCommanderThisTurn(state, seat)),
+      ))
   );
 }
 
@@ -497,6 +515,8 @@ export function castZone(
       mayPlayFromExile(state, seat, obj) ||
       // Lorehold group 2 (CR 118.9): "You may cast that card this turn without paying its mana cost".
       mayPlayFromExile(state, seat, obj, false, true) ||
+      // Nashi (CR 118.9): "pay life equal to its mana value rather than paying its mana cost".
+      mayPlayFromExile(state, seat, obj, false, false, true) ||
       freeCastSlots(state, seat, obj, faceIndex).length > 0);
   // Issue 159: or a card of another player's graveyard that an effect named ("You may cast target creature card in a graveyard this turn").
   const fromTheirGraveyard = obj.zone === 'graveyard' && grantedFromAnyGraveyard(state, seat, obj);
@@ -624,7 +644,15 @@ export function castZone(
         ? 'exile'
         : null;
     }
-    return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
+    // Nashi (CR 118.9): the alternative cost `lifeForMana` of a permission to cast the card by paying life equal to its mana value.
+    if (alternative === 'lifeForMana') {
+      return mayPlayFromExile(state, seat, obj, false, false, true) ? 'exile' : null;
+    }
+    // Tlincalli Hunter: the alternative cost a permanent gives for spells cast from exile is paid instead of the mana cost of a card the player may cast from exile.
+    return (alternative === undefined || alternative === 'energyGrant') &&
+      mayPlayFromExile(state, seat, obj)
+      ? 'exile'
+      : null;
   }
   if (obj.zone === 'hand') return 'hand';
   // A card in the command zone is one card, never a melded permanent (D-277).
@@ -714,8 +742,9 @@ export function targetsPossible(
     // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
     const restricted = only === null ? -1 : flashSlotOf(specs);
     if (only !== null && restricted < 0) return false;
-    return specs.every((spec, i) =>
-      slotCanBeFilled(state, spec, ctx, i === restricted ? only : null),
+    return (
+      specs.every((spec, i) => slotCanBeFilled(state, spec, ctx, i === restricted ? only : null)) &&
+      sameControllerFillable(state, specs, ctx)
     );
   });
 }
@@ -733,6 +762,20 @@ export function hasKickedTargets(face: CardFace | null): boolean {
  * turn (damage, a life-loss effect or life paid, all counted by `loseLifeBy`). The life lost by `seat` and by
  * players who left the game does not count (D-124).
  */
+/**
+ * CR 702.173a (Freerunning, Petty Larceny): whether `seat` dealt combat damage to a player this turn with an Assassin or a commander: a creature `seat` controlled as it dealt the damage
+ * (`TurnLog.combatDamaged`, kept as the damage is dealt, so every damage step counts and a creature that has left still does) that had the Assassin creature type or was one of its owner's
+ * commanders (read from the object as it last was when it has left the battlefield).
+ */
+export function dealtCombatDamageWithAssassinOrCommander(state: GameState, seat: SeatId): boolean {
+  return state.turnLog.combatDamaged.some((hit) => {
+    if (hit.controller !== seat) return false;
+    if (hit.subtypes.includes('Assassin')) return true;
+    const source = state.objects[hit.source] ?? state.lki[hit.source]?.object;
+    return source !== undefined && isCommanderObject(state, source);
+  });
+}
+
 export function opponentLostLifeThisTurn(state: GameState, seat: SeatId): boolean {
   return opponentsOf(state, seat).some((id) => getSeat(state, id).lifeLostThisTurn > 0);
 }
@@ -775,6 +818,9 @@ export function alternativeCostAllowed(
   }
   // CR 702.137a: "if an opponent lost life this turn", read as the spell is cast (601.2b), for the one casting it.
   if (kind === 'spectacle' && !opponentLostLifeThisTurn(state, seat)) return false;
+  // CR 702.173a (Freerunning): "if you dealt combat damage to a player this turn with an Assassin or commander", read as the spell is cast, for the one casting it.
+  if (kind === 'freerunning' && !dealtCombatDamageWithAssassinOrCommander(state, seat))
+    return false;
   return (
     alt.condition === undefined ||
     evaluateCondition(state, alt.condition, { controller: seat, source: obj.id })
@@ -824,7 +870,14 @@ export function canCast(
     return false;
   }
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
-  if (alternative === 'lifeForMana' && !mayPayLifeForMana(state, seat)) return false;
+  if (
+    alternative === 'lifeForMana' &&
+    !mayPayLifeForMana(state, seat) &&
+    // Nashi: a card in exile a permission lets the seat cast by paying life.
+    !(obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, false, false, true))
+  ) {
+    return false;
+  }
   // CR 118.9, 107.14 (issue 105, Nissa): only while a permanent of the caster gives it for this spell.
   if (
     alternative === 'energyGrant' &&
@@ -937,6 +990,8 @@ export function canCastDuringResolution(
   anyManaType = false,
   /** CR 118.9 (Blue Mage's Cane): the mana paid rather than the mana cost of a `free` cast, which has to be payable. */
   payInstead?: readonly Cost[],
+  /** CR 608.2g, 402.3 (Silent-Blade Oni, Extract Brain): the card is in a hand, whoever's it is: an effect named it and the caster looked at it (`castFree.fromHand`). */
+  fromAnyHand = false,
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
@@ -957,7 +1012,9 @@ export function canCastDuringResolution(
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   // CR 608.2g: a card of a library is cast from among the cards its owner looked at ("look at the top seven cards ... you may cast a spell from among them").
-  if ((obj.zone === 'hand' || obj.zone === 'library') && obj.owner !== seat) return false;
+  if ((obj.zone === 'hand' || obj.zone === 'library') && obj.owner !== seat) {
+    if (!(fromAnyHand && obj.zone === 'hand')) return false;
+  }
   // CR 702.94a (D-274): a card is cast for its miracle cost from the hand it was revealed in.
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (
@@ -1121,6 +1178,20 @@ export function alternativeCastObjects(
     // `mayCastEachType`: the exiled cards a permission lets the seat cast without paying their mana costs.
     ...(kind === 'free'
       ? freeCastCards(state, seat).filter((id) => !freeFromExile.includes(id))
+      : []),
+    // Nashi (CR 118.9): the cards in exile a permission lets the seat cast by paying life equal to their mana value.
+    ...(kind === 'lifeForMana'
+      ? state.exile.filter(
+          (id) =>
+            !onAdventure.includes(id) &&
+            mayPlayFromExile(state, seat, getObject(state, id), false, false, true),
+        )
+      : []),
+    // Tlincalli Hunter (CR 118.9): the cards in exile the seat may cast, for an alternative cost a permanent gives for spells cast from exile.
+    ...(kind === 'energyGrant'
+      ? state.exile.filter(
+          (id) => !onAdventure.includes(id) && mayPlayFromExile(state, seat, getObject(state, id)),
+        )
       : []),
   ];
   return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, kind, face));

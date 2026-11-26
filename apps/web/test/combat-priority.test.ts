@@ -54,6 +54,7 @@ function watching(played: Played): { client: GameClient; click: () => void } {
       return reply;
     },
     undo: () => host.undo(),
+    gameRecord: () => host.gameRecord(),
   };
   return { client, click: () => (calls = 0) };
 }

@@ -17,9 +17,9 @@ const WARD: readonly Line[] = [
   { kind: 'creature', text: 'Flying\nWard {2}', expect: OK, note: 'SYNTHETIC; on its own line' },
   {
     kind: 'creature',
-    text: 'Ward—Sacrifice a permanent.',
-    expect: { engine: 'cost "sacrifice" is not implemented by the engine yet' },
-    note: 'SYNTHETIC; read as the keyword, the engine pays mana and life only',
+    text: 'Ward—Sacrifice this creature.',
+    expect: { engine: 'a sacrifice of Ward is a number of permanents the payer controls' },
+    note: 'SYNTHETIC; read as the keyword, the engine pays a counted sacrifice of other permanents only',
   },
   {
     kind: 'creature',

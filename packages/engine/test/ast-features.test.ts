@@ -50,6 +50,8 @@ describe('the dimensions', () => {
     // The costs and durations the engine pays and ends (scenario-xx-activated-*, -pump-*).
     expect(SUPPORTED_FEATURES.costKinds).toEqual([
       'tap',
+      // CR 107.6: the untap symbol {Q}.
+      'untap',
       'mana',
       'payLife',
       'payXLife',
@@ -70,12 +72,16 @@ describe('the dimensions', () => {
       // D-139: "Put a page counter on this artifact", "Return an artifact you control to its owner's hand".
       'putCounters',
       'returnToHand',
+      // Primordial Mist: "Exile a face-down permanent you control face up".
+      'exilePermanent',
       // D-185: "Exile this card from your graveyard" (the cost of Encore).
       'exileThis',
       // D-229: "Mill a card" as the cost of an ordinary ability.
       'mill',
       // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
       'exileFromGraveyard',
+      'putLinkedExileInGraveyard',
+      'putOpponentExileInGraveyard',
       // D-200: the loyalty symbol of a loyalty ability.
       'loyalty',
       // D-209: "{E}{E}", paid in an `unlessPays`; issue 105: and as the cost of an activated ability.
@@ -117,26 +123,34 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       // Auntie Ool, Massacre Girl, Lasting Tarfire.
       'subjectControlledByYou',
+      'subjectHadToAttack',
+      'subjectMatches',
       'subjectStat',
       'subjectGreaterThanEach',
+      'counterPutOnThisThisTurn',
+      'subjectPowerLessThanThis',
       'putCountersThisTurn',
       'triggerPlayerHasMore',
       'triggerPlayerTurn',
       'triggerPlayerIsOpponent',
       'triggerPlayerStat',
+      'thisPowerParity',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      'sacrificedThisTurn',
       // Lorehold group 3: "if a player has one or fewer cards in hand".
       'aPlayerCardsInHand',
       'escaped',
       // CR 702.143a: "if this spell was foretold".
       'foretold',
+      'castForAlternative',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
       'amountIsPrime',
       'playerHasDesignation',
       'maxSpeed',
+      'completedDungeon',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',
       'lifeTotal',
@@ -146,10 +160,12 @@ describe('the dimensions', () => {
       'movedShareAllCardTypes',
       // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have".
       'manaValueAtMostAmount',
+      'manaValueAtLeastAmount',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'diedThisWay',
       'objectMatches',
+      'discardedAsCostMatches',
       'giftPromised',
       'opponentControlsAtLeast',
       // D-139: "if you control the artifact with the greatest mana value or tied".
@@ -161,7 +177,9 @@ describe('the dimensions', () => {
       'yourTurn',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
+      'playedLandThisTurn',
       'manaSpentAtLeast',
+      'manaSpentFromSubtype',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
       'wasCast',
@@ -197,13 +215,17 @@ describe('the dimensions', () => {
       'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
+      'loyaltyAbilityActivatedThisTurn',
       'thisAttackedThisTurn',
       'dieResult',
       // CR 701.30d: "If you win" after a clash.
       'clashWon',
+      'voteMost',
+      'voteTied',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
+      'thisSuspended',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
@@ -235,6 +257,8 @@ describe('the dimensions', () => {
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
+      // "The monarch controls enchanted creature." (CR 613.1b, 725.1).
+      'controlAttached',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'revealTopOfLibrary',
@@ -271,20 +295,28 @@ describe('the dimensions', () => {
       // Issue 102 (Steward of the Harvest): the same for the cards exiled with the permanent.
       'grantActivatedAbilitiesOfLinkedExile',
       'castAsThoughFlash',
+      'beginGameOnBattlefield',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
+      // CR 602.5, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated."
+      'cantActivateChosenName',
       'setColors',
       // D-149: prevention to this, a player's hexproof, can't lose, opponents can't win, can't cast this.
       'preventDamageToThis',
+      'preventDamageAround',
       'playerHexproof',
       'cantLoseGame',
       'opponentsCantWin',
+      'cantAttackItsOwner',
       'cantGainLife',
+      'drawLimit',
+      'combatCreatureLimit',
       'damageCantBePrevented',
       'damageAsThoughWither',
+      'opponentSearchTopOnly',
       'playerProtection',
       'cantHaveCounters',
       'cantBeSacrificed',
@@ -300,8 +332,10 @@ describe('the dimensions', () => {
       'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
+      'playFromLinkedExile',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
+      'plotCostReduction',
       // CR 606.3: "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once."
       'loyaltyActivationLimit',
       // D-179: "Your opponents can't cast spells during your turn."
@@ -315,7 +349,9 @@ describe('the dimensions', () => {
       // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
+      'giveTypesToCardsOffBattlefield',
       'grantEncoreToGraveyardCards',
+      'grantUnearthToGraveyardCards',
     ]);
     expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.
@@ -341,7 +377,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('searchDestination:hand')).toBe(true);
     expect(isFeatureSupported('searchDestination:graveyard')).toBe(true);
     expect(isFeatureSupported('searchDestination:library')).toBe(true);
-    expect(isFeatureSupported('searchDestination:exile')).toBe(false);
+    expect(isFeatureSupported('searchDestination:exile')).toBe(true);
     expect(isFeatureSupported('effect:modifyPt')).toBe(true);
     expect(isFeatureSupported('duration:untilEndOfTurn')).toBe(true);
     expect(isFeatureSupported('duration:permanent')).toBe(false);
@@ -386,7 +422,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('amount:countOf')).toBe(true);
     expect(isFeatureSupported('static:costReduction')).toBe(true);
     expect(isFeatureSupported('condition:controlCommander')).toBe(true);
-    expect(isFeatureSupported('cost:untap')).toBe(false);
+    expect(isFeatureSupported('cost:untap')).toBe(true);
     // D-232: the cost of an activated ability (Coin of Fate); an additional cost of a spell refuses it.
     expect(isFeatureSupported('cost:exileFromGraveyard')).toBe(true);
     expect(isFeatureSupported('selector:anyOf')).toBe(true);
@@ -396,7 +432,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('token:Food')).toBe(true);
     expect(isFeatureSupported('token:Clue')).toBe(true);
     expect(isFeatureSupported('token:Map')).toBe(true); // issue 81: the Map token and explore
-    expect(isFeatureSupported('token:Blood')).toBe(true); // Squirreled Away deck, group 1: the Blood token (CR 111.10)
+    expect(isFeatureSupported('token:Blood')).toBe(true); // CR 111.10g: the Blood token and its discard cost
     // The intervening "if" (CR 603.4) is a `trigger:` feature; the condition is a `condition:`.
     expect(isFeatureSupported('trigger:interveningIf')).toBe(true);
     expect(isFeatureSupported('condition:kicked')).toBe(true);

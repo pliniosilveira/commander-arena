@@ -171,6 +171,35 @@ export const KEYWORD_SPECTACLE = defineRule<readonly IrKeyword[]>({
 });
 
 /**
+ * `keyword.freerunning`: "Freerunning {1}{B}" (CR 702.173a: "You may cast this spell by paying [cost] rather than its mana cost if you dealt combat damage to a player this turn with an Assassin
+ * or commander"; Petty Larceny). The engine reads the condition at the first casting step (`TurnLog.combatDamaged`), so the line is the cost and nothing else. Not read: no cost, {X}, a
+ * hybrid symbol, a cost that is not mana, a full stop, a second cost.
+ */
+export const KEYWORD_FREERUNNING = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.freerunning',
+  family: 'keyword',
+  leading: ['freerunning'],
+  cites: [
+    'CR 702.173a (Freerunning)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: ['Freerunning {1}{B}', 'Freerunning {2}{B}', 'freerunning {B}'],
+  rejects: [
+    'Freerunning',
+    'Freerunning {X}{B}',
+    'Freerunning {B/R}',
+    'Freerunning {1}{B}.',
+    'Freerunning—Pay 2 life.',
+    'Freerunning {1}{B}, freerunning {B}',
+    'Freerunning {B} and haste',
+    'Freerunner {B}',
+    'Dash {B}',
+  ],
+  parse: altCostKeyword('keyword.freerunning', 'freerunning'),
+});
+
+/**
  * `keyword.unearth`: "Unearth {R}" (CR 702.84a: "[Cost]: Return this card from your graveyard to the battlefield.
  * It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it
  * instead of putting it anywhere else. Activate only as a sorcery"). Not an alternative cost: it lowers to the
@@ -559,6 +588,7 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_DASH,
   KEYWORD_BESTOW,
   KEYWORD_SPECTACLE,
+  KEYWORD_FREERUNNING,
   KEYWORD_UNEARTH,
   KEYWORD_ENCORE,
   KEYWORD_ETERNALIZE,

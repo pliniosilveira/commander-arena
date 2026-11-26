@@ -4,7 +4,15 @@
 import { fail, literal, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { defineRule } from '../registry';
-import { CARD_TYPES, NO_PARTS, permanentPhrase, toFilter, typeWords } from './phrases';
+import {
+  BOUNDARY,
+  CARD_TYPES,
+  NO_PARTS,
+  PERMANENT_TYPES,
+  permanentPhrase,
+  toFilter,
+  typeWords,
+} from './phrases';
 
 const ID = 'noun.target-card-and-same-name';
 
@@ -161,6 +169,81 @@ export const NOUN_TARGET_PERMANENT_AND_SAME_NAME_TOKENS = defineRule<IrNoun>({
   },
 });
 
+const NAMESAKES_ID = 'noun.target-permanent-and-same-name-others';
+
+/**
+ * `noun.target-permanent-and-same-name-others`: "target creature and all other creatures with the same name as that creature" (Sever the Bloodline; CR 201.2: the name, and 201.2a: an
+ * object with no name has the same name as nothing, so a face-down target brings no one with it; CR 608.2c: the effect works out which permanents have the name as it resolves). The
+ * target is a permanent of one card type (or "permanent") of a noun of its own, numbered with the other targets of the text; the objects are that permanent and every other permanent
+ * of that type on the battlefield, whoever controls it, that has its name (the engine's `each` with `sameNameAs` and `plus` the target). Not read: a target with a restriction
+ * ("an opponent controls", "nonland"), a count, "up to", "all" without "other", another type for the others than the target's, "the same name as" something else than "that" and the
+ * type word, a graveyard.
+ */
+export const NOUN_TARGET_PERMANENT_AND_SAME_NAME_OTHERS = defineRule<IrNoun>({
+  id: NAMESAKES_ID,
+  family: 'noun',
+  leading: ['target'],
+  cites: ['CR 201.2 (Name)', 'CR 115.1 (Targets)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'target creature and all other creatures with the same name as that creature',
+    'target artifact and all other artifacts with the same name as that artifact',
+    'target permanent and all other permanents with the same name as that permanent',
+  ],
+  rejects: [
+    'target creature and all other creatures',
+    'target creature and all creatures with the same name as that creature',
+    'target creature and other creatures with the same name as that creature',
+    'target creature and all other artifacts with the same name as that creature',
+    'target creature and all other creatures with the same name as that artifact',
+    'target creature and all other creatures with the same name as target creature',
+    'target creature an opponent controls and all other creatures with the same name as that creature',
+    'target nonland permanent and all other permanents with the same name as that permanent',
+    'two target creatures and all other creatures with the same name as that creature',
+    'target creature card and all other creature cards with the same name as that card',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('target '),
+      pattern(
+        new RegExp(
+          `(${PERMANENT_TYPES}|permanent) and all other (\\1)s with the same name as that (\\1)${BOUNDARY}`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const word = (r.value[1][1] ?? '').toLowerCase();
+    if (word === '') return fail(ctx, pos);
+    const raw = ctx.text.slice(pos, r.pos);
+    const types = word === 'permanent' ? [] : [word];
+    const target: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: toFilter('battlefield', { ...NO_PARTS, types }, raw),
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: NAMESAKES_ID,
+    };
+    const set: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: {
+        ...toFilter('battlefield', { ...NO_PARTS, types }, raw),
+        sameNameAsNoun: target,
+        withNamedTarget: true,
+      },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: NAMESAKES_ID,
+    };
+    return { ok: true, value: set, pos: r.pos };
+  },
+});
+
 const PERMANENTS_ID = 'noun.target-permanent-and-same-name-permanents';
 
 /**
@@ -181,7 +264,6 @@ export const NOUN_TARGET_PERMANENT_AND_SAME_NAME_PERMANENTS = defineRule<IrNoun>
   ],
   examples: [
     'target nonland permanent and all other permanents with the same name as that permanent',
-    'target permanent and all other permanents with the same name as that permanent',
   ],
   rejects: [
     'target nonland permanent and all permanents with the same name as that permanent',
@@ -202,6 +284,8 @@ export const NOUN_TARGET_PERMANENT_AND_SAME_NAME_PERMANENTS = defineRule<IrNoun>
     const [, targetFilter] = r.value;
     // The permanents with the name are everyone's: a target limited to one player's would read as a limit on the set.
     if (targetFilter.controller !== undefined) return fail(ctx, pos);
+    // "target permanent and all other permanents ..." with no restriction is the rule above's.
+    if (/^target permanent and /iu.test(ctx.text.slice(pos))) return fail(ctx, pos);
     const raw = ctx.text.slice(pos, r.pos);
     const target: IrNoun = {
       kind: 'noun',
@@ -236,5 +320,6 @@ export const SAME_NAME_NOUN_RULES = [NOUN_TARGET_CARD_AND_SAME_NAME];
 /** Read before `noun.target-permanent`, whose phrase would stop at "an opponent controls". */
 export const SAME_NAME_TOKENS_NOUN_RULES = [
   NOUN_TARGET_PERMANENT_AND_SAME_NAME_TOKENS,
+  NOUN_TARGET_PERMANENT_AND_SAME_NAME_OTHERS,
   NOUN_TARGET_PERMANENT_AND_SAME_NAME_PERMANENTS,
 ];

@@ -76,6 +76,16 @@ function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
  * nothing is attached to anything, so the statement is not lowered (the engine's `validateCard`
  * would refuse it too).
  */
+/** "For each unity counter on ~" / "for each counter on ~" (CR 122.1): the counters of the kind on the permanent with the ability, every kind when the text names none. */
+function countersOnSource(counter: string | undefined): {
+  readonly kind: 'countersOnSource';
+  readonly counter?: string;
+} {
+  return counter === undefined
+    ? { kind: 'countersOnSource' }
+    : { kind: 'countersOnSource', counter };
+}
+
 function attachedSubject(noun: IrNoun, ctx: LowerContext): LowerResult<StaticSubject> {
   const needed = noun.det === 'enchanted' ? 'Aura' : 'Equipment';
   if (!ctx.faceSubtypes.includes(needed)) return failure(noun);
@@ -139,6 +149,8 @@ function groupSubject(noun: IrNoun, keywords = false): LowerResult<StaticSubject
 }
 
 function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResult<StaticSubject> {
+  // The cards outside the battlefield that the noun also names are given types by `lowerGroupAndCardsOffBattlefield` alone; any other reading would drop them.
+  if (noun.alsoCardsYouOwnOffBattlefield === true) return failure(noun);
   // `~` is the ability's own permanent, or the spell for "This spell can't be countered".
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
@@ -149,6 +161,13 @@ function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResu
     return host.ok && host.value.kind === 'attached'
       ? { ...host, value: { ...host.value, andThis: true } }
       : host;
+  }
+  // "~ and land creatures you control" (CR 611.3a): the group of the filter, and this permanent whether or not it matches.
+  if (noun.det === 'selfAndGroup') {
+    const group = groupSubject({ ...noun, det: 'each' }, keywords);
+    return group.ok && group.value.kind === 'filter'
+      ? { ...group, value: { ...group.value, andThis: true } }
+      : group;
   }
   // "Each of those creatures" of a soulbond card (D-286, CR 702.95b): this permanent and the creature it is paired with.
   if (noun.det === 'pair') return { ok: true, value: { kind: 'pair' }, rule: noun.rule };
@@ -433,7 +452,10 @@ function effectOf(
     case 'addTypes':
       // "... are Juggernauts in addition to their other creature types" (stage P31, D-140, CR 205.1b, 613.1d): layer 4; and, stage P33
       // (D-150), "Enchanted creature ... is an Angel in addition to its other types".
-      return subject.kind === 'filter' || subject.kind === 'attached'
+      // Burakos, Party Leader: "~ is also a Cleric, Rogue, Warrior, and Wizard", the permanent itself, creature types only.
+      return subject.kind === 'filter' ||
+        subject.kind === 'attached' ||
+        (subject.kind === 'this' && effect.types === undefined)
         ? ok({
             kind: 'setTypes',
             subject,
@@ -468,8 +490,8 @@ function effectOf(
       return ok({
         kind: 'modifyPt',
         subject,
-        power: effect.power ? { kind: 'countersOnSource', counter: effect.counter } : 0,
-        toughness: effect.toughness ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+        power: effect.power ? countersOnSource(effect.counter) : 0,
+        toughness: effect.toughness ? countersOnSource(effect.counter) : 0,
       });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.
@@ -491,7 +513,9 @@ function effectOf(
       });
     }
     case 'loseAllAbilities':
-      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says.
+      // CR 613.1f (stage P32, D-147): the permanent the Aura or Equipment is attached to, whatever host type its text says; or (Sludge Monster, CR 613.7) a group the
+      // permanent names, whose filter the engine checks (`validateCard`: no keyword or ability in it).
+      if (subject.kind === 'filter') return ok({ kind: 'loseAllAbilities', subject });
       return subject.kind === 'attached'
         ? ok({ kind: 'loseAllAbilities', subject: { kind: 'attached' } })
         : failure(at);
@@ -549,12 +573,24 @@ function effectOf(
         return ok({
           kind: 'cantAttackYou',
           creatures: { hostOfSource: true },
-          planeswalkers: true,
+          // Riders of Rohan, group E (Fealty to the Realm): "can't attack you" bars the player only.
+          ...(effect.playersOnly === true ? {} : { planeswalkers: true as const }),
         });
       }
+      if (effect.playersOnly === true) return failure(at);
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
+    case 'controlByMonarch': {
+      // CR 613.1b, 725.1 (Fealty to the Realm): "The monarch controls enchanted creature.": only the creature an Aura is attached to, with no other modifier.
+      const plain =
+        subject.kind === 'attached' &&
+        subject.types?.length === 1 &&
+        subject.types[0] === 'creature' &&
+        Object.keys(subject).length === 2;
+      if (!plain) return failure(at);
+      return ok({ kind: 'controlAttached', by: 'monarch' });
+    }
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
@@ -582,7 +618,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'definesPt':
       return [
         'static:characteristicPt',
-        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+        effect.count.kind === 'lifeTotalOf'
+          ? 'amount:lifeTotalOf'
+          : effect.count.kind === 'partySize'
+            ? 'amount:partySize'
+            : 'amount:countOf',
       ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
@@ -615,10 +655,14 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
+    case 'controlByMonarch':
+      return ['static:controlAttached'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'beginGameOnBattlefield':
+      return ['static:beginGameOnBattlefield'];
     case 'creatureOffBattlefield':
       return ['static:creatureOffBattlefield'];
     case 'chosenType':
@@ -653,6 +697,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
       return ['static:costPerExtraTarget'];
+    case 'plotCostReduction':
+      return ['static:plotCostReduction'];
     case 'restrictUnless':
       return ['static:restrictionUnless'];
     case 'ptAmount':
@@ -688,6 +734,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'legendRuleDoesntApply':
     case 'chosenTypeGroups':
     case 'graveyardEncore':
+    case 'graveyardUnearth':
       return [...sliverLordNeeds(effect)];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
@@ -706,6 +753,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'optionalSacrificeCopies':
     case 'freeCast':
     case 'lifeAlternative':
+    case 'manaAlternative':
     case 'tapAlternative':
     case 'graveyardSacrificeAlternative':
     case 'sacrificeAlternative':
@@ -726,10 +774,20 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:damageCantBePrevented'];
     case 'damageAsThoughWither':
       return ['static:damageAsThoughWither'];
+    case 'cantActivateChosenName':
+      return ['static:cantActivateChosenName'];
+    case 'opponentSearchTopOnly':
+      return ['static:opponentSearchTopOnly'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
     case 'cantBeSacrificed':
       return ['static:cantBeSacrificed'];
+    case 'combatCreatureLimit':
+      return ['static:combatCreatureLimit'];
+    case 'drawLimit':
+      return ['static:drawLimit'];
+    case 'preventDamageAround':
+      return ['static:preventDamageAround'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -746,6 +804,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:castFromTopOfLibrary'];
     case 'graveyardPlay':
       return ['static:playFromGraveyardOnceEachTurn'];
+    case 'linkedExilePlay':
+      return ['static:playFromLinkedExile'];
     case 'groupEntersUntapped':
     case 'groupEntersTapped':
       return ['replacement:groupEntersUntapped'];
@@ -775,10 +835,13 @@ function readsCombat(filter: ObjectFilter): boolean {
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
     // D-416 (CR 700.9): "modified" is read from the counters and attachments (`subjectAffects`, issue 345), so a subject may name it.
-    // CR 701.15b: the designation is read from the game, which `derive` does not have while it matches a subject.
-    filter.goaded === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, names a goaded creature (CR 701.15b). */
+function readsGoaded(filter: ObjectFilter): boolean {
+  return filter.goaded === true || (filter.anyOf?.some(readsGoaded) ?? false);
 }
 
 /** "You have no maximum hand size." (CR 402.2). */
@@ -803,9 +866,12 @@ function lowerCostReduction(
   amount: Extract<IrStaticEffect, { kind: 'costReduction' }>['amount'],
   ctx: LowerContext,
   inCommandZone?: true,
+  thisWay?: 'flashback',
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', 'static:costReduction']);
+  // Visions of Glory (CR 702.34a): "this way" is the spell's own reduction, for its flashback cost.
+  if (thisWay !== undefined && subject.det !== 'self') return failure(subject);
   if (missing.length > 0) return failure(ability, missing);
   const lowered = lowerAmount(amount, ctx, ability.rule);
   if (!lowered.ok) return lowered;
@@ -834,6 +900,7 @@ function lowerCostReduction(
           amount: lowered.value,
           // Eminence (issue 81, CR 113.6): the reduction works in the command zone too.
           ...(inCommandZone === true ? { inCommandZone: true as const } : {}),
+          ...(thisWay === undefined ? {} : { forAlternative: thisWay }),
         },
       },
     ],
@@ -957,6 +1024,48 @@ function lowerConditionalCastFromTop(
   };
 }
 
+/**
+ * "As long as ~'s power is even, you may cast noncreature spells as though they had flash." (Kianne, Corrupted Memory; CR 601.3b, 702.8a): the engine's `castAsThoughFlash` of the
+ * spells the words name, the controller's own, with the condition the engine reads as the spell is cast (`rules/legality.ts`). The subject is "you"; "any player" is not read here.
+ */
+function lowerConditionalFlash(
+  ability: Static,
+  part: IrStaticPart,
+  only: Extract<IrStaticEffect, { kind: 'castAsThoughFlash' }>,
+  condition: Condition,
+): LowerResult<readonly Ability[]> {
+  if (part.subject.det !== 'you' || only.anyPlayer === true) return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'ability:staticCondition',
+    'static:castAsThoughFlash',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const { zone: _zone, stackKind: _kind, ...described } = only.spells;
+  const spells = lowerFilter({
+    kind: 'noun',
+    det: 'a',
+    filter: described,
+    upTo: false,
+    plural: true,
+    other: false,
+    span: ability.span,
+    rule: ability.rule,
+  });
+  if (!spells.ok) return spells;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'static',
+        static: { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+        condition,
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** One subject with what it gets or has: one engine `static` ability for each effect, with the condition when there is one. */
 function lowerPart(
   part: IrStaticPart,
@@ -1012,6 +1121,15 @@ function lowerPart(
   // Resolution-only values cannot be read by a static ability.
   if (subject.value.kind === 'filter' && readsCombat(subject.value.filter))
     return failure(part.subject);
+  // CR 701.15b, 613.11 (Bothersome Quasit): "goaded creatures your opponents control can't block" is a restriction, read where the rule acts after the layers and after the
+  // abilities that goad (`derive-statics.ts`); any other effect on a goaded group reads the designation before it is settled, which `validateCard` would refuse.
+  if (
+    subject.value.kind === 'filter' &&
+    readsGoaded(subject.value.filter) &&
+    part.effects.some((e) => e.kind !== 'restriction')
+  ) {
+    return failure(part.subject);
+  }
   const needs: FeatureRef[] = ['ability:static', `staticSubject:${subject.value.kind}`];
   if (subject.value.kind === 'filter' && namesKeyword(subject.value.filter)) {
     needs.push('selector:keywords');
@@ -1150,6 +1268,45 @@ export function lowerStatic(ability: Static, ctx: LowerContext): LowerResult<rea
 }
 
 /**
+ * "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ..." (CR 611.3a, 613.1f): one static ability for each keyword, with that keyword's
+ * own condition (the same lowering as a statement with one condition, once for each effect). The conditions name no keyword and no power or toughness (CR 613.8).
+ */
+function lowerEffectConditions(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const { effectConditions = [] } = statement;
+  if (
+    effectConditions.length !== statement.effects.length ||
+    statement.condition !== undefined ||
+    statement.also !== undefined
+  ) {
+    return failure(ability);
+  }
+  const abilities: Ability[] = [];
+  for (const [i, effect] of statement.effects.entries()) {
+    const written = effectConditions[i];
+    if (written === undefined) return failure(ability);
+    ctx.staticCondition = true;
+    ctx.staticSubjectIsSelf = false;
+    const lowered = lowerCondition(written, true, ctx);
+    ctx.staticCondition = false;
+    if (!lowered.ok) return lowered;
+    if (conditionNamesLayerValue(lowered.value)) return failure(ability);
+    const done = lowerPart(
+      { subject: statement.subject, effects: [effect] },
+      ability,
+      lowered.value,
+      ctx,
+    );
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * "• Temur — Creatures you control get +1/+0 and have trample and haste." (CR 607.2d, 614.12; Frostcliff Siege): the changes work only while the permanent has the option
  * it chose as it entered, which the engine reads as the static condition `chosenOption` (what no layer changes).
  */
@@ -1174,6 +1331,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   const { statement } = ability;
   const [first, ...more] = statement.effects;
   if (first === undefined) return failure(ability);
+  // CR 611.3a, 613.1f (Multiclass Baldric): "Equipped creature has lifelink if you control a Cleric, deathtouch if you control a Rogue, ...": each keyword with its own condition.
+  if (statement.effectConditions !== undefined) return lowerEffectConditions(ability, ctx);
   if (statement.option !== undefined && first.kind !== 'doubleTriggers') {
     return lowerOptionStatic(ability, ctx);
   }
@@ -1184,6 +1343,23 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     !(first.kind === 'castFromTop' && statement.condition !== undefined)
   ) {
     return lowerDragonStatic(ability);
+  }
+  // Evendo Brushrazer (CR 607.2a, 601.2a): "During your turn, as long as ..., you may play cards exiled with ~."
+  if (first.kind === 'linkedExilePlay') {
+    if (more.length > 0 || statement.condition === undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const lowered = lowerCondition(statement.condition, false, ctx);
+    if (!lowered.ok) return lowered;
+    const missing = missingFeatures(['ability:static', 'static:playFromLinkedExile']);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [
+        { kind: 'static', static: { kind: 'playFromLinkedExile' }, condition: lowered.value },
+      ],
+      rule: ability.rule,
+    };
   }
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   if (isGraveyardPlayStatic(first)) return lowerGraveyardPlayStatic(ability, ctx);
@@ -1207,7 +1383,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       ability.statement.condition !== undefined ||
       ability.statement.also !== undefined ||
       ability.statement.functionsIn !== undefined ||
-      first.count < 1
+      (first.count < 1 && first.oncePerTurn !== true)
     ) {
       return failure(ability);
     }
@@ -1224,8 +1400,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           kind: 'static',
           static: {
             kind: 'grantEnergyAlternative',
-            what: { controller: 'you' },
+            what: {
+              controller: 'you',
+              ...(first.types === undefined ? {} : { types: [...first.types] as never }),
+            },
             energy: first.count,
+            ...(first.fromExile === true ? { from: 'exile' as const } : {}),
+            ...(first.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
           },
         },
       ],
@@ -1239,6 +1420,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
+  // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types."
+  if (statement.subject.alsoCardsYouOwnOffBattlefield === true) {
+    return lowerGroupAndCardsOffBattlefield(ability, ctx);
+  }
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
     ...(statement.also ?? []),
@@ -1306,6 +1491,23 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         rule: ability.rule,
       };
     }
+    if (first.causeCombatDamage === true) {
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'doubleTriggers',
+              subject: subject.value,
+              cause: { kind: 'creatureDealsCombatDamageToPlayer' },
+            },
+            ...linked,
+          },
+        ],
+        rule: ability.rule,
+      };
+    }
     if (first.causeAttacks === true) {
       return {
         ok: true,
@@ -1346,7 +1548,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with
   // a condition the engine reads as the total cost is determined (not by `derive`, so it may compare a power).
   if (first.kind === 'costReduction' && statement.condition !== undefined) {
-    if (more.length > 0 || statement.subject.det !== 'self') return failure(ability);
+    if (more.length > 0 || statement.subject.det !== 'self' || first.thisWay !== undefined) {
+      return failure(ability);
+    }
     const lowered = lowerCondition(statement.condition, false, ctx);
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
@@ -1415,6 +1619,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
         abilities.push(...cast.value);
         continue;
       }
+      // "As long as ~'s power is even, you may cast noncreature spells as though they had flash." (Kianne, Corrupted Memory).
+      if (only?.kind === 'castAsThoughFlash' && part.effects.length === 1) {
+        const flash = lowerConditionalFlash(ability, part, only, condition);
+        if (!flash.ok) return flash;
+        abilities.push(...flash.value);
+        continue;
+      }
       if (only !== undefined && isPlayRule(only)) {
         if (
           part.effects.length > 1 ||
@@ -1436,7 +1647,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
-    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone);
+    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone, first.thisWay);
   }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
@@ -1461,6 +1672,20 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           },
         },
       ],
+      rule: ability.rule,
+    };
+  }
+  // "Plotting cards from your hand costs {2} less." (Doc Aurlock, Grizzled Genius, CR 702.170a).
+  if (first.kind === 'plotCostReduction') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:plotCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'plotCostReduction', amount: first.amount } }],
       rule: ability.rule,
     };
   }
@@ -1524,7 +1749,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (
     first.kind === 'additionalCost' ||
     first.kind === 'freeCast' ||
-    first.kind === 'lifeAlternative'
+    first.kind === 'lifeAlternative' ||
+    first.kind === 'manaAlternative'
   ) {
     return failure(ability);
   }
@@ -1559,6 +1785,19 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           },
         },
       ],
+      rule: ability.rule,
+    };
+  }
+  // "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the card's own pregame option.
+  if (first.kind === 'beginGameOnBattlefield') {
+    if (more.length > 0 || statement.subject.det !== 'self' || statement.condition !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures(['ability:static', ...needsOf(first)]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'beginGameOnBattlefield' } }],
       rule: ability.rule,
     };
   }
@@ -1685,11 +1924,63 @@ function lowerOwnStatic(
   };
 }
 
+/**
+ * "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types." (Dune Chanter, CR 613.1d, 205.1b): two static abilities in layer 4,
+ * the engine's `setTypes` for the permanents and `giveTypesToCardsOffBattlefield` for the cards of the same kind its controller owns anywhere else. Only the one effect "are [types] in addition
+ * to their other types", with no condition and no other subject: the cards outside the battlefield take no other effect (a keyword or a bonus would have nothing to work on there).
+ */
+function lowerGroupAndCardsOffBattlefield(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const [only, ...more] = statement.effects;
+  if (
+    only?.kind !== 'addTypes' ||
+    more.length > 0 ||
+    statement.condition !== undefined ||
+    statement.also !== undefined
+  ) {
+    return failure(ability);
+  }
+  const { alsoCardsYouOwnOffBattlefield: _also, ...plain } = statement.subject;
+  const group = subjectOf(plain, ctx);
+  if (!group.ok) return group;
+  if (group.value.kind !== 'filter' || group.value.other === true) return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'staticSubject:filter',
+    'static:setTypes',
+    'static:giveTypesToCardsOffBattlefield',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const battlefield = effectOf(only, group.value, ability, ctx);
+  if (!battlefield.ok) return battlefield;
+  const { controller: _you, ...what } = group.value.filter;
+  return {
+    ok: true,
+    value: [
+      { kind: 'static', static: battlefield.value },
+      {
+        kind: 'static',
+        static: {
+          kind: 'giveTypesToCardsOffBattlefield',
+          what: { ...what, controller: 'you' },
+          subtypes: [...only.subtypes],
+          ...(only.types === undefined ? {} : { types: only.types as CardType[] }),
+        },
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** Features the static lowerings can name, for the dimension test. */
 export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
   'static:creatureOffBattlefield',
+  'static:beginGameOnBattlefield',
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',
@@ -1698,11 +1989,13 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:restriction',
   'static:costReduction',
   'static:costIncrease',
+  'static:plotCostReduction',
   // D-428 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   'static:abilityCostReduction',
   'static:setTypes',
   'static:loseTypes',
   'static:allCreatureTypes',
+  'static:giveTypesToCardsOffBattlefield',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
   'static:grantAlternativeCostToSpells',

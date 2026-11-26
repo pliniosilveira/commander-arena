@@ -568,7 +568,7 @@ const P1_EFFECTS: readonly Line[] = [
     kind: 'sorcery',
     text: 'Create a Blood token.',
     expect: OK,
-    note: 'the Blood token runs since the Squirreled Away deck, group 1 (CR 111.10)',
+    note: 'Blood runs since CR 111.10g',
   },
   {
     kind: 'sorcery',

@@ -37,11 +37,7 @@ const EACH_OF: Ability = {
       anyOf: [{ subtypes: ['Clue'] }, { subtypes: ['Food'] }, { subtypes: ['Treasure'] }],
     },
     mode: 'eachOf',
-    tokens: [
-      { kind: 'preset', preset: 'Clue' },
-      { kind: 'preset', preset: 'Food' },
-      { kind: 'preset', preset: 'Treasure' },
-    ],
+    tokens: ['Clue', 'Food', 'Treasure'],
   },
 };
 

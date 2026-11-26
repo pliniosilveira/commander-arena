@@ -25,6 +25,14 @@ const OPPONENT_TARGET = { id: 't1', what: { kind: 'player', filter: 'opponent' }
 
 const manifestYours: Effect = { kind: 'manifest', player: YOU };
 
+/** CR 701.62a: look at the top two cards, manifest one, put the rest into the graveyard. */
+const manifestDread: Effect = {
+  kind: 'lookAtTop',
+  count: 2,
+  take: { filter: {}, max: 1, min: 1, hidden: true, to: 'manifest' },
+  rest: 'graveyard',
+};
+
 const entersTrigger = (effect: Effect): Ability => ({
   kind: 'triggered',
   trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
@@ -202,6 +210,16 @@ export const SYNTHETIC_MANIFEST_LIST: readonly CardDefinition[] = [
     colorIdentity: ['G'],
     oracleText: 'Manifest the top card of your library.',
     spell: { effect: manifestYours },
+  }),
+  // "Manifest dread." (CR 701.62a: look at the top two cards, manifest one, put the other into the graveyard.)
+  singleFace({
+    name: 'SYNTHETIC Manifest Dread',
+    manaCost: ['2', 'G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'Manifest dread.',
+    spell: { effect: manifestDread },
   }),
   // "You manifest the top card of target opponent's library."
   singleFace({

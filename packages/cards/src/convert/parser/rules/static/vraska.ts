@@ -26,8 +26,10 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     // CR 510.1a, 609.4 (Baldin, Century Herdmaster): each creature, whoever controls it, while it is your turn.
     'During your turn, each creature assigns combat damage equal to its toughness rather than its power.',
     'During your turn, each creature you control gets +1/+0.',
-    // Gourmand's Talent (CR 611.3a, 613.1d, 613.1f): a statement about a group of permanents, with its types or abilities.
+    // Flint deck (issue 685, At Knifepoint): a group of permanents, while it is your turn.
     'During your turn, creatures you control have flying.',
+    'During your turn, outlaws you control have first strike.',
+    // Gourmand's Talent (CR 611.3a, 613.1d, 613.1f): a statement about a group of permanents, with its types or abilities.
     'During your turn, artifacts you control are Foods in addition to their other types.',
     'During your turn, artifacts you control are Foods in addition to their other types and have "{2}, {T}, Sacrifice this artifact: You gain 3 life."',
   ],

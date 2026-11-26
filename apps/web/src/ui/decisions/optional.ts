@@ -512,6 +512,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'searchPut') {
+    // CR 608.2d, 701.23 (`search.mayPut`): the card found and revealed may be put onto the battlefield; otherwise it goes into the hand.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? 'the card';
+    return {
+      prompt: `${d.sourceName}: put ${card} onto the battlefield? If you don't, it goes into your hand.`,
+      yes: 'Put it onto the battlefield',
+      no: 'Put it into my hand',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'clash') {
     // CR 701.30a, 701.30c: "clash with an opponent": the card this player revealed is the top card of their library; they may put it on the bottom. Nothing is rewound.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? 'the card';
@@ -566,11 +576,30 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: false,
     };
   }
+  if (d.purpose === 'openingHand') {
+    // CR 103.6: asked after the mulligans, before the first turn; nothing is rewound by declining.
+    return {
+      prompt: `${d.sourceName}: begin the game with it on the battlefield?`,
+      yes: 'Begin on the battlefield',
+      no: 'Keep in hand',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'costChoice') {
     // "Sacrifice an artifact or creature or pay {4}" (CR 118.8, 601.2b, D-181): asked as the spell is cast, each button is one way to pay;
     // Cancel rewinds the cast (CR 733).
     const first = additionalWayText(d.cost ?? []);
     const second = additionalWayText(d.otherCost ?? []);
+    if (d.moreCost !== undefined) {
+      // Three ways: the first button takes the first way, the second goes on to the choice between the other two (declining asks again).
+      const third = additionalWayText(d.moreCost);
+      return {
+        prompt: `${d.sourceName}: ${first}, ${second}, or ${third}, as an additional cost?`,
+        yes: first.replace(/^./, (c) => c.toUpperCase()),
+        no: `Another way: ${second} or ${third}`,
+        cancellable: true,
+      };
+    }
     return {
       prompt: `${d.sourceName}: ${first}, or ${second}, as an additional cost?`,
       yes: first.replace(/^./, (c) => c.toUpperCase()),

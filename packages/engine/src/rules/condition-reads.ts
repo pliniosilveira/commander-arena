@@ -5,9 +5,9 @@
  * cannot disagree. It imports no `derive`.
  */
 import type { Condition } from '../ast/types';
-import type { SeatId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
-import type { GameState } from '../state/types';
+import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { commanderCardOf } from './melded';
 
@@ -141,10 +141,15 @@ export function enteredThisTurnHolds(
   state: GameState,
   seat: SeatId,
   condition: EnteredCondition,
+  source: ObjectId | null = null,
 ): boolean {
+  // CR 400.7 (Éowyn, Shieldmaiden): "another" leaves out the permanent with the ability; with no such permanent to leave out, the condition cannot be told and fails.
+  if (condition.other === true && source === null) return false;
   let n = 0;
   for (const e of state.turnLog.entered) {
     if (e.controller !== seat) continue;
+    // "Another Elf entered ...": the permanent the condition belongs to does not count (a permanent that left and came back is a new object, CR 400.7).
+    if (condition.other === true && e.object === source) continue;
     if (condition.types?.some((t) => !e.types.includes(t))) continue;
     if (condition.notTypes?.some((t) => e.types.includes(t))) continue;
     if (condition.subtypes?.some((t) => !e.subtypes.includes(t))) continue;
@@ -152,6 +157,23 @@ export function enteredThisTurnHolds(
     n += 1;
   }
   return n >= condition.count;
+}
+
+/**
+ * CR 701.21a (Evendo Brushrazer): `seat` has sacrificed a permanent this turn whose card types include all of the condition's `types` and that is a token or not as `token` says. Read from
+ * the turn log (`TurnLog.sacrificed`), so a permanent that has left since still counts as it was sacrificed.
+ */
+export function sacrificedThisTurnHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'sacrificedThisTurn' }>,
+): boolean {
+  return (state.turnLog.sacrificed ?? []).some(
+    (e) =>
+      e.controller === seat &&
+      (condition.types === undefined || condition.types.every((t) => e.types.includes(t))) &&
+      (condition.token === undefined || e.token === condition.token),
+  );
 }
 
 /**
@@ -207,8 +229,20 @@ export function plainConditionHolds(
   state: GameState,
   condition: Condition,
   controller: SeatId,
+  source?: GameObject,
 ): boolean {
   switch (condition.kind) {
+    case 'thisMatches': {
+      // CR 122.1, 613.8 (Arixmethes, Slumbering Isle): the permanent has a counter of the kind (any kind when none is named), which no layer changes. `validateCard` allows no other
+      // test of the permanent here.
+      if (source === undefined) return false;
+      const counter = condition.filter.hasCounter;
+      return counter === undefined
+        ? false
+        : counter === true
+          ? Object.values(source.counters).some((n) => n > 0)
+          : (source.counters[counter] ?? 0) > 0;
+    }
     case 'lifeTotal':
       return lifeTotalHolds(state, controller, condition);
     case 'controlCommander':
@@ -239,11 +273,11 @@ export function plainConditionHolds(
           : turns === value;
     }
     case 'and':
-      return condition.terms.every((t) => plainConditionHolds(state, t, controller));
+      return condition.terms.every((t) => plainConditionHolds(state, t, controller, source));
     case 'or':
-      return condition.terms.some((t) => plainConditionHolds(state, t, controller));
+      return condition.terms.some((t) => plainConditionHolds(state, t, controller, source));
     case 'not':
-      return !plainConditionHolds(state, condition.term, controller);
+      return !plainConditionHolds(state, condition.term, controller, source);
     default:
       return false;
   }

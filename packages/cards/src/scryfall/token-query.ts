@@ -1,7 +1,24 @@
 import type { TokenDefinition } from '@commander-arena/engine';
 
+/** The keyword abilities of a token as the words Scryfall prints them in ("first strike", "flying"). */
+export function tokenKeywordWords(token: TokenDefinition): string[] {
+  return [
+    ...new Set(
+      token.abilities.flatMap((a) =>
+        a.kind === 'keyword'
+          ? [a.keyword.kind.replace(/[A-Z]/g, (c) => ` ${c.toLowerCase()}`)]
+          : [],
+      ),
+    ),
+  ];
+}
+
 /** Search printed token characteristics, never a permanent's counters or continuous effects. */
-export function tokenSearchQuery(token: TokenDefinition): string | null {
+export function tokenSearchQuery(
+  token: TokenDefinition,
+  /** `cards`: the best printing of the token (the default); `prints`: every printing, for a picker. */
+  unique: 'cards' | 'prints' = 'cards',
+): string | null {
   if (token.name === '' || token.name.startsWith('SYNTHETIC') || token.manaCost !== null) {
     return null;
   }
@@ -44,6 +61,6 @@ export function tokenSearchQuery(token: TokenDefinition): string | null {
       : [`tou=${token.toughness === '*' ? quote('*') : token.toughness}`]),
     ...[...new Set(words)].map((w) => `o:${quote(w)}`),
     ...(token.abilities.length === 0 && token.oracleText.trim() === '' ? ['-o:/./'] : []),
-    'game:paper unique:cards prefer:best',
+    unique === 'prints' ? 'game:paper unique:prints' : 'game:paper unique:cards prefer:best',
   ].join(' ');
 }

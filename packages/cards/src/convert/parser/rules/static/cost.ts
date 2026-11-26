@@ -104,6 +104,12 @@ function reduction(): Parser<IrAmount> {
           'amount.for-each-this-way',
           // Eris, Roar of the Storm (issue 121): "costs {2} less to cast for each different mana value among ...".
           'amount.for-each-different-mana-value',
+          // CR 700.8 (Thwart the Grave): "costs {1} less to cast for each creature in your party".
+          'amount.for-each-party-creature',
+          // Valiant Changeling (CR 205.3m): "costs {1} less to cast for each creature type among creatures you control".
+          'amount.for-each-creature-type',
+          // Bloodsoaked Insight (issue 685): "costs {1} less to cast for each 1 life your opponents have lost this turn".
+          'amount.for-each-opponents-life-lost',
         ],
       }),
     ),
@@ -172,6 +178,16 @@ const REDUCTION_IF: Parser<IrCondition> = map(
   ([, condition]) => condition,
 );
 
+/** " This effect can't reduce the amount of mana this spell costs by more than {5}." (CR 118.7a): the most the reduction takes off, a generic number. */
+const REDUCTION_CAP: Parser<IrAmount> = map(
+  spanned(
+    pattern(
+      /\s+This effect can['’]t reduce the amount of mana (?:this spell|~) costs by more than \{([1-9]\d*)\}\./iu,
+    ),
+  ),
+  ({ value, span }): IrAmount => ({ kind: 'number', value: Number(value[1]), span }),
+);
+
 /**
  * `static.self-cost-reduction`: "~ costs {2} less to cast." and "~ costs {1} less to cast for each
  * creature on the battlefield." (CR 118.7a: only the generic part of the cost is reduced; CR 113.6d:
@@ -198,6 +214,7 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {2} less to cast.',
     '~ costs {2} less to cast for each card exiled this way.',
     '~ costs {1} less to cast for each card in your hand.',
+    '~ costs {1} less to cast for each creature in your party.',
     '~ costs {1} less to cast for each other creature you control.',
     '~ costs {X} less to cast, where X is the total power of creatures you control.',
     '~ costs {X} less to cast, where X is the greatest power among creatures you control.',
@@ -213,8 +230,15 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {3} less to cast if it targets a tapped creature.',
     // Into the Story: a condition on an opponent's graveyard.
     '~ costs {3} less to cast if an opponent has seven or more cards in their graveyard.',
+    // Valiant Changeling (CR 205.3m, 118.7a): a count of creature types, capped.
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {5}.",
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana ~ costs by more than {5}.",
+    '~ costs {1} less to cast for each creature type among creatures you control.',
   ],
   rejects: [
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {W}.",
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {0}.",
+    "~ costs {1} less to cast for each creature type among creatures you control. This effect can't reduce the amount of mana this spell costs by more than {5}",
     '~ costs {X} less to cast.',
     '~ costs {X} less to cast, where X is the number of creatures.',
     '~ costs {X} less to cast, where Y is the number of creatures you control.',
@@ -240,9 +264,16 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
       reduction(),
       optional(REDUCTION_IF, undefined),
       PERIOD,
+      optional(REDUCTION_CAP, undefined),
     )(ctx, pos);
     if (!r.ok) return r;
-    const effect = { kind: 'costReduction' as const, amount: r.value[1] };
+    // CR 118.7a, 601.2f (Valiant Changeling): "This effect can't reduce the amount of mana this spell costs by more than {5}": the lesser of the count and the cap.
+    const cap = r.value[4];
+    const amount: IrAmount =
+      cap === undefined
+        ? r.value[1]
+        : { kind: 'extreme', pick: 'lesser', of: [r.value[1], cap], span: r.value[1].span };
+    const effect = { kind: 'costReduction' as const, amount };
     const condition = r.value[2];
     const read = statement(
       'static.self-cost-reduction',
@@ -259,28 +290,83 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.self-cost-reduction-this-way`: "~ costs {X} less to cast this way, where X is the greatest mana value of a commander you own on the battlefield or in the command zone." (Visions of Glory,
+ * CR 702.34a, 118.9, 601.2f: a spell with Flashback costs less when it is cast for its flashback cost; CR 107.3c: X is what the text defines). The spell's own reduction, for the
+ * flashback cost only (the engine's `costReduction` with `forAlternative`); the face must have the flashback keyword, which the engine checks. Not read: "this way" with no definition of X, a
+ * fixed number, a condition, another subject.
+ */
+export const STATIC_SELF_COST_REDUCTION_THIS_WAY = defineRule<IrStatic>({
+  id: 'static.self-cost-reduction-this-way',
+  family: 'static',
+  leading: ['~'],
+  cites: [
+    'CR 702.34a (Flashback)',
+    'CR 118.9 (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 107.3c (Numbers and Symbols)',
+  ],
+  examples: [
+    '~ costs {X} less to cast this way, where X is the greatest mana value of a commander you own on the battlefield or in the command zone.',
+    '~ costs {X} less to cast this way, where X is the number of creatures you control.',
+  ],
+  rejects: [
+    '~ costs {X} less to cast this way.',
+    '~ costs {2} less to cast this way.',
+    '~ costs {X} less to cast, where X is the number of creatures you control.',
+    '~ costs {X} less to cast this way, where X is the number of creatures you control',
+    '~ costs {X} less to cast this way, where Y is the number of creatures you control.',
+    '~ costs {X} less to cast this way if you control a Dragon.',
+    '~ costs {X} more to cast this way, where X is the number of creatures you control.',
+    'Creature spells cost {X} less to cast this way, where X is the number of creatures you control.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('~ costs {X} less to cast this way, '),
+      family<IrAmount>('amount', { only: ['amount.where-x'] }),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: statement(
+        'static.self-cost-reduction-this-way',
+        selfNoun('static.self-cost-reduction-this-way', pos),
+        { kind: 'costReduction' as const, amount: r.value[1], thisWay: 'flashback' as const },
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 const SPELLS = pattern(new RegExp(`spells${BOUNDARY}`, 'iu'));
 
 /** The singular "spell" that closes "Each Sliver spell you cast". */
 export const SPELL = pattern(new RegExp(`spell${BOUNDARY}`, 'iu'));
 
 /** Modifiers a reduction's subject may carry: colors and "non<type>" words (no tapped, no supertype). */
-const SUBJECT_MODIFIERS = satisfy(
-  map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
-  // The filter below keeps only the colors and the "non<type>" words: any other modifier is refused, never dropped (D-230: "historic" would read as every spell).
-  (parts) =>
-    parts.tapped === undefined &&
-    parts.supertypes.length === 0 &&
-    parts.notSupertypes.length === 0 &&
-    parts.token === undefined &&
-    !parts.colorless &&
-    parts.notColors.length === 0 &&
-    !parts.attacking &&
-    !parts.attackingOrBlocking &&
-    !parts.blocking &&
-    !parts.historic &&
-    parts.colorCount === undefined,
-);
+const subjectModifiers = (supertypes: boolean) =>
+  satisfy(
+    map(many(MODIFIER), (modifiers) => modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS)),
+    // The filter below keeps only the colors and the "non<type>" words (and the supertypes, where the rule reads them): any other modifier is refused, never dropped (D-230: "historic" would read as every spell).
+    (parts) =>
+      parts.tapped === undefined &&
+      (supertypes || parts.supertypes.length === 0) &&
+      parts.notSupertypes.length === 0 &&
+      parts.token === undefined &&
+      !parts.colorless &&
+      parts.notColors.length === 0 &&
+      !parts.attacking &&
+      !parts.attackingOrBlocking &&
+      !parts.blocking &&
+      !parts.historic &&
+      parts.outlaw === undefined &&
+      parts.colorCount === undefined,
+  );
+const SUBJECT_MODIFIERS = subjectModifiers(false);
+const SUBJECT_MODIFIERS_WITH_SUPERTYPES = subjectModifiers(true);
 
 /**
  * The subtypes a spell can be named by: the creature types and the three non-creature ones the
@@ -297,7 +383,12 @@ const isSpellSubtype = (word: string): boolean =>
  * spells", "Aura and Equipment spells", "Blue spells and red spells". A list of types, subtypes or colors is joined with "and" and takes
  * no modifier, as a list of permanent types does for a target (CR 205.2a, 205.3).
  */
-export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
+export function spellSubject(
+  word: Parser<unknown> = SPELLS,
+  options: { readonly supertypes?: boolean } = {},
+): Parser<IrFilter> {
+  const modifiers =
+    options.supertypes === true ? SUBJECT_MODIFIERS_WITH_SUPERTYPES : SUBJECT_MODIFIERS;
   const typeList: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typeChoice(CARD_TYPES, false, 'and'), literal(' '), word)(ctx, pos);
     if (!r.ok) return r;
@@ -316,7 +407,7 @@ export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
   };
   const plain: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
-      SUBJECT_MODIFIERS,
+      modifiers,
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([words]) => words),
         [] as string[],
@@ -336,6 +427,7 @@ export function spellSubject(word: Parser<unknown> = SPELLS): Parser<IrFilter> {
           : { notKeywords: [keyword.keyword] }),
       ...(parts.notTypes.length > 0 ? { notTypes: parts.notTypes } : {}),
       ...(parts.colors.length > 0 ? { colors: parts.colors } : {}),
+      ...(parts.supertypes.length > 0 ? { supertypes: parts.supertypes } : {}),
       raw: ctx.text.slice(pos, r.pos),
     };
     return { ok: true, value: filter, pos: r.pos };
@@ -406,6 +498,8 @@ const CAST_HEAD: Parser<{
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
   readonly ownGraveyard?: true;
+  readonly graveyardOrExile?: true;
+  readonly notOwned?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
   readonly aimed?: IrFilter;
@@ -451,6 +545,18 @@ const CAST_HEAD: Parser<{
     chosen: undefined,
     compared: undefined,
     ownGraveyard: true as const,
+  })),
+  // Doc Aurlock, Grizzled Genius (CR 601.2a, 404.1, 406.1): "Spells you cast from your graveyard or from exile cost {2} less to cast".
+  map(literal(' you cast from your graveyard or from exile cost '), () => ({
+    chosen: undefined,
+    compared: undefined,
+    graveyardOrExile: true as const,
+  })),
+  // Gonti, Canny Acquisitor (CR 108.3, 601.2f): "Spells you cast but don't own cost {1} less to cast": the owner of the card is not the caster.
+  map(pattern(/ you cast but (?:don't|don’t) own cost /iu), () => ({
+    chosen: undefined,
+    compared: undefined,
+    notOwned: true as const,
   })),
   // Stage P32 (D-147): "Creature spells you cast with power 4 or greater cost {2} less to cast": a spell on the stack has the power,
   // toughness and mana value of its card (CR 202.3, 208.1), which the engine compares as the cost is determined.
@@ -512,6 +618,12 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells without flying you cast cost {1} less to cast.',
     // Stage P75 (D-235): spells cast from anywhere other than the hand.
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
+    // Doc Aurlock, Grizzled Genius: spells cast from the caster's own graveyard or from exile.
+    'Spells you cast from your graveyard or from exile cost {2} less to cast.',
+    'Creature spells you cast from your graveyard or from exile cost {1} less to cast.',
+    // Gonti, Canny Acquisitor: spells the caster does not own.
+    "Spells you cast but don't own cost {1} less to cast.",
+    "Noncreature spells you cast but don't own cost {1} less to cast.",
     // Emet-Selch of the Third Seat: spells cast from the caster's own graveyard.
     'Spells you cast from your graveyard cost {2} less to cast.',
     'Instant and sorcery spells you cast from your graveyard cost {1} less to cast.',
@@ -553,6 +665,13 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from anywhere other than your graveyard cost {2} less to cast.',
     'Spells you cast from a graveyard cost {2} less to cast.',
     'Spells you cast from your graveyard cost {2} less to cast',
+    'Spells you cast from your graveyard or from exile cost {2} less to cast',
+    'Spells you cast from your graveyard or exile cost {2} less to cast.',
+    'Spells you cast from exile or from your graveyard cost {2} less to cast.',
+    "Spells you cast but don't own cost {1} less to cast",
+    "Spells you cast and don't own cost {1} less to cast.",
+    "Spells you don't own cost {1} less to cast.",
+    "Spells your opponents cast but don't own cost {1} less to cast.",
     'Spells you cast from your graveyard cost {W} less to cast.',
     'Spells your opponents cast from your graveyard cost {2} less to cast.',
     'Spells you cast from your hand cost {2} less to cast.',
@@ -570,7 +689,20 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
     const [
-      [filter, { chosen, compared, notHand, ownGraveyard, anyCaster, targetsHost, aimed }],
+      [
+        filter,
+        {
+          chosen,
+          compared,
+          notHand,
+          ownGraveyard,
+          graveyardOrExile,
+          notOwned,
+          anyCaster,
+          targetsHost,
+          aimed,
+        },
+      ],
       amount,
     ] = r.value;
     const subjectEnd = pos + filter.raw.length;
@@ -584,6 +716,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(ownGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+          ...(graveyardOrExile === true ? { castFromOwnGraveyardOrExile: true as const } : {}),
+          ...(notOwned === true ? { notOwnedByYou: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
           // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
           ...(aimed === undefined ? {} : { castTargets: aimed }),
@@ -708,10 +842,12 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
       'cost.behold',
       'cost.sacrifice',
       'cost.discard',
+      'cost.discard-filtered',
       'cost.discard-x',
       'cost.pay-life',
       'cost.pay-x-life',
       'cost.exile-any-hand',
+      'cost.exile-graveyard-cards',
       'cost.blight',
     ],
   }),
@@ -726,13 +862,13 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
  * card.", "... sacrifice an artifact or creature.", "... sacrifice a land.", "... pay 3 life.", "...
  * pay {1}.", "... pay X life." (stage P16, D-103: X is announced as the spell is cast, CR 107.3a), "... discard X cards." (D-386)
  * and costs joined with "and" ("sacrifice a creature and discard a card"). Since stage P38 (D-182) also a choice
- * of two ways, one cost each ("sacrifice an artifact or creature or pay {4}", "discard a card or pay 3 life"): the
+ * of two or three ways, one cost each ("sacrifice an artifact or creature or pay {4}", "discard a card or pay 3 life"): the
  * caster pays one of them (CR 118.8, 601.2b). CR 118.8: an
  * additional cost is paid with the spell's other costs as it is cast (CR 601.2b announces it, CR
  * 601.2h pays it); the player chooses what to sacrifice and discard. It is read for a spell
  * whose text it is ("this spell" is `~`); the costs are the face's `additionalCosts`, or for a choice its
  * `additionalCostChoice`. Not read: an optional cost ("you may sacrifice"), a choice of ways of more than
- * one cost each ("sacrifice a creature and discard a card or pay {2}"), a choice of three,
+ * one cost each ("sacrifice a creature and discard a card or pay {2}"), a choice of four,
  * "sacrifice another creature", "sacrifice two creatures" and any other kind of cost.
  */
 export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
@@ -752,12 +888,18 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice an artifact or creature.',
     'As an additional cost to cast ~, sacrifice a land.',
     'As an additional cost to cast ~, discard two cards.',
+    // CR 701.9, 118.8 (Magmatic Insight): the card discarded is of a kind.
+    'As an additional cost to cast ~, discard a land card.',
+    'As an additional cost to cast ~, discard a creature card.',
     'As an additional cost to cast ~, pay 3 life.',
     'As an additional cost to cast ~, pay {2}.',
     'As an additional cost to cast ~, sacrifice a creature and discard a card.',
     'As an additional cost to cast ~, pay X life.',
     'As an additional cost to cast ~, pay X life and discard a card.',
     'As an additional cost to cast ~, you may exile any number of blue cards from your hand.',
+    // CR 118.8, 406.1 (Skaab Ruinator): cards of a kind exiled from the caster's own graveyard.
+    'As an additional cost to cast ~, exile three creature cards from your graveyard.',
+    'As an additional cost to cast ~, exile a card from your graveyard.',
     // Lorwyn Eclipsed (CR 701.68a, 118.8): the optional blight of a spell's additional cost.
     'As an additional cost to cast ~, you may blight 1.',
     'As an additional cost to cast ~, you may blight 2.',
@@ -770,6 +912,9 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice a creature or discard a card.',
     'As an additional cost to cast ~, discard a card or pay 3 life.',
     'As an additional cost to cast ~, behold a Jace or pay {1}.',
+    // A choice of three ways (CR 118.8, 601.2b).
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or pay 4 life.',
+    'As an additional cost to cast ~, discard a card, pay 3 life, or pay {2}.',
   ],
   rejects: [
     'As an additional cost to cast ~, sacrifice a creature',
@@ -782,13 +927,19 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, you may blight 1',
     'As an additional cost to cast ~, sacrifice a creature and discard a card or pay {2}.',
     'As an additional cost to cast ~, sacrifice a creature or discard a card or pay {2}.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or pay 4 life, or pay {2}.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card or pay 4 life.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, or.',
+    'As an additional cost to cast ~, sacrifice a creature, discard a card, and pay 4 life.',
+    'As an additional cost to cast ~, you may sacrifice a creature, discard a card, or pay 4 life.',
     'As an additional cost to cast ~, sacrifice an artifact or creature or.',
     'As an additional cost to cast ~, sacrifice a creature or.',
-    'As an additional cost to cast ~, discard a creature card.',
     'As an additional cost to cast ~, discard X cards at random.',
     'As an additional cost to cast ~, discard Y cards.',
+    'As an additional cost to cast ~, discard a land.',
+    'As an additional cost to cast ~, discard two land cards.',
     'As an additional cost to cast ~, behold another Jace or pay {1}.',
-    'As an additional cost to cast ~, exile a card from your graveyard.',
+    'As an additional cost to cast ~, exile three creature cards from an opponent’s graveyard.',
     'As an additional cost to cast ~, tap an untapped creature you control.',
     'As an additional cost to cast spells, sacrifice a creature.',
     'As an additional cost to cast ~.',
@@ -804,6 +955,30 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
       !ctx.text.startsWith('you may blight ', optionalAt)
     ) {
       return fail(ctx, optionalAt);
+    }
+    // A choice of three ways, one cost each (CR 118.8, 601.2b): "sacrifice a creature, discard a card, or pay 4 life".
+    const three = sequence(
+      literal(prefix),
+      ADDITIONAL_COST,
+      literal(', '),
+      ADDITIONAL_COST,
+      literal(', or '),
+      ADDITIONAL_COST,
+      PERIOD,
+    )(ctx, pos);
+    if (three.ok) {
+      const [, one, , two, , last] = three.value;
+      return {
+        ok: true,
+        value: statement(
+          'static.additional-cost',
+          selfNoun('static.additional-cost', pos + 'as an additional cost to cast '.length),
+          { kind: 'additionalCost' as const, costs: [one], orCosts: [two, last] },
+          pos,
+          three.pos,
+        ),
+        pos: three.pos,
+      };
     }
     const r = sequence(
       literal(prefix),
@@ -1134,6 +1309,71 @@ export const STATIC_FIRST_X_SPELL_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.first-typed-spell-cost-reduction`: "The first artifact spell you cast each turn costs {1} less to cast." (Artifact Class; CR 118.7a, 601.2f, 601.2i, 604.2: a static ability
+ * of a permanent that reduces the generic mana of the first spell of a card type its controller casts each turn, read as the cost is determined). The engine's `costReduction` of the
+ * spells of the type with `firstOfTypeThisTurn`. Not read: "first" without a card type (a spell with nothing before it), two types, another caster, "each turn" missing, "more", a
+ * colored reduction.
+ */
+export const STATIC_FIRST_TYPED_SPELL_COST_REDUCTION = defineRule<IrStatic>({
+  id: 'static.first-typed-spell-cost-reduction',
+  family: 'static',
+  leading: ['The', 'the'],
+  cites: [
+    'CR 118.7a (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'The first artifact spell you cast each turn costs {1} less to cast.',
+    'The first creature spell you cast each turn costs {2} less to cast.',
+    'The first instant spell you cast each turn costs {1} less to cast for each +1/+1 counter on ~.',
+  ],
+  rejects: [
+    'The first artifact spell you cast each turn costs {1} less to cast',
+    'The first spell you cast each turn costs {1} less to cast.',
+    'The first artifact spell your opponents cast each turn costs {1} less to cast.',
+    'The first artifact spell you cast costs {1} less to cast.',
+    'The first artifact spell you cast each turn costs {1} more to cast.',
+    'The first artifact spell you cast each turn costs {W} less to cast.',
+    'The first artifact or creature spell you cast each turn costs {1} less to cast.',
+    'The first artifact spells you cast each turn costs {1} less to cast.',
+    'The second artifact spell you cast each turn costs {1} less to cast.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.first-typed-spell-cost-reduction';
+    const head = pattern(
+      /[Tt]he first (artifact|creature|enchantment|instant|sorcery|planeswalker|battle) spell you cast each turn costs /u,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const r = sequence(reduction(), PERIOD)(ctx, head.pos);
+    if (!r.ok) return r;
+    const [amount] = r.value;
+    const type = head.value[1] ?? '';
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: {
+        controller: 'you',
+        types: [type],
+        firstOfTypeThisTurn: true,
+        raw: ctx.text.slice(pos, head.pos - ' costs '.length),
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: head.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: statement(id, subject, { kind: 'costReduction', amount }, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 const ORDINALS: Readonly<Record<string, number>> = { second: 2, third: 3, fourth: 4, fifth: 5 };
 
 /**
@@ -1207,8 +1447,10 @@ export const STATIC_NTH_SPELL_COST_REDUCTION = defineRule<IrStatic>({
 
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
+  STATIC_SELF_COST_REDUCTION_THIS_WAY,
   STATIC_FIRST_X_SPELL_COST_REDUCTION,
   STATIC_NTH_SPELL_COST_REDUCTION,
+  STATIC_FIRST_TYPED_SPELL_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
   STATIC_SPELLS_AFFINITY,
   // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.

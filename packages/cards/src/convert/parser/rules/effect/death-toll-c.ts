@@ -197,6 +197,42 @@ export const EFFECT_PLAYER_GETS_EMBLEM = defineRule<Clauses>({
   ),
 });
 
+/** "each opponent": every opponent of the controller gets the emblem (CR 114.1), one each. */
+const EACH_OPPONENT: Parser<IrNoun> = satisfy(
+  family<IrNoun>('noun', { only: ['noun.player'] }),
+  (noun) => noun.det === 'eachOpponent' && !noun.other,
+);
+
+/**
+ * `effect.each-opponent-gets-emblem`: `Each opponent gets an emblem with "At the beginning of your upkeep, this emblem deals 1 damage to you."` (Chandra, Awakened Inferno; CR 114.1,
+ * 114.2, 114.3: each player the words name gets an emblem of their own, which they own and control, so "you" in the quotes is that player). The engine's `createEmblem` for the players
+ * `eachOpponent` names. Not read: "target opponent gets" (`effect.player-gets-emblem`), "each player gets", "each opponent gets two emblems", an emblem with no quote.
+ */
+export const EFFECT_EACH_OPPONENT_GETS_EMBLEM = defineRule<Clauses>({
+  id: 'effect.each-opponent-gets-emblem',
+  family: 'effect',
+  leading: ['each'],
+  cites: ['CR 114.1 (Emblems)', 'CR 114.2 (Emblems)', 'CR 114.3 (Emblems)', 'CR 114.4 (Emblems)'],
+  examples: [
+    'each opponent gets an emblem with "Creatures you control get +1/+1."',
+    'Each opponent gets an emblem with "Whenever a player draws a card, you lose 2 life."',
+  ],
+  rejects: [
+    'each opponent gets an emblem',
+    'each opponent gets an emblem with',
+    'each opponent gets an emblem with Creatures you control get +1/+1.',
+    'each opponent gets two emblems with "Creatures you control get +1/+1."',
+    'each player gets an emblem with "Creatures you control get +1/+1."',
+    'target opponent gets an emblem with "Creatures you control get +1/+1."',
+    'each opponent gets an emblem with "Draw a card."',
+  ],
+  parse: single(
+    'effect.each-opponent-gets-emblem',
+    sequence(EACH_OPPONENT, literal(' gets an emblem with '), EMBLEM_ABILITY),
+    ([who, , quoted]) => ({ verb: 'getEmblem', args: { emblem: quoted, who } }),
+  ),
+});
+
 /**
  * `effect.put-any-number-from-hand`: "put any number of land cards from your hand onto the battlefield tapped" (Wrenn and Seven; CR 608.2d: the player chooses, none up to every card of
  * the kind in their hand; CR 110.2a: the cards enter under their control; CR 614.1 is not needed, tapped is part of the instruction). The engine's `moveToZone` of a `choose` selector
@@ -321,6 +357,7 @@ export const DEATH_TOLL_C_EFFECT_RULES = [
   EFFECT_PUT_ANY_NUMBER_PERMANENTS_FROM_HAND,
   EFFECT_PUT_ANY_NUMBER_FROM_HAND,
   EFFECT_PLAYER_GETS_EMBLEM,
+  EFFECT_EACH_OPPONENT_GETS_EMBLEM,
   EFFECT_REPEAT_PROCESS_AGAIN,
   EFFECT_REVEAL_PUT_ALL_HAND,
   EFFECT_LOOK_TAKE_ONE_GRAVEYARD,

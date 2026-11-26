@@ -309,8 +309,8 @@ describe('WhyDialog', () => {
   test('notRunnable: says the engine cannot run it and lists each missing feature', () => {
     const out = why(ENGINE_GAP);
     expect(out).toContain('The grammar reads this, but the engine cannot run it yet: needs ');
-    expect(out).toContain('token: Blood');
-    expect(out).toContain('Rules that matched before it stopped: trigger.enters');
+    expect(out).toContain('manaCost: discard');
+    expect(out).toContain('Rules that matched before it stopped: cost.tap, cost.discard');
     expect(out).toContain('<mark');
   });
 
@@ -342,7 +342,7 @@ describe('WhyDialog', () => {
 });
 
 describe('other views', () => {
-  test('the input panel explains Scryfall, offline use and has an example, import and save', () => {
+  test('the input panel explains Scryfall, offline use and has import and no example button', () => {
     const out = renderToStaticMarkup(
       <InputPanel
         text=""
@@ -353,15 +353,36 @@ describe('other views', () => {
         onText={() => {}}
         onName={() => {}}
         onImport={() => {}}
-        onExample={() => {}}
-        onSave={() => {}}
       />,
     );
     expect(out).toContain('Scryfall');
     expect(out).toContain('internet connection');
     expect(out).toContain('Quick start');
-    expect(out).toContain('Fill in an example');
+    expect(out).not.toContain('Fill in an example');
     expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Import</);
+  });
+
+  test('the special-frame commander art option is a checkbox, off until turned on, and absent when not offered', () => {
+    const panel = (extra: object) =>
+      renderToStaticMarkup(
+        <InputPanel
+          text="x"
+          name=""
+          running={false}
+          progress={null}
+          saveMessage={null}
+          onText={() => {}}
+          onName={() => {}}
+          onImport={() => {}}
+          {...extra}
+        />,
+      );
+    const off = panel({ niceArt: false, onNiceArt: () => {} });
+    expect(off).toContain('type="checkbox"');
+    expect(off).toContain('special-frame art for my commander');
+    expect(off).not.toContain('checked=""');
+    expect(panel({ niceArt: true, onNiceArt: () => {} })).toContain('checked=""');
+    expect(panel({})).not.toContain('type="checkbox"');
   });
 
   test('progress shows a labelled progress bar', () => {
@@ -375,8 +396,6 @@ describe('other views', () => {
         onText={() => {}}
         onName={() => {}}
         onImport={() => {}}
-        onExample={() => {}}
-        onSave={() => {}}
       />,
     );
     expect(out).toContain('Resolving cards (30 of 99)');

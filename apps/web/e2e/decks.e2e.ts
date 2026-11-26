@@ -1,25 +1,24 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Locator, type Page, test } from '@playwright/test';
 import {
   chooseDeck,
   chooseDeckById,
   OPPONENT_DIALOG,
   openStartFlow,
   select,
-  startDefaultGame,
   startFromVersus,
+  versusScreen,
 } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
 /**
  * The decks page and the choice of the opponent's deck (issues 93 and 108, D-215): precons listed
- * beside the saved decks, edited and reset locally, and saved decks picked for either seat.
+ * beside the saved decks, switched on and off, and saved decks picked for either seat.
  * Scryfall is the SYNTHETIC fake of harness/synthetic-scryfall.ts; the precons are the real ones that ship
  * with the app, whose own cards need no network.
  */
 
 const PRECON = 'zombies';
-const PRECON_NAME = 'Ghoulcaller Gisa Zombies';
 const installed = installedPrecons();
 
 /** A legal 100-card list of supported SYNTHETIC cards (as in import.e2e.ts). */
@@ -46,24 +45,6 @@ async function openDecks(page: Page): Promise<void> {
 
 const row = (page: Page) => page.locator(`[data-precon="${PRECON}"]`);
 
-/** Opens the precon in the editor and replaces its Sol Ring line with `line`; returns once imported. */
-async function editPrecon(page: Page, line: string): Promise<void> {
-  await row(page).getByRole('button', { name: /^Edit/ }).click();
-  await expect(page.getByTestId('editing-precon')).toBeVisible();
-  const list = page.getByLabel(/^Decklist/);
-  await expect(list).toContainText('1x Sol Ring');
-  await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
-  const text = await list.inputValue();
-  await list.fill(text.replace('1x Sol Ring', line));
-  await page.getByRole('button', { name: 'Import', exact: true }).click();
-  await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
-}
-
-async function saveMine(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Save my version' }).click();
-  await expect(page.getByText(/Saved your version of/)).toBeVisible();
-}
-
 async function saveDeck(page: Page, name: string, text: string): Promise<void> {
   await page.getByRole('button', { name: 'My decks' }).click();
   await page.getByRole('button', { name: 'Paste a list' }).click();
@@ -71,100 +52,82 @@ async function saveDeck(page: Page, name: string, text: string): Promise<void> {
   await page.getByLabel(/^Decklist/).fill(text);
   await page.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Save deck' }).click();
-  await expect(page.getByText(`Saved "${name}".`)).toBeVisible();
+  await expect(page.getByText(`Imported and saved "${name}".`)).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
 }
 
 test.describe('precons on the decks page', () => {
   test.skip(!installed.includes(PRECON), 'the Zombies precon snapshot is not installed');
 
-  test('a precon is listed as built in, edited, kept after a reload, and reset to default', async ({
+  const toggle = (page: Page) => row(page).getByTestId('precon-toggle');
+  /** The ids of the precons the dialog lists (the Precons tab), in the order shown. */
+  const listedIds = async (dialog: Locator): Promise<string[]> => {
+    await dialog.getByRole('tab', { name: 'Precons' }).click();
+    return dialog
+      .locator('button.scr-deck')
+      .evaluateAll((buttons) => buttons.map((b) => b.getAttribute('data-deck-id') ?? ''));
+  };
+
+  test('a precon is listed as built in, and the Available switch hides it from the deck lists, kept after a reload', async ({
     page,
   }) => {
     await fakeScryfall(page);
     await openDecks(page);
     await expect(page.getByTestId('precon-decks').locator('li')).toHaveCount(installed.length);
+    await expect(toggle(page)).toBeChecked();
+    // Built in decks cannot be edited: no Edit, no "edited" mark.
+    await expect(row(page).getByRole('button', { name: /^Edit/ })).toHaveCount(0);
     await expect(row(page).getByTestId('precon-tag')).toHaveCount(0);
-    await expect(row(page).getByRole('button', { name: /^Reset to default/ })).toHaveCount(0);
 
-    // Replace a card with one that is not in the precon: it is looked up and judged.
-    await editPrecon(page, '1x SYNTHETIC Bear 01');
-    await expect(page.getByLabel('Deck name')).toHaveValue(PRECON_NAME);
-    await expect(page.getByLabel('Deck name')).toHaveJSProperty('readOnly', true);
-    const table = page.getByRole('table');
-    await expect(table.getByRole('row', { name: /SYNTHETIC Bear 01/ })).toContainText('Supported');
-    await expect(table.getByRole('row', { name: /Sol Ring/ })).toHaveCount(0);
-    await saveMine(page);
+    await toggle(page).uncheck();
+    await page.getByRole('button', { name: 'Back to menu' }).click();
+    const mine = await openStartFlow(page);
+    const ids = await listedIds(mine);
+    expect(ids).not.toContain(PRECON);
+    expect(ids).toHaveLength(installed.length - 1);
 
-    await page.getByRole('button', { name: 'My decks', exact: true }).click();
-    await expect(row(page).getByTestId('precon-tag')).toHaveText('Edited by you');
-
-    // The edit stays in this browser across a reload; the menu says which precon is edited.
+    // The switch is kept in this browser across a reload.
     await page.reload();
     await page.getByRole('button', { name: 'My decks' }).click();
-    await expect(row(page).getByTestId('precon-tag')).toHaveText('Edited by you');
-    await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
-    // A second click confirms: the edits are lost for good.
-    await page.getByRole('button', { name: 'Keep my edits of Ghoulcaller Gisa Zombies' }).click();
-    await expect(row(page).getByTestId('precon-tag')).toHaveText('Edited by you');
-    await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
-    await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
-    await expect(row(page).getByTestId('precon-tag')).toHaveCount(0);
-
-    // The shipped list was never changed.
-    await row(page).getByRole('button', { name: /^Edit/ }).click();
-    await expect(page.getByLabel(/^Decklist/)).toContainText('1x Sol Ring');
-    await expect(page.getByLabel(/^Decklist/)).not.toContainText('SYNTHETIC Bear 01');
-  });
-
-  test('an edited precon is marked in the menu', async ({ page }) => {
-    await fakeScryfall(page);
-    await openDecks(page);
-    await editPrecon(page, '1x SYNTHETIC Bear 01');
-    await saveMine(page);
+    await expect(toggle(page)).not.toBeChecked();
+    await toggle(page).check();
     await page.getByRole('button', { name: 'Back to menu' }).click();
-    // The edited precon is marked in both dialogs of the start-game flow.
-    const mine = await openStartFlow(page);
-    await mine.getByRole('tab', { name: 'Precons' }).click();
-    await expect(mine.locator('.scr-deck-tag')).toHaveCount(1);
-    // Choosing your deck opens the opponent's dialog, which marks it too.
-    await select(mine);
-    const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
-    await expect(theirs.locator('.scr-deck-tag')).toHaveCount(1);
+    expect(await listedIds(await openStartFlow(page))).toContain(PRECON);
   });
 
-  test('a precon with a card the engine cannot run is refused with the reason, and reset makes it playable', async ({
+  test('a switched-off precon is offered in neither dialog of the start-game flow', async ({
     page,
   }) => {
+    test.skip(installed.length < 2, 'needs a second precon to choose for your seat');
+    await fakeScryfall(page);
+    await openDecks(page);
+    await toggle(page).uncheck();
+    await page.getByRole('button', { name: 'Back to menu' }).click();
+    const mine = await openStartFlow(page);
+    await select(mine);
+    // Choosing your deck opens the opponent's dialog, which leaves the precon out too.
+    const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+    await expect(theirs).toBeVisible();
+    const ids = await listedIds(theirs);
+    expect(ids).not.toContain(PRECON);
+    // Only the switched-off precon is missing: the deck chosen for your seat is still listed.
+    expect(ids).toHaveLength(installed.length - 1);
+  });
+
+  test('a precon switched off and on again is playable', async ({ page }) => {
     test.skip(installed.length < 2, 'needs a second precon for the other seat');
     await fakeScryfall(page);
     await openDecks(page);
-    // "SYNTHETIC Bear 04" has text the parser does not read: unsupported.
-    await editPrecon(page, '1x SYNTHETIC Bear 04');
-    await expect(
-      page.getByRole('table').getByRole('row', { name: /SYNTHETIC Bear 04/ }),
-    ).toContainText('Unsupported');
-    await saveMine(page);
+    await toggle(page).uncheck();
+    await toggle(page).check();
     await page.getByRole('button', { name: 'Back to menu' }).click();
-
-    const other = installed.find((id) => id !== PRECON);
+    const other = String(installed.find((id) => id !== PRECON));
     const mine = await openStartFlow(page);
-    await chooseDeckById(mine, 'Precons', String(other));
+    await chooseDeckById(mine, 'Precons', other);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
     await chooseDeckById(theirs, 'Precons', PRECON);
-    const alert = page.getByRole('alert');
-    await expect(alert).toContainText(`"${PRECON_NAME}" cannot be played`);
-    await expect(alert).toContainText('abilities the engine cannot run yet');
-
-    // Resetting from the decks page brings the shipped, playable deck back. The refusal left the
-    // opponent's dialog open: close it first.
-    await theirs.getByRole('button', { name: 'Cancel' }).click();
-    await page.getByRole('button', { name: 'My Decks' }).click();
-    await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
-    await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
-    await page.getByRole('button', { name: 'Back to menu' }).click();
-    await startDefaultGame(page);
+    await expect(versusScreen(page)).toBeVisible({ timeout: 30_000 });
+    await startFromVersus(page);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
   });
 });

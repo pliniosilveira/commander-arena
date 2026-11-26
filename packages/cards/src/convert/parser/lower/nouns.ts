@@ -57,6 +57,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   defendingPlayer: 'selector:defendingPlayer',
   // "the player to your right" (Hithlain Rope).
   playerToRight: 'selector:playerToYourRight',
+  // "the chosen player" of "As ~ enters, choose a player" (Stuffy Doll).
+  enteredChosenPlayer: 'selector:enteredChosenPlayer',
   // Stage P33 (D-150): "this card".
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
@@ -74,6 +76,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   combatDamagedThisTurn: 'selector:combatDamagedThisTurn',
   // CR 102.1: "each player who controls a creature with power 4 or greater".
   eachPlayerControlling: 'selector:eachPlayerControlling',
+  // CR 102.1: "the number of players who control more lands than you".
+  eachPlayerControllingMore: 'selector:eachPlayerControllingMore',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -101,6 +105,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:token',
   'selector:nontoken',
   'selector:notSubtypes',
+  'selector:outlaw',
   'selector:notSupertypes',
   'selector:colorless',
   'selector:notColors',
@@ -113,6 +118,14 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyNumber',
   // Hylda group 3: "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
   'selector:differentControllers',
+  // Guff Rewrites History: "for each player, choose target ... that player controls" (`TargetSpec.everyController`).
+  'selector:everyController',
+  // Ringsight: "a card that shares a color with a legendary creature you control" (`ObjectFilter.sharesColorWith`).
+  'selector:sharesColorWith',
+  // Breaking of the Fellowship: "another target creature that player controls" (`TargetSpec.sameControllerAs`).
+  'selector:sameControllerAs',
+  // Bladegriff Prototype: "target nonland permanent of that player's choice" (`TargetSpec.chosenBy`).
+  'selector:targetChosenBy',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
@@ -133,10 +146,15 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:dealtDamageThisTurn',
   'selector:controllerDealtCombatDamageByAtLeast',
   'selector:modified',
   // CR 701.15b: "a goaded creature".
   'selector:goaded',
+  // CR 708.2: "a face-down permanent", "a face-up creature".
+  'selector:faceDown',
+  // CR 201.2 (Mocking Doppelganger): "with the same name as ~", in the subject of a static ability.
+  'selector:sameNameAsSource',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
@@ -279,6 +297,8 @@ function lowerFilterAt(
   const parts: FeatureRef[] = [];
   if (filter.token !== undefined) parts.push(filter.token ? 'selector:token' : 'selector:nontoken');
   if (filter.notSubtypes !== undefined) parts.push('selector:notSubtypes');
+  // CR 700.12: "outlaw" and "non-outlaw", the engine's `outlaw`.
+  if (filter.outlaw !== undefined) parts.push('selector:outlaw');
   // D-135 (stage P30): "nonbasic land" (CR 205.4), the engine's `notSupertypes`.
   if (filter.notSupertypes !== undefined) parts.push('selector:notSupertypes');
   if (filter.colorless === true) parts.push('selector:colorless');
@@ -287,7 +307,7 @@ function lowerFilterAt(
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
-      if (word === 'toxic' || word === 'flash') {
+      if (word === 'toxic' || word === 'flash' || word === 'cascade') {
         kinds.push(word);
         continue;
       }
@@ -309,6 +329,8 @@ function lowerFilterAt(
   if (filter.powerGreaterThanSource === true) parts.push('selector:powerGreaterThanSource');
   // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
   if (filter.controller === 'monarch') parts.push('selector:monarchController');
+  // CR 607.2d (Sewer Nemesis): "cards in the chosen player's graveyard", read from what the permanent chose as it entered.
+  if (filter.controller === 'chosenPlayer') parts.push('selector:chosenPlayerController');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -325,6 +347,7 @@ function lowerFilterAt(
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
   if (filter.hasCounter !== undefined) parts.push('selector:hasCounter');
   if (filter.commander !== undefined) parts.push('selector:commander');
+  if (filter.notCommander === true) parts.push('selector:notCommander');
   if (filter.isSelf === true) parts.push('selector:isSource');
   // D-180 (stage P37): "that was put there from the battlefield this turn" (CR 700.4), a card of a graveyard (the engine reads it of the filter of
   // a target or an `each` selector, never of a member of a choice).
@@ -335,6 +358,10 @@ function lowerFilterAt(
   if (filter.discardedOrFromLibraryThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:discardedOrFromLibraryThisTurn');
+  }
+  if (filter.putFromLibraryThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:putFromLibraryThisTurn');
   }
   // D-235: "spells you cast from anywhere other than your hand" (CR 601.2a), a spell on the stack.
   if (filter.notCastFromHand === true) {
@@ -351,10 +378,20 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castSpellFromGraveyard');
   }
+  // Exit from Exile deck: "a spell cast from exile" (CR 601.2a), a spell on the stack.
+  if (filter.castFromExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castSpellFromExile');
+  }
   // Emet-Selch of the Third Seat: "spells you cast from your graveyard" (CR 601.2a, 404.1), a spell on the stack.
   if (filter.castFromOwnGraveyard === true) {
     if (inner) return bad([]);
     parts.push('selector:castFromOwnGraveyard');
+  }
+  // Doc Aurlock, Grizzled Genius: "spells you cast from your graveyard or from exile" (CR 601.2a, 404.1, 406.1), a spell on the stack.
+  if (filter.castFromOwnGraveyardOrExile === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromOwnGraveyardOrExile');
   }
   // Alisaie Leveilleur: "the second spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.nthSpellThisTurn !== undefined) {
@@ -370,10 +407,34 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:firstXSpellThisTurn');
   }
+  // Wild-Magic Sorcerer: "the first spell you cast from exile each turn" (CR 601.2i).
+  if (filter.firstCastFromExileThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstCastFromExileThisTurn');
+  }
+  // Rain of Riches: "the first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2h, 601.2i), a spell on the stack.
+  if (filter.manaSpentFromSubtype !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:manaSpentFromSubtype');
+  }
+  if (filter.firstManaSpentFromSubtypeThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstManaSpentFromSubtypeThisTurn');
+  }
+  // Artifact Class: "the first artifact spell you cast each turn" (CR 601.2i), a spell on the stack.
+  if (filter.firstOfTypeThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstOfTypeThisTurn');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
+  }
+  // Bitter Downfall: "that was dealt damage this turn" (CR 120.3), read where the filter is matched against the game; never a member of a choice.
+  if (filter.dealtDamageThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:dealtDamageThisTurn');
   }
   // Ahoy Mateys group 7: "controlled by a player who was dealt combat damage by three or more Pirates this turn" (CR 510.2), read where the filter is matched against the game (a target slot, an `each` selector); never a member of a choice.
   if (filter.controllerDealtCombatDamageBy !== undefined) {
@@ -390,6 +451,11 @@ function lowerFilterAt(
     if (inner || filter.zone !== 'exile') return bad([]);
     parts.push('selector:exiledThisWay');
   }
+  // Grishnákh (CR 603.12, 701.47a): "power less than or equal to the amassed Army's power", read where the filter is matched against the game with what the reflexive ability carries (a target slot); never a member of a choice, and a battlefield permanent.
+  if (filter.powerAtMostMoved === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:powerAtMostMoved');
+  }
   // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
   if (filter.putWithSelf === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -405,6 +471,16 @@ function lowerFilterAt(
   if (filter.goaded === true) {
     if (inner) return bad([]);
     parts.push('selector:goaded');
+  }
+  // CR 708.2: "face-down" and "face-up", read where the filter is matched against the game (a count, a target slot, an `each` selector); never a member of a choice.
+  if (filter.facing !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:faceDown');
+  }
+  // CR 201.2: "with the same name as ~" is read where the subject of a static ability is matched (`subjectAffects`); never a member of a choice.
+  if (filter.sameNameAsSource === true) {
+    if (inner) return bad([]);
+    parts.push('selector:sameNameAsSource');
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
@@ -430,6 +506,15 @@ function lowerFilterAt(
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
   if (filter.otherThanIt === true) parts.push('selector:otherThanTriggerSubject');
+  // CR 105.1, 109.4 (Ringsight): "that shares a color with a legendary creature you control", read where the filter is matched against the game; never a member of a choice.
+  let sharesColorWith: ObjectFilter | undefined;
+  if (filter.sharesColorWith !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:sharesColorWith');
+    const permanents = lowerFilterAt(filter.sharesColorWith, noun, false);
+    if (!permanents.ok) return permanents;
+    sharesColorWith = permanents.value;
+  }
   // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
   if (filter.sharesCreatureTypeWithSacrificed === true) {
     parts.push('selector:sharesCreatureTypeWithSacrificed');
@@ -455,6 +540,15 @@ function lowerFilterAt(
     const aimed = lowerFilterAt(filter.targets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
+  }
+  // Green Slime (CR 113.7a): "from an artifact or enchantment source", an ability on the stack.
+  let abilitySource: ObjectFilter | undefined;
+  if (filter.abilitySource !== undefined) {
+    if (inner || filter.stackKind === undefined) return bad([]);
+    parts.push('selector:abilitySource');
+    const from = lowerFilterAt(filter.abilitySource, noun, true, false, false);
+    if (!from.ok) return from;
+    abilitySource = from.value;
   }
   // Siren Stormtamer (CR 115.1, 601.2c): "that targets you": a chosen target that is the controller of the ability, a member of the choice that also reads "a creature you control".
   let targetsPlayer: 'you' | undefined;
@@ -588,6 +682,7 @@ function lowerFilterAt(
     ...(filter.notSubtypes !== undefined && filter.notSubtypes.length > 0
       ? { notSubtypes: [...filter.notSubtypes] }
       : {}),
+    ...(filter.outlaw !== undefined ? { outlaw: filter.outlaw } : {}),
     ...(filter.colorless === true ? { colorless: true as const } : {}),
     ...(filter.token !== undefined ? { token: filter.token } : {}),
     ...(keywords.length > 0 ? { keywords } : {}),
@@ -617,6 +712,7 @@ function lowerFilterAt(
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
     ...(filter.hasCounter === undefined ? {} : { hasCounter: filter.hasCounter }),
     ...(filter.commander === undefined ? {} : { commander: filter.commander }),
+    ...(filter.notCommander === true ? { notCommander: true as const } : {}),
     ...(filter.isSelf === true ? { isSource: true as const } : {}),
     ...(filter.manaValueX === true ? { manaValueX: true as const } : {}),
     ...(filter.controllerDamagedBySource === true
@@ -628,14 +724,30 @@ function lowerFilterAt(
     ...(filter.discardedOrFromLibraryThisTurn === true
       ? { discardedOrFromLibraryThisTurn: true as const }
       : {}),
+    ...(filter.putFromLibraryThisTurn === true ? { putFromLibraryThisTurn: true as const } : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.castFromGraveyard === true ? { castFromGraveyard: true as const } : {}),
+    ...(filter.castFromExile === true ? { castFromExile: true as const } : {}),
     ...(filter.castFromOwnGraveyard === true ? { castFromOwnGraveyard: true as const } : {}),
+    ...(filter.castFromOwnGraveyardOrExile === true
+      ? { castFromOwnGraveyardOrExile: true as const }
+      : {}),
     ...(filter.nthSpellThisTurn === undefined ? {} : { nthSpellThisTurn: filter.nthSpellThisTurn }),
     ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
+    ...(filter.firstCastFromExileThisTurn === true
+      ? { firstCastFromExileThisTurn: true as const }
+      : {}),
+    ...(filter.manaSpentFromSubtype === undefined
+      ? {}
+      : { manaSpentFromSubtype: filter.manaSpentFromSubtype }),
+    ...(filter.firstManaSpentFromSubtypeThisTurn === true
+      ? { firstManaSpentFromSubtypeThisTurn: true as const }
+      : {}),
+    ...(filter.firstOfTypeThisTurn === true ? { firstOfTypeThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.dealtDamageThisTurn === true ? { dealtDamageThisTurn: true as const } : {}),
     ...(filter.controllerDealtCombatDamageBy === undefined
       ? {}
       : {
@@ -646,9 +758,12 @@ function lowerFilterAt(
         }),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.exiledThisWay === true ? { exiledThisWay: true as const } : {}),
+    ...(filter.powerAtMostMoved === true ? { powerAtMostMoved: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
+    ...(filter.facing === undefined ? {} : { facing: filter.facing }),
+    ...(filter.sameNameAsSource === true ? { sameNameAsSource: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
     ...(filter.basePowerOrToughnessIs === undefined
@@ -663,6 +778,7 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
     ...(filter.otherThanIt === true ? { otherThanTriggerSubject: true as const } : {}),
+    ...(sharesColorWith === undefined ? {} : { sharesColorWith }),
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
@@ -673,6 +789,7 @@ function lowerFilterAt(
       ? { sharesCreatureTypeWith: 'source' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(abilitySource === undefined ? {} : { abilitySource }),
     ...(targetsPlayer === undefined ? {} : { targetsPlayer }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
@@ -785,7 +902,44 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.xIs !== null &&
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
-  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX;
+  // CR 107.3m (Blitzball Stadium: "When this artifact enters, support X"): in the enters trigger of the permanent itself, up to as many targets as the X of the spell it came from.
+  const upToEnteredX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    noun.rule === 'effect.support' &&
+    ctx.entersX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody;
+  // CR 701.37c (Death Kiss: "When this creature becomes monstrous, goad up to X target creatures your opponents control"): in the becomes monstrous trigger of the permanent itself, up to
+  // as many targets as the X of its monstrosity.
+  const upToMonstrousX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    ctx.monstrousX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody &&
+    ctx.xIs === null &&
+    noun.rule !== 'noun.up-to-x-target-graveyard-cards';
+  // "When you cycle this card, destroy up to X target artifacts" (Rampaging War Mammoth, CR 702.29a, 107.3, 603.3d): X is the X announced for the cycling cost, which the cycled
+  // event carries as its number, so the slot is the engine's `upToTriggerAmount`; only the body of a cycling trigger reads it.
+  const upToCycleX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    ctx.cycleTriggerX &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody &&
+    ctx.xIs === null &&
+    noun.rule !== 'noun.up-to-x-target-graveyard-cards';
+  const countX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    !upToDefinedX &&
+    !upToEnteredX &&
+    !upToMonstrousX &&
+    !upToCycleX;
   // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
   // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
   if (noun.rule === 'noun.up-to-x-target-graveyard-cards' && !upToDefinedX) {
@@ -807,7 +961,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       return failure(noun, []);
     }
   }
-  if (upToDefinedX) {
+  if (upToDefinedX || upToEnteredX || upToCycleX || upToMonstrousX) {
     if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
@@ -872,15 +1026,29 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       ) {
         return failure(noun, []);
       }
-      const blocked = missingFeatures(['selector:objectOrSpell']);
+      const blocked = missingFeatures([
+        'selector:objectOrSpell',
+        // Endless Detour (CR 115.1, 404.1): "target spell, nonland permanent, or card in a graveyard": the third half, a card of any graveyard.
+        ...(noun.orCard === undefined ? [] : (['ability:spellPermanentOrCard'] as const)),
+      ]);
       if (blocked.length > 0) return failure(noun, blocked);
       const permanents = lowerFilter(noun);
       if (!permanents.ok) return permanents;
       const spells = lowerFilterAt(noun.orSpell, { ...noun, other: false }, false);
       if (!spells.ok) return spells;
+      const cards =
+        noun.orCard === undefined
+          ? undefined
+          : lowerFilterAt(noun.orCard, { ...noun, other: false }, false);
+      if (cards !== undefined && !cards.ok) return cards;
       spec = {
         id,
-        what: { kind: 'objectOrSpell', filter: permanents.value, spell: spells.value },
+        what: {
+          kind: 'objectOrSpell',
+          filter: permanents.value,
+          spell: spells.value,
+          ...(cards === undefined ? {} : { card: cards.value }),
+        },
         ...boundsOf(noun),
       };
     } else if (noun.orCard !== undefined) {
@@ -1054,11 +1222,29 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         if (blocked.length > 0) return failure(noun, blocked);
         if (!ctx.scryTrigger || noun.det !== 'target') return failure(noun, []);
       }
+      if (upToCycleX) {
+        const blocked = missingFeatures(['selector:upToTriggerAmount']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
       // "another target artifact or creature you control" after a first target (stage P64, D-217, CR 115.3): not the target of the slot before it.
       const apart = noun.otherTarget === true ? ctx.targets[ctx.targets.length - 1]?.id : undefined;
       if (noun.otherTarget === true && apart === undefined) return failure(noun, []);
+      // "another target creature that player controls" (Breaking of the Fellowship, CR 115.3, 109.4): controlled by the controller of the target of the slot before it, which is an object.
+      let sameController: string | undefined;
+      if (noun.sameControllerAsPrevious === true) {
+        const blocked = missingFeatures(['selector:sameControllerAs']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        const before = ctx.targets[ctx.targets.length - 1];
+        if (apart === undefined || before?.what.kind !== 'object') return failure(noun, []);
+        sameController = before.id;
+      }
       if (anyNumberTarget) {
         const blocked = missingFeatures(['selector:anyNumber']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
+      // Bladegriff Prototype (CR 603.3d): "target nonland permanent of that player's choice": the player of the event chooses the target.
+      if (noun.chosenByTriggerPlayer === true) {
+        const blocked = missingFeatures(['selector:targetChosenBy']);
         if (blocked.length > 0) return failure(noun, blocked);
       }
       if (noun.differentControllers === true) {
@@ -1069,7 +1255,22 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
           return failure(noun, []);
         }
       }
+      if (noun.everyController === true) {
+        const blocked = missingFeatures(['selector:everyController']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        if (!anyNumberTarget || noun.differentControllers !== true) return failure(noun, []);
+      }
       let upToAmount: Amount | undefined;
+      if (upToEnteredX) {
+        const blocked = missingFeatures(['selector:upToAmount', 'amount:enteredX']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        upToAmount = { kind: 'enteredX' };
+      }
+      if (upToMonstrousX) {
+        const blocked = missingFeatures(['selector:upToAmount', 'amount:monstrousX']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        upToAmount = { kind: 'monstrousX' };
+      }
       if (upToDefinedX) {
         const blocked = missingFeatures(['selector:upToAmount']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -1101,15 +1302,21 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               ...(noun.differentControllers === true
                 ? { differentControllers: true as const }
                 : {}),
+              ...(noun.everyController === true ? { everyController: true as const } : {}),
             }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
             : upToAmount !== undefined
               ? { id, what: { kind: 'object', filter: filter.value }, upToAmount }
-              : noun.upToTriggerAmount === true
+              : noun.upToTriggerAmount === true || upToCycleX
                 ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
                 : noun.upToThatMany === true
-                  ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                  ? {
+                      id,
+                      what: { kind: 'object', filter: filter.value },
+                      // Loamcrafter Faun (CR 603.12): after "discard one or more land cards", "that many" is the cards discarded.
+                      upToThatMany: ctx.thisWay === 'discarded' ? ('discarded' as const) : true,
+                    }
                   : {
                       id,
                       what: { kind: 'object', filter: filter.value },
@@ -1118,6 +1325,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                         ? { differentControllers: true as const }
                         : {}),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
+                      ...(sameController === undefined ? {} : { sameControllerAs: sameController }),
+                      ...(noun.chosenByTriggerPlayer === true
+                        ? { chosenBy: 'triggerPlayer' as const }
+                        : {}),
                       // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
                       ...(apart === undefined ||
                       noun.otherTargetAll !== true ||
@@ -1194,6 +1405,17 @@ export function objectRefOf(
       }
     );
   }
+  // Experimental Lab (CR 701.62a, 608.2c, 400.7j): "that creature" after "manifest dread" is the creature it manifested, the engine's `moved`.
+  if (
+    options.moved === true &&
+    ctx.manifestedCreature &&
+    (noun.rule === 'noun.that-object' || noun.rule === 'noun.it') &&
+    (noun.det === 'anaphor' || noun.det === 'triggerSubject')
+  ) {
+    return (
+      gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
+    );
+  }
   // "Then if you control four or more lands, untap that land." (stage P36, D-178, CR 400.7j): the card a search found, the engine's `moved`.
   if (
     options.moved === true &&
@@ -1238,6 +1460,16 @@ export function objectRefOf(
   ) {
     return (
       gate(noun, ['selector:moved']) ?? { ok: true, value: { kind: 'moved' }, rule: noun.rule }
+    );
+  }
+  // Terastodon (CR 608.2c, 400.7): "each permanent put into a graveyard this way", the permanents the destroy effects before it put there.
+  if (noun.det === 'graveyardedThisWay') {
+    return (
+      gate(noun, ['selector:putIntoGraveyardThisWay']) ?? {
+        ok: true,
+        value: { kind: 'putIntoGraveyardThisWay' },
+        rule: noun.rule,
+      }
     );
   }
   if (noun.det === 'anaphor' || noun.det === 'triggerSubject') {
@@ -1575,6 +1807,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'playerToYourRight' });
     }
+    case 'enteredChosenPlayer': {
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'enteredChosenPlayer' });
+    }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return (
@@ -1611,8 +1847,31 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
         return failure(noun, []);
       }
+      // CR 102.2 (Summon: Yojimbo): "the number of opponents who control a creature with power 4 or greater" counts only the opponents of the controller.
+      const opponents = noun.whoGroup === 'eachOpponent';
+      const blocked = gate(noun, [
+        ...(need === undefined ? [] : [need]),
+        ...(opponents ? (['ability:opponentsControlling'] as const) : []),
+      ]);
+      return (
+        blocked ??
+        ok({
+          kind: 'eachPlayerControlling',
+          filter: filter.value,
+          ...(opponents ? { opponentsOnly: true as const } : {}),
+        })
+      );
+    }
+    case 'eachPlayerControllingMore': {
+      // CR 102.1, 109.4: the other players who control more battlefield permanents like the noun than the controller; the filter names no controller (each player is "you" in turn).
+      if (noun.of === undefined) return failure(noun, []);
+      const filter = lowerFilter(noun.of);
+      if (!filter.ok) return filter;
+      if (filter.value.controller !== undefined || filter.value.zone !== undefined) {
+        return failure(noun, []);
+      }
       const blocked = gate(noun, need === undefined ? [] : [need]);
-      return blocked ?? ok({ kind: 'eachPlayerControlling', filter: filter.value });
+      return blocked ?? ok({ kind: 'eachPlayerControllingMore', filter: filter.value });
     }
     case 'lostLifeThisTurn': {
       // CR 119.3, 102.1, 102.2: the players of the group (every player or every opponent) who lost life this turn.
@@ -1711,6 +1970,11 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       ) {
         return ok({ kind: 'declinedPlayer' });
       }
+      // CR 608.2d (Sylvan Offering): "that player" after "Choose an opponent": the player the `choosePlayer` before it chose.
+      if (noun.ref === 'chosen') {
+        if (!ctx.choseAPlayer) return failure(noun, []);
+        return gate(noun, ['selector:chosenPlayer']) ?? ok({ kind: 'chosenPlayer' });
+      }
       // D-648: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
       if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
         return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);
@@ -1755,6 +2019,8 @@ export function recipientOf(
     (noun.det === 'discardedThisWay' && noun.discardedHand === true) ||
     // Barret Wallace (CR 508.5): "it deals damage equal to ... to defending player".
     noun.det === 'defendingPlayer' ||
+    // Stuffy Doll (CR 614.12a): "it deals that much damage to the chosen player".
+    noun.det === 'enteredChosenPlayer' ||
     (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);

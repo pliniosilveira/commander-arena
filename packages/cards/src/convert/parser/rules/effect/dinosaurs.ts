@@ -29,7 +29,7 @@ import type {
 import { FOR_EACH_AMOUNTS } from '../amount/kicked';
 import { scaled } from '../amount/scaled';
 import { spellPhrase } from '../noun/phrases';
-import { defineRule, family, spanned } from '../registry';
+import { defineRule, family, node, spanned } from '../registry';
 import { type Clauses, makeClause, single } from './operands';
 import { tokenWithEach } from './token';
 
@@ -89,8 +89,16 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
     // Bulk Up (CR 701.10): the possessive of a single target.
     "double target creature's power until end of turn",
     "double target creature you control's toughness until end of turn",
+    // Death Kiss (CR 701.10): the possessive of "it", the creature an earlier part of the ability is about.
+    'double its power until end of turn',
+    'double its power and toughness until end of turn',
   ],
   rejects: [
+    'double its power',
+    'double its mana value until end of turn',
+    'double it power until end of turn',
+    'double its power until your next turn',
+    'double its powers until end of turn',
     "double target creatures's power until end of turn",
     "double target creature's power",
     "double target creature's mana value until end of turn",
@@ -137,6 +145,36 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
           duration,
         ],
       ),
+      // Death Kiss: "double its power until end of turn", the possessive of "it" (the creature the trigger is about).
+      map(
+        sequence(
+          literal('double '),
+          node<RegExpExecArray, IrNoun>(
+            'effect.double-pt',
+            pattern(/its(?![\p{L}\p{N}])/iu),
+            () => ({
+              kind: 'noun',
+              det: 'anaphor',
+              filter: { raw: 'it' },
+              upTo: false,
+              plural: false,
+              other: false,
+            }),
+          ),
+          literal(' '),
+          spanned(STATS),
+          literal(' '),
+          family<IrDuration>('duration'),
+        ),
+        ([, objects, , stats, , duration]): DoubleParts => [
+          'double the ',
+          stats,
+          ' of ',
+          objects,
+          ' ',
+          duration,
+        ],
+      ),
     ),
     ([, stats, , objects, , duration]) => ({
       verb: 'doublePt',
@@ -167,7 +205,7 @@ const isOneOrUpToOne = (noun: IrNoun): boolean =>
 export const EFFECT_FIGHT = defineRule<Clauses>({
   id: 'effect.fight',
   family: 'effect',
-  leading: ['target', 'another', '~', 'it', 'have'],
+  leading: ['target', 'another', '~', 'it', 'have', 'up'],
   cites: ['CR 701.14 (Fight)', 'CR 701.14b (Fight)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
   examples: [
     "target creature you control fights target creature you don't control",
@@ -181,6 +219,8 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     // Primal Might: the creature fought is an "up to one" target.
     "it fights up to one target creature you don't control",
     "target creature you control fights up to one target creature you don't control",
+    // Earth Rumble: the creature that fights is an "up to one" target too (CR 701.14b: nothing fights unless both are chosen).
+    'up to one target creature you control fights target creature an opponent controls',
   ],
   rejects: [
     "have it fights target creature you don't control",
@@ -196,15 +236,20 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     '~ fights',
     'target creature fights it and draws a card',
     'target creature you control fights each creature',
-    'up to one target creature you control fights target creature',
+    'up to two target creatures you control fight target creature',
+    'up to one target creature you control fights each creature',
   ],
   parse: single(
     'effect.fight',
     choice(
-      sequence(
-        satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
-        literal(' fights '),
-        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+      satisfy(
+        sequence(
+          satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOneOrUpToOne),
+          literal(' fights '),
+          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+        ),
+        // Only one of the two creatures may be an "up to one" target: with neither chosen nothing would be said.
+        ([fighter, , against]) => !(fighter.upTo && against.upTo),
       ),
       // "have it fight target creature": the causative form, with the bare verb.
       map(
@@ -714,6 +759,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     // Prismari deck, group 2 (D-657, CR 115.4): any target, as many as the damage can be divided among.
     '~ deals 4 damage divided as you choose among any number of targets',
     '~ deals 2 damage divided as you choose among one or two targets',
+    // Inferno Titan (CR 601.2d, 603.3d): one to three targets of any kind.
+    '~ deals 3 damage divided as you choose among one, two, or three targets',
     'it deals 5 damage divided as you choose among any number of target creatures and/or planeswalkers your opponents control',
   ],
   rejects: [
@@ -727,6 +774,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals X damage divided as you choose among any target',
     '~ deals 4 damage divided as you choose among any number of targets you control',
     '~ deals 2 damage divided as you choose among one or two target',
+    '~ deals 3 damage divided as you choose among one, two, or three target',
+    '~ deals 3 damage divided as you choose among one, two or three targets',
     'it deals 2 damage divided as you choose among one or two creatures',
     'its deals 2 damage divided as you choose among one or two targets',
   ],
@@ -748,6 +797,7 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
             'noun.any-number-targets',
             'noun.any-number-of-targets',
             'noun.one-or-two-targets-bare',
+            'noun.one-two-or-three-targets-bare',
           ],
         }),
         satisfy(

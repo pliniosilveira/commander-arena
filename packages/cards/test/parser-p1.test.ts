@@ -456,7 +456,7 @@ describe('tokens, sacrifice and counters as effects', () => {
     return effect;
   };
 
-  test('predefined tokens (CR 111.10): Treasure, Food and Map run, Blood is reported with what is missing', () => {
+  test('predefined tokens (CR 111.10): Treasure, Food, Map and Blood run', () => {
     expect(only('Create a Treasure token.')).toEqual({
       kind: 'createToken',
       token: { kind: 'preset', preset: 'Treasure' },
@@ -479,7 +479,7 @@ describe('tokens, sacrifice and counters as effects', () => {
       rules: buildRuleSet(ALL_RULES),
       face: 'spell',
     });
-    // The Blood token runs (Squirreled Away deck, group 1, CR 111.10).
+    // CR 111.10g: the Blood token runs since the deck branch taught the engine its preset.
     expect(blood).toMatchObject({ ok: true });
   });
 

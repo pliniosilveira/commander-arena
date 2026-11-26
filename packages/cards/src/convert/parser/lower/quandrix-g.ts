@@ -86,7 +86,11 @@ export const REMOVE_COUNTERS_SELF: Lowering<IrClause, Effects> = {
     if (counter?.kind !== 'counterSpec' || from?.kind !== 'noun' || count?.kind !== 'number') {
       return failure(clause);
     }
-    const objects = objectSelectorOf(from, ctx);
+    // "this card" is the source itself, which a card in exile (a suspended card, CR 702.62b) is as much as a permanent.
+    const objects =
+      from.det === 'thisCard'
+        ? ({ ok: true, value: { kind: 'this' } } as const)
+        : objectSelectorOf(from, ctx);
     if (!objects.ok) return objects;
     if (objects.value.kind !== 'this') return failure(clause);
     return {

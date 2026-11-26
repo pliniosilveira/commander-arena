@@ -68,7 +68,9 @@ export const NOUN_TARGET_NONMATCHING_GRAVEYARD_CARD = defineRule<IrNoun>({
       !parts.historic &&
       !parts.modified &&
       !parts.equipped &&
+      parts.facing === undefined &&
       !parts.commander &&
+      parts.outlaw === undefined &&
       parts.colorCount === undefined;
     if (!plain) return fail(ctx, pos);
     return {
@@ -118,17 +120,21 @@ export const NOUN_TARGET_CARD_EXILED_WITH_SELF = defineRule<IrNoun>({
     'card exiled with ~',
     'target card in exile',
     'target card exiled with ~ this turn',
+    'target creature card with mana value 3 exiled with ~',
+    'target creature card with mana value X or less exiled with ~',
   ],
   parse: (ctx, pos) => {
     // The Darkness Crystal: a card type before "card" ("target creature card exiled with ~").
     const r = pattern(
       new RegExp(
-        `target (?:(artifact|creature|enchantment|land|planeswalker|instant|sorcery) )?card exiled with ~${BOUNDARY}`,
+        `target (?:(artifact|creature|enchantment|land|planeswalker|instant|sorcery) )?card( with mana value X)? exiled with ~${BOUNDARY}`,
         'iu',
       ),
     )(ctx, pos);
     if (!r.ok) return r;
     const type = r.value[1]?.toLowerCase();
+    // Shelob, Dread Weaver (CR 107.3a, 202.3, 607.2a): "target creature card with mana value X exiled with ~": the X announced for the ability with {X} in its cost.
+    const valueX = r.value[2] !== undefined;
     return {
       ok: true,
       value: {
@@ -139,6 +145,7 @@ export const NOUN_TARGET_CARD_EXILED_WITH_SELF = defineRule<IrNoun>({
           card: true,
           ...(type === undefined ? {} : { types: [type] }),
           exiledWithSelf: true,
+          ...(valueX ? { manaValueX: true as const } : {}),
           raw: ctx.text.slice(pos, r.pos),
         },
         upTo: false,

@@ -7,10 +7,13 @@
  * first, so the answer is deterministic and uses no randomness. The view shows an agent its hand, never a
  * library, so (unlike the library) only what the view shows is counted; that is a deliberate limit.
  */
+
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { chooseCardType } from './casual-card-type';
+import { chooseCardNameOption, choosePlayerOption } from './casual-chosen-subject';
 import { chooseCounterPick } from './casual-counter-pick';
 import { chooseNamedOption } from './casual-dragons';
+import { chooseDungeonRoom } from './casual-dungeon';
 import { chooseRiot } from './casual-keywords';
 import { chooseLifePaid } from './casual-life-paid';
 import { choosePile } from './casual-piles';
@@ -148,6 +151,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
     }
     return { kind: 'chooseOption', option: best ?? d.options[0] ?? '' };
   }
+  // CR 701.49b, 309.5a: the room to move a venture marker into (casual-dungeon.ts).
+  if (d.purpose === 'dungeonRoom') return chooseDungeonRoom(view, d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);
   // CR 122.1, 122.5, 608.2d: the counter to remove or move next (casual-counter-pick.ts).
@@ -162,6 +167,9 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'cardType') return chooseCardType(view, d);
   // CR 614.12a, 205.3j: "choose a planeswalker type", the type of the planeswalkers it controls (casual-walker-type.ts).
   if (d.purpose === 'planeswalkerType') return chooseWalkerType(view, d);
+  // CR 614.12a, 607.2d: "choose a player" and "choose a nonland card name" as it enters (casual-chosen-subject.ts).
+  if (d.purpose === 'player') return choosePlayerOption(view, d);
+  if (d.purpose === 'cardName') return chooseCardNameOption(view, d);
   // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice", the color that threatens the protected permanents (casual-protection.ts).
   if (d.purpose === 'protectionColor') return chooseProtectionColor(view, d);
   // D-514 (CR 702.16a, 608.2d): "gains protection from the card type of your choice", the card type that threatens the protected permanents (casual-protection.ts).
