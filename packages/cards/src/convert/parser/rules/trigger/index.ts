@@ -37,6 +37,7 @@ import { BRAINSTEALER_G9_TRIGGER_RULES } from './brainstealer-g9';
 import { CAST_AND_DRAW_TRIGGER_RULES } from './cast-and-draw';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CAST_WHILE_TRIGGER_RULES } from './cast-while';
+import { CLASH_TRIGGER_RULES } from './clash';
 import { CLASS_TRIGGER_RULES } from './class';
 import { COIN_FLIP_TRIGGER_RULES } from './coin-flip';
 import { CONTROL_TRIGGER_RULES } from './control';
@@ -54,6 +55,7 @@ import { ENTERS_AND_ATTACKS_TRIGGER_RULES } from './enters-and-attacks';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
 import { EXILE_CAST_TRIGGER_RULES } from './exile-cast';
+import { EXILE_COUNTER_TRIGGER_RULES } from './exile-counter';
 import { FLINT_TRIGGER_RULES } from './flint';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
@@ -1602,6 +1604,8 @@ export const TRIGGER_RULES = [
   ...NOT_OWNED_DIES_TRIGGER_RULES,
   TRIGGER_ENTERS_AND_CAST,
   TRIGGER_ENTERS_AND_UPKEEP,
+  // Watcher of Hours: "you remove a time counter from this card while it's exiled" starts like no other trigger rule reads.
+  ...EXILE_COUNTER_TRIGGER_RULES,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
   ...CAST_DURING_TURN_TRIGGER_RULES,
   // Astrologian's Planisphere: "you cast a noncreature spell and whenever you draw your third card each turn" starts like `trigger.cast`, which stops before the rest.
@@ -1725,6 +1729,7 @@ export const TRIGGER_RULES = [
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
   ...COIN_FLIP_TRIGGER_RULES,
+  ...CLASH_TRIGGER_RULES,
   ...VOTING_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,

@@ -262,6 +262,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
         : null;
     if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
       ctx.randomYardCard = true;
+    if (lowered.value.some((e) => e.kind === 'revealTopCard')) ctx.revealedTopCard = true;
     if (lowered.value.some((e) => e.kind === 'choosePlayer')) ctx.choseAPlayer = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
@@ -2303,7 +2304,11 @@ function lowerDoneReflexive(
   ) {
     return refuse(sentence);
   }
-  if (next.instead === true || next.clauses.some((c) => c.optional)) {
+  // Dream Eater (CR 701.25a, 603.12): "Surveil 4. When you do, you may return target ... to its owner's hand.": the reflexive ability of a surveil may hold one instruction that its
+  // controller may decline (the question is asked as it resolves, after the target is chosen). Any other reflexive ability refuses an offer.
+  const offered =
+    clause.verb === 'surveil' && next.clauses.length === 1 && next.clauses[0]?.optional;
+  if (next.instead === true || (offered !== true && next.clauses.some((c) => c.optional))) {
     return refuse(next);
   }
   // A reflexive ability is the last effect of its sequence (`validateCard`); the sentences after the one of "When you do" are its own body, which only the exile of a graveyard before it reads
@@ -2325,13 +2330,14 @@ function lowerDoneReflexive(
   const [only, ...rest] = done.value;
   // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
   const madeToken = only?.kind === 'createToken';
+  // CR 701.25a: a surveil is done when the player looked at the cards and arranged them (the engine's `performed`, which `arrange` sets), even when it put none into the graveyard.
   // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done.
   // Earth Rumble: "Earthbend 2. When you do, ...": the land bent and the counters put on it are something done.
   const putCounter = only?.kind === 'addCounters' || only?.kind === 'earthbend';
   if (
     only === undefined ||
     rest.length > 0 ||
-    !(MAY_KINDS.has(only.kind) || madeToken || putCounter)
+    !(MAY_KINDS.has(only.kind) || madeToken || putCounter || only.kind === 'surveil')
   ) {
     return refuse(sentence);
   }
@@ -2356,9 +2362,24 @@ function lowerDoneReflexive(
         };
   const outerX = ctx.xIs;
   if (defined !== null) ctx.xIs = defined;
-  const effect = lowerReflexive(next, ctx);
+  // "When you do, you may ...": the offer is the engine's `may` around the instruction, asked as it resolves (CR 603.5); the reflexive ability still chooses its targets as it goes on the stack.
+  const effect = lowerReflexive(
+    offered === true
+      ? { ...next, clauses: next.clauses.map((c) => ({ ...c, optional: false })) }
+      : next,
+    ctx,
+  );
   ctx.xIs = outerX;
   if (!effect.ok) return effect;
+  if (offered === true && effect.value.kind === 'reflexive') {
+    const blockedMay = missingFeatures(['effect:may']);
+    if (blockedMay.length > 0) return { ...refuse(next), needs: blockedMay };
+    return {
+      ok: true,
+      value: [only, { ...effect.value, effect: { kind: 'may', effect: effect.value.effect } }],
+      rule: clause.rule,
+    };
+  }
   if (defined !== null) {
     if (!defined.used) return refuse(next);
     ctx.xDefined = true;

@@ -483,8 +483,12 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target Plant, Treefolk, or land card from your graveyard',
     // Betor, Ancestor's Voice (CR 119.3, 202.3): a limit of the life the controller lost this turn.
     'target creature card with mana value less than or equal to the amount of life you lost this turn from your graveyard',
+    // Mirko, Obsessive Theorist (CR 208.1): less than the power of the permanent with the ability.
+    "target creature card with power less than ~'s from your graveyard",
   ],
   rejects: [
+    "target creature card with power less than ~'s",
+    "target creature card with power less than ~'s power from your graveyard",
     "target creature card with mana value equal to that card's mana value from your graveyard",
     "target creature card with mana value equal to that spell's mana value",
     "target instant or sorcery card from the defending player's graveyard",
@@ -516,7 +520,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   ],
   parse: targetOf(ID.targetGraveyard, (plural) =>
     // Puca's Covenant: "with mana value less than or equal to the number of counters on that creature" (CR 202.3, 122.1).
-    graveyardPhrase(plural, 'from', graveyardLimit),
+    graveyardPhrase(plural, 'from', graveyardLimit, false, false, false, true),
   ),
 });
 
@@ -551,9 +555,12 @@ export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
     'two target creature cards in your graveyard',
     'three target land cards in your graveyard',
     'target card in your graveyard',
+    // Lazav, the Multifarious (CR 107.3a): the mana value of the card is the X of the ability.
+    'target creature card in your graveyard with mana value X',
   ],
   rejects: [
     'target creature card in a graveyard',
+    'target creature card in your graveyard with mana value Y',
     "target creature card in an opponent's graveyard",
     'target creature card from your graveyard',
     'target creature in your graveyard',

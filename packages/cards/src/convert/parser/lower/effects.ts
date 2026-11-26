@@ -34,13 +34,17 @@ import { ARCANUM_LOWERINGS } from './arcanum';
 import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
+import { BECOME_COPY_GRAVEYARD_LOWERINGS } from './become-copy-graveyard';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
+import { CASE_LOWERINGS } from './case-solved';
 import { CHANGE_TARGET } from './change-target';
 import { CHOOSE_ONE_OF_THEM_LOWERINGS } from './choose-one-of-them';
 import { CHOOSE_PER_OPPONENT_LOWERINGS } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
+import { CLASH_DEFENDING_LOWERINGS } from './clash-defending';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
+import { CLOAK_LOWERINGS } from './cloak';
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
@@ -95,6 +99,8 @@ import { DESTROY_COUNTERED_SOURCE_LOWERINGS } from './destroy-countered-source';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { DURNAN_LOWERINGS } from './durnan';
+import { EACH_PLAYER_CHOOSES_EXILE_LOWERINGS } from './each-player-chooses-exile';
+import { EACH_RETURNS_LOWERINGS } from './each-returns';
 import { EARTHBEND_LOWERINGS } from './earthbend';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
@@ -136,6 +142,7 @@ import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
 import { GUFF_LOWERINGS } from './guff';
+import { GYCAST_LOWERINGS } from './gycast';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
@@ -384,7 +391,7 @@ function simple(
       eachObject(
         clause,
         ctx,
-        (objects) =>
+        (objects): Effect =>
           // "... until ~ leaves the battlefield" (stage P33, D-150, CR 610.3): the cards return when the permanent with the ability leaves.
           verb === 'exile' && clause.args.until !== undefined
             ? { kind: verb, objects, until: 'sourceLeaves' }
@@ -1164,6 +1171,8 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       },
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
+      // "... to the battlefield with a finality counter on it" (CR 122.6): the counter it enters with.
+      ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
     };
     // "... onto the battlefield tapped and attacking" (stage P34, D-152, CR 508.4): the creature joins the combat, never declared as an
     // attacker, so nothing triggers from the declaration; the engine's `enterAttacking` of what was just put.
@@ -2247,7 +2256,9 @@ const ATTACH: Lowering<IrClause, Effects> = {
     ) {
       return failure(clause);
     }
-    const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
+    // CR 400.7, 701.3 (Necromancy): "Put target creature card from a graveyard onto the battlefield under your control and attach ~ to it": "it" is the object that instruction put onto the
+    // battlefield, the engine's `moved`.
+    const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true, moved: true });
     if (!onto.ok) return onto;
     // A permanent is not attached to itself (CR 701.3b): "attach ~ to it" where "it" is `~` is no instruction the game can follow.
     if (what.value.kind === 'this' && onto.value.kind === 'this') return failure(clause);
@@ -3139,13 +3150,16 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
+  ...CLASH_DEFENDING_LOWERINGS,
   // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards" after a mill.
   ...LOCKE_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
   ...AURA_GRAVEYARD_LOWERINGS,
   ...VRASKA_LOWERINGS,
+  ...BECOME_COPY_GRAVEYARD_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...CASE_LOWERINGS,
   ...ENDURING_LOWERINGS,
   // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
   ...WITHERBLOOM_C_LOWERINGS,
@@ -3257,6 +3271,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EARTHBEND_LOWERINGS,
   ...KEFKA_LOWERINGS,
   ...F144_LOWERINGS,
+  ...GYCAST_LOWERINGS,
   ...DACK_LOWERINGS,
   ...CHOOSE_PER_OPPONENT_LOWERINGS,
   ...CONTROLLERS_MAY_EXILE_LOWERINGS,
@@ -3289,6 +3304,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...CLOAK_LOWERINGS,
+  ...EACH_RETURNS_LOWERINGS,
+  ...EACH_PLAYER_CHOOSES_EXILE_LOWERINGS,
   ...BLIGHT_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   // Sliver Swarm deck, group D (issue 133): Harsh Mercy.

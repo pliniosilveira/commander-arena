@@ -183,6 +183,11 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
+   * The solved designation (CR 719.3b): set when a Case becomes solved, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker that the
+   * "Solved" abilities (CR 702.169, 719.3c) read, is not an ability and is not a copiable value; a new object after any zone change (CR 400.7) is not solved.
+   */
+  readonly solved?: true;
+  /**
    * The X of the monstrosity action that made this permanent monstrous (CR 701.37c: "other abilities of that permanent may also refer to X", with the value of X as the permanent became
    * monstrous), `monstrousX` of an amount. Set with `monstrous`; a new object after any zone change (CR 400.7) has none.
    */
@@ -339,10 +344,10 @@ export interface GameObject {
 }
 
 /**
- * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
- * it is turned face up for its morph cost). Megamorph, Disguise and cloak would be more values.
+ * What made a permanent (or a spell on the stack) face down (D-308): `manifest` (CR 701.40a) or `cloak` (CR 701.58a: a manifest that also has ward {2}), `morph` (CR 702.37c: the card was cast face down for {3} with its morph ability;
+ * it is turned face up for its morph cost). Megamorph and Disguise would be more values.
  */
-export type FaceDownBy = 'manifest' | 'morph' | 'forestLand';
+export type FaceDownBy = 'manifest' | 'cloak' | 'morph' | 'forestLand';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {
@@ -436,6 +441,12 @@ export interface StackData {
   readonly castFromCommandZone: boolean;
   /** The zone the spell was cast from (CR 601.2a, D-206): "if this spell was cast from a graveyard". Absent for an ability and for a copy. */
   readonly castFrom?: Zone;
+  /**
+   * Present (true) on a spell cast at a time a sorcery could not have been cast (CR 307.1) whose own flash permission has the rider `sacrificeIfCastAtInstantSpeed` (Necromancy): the
+   * permanent it becomes gets a delayed triggered ability, as the spell resolves, that has its controller sacrifice it at the beginning of the next cleanup step (CR 603.7, 514.3a).
+   * Absent otherwise.
+   */
+  readonly sacrificeAtCleanup?: true;
   /**
    * The number an `asCast` amount of the spell's text worked out as the spell was cast (CR 601.2i: "the greatest power among creatures you controlled as you cast this spell"),
    * written when the spell becomes cast (`rules/cast-amount.ts`). Absent for a spell with no such amount, for an ability and for a spell put on the stack without being cast.
@@ -1646,7 +1657,11 @@ export type Instruction =
       /** The choice in `chosen` was made by the engine (there were no more candidates than needed): the event says so. */
       readonly automatic?: true;
       /** Issue 102 (Dauthi Voidwalker): the card chosen is not moved; the controller may play it this turn (`mayPlay`), without paying its mana cost when `free`. */
-      readonly permit?: { readonly free?: true };
+      readonly permit?: {
+        readonly free?: true;
+        /** Mission Briefing (CR 608.2d, 601.2): the card chosen in the graveyard may be cast this turn (`mayCast` of what was chosen), its spell exiled instead of going to a graveyard when `exileInstead`. */
+        readonly cast?: { readonly exileInstead?: true };
+      };
       /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
       readonly decider?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */
@@ -1678,9 +1693,9 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
-      /** "... until this creature leaves the battlefield" (`moveToZone.untilSourceLeaves`, CR 610.3): the permanent whose leaving returns the cards exiled. */
+      /** "Exile them until this Vehicle leaves the battlefield" (`moveToZone.until`, CR 610.3): the permanent whose leaving returns the cards exiled. */
       readonly untilLeaves?: ObjectId;
-      /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`): the choice is among the candidates with the greatest (smallest) value of the stat. */
+      /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`, or of a choice with `players`): the choice is among the candidates with the greatest (smallest) value of the stat. */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
       readonly least?: 'power' | 'toughness' | 'manaValue';
       readonly chosen: readonly ObjectId[] | null;
@@ -3290,6 +3305,16 @@ export interface TurnLog {
     /** The zone the card was put into the graveyard from (issue 102, "put into your graveyard from your hand or library this turn"). */
     readonly from: Zone;
   }[];
+  /**
+   * Each surveil this turn (CR 701.25), in order: the player who surveilled. A surveil of 0 is no surveil (CR 701.25c) and is not here; one of an empty library is (CR 701.25d).
+   * "Whenever you surveil for the first time each turn" (Whispering Snitch) reads it. Absent until one was recorded, so the state of a game where none was is as it was.
+   */
+  readonly surveils?: readonly SeatId[];
+  /**
+   * Each card a surveil put into a graveyard this turn (CR 701.25a), by the id it has in the graveyard, and the player who surveilled (Eye of Duskmantle: "cards in your graveyard
+   * you've surveilled this turn"). A card that moved on from there is a new object (CR 400.7) and is not in it. Absent until one was recorded.
+   */
+  readonly surveiledCards?: readonly { readonly card: ObjectId; readonly by: SeatId }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**

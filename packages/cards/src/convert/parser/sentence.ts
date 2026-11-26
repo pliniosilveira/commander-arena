@@ -738,7 +738,9 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             null,
           )
         : // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add ...": "you may" after a leading test only.
-          (options.may === true || options.may === 'afterTest') && !reflexive
+          // Dream Eater (CR 603.12): "When you do, you may return target ..." reads its "you may" after the lead of a reflexive ability too; the lowering of each reflexive reading
+          // refuses the offer unless it is one it can run.
+          options.may === true || (options.may === 'afterTest' && !reflexive)
           ? optional(
               choice<'you' | NonNullable<IrSentence['mayBy']>>(
                 map(

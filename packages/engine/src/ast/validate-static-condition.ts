@@ -340,11 +340,13 @@ export function checkStaticCondition(
     // Kianne, Corrupted Memory (CR 601.3b): "As long as ~'s power is even, you may cast noncreature spells as though they had flash": a permanent's permission read as the spell is cast
     // (`rules/legality.ts`, with `evaluateCondition`), so it may read the power of the permanent, as `thisPowerParity` does, or the permanents its controller has.
     if (kindOf(s.spells) !== 'this') {
+      // CR 513.1, 601.3b: "During each opponent's end step, you may cast spells as though they had flash": read where the permission is used.
+      if (kindOf(condition) === 'opponentsEndStep') return;
       if (!PERMISSION_CONDITIONS.includes(condition?.kind)) {
         issue(
           out,
           `${path}.condition`,
-          `a permanent's permission to cast as though it had flash takes only a condition on the power of the permanent or on the permanents its controller controls, not ${kindOf(condition)}`,
+          `a permanent's permission to cast as though it had flash takes only a condition on the power of the permanent or on the permanents its controller controls, or the condition opponentsEndStep, not ${kindOf(condition)}`,
         );
         return;
       }

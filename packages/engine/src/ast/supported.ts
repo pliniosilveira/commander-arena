@@ -150,7 +150,11 @@ function walkEffect(
       return;
     case 'mayCast': {
       // D-135: the permission is for a card in the graveyard (`runMayCast` skips any other).
-      const filter = selectedFilter(effect.objects, targets);
+      // Mission Briefing (CR 608.2d, 601.2): "choose an instant or sorcery card in your graveyard. You may cast it this turn": a card chosen as the effect resolves, not targeted.
+      const filter =
+        effect.objects.kind === 'choose'
+          ? effect.objects.filter
+          : selectedFilter(effect.objects, targets);
       // Lorehold group 2 (CR 607.2a): `from: 'exile'` is for a card the permanent exiled with its linked ability, which only `exiledWithSource` names.
       if (effect.from === 'exile') {
         if (filter?.zone !== 'exile' || filter.exiledWithSource !== true) {
@@ -330,10 +334,12 @@ function walkEffect(
       }
       if (effect.of.kind === 'target') {
         const zone = selectedFilter(effect.of, targets)?.zone;
-        if (zone !== undefined && zone !== 'battlefield') {
+        // A card of a graveyard is copied as it is there (CR 707.2, D-232: the engine copies the copiable values of a card in any zone): "becomes a copy of target creature card in your graveyard".
+        if (zone !== undefined && zone !== 'battlefield' && zone !== 'graveyard') {
           out.push({
             path: `${path}.of`,
-            message: 'only a permanent on the battlefield can be copied by becoming a copy',
+            message:
+              'only a permanent on the battlefield or a card in a graveyard can be copied by becoming a copy',
           });
         }
       }
@@ -1070,6 +1076,7 @@ function walkAbility(
       }
       return;
     case 'level':
+    case 'solved':
     case 'stationLevel':
       // CR 716.2a (D-235), 721.2a: the abilities of a class level bar or a station symbol are held to the same rules as any other.
       for (const [i, inner] of a.abilities.entries()) {

@@ -38,6 +38,30 @@ export const AURA_SWAPS_ENCHANT: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * `it becomes an Aura with "enchant creature put onto the battlefield with ~."` (Necromancy; CR 303.4, 702.5a, 613.1d, 613.1f): the engine's `becomeAura` of `this`, read in the ability of a
+ * permanent about itself (not once it has left: its source is gone).
+ */
+export const IT_BECOMES_AURA: Lowering<IrClause, Effects> = {
+  head: 'becomeAura',
+  id: 'lower.it-becomes-aura',
+  needs: ['effect:becomeAura', 'ability:keyword', 'keyword:enchant'],
+  lower(clause, ctx) {
+    const enchant = arg(clause, 'enchant');
+    if (enchant?.kind !== 'noun' || ctx.owner !== 'ability' || ctx.selfGone || !ctx.itIsSelf) {
+      return failure(clause);
+    }
+    const filter = lowerEnchantFilter(enchant);
+    if (!filter.ok) return filter;
+    const effect: Effect = {
+      kind: 'becomeAura',
+      objects: { kind: 'this' },
+      enchant: { kind: 'enchant', filter: filter.value } satisfies Keyword,
+    };
+    return { ok: true, value: [effect], rule: clause.rule };
+  },
+};
+
 export const RETURN_ENCHANTED_CARD_ATTACH: Lowering<IrClause, Effects> = {
   head: 'returnEnchantedCardAttach',
   id: 'lower.return-enchanted-card-attach',
@@ -63,8 +87,9 @@ export const SACRIFICE_LINKED_CREATURE: Lowering<IrClause, Effects> = {
   id: 'lower.sacrifice-linked-creature',
   needs: ['effect:sacrifice', 'selector:putWithThis'],
   lower(clause, ctx) {
-    // The ability of an Aura that has left: its source is gone (`selfGone` is not asked), the creature is not.
-    if (ctx.owner !== 'ability' || !ctx.faceSubtypes.includes('Aura')) return failure(clause);
+    // The ability of a permanent that has left (an Aura, or an enchantment that becomes one, Necromancy): its source is gone (`selfGone` is not asked), the creature is not. The engine's
+    // `validateCard` checks that the face has the ability that put the creature there.
+    if (ctx.owner !== 'ability') return failure(clause);
     const effect: Effect = {
       kind: 'sacrifice',
       objects: { kind: 'putWithThis' },
@@ -91,6 +116,7 @@ export const EXILE_PUT_WITH_SELF: Lowering<IrClause, Effects> = {
 
 export const AURA_GRAVEYARD_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   AURA_SWAPS_ENCHANT,
+  IT_BECOMES_AURA,
   RETURN_ENCHANTED_CARD_ATTACH,
   SACRIFICE_LINKED_CREATURE,
   EXILE_PUT_WITH_SELF,
@@ -99,6 +125,7 @@ export const AURA_GRAVEYARD_LOWERINGS: readonly Lowering<IrClause, Effects>[] = 
 /** Features the lowerings of this file can name, for the dimension test. */
 export const AURA_GRAVEYARD_NEEDS: readonly FeatureRef[] = [
   'effect:replaceEnchant',
+  'effect:becomeAura',
   'effect:moveToZone',
   'effect:attach',
   'effect:sacrifice',

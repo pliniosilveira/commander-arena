@@ -105,6 +105,7 @@ import { harmonizeWays } from './harmonize';
 import {
   canCast,
   canCastDuringResolution,
+  castAtInstantSpeedRider,
   castPermissionExiles,
   castTiming,
   castZone,
@@ -246,7 +247,15 @@ export function beginCast(
     alternative !== 'retrace' &&
     alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
-      ? graveyardPlayPermission(state, seat, obj, false, permanentType)
+      ? graveyardPlayPermission(
+          state,
+          seat,
+          obj,
+          false,
+          permanentType,
+          // CR 118.9 (Eye of Duskmantle): cast for life, which only the permission that says so gives.
+          alternative === 'lifeForMana',
+        )
       : null;
   const graveyardSlot =
     graveyardUse === null
@@ -282,6 +291,15 @@ export function beginCast(
       castFrom: zone,
       kicked: false,
       flashback: alternative === 'flashback',
+      // CR 307.1, 603.7 (Necromancy): "If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the
+      // next cleanup step": the spell carries the fact to the permanent (`finish` in rules/stack.ts).
+      ...(castAtInstantSpeedRider(
+        state,
+        seat,
+        obj.card === null ? null : (definitionOf(state, obj.card).faces[face] ?? null),
+      )
+        ? { sacrificeAtCleanup: true as const }
+        : {}),
       // CR 702.127a (Aftermath): the half was cast from a graveyard.
       ...(zone === 'graveyard' &&
       obj.card !== null &&

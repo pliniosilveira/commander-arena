@@ -444,6 +444,12 @@ const MANA_VALUE_X: Parser<boolean> = map(
   () => true,
 );
 
+/** " with power less than ~'s" (Mirko, CR 208.1): the power of the object the ability belongs to; a card outside the battlefield has its printed power. */
+const POWER_LESS_THAN_SOURCE: Parser<boolean> = map(
+  pattern(new RegExp(` with power less than ~['’]s${BOUNDARY}`, 'u')),
+  () => true,
+);
+
 /** " with total power 10 or less" (Reunion of the House, CR 208.1): the cards chosen together have power adding up to at most the number. */
 const TOTAL_POWER_OR_LESS: Parser<number> = map(
   pattern(new RegExp(` with total power (\\d{1,3}) or less${BOUNDARY}`, 'u')),
@@ -1257,6 +1263,8 @@ export function graveyardPhrase(
   allowTotalPower = false,
   // "all instant and sorcery cards": only the "all" form reads a list joined by "and" as a choice of kinds; "target creature and planeswalker cards" stays unread.
   andList = false,
+  // Mirko, Obsessive Theorist (CR 208.1, 603.4): "target creature card with power less than ~'s from your graveyard", read only where the caller asks for it.
+  allowPowerLessThanSource = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | 'defendingPlayer' | undefined> =
     preposition === 'sharedZone'
@@ -1599,6 +1607,8 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X), false),
       // Reunion of the House (CR 208.1): "creature cards with total power 10 or less from your graveyard".
       optional(allowTotalPower ? quiet(TOTAL_POWER_OR_LESS) : fail, undefined),
+      // Mirko (CR 208.1): "creature card with power less than ~'s from your graveyard": less than the power of the permanent with the ability (the engine's `powerLessThanSource`).
+      optional(allowPowerLessThanSource ? quiet(POWER_LESS_THAN_SOURCE) : fail, false),
       optional(
         quiet(
           amountLimit === undefined
@@ -1625,6 +1635,8 @@ export function graveyardPhrase(
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), null),
+      // Lazav, the Multifarious (CR 107.3a, 202.3): "target creature card in your graveyard with mana value X", the mana value said after the graveyard of an "in" phrase.
+      optional(preposition === 'in' ? quiet(MANA_VALUE_X) : fail, false),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
@@ -1647,10 +1659,12 @@ export function graveyardPhrase(
       atMostX,
       equalsX,
       totalPower,
+      lessThanSource,
       limitAmount,
       byOpponent,
       controller,
       putThere,
+      equalsXAfter,
     ] = r.value;
     // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
     if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
@@ -1693,8 +1707,9 @@ export function graveyardPhrase(
           ...(putThere === 'library' ? { putFromLibraryThisTurn: true as const } : {}),
           ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
-          ...(equalsX ? { manaValueX: true as const } : {}),
+          ...(equalsX || equalsXAfter ? { manaValueX: true as const } : {}),
           ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
+          ...(lessThanSource ? { powerLessThanSource: true as const } : {}),
           ...(limitAmount === undefined
             ? {}
             : {

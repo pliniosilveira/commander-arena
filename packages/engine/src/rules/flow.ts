@@ -326,8 +326,11 @@ export function beginStep(input: GameState, step: StepId): Outcome {
         events.push(...expired.events);
       }
       break;
-    case 'cleanup':
-      return join({ state, events }, runCleanup(state));
+    case 'cleanup': {
+      // CR 514.3a, 603.2b: what triggers "at the beginning of the next cleanup step" (a delayed ability, Necromancy) is noted as the step begins; it goes on the stack in `afterDiscard`.
+      const noted = collectTriggers(state, events);
+      return join({ state: noted, events }, runCleanup(noted));
+    }
     default:
       break;
   }

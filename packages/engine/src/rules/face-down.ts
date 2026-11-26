@@ -33,6 +33,17 @@ export const FACE_DOWN_VALUES: CopiableValues = {
 };
 
 /**
+ * CR 701.58a (Cloak): a cloaked permanent is a face-down 2/2 creature like a manifested one, and it has ward {2} (CR 702.21). The ward is part of its face-down values, so it is
+ * a copiable value of layer 1b and goes with the permanent until it is turned face up (CR 708.8).
+ */
+export const FACE_DOWN_CLOAK_VALUES: CopiableValues = {
+  characteristics: FACE_DOWN_VALUES.characteristics,
+  abilities: [
+    { kind: 'keyword', keyword: { kind: 'ward', cost: [{ kind: 'mana', symbols: ['2'] }] } },
+  ],
+};
+
+/**
  * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 613.2b): the characteristics the effect gives the face-down permanent are those of a land with the
  * Forest subtype and nothing else: no name, mana cost, color, power, toughness or text. Its mana ability is the one of its basic land type (CR 305.6, `rules/land-types.ts`).
  */
@@ -56,7 +67,14 @@ export const FACE_DOWN_FOREST_LAND_VALUES: CopiableValues = {
 
 /** The characteristics a face-down permanent has, by what made it face down (CR 708.2, 613.2b). */
 export function faceDownValuesOf(obj: GameObject): CopiableValues {
-  return obj.faceDown?.by === 'forestLand' ? FACE_DOWN_FOREST_LAND_VALUES : FACE_DOWN_VALUES;
+  switch (obj.faceDown?.by) {
+    case 'forestLand':
+      return FACE_DOWN_FOREST_LAND_VALUES;
+    case 'cloak':
+      return FACE_DOWN_CLOAK_VALUES;
+    default:
+      return FACE_DOWN_VALUES;
+  }
 }
 
 /** True for a face-down permanent (on the battlefield or phased out). */
