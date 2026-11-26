@@ -1295,6 +1295,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moved',
     // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
     'putCountersOn',
+    // CR 608.2c, 400.7: "for each permanent put into a graveyard this way, its controller creates a token" (`ObjectRef` `putIntoGraveyardThisWay`).
+    'putIntoGraveyardThisWay',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
@@ -2419,6 +2421,8 @@ export const SELECTOR_KINDS = [
   'moved',
   /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
   'putCountersOn',
+  /** "For each permanent put into a graveyard this way" (CR 608.2c): the engine's `putIntoGraveyardThisWay`. */
+  'putIntoGraveyardThisWay',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
   'colorChoice',
   /**

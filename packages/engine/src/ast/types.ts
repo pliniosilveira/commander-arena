@@ -1345,6 +1345,13 @@ export type ObjectRef =
    */
   | { readonly kind: 'putCountersOn'; readonly counter?: string }
   /**
+   * "For each permanent put into a graveyard this way, its controller creates ..." (Terastodon, CR 608.2c, 608.2h, 400.7): the permanents the `destroy` effects before it in the resolution
+   * really put into a graveyard, each once, by the id they had on the battlefield, so that `controllerOf` reads the player who controlled each as it left (last-known information).
+   * A permanent that was not destroyed (indestructible, regenerated, gone before the effect resolved) or that went to another zone instead (a replacement effect exiled it) is not in it.
+   * Empty when there were none.
+   */
+  | { readonly kind: 'putIntoGraveyardThisWay' }
+  /**
    * "It" in the body of a triggered ability, for the object whose event caused the trigger: the
    * spell or ability that targeted this permanent (Ward, CR 702.21a), the spell that was cast, the
    * permanent that entered or attacked. Valid only where the engine reads it: the `counterUnlessPays`

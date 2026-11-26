@@ -1683,6 +1683,16 @@ export function checkRef(
     case 'putCountersOn':
       // CR 608.2c: the objects the `addCounters` effects before it in the resolution put counters on; empty when there were none.
       break;
+    case 'putIntoGraveyardThisWay':
+      // CR 608.2c: the permanents the `destroy` effects before it in the resolution put into graveyards; empty when there were none.
+      if (!(scope.thisWay ?? []).includes('destroyed')) {
+        issue(
+          out,
+          path,
+          "'putIntoGraveyardThisWay' needs a destroy effect before it in the sequence",
+        );
+      }
+      break;
     case 'triggerSubject':
       // The engine reads it only where a node says so (`checkSubjectRef`), not in any selector.
       issue(
