@@ -62,6 +62,8 @@ const STATIC_CONDITIONS = [
   'condition.full-party',
   // Kianne, Corrupted Memory: "as long as ~'s power is even".
   'condition.this-power-parity',
+  // Mogis, God of Slaughter (CR 700.5): "your devotion to black and red is less than seven".
+  'condition.devotion',
 ] as const;
 
 export const STATIC_CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {

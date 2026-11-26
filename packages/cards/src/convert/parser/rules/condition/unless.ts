@@ -6,7 +6,7 @@
  * read: a cost with {X} (CR 107.3j: no X in a triggered ability), "pays 2 life", "discards a card",
  * "any opponent may pay" and a payer who chooses among costs are not.
  */
-import { choice, literal, map, satisfy, sequence } from '../../combinators';
+import { choice, literal, map, optional, satisfy, sequence } from '../../combinators';
 import type { IrAmount, IrCondition, IrCost, IrNoun } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 
@@ -77,14 +77,26 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
     // Gitrog Monster (CR 701.21a, 118.12a): a permanent sacrificed to stop the instruction.
     'unless you sacrifice a land',
     'unless you sacrifice a creature',
+    // Mogis, God of Slaughter (CR 701.21a, 118.12a): the player the trigger is about sacrifices a permanent of their choice.
+    'unless they sacrifice a creature of their choice',
+    'unless they sacrifice a creature',
+    'unless that player sacrifices a creature',
+    'unless that player sacrifices a land of their choice',
   ],
   rejects: [
+    'unless they sacrifice another creature',
+    'unless they sacrifice two creatures',
+    'unless they sacrifice ~',
+    'unless they sacrifice',
+    'unless that player sacrifice a creature',
+    'unless that player sacrifices',
+    'unless they sacrifices a creature',
+    'unless they sacrifice a creature of your choice',
     'unless you sacrifice ~',
     'unless you sacrifice another creature',
     'unless you sacrifice two lands',
     'unless you sacrifice a land and a creature',
     'unless you sacrifice',
-    'unless that player sacrifices a land',
     'unless that player pays {X}',
     'unless that player pays 0 life',
     'unless that player pays X life',
@@ -105,6 +117,41 @@ export const CONDITION_UNLESS_PAYS = defineRule<IrCondition>({
   parse: (ctx, pos) => {
     // Gitrog Monster (CR 701.21a, 118.12a): "unless you sacrifice a land": the payer sacrifices a permanent they control that matches, which the engine's `unlessPays` asks as it
     // asks Ward—Sacrifice. One permanent of a kind, never the permanent itself, another permanent or several.
+    // Mogis, God of Slaughter (CR 701.21a, 118.12a, 608.2d): "unless they sacrifice a creature of their choice", "unless that player sacrifices a creature": the same payment by the player the
+    // text names, who chooses the permanent (the engine asks them as it asks Ward—Sacrifice). One permanent of a kind, never the permanent itself, another permanent or several.
+    const theirs = sequence(
+      choice(
+        map(spanned(literal('unless they sacrifice ')), ({ span }) => anaphor(span, 'they')),
+        map(spanned(literal('unless that player sacrifices ')), ({ span }) =>
+          anaphor(span, 'that player'),
+        ),
+      ),
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.a-permanent'] }),
+        (what) =>
+          what.det === 'a' && what.count === undefined && !what.other && what.anyNumber !== true,
+      ),
+      optional(literal(' of their choice'), null),
+    )(ctx, pos);
+    if (theirs.ok) {
+      const [who, what] = theirs.value;
+      const cost: IrCost = {
+        kind: 'sacrifice',
+        what,
+        span: what.span,
+        rule: 'condition.unless-pays',
+      };
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'unlessPays', who: { ...who, span: who.span }, cost: [cost] },
+          span: { start: pos, end: theirs.pos },
+          rule: 'condition.unless-pays',
+        },
+        pos: theirs.pos,
+      };
+    }
     const sacrificed = sequence(
       literal('unless you '),
       satisfy(

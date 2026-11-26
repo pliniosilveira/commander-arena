@@ -27,6 +27,7 @@ import { countersOfKind } from './counters-of-kind';
 import { cardTypesAmongForSource, countForSource, partySizeForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders, hasMaxSpeed } from './designations';
+import { devotionOf } from './devotion';
 import { matchesFilterWith } from './filter-match';
 import { partnerOf } from './pairing';
 
@@ -115,13 +116,22 @@ export function staticConditionHolds(
             ? countForSource(state, condition.amount.filter, source)
             : condition.amount.kind === 'partySize' // CR 700.8: the party of the source's controller, through layers 1, 4 and 5
               ? partySizeForSource(state, source)
-              : null;
+              : condition.amount.kind === 'devotion' // CR 700.5 (Mogis, God of Slaughter): the mana symbols of the costs of the permanents the controller controls, layers 1 and 2 only
+                ? devotionOf(state, controllerOf(state, source), condition.amount.colors)
+                : null;
       if (n === null) return false;
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
     }
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controllerOf(state, source), condition);
+    case 'aPlayerLostLifeThisTurn': {
+      // CR 119.3, 102.2 (Rakdos, Lord of Riots): the seats' life lost this turn, which no layer changes; `opponent` leaves out the controller.
+      const you = controllerOf(state, source);
+      return condition.opponent === true
+        ? state.seats.some((s) => s.id !== you && s.lifeLostThisTurn >= condition.atLeast)
+        : state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
+    }
     case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the turn log, which no layer changes
       return spellsCastThisTurnHolds(state, controllerOf(state, source), condition);
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes

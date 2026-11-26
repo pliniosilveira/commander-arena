@@ -8,7 +8,7 @@
  */
 import type { Amount } from '../../ast/types';
 import type { CardDefinition } from '../definition';
-import { singleFace } from './helpers';
+import { kw, singleFace } from './helpers';
 
 const YOU = { kind: 'you' } as const;
 const THIS = { kind: 'this' } as const;
@@ -272,6 +272,54 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
           kind: 'amountIs',
           amount: { kind: 'cardTypesAmong', filter: { zone: 'graveyard', controller: 'you' } },
           compare: { cmp: 'atLeast', value: 4 },
+        },
+      },
+    ],
+  }),
+  // "At the beginning of each opponent's upkeep, this enchantment deals 2 damage to that player unless they sacrifice a creature of their choice."
+  singleFace({
+    name: 'SYNTHETIC Grim Overseer',
+    manaCost: ['2', 'B', 'R'],
+    types: ['enchantment'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    oracleText:
+      "At the beginning of each opponent's upkeep, this enchantment deals 2 damage to that player unless they sacrifice a creature of their choice.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'upkeep', whose: 'opponent' },
+        effect: {
+          kind: 'unlessPays',
+          player: { kind: 'triggerPlayer' },
+          cost: [{ kind: 'sacrifice', what: { types: ['creature'] } }],
+          effect: { kind: 'dealDamage', amount: 2, to: { kind: 'triggerPlayer' } },
+        },
+      },
+    ],
+  }),
+  // "Indestructible. As long as your devotion to black and red is less than seven, this permanent isn't a creature."
+  singleFace({
+    name: 'SYNTHETIC Dim God',
+    manaCost: ['2', 'B', 'R'],
+    types: ['enchantment', 'creature'],
+    supertypes: ['legendary'],
+    subtypes: ['God'],
+    colors: ['B', 'R'],
+    colorIdentity: ['B', 'R'],
+    power: 5,
+    toughness: 3,
+    oracleText:
+      "Indestructible\nAs long as your devotion to black and red is less than seven, this permanent isn't a creature.",
+    abilities: [
+      kw('indestructible'),
+      {
+        kind: 'static',
+        static: { kind: 'loseTypes', subject: THIS, types: ['creature'] },
+        condition: {
+          kind: 'amountIs',
+          amount: { kind: 'devotion', colors: ['B', 'R'] },
+          compare: { cmp: 'atMost', value: 6 },
         },
       },
     ],

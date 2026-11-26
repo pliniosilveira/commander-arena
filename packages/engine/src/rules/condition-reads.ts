@@ -9,6 +9,7 @@ import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
+import { devotionOf } from './devotion';
 import { commanderCardOf } from './melded';
 
 type LifeCondition = Extract<Condition, { kind: 'lifeTotal' }>;
@@ -225,6 +226,18 @@ export function lifeGainedThisTurnHolds(
  * 5 can read them without the layers they are part of (CR 613.8): a life total, a commander, what entered or what damage was dealt this turn,
  * and combinations. `validateCard` allows no other (`ast/validate-static-condition.ts`); any other kind never holds here.
  */
+/** Whether `n` meets the comparison (`atLeast`, `atMost` or `equal`). */
+function numberMeets(
+  n: number,
+  compare: { readonly cmp: 'atLeast' | 'atMost' | 'equal'; readonly value: number },
+): boolean {
+  return compare.cmp === 'atLeast'
+    ? n >= compare.value
+    : compare.cmp === 'atMost'
+      ? n <= compare.value
+      : n === compare.value;
+}
+
 export function plainConditionHolds(
   state: GameState,
   condition: Condition,
@@ -269,6 +282,11 @@ export function plainConditionHolds(
           ? turns <= value
           : turns === value;
     }
+    case 'amountIs':
+      // CR 700.5, 613.8 (Mogis, God of Slaughter): only the devotion of the controller is read here (`validateCard` allows no other amount in a layer 4 or 5 static ability).
+      if (typeof condition.amount === 'number' || condition.amount.kind !== 'devotion')
+        return false;
+      return numberMeets(devotionOf(state, controller, condition.amount.colors), condition.compare);
     case 'and':
       return condition.terms.every((t) => plainConditionHolds(state, t, controller, source));
     case 'or':

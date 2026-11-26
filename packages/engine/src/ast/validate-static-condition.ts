@@ -53,7 +53,6 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'playerDealtDamage',
   'lifeGainedThisTurn',
   'lifeGainedAndLostThisTurn',
-  'aPlayerLostLifeThisTurn',
   'castFromGraveyardThisTurn',
   'cardsInGraveyard',
   'cardsInLibrary',
@@ -82,6 +81,9 @@ function plainOnly(
   // CR 613.8, 122.1 (Arixmethes, Slumbering Isle): "as long as ~ has a slumber counter on it, it's a land": a test of the counters on the permanent itself and nothing else (no type, no
   // keyword, no power: those are what the layers change), which belong to no layer, so layer 4 may read it.
   if (c?.kind === 'thisMatches' && onlyCounterTest(c.filter)) return;
+  // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads the mana costs of the permanents they control (layers 1 and 2 only), which no layer 4 to 7 effect changes.
+  if (c?.kind === 'amountIs' && typeof c.amount !== 'number' && c.amount?.kind === 'devotion')
+    return;
   if (!PLAIN_CONDITIONS.includes(c?.kind)) {
     issue(
       out,
@@ -192,11 +194,13 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       }
       // CR 700.8, 613.8 (full party): the creatures in the party, read through layers 1, 4 and 5 like a count of objects.
       if (typeof amount !== 'number' && amount?.kind === 'partySize') return;
+      // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads mana costs (layers 1 and 2 only), which no type-changing or P/T effect changes.
+      if (typeof amount !== 'number' && amount?.kind === 'devotion') return;
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,
           `${path}.amount`,
-          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong)",
+          "a static ability's condition compares a count of objects (countOf), the devotion or the card types among cards (cardTypesAmong) with a number",
         );
         return;
       }
