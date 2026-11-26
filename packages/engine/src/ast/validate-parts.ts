@@ -7442,7 +7442,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // ability resolves, and `checkAmount` holds it to a trigger that has a spell.
       const readsTrigger = (a: Amount): boolean =>
         kindOf(a) === 'triggerDamage' ||
-        (kindOf(a) === 'manaValueOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject');
+        (kindOf(a) === 'manaValueOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject') ||
+        // CR 208.1, 603.10a (Mask of Griselbrand): "you may pay X life, where X is its power": the power of the creature that died, as it last was, read as the ability resolves.
+        (kindOf(a) === 'powerOf' && kindOf((a as { of?: unknown }).of) === 'triggerSubject');
       if (Array.isArray(e.cost)) {
         e.cost.forEach((c, i) => {
           if (c?.kind === 'payLife' && readsTrigger(c.amount)) {

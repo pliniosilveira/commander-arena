@@ -467,4 +467,55 @@ export const SYNTHETIC_LIFE_LOST_GROUP_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever a creature you control dies, you may pay X life, where X is its power. If you do, draw X cards."
+  singleFace({
+    name: 'SYNTHETIC Grim Ledger',
+    manaCost: ['1', 'B'],
+    types: ['enchantment'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'Whenever a creature you control dies, you may pay X life, where X is its power. If you do, draw X cards.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dies', what: { types: ['creature'], controller: 'you' } },
+        effect: {
+          kind: 'mayPay',
+          cost: [{ kind: 'payLife', amount: { kind: 'powerOf', of: { kind: 'triggerSubject' } } }],
+          effect: {
+            kind: 'draw',
+            player: YOU,
+            count: { kind: 'powerOf', of: { kind: 'triggerSubject' } },
+          },
+        },
+      },
+    ],
+  }),
+  // "Equipped creature gets +1/+1. Whenever equipped creature dies, you may pay X life, where X is its power. If you do, draw X cards."
+  singleFace({
+    name: 'SYNTHETIC Ledger Mask',
+    manaCost: ['2'],
+    types: ['artifact'],
+    subtypes: ['Equipment'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'Whenever equipped creature dies, you may pay X life, where X is its power. If you do, draw X cards.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dies', what: { kind: 'attached' } },
+        effect: {
+          kind: 'mayPay',
+          cost: [{ kind: 'payLife', amount: { kind: 'powerOf', of: { kind: 'triggerSubject' } } }],
+          effect: {
+            kind: 'draw',
+            player: YOU,
+            count: { kind: 'powerOf', of: { kind: 'triggerSubject' } },
+          },
+        },
+      },
+    ],
+  }),
 ];

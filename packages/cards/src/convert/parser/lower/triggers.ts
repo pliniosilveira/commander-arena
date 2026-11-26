@@ -1703,7 +1703,13 @@ function lowerTriggeredAbility(
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.attachedTrigger =
     triggers.length > 0 &&
-    triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'attached');
+    // CR 603.10a (Mask of Griselbrand): "Whenever equipped creature dies, ... its power" is the power the creature had, the trigger's subject, as is the host of an attack trigger.
+    triggers.every(
+      (t) =>
+        (t.kind === 'attacks' || t.kind === 'dies') &&
+        'kind' in t.what &&
+        t.what.kind === 'attached',
+    );
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.excessDamageTrigger =

@@ -11710,18 +11710,10 @@
     "b46da6bd-578c-4040-97c3-0005b78e31be": {
       "name": "Mask of Griselbrand",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever equipped creature dies, you may pay X life, where X is its power. If you do, draw X cards.",
-          "reason": "notRunnable",
-          "closestRule": "body.sentence"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "6c840a9c"
+      "ast": "2011c3e5"
     },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
@@ -16521,7 +16513,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1746,
+      "supported": 1747,
       "total": 1770
     }
   }
