@@ -32,6 +32,7 @@ import { ARCANUM_LOWERINGS } from './arcanum';
 import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
+import { BECOME_COPY_GRAVEYARD_LOWERINGS } from './become-copy-graveyard';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CHANGE_TARGET } from './change-target';
@@ -2768,6 +2769,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
   ...AURA_GRAVEYARD_LOWERINGS,
   ...VRASKA_LOWERINGS,
+  ...BECOME_COPY_GRAVEYARD_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
   ...ENDURING_LOWERINGS,

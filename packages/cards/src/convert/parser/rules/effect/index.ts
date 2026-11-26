@@ -38,6 +38,7 @@ import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
+import { BECOMES_COPY_GRAVEYARD_EFFECT_RULES } from './becomes-copy-graveyard';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
@@ -137,6 +138,7 @@ import { KEEPS_UP_TO_EFFECT_RULES } from './keeps-up-to';
 import { KEFKA_EFFECT_RULES } from './kefka';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
+import { LAND_CREATURE_COLORLESS_EFFECT_RULES } from './land-creature-colorless';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LIBRARY_TOP_EFFECT_RULES } from './library-top';
@@ -219,6 +221,7 @@ import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
+import { RETURN_IT_SELF_GRAVEYARD_EFFECT_RULES } from './return-it-self-graveyard';
 import { RETURNED_LAND_EFFECT_RULES } from './returned-land';
 import { REVEAL_CHOSEN_TYPE_EFFECT_RULES } from './reveal-chosen-type';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
@@ -1335,6 +1338,9 @@ export const EFFECT_RULES = [
   // Strago and Relm (issue 97): "Target opponent exiles cards from the top of their library until they exile ... You may cast that card without paying its mana cost."
   ...EXILE_UNTIL_CAST_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
+  ...LAND_CREATURE_COLORLESS_EFFECT_RULES,
+  ...BECOMES_COPY_GRAVEYARD_EFFECT_RULES,
+  ...RETURN_IT_SELF_GRAVEYARD_EFFECT_RULES,
   ...LAND_CREATURE_ABILITY_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,

@@ -4477,6 +4477,11 @@ export type Effect =
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
        */
       readonly abilities?: readonly Ability[];
+      /**
+       * "..., except it has this ability" (Lazav, the Multifarious; CR 707.9b): the activated or triggered ability that is resolving is one of the abilities the copy has besides the
+       * ones it copies, as part of the copiable values the copy effect gives (so a copy of the copy has it too). Only `true`, and only in an activated or a triggered ability.
+       */
+      readonly withThisAbility?: true;
     }
   /**
    * CR 701.27 (Transform): each permanent `objects` names that is represented by a double-faced

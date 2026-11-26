@@ -6188,6 +6188,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEnumList(out, `${path}.addSupertypes`, e.addSupertypes, SUPERTYPES, 'supertype');
         }
       }
+      // CR 707.9b: "..., except it has this ability": the ability that is resolving, so only an ability has one to give.
+      if (e.withThisAbility !== undefined) {
+        if (e.withThisAbility !== true)
+          issue(out, `${path}.withThisAbility`, 'withThisAbility is true when present');
+        if (scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.withThisAbility`,
+            'withThisAbility is read in an activated or a triggered ability, not in a spell',
+          );
+        }
+      }
       // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
       if (e.abilities !== undefined) {
         if (!Array.isArray(e.abilities) || e.abilities.length === 0) {

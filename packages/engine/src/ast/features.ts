@@ -176,6 +176,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copyEntersWithX',
     // "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (`entersAsCopy.fromGraveyard`, `keepName`, `addSupertypes`, CR 614.12, 707.9, 700.4).
     'copyEntersFromGraveyard',
+    // "~ becomes a copy of target creature card in your graveyard with mana value X, except ... it has this ability" (`becomeCopy.withThisAbility`, CR 707.9b, 707.2).
+    'becomeCopyWithThisAbility',
     // "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped" (`lookAtTop` with `take.all`, CR 701.20).
     'lookTakeAll',
     // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
@@ -1966,6 +1968,8 @@ export const ABILITY_FEATURES = [
   'copyEntersWithX',
   /** "... enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~ and she's a legendary Trill in addition to her other types" (CR 614.12, 707.9, 700.4): the engine's `entersAsCopy.fromGraveyard`, `keepName` and `addSupertypes`. */
   'copyEntersFromGraveyard',
+  /** "... becomes a copy of target creature card in your graveyard with mana value X, except ... it has this ability" (CR 707.9b, 707.2): the engine's `becomeCopy.withThisAbility`, the ability that is resolving as one of the abilities of the copy. */
+  'becomeCopyWithThisAbility',
   /** "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c): the engine's `lookAtTop` with `take.all`, no question. */
   'lookTakeAll',
   /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
@@ -2997,6 +3001,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   spellXAtMost: true,
   copyEntersWithX: true,
   copyEntersFromGraveyard: true,
+  becomeCopyWithThisAbility: true,
   lookTakeAll: true,
   delayedReturnToCommandZone: true,
   delayedReturnToHand: true,
