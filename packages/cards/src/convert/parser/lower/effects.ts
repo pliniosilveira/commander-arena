@@ -154,6 +154,7 @@ import { LOCKE_LOWERINGS } from './locke';
 import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
+import { MANIFEST_DREAD_LOWERINGS } from './manifest-dread';
 import { MARDU_SURGE_LOWERINGS } from './mardu-surge';
 import { MAY_PLAY_THIS_WAY_FREE_LOWERINGS } from './may-play-this-way-free';
 import { MELD_LOWERINGS } from './meld';
@@ -3106,6 +3107,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...IMPULSE_EXILE_LOWERINGS,
   ...GRAND_LARCENY_B_LOWERINGS,
   ...DURNAN_LOWERINGS,
+  ...MANIFEST_DREAD_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".

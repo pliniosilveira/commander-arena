@@ -168,6 +168,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeKinds',
     // Gonti, Lord of Luxury (CR 401.2, 406.3): "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (`lookAtTop.from`).
     'lookTakeFromPlayer',
+    // Manifest dread (CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the rest into your graveyard" (`lookAtTop` `take.to` `manifest`).
+    'lookTakeManifest',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -2217,6 +2219,8 @@ export const ABILITY_FEATURES = [
   'lookTakeKinds',
   /** "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, CR 401.2, 406.3): the engine's `lookAtTop` with `from`. */
   'lookTakeFromPlayer',
+  /** "Manifest dread" (CR 701.62a): the engine's `lookAtTop` with `take.to` `manifest`, one card of the top two put onto the battlefield face down and the rest into the graveyard. */
+  'lookTakeManifest',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -3425,6 +3429,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseExileUntilLeaves: true,
   lookTakeKinds: true,
   lookTakeFromPlayer: true,
+  lookTakeManifest: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   chooseFromExileOwnedBy: true,
