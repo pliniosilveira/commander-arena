@@ -105,6 +105,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:token',
   'selector:nontoken',
   'selector:notSubtypes',
+  'selector:outlaw',
   'selector:notSupertypes',
   'selector:colorless',
   'selector:notColors',
@@ -293,6 +294,8 @@ function lowerFilterAt(
   const parts: FeatureRef[] = [];
   if (filter.token !== undefined) parts.push(filter.token ? 'selector:token' : 'selector:nontoken');
   if (filter.notSubtypes !== undefined) parts.push('selector:notSubtypes');
+  // CR 700.12: "outlaw" and "non-outlaw", the engine's `outlaw`.
+  if (filter.outlaw !== undefined) parts.push('selector:outlaw');
   // D-135 (stage P30): "nonbasic land" (CR 205.4), the engine's `notSupertypes`.
   if (filter.notSupertypes !== undefined) parts.push('selector:notSupertypes');
   if (filter.colorless === true) parts.push('selector:colorless');
@@ -661,6 +664,7 @@ function lowerFilterAt(
     ...(filter.notSubtypes !== undefined && filter.notSubtypes.length > 0
       ? { notSubtypes: [...filter.notSubtypes] }
       : {}),
+    ...(filter.outlaw !== undefined ? { outlaw: filter.outlaw } : {}),
     ...(filter.colorless === true ? { colorless: true as const } : {}),
     ...(filter.token !== undefined ? { token: filter.token } : {}),
     ...(keywords.length > 0 ? { keywords } : {}),

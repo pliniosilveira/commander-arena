@@ -359,6 +359,7 @@ const SUBJECT_MODIFIERS = satisfy(
     !parts.attackingOrBlocking &&
     !parts.blocking &&
     !parts.historic &&
+    parts.outlaw === undefined &&
     parts.colorCount === undefined,
 );
 
