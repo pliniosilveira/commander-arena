@@ -149,6 +149,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.bestow': asIs,
   // Stage P23: Spectacle, Unearth and Escape are lines of their own.
   'keyword.spectacle': asIs,
+  'keyword.freerunning': asIs,
   'keyword.unearth': asIs,
   // Stage P40: Encore is a line of its own, like Unearth.
   'keyword.encore': asIs,

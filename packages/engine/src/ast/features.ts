@@ -1995,6 +1995,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dash',
     'bestow',
     'spectacle',
+    'freerunning',
     'escape',
     // CR 702.180: Harmonize.
     'harmonize',
@@ -3382,6 +3383,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'escape',
   'harmonize',
   'madness',

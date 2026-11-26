@@ -2174,6 +2174,7 @@ export type NamedAlternativeKind =
   | 'dash'
   | 'bestow'
   | 'spectacle'
+  | 'freerunning'
   | 'escape'
   | 'harmonize'
   | 'madness'
@@ -2224,6 +2225,8 @@ export type PermanentAlternativeKind =
  *   opponent lost life this turn. The engine reads that condition itself (`GameState` seats'
  *   `lifeLostThisTurn`, at the first casting step), so the card lists only the cost; a `condition` of the
  *   card is read as well.
+ * - `freerunning` (CR 702.173a, 118.9, 601.2b, Petty Larceny): the `cost` is paid instead of the mana cost of a spell, but only if the caster dealt combat damage to a player this turn
+ *   with an Assassin or a commander they controlled. The engine reads that condition itself (`TurnLog.combatDamaged`, at the first casting step), so the card lists only the cost.
  * - `escape` (D-124, CR 702.138): the card is cast from its owner's graveyard (the only alternative that is
  *   cast from there besides flashback), paying `cost` (mana only) instead of the mana cost and exiling `exile`
  *   other cards from that graveyard as part of the cost; the caster chooses them (`chooseCards`, purpose

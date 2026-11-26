@@ -143,6 +143,7 @@ export function isNamedAlternative(
     alternative === 'dash' ||
     alternative === 'bestow' ||
     alternative === 'spectacle' ||
+    alternative === 'freerunning' ||
     alternative === 'escape' ||
     alternative === 'harmonize' ||
     alternative === 'madness' ||

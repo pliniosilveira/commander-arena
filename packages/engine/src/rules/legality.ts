@@ -46,7 +46,7 @@ import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
-import { isCommanderCardId } from './melded';
+import { isCommanderCardId, isCommanderObject } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { mayPayLifeForMana } from './next-spell-life';
 import { hasGrantedFlashCasting } from './player-flash';
@@ -752,6 +752,20 @@ export function hasKickedTargets(face: CardFace | null): boolean {
  * turn (damage, a life-loss effect or life paid, all counted by `loseLifeBy`). The life lost by `seat` and by
  * players who left the game does not count (D-124).
  */
+/**
+ * CR 702.173a (Freerunning, Petty Larceny): whether `seat` dealt combat damage to a player this turn with an Assassin or a commander: a creature `seat` controlled as it dealt the damage
+ * (`TurnLog.combatDamaged`, kept as the damage is dealt, so every damage step counts and a creature that has left still does) that had the Assassin creature type or was one of its owner's
+ * commanders (read from the object as it last was when it has left the battlefield).
+ */
+export function dealtCombatDamageWithAssassinOrCommander(state: GameState, seat: SeatId): boolean {
+  return state.turnLog.combatDamaged.some((hit) => {
+    if (hit.controller !== seat) return false;
+    if (hit.subtypes.includes('Assassin')) return true;
+    const source = state.objects[hit.source] ?? state.lki[hit.source]?.object;
+    return source !== undefined && isCommanderObject(state, source);
+  });
+}
+
 export function opponentLostLifeThisTurn(state: GameState, seat: SeatId): boolean {
   return opponentsOf(state, seat).some((id) => getSeat(state, id).lifeLostThisTurn > 0);
 }
@@ -794,6 +808,9 @@ export function alternativeCostAllowed(
   }
   // CR 702.137a: "if an opponent lost life this turn", read as the spell is cast (601.2b), for the one casting it.
   if (kind === 'spectacle' && !opponentLostLifeThisTurn(state, seat)) return false;
+  // CR 702.173a (Freerunning): "if you dealt combat damage to a player this turn with an Assassin or commander", read as the spell is cast, for the one casting it.
+  if (kind === 'freerunning' && !dealtCombatDamageWithAssassinOrCommander(state, seat))
+    return false;
   return (
     alt.condition === undefined ||
     evaluateCondition(state, alt.condition, { controller: seat, source: obj.id })
