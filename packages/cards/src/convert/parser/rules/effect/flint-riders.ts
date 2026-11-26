@@ -3,10 +3,11 @@
  * Bloodsoaked Insight; Outrageous Robbery; Inside Information; CR 609.4b, 118.9, 601.2f). None is an instruction of its own: each is the rider of the `mayPlay` of the sentence before it,
  * which the lowering (`lower/flint-riders.ts`) completes and refuses everywhere else.
  */
-import { fail, pattern } from '../../combinators';
-import type { IrArg, IrDuration } from '../../ir/types';
+import { fail, literal, pattern, sequence } from '../../combinators';
+import type { IrArg, IrDuration, IrNoun } from '../../ir/types';
+import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
-import { defineRule, quietly, spanned } from '../registry';
+import { defineRule, family, quietly, spanned } from '../registry';
 import { flag } from './dragons';
 import { type Clauses, makeClause } from './operands';
 
@@ -215,8 +216,64 @@ export const EFFECT_MAY_PLAY_EXILED_AND_SPEND = defineRule<Clauses>({
   },
 });
 
+const EQUAL_ID = 'effect.exile-top-cards-equal-to-its-mana-value';
+
+/**
+ * `effect.exile-top-cards-equal-to-its-mana-value`: "exile cards equal to its mana value from the top of target player's library" (Rakdos, the Muscle; CR 701.13, 401.1, 202.3, 608.2h): the
+ * cards are exiled one after the other, face up, from the top of the library of a target player, as many as the mana value of the object the sentence is about ("its", the creature that
+ * was sacrificed, as it last was). The engine's `exileTop` with `from` and a `manaValueOf` count. Not read: your own library, "the top", another count, "that card's", a trailing instruction.
+ */
+export const EFFECT_EXILE_TOP_CARDS_EQUAL_TO_ITS_MANA_VALUE = defineRule<Clauses>({
+  id: EQUAL_ID,
+  family: 'effect',
+  leading: ['exile'],
+  cites: ['CR 701.13 (Exile)', 'CR 401.1 (Library)', 'CR 202.3 (Mana Value)', 'CR 115.1 (Targets)'],
+  examples: ["exile cards equal to its mana value from the top of target player's library"],
+  rejects: [
+    'exile cards equal to its mana value from the top of your library',
+    "exile cards equal to its power from the top of target player's library",
+    "exile cards equal to its mana value from the top of each player's library",
+    "exile cards equal to its mana value from target player's library",
+    "exile cards equal to its mana value from the top of target player's library and draw a card",
+    "exile the top card equal to its mana value from the top of target player's library",
+  ],
+  parse: (ctx, pos) => {
+    const head = literal('exile cards equal to its mana value from the top of ')(ctx, pos);
+    if (!head.ok) return head;
+    const owner = sequence(
+      family<IrNoun>('noun', { only: ['noun.player'] }),
+      pattern(/['’]s library(?![\p{L}\p{N}])(?!,| face down| and\b| then\b)/iu),
+    )(ctx, head.pos);
+    if (!owner.ok) return owner;
+    const [who] = owner.value;
+    if (who.det !== 'target' || who.anyNumber === true) return fail(ctx, pos);
+    const start = pos + 'exile cards equal to '.length;
+    const of = possessedNoun(EQUAL_ID, 'its', start);
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          EQUAL_ID,
+          'exileTop',
+          {
+            count: {
+              kind: 'manaValueOf',
+              of,
+              span: { start, end: start + 'its mana value'.length },
+            },
+            from: who,
+          },
+          { start: pos, end: owner.pos },
+        ),
+      ],
+      pos: owner.pos,
+    };
+  },
+});
+
 /** Tried first: "if ..." and "mana ..." are the first words of the plain rules. */
 export const FLINT_RIDER_EFFECT_RULES = [
+  EFFECT_EXILE_TOP_CARDS_EQUAL_TO_ITS_MANA_VALUE,
   EFFECT_MAY_PLAY_EXILED_AND_SPEND,
   EFFECT_ANY_TYPE_FOR_SPELL_CAST_THIS_WAY,
   EFFECT_ANY_TYPE_FOR_SPELLS_CAST_THIS_WAY,
