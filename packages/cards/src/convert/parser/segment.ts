@@ -1802,11 +1802,14 @@ export function splitSentences(text: string, start: number, end: number): Span[]
       // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
       // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
       // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).
+      // Issue 685 (At Knifepoint): `... create a token with "..." This ability triggers only once each turn.` is the same, the last sentence being the limit of the trigger.
       // The same after a quoted enchant ability (issue 89, Animate Dead, CR 702.5a): `... gains "enchant creature put onto the battlefield with ~." Return ...`.
       if (
         closes &&
         /\.['’]?$/u.test(text.slice(from, i)) &&
-        (/^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end)) ||
+        (/^\s+(?:activate\b|this ability costs\b|this ability triggers only once each turn\b)/iu.test(
+          text.slice(i + 1, end),
+        ) ||
           // Issue 81 (White Sun's Twilight): a token's quoted ability ends with its period and the next sentence is the condition on X: `... "This token can't block." If X is 5 or more, ...`.
           /^\s+if x is\b/iu.test(text.slice(i + 1, end)) ||
           (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&

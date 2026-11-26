@@ -571,7 +571,7 @@ export function permanentPhrase(
   };
   // CR 700.12, 700.12a ("outlaws you control", "an outlaw you control"): the noun alone, the permanents that have at least one of the five outlaw creature types.
   const bareOutlaws: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> = map(
-    pattern(new RegExp(`outlaw${plural ? 's' : ''}${BOUNDARY}`, 'u')),
+    pattern(new RegExp(`[Oo]utlaw${plural ? 's' : ''}${BOUNDARY}`, 'u')),
     () => ({ subtypes: [] as string[], types: [] as string[], outlaw: true as const }),
   );
   const nouns: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> =
