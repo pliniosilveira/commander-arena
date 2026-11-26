@@ -1,5 +1,5 @@
 {
-  "parserVersion": 222,
+  "parserVersion": 223,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -1208,6 +1208,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a199ce51"
+    },
+    "11b5308d-5bc0-4782-875f-a28be36e665d": {
+      "name": "Beastmaster Ascension",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ffd6a7da"
     },
     "11c7662f-e688-40a6-98fd-6ae89d231b44": {
       "name": "Staff of Compleation",
@@ -2835,6 +2843,14 @@
       "reasons": [],
       "ast": "90ac7519"
     },
+    "2d584333-b25e-4291-a2c9-80c6d9f8732a": {
+      "name": "Squirrel Nest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "031f0c12"
+    },
     "2d73a3bd-f052-4f48-9a72-12db03e27249": {
       "name": "Soul of Windgrace",
       "group": "acceptance",
@@ -3720,6 +3736,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "efcc6787"
+    },
+    "391978f6-0bbc-41e8-9246-f7d0e21c7900": {
+      "name": "Nadier's Nightblade",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "41525a3e"
     },
     "393b9d9e-9d71-43e7-aede-eac7f85d2365": {
       "name": "Demonic Covenant",
@@ -4761,6 +4785,14 @@
       "reasons": [],
       "ast": "216b592d"
     },
+    "4a338863-d599-46e7-9c30-e11b898ae1b0": {
+      "name": "Chitterspitter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ec7576d5"
+    },
     "4a3fdb8e-4699-4bd9-84e6-3cc7fea0e1ef": {
       "name": "The Ur-Sphinx",
       "group": "acceptance",
@@ -5106,6 +5138,14 @@
       "reasons": [],
       "ast": "fb10320f"
     },
+    "4f31eea0-61b9-467d-8393-0ab9f1b6e882": {
+      "name": "Insatiable Frugivore",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1a69331"
+    },
     "4f515250-0f1f-4fb7-aa75-b703b81ccd4a": {
       "name": "Silent-Blade Oni",
       "group": "acceptance",
@@ -5193,6 +5233,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8b811e1b"
+    },
+    "50e7ae38-2a66-4e32-bfb3-fefbae0caa61": {
+      "name": "Swarmyard Massacre",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0f75c72"
     },
     "5146b291-1170-481f-a4b9-709dd5c4b09c": {
       "name": "Overgrown Zealot",
@@ -6232,6 +6280,14 @@
       "reasons": [],
       "ast": "4a0a37db"
     },
+    "61a6341e-0d36-44b6-8026-9c87c8ef61cb": {
+      "name": "Second Harvest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7df14686"
+    },
     "61c89b11-65c9-4fda-bbcd-d84de25df801": {
       "name": "Aether Hub",
       "group": "acceptance",
@@ -6672,6 +6728,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ccebab1a"
+    },
+    "67158085-4807-4f0e-8599-c55ec7ec252e": {
+      "name": "Skyfisher Spider",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "43f13b76"
     },
     "6745e850-68f6-480b-a1e0-e06180dde169": {
       "name": "Draconic Visitor",
@@ -7177,6 +7241,14 @@
       "reasons": [],
       "ast": "12d9f5fb"
     },
+    "6ede28a7-57ea-47d6-a5fb-b0f061da2689": {
+      "name": "Sword of the Squeak",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4ccfb8da"
+    },
     "6f16c3ac-a9b8-47e6-b18b-ae37c74d44a0": {
       "name": "Nether Traitor",
       "group": "acceptance",
@@ -7585,6 +7657,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3ecc6edf"
+    },
+    "7579f57d-c76e-4703-a030-34fb7160cb23": {
+      "name": "Wolfwillow Haven",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "757d408e"
     },
     "75a4ddf5-1b3c-4dde-a6e4-4346e46cebf1": {
       "name": "Druidic Satchel",
@@ -8359,6 +8439,14 @@
       "reasons": [],
       "ast": "123ec85a"
     },
+    "80e9a42e-f4f4-4bfc-91a2-ad124737dca2": {
+      "name": "Deep Forest Hermit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "520b8199"
+    },
     "8134f3fd-197a-4b44-a370-311cc955dea3": {
       "name": "Ainok Wayfarer",
       "group": "acceptance",
@@ -8566,6 +8654,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8ac199c9"
+    },
+    "845b40b1-dc09-44fa-9910-22544c1424ba": {
+      "name": "Hazel of the Rootbloom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ddbb4931"
     },
     "84adce5c-39c7-425e-b163-4a1a3977364b": {
       "name": "Skycat Sovereign",
@@ -8872,6 +8968,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e88b1343"
+    },
+    "8b1aa532-4f19-407e-83a5-13b3160ad8c2": {
+      "name": "Chittering Witch",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6be4906e"
     },
     "8b388331-eaa7-41aa-99de-4451e51cb221": {
       "name": "Merchant Raiders",
@@ -9553,6 +9657,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5e18fbc6"
+    },
+    "95ce305f-34bc-4d6d-b7ba-ffd4b2a25336": {
+      "name": "Maelstrom Pulse",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b704c221"
     },
     "95d59a06-5144-4da3-8a9c-846b087975b9": {
       "name": "Gollum, Obsessed Stalker",
@@ -12947,19 +13059,10 @@
     "c97957a2-8310-4cff-8aad-871b7901d124": {
       "name": "Caretaker's Talent",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When ~ becomes level 2, create a token that's a copy of target token you control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-permanent"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7ac10afa"
+      "ast": "0cd74b45"
     },
     "c98d476a-2646-4171-bab7-4a4624fce917": {
       "name": "Chief Miles O'Brien",
@@ -13345,6 +13448,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9b46cd13"
+    },
+    "cf9190e0-6f53-44fb-8afa-c16f5bf9829e": {
+      "name": "Moonstone Eulogist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fd3d5ff5"
     },
     "cf9b0bb5-d545-4efd-9255-39b10c2be0ee": {
       "name": "Jhoira, Weatherlight Corsair",
@@ -14507,6 +14618,14 @@
       "reasons": [],
       "ast": "2257864b"
     },
+    "e0cef79c-ad47-4cbc-9d73-a913e487ccb7": {
+      "name": "Garruk, Cursed Huntsman",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9d05db2d"
+    },
     "e0edb2fc-2533-407c-85e5-4337f4233f05": {
       "name": "Kaya, Geist Hunter",
       "group": "acceptance",
@@ -14858,6 +14977,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "02c73bde"
+    },
+    "e802bf11-d3c7-4aad-8e85-99b39ff50d70": {
+      "name": "Gourmand's Talent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6d14a020"
+    },
+    "e8180024-1979-4677-9a0d-e08d4b7c825a": {
+      "name": "Hazel's Brewmaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1623348a"
     },
     "e823639f-1308-47f6-9b51-8fd9a682489a": {
       "name": "Gnarlwood Dryad",
@@ -15491,6 +15626,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9de0530e"
+    },
+    "f15b3b76-d38a-48db-bb44-3296183c8641": {
+      "name": "Chatterfang, Squirrel General",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8efdd21f"
     },
     "f17d0fb8-c157-43b8-be26-f5ba4c6aed14": {
       "name": "Haze of Rage",
@@ -16464,6 +16607,14 @@
       "reasons": [],
       "ast": "9feab4e5"
     },
+    "ffe13100-99dd-41e3-82ba-eaead6fd0113": {
+      "name": "Rootcast Apprenticeship",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c27a30f5"
+    },
     "name:Angel's Mercy": {
       "name": "Angel's Mercy",
       "group": "holdout",
@@ -16475,7 +16626,7 @@
   },
   "summary": {
     "training": {
-      "supported": 158,
+      "supported": 159,
       "total": 175
     },
     "holdout": {
@@ -16483,8 +16634,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1758,
-      "total": 1774
+      "supported": 1778,
+      "total": 1794
     }
   }
 }
