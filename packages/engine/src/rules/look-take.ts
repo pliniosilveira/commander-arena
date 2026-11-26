@@ -194,7 +194,9 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
       reveal: to !== 'exileFaceDown' && ins.hidden !== true,
       prompt: `${ins.revealAll === true ? 'Reveal' : 'Look at'} the top ${looked.length} card${looked.length === 1 ? '' : 's'} of ${ins.libraryOf === undefined ? 'your' : 'that player’s'} library. ${
         to === 'exileFaceDown'
-          ? 'Exile one of them face down'
+          ? ins.max === 1
+            ? 'Exile one of them face down'
+            : `Exile ${ins.max} of them face down`
           : ins.totalManaValue !== undefined
             ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
             : ins.hidden === true && to === 'top'

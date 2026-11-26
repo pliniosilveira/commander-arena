@@ -3,7 +3,7 @@
  * Bloodsoaked Insight; Outrageous Robbery; Inside Information; CR 609.4b, 118.9, 601.2f). None is an instruction of its own: each is the rider of the `mayPlay` of the sentence before it,
  * which the lowering (`lower/flint-riders.ts`) completes and refuses everywhere else.
  */
-import { fail, literal, pattern, sequence } from '../../combinators';
+import { fail, literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrArg, IrDuration, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
@@ -271,8 +271,207 @@ export const EFFECT_EXILE_TOP_CARDS_EQUAL_TO_ITS_MANA_VALUE = defineRule<Clauses
   },
 });
 
+/** "the top nine cards of target opponent's library": the count of cards and the opponent whose library it is (a target, never "each"). */
+const TOP_OF_TARGET_LIBRARY = sequence(
+  literal('look at the top '),
+  satisfy(
+    family<IrArg>('amount', { only: ['amount.number'] }),
+    (a) => a.kind === 'number' && a.value >= 2,
+  ),
+  literal(' cards of '),
+  satisfy(
+    family<IrNoun>('noun', { only: ['noun.player'] }),
+    (n) => n.det === 'target' && n.anyNumber !== true,
+  ),
+);
+
+const LOOK_N_ID = 'effect.look-exile-n-face-down';
+
+const WORD_NUMBERS: Readonly<Record<string, number>> = {
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+};
+
+/**
+ * `effect.look-exile-n-face-down`: "look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order"
+ * (Black Cat, Cunning Thief; CR 401.2, 406.3, 701.20): the controller looks at the cards, exiles a number of them face down (a fixed number, never fewer while there are as many), and the rest
+ * go to the bottom of that library in a random order. The engine's `lookAtTop` of the library of the target player with `take.to` `exileFaceDownUnlinked`. The controller looked at the cards
+ * they exiled, so the permission after it may look at them (`ctx.exiledLookedAt`). Not read: your own library, "each opponent", one card (Gonti's own sentence pair), another place for the
+ * rest, more cards exiled than looked at, a trailing instruction.
+ */
+export const EFFECT_LOOK_EXILE_N_FACE_DOWN = defineRule<Clauses>({
+  id: LOOK_N_ID,
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 406.3 (Exile)', 'CR 701.20 (Reveal)'],
+  examples: [
+    "look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order",
+    'look at the top five cards of target player’s library, exile three of them face down, then put the rest on the bottom of their library in a random order',
+  ],
+  rejects: [
+    'look at the top nine cards of your library, exile two of them face down, then put the rest on the bottom of their library in a random order',
+    "look at the top nine cards of each opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order",
+    "look at the top nine cards of target opponent's library, exile one of them face down, then put the rest on the bottom of their library in a random order",
+    "look at the top two cards of target opponent's library, exile three of them face down, then put the rest on the bottom of their library in a random order",
+    "look at the top nine cards of target opponent's library, exile two of them face down, then put the rest into their graveyard",
+    "look at the top nine cards of target opponent's library, exile two of them, then put the rest on the bottom of their library in a random order",
+    "look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order and draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const head = TOP_OF_TARGET_LIBRARY(ctx, pos);
+    if (!head.ok) return head;
+    const [, count, , from] = head.value;
+    const tail = pattern(
+      /['’]s library, exile (two|three|four|five) of them face down, then put the rest on the bottom of their library in a random order(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu,
+    )(ctx, head.pos);
+    if (!tail.ok) return tail;
+    const taken = WORD_NUMBERS[(tail.value[1] ?? '').toLowerCase()];
+    if (taken === undefined || count.kind !== 'number' || taken > count.value)
+      return fail(ctx, pos);
+    const span = { start: pos, end: tail.pos };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          LOOK_N_ID,
+          'lookExileFaceDownMany',
+          { count, from, taken: { kind: 'number', value: taken, span } },
+          span,
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
+const LOOK_ALL_ID = 'effect.look-and-exile-those-face-down';
+
+/**
+ * `effect.look-and-exile-those-face-down`: "look at the top two cards of target opponent's library and exile those cards face down" (Petty Larceny; CR 401.2, 406.3, 701.20): the controller
+ * looks at the cards and exiles every one of them face down. The engine's `lookAtTop` of the library of the target player taking all the cards looked at into exile face down, remembered by
+ * nobody (`take.to` `exileFaceDownUnlinked`, `min` and `max` the number of cards). The controller looked at the cards, so the permission after it may look at them. Not read: your own
+ * library, "each opponent", one card, "and put the rest", a trailing instruction.
+ */
+export const EFFECT_LOOK_AND_EXILE_THOSE_FACE_DOWN = defineRule<Clauses>({
+  id: LOOK_ALL_ID,
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 406.3 (Exile)', 'CR 701.20 (Reveal)'],
+  examples: [
+    "look at the top two cards of target opponent's library and exile those cards face down",
+    'look at the top three cards of target player’s library and exile those cards face down',
+  ],
+  rejects: [
+    'look at the top two cards of your library and exile those cards face down',
+    "look at the top two cards of each opponent's library and exile those cards face down",
+    "look at the top two cards of target opponent's library and exile those cards",
+    "look at the top two cards of target opponent's library and exile one of them face down",
+    "look at the top two cards of target opponent's library and exile those cards face down and draw a card",
+    "look at the top card of target opponent's library and exile that card face down",
+  ],
+  parse: (ctx, pos) => {
+    const head = TOP_OF_TARGET_LIBRARY(ctx, pos);
+    if (!head.ok) return head;
+    const [, count, , from] = head.value;
+    const tail = pattern(
+      /['’]s library and exile those cards face down(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu,
+    )(ctx, head.pos);
+    if (!tail.ok) return tail;
+    const span = { start: pos, end: tail.pos };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          LOOK_ALL_ID,
+          'lookExileFaceDownMany',
+          {
+            count,
+            from,
+            taken: { kind: 'number', value: count.kind === 'number' ? count.value : 0, span },
+          },
+          span,
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
+const PLAY_WHILE_ID = 'effect.may-play-those-cards-while-exiled-and-spend';
+
+/**
+ * `effect.may-play-those-cards-while-exiled-and-spend`: "you may play those cards for as long as they remain exiled, and mana of any type can be spent to cast them" (Petty Larceny; CR 406.3,
+ * 601.2, 305.1, 609.4b, 611.2b): the controller may play the cards the instruction before it exiled for as long as they stay in exile (a land as a land drop, a spell by casting it) and pays
+ * for the spells with mana of any type. The engine's `mayPlay` with `whileExiled` and `anyManaType`. The cards are the ones of the "exile" before it, which the lowering requires (and, for
+ * cards exiled face down, which the controller looked at). Not read: one card (`effect.may-play-while-exiled-spend`), "look at and play", "cast", another rider, another length, a trailing
+ * instruction.
+ */
+export const EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND = defineRule<Clauses>({
+  id: PLAY_WHILE_ID,
+  family: 'effect',
+  leading: ['you', 'play'],
+  cites: [
+    'CR 406.3 (Exile)',
+    'CR 601.2 (Casting Spells)',
+    'CR 305.1 (Lands)',
+    'CR 609.4b (Effects)',
+    'CR 611.2b (Continuous Effects)',
+  ],
+  examples: [
+    'you may play those cards for as long as they remain exiled, and mana of any type can be spent to cast them',
+    'play the exiled cards for as long as they remain exiled, and mana of any type can be spent to cast those spells',
+  ],
+  rejects: [
+    'you may play those cards for as long as they remain exiled',
+    'you may look at and play those cards for as long as they remain exiled, and mana of any type can be spent to cast them',
+    'you may cast those cards for as long as they remain exiled, and mana of any type can be spent to cast them',
+    'you may play that card for as long as it remains exiled, and mana of any type can be spent to cast it',
+    'you may play those cards this turn, and mana of any type can be spent to cast them',
+    'you may play those cards for as long as they remain exiled, and mana of any color can be spent to cast them',
+    'you may play those cards for as long as they remain exiled, and mana of any type can be spent to cast them and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `(?:you may )?play (?:those|the exiled) cards for as long as they remain exiled, and mana of any type can be spent to cast (?:them|those spells)${NOT_MORE}`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { span } = r.value;
+    const duration: IrDuration = {
+      kind: 'duration',
+      scope: 'whileExiled',
+      span,
+      rule: PLAY_WHILE_ID,
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(
+            PLAY_WHILE_ID,
+            'mayPlay',
+            { anyManaType: flag(PLAY_WHILE_ID, true, span) },
+            span,
+          ),
+          duration,
+        },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 /** Tried first: "if ..." and "mana ..." are the first words of the plain rules. */
 export const FLINT_RIDER_EFFECT_RULES = [
+  EFFECT_MAY_PLAY_THOSE_CARDS_WHILE_EXILED_AND_SPEND,
+  EFFECT_LOOK_EXILE_N_FACE_DOWN,
+  EFFECT_LOOK_AND_EXILE_THOSE_FACE_DOWN,
   EFFECT_EXILE_TOP_CARDS_EQUAL_TO_ITS_MANA_VALUE,
   EFFECT_MAY_PLAY_EXILED_AND_SPEND,
   EFFECT_ANY_TYPE_FOR_SPELL_CAST_THIS_WAY,

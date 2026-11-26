@@ -8385,8 +8385,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (
         e.take?.to === 'exileFaceDownUnlinked' &&
-        (e.take.max !== 1 ||
-          e.take.min !== 1 ||
+        (e.take.min !== e.take.max ||
+          // Black Cat, Cunning Thief (CR 406.3, 701.20): "exile two of them face down": a fixed number of cards, taken without a choice to stop.
+          (e.from === undefined && e.take.max !== 1) ||
           e.take.kinds !== undefined ||
           e.take.hidden !== undefined ||
           e.take.tapped !== undefined ||
@@ -8403,7 +8404,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           `${path}.take`,
-          "a card exiled face down from another player's library is one card (min and max 1) of any kind, with nothing revealed, and the rest go to the bottom in a random order (or into the graveyard)",
+          "cards exiled face down from another player's library are a fixed number of cards (min equal to max) of any kind, with nothing revealed, and the rest go to the bottom in a random order (or into the graveyard)",
         );
       }
       // Harper Recruiter: one card for each of several kinds, put into the hand.

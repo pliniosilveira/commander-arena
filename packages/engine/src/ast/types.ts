@@ -5376,7 +5376,7 @@ export type Effect =
        * "Look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order" (Gonti, Lord of Luxury,
        * CR 401.2, 406.3, 608.2d): whose library is looked at, a selector that names exactly one player (a target or an opponent); left out, the controller's own. The controller looks at
        * the cards and chooses; the cards belong to the owner of the library, which is where the rest go (the bottom). Only with `take.to` `exileFaceDownUnlinked`, `hand`... (see
-       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` of 1, and `rest` `bottomRandom` (Thief of Sanity: `graveyard`, "then put the rest into their graveyard").
+       * `rules/look-take.ts`): with `exileFaceDownUnlinked` and no other `take` field but `min` and `max` (equal: with `from`, any number of cards, Black Cat, Cunning Thief "exile two of them face down"; without `from`, 1), and `rest` `bottomRandom` (Thief of Sanity: `graveyard`, "then put the rest into their graveyard").
        */
       readonly from?: PlayerSelector;
       /**
@@ -5404,7 +5404,7 @@ export type Effect =
         // `exile` (Durnan of the Yawning Portal, CR 406.3, 701.13): "You may exile a creature card from among them": the card taken is exiled face up (no permanent remembers it); it is what `moved` names
         // afterwards, for a `mayPlay` of it (`whileExiled`). `min` and `max` of 1 or `max` of 1 with "you may"; the rest goes where `rest` says.
         // `exileFaceDownUnlinked` (Gonti, CR 406.3): exiled face down as `exileFaceDown` is, but no permanent remembers the card: it is what `moved` names afterwards, for a `mayPlay` of it
-        // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` and `max` of 1, and the rest on the bottom in a random order.
+        // (`lookAt`, `castOnly`, `anyManaType`, `whileExiled`). Only with `from`, `min` equal to `max`, and the rest on the bottom in a random order.
         readonly to?:
           | 'hand'
           | 'battlefield'

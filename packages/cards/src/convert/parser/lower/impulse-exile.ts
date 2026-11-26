@@ -44,6 +44,46 @@ export const LOOK_EXILE_FACE_DOWN_ONE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order" (Black Cat, Cunning Thief) and
+ * "look at the top two cards of target opponent's library and exile those cards face down" (Petty Larceny; CR 401.2, 406.3, 701.20): the engine's `lookAtTop` of the library of the player
+ * the noun names with a fixed number of cards taken (`min` and `max` alike) into exile face down, remembered by nobody, the rest on the bottom of the library in a random order. The
+ * controller looked at the cards, so the permission after it may look at them (`ctx.exiledLookedAt`).
+ */
+export const LOOK_EXILE_FACE_DOWN_MANY: Lowering<IrClause, Effects> = {
+  head: 'lookExileFaceDownMany',
+  id: 'lower.look-exile-face-down-many',
+  needs: ['effect:lookAtTop', 'ability:lookTakeFromPlayer'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    const taken = amountArg(clause, 'taken', ctx);
+    if (!taken.ok) return taken;
+    if (typeof taken.value !== 'number' || taken.value < 1) return failure(clause);
+    const owner = arg(clause, 'from');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    ctx.exiled = 'top';
+    ctx.exiledFaceDown = true;
+    ctx.exiledLookedAt = true;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          from: from.value,
+          take: { filter: {}, max: taken.value, min: taken.value, to: 'exileFaceDownUnlinked' },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const IMPULSE_EXILE_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOOK_EXILE_FACE_DOWN_ONE,
+  LOOK_EXILE_FACE_DOWN_MANY,
 ];

@@ -54,7 +54,11 @@ describe('You Find Some Prisoners (CR 700.2, 701.13, 609.4b)', () => {
 
   test('Interrogate Them exiles three cards, and only the one chosen can be played, with mana of any color', () => {
     const g = table();
-    g.act(0).cast(PRISONERS.name).modes(1).targets([{ player: 1 }]).pay();
+    g.act(0)
+      .cast(PRISONERS.name)
+      .modes(1)
+      .targets([{ player: 1 }])
+      .pay();
     g.passAll();
     g.expect.zone(ELVES, 'exile', { seat: 1 });
     g.expect.zone('Forest', 'exile', { seat: 1 });
