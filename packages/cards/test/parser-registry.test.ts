@@ -653,6 +653,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.loyalty': permanent((e) => `${e}: Draw a card.`),
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
+  'cost.exile-face-down-permanent': permanent((e) => `{U}, ${e}: Draw a card.`),
   'trigger.combat-damage-batch': whenever,
   'trigger.damage-batch': whenever,
   'trigger.tapped-for-mana': whenever,

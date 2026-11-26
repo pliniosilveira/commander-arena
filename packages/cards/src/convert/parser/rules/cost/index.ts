@@ -12,6 +12,7 @@ import { defineRule, family, node, spanned } from '../registry';
 import { COST_BEHOLD } from './behold';
 import { COUNTER_INTELLIGENCE_G2_COST_RULES } from './counter-intelligence-g2';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
+import { EXILE_PERMANENT_COST_RULES } from './exile-permanent';
 import { EXTRA_TURN_COST_RULES } from './extra-turns';
 import { FEDERATION_D_COST_RULES } from './federation-d';
 import { GISA_G4_COST_RULES } from './gisa-g4';
@@ -958,6 +959,8 @@ export const COST_RULES = [
   COST_DISCARD_FILTERED,
   // Stage P68 (D-229): "Discard this card", "Exile ~".
   ...HOFRI_COST_RULES,
+  // Jump Scare! deck (issue #108): "Exile a face-down permanent you control face up".
+  ...EXILE_PERMANENT_COST_RULES,
   // Extra turns (CR 401.4): "Put ~ on the bottom of its owner's library".
   ...EXTRA_TURN_COST_RULES,
   ...PUT_LINKED_EXILE_COST_RULES,

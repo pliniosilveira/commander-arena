@@ -4001,6 +4001,29 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         }
       }
       break;
+    case 'exilePermanent': {
+      // Primordial Mist: "Exile a face-down permanent you control face up": a choice among the player's own permanents on the battlefield.
+      const what = cost.filter as ObjectFilter;
+      checkFilter(what, `${path}.filter`, out);
+      if (filterSome(what, (f) => f.controller === 'opponent')) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'only permanents you control can be exiled for a cost',
+        );
+      }
+      if (what.zone !== undefined && what.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be exiled');
+      }
+      if (filterSome(what, (f) => f.owner !== undefined || f.stackKind !== undefined)) {
+        issue(
+          out,
+          `${path}.filter`,
+          'a cost names permanents by type and the like: no owner or stackKind',
+        );
+      }
+      break;
+    }
     default:
       issue(out, path, `unknown cost ${kindOf(cost)}`);
   }

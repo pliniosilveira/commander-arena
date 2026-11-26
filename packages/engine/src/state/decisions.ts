@@ -451,6 +451,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * tapped creatures you control"), always `forCost`: `legal` are the tapped permanents the player controls that match, `min` and `max` the number to untap.
    * `'removeCountersCost'` (CR 118.3, 122.1): the cost of an activated ability that removes counters "from among" permanents ("Remove two +1/+1 counters from among creatures you control"),
    * always `forCost`: `legal` are the permanents the player controls that match and have a counter of the kind, `min` and `max` are 1 (one counter at a time).
+   * `'exileCost'` (Primordial Mist, CR 118.3, 406.3): the cost of an activated ability that exiles a permanent the player controls ("Exile a face-down permanent you control face up"),
+   * always `forCost`: `legal` are the permanents the player controls that match, `min` and `max` are 1.
    */
   readonly purpose:
     | 'sacrifice'
@@ -460,6 +462,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'untap'
     | 'tap'
     | 'bounce'
+    | 'exileCost'
     | 'fight'
     | 'proliferate'
     | 'auraHost'

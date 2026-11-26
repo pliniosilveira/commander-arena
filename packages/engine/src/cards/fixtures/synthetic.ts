@@ -154,6 +154,7 @@ import { SYNTHETIC_MANA_PLUS_LIST } from './synthetic-mana-plus';
 import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
 import { SYNTHETIC_MANA_SPENT_LIST } from './synthetic-mana-spent';
 import { SYNTHETIC_MANA_TRIGGERS_LIST } from './synthetic-mana-triggers';
+import { SYNTHETIC_MANA_TURN_UP_LIST } from './synthetic-mana-turn-up';
 import { SYNTHETIC_MANIFEST_LIST } from './synthetic-manifest';
 import { SYNTHETIC_MANIFEST_B_LIST } from './synthetic-manifest-b';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
@@ -491,6 +492,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_COUNTER_DOUBLING_LIST,
   ...SYNTHETIC_MANA_RESTRICTED_LIST,
   ...SYNTHETIC_MANA_NOT_GENERIC_LIST,
+  ...SYNTHETIC_MANA_TURN_UP_LIST,
   ...SYNTHETIC_NIV_GROUP_2B_B_LIST,
   ...SYNTHETIC_HASHATON_G1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,

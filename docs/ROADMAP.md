@@ -623,3 +623,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - An attack tax made by an effect ("until your next turn, creatures can't attack you unless their controller pays") covers attacks on the player only, not their planeswalkers.
 - Undercity is the only dungeon: no other dungeon card, no choice of dungeon for "venture into the dungeon", and the parser reads neither "venture into Undercity" nor "if you have the initiative" (the engine runs both).
 - A room ability of a dungeon with no legal target is removed with no `abilityRemoved` event, so the log shows only the venture. The casual agent values rooms from a fixed table, with no look-ahead.
+- The `exilePermanent` cost exiles one permanent, only in an activated ability (no spell additional cost, no keyword cost). Mana "only to turn permanents face up" covers morph and manifest costs, not megamorph.

@@ -335,7 +335,10 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           restriction: mana.restriction,
           vec,
           // An activation cost is paid for an ability, which restricted mana may not be spent on.
-          payAct: restrictionAllows(mana.restriction, { ability: true }),
+          payAct: restrictionAllows(
+            mana.restriction,
+            'ability' in request.spell ? request.spell : { ability: true },
+          ),
           genericOnly: false,
           notGeneric: mana.restriction?.kind === 'notGeneric',
           types: mana.sourceTypes ?? [],

@@ -128,6 +128,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyFromGraveyard',
     // Thieving Varmint: "Spend this mana only to cast spells you don't own." (`ManaAbility.spendOnly.notOwned`)
     'manaSpendOnlyNotOwned',
+    // Overgrown Zealot: "Spend this mana only to turn permanents face up." (`ManaAbility.spendOnly.turnFaceUp`)
+    'manaSpendOnlyTurnFaceUp',
     'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // Empowered Autogenerator: "Put a charge counter on this artifact. Add X mana ..." (`ManaAbility.putCounter`).
@@ -1140,6 +1142,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
+    // Primordial Mist: "Exile a face-down permanent you control face up" as the cost of an activated ability.
+    'exilePermanent',
     // D-185: "Exile this card from your graveyard" (the cost of Encore); D-229: "Exile this artifact" from the battlefield and "Mill a card" as costs.
     'exileThis',
     'mill',
@@ -2195,6 +2199,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyFromGraveyard',
   /** "Spend this mana only to cast spells you don't own" (CR 106.6, 108.3, Thieving Varmint): `ManaAbility.spendOnly.notOwned`. */
   'manaSpendOnlyNotOwned',
+  /** "Spend this mana only to turn permanents face up" (CR 106.6, 701.40b, Overgrown Zealot): `ManaAbility.spendOnly.turnFaceUp`. */
+  'manaSpendOnlyTurnFaceUp',
   /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
   'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
@@ -3438,6 +3444,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnlyNotGeneric: true,
   manaSpendOnlyFromGraveyard: true,
   manaSpendOnlyNotOwned: true,
+  manaSpendOnlyTurnFaceUp: true,
   spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   manaPutCounter: true,
@@ -4020,6 +4027,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   energy: true,
   energyAmount: true,
   returnToHand: true,
+  exilePermanent: true,
 };
 
 /**

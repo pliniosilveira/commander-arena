@@ -72,11 +72,11 @@ export function answerTurnFaceUpPayment(
   const symbols = d.totalCost;
   let paid: { state: GameState; events: GameEvent[] };
   if (action.kind === 'payManual') {
-    const r = payByTapping(state, seat, symbols, { ability: true }, action.taps);
+    const r = payByTapping(state, seat, symbols, { ability: true, turnFaceUp: true }, action.taps);
     if ('error' in r) return fail(r.error);
     paid = r;
   } else {
-    const plan = planFor(state, seat, symbols, { ability: true });
+    const plan = planFor(state, seat, symbols, { ability: true, turnFaceUp: true });
     if (plan === null) return fail('You cannot pay that cost');
     paid = applyPaymentPlan(state, seat, plan, plan.lifePaid);
   }

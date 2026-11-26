@@ -1137,7 +1137,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
       if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
-      if (d.purpose === 'bounce') return answerReturnCost(state, action.objects);
+      if (d.purpose === 'bounce' || d.purpose === 'exileCost') {
+        return answerReturnCost(state, action.objects);
+      }
       if (d.forCost) {
         // The sacrifice of a cost: of an ability being activated, or an additional cost of a spell.
         return state.casting?.activation == null
