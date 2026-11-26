@@ -180,6 +180,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moveFaceDownLand',
     // CR 701.40a (Scroll of Fate): "Manifest a card from your hand" (`moveToZone.faceDownAs` `manifest` of a `choose` from the hand).
     'manifestFromHand',
+    // CR 708.2a, 708.3, 702.37e (Deathmist Raptor): "return this card from your graveyard to the battlefield ... face down" as a face-down creature that morph can turn up (`moveToZone.faceDownAs` `morph`).
+    'moveFaceDownMorph',
+    // CR 702.37b (Megamorph): a morph cost that puts a +1/+1 counter on the permanent as it is turned face up (`AlternativeCost.megamorph`).
+    'megamorph',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
     // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
@@ -2245,6 +2249,10 @@ export const ABILITY_FEATURES = [
   'moveFaceDownLand',
   /** "Manifest a card from your hand" (Scroll of Fate, CR 701.40a): the engine's `moveToZone.faceDownAs` `manifest` of a `choose` of a card of the hand. */
   'manifestFromHand',
+  /** "Return this card from your graveyard to the battlefield face down" (Deathmist Raptor, CR 708.2a, 708.3, 702.37e): the engine's `moveToZone.faceDownAs` `morph`. */
+  'moveFaceDownMorph',
+  /** "Megamorph {4}{G}" (CR 702.37b): the engine's `megamorph` flag of the morph alternative cost, a +1/+1 counter as the permanent is turned face up for it. */
+  'megamorph',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
   'revealUntilCount',
   /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */

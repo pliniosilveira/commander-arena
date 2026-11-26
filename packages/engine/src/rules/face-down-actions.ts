@@ -10,14 +10,18 @@
  * applies); its copiable values revert to the card's own, and what had been applied to it still applies. The same player has priority again (CR 116.1).
  *
  * What the cost is depends on what made the permanent face down (`faceDown.by`): for a manifested one it is the mana cost of the card (CR 701.40b). A morph or disguise
- * cost would be another branch of `turnUpSymbols`.
+ * cost is the other branch of `turnUpSymbols`; a megamorph cost (CR 702.37b) also puts a +1/+1 counter on the permanent as it is turned face up.
  */
 import type { ObjectId, SeatId } from '../ids';
 import type { PayManaDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getObject, setObject } from '../state/ops';
+import { definitionOf, getObject, setObject } from '../state/ops';
 import type { GameState } from '../state/types';
-import { withoutFaceDown } from './face-down';
+import { alternativeOf } from './alt-costs';
+import { counterBonuses } from './counter-bonus';
+import { counterBlockers } from './counter-prevention';
+import { putCountersOn } from './counter-put';
+import { faceDownBy, withoutFaceDown } from './face-down';
 import { canTurnFaceUp, turnUpSymbols } from './face-down-legality';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
 import { type ManualTap, payByTapping } from './pay-manual';
@@ -96,6 +100,23 @@ function takeTurnFaceUp(
   // CR 708.8: the same object, its copiable values back to the card's own; counters, damage, attachments, timestamps and the effects applied to it are unchanged.
   let next = setObject(state, withoutFaceDown(obj));
   next = { ...next, pending: null, turn: { ...next.turn, passedInSuccession: [] } };
+  // CR 702.37b (Megamorph): "As this permanent is turned face up, put a +1/+1 counter on it if its megamorph cost was paid to turn it face up": paid for a permanent turned up
+  // for its morph cost, never for a manifested one (CR 701.40b: its mana cost).
+  const face = definitionOf(state, obj.card).faces[0];
+  if (faceDownBy(obj) === 'morph' && alternativeOf(face ?? null, 'morph')?.megamorph === true) {
+    const put = putCountersOn(
+      next,
+      next,
+      object,
+      '+1/+1',
+      1,
+      seat,
+      counterBlockers(next),
+      counterBonuses(next),
+    );
+    next = put.state;
+    events.push(...put.events);
+  }
   const granted = grantPriority(next, seat, events);
   return ok(granted.state, [...events, ...granted.events]);
 }

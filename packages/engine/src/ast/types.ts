@@ -2277,6 +2277,11 @@ export type AlternativeCost =
        * card cast is never that card (it is on the stack by then, CR 601.2a).
        */
       readonly exileFromHand?: ObjectFilter;
+      /**
+       * `morph` only (CR 702.37b, Megamorph): the `cost` is a megamorph cost, which is a morph cost, and as the permanent is turned face up for it a +1/+1 counter is put on it. Not for a
+       * permanent turned face up some other way (a manifested one is turned up for its mana cost, CR 701.40b).
+       */
+      readonly megamorph?: true;
       readonly condition?: Condition;
     }
   | {
@@ -4228,10 +4233,12 @@ export type Effect =
        * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 708.3, 613.2b): the permanents enter face down, as a land with the Forest subtype and no other
        * characteristic (the face-down status `forestLand`); the card's own enters replacements and triggers do not apply (CR 708.3). Only with `to` `battlefield` and a selector
        * that is not `choose`. A face-down permanent of this kind is never turned face up.
+       * `morph` (CR 708.2a, 708.3, 702.37e, Deathmist Raptor: "return this card ... to the battlefield face down"): the card enters as a 2/2 face-down creature with no characteristics
+       * of its own; it can be turned face up for its morph cost if it has one (and for its megamorph cost, with the counter), and cannot be turned face up if it has none. Not with a `choose` selector.
        * `manifest` (CR 701.40a, 701.40b, Scroll of Fate: "Manifest a card from your hand"): the card the player chooses among the cards of their hand (a `choose` selector with `filter.zone`
        * `hand`, and `to` `battlefield`) is put onto the battlefield face down as a manifested 2/2 creature under their control, which can be turned face up as any manifested card can.
        */
-      readonly faceDownAs?: 'forestLand' | 'manifest';
+      readonly faceDownAs?: 'forestLand' | 'manifest' | 'morph';
       /**
        * For battlefield: the permanents enter with `count` counters of the kind on them ("return it to
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
