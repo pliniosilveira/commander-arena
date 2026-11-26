@@ -134,11 +134,11 @@ describe('the dimensions', () => {
       'triggerPlayerTurn',
       'triggerPlayerIsOpponent',
       'triggerPlayerStat',
-      'controlsDifferentPowers',
       'thisPowerParity',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      'sacrificedThisTurn',
       // Lorehold group 3: "if a player has one or fewer cards in hand".
       'aPlayerCardsInHand',
       'escaped',
@@ -331,6 +331,7 @@ describe('the dimensions', () => {
       'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
+      'playFromLinkedExile',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
       'plotCostReduction',

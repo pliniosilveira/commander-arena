@@ -798,6 +798,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersBattlefieldFromExile',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
+    // CR 603.2 (Szarel, Genesis Shepherd): "Whenever you sacrifice another nontoken permanent during your turn" (`permanentSacrificed` with `duringTurn`).
+    'sacrificedDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -1536,14 +1538,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Fevered Visions: "if the player is your opponent and has four or more cards in hand" in the effect of a trigger about a player.
     'triggerPlayerIsOpponent',
     'triggerPlayerStat',
-    // Augur of Autumn (Coven): "as long as you control three or more creatures with different powers", read as a permission to cast is used.
-    'controlsDifferentPowers',
     // Kianne, Corrupted Memory: "as long as ~'s power is even", read as a permission to cast is used.
     'thisPowerParity',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
     'cardsInLibrary',
+    // CR 701.21a (Evendo Brushrazer): "you've sacrificed a nontoken permanent this turn".
+    'sacrificedThisTurn',
     // Lorehold group 3: "if a player has one or fewer cards in hand" (CR 402.1, 603.4).
     'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
@@ -1816,6 +1818,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playFromGraveyardEachType',
     // CR 305.1: "You may play Forests from your graveyard."
     'playLandsFromGraveyard',
+    // CR 607.2a, 601.2a (Evendo Brushrazer): "you may play cards exiled with this creature".
+    'playFromLinkedExile',
     // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
     'activateAsThoughHaste',
     // CR 702.170a (Doc Aurlock, Grizzled Genius): "Plotting cards from your hand costs {2} less."
@@ -1923,6 +1927,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'differentManaValuesAmong',
     // Issue 101: "the number of differently named tokens you control" (CR 201.2).
     'differentNamesAmong',
+    // CR 208.1 (Augur of Autumn): "creatures with different powers".
+    'differentPowersAmong',
     // CR 205.3m: "for each creature type among creatures you control" (Valiant Changeling).
     'creatureTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
@@ -2390,6 +2396,8 @@ export const TRIGGER_FEATURES = [
   'castDuringYourTurn',
   /** "Whenever a card leaves your graveyard during your turn" (issue 102, CR 603.2): `leftGraveyard` with `duringTurn`. */
   'leftGraveyardDuringYourTurn',
+  /** "Whenever you sacrifice another nontoken permanent during your turn" (CR 603.2, Szarel): `permanentSacrificed` with `duringTurn`. */
+  'sacrificedDuringYourTurn',
   /** "Whenever this creature or another permanent enters from a graveyard" (issue 102, CR 603.6a): `entersBattlefield` with `fromGraveyard`. */
   'entersBattlefieldFromGraveyard',
   /** "Whenever this creature or another creature enters from your graveyard" (CR 603.6a, 404.1): `entersBattlefield` with `fromGraveyard` and `graveyardOwner: 'you'`. */
@@ -2986,13 +2994,13 @@ export const CONDITION_KINDS = [
   /** The intervening "if" of the two abilities soulbond stands for (CR 702.95a, D-286): the engine's `soulbondReady`; built by the engine, refused in card data. */
   'soulbondReady',
   'unlessPays',
-  /** "As long as you control three or more creatures with different powers" (Augur of Autumn, CR 208.1): the engine's `controlsDifferentPowers`. */
-  'controlsDifferentPowers',
   /** "As long as ~'s power is even" (Kianne, Corrupted Memory, CR 107.1): the engine's `thisPowerParity`. */
   'thisPowerParity',
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',
+  /** "As long as you've sacrificed a nontoken permanent this turn" (CR 701.21a, Evendo Brushrazer): the engine's `sacrificedThisTurn`. */
+  'sacrificedThisTurn',
   /** "If a player has one or fewer cards in hand" (CR 402.1, 603.4; Lorehold group 3): the engine's `aPlayerCardsInHand`. */
   'aPlayerCardsInHand',
   'and',
@@ -3162,6 +3170,8 @@ export const STATIC_KINDS = [
   'playFromGraveyardEachType',
   /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
   'playLandsFromGraveyard',
+  /** "You may play cards exiled with this creature" (CR 607.2a, 601.2a, Evendo Brushrazer): `playFromLinkedExile`. */
+  'playFromLinkedExile',
   /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
   'activateAsThoughHaste',
   /** "Plotting cards from your hand costs {2} less" (CR 702.170a, Doc Aurlock, Grizzled Genius): the engine's `plotCostReduction`. */
@@ -3288,6 +3298,8 @@ export const AMOUNT_KINDS = [
   'differentManaValuesAmong',
   /** "The number of differently named tokens you control" (CR 201.2, issue 101): the engine's `differentNamesAmong`. */
   'differentNamesAmong',
+  /** "You control three or more creatures with different powers" (CR 208.1, Augur of Autumn): the engine's `differentPowersAmong`. */
+  'differentPowersAmong',
   /** "For each creature type among creatures you control" (CR 205.3m): the engine's `creatureTypesAmong`. */
   'creatureTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
@@ -3857,6 +3869,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castDuringOpponentTurn: true,
   castDuringYourTurn: true,
   leftGraveyardDuringYourTurn: true,
+  sacrificedDuringYourTurn: true,
   entersBattlefieldFromGraveyard: true,
   entersBattlefieldFromYourGraveyard: true,
   entersBattlefieldFromExile: true,

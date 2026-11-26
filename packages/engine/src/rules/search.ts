@@ -26,6 +26,7 @@ import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
 import { searchTopLimit } from './global-statics';
+import { landCardsToGraveyard } from './graveyard-lands';
 import { discardOne } from './madness';
 import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
@@ -553,6 +554,8 @@ export function runDiscard(
       });
     }
   }
+  // CR 701.9, 608.2c (Eumidian Wastewaker): "for each land card put into a graveyard this way", read in the graveyard.
+  const landsToGraveyard = landCardsToGraveyard(next, events);
   // D-135: "if you do" counts the cards actually discarded (an empty hand discards nothing).
   return {
     ...done(next, events),
@@ -563,6 +566,7 @@ export function runDiscard(
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
       ...(discardedNonlands > 0 ? { discardedNonland: discardedNonlands } : {}),
+      ...(landsToGraveyard > 0 ? { landCardsToGraveyard: landsToGraveyard } : {}),
       discardedInstantOrSorcery: discardedSpells,
       ...(discardedCards > 0 ? { discardedValue } : {}),
       ...(discardedCards > 0 ? { discardedTypes, discardedTypeCount: discardedTypes.length } : {}),

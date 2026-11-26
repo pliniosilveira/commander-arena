@@ -66,6 +66,7 @@ type StateAmount = Extract<
       | 'cardTypesAmong'
       | 'differentManaValuesAmong'
       | 'differentNamesAmong'
+      | 'differentPowersAmong'
       | 'creatureTypesAmong'
       | 'colorsAmong';
   }
@@ -126,6 +127,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardTypesAmong' ||
     amount.kind === 'differentManaValuesAmong' ||
     amount.kind === 'differentNamesAmong' ||
+    amount.kind === 'differentPowersAmong' ||
     amount.kind === 'creatureTypesAmong' ||
     amount.kind === 'colorsAmong'
   );
@@ -220,6 +222,26 @@ function differentNamesAmongOf(state: GameState, filter: ObjectFilter, ctx: Sele
     const obj = state.objects[id];
     if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
     seen.add(derive(state, obj).name);
+  }
+  return seen.size;
+}
+
+/**
+ * CR 208.1, 613.4 (Augur of Autumn): "creatures with different powers": the distinct powers of the battlefield permanents the filter matches, each once, as the permanents have them now
+ * (through `derive`, so every layer 7 effect applies). A permanent with no power is not counted.
+ */
+function differentPowersAmongOf(
+  state: GameState,
+  filter: ObjectFilter,
+  ctx: SelectContext,
+): number {
+  const seen = new Set<number>();
+  for (const id of objectsInZone(state, filter.zone ?? 'battlefield')) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    const power = derive(state, obj).power;
+    if (typeof power === 'number') seen.add(power);
   }
   return seen.size;
 }
@@ -597,6 +619,8 @@ export function stateAmountOf(
       return differentManaValuesAmongOf(state, amount.filter, ctx);
     case 'differentNamesAmong':
       return differentNamesAmongOf(state, amount.filter, ctx);
+    case 'differentPowersAmong':
+      return differentPowersAmongOf(state, amount.filter, ctx);
     case 'creatureTypesAmong':
       return creatureTypesAmongOf(state, amount.filter, ctx);
     case 'colorsAmong':

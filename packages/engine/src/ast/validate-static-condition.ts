@@ -64,10 +64,7 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
 ];
 
 /** The conditions a permission to cast (`castAsThoughFlash`, `castFromTopOfLibrary`) reads as the spell is cast, with the power of permanents among them (CR 208.1). */
-const PERMISSION_CONDITIONS: readonly Condition['kind'][] = [
-  'controlsDifferentPowers',
-  'thisPowerParity',
-];
+const PERMISSION_CONDITIONS: readonly Condition['kind'][] = ['thisPowerParity'];
 
 /** Whether a filter on the permanent itself tests a counter and nothing else (`hasCounter`, with the `raw` words the grammar keeps). */
 function onlyCounterTest(f: ObjectFilter | undefined): boolean {
@@ -223,6 +220,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       }
       return;
     case 'yourTurn': // D-206: the active player, which no layer changes
+    case 'sacrificedThisTurn': // CR 701.21a: the turn log, which no layer changes
     case 'thisEnteredThisTurn': // D-423: the turn log, which no layer changes
     case 'controlCommander':
     case 'lifeTotal':
@@ -368,6 +366,23 @@ export function checkStaticCondition(
     typeof condition.amount !== 'number' &&
     condition.amount?.kind === 'opponentsWithMore'
   ) {
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 601.3, 401.5, 604.1 (Augur of Autumn): "As long as you control three or more creatures with different powers, you may cast creature spells from the top of your
+  // library": the permission is read as the spell is cast (`rules/legality.ts`), with `evaluateCondition`, not by `derive`, so the condition may read the powers.
+  if (
+    s?.kind === 'castFromTopOfLibrary' &&
+    condition.kind === 'amountIs' &&
+    typeof condition.amount !== 'number' &&
+    condition.amount?.kind === 'differentPowersAmong'
+  ) {
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 607.2a, 601.2a (Evendo Brushrazer): "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with this creature": the permission is read as
+  // the card is played (`rules/legality.ts`), with `evaluateCondition`, not by `derive`.
+  if (s?.kind === 'playFromLinkedExile') {
     checkCondition(condition, `${path}.condition`, out);
     return;
   }

@@ -50,6 +50,7 @@
  */
 import type { Color } from '../characteristics';
 import type { ObjectId } from '../ids';
+import { classCombinations } from './any-combination';
 import { activationDemands, costedCandidates, hasCost, selections } from './costed';
 
 export type { PaymentRequest, PaymentSource };
@@ -72,7 +73,7 @@ import type { HybridOption, ManaColor, ManaCost, ManaObject, ManaRestriction } f
 export interface PaymentPlan {
   /** Indices into request.pool that are spent. */
   readonly fromPool: readonly number[];
-  /** Sources to tap; `outcome` indexes PaymentSource.produces. */
+  /** Sources to tap; `outcome` indexes PaymentSource.produces (for a source with `anyCombination`, the number of the combination the plan tried). */
   readonly taps: readonly { object: ObjectId; abilityIndex: number; outcome: number }[];
   readonly lifePaid: number;
   /**
@@ -310,7 +311,17 @@ function spendsBlueAsAnyColor(request: PaymentRequest): boolean {
   return 'ability' in request.spell && request.spell.blueAsAnyColor === true;
 }
 
-function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]): Item[] {
+/** What `buildItems` needs to build the combinations of an "any combination" source for the cost: the most demand on each dimension over every way to pay it, and the hybrid halves. */
+interface Demanded {
+  readonly envelope: readonly number[];
+  readonly flex: readonly (readonly ManaColor[])[];
+}
+
+function buildItems(
+  request: PaymentRequest,
+  selection: readonly PaymentSource[],
+  demanded: Demanded,
+): Item[] {
   const reserve = new Set<ManaColor>(request.reserve ?? []);
   const items: Item[] = [];
   const only = onlyColorOf(request);
@@ -384,10 +395,11 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
     for (const source of sources) {
       const sourceNumber = sourceCount;
       sourceCount += 1;
-      source.produces.forEach((colors, outcome) => {
-        if (colors.length === 0) return;
-        if (!restrictionAllows(source.restriction, request.spell)) return;
-        if (only !== undefined && colors.some((c) => c !== only)) return;
+      const makeEntry = (
+        colors: readonly ManaColor[],
+        outcome: number,
+        from: PaymentSource,
+      ): Entry => {
         const vec = new Array<number>(COMPONENTS).fill(0);
         vec[TIER_COMPONENT[source.tier]] = 1;
         vec[C_RESERVE] = reserveColors.size;
@@ -401,10 +413,10 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
                 (source.energyCost ?? 0) > 0
               ? 1
               : 0;
-        entries.push({
+        return {
           abilityIndex: source.abilityIndex,
           source: sourceNumber,
-          from: source,
+          from,
           outcome,
           colors,
           snow: source.snow,
@@ -416,7 +428,43 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
           types: source.types ?? [],
           anyColor: spendsAnyColor(request),
           blueAnyColor: spendsBlueAsAnyColor(request),
+        };
+      };
+      const usable = (colors: readonly ManaColor[]): boolean =>
+        colors.length > 0 &&
+        restrictionAllows(source.restriction, request.spell) &&
+        (only === undefined || colors.every((c) => c === only));
+      if (source.anyCombination === undefined) {
+        source.produces.forEach((colors, outcome) => {
+          if (usable(colors)) entries.push(makeEntry(colors, outcome, source));
         });
+        continue;
+      }
+      // Issue 632: one combination for each class of outcome against this cost. The entries are kept for this request only (a fresh `from`): which combinations
+      // there are, and so their numbers, depend on the demand.
+      const from = { ...source };
+      const proto = makeEntry([], 0, from);
+      const colorsOf = COLOR_DIMS.slice(0, 5).map((color) => unitDims(proto, color, demanded.flex));
+      const shared = colorsOf[0]?.filter((d) => colorsOf.every((dims) => dims.includes(d))) ?? [];
+      const own = colorsOf.map((dims) =>
+        dims
+          .filter((d) => !shared.includes(d) && (demanded.envelope[d] ?? 0) > 0)
+          .sort((x, y) => x - y),
+      );
+      const keys: string[] = [];
+      const caps: number[] = [];
+      const kindOfColor = own.map((dims) => {
+        const key = dims.join('.');
+        let kind = keys.indexOf(key);
+        if (kind < 0) {
+          kind = keys.length;
+          keys.push(key);
+          caps.push(dims.reduce((n, d) => n + (demanded.envelope[d] ?? 0), 0));
+        }
+        return kind;
+      });
+      classCombinations(source.anyCombination, kindOfColor, caps).forEach((colors, outcome) => {
+        if (usable(colors)) entries.push(makeEntry(colors, outcome, from));
       });
     }
     if (entries.length === 0) continue;
@@ -833,6 +881,22 @@ function demandUnits(demand: readonly number[]): number {
   return n;
 }
 
+/** The most demand on each dimension, over every profile of the cost and every way to pay the activation costs: what no search below asks for more of. */
+function demandEnvelope(
+  profiles: readonly Profile[],
+  vectors: readonly (readonly number[])[],
+): number[] {
+  const envelope: number[] = [];
+  for (const profile of profiles) {
+    for (const vector of vectors) {
+      [...profile.demand, ...vector].forEach((v, i) => {
+        envelope[i] = Math.max(envelope[i] ?? 0, v);
+      });
+    }
+  }
+  return envelope;
+}
+
 function planOnce(request: PaymentRequest): PaymentPlan | null {
   const profiles = buildProfiles(
     request.cost,
@@ -852,9 +916,12 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
   let best: { solution: Solution; life: number } | null = null;
   // Each subset of costed abilities is a separate search (the empty one first); see the header.
   for (const selection of selections(costedCandidates(request))) {
-    const items = buildItems(request, selection);
     // CR 107.4e: a hybrid symbol in a costed ability's cost is paid with either half.
     const { flex, vectors } = activationDemands(selection);
+    const items = buildItems(request, selection, {
+      envelope: demandEnvelope(profiles, vectors),
+      flex,
+    });
     for (const activation of vectors) {
       for (const profile of profiles) {
         if (best !== null && profile.life > best.life) break; // profiles are sorted by life

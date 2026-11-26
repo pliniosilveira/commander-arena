@@ -6,6 +6,8 @@
  *     creature (by `creatureValue`) for the strongest attackers first;
  *  2. value trades: a blocker and an attacker that both die, when the attacker is worth at least as
  *     much as the blocker (so an even trade is taken and a trade against a more valuable blocker is not);
+ *     in the agent's own blocks an opposing commander attacker also counts its `threatBonus`
+ *     (`heuristic-danger.ts`); the opponent model of an attack keeps the body alone;
  *  3. gang blocks: two blockers that kill an attacker between them while the attacker can kill only one
  *     (and a pair for a menace attacker, which needs two, CR 702.111b), when the attacker is worth at
  *     least the dearer of the two;
@@ -29,7 +31,7 @@ import type {
 import { poisonDamageOf } from './casual-poison';
 import { findObject, hasKeyword, powerOf, toughnessOf } from './casual-view';
 import { creatureValue } from './evaluate';
-import { type Breakthrough, hitDamage, verdict } from './heuristic-danger';
+import { type Breakthrough, hitDamage, threatBonus, verdict } from './heuristic-danger';
 import { duel, gangWins } from './heuristic-duel';
 import type { AgentWeights } from './weights';
 
@@ -94,10 +96,12 @@ class Planner {
 
   private readonly view: GameView;
   private readonly weights: AgentWeights;
+  private readonly threat: boolean;
 
-  constructor(view: GameView, d: DeclareBlockersDecision, weights: AgentWeights) {
+  constructor(view: GameView, d: DeclareBlockersDecision, weights: AgentWeights, threat: boolean) {
     this.view = view;
     this.weights = weights;
+    this.threat = threat;
     this.attackers = d.attackers.flatMap((a) => {
       const object = findObject(view, a.attacker);
       return object === undefined
@@ -123,6 +127,11 @@ class Planner {
   /** A creature's value under the planner's weights. */
   private value(o: ObjectView): number {
     return creatureValue(o, this.weights);
+  }
+
+  /** What trading with attacker `a` is worth: its value, plus `threatBonus` in the agent's own blocks. */
+  private tradeValue(a: ObjectView): number {
+    return this.value(a) + (this.threat ? threatBonus(this.view, a, this.weights) : 0);
   }
 
   private blocked(draft: Draft, attacker: ObjectId): boolean {
@@ -177,7 +186,7 @@ class Planner {
       if (a.minBlockers !== 1 || this.blocked(draft, a.id)) continue;
       const pick = this.free(draft, a).find((b) => {
         const r = duel(a.object, b.object);
-        return r.attackerDies && r.blockerDies && this.value(a.object) >= this.value(b.object);
+        return r.attackerDies && r.blockerDies && this.tradeValue(a.object) >= this.value(b.object);
       });
       if (pick !== undefined) this.assign(draft, a, [pick], 'trade-block');
     }
@@ -281,7 +290,7 @@ export function blockPlans(
   d: DeclareBlockersDecision,
   weights: AgentWeights,
 ): BlockPlan[] {
-  const p = new Planner(view, d, weights);
+  const p = new Planner(view, d, weights, true);
   const plans = new Map<string, BlockPlan>();
   const add = (draft: Draft): void => {
     const k = key(draft.blocks);
@@ -314,13 +323,17 @@ export function blockPlans(
   return [...plans.values()];
 }
 
-/** Without a sample: the deepest tier with the chump fill (the last tier plan that adds the fill). */
+/**
+ * Without a sample: the deepest tier with the chump fill (the last tier plan that adds the fill). `threat`
+ * is on for the agent's own blocks and off for the opponent model of an attack (see the module comment).
+ */
 export function defaultPlan(
   view: GameView,
   d: DeclareBlockersDecision,
   weights: AgentWeights,
+  threat = false,
 ): BlockPlan {
-  const p = new Planner(view, d, weights);
+  const p = new Planner(view, d, weights, threat);
   const draft = emptyDraft();
   p.good(draft);
   p.trades(draft);
@@ -335,7 +348,7 @@ export function dangerOnlyPlan(
   d: DeclareBlockersDecision,
   weights: AgentWeights,
 ): BlockPlan {
-  const p = new Planner(view, d, weights);
+  const p = new Planner(view, d, weights, false);
   const draft = emptyDraft();
   p.chump(draft);
   return finish(draft);

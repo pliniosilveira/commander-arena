@@ -282,6 +282,13 @@ export type Amount =
    */
   | { readonly kind: 'differentNamesAmong'; readonly filter: ObjectFilter }
   /**
+   * "You control three or more creatures with different powers" (Augur of Autumn, coven; CR 208.1, 613.4): how many distinct powers the battlefield permanents `filter` matches have
+   * between them, each counted once however many have it, as the permanents have them now (all layers; a permanent with no power is not counted). A creature with different power
+   * from each of N others is the same as N distinct powers, so "N or more creatures with different powers" is this amount at least N. The filter names the battlefield (or leaves it
+   * out) and reads no combat, source power, power or toughness (the powers are the permanents', not a limit on them).
+   */
+  | { readonly kind: 'differentPowersAmong'; readonly filter: ObjectFilter }
+  /**
    * "~ costs {1} less to cast for each creature type among creatures you control" (Valiant Changeling, CR 205.3m, 205.3d): how many distinct creature types the battlefield permanents
    * `filter` matches have between them, each counted once however many have it (a creature with every creature type, CR 702.73a, counts all of them), as the permanents have them now
    * (layers 1 and 4). Subtypes that are not creature types (Equipment, Aura, ...) are not counted. The filter names the battlefield (or leaves it out) and reads no power, toughness,
@@ -595,6 +602,8 @@ export type ThisWayKind =
   | 'milledCreature'
   // Dune Chanter (CR 701.17a, 608.2c): "for each land card milled this way": the land cards the `mill` effects of this resolution milled, whoever's they are.
   | 'milledLand'
+  // CR 701.9, 701.21, 608.2c (Eumidian Wastewaker): "for each land card put into a graveyard this way": the land cards (never tokens) that `discard` and `sacrifice` effects of this resolution put into a graveyard.
+  | 'landCardsToGraveyard'
   | 'discardedCreature'
   | 'discardedNoncreature'
   // Federation Fleet deck, group D (CR 608.2c, 603.12): "When you discard a nonland card this way": the nonland cards `discard` effects discarded.
@@ -1837,8 +1846,11 @@ export interface TargetSpec {
    * resolution that created this reflexive ability sacrificed permanents (none to that many); the number is fixed as the ability is created, and
    * the engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a `reflexive` ability after a
    * `sacrifice`, with `min` and `max` left out.
+   * `'discarded'` (Loamcrafter Faun, "you may discard one or more land cards. When you do, return up to that many target nonland permanent cards from your graveyard to your hand";
+   * CR 603.12, 601.2c, 701.9): as many targets as the cards the resolution that created the reflexive ability discarded (`thisWay` `discarded`); only a slot of a `reflexive` ability with
+   * `ifThisWay` `discarded`, which is created only when at least one was.
    */
-  readonly upToThatMany?: true;
+  readonly upToThatMany?: true | 'discarded';
   /**
    * "Tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (CR 603.3d, 701.22, D-513): the slot takes up to as many targets as
    * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry, or the X announced for the cycling cost of "When you cycle this card", CR 702.29a), none to that many; the number is fixed as the ability is put on the stack, and the
@@ -4233,13 +4245,18 @@ export type Effect =
       readonly kind: 'keepOrSacrifice';
       readonly players: PlayerSelector;
       readonly filter: ObjectFilter;
-      /** The limit on the total power of what is kept; exactly one of this and `keepAtMost`. */
+      /** The limit on the total power of what is kept; exactly one of this, `keepAtMost` and `keepExactly`. */
       readonly totalPowerAtMost?: number;
       /**
        * "That player chooses up to two creatures they control, then sacrifices the rest" (CR 608.2d, 701.21a, 101.4; Archfiend of Depravity): the limit is on how many are kept, 0 or more,
        * instead of on their total power. The player may keep fewer; one who controls no more than that many sacrifices nothing.
        */
       readonly keepAtMost?: number;
+      /**
+       * "Each player chooses six lands they control, then sacrifices the rest" (Planetary Annihilation, CR 608.2d, 701.21a, 101.4): the limit is on how many are kept, and the player keeps
+       * exactly that many (all of them when they control no more, which chooses nothing), 0 or more, instead of at most that many. The choices are made in APNAP order, then the rest are sacrificed at once.
+       */
+      readonly keepExactly?: number;
     }
   /**
    * "Each player chooses a party from among creatures they control, then sacrifices the rest" (Stick Together, CR 700.8d, 701.21a, 101.4): each player the selector names, in APNAP
@@ -6515,6 +6532,8 @@ export type Trigger =
       /** `opponent` ("Whenever an opponent sacrifices a nontoken permanent", CR 701.21, Nazgûl Battle-Mace): a player who is not the controller of this ability. */
       readonly by: 'you' | 'opponent' | 'any';
       readonly filter?: ObjectFilter;
+      /** "Whenever you sacrifice another nontoken permanent during your turn" (Szarel, CR 603.2): only while the active player is the controller of this ability. */
+      readonly duringTurn?: 'you';
     }
   /**
    * "Whenever this becomes tapped" (CR 603.2e): not when it enters tapped.
@@ -7680,17 +7699,6 @@ export type Keyword =
 export type Condition =
   | { readonly kind: 'controlsAtLeast'; readonly filter: ObjectFilter; readonly count: number }
   /**
-   * "As long as you control three or more creatures with different powers" (Augur of Autumn, Coven, CR 208.1, 207.2c): the battlefield permanents the controller controls that `filter`
-   * matches have at least `count` different powers between them, so `count` of them can be named with powers that are all different (a permanent with no power, as a noncreature, has none).
-   * The powers are those the permanents have now, through every layer, so it is read where a rule acts (a permission to cast, as the spell is cast), never in a layer of `derive`: a
-   * static ability takes it only on a permission to cast (`castFromTopOfLibrary`, `castAsThoughFlash`).
-   */
-  | {
-      readonly kind: 'controlsDifferentPowers';
-      readonly filter: ObjectFilter;
-      readonly count: number;
-    }
-  /**
    * "As long as Kianne's power is even", "... is odd" (Kianne, Corrupted Memory; CR 107.1: the numbers of the game are integers, a power may be below zero; CR 208.1): the power of the permanent the condition belongs to, as it is now through
    * every layer, is an even or an odd number. A permanent with no power meets neither. Read where a rule acts (a permission to cast), never in a layer of `derive`: a static ability takes it
    * only on `castAsThoughFlash` and `castFromTopOfLibrary`.
@@ -8154,6 +8162,16 @@ export type Condition =
    * read (a static ability's `condition` each time its effect is looked at; an `interveningIf` as the event happens and as the ability resolves).
    */
   | { readonly kind: 'yourTurn' }
+  /**
+   * "As long as you've sacrificed a nontoken permanent this turn" (Evendo Brushrazer, CR 701.21a, 603.4, 611.3a): the controller of the ability has sacrificed at least one permanent this turn
+   * that `types` (each of them) and `token` describe, as it was as it was sacrificed (a permanent that has left since still counts), read from the turn log
+   * (`TurnLog.sacrificed`). With neither, any permanent. A token is a permanent too (CR 111.1), so `token: false` is "nontoken". No layer changes it, so a static ability may read it.
+   */
+  | {
+      readonly kind: 'sacrificedThisTurn';
+      readonly types?: readonly CardType[];
+      readonly token?: boolean;
+    }
   /**
    * "If a card left your graveyard this turn" (CR 603.4, 400.7, D-206): a card of the controller's (owned by them) left a graveyard, to any zone, since
    * the turn began (a card cast from it, exiled, returned, shuffled in; a card that moved on from there is a new object and counts once, as it left).
@@ -9744,6 +9762,12 @@ export type StaticEffect =
        */
       readonly exileOthers?: number;
       /**
+       * "Once during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs." (Exploration Broodship; CR 601.2b,
+       * 601.2f, 118.8, 701.21a): a spell cast from the graveyard with this permission has the sacrifice of one permanent `sacrifice` matches (the caster controls it) as an additional
+       * cost, paid as the others are; with no such permanent the spell cannot be cast that way. Only with `cast`; a land played with `land` is not a spell and sacrifices nothing.
+       */
+      readonly sacrifice?: ObjectFilter;
+      /**
        * "Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn." (Banon,
        * the Returners' Leader; CR 601.2a, 404.1, 400.7): only a card that was put into the graveyard this turn from a zone other than the battlefield (a hand, a library, the stack; read from
        * `TurnLog.graveyardedElsewhere`, so a card that moved on and came back is a new object and does not count). Only with `cast`, and not with `land`.
@@ -9764,6 +9788,13 @@ export type StaticEffect =
    * (unlike `playFromGraveyardOnceEachTurn`, which it may stand beside).
    */
   | { readonly kind: 'playLandsFromGraveyard'; readonly lands?: ObjectFilter }
+  /**
+   * "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with this creature." (Evendo Brushrazer, CR 607.2a, 601.2a, 305.1, 604.1): while the
+   * permanent has the ability (and its `condition`, read where the card is played, as `evaluateCondition` reads it for its controller), its controller may play each card in exile that the
+   * permanent exiled with its linked ability (`exile.linked`, `GameObject.linkedExile`), whoever owns it: a land as a land play (the turn's land drop, CR 305.2) and a spell cast at the timing of
+   * its type paying its ordinary cost. The permission is not used up and lasts only while the permanent with the ability is on the battlefield with the condition true.
+   */
+  | { readonly kind: 'playFromLinkedExile' }
   /**
    * "You may activate abilities of creatures you control as though those creatures had haste." (CR 702.10b, 302.6, issue 345): while the permanent has the ability, a creature `creatures`
    * describes (read for the controller of the permanent: "you" is usual, the source is the permanent) is not held back by summoning sickness from an ability with {T} or {Q} in its

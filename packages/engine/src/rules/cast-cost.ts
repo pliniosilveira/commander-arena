@@ -504,10 +504,25 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const option = request.costOption ?? spell.stack?.costOption;
   // CR 601.2b, 118.8: "You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs."
   const librarySacrifice = zone === 'library' ? libraryCastSacrificeOf(state, seat, spell) : null;
+  // CR 601.2b, 118.8 (Exploration Broodship): "cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs": once cast, the spell remembers the
+  // permission it was cast with; before that the card is read as it is in the graveyard.
+  const graveyardSacrifice =
+    zone !== 'graveyard' || alternative !== undefined
+      ? null
+      : (spell.stack?.graveyardPlay?.sacrifice ??
+        (() => {
+          const card = state.objects[request.spell.id];
+          return card === undefined
+            ? null
+            : (graveyardPlayPermission(state, seat, card, false)?.sacrifice ?? null);
+        })());
   const additional: readonly Cost[] = [
     ...(face?.additionalCosts ?? []),
     ...(option === undefined ? [] : (face?.additionalCostChoice?.[option] ?? [])),
     ...(librarySacrifice === null ? [] : [{ kind: 'sacrifice' as const, what: librarySacrifice }]),
+    ...(graveyardSacrifice === null
+      ? []
+      : [{ kind: 'sacrifice' as const, what: graveyardSacrifice }]),
   ];
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;

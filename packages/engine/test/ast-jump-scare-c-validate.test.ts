@@ -19,11 +19,6 @@ const THIS = { kind: 'this' };
 const LAND = { kind: 'setTypes', subject: THIS, types: ['land'] };
 const FROM_TOP = { kind: 'castFromTopOfLibrary', spells: { types: ['creature'] } };
 const FLASH = { kind: 'castAsThoughFlash', spells: { notTypes: ['creature'], controller: 'you' } };
-const DIFFERENT = {
-  kind: 'controlsDifferentPowers',
-  filter: { types: ['creature'] },
-  count: 3,
-};
 const EVEN = { kind: 'thisPowerParity', parity: 'even' };
 const text = (problems: unknown) => JSON.stringify(problems);
 
@@ -60,22 +55,16 @@ describe('a layer 4 static ability may test the counters on the permanent itself
 });
 
 describe('a permission to cast reads the powers of permanents as the spell is cast', () => {
-  test('three or more creatures with different powers goes with a cast from the top of the library', () => {
-    expect(validateCard(withStatic(FROM_TOP, DIFFERENT))).toEqual([]);
-  });
-
-  test('so does the parity of the power of the permanent', () => {
+  test('the parity of the power of the permanent goes with a cast from the top of the library', () => {
     expect(validateCard(withStatic(FROM_TOP, EVEN))).toEqual([]);
   });
 
-  test('and both go with a permanent permission to cast as though it had flash', () => {
+  test('and it goes with a permanent permission to cast as though it had flash', () => {
     expect(validateCard(withStatic(FLASH, EVEN))).toEqual([]);
-    expect(validateCard(withStatic(FLASH, DIFFERENT))).toEqual([]);
   });
 
   test('a static ability that works in a layer may not read them: its own result would depend on a layer 7 value', () => {
     const pump = { kind: 'modifyPt', subject: THIS, power: 1, toughness: 1 };
-    expect(text(validateCard(withStatic(pump, DIFFERENT)))).toContain('controlsDifferentPowers');
     expect(text(validateCard(withStatic(pump, EVEN)))).toContain('thisPowerParity');
     expect(text(validateCard(withStatic(LAND, EVEN)))).toContain('reads no characteristic');
   });
@@ -83,16 +72,6 @@ describe('a permission to cast reads the powers of permanents as the spell is ca
   test('the permission of a permanent takes no other condition than these', () => {
     const life = { kind: 'lifeTotal', compare: { cmp: 'atLeast', value: 10 } };
     expect(text(validateCard(withStatic(FLASH, life)))).toContain('takes only a condition');
-  });
-
-  test('different powers needs at least two permanents, on the battlefield, that the controller controls', () => {
-    expect(text(validateCard(withStatic(FROM_TOP, { ...DIFFERENT, count: 1 })))).toContain(
-      'at least two',
-    );
-    const elsewhere = { ...DIFFERENT, filter: { types: ['creature'], zone: 'graveyard' } };
-    expect(text(validateCard(withStatic(FROM_TOP, elsewhere)))).toContain('battlefield');
-    const opponents = { ...DIFFERENT, filter: { types: ['creature'], controller: 'opponent' } };
-    expect(text(validateCard(withStatic(FROM_TOP, opponents)))).toContain('you control');
   });
 
   test('the parity is even or odd', () => {

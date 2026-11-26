@@ -23,26 +23,6 @@ describe('lowering', () => {
     ]);
   });
 
-  test('Coven: three creatures with different powers condition the cast from the top of the library', () => {
-    const def = parsed(
-      'SYNTHETIC Autumn Augur',
-      'Creature — Human Druid',
-      'Coven — As long as you control three or more creatures with different powers, you may cast creature spells from the top of your library.',
-      { power: '2', toughness: '3' },
-    );
-    expect(abilitiesOf(def)).toEqual([
-      {
-        kind: 'static',
-        static: { kind: 'castFromTopOfLibrary', spells: { types: ['creature'] } },
-        condition: {
-          kind: 'controlsDifferentPowers',
-          filter: { types: ['creature'] },
-          count: 3,
-        },
-      },
-    ]);
-  });
-
   test('the parity of the power of ~ conditions the permission to cast as though it had flash', () => {
     const def = parsed(
       'SYNTHETIC Odd Memory',
@@ -149,8 +129,7 @@ describe('what stays unsupported, with its reason', () => {
   });
 
   test.each([
-    // Different powers needs two or more permanents, and "different toughnesses" is another condition.
-    'As long as you control one or more creatures with different powers, you may cast creature spells from the top of your library.',
+    // "Different toughnesses" is not the condition of "different powers".
     'As long as you control three or more creatures with different toughnesses, you may cast creature spells from the top of your library.',
     // Only the controller may cast as though it had flash here.
     "As long as ~'s power is even, any player may cast noncreature spells as though they had flash.",

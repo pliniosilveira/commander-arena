@@ -445,6 +445,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'one or two target creature and/or planeswalker cards from your graveyard',
     "target creature card from an opponent's graveyard",
     'two target land cards from your graveyard',
+    // Groundskeeper (CR 205.4, 205.4a): the supertype basic with the land type.
+    'target basic land card from your graveyard',
+    'up to two target basic land cards from your graveyard',
     'up to three target land cards from your graveyard',
     'up to one target card from a graveyard',
     // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
@@ -494,6 +497,8 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
+    'target basic creature card from your graveyard',
+    'target basic card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',
     'target Aura or Equipment from your graveyard',
     'target Aura or Equipment or Saga card from your graveyard',

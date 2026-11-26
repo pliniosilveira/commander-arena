@@ -155,6 +155,51 @@ export function isCombinationProduction(production: ManaProduction): boolean {
 }
 
 /**
+ * Issue 632: the most combinations of "Add X mana in any combination of colors" that are listed as choices. There are C(X + 4, 4) of them (CR 106.1b): 495 for
+ * X = 8 but 249,900 for X = 47 (Selvala, Heart of the Wilds beside a 47-power creature), and every priority grant of the game weighed each one. Past the limit the
+ * ability lists `representativeCombinations` instead, accepts any combination of X mana of the five colors that is named (`acceptedCombination`), and the payment
+ * planner builds only the combinations that differ for the cost it pays (`PaymentSource.anyCombination`).
+ */
+export const MAX_LISTED_COMBINATIONS = 500;
+
+/** How many ways there are to choose `count` mana of the five colors, C(count + 4, 4). */
+export function combinationCount(count: number): number {
+  return ((count + 1) * (count + 2) * (count + 3) * (count + 4)) / 24;
+}
+
+/** Whether "X mana in any combination of colors" has too many combinations to list them (`MAX_LISTED_COMBINATIONS`). */
+export const isTooManyCombinations = (count: number): boolean =>
+  combinationCount(count) > MAX_LISTED_COMBINATIONS;
+
+/**
+ * The combinations of `count` mana a player is shown when there are too many to list: all of one color, then every pair of colors split as evenly as
+ * possible (the first of the pair has the odd mana) and all five colors as evenly as possible, in the order W, U, B, R, G.
+ */
+export function representativeCombinations(count: number): ManaColor[][] {
+  const split = (colors: readonly ManaColor[]): ManaColor[] => {
+    const each = Math.floor(count / colors.length);
+    const extra = count % colors.length;
+    return colors.flatMap((c, i) => Array.from({ length: each + (i < extra ? 1 : 0) }, () => c));
+  };
+  const out: ManaColor[][] = [];
+  const seen = new Set<string>();
+  const add = (colors: readonly ManaColor[]): void => {
+    const combination = canonicalCombination(split(colors));
+    const key = combination.join('');
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(combination);
+  };
+  for (const c of COLORS) add([c]);
+  for (let i = 0; i < COLORS.length; i += 1) {
+    for (let j = i + 1; j < COLORS.length; j += 1)
+      add([COLORS[i] as ManaColor, COLORS[j] as ManaColor]);
+  }
+  add(COLORS);
+  return out;
+}
+
+/**
  * Every way to choose `count` mana of the five colors, each as a combination in `TYPE_ORDER` (D-151). With `distinct` (D-319, "two mana of different
  * colors") only the sets of different colors: the next pick starts after the last one, so no color is picked twice; colorless is not one of the five
  * (CR 105.1, 106.1b).
@@ -216,7 +261,8 @@ function plainOutcomes(
       // CR 106.1b, 605.3b: "Add X mana in any combination of colors, where X is ...": every multiset of X of the five colors, X read for the controller with the permanent as "this"
       // (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
       const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
-      return colorMultisets(n, false);
+      // Issue 632: too many combinations to list (`MAX_LISTED_COMBINATIONS`): a few of them, the others accepted when named (`acceptedCombination`).
+      return isTooManyCombinations(n) ? representativeCombinations(n) : colorMultisets(n, false);
     }
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
@@ -472,6 +518,51 @@ export function productionOutcomes(
     if (after !== undefined) return plainOutcomes(put.state, after, p);
   }
   return plainOutcomes(state, obj, p);
+}
+
+/**
+ * How much mana "Add X mana in any combination of colors" makes now, when it makes too many combinations to list (`MAX_LISTED_COMBINATIONS`): X, read as
+ * `productionOutcomes` reads it. Null for any other ability and for a small X, whose combinations are all listed.
+ */
+export function unlistedCombinationSize(
+  state: GameState,
+  obj: GameObject,
+  ability: ManaAbility,
+): number | null {
+  const p = effectiveManaAbility(state, obj, ability).production;
+  if (p.kind !== 'anyCombinationAmount') return null;
+  let at = state;
+  let source = obj;
+  // CR 605.3b (Empowered Autogenerator): the ability puts its counters first, so an amount counts after them.
+  if (ability.putCounter !== undefined) {
+    const put = putOwnCounters(state, obj.id, ability, controllerOf(state, obj));
+    const after = put.state.objects[obj.id];
+    if (after !== undefined) {
+      at = put.state;
+      source = after;
+    }
+  }
+  const n = Math.max(
+    0,
+    amountOf(at, p.amount, { controller: controllerOf(at, source), source: source.id }, []),
+  );
+  return isTooManyCombinations(n) ? n : null;
+}
+
+/**
+ * The combination a player names for an ability that makes too many combinations to list (`unlistedCombinationSize`): any `size` mana of the five colors
+ * (CR 106.1b, 605.3b), in the order of `TYPE_ORDER`; null when the ability lists all its combinations or the one named is not one.
+ */
+export function acceptedCombination(
+  state: GameState,
+  obj: GameObject,
+  ability: ManaAbility,
+  combination: readonly ManaColor[],
+): ManaColor[] | null {
+  const size = unlistedCombinationSize(state, obj, ability);
+  if (size === null || combination.length !== size) return null;
+  const colors: readonly ManaColor[] = COLORS;
+  return combination.every((c) => colors.includes(c)) ? canonicalCombination(combination) : null;
 }
 
 /**

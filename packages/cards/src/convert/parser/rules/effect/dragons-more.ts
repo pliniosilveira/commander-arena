@@ -442,8 +442,15 @@ export const EFFECT_DISCARD_ANY_NUMBER = defineRule<Clauses>({
     // CR 701.9 (Nantuko Cultivator): any number of cards of a kind.
     'discard any number of land cards',
     'discard any number of creature cards',
+    // Loamcrafter Faun (CR 701.9, 603.12): "you may discard one or more land cards"; the lowering reads the "you may" (never a mandatory discard of at least one).
+    'discard one or more land cards',
+    'discard one or more cards',
   ],
   rejects: [
+    'discard one or more land card',
+    'discard one or more legendary cards',
+    'discard one or more',
+    'discard one or more of your cards',
     'discard any number of land card',
     'discard any number of legendary cards',
     'discard any number of card',
@@ -458,13 +465,14 @@ export const EFFECT_DISCARD_ANY_NUMBER = defineRule<Clauses>({
     const r = spanned(
       pattern(
         new RegExp(
-          `discard any number of (?:(land|creature|artifact|enchantment|instant|sorcery|planeswalker) )?cards${BOUNDARY}`,
+          `discard (any number of|one or more) (?:(land|creature|artifact|enchantment|instant|sorcery|planeswalker) )?cards${BOUNDARY}`,
           'iu',
         ),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const kind = r.value.value[1]?.toLowerCase();
+    const kind = r.value.value[2]?.toLowerCase();
+    const oneOrMore = r.value.value[1]?.toLowerCase() === 'one or more';
     const cards: IrNoun | undefined =
       kind === undefined
         ? undefined
@@ -488,6 +496,7 @@ export const EFFECT_DISCARD_ANY_NUMBER = defineRule<Clauses>({
             player: impliedYou(id, pos),
             amount: number(0, r.value.span),
             anyNumber: flag(id, true, r.value.span),
+            ...(oneOrMore ? { oneOrMore: flag(id, true, r.value.span) } : {}),
             ...(cards === undefined ? {} : { cards }),
           },
           r.value.span,

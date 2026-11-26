@@ -3,7 +3,8 @@
 // scenario DSL; each check asserts the answer and the reason.
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { attackShare, urgency } from '../src/heuristic-attacks';
+import { urgency } from '../src/heuristic-attacks';
+import { attackShare } from '../src/heuristic-crack-back';
 import { HeuristicAgent } from '../src/index';
 import { askHeuristic, creature, lastReason } from './heuristic-helpers';
 

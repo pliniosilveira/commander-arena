@@ -126,6 +126,7 @@ import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
+import { landCardsToGraveyard } from './graveyard-lands';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { runHandCards, startHandCards } from './hand-cards';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
@@ -372,6 +373,8 @@ export function runInstruction(
           thisWay: {
             sacrificed: 1,
             sacrificedOwn: (instruction.seat ?? res.controller) === res.controller ? 1 : 0,
+            // CR 701.21, 608.2c (Eumidian Wastewaker): "for each land card put into a graveyard this way".
+            ...(landCardsToGraveyard(r.state, r.events) > 0 ? { landCardsToGraveyard: 1 } : {}),
           },
           performed: 1,
           sacrificed: [instruction.object],
@@ -495,6 +498,26 @@ export function runInstruction(
     if (instruction.answer === null) {
       const offered = instruction.effect;
       const player = instruction.as ?? res.controller;
+      // CR 701.9, 701.21 (Eumidian Wastewaker: "discard a card or sacrifice a permanent"): a player with no permanent to sacrifice cannot take the "otherwise" way, so they discard
+      // without being asked (a player with no card in hand is sent to the sacrifice by the rule below).
+      const alternative = instruction.otherwise;
+      if (
+        offered.kind === 'discard' &&
+        alternative?.kind === 'sacrifice' &&
+        alternative.objects.kind === 'choose' &&
+        alternative.player?.kind === 'declinedPlayer' &&
+        getSeat(state, player).hand.length > 0 &&
+        sacrificeCandidates(
+          state,
+          instruction.seat,
+          res.source,
+          alternative.objects.filter,
+          res.sacrificed,
+        ).length === 0
+      ) {
+        if (group !== undefined) return hold(true);
+        return done(state, [], [{ ...instruction, answer: true }]);
+      }
       if (
         (offered.kind === 'sacrifice' &&
           offered.objects.kind === 'choose' &&
@@ -1301,6 +1324,7 @@ function runEffect(
               ? {}
               : { keepPowerAtMost: effect.totalPowerAtMost }),
             ...(effect.keepAtMost === undefined ? {} : { keepCountAtMost: effect.keepAtMost }),
+            ...(effect.keepExactly === undefined ? {} : { keepCountExactly: effect.keepExactly }),
             chosen: null,
             seat: first,
             ...(later.length === 0 ? {} : { together: { later, held: [] } }),

@@ -306,9 +306,11 @@ function walkEffect(
         effect.cost,
         `${path}.cost`,
         out,
-        ['mana', 'payLife', 'discard', 'energy'],
+        ['mana', 'payLife', 'discard', 'energy', 'sacrifice'],
         effect.xIsHandSize === true,
       );
+      // CR 701.21a, 118.12a (Gitrog Monster): "unless you sacrifice a land" is paid as Ward—Sacrifice is.
+      unlessSacrificeIssues(effect.cost, `${path}.cost`, out);
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'becomeCopy':

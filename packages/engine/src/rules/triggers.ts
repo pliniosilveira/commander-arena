@@ -1427,6 +1427,10 @@ function matches(
     case 'permanentSacrificed': {
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 603.2 (Szarel, Genesis Shepherd): "during your turn": the active player is the controller of this ability.
+      if (trigger.duringTurn === 'you' && state.turn.activeSeat !== candidate.controller) {
+        return false;
+      }
       if (trigger.filter === undefined) return true;
       return subject !== null && matchesFilter(state, subject, trigger.filter, ctx);
     }

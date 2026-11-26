@@ -202,6 +202,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'landCardsToGraveyard':
+      // Eumidian Wastewaker (CR 608.2c): the land cards the discards and sacrifices before it put there.
+      return 'the number of land cards put into a graveyard this way';
     case 'discardedValue':
       // Summon: Kujata (CR 608.2c): "damage equal to that card's mana value" after a discard.
       return 'the total mana value of the cards discarded this way';
@@ -376,6 +379,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       const things = thingsPhrase(amount.filter, true);
       return things === null ? UNKNOWN_AMOUNT : `the number of colors among ${things}`;
     }
+    case 'differentPowersAmong':
+      // CR 208.1 (Augur of Autumn).
+      return 'the number of different powers among permanents';
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2).
       return 'the number of differently named permanents';

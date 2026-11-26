@@ -1306,7 +1306,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               : noun.upToTriggerAmount === true || upToCycleX
                 ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
                 : noun.upToThatMany === true
-                  ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                  ? {
+                      id,
+                      what: { kind: 'object', filter: filter.value },
+                      // Loamcrafter Faun (CR 603.12): after "discard one or more land cards", "that many" is the cards discarded.
+                      upToThatMany: ctx.thisWay === 'discarded' ? ('discarded' as const) : true,
+                    }
                   : {
                       id,
                       what: { kind: 'object', filter: filter.value },

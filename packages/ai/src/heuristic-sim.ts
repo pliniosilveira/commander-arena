@@ -13,26 +13,33 @@
  */
 import {
   type Action,
-  applyAction,
   type DeclareBlockersDecision,
   defaultDivision,
   type GameState,
   type GameView,
-  getView,
   handleDecision,
   type SeatId,
 } from '@commander-arena/engine';
 import { createCasualHandlers } from './casual-agent';
+import { type Budget, DIRECT, type Engine } from './heuristic-budget';
 
 export interface SimPolicy {
   /** How a seat other than the agent blocks. Without it, nothing blocks. */
   readonly blocks?: (view: GameView, d: DeclareBlockersDecision) => Action;
   /**
    * Asked before each engine step: when it says true the play-out is dropped (null), like a refused
-   * action, so a candidate on a huge board cannot run past the time budget (D-164).
+   * action, so a candidate on a huge board cannot run past the decision's budget (D-164).
    */
   readonly abort?: () => boolean;
+  /** The engine calls of the play-out: the decision's, counted in its budget (uncounted when absent). */
+  readonly engine?: Engine;
 }
+
+/** The policy of a play-out inside a decision's budget: its calls are counted there and stop with it. */
+export const within = (budget: Budget): Required<Pick<SimPolicy, 'abort' | 'engine'>> => ({
+  abort: () => budget.over() !== null,
+  engine: budget.engine,
+});
 
 /** Enough actions for any combat: priority passes, damage choices, a few triggers and payments. */
 const MAX_STEPS = 120;
@@ -52,7 +59,7 @@ function simAction(state: GameState, me: SeatId, policy: SimPolicy): Action | nu
   if (d.kind === 'assignDamage')
     return { kind: 'assignDamage', assignments: defaultDivision(d.choices) };
   if (d.kind === 'declareAttackers') return { kind: 'declareAttackers', attacks: [] };
-  const view = getView(state, d.seat);
+  const view = (policy.engine ?? DIRECT).view(state, d.seat);
   if (d.kind === 'declareBlockers') {
     if (d.seat !== me && policy.blocks !== undefined) return policy.blocks(view, d);
     return { kind: 'declareBlockers', blocks: [] };
@@ -64,9 +71,14 @@ function simAction(state: GameState, me: SeatId, policy: SimPolicy): Action | nu
   );
 }
 
-/** Applies one action of `seat`; null when the engine refuses it. */
-export function applyOrNull(state: GameState, seat: SeatId, action: Action): GameState | null {
-  const applied = applyAction(state, seat, action);
+/** Applies one action of `seat` (through `engine`, uncounted by default); null when the engine refuses it. */
+export function applyOrNull(
+  state: GameState,
+  seat: SeatId,
+  action: Action,
+  engine: Engine = DIRECT,
+): GameState | null {
+  const applied = engine.apply(state, seat, action);
   return applied.ok ? applied.state : null;
 }
 
@@ -94,7 +106,7 @@ export function playOut(
       return null;
     }
     if (action === null || seat === undefined) return current;
-    const next = applyOrNull(current, seat, action);
+    const next = applyOrNull(current, seat, action, policy.engine);
     if (next === null) return null;
     current = next;
   }

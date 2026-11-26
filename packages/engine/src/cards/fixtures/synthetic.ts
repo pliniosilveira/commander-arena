@@ -201,6 +201,7 @@ import { SYNTHETIC_REVEAL_DUEL_LIST } from './synthetic-reveal-duel';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_ROOM_LIST } from './synthetic-rooms';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
+import { SYNTHETIC_SACRIFICE_PLAYS_LIST } from './synthetic-sacrifice-plays';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SAME_CONTROLLER_LIST } from './synthetic-same-controller';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
@@ -634,6 +635,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ATTACK_LIMIT_LIST,
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_SLIVER_C_LIST,
+  ...SYNTHETIC_SACRIFICE_PLAYS_LIST,
   ...SYNTHETIC_CHOSEN_REVEAL_LIST,
   ...SYNTHETIC_PILES_LIST,
   ...SYNTHETIC_HASHATON_G2_LIST,

@@ -532,6 +532,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.designation': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.completed-dungeon': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.amount-count': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.amount-count-are': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   // Into the Story (Scions of Spellcraft deck, group D): an opponent's graveyard in an intervening "if".
   'condition.opponent-cards-in-graveyard': permanent(
     (e) => `When ~ enters, if ${e}, you gain 1 life.`,
@@ -1387,6 +1388,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
+  // World Shaper deck: the permission to play the cards exiled with ~, a whole line; the condition after "as long as" of a permission to cast from the top of the library.
+  'static.play-linked-exile': asIs,
+  'condition.control-different-powers': permanent(
+    (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
+  ),
+  'condition.sacrificed-this-turn': permanent(
+    (e) => `During your turn, as long as ${e}, you may play cards exiled with ~.`,
+  ),
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
@@ -1481,6 +1490,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.put-into-graveyard': whenever,
   // Mind Flayarrrs deck, group 8 (Nihilith): "a card is put into an opponent's graveyard from anywhere", and its intervening "if this card is suspended".
   'trigger.put-into-opponent-graveyard': whenever,
+  'trigger.put-into-any-graveyard': whenever,
   'trigger.this-exploits': whenever,
   'condition.this-suspended': permanent(
     (e) =>
@@ -1829,9 +1839,6 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
   // Jump Scare! deck, group C: a permission of the card read "as long as" the condition holds, and the card's own restriction lifted "unless" it holds.
-  'condition.control-different-powers': permanent(
-    (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
-  ),
   'condition.this-power-parity': permanent(
     (e) => `As long as ${e}, you may cast noncreature spells as though they had flash.`,
   ),

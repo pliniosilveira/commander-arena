@@ -21,6 +21,7 @@ import {
   lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
+  sacrificedThisTurnHolds,
   spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
@@ -149,22 +150,6 @@ export function evaluateCondition(
         if (matchesFilter(state, getObject(state, id), filter, ctx)) count += 1;
       }
       return count >= condition.count;
-    }
-    case 'controlsDifferentPowers': {
-      // CR 208.1 (Augur of Autumn): the distinct powers the controller's permanents of the kind have now.
-      const filter = {
-        ...condition.filter,
-        zone: 'battlefield' as const,
-        controller: 'you' as const,
-      };
-      const powers = new Set<number>();
-      for (const id of objectsInZone(state, 'battlefield')) {
-        const obj = getObject(state, id);
-        if (!matchesFilter(state, obj, filter, ctx)) continue;
-        const power = derive(state, obj).power;
-        if (typeof power === 'number') powers.add(power);
-      }
-      return powers.size >= condition.count;
     }
     case 'thisPowerParity': {
       // CR 107.1, 208.1 (integers, a power may be below zero): the power of the permanent the condition belongs to, as it is now (or as it last was, CR 113.7a).
@@ -626,6 +611,9 @@ export function evaluateCondition(
     case 'yourTurn':
       // CR 611.3a, 613.8 (D-206): it is a turn of the controller.
       return state.turn.activeSeat === ctx.controller;
+    case 'sacrificedThisTurn':
+      // CR 701.21a (Evendo Brushrazer): the controller sacrificed a permanent like this one this turn.
+      return sacrificedThisTurnHolds(state, ctx.controller, condition);
     case 'yourMainPhase':
       // CR 505.1 (D-187): the precombat main phase or the postcombat main phase, of a turn of the controller.
       return (
