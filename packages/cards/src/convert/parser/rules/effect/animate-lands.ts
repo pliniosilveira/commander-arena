@@ -128,6 +128,8 @@ export const EFFECT_MAY_HAVE_TARGET_LAND_BECOME_CREATURE = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const r = sequence(
       literal('have '),
+      // Only a land: checked before the noun so a "have target creature ..." text gets no further here than the rules for creatures (the closest rule it reports).
+      pattern(/(?=target lands?(?![\p{L}\p{N}]))/iu),
       satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), (n) =>
         isLands(n.filter),
       ),
@@ -142,7 +144,7 @@ export const EFFECT_MAY_HAVE_TARGET_LAND_BECOME_CREATURE = defineRule<Clauses>({
     )(ctx, pos);
     if (!r.ok) return r;
     if (MORE_AFTER.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
-    const [, subject, , pt, types, , keywords, , duration] = r.value;
+    const [, , subject, , pt, types, , keywords, , duration] = r.value;
     const words = keywords === null ? null : { value: keywords.value[1], span: keywords.span };
     return {
       ok: true,

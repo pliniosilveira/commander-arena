@@ -1585,6 +1585,7 @@ describe('unmatched abilities', () => {
       'noun.attacking-opponents',
       'noun.subtype-token-permanents',
       'noun.subtype-union',
+      'noun.self-and-group',
       'noun.permanents-and-cards-off-battlefield',
       'noun.other-subtype-pair',
       'noun.subtype-pair',
