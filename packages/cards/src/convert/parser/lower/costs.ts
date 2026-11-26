@@ -186,8 +186,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       }
       // "Sacrifice X creatures" (D-488, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
       if (what.det === 'a' && what.count?.kind === 'x') {
-        if ((options.ordinary !== true && options.discardX !== true) || what.other)
-          return failure(cost);
+        // "Sacrifice X other creatures" (Champion of Stray Souls, CR 109.1): the permanent with the ability is not one of them, the filter's `other`.
+        if (options.ordinary !== true && options.discardX !== true) return failure(cost);
+        if (what.other && options.ordinary !== true) return failure(cost);
         const { count: _counted, ...described } = what;
         const filter = lowerFilter(described);
         return filter.ok ? ok({ kind: 'sacrifice', what: filter.value, countX: true }) : filter;

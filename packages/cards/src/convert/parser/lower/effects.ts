@@ -868,6 +868,22 @@ const PUT_LIBRARY: Lowering<IrClause, Effects> = {
     const to = zoneOf(clause);
     if (to?.zone !== 'library' || to.position === undefined) return failure(clause);
     const position = to.position;
+    // "Put this card from your graveyard on top of your library" (CR 113.6b, 401.3): an ability of the card itself that works from the graveyard, which only an ordinary activated
+    // ability can be (`ctx.graveyardSource`, as for "Return this card from your graveyard to your hand"); the card goes to its owner's library, on top or on the bottom.
+    if (to.from === 'graveyard') {
+      const what = operand(clause, 'objects');
+      if (what?.kind !== 'noun' || what.det !== 'self' || !ctx.graveyardSource) {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['selector:this']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      ctx.usedGraveyardSource = true;
+      return {
+        ok: true,
+        value: [{ kind: 'moveToZone', objects: { kind: 'this' }, to: 'library', position }],
+        rule: clause.rule,
+      };
+    }
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     // "Put it into its owner's library third from the top" (stage P30, D-135, CR 401.7): "it" may be the card the permanent became.
