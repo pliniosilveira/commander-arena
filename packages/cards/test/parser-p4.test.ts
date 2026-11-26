@@ -736,10 +736,13 @@ describe('Food and Clue lower (CR 111.10b, 111.10f)', () => {
     );
   });
 
-  test('Blood still needs what the engine lacks', () => {
-    expect(dropped('Create a Blood token.')).toMatchObject({
-      reason: 'notRunnable',
-      needs: ['token:Blood'],
-    });
+  test('Blood runs (Squirreled Away deck, group 1, CR 111.10)', () => {
+    expect(readAll('When ~ enters, create a Blood token.', 'creature').abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Blood' }, count: 1 },
+      },
+    ]);
   });
 });

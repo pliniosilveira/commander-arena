@@ -937,6 +937,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Lander',
     'Wicked Role',
     'Junk',
+    'Blood',
   ],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
@@ -1588,6 +1589,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Lander',
     'Wicked Role',
     'Junk',
+    'Blood',
     'custom',
     'copyOf',
     'tapped',

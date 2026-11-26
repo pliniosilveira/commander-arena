@@ -12,6 +12,8 @@ import type {
   Cost,
   Keyword,
   ObjectFilter,
+  Subtype,
+  TokenSpec,
 } from '@commander-arena/engine';
 import { isNonCreatureSubtype } from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
@@ -996,6 +998,33 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     void zone;
     return built({ kind: 'tokensInstead', what: filter, mode: 'double' });
   }
+  if (event.verb === 'tokensInstead' && event.args.eachOf !== undefined) {
+    // "If you would create a Clue, Food, or Treasure token, instead create one of each." (Squirreled Away deck, group 1, CR 614.1a, 111.10, 614.5): the engine's
+    // `tokensInstead` in `eachOf` mode, naming the predefined tokens (the tokens it replaces are the ones of those names).
+    const named = [event.args.token1, event.args.token2, event.args.token3];
+    const presets: Extract<TokenSpec, { kind: 'preset' }>[] = [];
+    for (const t of named) {
+      if (t?.kind !== 'token' || t.predefined === undefined || t.predefined === 'Blood') {
+        return failure(ability);
+      }
+      presets.push({ kind: 'preset', preset: t.predefined });
+    }
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:tokensInstead',
+      ...presets.map((p) => `token:${p.preset}` as const),
+    ]);
+    if (blocked !== null) return blocked;
+    return built({
+      kind: 'tokensInstead',
+      what: {
+        token: true,
+        anyOf: presets.map((p) => ({ subtypes: [p.preset as Subtype] })),
+      },
+      mode: 'eachOf',
+      tokens: presets,
+    });
+  }
   if (event.verb === 'tokensInstead') {
     // "If one or more artifact tokens would be created under your control, that many ... are created instead" (stage P66, D-219, CR 614.1a, 616.1): the engine's
     // `tokensInstead` of the permanent; the token is the one the text describes, its count is the rule's (`thatMany` or one more, `plus`).
@@ -1026,7 +1055,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     return built({
       kind: 'tokensInstead',
       what: filter,
-      mode: event.args.plus === undefined ? 'thatMany' : 'plus',
+      mode:
+        event.args.plusThatMany !== undefined
+          ? 'plusThatMany'
+          : event.args.plus === undefined
+            ? 'thatMany'
+            : 'plus',
       token: only.token,
     });
   }

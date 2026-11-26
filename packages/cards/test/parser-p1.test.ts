@@ -479,7 +479,8 @@ describe('tokens, sacrifice and counters as effects', () => {
       rules: buildRuleSet(ALL_RULES),
       face: 'spell',
     });
-    expect(blood).toMatchObject({ failure: { reason: 'notRunnable', needs: ['token:Blood'] } });
+    // The Blood token runs (Squirreled Away deck, group 1, CR 111.10).
+    expect(blood).toMatchObject({ ok: true });
   });
 
   test('an inline creature token has power, toughness, colors and creature types, no abilities', () => {

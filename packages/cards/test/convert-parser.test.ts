@@ -362,6 +362,8 @@ describe('unmatched abilities', () => {
       'replacement.skip-draw',
       'replacement.draw-instead',
       'replacement.tokens-double',
+      'replacement.tokens-plus-that-many',
+      'replacement.token-each-of',
       'replacement.umbra-armor',
       'replacement.escapes-with-counters',
       'replacement.keep-one-loyalty',

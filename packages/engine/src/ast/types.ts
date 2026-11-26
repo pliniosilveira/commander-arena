@@ -2083,7 +2083,8 @@ export type TokenPreset =
   | 'Incubator'
   | 'Lander'
   | 'Wicked Role'
-  | 'Junk';
+  | 'Junk'
+  | 'Blood';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -7350,8 +7351,20 @@ export type Replacement =
   | {
       readonly kind: 'tokensInstead';
       readonly what: ObjectFilter;
-      readonly mode: 'thatMany' | 'plus';
+      readonly mode: 'thatMany' | 'plus' | 'plusThatMany';
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
+    }
+  /**
+   * `eachOf` (Academy Manufactor, CR 614.1a, 111.10, 614.5): "If you would create a Clue, Food, or Treasure token, instead create one of each." Each part of the creation `what`
+   * matches, of some number of tokens, is replaced by that many of each of the predefined `tokens` (a list of at least two, in this order); the tokens made are the presets
+   * as they are (what the instruction said about the replaced ones does not carry over). `plusThatMany` (Chatterfang, Squirrel General): "..., those tokens plus that many 1/1
+   * green Squirrel creature tokens are created instead": the tokens `what` matches stay and as many of `token` as each of them are added, with what the instruction said about them (tapped) as for the original.
+   */
+  | {
+      readonly kind: 'tokensInstead';
+      readonly what: ObjectFilter;
+      readonly mode: 'eachOf';
+      readonly tokens: readonly Extract<TokenSpec, { readonly kind: 'preset' }>[];
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
   /**

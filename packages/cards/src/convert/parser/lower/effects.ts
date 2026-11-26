@@ -2107,8 +2107,7 @@ const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
 
 /**
  * "Create a Treasure token", "create two 1/1 white Soldier creature tokens" (CR 111.2, 111.10).
- * A predefined token the engine cannot run (Food and Clue carry abilities it cannot activate yet,
- * Blood is not in the AST) is reported with `token:<name>`.
+ * A predefined token the engine has no preset for is reported with `token:<name>`.
  */
 const CREATE_TOKEN: Lowering<IrClause, Effects> = {
   head: 'createToken',
@@ -2305,7 +2304,6 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
     if (blocked.length > 0) return { ok: false, needs: blocked, ...at };
-    if (name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
     // CR 111.10, 303.7: a Role token is an Aura token; the engine creates it only attached to the target the text names (`createToken.attachTo`).
     let attachTo: { kind: 'target'; id: string } | undefined;
     const host = arg(clause, 'attachTo');

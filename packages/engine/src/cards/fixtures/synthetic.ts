@@ -197,6 +197,7 @@ import { SYNTHETIC_SLIVER_B_LIST } from './synthetic-sliver-b';
 import { SYNTHETIC_SLIVER_C_LIST } from './synthetic-sliver-c';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
+import { SYNTHETIC_SQUIRREL_G1_LIST } from './synthetic-squirrel-g1';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
 import { SYNTHETIC_STATION_LIST } from './synthetic-station';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
@@ -488,6 +489,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
+  ...SYNTHETIC_SQUIRREL_G1_LIST,
   ...SYNTHETIC_CANT_SACRIFICE_LIST,
   ...SYNTHETIC_COUNTERS_PLUS_LIST,
   ...SYNTHETIC_MANA_GROUP_F_LIST,

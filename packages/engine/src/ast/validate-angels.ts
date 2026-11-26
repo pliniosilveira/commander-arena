@@ -179,10 +179,24 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
-      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double'])) {
+      if (!isOneOf(r.mode, ['thatMany', 'plus', 'plusThatMany', 'eachOf', 'double'])) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }
-      if (r.mode === 'double') {
+      if (r.mode === 'eachOf') {
+        // CR 614.1a: one of each of several predefined tokens instead of one token.
+        const list = (r as { tokens?: unknown }).tokens;
+        if (!Array.isArray(list) || list.length < 2) {
+          issue(out, `${path}.tokens`, 'at least two tokens to make instead');
+        } else {
+          list.forEach((t, i) => {
+            if (kindOf(t) !== 'preset') {
+              issue(out, `${path}.tokens[${i}]`, 'a predefined token');
+            } else {
+              checkReplacementToken(t, `${path}.tokens[${i}]`, out);
+            }
+          });
+        }
+      } else if (r.mode === 'double') {
         // D-378 (CR 614.1a): "twice that many of those tokens" makes more of the tokens `what` names, not a token of its own.
         if ((r as { token?: unknown }).token !== undefined) {
           issue(out, `${path}.token`, 'a doubling of tokens makes no token of its own');

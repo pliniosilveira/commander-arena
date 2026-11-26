@@ -153,6 +153,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Wicked Role token',
     // CR 111.10t (Break Down).
     'a Junk token',
+    // CR 111.10 (Moonstone Eulogist): a Blood token.
+    'a Blood token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',

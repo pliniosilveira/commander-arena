@@ -1085,6 +1085,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
   'replacement.draw-instead': asIs,
   'replacement.tokens-double': asIs,
+  'replacement.tokens-plus-that-many': asIs,
+  'replacement.token-each-of': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
