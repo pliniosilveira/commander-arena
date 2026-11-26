@@ -528,6 +528,8 @@ function becoming(
         kind: 'setTypes',
         objects,
         types: types.cardTypes as CardType[],
+        // "... 3/3 Construct Assassin artifact creatures in addition to their other types" (Vihaan, Goldwaker): the creature types come with the card types, in the same effect.
+        ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
         ...(types.additive === true ? { additive: true as const } : {}),
         basePt: { power: base.power, toughness: base.toughness },
         duration: END,

@@ -3258,6 +3258,8 @@ export interface TurnLog {
     readonly fromGraveyard?: true;
     /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
     readonly fromExile?: true;
+    /** The subtypes of the sources that made the mana spent on the spell (Rain of Riches, CR 601.2h: "the first spell you cast each turn that mana from a Treasure was spent to cast"). */
+    readonly manaSubtypes?: readonly string[];
   }[];
   /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
   readonly oncePerTurnGrants?: readonly ObjectId[];

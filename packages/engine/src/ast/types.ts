@@ -895,6 +895,18 @@ export interface ObjectFilter {
    */
   readonly firstCastFromExileThisTurn?: true;
   /**
+   * "A spell that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2h, 106.1, 205.3i): the spell on the stack had mana spent on it that a source with this subtype made
+   * ("Treasure": a Treasure token, an artifact with the subtype), as the mana of `StackData.manaSpent` records it (a copy was not cast, CR 707.10, and has none; a spell cast without
+   * paying its mana cost has none). Read from the spell itself once it has been paid, so only a spell is matched, and only as it is cast or after (a cost reduction or an alternative
+   * cost is worked out before the mana is paid: not read there). A subtype name, as `subtypes` has them.
+   */
+  readonly manaSpentFromSubtype?: string;
+  /**
+   * "The first spell you cast each turn that mana from a Treasure was spent to cast" (Rain of Riches, CR 601.2i): no other spell its caster cast this turn, before it, had mana spent on
+   * it that a source of the subtype `manaSpentFromSubtype` made (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Needs `manaSpentFromSubtype`. Read as `firstXSpellThisTurn` is.
+   */
+  readonly firstManaSpentFromSubtypeThisTurn?: true;
+  /**
    * "The second spell you cast each turn" (Alisaie Leveilleur, CR 601.2f, 601.2i, 604.2): the spell is the `nthSpellThisTurn`th spell its caster casts this turn, that is, exactly
    * `nthSpellThisTurn - 1` other spells were cast by that caster before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10, and the spell itself is left out of the count
    * whether or not it is logged yet). A whole number of 2 or more. Read from the turn log, so it is read as the cost is determined (a cost reduction, where the spell is not yet
@@ -8463,6 +8475,19 @@ export type Replacement =
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
+  /**
+   * "If you would create a Clue, Food, or Treasure token, instead create one of each." (Academy Manufactor, CR 614.1a, 111.2, 614.5): every token `what` matches among the ones its
+   * controller would create at once is replaced by one of each of the predefined tokens `tokens` for each such token (a count of N is N of each), so a Treasure becomes a Clue, a
+   * Food and a Treasure. The tokens it makes are the ones it names (what the instruction said about the replaced ones, tapped for one, does not carry over, as for `thatMany`). It is
+   * applied once to one event (CR 614.5): a second one sees the tokens the first made and replaces each of them again, so two make three times as many of each (the rulings of the card).
+   * Not an `investigate` or any other action: only the creation of the tokens is replaced. `tokens` names at least two different presets and `what` names only them.
+   */
+  | {
+      readonly kind: 'tokensInstead';
+      readonly what: ObjectFilter;
+      readonly mode: 'eachOf';
+      readonly tokens: readonly TokenPreset[];
+    }
   /**
    * "As this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste." (CR 707.9,
    * 614.1c, 614.12, 707.2, D-151): as the permanent enters, its controller may choose a permanent on the battlefield that `what` matches (`optional`:

@@ -154,6 +154,7 @@ import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HAVE_DAMAGE_EFFECT_RULES } from './have-damage';
+import { HAVE_GROUP_BECOMES_RULES } from './have-group-becomes';
 import { HEXPROOF_LOSS_EFFECT_RULES } from './hexproof-loss';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
@@ -1812,6 +1813,8 @@ export const EFFECT_RULES = [
   ...GAIN_RULES,
   ...RESTRICT_RULES,
   ...BECOMES_RULES,
+  // Most Wanted deck, group 2 (Vihaan, Goldwaker): "have Treasures you control become 3/3 Construct Assassin artifact creatures in addition to their other types until end of turn".
+  ...HAVE_GROUP_BECOMES_RULES,
   ...GROUP_BASE_PT_RULES,
   ...GROUP_BASE_PT_SOURCE_RULES,
   ...SEARCH_RULES,

@@ -409,6 +409,15 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:firstCastFromExileThisTurn');
   }
+  // Rain of Riches: "the first spell you cast each turn that mana from a Treasure was spent to cast" (CR 601.2h, 601.2i), a spell on the stack.
+  if (filter.manaSpentFromSubtype !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:manaSpentFromSubtype');
+  }
+  if (filter.firstManaSpentFromSubtypeThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstManaSpentFromSubtypeThisTurn');
+  }
   // Artifact Class: "the first artifact spell you cast each turn" (CR 601.2i), a spell on the stack.
   if (filter.firstOfTypeThisTurn === true) {
     if (inner) return bad([]);
@@ -720,6 +729,12 @@ function lowerFilterAt(
     ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.firstCastFromExileThisTurn === true
       ? { firstCastFromExileThisTurn: true as const }
+      : {}),
+    ...(filter.manaSpentFromSubtype === undefined
+      ? {}
+      : { manaSpentFromSubtype: filter.manaSpentFromSubtype }),
+    ...(filter.firstManaSpentFromSubtypeThisTurn === true
+      ? { firstManaSpentFromSubtypeThisTurn: true as const }
       : {}),
     ...(filter.firstOfTypeThisTurn === true ? { firstOfTypeThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),

@@ -438,6 +438,7 @@ export function checkFilter(
     'xInManaCost',
     'firstXSpellThisTurn',
     'firstCastFromExileThisTurn',
+    'firstManaSpentFromSubtypeThisTurn',
     'firstOfTypeThisTurn',
     'enteredThisTurn',
     'dealtDamageThisTurn',
@@ -458,6 +459,20 @@ export function checkFilter(
     (!Number.isInteger(f.nthSpellThisTurn) || f.nthSpellThisTurn < 2)
   ) {
     issue(out, `${path}.nthSpellThisTurn`, 'nthSpellThisTurn must be a whole number of 2 or more');
+  }
+  // CR 601.2h (Rain of Riches): "a spell that mana from a Treasure was spent to cast" names a subtype; "the first such spell each turn" needs it.
+  if (
+    f.manaSpentFromSubtype !== undefined &&
+    (typeof f.manaSpentFromSubtype !== 'string' || f.manaSpentFromSubtype === '')
+  ) {
+    issue(out, `${path}.manaSpentFromSubtype`, 'manaSpentFromSubtype must be a subtype name');
+  }
+  if (f.firstManaSpentFromSubtypeThisTurn === true && f.manaSpentFromSubtype === undefined) {
+    issue(
+      out,
+      `${path}.firstManaSpentFromSubtypeThisTurn`,
+      'firstManaSpentFromSubtypeThisTurn needs manaSpentFromSubtype',
+    );
   }
   // CR 601.2i: "the first artifact spell you cast each turn" is the first of the card types the filter names.
   if (f.firstOfTypeThisTurn === true && (f.types?.length ?? 0) === 0) {
