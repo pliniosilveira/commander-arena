@@ -1593,6 +1593,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-creature-that-is-subtype-or-subtype': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
   ),
+  // Laughing Jasper Flint (issue 685): the same group in the plural, as a static ability.
+  'noun.creatures-you-control-but-dont-own': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} get +1/+1.`,
+  ),
   'noun.each-creature-you-control-but-dont-own': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
   ),

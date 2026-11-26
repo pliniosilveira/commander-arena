@@ -171,7 +171,10 @@ describe('Outrageous Robbery (CR 406.3, 609.4b)', () => {
 
   test('X=2 exiles two cards of the opponent’s library face down; a spell cast from them takes any mana', () => {
     const g = table();
-    g.act(0).cast(ROBBERY.name, { x: 2 }).targets([{ player: 1 }]).pay();
+    g.act(0)
+      .cast(ROBBERY.name, { x: 2 })
+      .targets([{ player: 1 }])
+      .pay();
     g.passAll();
     g.expect.zone(ELVES, 'exile', { seat: 1 });
     // {G} is paid with red mana: any type of mana can be spent on the spell.
@@ -182,7 +185,10 @@ describe('Outrageous Robbery (CR 406.3, 609.4b)', () => {
 
   test('the cards stay playable on a later turn: nothing but leaving exile ends the permission', () => {
     const g = table();
-    g.act(0).cast(ROBBERY.name, { x: 2 }).targets([{ player: 1 }]).pay();
+    g.act(0)
+      .cast(ROBBERY.name, { x: 2 })
+      .targets([{ player: 1 }])
+      .pay();
     g.passAll();
     for (let i = 0; i < 3; i += 1) g.advanceTo('precombatMain', { turn: 'next' });
     g.expect.zone('Forest', 'exile', { seat: 1, count: 1 });
