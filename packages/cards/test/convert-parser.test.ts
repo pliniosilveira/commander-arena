@@ -844,6 +844,8 @@ describe('unmatched abilities', () => {
       'effect.reveal-top-then',
       'effect.look-top-put',
       'effect.they-become-creatures',
+      'effect.may-have-target-land-become-creature',
+      'effect.all-lands-become-creatures',
       'effect.exchange-control',
       'effect.counter-unless-pays-equal',
       'effect.draw-reveal-remove',
