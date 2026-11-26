@@ -336,9 +336,62 @@ export const STATIC_CAST_SELF_AS_THOUGH_FLASH = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.cast-self-flash-sacrifice-at-cleanup`: "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes
+ * sacrifices it at the beginning of the next cleanup step." (Necromancy; CR 601.3b, 307.1, 603.7, 514.3a, 701.21a). The spell's own permission and its rider, one whole line: the engine's
+ * `castAsThoughFlash` on `this` with `sacrificeIfCastAtInstantSpeed`. The subject is `~` ("this spell" after normalization). Not read: the permission alone (no rider), another timing in the
+ * rider, another sacrificer ("you sacrifice it"), another moment ("the beginning of the next end step"), another object, a line that does not end in a period.
+ */
+export const STATIC_CAST_SELF_FLASH_SACRIFICE_AT_CLEANUP = defineRule<IrStatic>({
+  id: 'static.cast-self-flash-sacrifice-at-cleanup',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 601.3b (Casting Spells)',
+    'CR 307.1 (Sorceries)',
+    'CR 603.7 (Handling Triggered Abilities)',
+    'CR 514.3a (Cleanup Step)',
+    'CR 701.21a (Sacrifice)',
+  ],
+  examples: [
+    "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
+    'You may cast ~ as though it had flash. If you cast it any time a sorcery couldn’t have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.',
+  ],
+  rejects: [
+    "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step",
+    "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next end step.",
+    "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, you sacrifice it at the beginning of the next cleanup step.",
+    "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes exiles it at the beginning of the next cleanup step.",
+    "You may cast ~ as though it had flash. If you cast it any time an instant couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
+    'You may cast ~ as though it had flash.',
+    "You may cast ~ as though it had haste. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
+  ],
+  parse: (ctx, pos) => {
+    const head = quiet(
+      pattern(
+        /you may cast ~ as though it had flash\. if you cast it any time a sorcery couldn['’]t have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step\./iu,
+      ),
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const id = 'static.cast-self-flash-sacrifice-at-cleanup';
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject: subjectNoun('self', '~', { start: pos + 13, end: pos + 14 }, id),
+        effects: [{ kind: 'selfFlashSacrificeAtCleanup' }],
+        span: { start: pos, end: head.pos },
+        rule: id,
+      },
+      pos: head.pos,
+    };
+  },
+});
+
 export const ARTIFACT_STATIC_RULES = [
   STATIC_CAST_AS_THOUGH_FLASH,
   STATIC_CAST_SELF_AS_THOUGH_FLASH,
+  STATIC_CAST_SELF_FLASH_SACRIFICE_AT_CLEANUP,
   STATIC_LINKED_EXILE,
   STATIC_ATTACHED_UNLESS_MONARCH,
 ];

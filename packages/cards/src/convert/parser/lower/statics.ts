@@ -677,6 +677,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes'];
     case 'castAsThoughFlash':
       return ['static:castAsThoughFlash'];
+    case 'selfFlashSacrificeAtCleanup':
+      return ['static:castAsThoughFlash', 'ability:flashSacrificeRider'];
     case 'opponentsCantCastSpells':
       return ['static:opponentsCantCastSpells'];
     case 'takeFromLinkedExile':
@@ -1566,6 +1568,33 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       ok: true,
       value: reduction.value.map((a): Ability => ({ ...a, condition }) as Ability),
       rule: reduction.rule,
+    };
+  }
+  // "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the
+  // next cleanup step." (Necromancy, CR 601.3b, 307.1, 603.7, 514.3a): the spell's own permission and its rider; no condition, nothing after it.
+  if (first.kind === 'selfFlashSacrificeAtCleanup' && statement.subject.det === 'self') {
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures([
+      'ability:static',
+      'static:castAsThoughFlash',
+      'ability:flashSacrificeRider',
+    ]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'castAsThoughFlash',
+            spells: { kind: 'this' },
+            sacrificeIfCastAtInstantSpeed: true,
+          },
+        },
+      ],
+      rule: ability.rule,
     };
   }
   // "You may cast ~ as though it had flash if it targets a commander." (Danitha deck, D-408, CR 601.3b, 601.3d): the spell's own permission, with the condition

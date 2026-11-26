@@ -409,6 +409,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return stepWording('upkeep', trigger.whose);
     case 'endStep':
       return stepWording('endStep', trigger.whose);
+    case 'cleanupStep':
+      // CR 514.3a (Necromancy): the engine's own delayed trigger.
+      return 'At the beginning of the next cleanup step';
     case 'drawn': {
       const nth = trigger.nth;
       if (nth === undefined) {

@@ -15,6 +15,9 @@ function scan(node: unknown, found: { reads: boolean; makes: boolean }): void {
   }
   if (node === null || typeof node !== 'object') return;
   const record = node as Record<string, unknown>;
+  // CR 303.4, 702.5a (Necromancy): "it becomes an Aura with \"enchant creature put onto the battlefield with ~\"" names what the same ability goes on to put there: it is no reader of another
+  // ability's link, so the ability that makes the link stays a maker.
+  if (record.kind === 'becomeAura') return;
   if (record.kind === 'putWithThis') found.reads = true;
   if (record.putWithSource === true) {
     if (record.kind === 'moveToZone') found.makes = true;

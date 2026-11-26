@@ -109,6 +109,31 @@ export function castTiming(
 }
 
 /**
+ * CR 307.1, 601.3b, 603.7 (Necromancy): whether casting the spell with the face `face` now makes the permanent it becomes get the delayed sacrifice of the rider "If you cast it any
+ * time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step" (`castAsThoughFlash` with `spells: this` and
+ * `sacrificeIfCastAtInstantSpeed`): the face has the rider and `seat` could not cast a sorcery at this moment (it is not their main phase with an empty stack, CR 307.1). Read as the
+ * spell is cast, before it moves to the stack.
+ */
+export function castAtInstantSpeedRider(
+  state: GameState,
+  seat: SeatId,
+  face: CardFace | null,
+): boolean {
+  if (
+    !(face?.abilities ?? []).some(
+      (a) =>
+        a.kind === 'static' &&
+        a.static.kind === 'castAsThoughFlash' &&
+        'kind' in a.static.spells &&
+        a.static.sacrificeIfCastAtInstantSpeed === true,
+    )
+  ) {
+    return false;
+  }
+  return !hasSorceryTiming(state, seat);
+}
+
+/**
  * CR 601.3b, 601.3d, 113.6d (D-408): the spell's own permission to be cast as though it had flash (`castAsThoughFlash` with `spells: this`, on the face being
  * cast). With no condition, or one that holds as the spell is cast, it is plain permission. A `spellTargets` condition is read as CR 601.3b and 601.3d say: the
  * caster may begin to cast the spell as though it had flash when the targets they choose could meet it, so the permission is there and the targets are
