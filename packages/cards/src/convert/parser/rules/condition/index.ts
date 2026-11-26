@@ -40,6 +40,7 @@ import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './d
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
 import { DEATH_TOLL_B_CONDITION_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
+import { DIFFERENT_POWERS_CONDITION_RULES } from './different-powers';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
@@ -80,6 +81,7 @@ import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { REVOLT_CONDITION_RULES } from './revolt';
 import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
+import { SACRIFICED_THIS_TURN_CONDITION_RULES } from './sacrificed-this-turn';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { SUBJECT_GREATER_CONDITION_RULES } from './subject-greater';
@@ -579,6 +581,8 @@ export const CONDITION_RULES = [
   ...EXILED_WITH_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
+  // Augur of Autumn (coven): "you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.
+  ...DIFFERENT_POWERS_CONDITION_RULES,
   // Ahoy Mateys deck, group 8: "you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   ...AHOY_G8_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
@@ -627,6 +631,8 @@ export const CONDITION_RULES = [
   ...DEATH_TOLL_B_CONDITION_RULES,
   // Issue 25 (D-318): "you've cast three or more spells this turn".
   ...SPELLS_CAST_CONDITION_RULES,
+  // Evendo Brushrazer: "you've sacrificed a nontoken permanent this turn".
+  ...SACRIFICED_THIS_TURN_CONDITION_RULES,
   // Issue 25 (D-331): "there are no cards in your library", "your library has no cards in it".
   ...LIBRARY_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".

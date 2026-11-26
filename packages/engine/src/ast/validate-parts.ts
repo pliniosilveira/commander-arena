@@ -2441,6 +2441,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'cardTypesAmong':
     case 'differentManaValuesAmong':
     case 'differentNamesAmong':
+    case 'differentPowersAmong':
     case 'creatureTypesAmong':
     case 'colorsAmong':
     case 'opponentsWithMore':
@@ -2737,6 +2738,33 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.filter`,
             'differentNamesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
+    case 'differentPowersAmong':
+      // CR 208.1 (Augur of Autumn): the distinct powers among the battlefield permanents a filter matches; no combat, source power, power or toughness filter is read.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'differentPowersAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'differentPowersAmong counts the powers of permanents on the battlefield',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'differentPowersAmong cannot read the combat, the source power, power or toughness',
           );
         }
       }
@@ -4196,6 +4224,19 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'yourMainPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
+      break;
+    case 'sacrificedThisTurn':
+      // CR 701.21a (Evendo Brushrazer): the card types the permanent had and whether it is a token, both optional.
+      if (c.token !== undefined && typeof c.token !== 'boolean') {
+        issue(out, `${path}.token`, 'token must be a boolean when present');
+      }
+      if (c.types !== undefined) {
+        for (const [i, t] of (Array.isArray(c.types) ? c.types : []).entries()) {
+          if (!CARD_TYPES.includes(t))
+            issue(out, `${path}.types[${i}]`, `unknown card type ${String(t)}`);
+        }
+        if (!Array.isArray(c.types)) issue(out, `${path}.types`, 'types is a list of card types');
+      }
       break;
     case 'yourCombatPhase':
       // Issue 144: no parameters but `first` (Tifa, Martial Artist).

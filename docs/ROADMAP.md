@@ -621,3 +621,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Undercity is the only dungeon: no other dungeon card, no choice of dungeon for "venture into the dungeon", and the parser reads neither "venture into Undercity" nor "if you have the initiative" (the engine runs both).
 - A room ability of a dungeon with no legal target is removed with no `abilityRemoved` event, so the log shows only the venture. The casual agent values rooms from a fixed table, with no look-ahead.
 - Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.
+- Graveyard permissions with a sacrifice (Exploration Broodship): when several permanents give a card a permission to be cast from the graveyard, the first in battlefield order is used; the caster cannot pick the one with the cheaper additional cost.

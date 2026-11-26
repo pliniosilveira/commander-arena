@@ -477,6 +477,8 @@ describe('supported feature gate', () => {
       // Exit from Exile precon (issue 168): "a land you control enters from exile".
       'entersBattlefieldFromExile',
       'leftGraveyardDuringYourTurn',
+      // Szarel, Genesis Shepherd: "Whenever you sacrifice another nontoken permanent during your turn".
+      'sacrificedDuringYourTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',

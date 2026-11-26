@@ -46,6 +46,7 @@ import { HOFRI_STATIC_RULES } from './hofri';
 import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
+import { LINKED_EXILE_PLAY_STATIC_RULES } from './linked-exile-play';
 import { MELD_STATIC_RULES } from './meld';
 import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
@@ -140,6 +141,8 @@ export const STATIC_RULES = [
   ...CONDITIONAL_STATIC_RULES,
   // Stage P49 (D-206): "During your turn, equipped creature has flying."
   ...VRASKA_STATIC_RULES,
+  // Evendo Brushrazer: "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with ~."
+  ...LINKED_EXILE_PLAY_STATIC_RULES,
   // Stage P31 (D-140): flash for a kind of spell, what a linked exile gives, and "unless that player is the monarch".
   ...ARTIFACT_STATIC_RULES,
   // Fealty to the Realm: "The monarch controls enchanted creature."

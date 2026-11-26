@@ -797,6 +797,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:castFromTopOfLibrary'];
     case 'graveyardPlay':
       return ['static:playFromGraveyardOnceEachTurn'];
+    case 'linkedExilePlay':
+      return ['static:playFromLinkedExile'];
     case 'groupEntersUntapped':
     case 'groupEntersTapped':
       return ['replacement:groupEntersUntapped'];
@@ -1292,6 +1294,23 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     !(first.kind === 'castFromTop' && statement.condition !== undefined)
   ) {
     return lowerDragonStatic(ability);
+  }
+  // Evendo Brushrazer (CR 607.2a, 601.2a): "During your turn, as long as ..., you may play cards exiled with ~."
+  if (first.kind === 'linkedExilePlay') {
+    if (more.length > 0 || statement.condition === undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const lowered = lowerCondition(statement.condition, false, ctx);
+    if (!lowered.ok) return lowered;
+    const missing = missingFeatures(['ability:static', 'static:playFromLinkedExile']);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [
+        { kind: 'static', static: { kind: 'playFromLinkedExile' }, condition: lowered.value },
+      ],
+      rule: ability.rule,
+    };
   }
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   if (isGraveyardPlayStatic(first)) return lowerGraveyardPlayStatic(ability, ctx);

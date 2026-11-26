@@ -19,6 +19,8 @@ import { OPPONENTS_CANT_CAST_UNIT } from './korvold';
 const STATIC_CONDITIONS = [
   // Ahoy Mateys deck, group 8: "as long as you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   'condition.control-at-least-subtypes',
+  // Augur of Autumn (coven): "you control three or more creatures with different powers".
+  'condition.control-different-powers',
   'condition.control-at-least',
   'condition.control-a',
   'condition.control-at-most',
