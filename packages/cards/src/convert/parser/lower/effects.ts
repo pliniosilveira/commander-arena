@@ -668,6 +668,35 @@ function lowerReturnSelf(
           ...(attachTo === undefined ? {} : { attachTo }),
         }
       : { kind: 'moveToZone', objects: { kind: 'this' }, to: 'hand' };
+  // CR 708.2a, 708.3 (Deathmist Raptor): "... to the battlefield face up or face down": the controller chooses as the effect resolves (`chooseOne`); face down it is a 2/2 that morph can
+  // turn up (`faceDownAs` `morph`). Only the plain return: no tapped, attacking, counters or attachment beside it.
+  if (to.faceChoice === true) {
+    if (
+      effect.kind !== 'moveToZone' ||
+      to.zone !== 'battlefield' ||
+      to.tapped === true ||
+      to.attacking === true ||
+      to.counters !== undefined ||
+      attachTo !== undefined
+    ) {
+      return failure(clause);
+    }
+    const faceBlocked = missingFeatures(['effect:chooseOne', 'ability:moveFaceDownMorph']);
+    if (faceBlocked.length > 0) return failure(clause, faceBlocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'chooseOne',
+          options: [
+            { label: 'face up', effect },
+            { label: 'face down', effect: { ...effect, faceDownAs: 'morph' } },
+          ],
+        },
+      ],
+      rule: clause.rule,
+    };
+  }
   if (to.attacking === true) {
     const attacking = missingFeatures(['effect:enterAttacking']);
     if (attacking.length > 0) return failure(clause, attacking);

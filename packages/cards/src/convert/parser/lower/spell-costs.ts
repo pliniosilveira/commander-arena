@@ -431,8 +431,11 @@ const isNamedAlternative = (name: string): name is NamedAlternative =>
  * as an ability).
  */
 export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering | null {
-  if (!isNamedAlternative(ability.name)) return null;
-  const kind = ability.name;
+  // CR 702.37b: Megamorph is a variant of morph, lowered to the morph alternative cost with the engine's `megamorph` flag.
+  const megamorph = ability.name === 'megamorph';
+  const name = megamorph ? 'morph' : ability.name;
+  if (!isNamedAlternative(name)) return null;
+  const kind = name;
   const [only, ...more] = ability.cost ?? [];
   if (kind === 'evoke' && only?.kind === 'exileFromHand') {
     return more.length > 0 || ability.params.length > 0
@@ -468,7 +471,11 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
   // A hybrid symbol or an {X} is refused here, as the engine's own check would; Miracle's cost may have an {X} (D-274, CR 107.3a).
   const cost = lowerCost(only, { x: kind === 'miracle' || kind === 'harmonize' });
   if (!cost.ok) return cost;
-  const blocked = missingFeatures([`castAlternative:${kind}`, `cost:${cost.value.kind}`]);
+  const blocked = missingFeatures([
+    `castAlternative:${kind}`,
+    `cost:${cost.value.kind}`,
+    ...(megamorph ? (['ability:megamorph'] as const) : []),
+  ]);
   if (blocked.length > 0) return failure(ability, blocked);
   const entry: AlternativeCost =
     kind === 'escape'
@@ -477,11 +484,13 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
         ? { kind, cost: [cost.value], counters: exile }
         : kind === 'blitz'
           ? { kind, cost: [cost.value], ...(exile > 0 ? { discard: exile } : {}) }
-          : { kind, cost: [cost.value] };
+          : kind === 'morph' && megamorph
+            ? { kind, cost: [cost.value], megamorph: true as const }
+            : { kind, cost: [cost.value] };
   return {
     ok: true,
     value: { ...NONE, alternativeCosts: [entry] },
-    rule: `keyword.${kind}`,
+    rule: megamorph ? 'keyword.megamorph' : `keyword.${kind}`,
   };
 }
 
@@ -498,6 +507,7 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:miracle',
   'castAlternative:foretell',
   'castAlternative:morph',
+  'ability:megamorph',
   'castAlternative:impending',
   'castAlternative:blitz',
   // Snuff Out: "you may pay 4 life rather than pay ~'s mana cost".

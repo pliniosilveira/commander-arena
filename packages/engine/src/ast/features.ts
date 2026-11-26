@@ -3465,6 +3465,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseFromExileOwnedBy: true,
   moveFaceDownLand: true,
   manifestFromHand: true,
+  moveFaceDownMorph: true,
+  megamorph: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,

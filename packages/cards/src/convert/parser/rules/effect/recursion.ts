@@ -322,6 +322,7 @@ interface Destination {
   readonly zone: 'battlefield' | 'hand';
   readonly tapped?: true;
   readonly attacking?: true;
+  readonly faceChoice?: true;
   readonly counters: { readonly count: number; readonly counter: string } | null;
   readonly span: Span;
 }
@@ -429,6 +430,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
     'CR 400.7 (General)',
     'CR 122.6 (Counters)',
     'CR 614.1c (Replacement Effects)',
+    'CR 708.2a (Face-Down Spells and Permanents)',
   ],
   examples: [
     'return this card from your graveyard to the battlefield',
@@ -437,6 +439,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
     'return this card from your graveyard to the battlefield with a +1/+1 counter on it',
     'return this card from your graveyard to the battlefield with two +1/+1 counters on it',
     'return this card from your graveyard to your hand',
+    'return this card from your graveyard to the battlefield face up or face down',
     'return ~ from your graveyard to the battlefield',
     'return ~ from your graveyard to your hand',
   ],
@@ -452,6 +455,10 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
     'return this card from your graveyard to the battlefield with a +1/+1 counter',
     'return this card from your graveyard to the battlefield and draw a card',
     'return it from your graveyard to the battlefield',
+    'return this card from your graveyard to your hand face up or face down',
+    'return this card from your graveyard to the battlefield face up',
+    'return this card from your graveyard to the battlefield face down',
+    'return this card from your graveyard to the battlefield face up or face down tapped',
   ],
   parse: (ctx, pos) => {
     const r = sequence(
@@ -467,11 +474,14 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
               // CR 508.4: "tapped and attacking" (Interceptor, Shadow's Hound).
               optional(literal(' and attacking'), null),
               optional(WITH_COUNTERS, null),
+              // CR 708.2a, 708.3 (Deathmist Raptor): the controller chooses whether it enters face up or face down.
+              optional(literal(' face up or face down'), null),
             ),
           ),
           ({ value, span }): Destination => ({
             zone: 'battlefield',
             counters: value[3],
+            ...(value[4] === null ? {} : { faceChoice: true as const }),
             ...(value[1] === null ? {} : { tapped: true }),
             ...(value[2] === null ? {} : { attacking: true as const }),
             span,
@@ -503,6 +513,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
       whose: to.zone === 'hand' ? 'you' : 'owner',
       ...(to.tapped === true ? { tapped: true } : {}),
       ...(to.attacking === true ? { attacking: true as const } : {}),
+      ...(to.faceChoice === true ? { faceChoice: true as const } : {}),
       ...(to.counters === null
         ? {}
         : { counters: { counter: to.counters.counter, count: to.counters.count } }),

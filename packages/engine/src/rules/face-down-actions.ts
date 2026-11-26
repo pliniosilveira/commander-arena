@@ -17,7 +17,7 @@ import type { PayManaDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { definitionOf, getObject, setObject } from '../state/ops';
 import type { GameState } from '../state/types';
-import { alternativeOf } from './alt-costs';
+import { megamorphCostOf } from './alt-costs';
 import { counterBonuses } from './counter-bonus';
 import { counterBlockers } from './counter-prevention';
 import { putCountersOn } from './counter-put';
@@ -103,7 +103,7 @@ function takeTurnFaceUp(
   // CR 702.37b (Megamorph): "As this permanent is turned face up, put a +1/+1 counter on it if its megamorph cost was paid to turn it face up": paid for a permanent turned up
   // for its morph cost, never for a manifested one (CR 701.40b: its mana cost).
   const face = definitionOf(state, obj.card).faces[0];
-  if (faceDownBy(obj) === 'morph' && alternativeOf(face ?? null, 'morph')?.megamorph === true) {
+  if (faceDownBy(obj) === 'morph' && megamorphCostOf(face ?? null)) {
     const put = putCountersOn(
       next,
       next,
