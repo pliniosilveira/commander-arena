@@ -98,9 +98,12 @@ export const NO_PARTS: FilterParts = {
 
 export type Modifier = (parts: FilterParts) => FilterParts;
 
-function word(text: string, modifier: Modifier): Parser<Modifier> {
-  // Modifiers are followed by a space; the word boundary keeps "tapped" out of "untapped".
-  return map(pattern(new RegExp(`${text} `, 'i')), () => modifier);
+function word(text: string, modifier: Modifier, notBefore = ''): Parser<Modifier> {
+  // Modifiers are followed by a space; the word boundary keeps "tapped" out of "untapped". `notBefore`: a word that, following, means this is the noun and no modifier ("an outlaw you control").
+  return map(
+    pattern(new RegExp(`${text} ${notBefore === '' ? '' : `(?!${notBefore})`}`, 'i')),
+    () => modifier,
+  );
 }
 
 const NON_TYPES = ['land', 'creature', 'artifact', 'enchantment', 'planeswalker'] as const;
@@ -157,7 +160,7 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
   word('multicolored', (p) => ({ ...p, colorCount: { cmp: 'atLeast', value: 2 } })),
   // CR 700.12 (outlaw): "outlaw creature", "non-outlaw creature"; outlaw is no creature type, so it is not a `NON_SUBTYPE`.
-  word('outlaw', (p) => ({ ...p, outlaw: true })),
+  word('outlaw', (p) => ({ ...p, outlaw: true }), 'you control|an opponent controls|dies|enters'),
   word('non-outlaw', (p) => ({ ...p, outlaw: false })),
   NON_SUBTYPE,
   word('untapped', (p) => ({ ...p, tapped: false })),
@@ -566,16 +569,16 @@ export function permanentPhrase(
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
-  // CR 700.12, 700.12a ("outlaws you control"): the plural noun alone, the permanents that have at least one of the five outlaw creature types.
+  // CR 700.12, 700.12a ("outlaws you control", "an outlaw you control"): the noun alone, the permanents that have at least one of the five outlaw creature types.
   const bareOutlaws: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> = map(
-    pattern(new RegExp(`outlaws${BOUNDARY}`, 'u')),
+    pattern(new RegExp(`outlaw${plural ? 's' : ''}${BOUNDARY}`, 'u')),
     () => ({ subtypes: [] as string[], types: [] as string[], outlaw: true as const }),
   );
   const nouns: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> =
     subtypes === false
       ? map(permanentNoun(plural), (types) => ({ subtypes: [] as string[], types }))
       : choice(
-          ...(plural ? [bareOutlaws] : []),
+          bareOutlaws,
           subtyped(plural, subtypes),
           map(permanentNoun(plural), (types) => ({ subtypes: [] as string[], types })),
         );
