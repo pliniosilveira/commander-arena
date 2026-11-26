@@ -202,4 +202,36 @@ export const SYNTHETIC_MANIFEST_B_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever a land you control enters, manifest dread if this is the first time this ability has resolved this turn. Otherwise, you may turn a permanent you control face up."
+  singleFace({
+    name: 'SYNTHETIC Dread Unraveler',
+    manaCost: ['2', 'G', 'U'],
+    types: ['creature'],
+    subtypes: ['Human', 'Wizard'],
+    colors: ['G', 'U'],
+    colorIdentity: ['G', 'U'],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      'Whenever a land you control enters, manifest dread if this is the first time this ability has resolved this turn. Otherwise, you may turn a permanent you control face up.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'landfall' },
+        effect: {
+          kind: 'conditional',
+          condition: { kind: 'abilityResolvedTimes', times: 1 },
+          effect: manifestDread,
+          else: {
+            kind: 'turnFaceUp',
+            objects: {
+              kind: 'choose',
+              filter: { controller: 'you', facing: 'down' },
+              optional: true,
+            },
+          },
+        },
+      },
+    ],
+  }),
 ];
