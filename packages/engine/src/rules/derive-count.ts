@@ -24,6 +24,7 @@ import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { countersOfKind } from './counters-of-kind';
+import { basePtOf } from './derive-layers';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
 import { effectsOn } from './effects-on';
@@ -79,6 +80,36 @@ function namesKeywords(f: ObjectFilter): boolean {
   );
 }
 
+function readsBasePt(f: ObjectFilter): boolean {
+  return f.basePowerOrToughnessIs !== undefined || (f.anyOf?.some(readsBasePt) ?? false);
+}
+
+/**
+ * CR 208.4b, 613.8 ("creatures you control with base power or toughness 1"): the base power and toughness of an object a "+N/+N" count looks at, which layer 7b leaves. They are
+ * worked out from the object's printed (or copied) values, the characteristic-defining ability that gives a `*` (layer 7a) and the effects that set them (layer 7b, resolved spells'
+ * and abilities'), and without the static abilities of other permanents, which would need this same count (a static "base power and toughness" of another permanent is not seen).
+ * Null for what is not a creature on the battlefield.
+ */
+function basePtForCount(
+  state: GameState,
+  obj: GameObject,
+  view: FilterSubject,
+): { readonly power: number | null; readonly toughness: number | null } {
+  if (obj.zone === 'battlefield' && !view.types.includes('creature')) {
+    return { power: null, toughness: null };
+  }
+  const values = copiableValues(state, obj);
+  const defined = characteristicPtOf(state, obj, values.abilities);
+  const printed = values.characteristics;
+  const num = (v: number | '*' | null, own: number | null | undefined): number | null =>
+    v === '*' ? (own ?? 0) : v;
+  const ptBase = {
+    power: defined?.power ?? num(printed.power, defined?.power),
+    toughness: defined?.toughness ?? num(printed.toughness, defined?.toughness),
+  };
+  return basePtOf(ptBase, effectsOn(state, obj.id));
+}
+
 function countFresh(
   state: GameState,
   filter: ObjectFilter,
@@ -99,12 +130,22 @@ function countFresh(
     const obj = state.objects[id];
     if (obj === undefined) continue;
     // D-149: the keywords the object has after layer 6, only where the filter names one (the view keeps its mana value read lazily).
-    const view = (): FilterSubject =>
-      keywordsOf === undefined || !namesKeywords(filter)
-        ? typeViewOf(state, obj)
-        : Object.create(typeViewOf(state, obj), {
-            keywords: { value: keywordsOf(obj), enumerable: true },
-          });
+    const view = (): FilterSubject => {
+      const typed = typeViewOf(state, obj);
+      // CR 208.4b: only a count that says "with base power or toughness N" reads the base values.
+      const based = !readsBasePt(filter)
+        ? typed
+        : (() => {
+            const base = basePtForCount(state, obj, typed);
+            return Object.create(typed, {
+              basePower: { value: base.power, enumerable: true },
+              baseToughness: { value: base.toughness, enumerable: true },
+            }) as FilterSubject;
+          })();
+      return keywordsOf === undefined || !namesKeywords(filter)
+        ? based
+        : Object.create(based, { keywords: { value: keywordsOf(obj), enumerable: true } });
+    };
     if (matchesFilterWith(state, obj, view, filter, ctx)) total += 1;
   }
   return total;

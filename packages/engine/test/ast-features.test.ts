@@ -175,6 +175,7 @@ describe('the dimensions', () => {
       'yourCombatPhase',
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
+      'opponentsEndStep',
       'cardLeftYourGraveyard',
       'descendedThisTurn',
       'playedLandThisTurn',
@@ -226,6 +227,7 @@ describe('the dimensions', () => {
       'thisInYourGraveyard',
       'thisOnBattlefield',
       'thisSuspended',
+      'thisSolved',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
@@ -327,8 +329,12 @@ describe('the dimensions', () => {
       'unspentManaStays',
       // Issue 81: "If you would lose unspent mana, that mana becomes colorless instead."
       'unspentManaBecomesColorless',
+      // Enhanced Surveillance: "You may look at an additional two cards each time you surveil."
+      'surveilLookAdditional',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      // Eye of Duskmantle: play lands and cast spells from among the cards you surveilled this turn, for life.
+      'playSurveiledFromGraveyard',
       'playFromGraveyardEachType',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',

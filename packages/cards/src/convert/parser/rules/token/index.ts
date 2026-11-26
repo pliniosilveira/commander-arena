@@ -160,6 +160,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Wicked Role token',
     // CR 111.10t (Break Down).
     'a Junk token',
+    // CR 111.10 (Moonstone Eulogist): a Blood token.
+    'a Blood token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
@@ -892,6 +894,8 @@ export const TOKEN_COPY = defineRule<IrToken>({
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
+    "a token that's a copy of target token you control",
+    'two tokens that are copies of it',
     // Flamerush Rider (CR 508.4, 110.5b, 707.2): a copy that enters tapped and attacking.
     "a token that's a copy of another target attacking creature and that's tapped and attacking",
     'a token that’s a copy of target creature you control and that’s tapped and attacking',
@@ -907,7 +911,6 @@ export const TOKEN_COPY = defineRule<IrToken>({
     "a token that's a copy of target creature and that's tapped and attacking a player",
     'two tokens that are copies of target creature and that are tapped and attacking',
     "a token that's a copy of target creature, except it's a 1/1",
-    "a token that's a copy of target token you control",
     "a token that's a copy of equipped creature",
     "a token that's a copy of two target creatures",
     "a token that's a copy of target creatures",

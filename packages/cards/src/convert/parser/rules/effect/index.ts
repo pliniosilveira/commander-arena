@@ -35,20 +35,22 @@ import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
-import { ANY_NUMBER_OPPONENTS_RULES } from './any-number-opponents';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
+import { BECOMES_COPY_GRAVEYARD_EFFECT_RULES } from './becomes-copy-graveyard';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
 import { BOTTOM_GRAVEYARD_EFFECT_RULES } from './bottom-graveyard';
 import { BRAINSTEALER_G9_EFFECT_RULES } from './brainstealer-g9';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CASE_EFFECT_RULES } from './case-solved';
 import { CAST_AMONG_EXILED_EFFECT_RULES } from './cast-among-exiled';
+import { CAST_FREE_HAND_VALUE_EFFECT_RULES } from './cast-free-hand-value';
 import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOOSE_ONE_OF_THEM_EFFECT_RULES } from './choose-one-of-them';
@@ -56,6 +58,8 @@ import { CHOOSE_OPPONENT_EFFECT_RULES } from './choose-opponent';
 import { CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES } from './choose-opponent-library-card';
 import { CHOOSE_PER_OPPONENT_EFFECT_RULES } from './choose-per-opponent';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
+import { CLASH_DEFENDING_EFFECT_RULES } from './clash-defending';
+import { CLOAK_EFFECT_RULES } from './cloak';
 import { COLORS_AMONG_MANA_EFFECT_RULES } from './colors-among-mana';
 import { COMBAT_RULE_EFFECT_RULES } from './combat-rules';
 import { CONTROL_EFFECT_RULES } from './control';
@@ -102,6 +106,8 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { DURNAN_EFFECT_RULES } from './durnan';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { EACH_PLAYER_CHOOSES_RULES } from './each-player-chooses';
+import { EACH_PLAYER_CHOOSES_EXILE_RULES } from './each-player-chooses-exile';
+import { EACH_RETURNS_EFFECT_RULES } from './each-returns';
 import { EARTHBEND_RULES } from './earthbend';
 import { ELVEN_COUNCIL_EFFECT_RULES } from './elven-council';
 import { ELVEN_COUNCIL_REVEAL_EFFECT_RULES } from './elven-council-reveal';
@@ -154,6 +160,7 @@ import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { GRELL_EFFECT_RULES } from './grell';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
+import { GYCAST_EFFECT_RULES } from './gycast';
 import { HALDIR_EFFECT_RULES } from './haldir';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
@@ -178,6 +185,7 @@ import { KENRITH_EFFECT_RULES } from './kenrith';
 import { KIMAHRI_EFFECT_RULES } from './kimahri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
+import { LAND_CREATURE_COLORLESS_EFFECT_RULES } from './land-creature-colorless';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES } from './land-creature-unblockable';
 import { LEAD_GAIN_NEXT_TURN_EFFECT_RULES } from './lead-gain-next-turn';
@@ -278,6 +286,7 @@ import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
+import { RETURN_IT_SELF_GRAVEYARD_EFFECT_RULES } from './return-it-self-graveyard';
 import { RETURNED_LAND_EFFECT_RULES } from './returned-land';
 import { REVEAL_CHOSEN_TYPE_EFFECT_RULES } from './reveal-chosen-type';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
@@ -298,6 +307,7 @@ import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { SQUIRRELED_G4_EFFECT_RULES } from './squirreled-g4';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
 import { THEN_MAY_RETURN_EFFECT_RULES } from './then-may-return';
 import { THRONE_EFFECT_RULES } from './throne';
@@ -612,6 +622,8 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy up to one target artifact or enchantment',
     'destroy target artifact or enchantment that player controls',
     'destroy target permanent you own',
+    // Maelstrom Pulse (CR 201.2, 608.2c): the target and the other permanents with the same name.
+    'destroy target nonland permanent and all other permanents with the same name as that permanent',
     "destroy target creature with power less than ~'s power",
   ],
   rejects: [
@@ -626,6 +638,8 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
       // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
       operands(
         [
+          // Maelstrom Pulse (CR 201.2, 608.2c): the target and every other permanent with its name.
+          'noun.target-permanent-and-same-name-permanents',
           ...SELF_OR_PERMANENT_OPERANDS,
           'noun.target-permanent-of-that-player',
           // "destroy target nonland permanent of that player's choice that one of your opponents controls" (Bladegriff Prototype, CR 603.3d).
@@ -663,6 +677,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile it',
     'exile that card',
     'exile that card from your graveyard',
+    'exile this card from your graveyard',
     'exile that creature',
     // D-407: the permanent an Aura or Equipment is attached to.
     'exile enchanted creature',
@@ -733,6 +748,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.it',
             // Stage P49 (D-206): "you may exile that card from your graveyard" (the card a trigger is about, CR 701.9a).
             'noun.that-card',
+            // Skyfisher Spider (CR 400.7, 603.10a): "exile this card from your graveyard" (the card the source became).
+            'noun.this-card',
             // Stage P63 (D-216): "If you control three or more artifacts, exile that creature." (the target of the sentence before, CR 608.2c).
             'noun.that-object',
             // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
@@ -1561,6 +1578,9 @@ export const EFFECT_RULES = [
   // Strago and Relm (issue 97): "Target opponent exiles cards from the top of their library until they exile ... You may cast that card without paying its mana cost."
   ...EXILE_UNTIL_CAST_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
+  ...LAND_CREATURE_COLORLESS_EFFECT_RULES,
+  ...BECOMES_COPY_GRAVEYARD_EFFECT_RULES,
+  ...RETURN_IT_SELF_GRAVEYARD_EFFECT_RULES,
   ...LAND_CREATURE_ABILITY_EFFECT_RULES,
   ...LAND_CREATURE_UNBLOCKABLE_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
@@ -1657,6 +1677,8 @@ export const EFFECT_RULES = [
   ...REVIVAL_TRANCE_EFFECT_RULES,
   // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
   ...F144_EFFECT_RULES,
+  // Revenant Recon deck (Counterpoint): "cast a creature, instant, sorcery, or planeswalker spell from your graveyard with mana value less than or equal to that spell's mana value without paying its mana cost".
+  ...GYCAST_EFFECT_RULES,
   // Scions & Spellcraft deck, group G: "cast target instant or sorcery card from your graveyard", paying its mana cost.
   ...OWN_GRAVEYARD_CAST_EFFECT_RULES,
   ...CHOOSE_OPPONENT_LIBRARY_CARD_EFFECT_RULES,
@@ -1666,6 +1688,10 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
+  ...CLOAK_EFFECT_RULES,
+  ...EACH_RETURNS_EFFECT_RULES,
+  ...EACH_PLAYER_CHOOSES_EXILE_RULES,
+  ...CAST_FREE_HAND_VALUE_EFFECT_RULES,
   // Lorwyn Eclipsed (CR 701.68a): "blight 1" as an instruction.
   ...BLIGHT_EFFECT_RULES,
   // Aberrant Return: "Each of them enters with an additional -1/-1 counter on it." after a put onto the battlefield.
@@ -1715,6 +1741,8 @@ export const EFFECT_RULES = [
   ...FLICKER_RULES,
   // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
   ...GRAVEYARD_COPY_EFFECT_RULES,
+  // Squirreled Away deck, group 4: "exile three cards from your graveyard".
+  ...SQUIRRELED_G4_EFFECT_RULES,
   // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
   ...EXILE_SPELL_RULES,
   EFFECT_EXILE,
@@ -1752,6 +1780,7 @@ export const EFFECT_RULES = [
   ...CROSS_ZONE_EFFECT_RULES,
   // Stage P69 (D-271): rolling a die, "roll a four-sided die".
   ...ARDEN_EFFECT_RULES,
+  ...CLASH_DEFENDING_EFFECT_RULES,
   // Locke, Treasure Hunter (issue 97): "you may cast a spell from among those cards".
   ...LOCKE_EFFECT_RULES,
   // Stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
@@ -1760,6 +1789,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // CR 719.3a (Case cards): "~ becomes solved", the effect of "To solve".
+  ...CASE_EFFECT_RULES,
   // Deck support issue 578 (Enduring Tenacity): "It's an enchantment." after the return of a card.
   ...ENDURING_EFFECT_RULES,
   // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
@@ -1860,7 +1891,6 @@ export const EFFECT_RULES = [
   ...LIBRARY_RULES,
   ...PUT_RULES,
   ...PUT_ANY_GRAVEYARD_RULES,
-  ...ANY_NUMBER_OPPONENTS_RULES,
   ...RECURSION_EFFECT_RULES,
   ...GRELL_EFFECT_RULES,
   ...ABOLETH_EFFECT_RULES,

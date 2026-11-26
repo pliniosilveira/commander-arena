@@ -514,10 +514,7 @@ describe('"you may ... If you do, ..." (CR 608.2c, 603.12, 701.48a)', () => {
   });
 
   test.each([
-    [
-      'you may gain 2 life. If you do, draw a card.',
-      'the engine cannot tell whether a gain was done',
-    ],
+    ['you may scry 2. If you do, draw a card.', 'the engine cannot tell whether a scry was done'],
     [
       'you may discard a card and draw a card. If you do, draw a card.',
       'one instruction is offered',
@@ -529,7 +526,7 @@ describe('"you may ... If you do, ..." (CR 608.2c, 603.12, 701.48a)', () => {
     ],
     ['If you do, draw a card.', 'nothing was offered'],
     // ("Exile it. If you do, ..." after an instruction the engine can tell was done is read since stage P31, D-140.)
-    ['gain 2 life. If you do, draw a card.', 'a sentence that is not an offer'],
+    ['scry 2. If you do, draw a card.', 'a sentence that is not an offer'],
     ['you may discard a card. If you do, draw a card. Gain 1 life if you do.', 'a second one'],
   ])('%s is read and not run (%s)', (body) => {
     expect(drop(`When ~ enters, ${body}`, 'creature', ['Goblin'])).toMatchObject({
@@ -629,10 +626,7 @@ describe('"When you do, ..." is a reflexive triggered ability (CR 603.12)', () =
       'the reflexive ability is the last effect',
     ],
     ['you may exile it. When you do, you may draw a card.', 'what follows is not optional'],
-    [
-      'you may gain 1 life. When you do, draw a card.',
-      'the engine cannot tell whether a gain was done',
-    ],
+    ['you may scry 1. When you do, draw a card.', 'the engine cannot tell whether a scry was done'],
     ['you may exile it. When you do, draw a card instead.', 'an "instead" is another statement'],
   ])('%s is read and not run (%s)', (body) => {
     expect(drop(`When ~ enters, ${body}`, 'creature', ['Goblin'])).toMatchObject({

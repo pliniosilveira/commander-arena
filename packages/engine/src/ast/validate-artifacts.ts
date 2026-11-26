@@ -318,6 +318,22 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
       } else if (s.anyPlayer === true && (s.spells as { kind?: unknown } | null)?.kind === 'this') {
         issue(out, `${path}.anyPlayer`, 'anyPlayer works with a filter of spells, not `this`');
       }
+      // CR 307.1, 603.7 (Necromancy): the rider belongs to the spell's own permission.
+      if (s.sacrificeIfCastAtInstantSpeed !== undefined) {
+        if (s.sacrificeIfCastAtInstantSpeed !== true) {
+          issue(
+            out,
+            `${path}.sacrificeIfCastAtInstantSpeed`,
+            'sacrificeIfCastAtInstantSpeed is true or absent',
+          );
+        } else if ((s.spells as { kind?: unknown } | null)?.kind !== 'this') {
+          issue(
+            out,
+            `${path}.sacrificeIfCastAtInstantSpeed`,
+            "the sacrifice rider works with the spell's own permission (`this`)",
+          );
+        }
+      }
       return true;
     case 'setTypes':
       // The "in addition to its other types" form with named types; the chosen-type form is checked in validate.ts.

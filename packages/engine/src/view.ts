@@ -80,6 +80,8 @@ export interface ObjectView {
   readonly level?: number;
   /** The monstrous designation of a permanent on the battlefield (CR 701.37b, D-445). Absent otherwise. */
   readonly monstrous?: true;
+  /** The solved designation of a Case on the battlefield (CR 719.3b). Absent otherwise. */
+  readonly solved?: true;
   readonly isCommander: boolean;
   readonly summoningSick: boolean;
   /**
@@ -870,6 +872,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
       ? { level: obj.level ?? 1 }
       : {}),
     ...(obj.zone === 'battlefield' && obj.monstrous === true ? { monstrous: true as const } : {}),
+    ...(obj.zone === 'battlefield' && obj.solved === true ? { solved: true as const } : {}),
     isCommander: (down === null || controls) && commanderCardOf(state, obj) !== null,
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),

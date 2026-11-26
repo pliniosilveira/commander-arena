@@ -33,7 +33,7 @@ export function isCardZoneChoice(filter: ObjectFilter): boolean {
 }
 
 /** The cards `seat` owns in the zone the filter names that match it (`source` is what "another" excludes). */
-function cardCandidates(
+export function cardCandidates(
   state: GameState,
   seat: SeatId,
   source: ObjectId | null,
@@ -186,12 +186,23 @@ export function runChooseMove(
           [
             {
               kind: 'effect' as const,
-              effect: {
-                kind: 'mayPlay' as const,
-                objects: { kind: 'moved' as const },
-                lasts: 'endOfTurn' as const,
-                ...(instruction.permit.free === true ? { free: true as const } : {}),
-              },
+              effect:
+                instruction.permit.cast !== undefined
+                  ? {
+                      // CR 601.2, 611.2a (Mission Briefing): the card stays in the graveyard, and may be cast from there this turn.
+                      kind: 'mayCast' as const,
+                      objects: { kind: 'moved' as const },
+                      duration: 'untilEndOfTurn' as const,
+                      ...(instruction.permit.cast.exileInstead === true
+                        ? { exileInstead: true as const }
+                        : {}),
+                    }
+                  : {
+                      kind: 'mayPlay' as const,
+                      objects: { kind: 'moved' as const },
+                      lasts: 'endOfTurn' as const,
+                      ...(instruction.permit.free === true ? { free: true as const } : {}),
+                    },
             },
           ],
         ),
@@ -213,10 +224,16 @@ export function runChooseMove(
       ).map((i) => {
         if (i.kind !== 'move') return i;
         // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
-        if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
-        // CR 610.3: "until this creature leaves the battlefield": each card exiled comes back when the permanent leaves.
-        if (instruction.untilLeaves !== undefined)
-          return { ...i, untilLeaves: instruction.untilLeaves };
+        if (instruction.linkTo !== undefined || instruction.untilLeaves !== undefined) {
+          return {
+            ...i,
+            ...(instruction.linkTo === undefined ? {} : { linkTo: instruction.linkTo }),
+            // CR 610.3 (Foreboding Steamboat): "until this Vehicle leaves the battlefield".
+            ...(instruction.untilLeaves === undefined
+              ? {}
+              : { untilLeaves: instruction.untilLeaves }),
+          };
+        }
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
@@ -346,6 +363,11 @@ export function runChooseMove(
           : instruction.filter.zone === 'command'
             ? 'command'
             : 'hand';
+    // CR 400.3 (Foreboding Steamboat): a card exiled by another player goes to its owner's graveyard, not the chooser's.
+    const where =
+      zone === 'exile' && instruction.to === 'graveyard'
+        ? "into its owner's graveyard"
+        : WHERE[instruction.to];
     return {
       state,
       events: [],
@@ -371,7 +393,9 @@ export function runChooseMove(
             ? // CR 701.40a (Scroll of Fate): the card is put onto the battlefield face down, not revealed.
               'Choose a card from your hand to manifest'
             : instruction.permit !== undefined
-              ? 'Choose an exiled card to play this turn'
+              ? instruction.permit.cast !== undefined
+                ? 'Choose a card from your graveyard to cast this turn'
+                : 'Choose an exiled card to play this turn'
               : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
                 decider !== chooser
                 ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
@@ -404,7 +428,7 @@ export function runChooseMove(
                                     : instruction.handOf !== undefined
                                       ? 'from their hand'
                                       : `from your ${zone}`
-                    } to put ${WHERE[instruction.to]}`.replace(
+                    } to put ${where}`.replace(
                       'from among the cards put into your graveyard',
                       instruction.anyOwner === true
                         ? 'from among the cards put into a graveyard'

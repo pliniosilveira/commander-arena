@@ -43,6 +43,7 @@ import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject, unattach } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
+import { runBecomeAura } from './become-aura';
 import { runBehold } from './behold';
 import { runBlight } from './blight-effect';
 import { makeCardCopy } from './card-copy';
@@ -152,7 +153,7 @@ import { successorsOf } from './melded';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
-import { isCardZoneChoice, runChooseMove } from './move-choice';
+import { cardCandidates, isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { runMyriad } from './myriad';
 import { nextMainStep } from './next-main';
@@ -608,6 +609,28 @@ export function runInstruction(
       offered.to !== 'battlefield' &&
       !isCardZoneChoice(offered.objects.filter) &&
       controlledCandidates(state, res.controller, res.source, offered.objects.filter).length === 0
+    ) {
+      return done(state);
+    }
+    // CR 608.2d (Insatiable Frugivore): "you may exile three cards from your graveyard" with fewer than three there: the player can't do it, so there is nothing to say yes to, nothing is asked
+    // and it was not done (the "if you do" that follows reads that). One card is the choice of none or one, which has always asked.
+    if (
+      offered.kind === 'moveToZone' &&
+      offered.objects.kind === 'choose' &&
+      offered.objects.filter.zone === 'graveyard' &&
+      offered.objects.optional === undefined &&
+      offered.objects.anyNumber === undefined &&
+      offered.objects.minCardTypes === undefined &&
+      offered.objects.alsoGraveyard === undefined &&
+      offered.objects.fromMoved === undefined &&
+      offered.objects.fromAnyGraveyard === undefined &&
+      offered.objects.chosenBy === undefined &&
+      offered.objects.eachGraveyard === undefined &&
+      offered.objects.exceptSacrificed === undefined &&
+      typeof offered.objects.count === 'number' &&
+      offered.objects.count >= 2 &&
+      cardCandidates(state, res.controller, res.source, offered.objects.filter).length <
+        offered.objects.count
     ) {
       return done(state);
     }
@@ -1560,6 +1583,44 @@ function runEffect(
           return { ...done(state), lastMoved: [] };
         }
         const sel = effect.objects;
+        // CR 608.2d, 101.4 (Dispersal): "each opponent returns a nonland permanent they control ... to its owner's hand": each player the selector names chooses among their own
+        // permanents, in APNAP order, and the permanents chosen move together once the last has chosen.
+        if (sel.players !== undefined) {
+          const [first, ...later] = apnapOrder(
+            state,
+            resolvePlayers(state, sel.players, ctx, targets),
+          );
+          if (first === undefined) return { ...done(state), lastMoved: [] };
+          // CR 610.3a, 610.3b (Foreboding Steamboat): "until ~ leaves the battlefield": if it has left already, as the exile would happen, nothing is exiled.
+          if (
+            effect.until === 'sourceLeaves' &&
+            (res.source === null || state.objects[res.source]?.zone !== 'battlefield')
+          ) {
+            return { ...done(state), lastMoved: [] };
+          }
+          const returning = {
+            kind: 'chooseMove' as const,
+            ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+            ...(effect.until === 'sourceLeaves' && res.source !== null
+              ? { untilLeaves: res.source }
+              : {}),
+            filter: sel.filter,
+            count: amountOf(state, sel.count ?? 1, ctx, targets),
+            to: effect.to,
+            position: effect.position ?? 'top',
+            ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
+            seat: first,
+            chosen: null,
+          };
+          return {
+            ...done(
+              state,
+              [],
+              [later.length === 0 ? returning : { ...returning, together: { later, held: [] } }],
+            ),
+            lastMoved: [],
+          };
+        }
         // CR 610.3a, 610.3b (Glorious Protector): "... until this creature leaves the battlefield": if it has left already, as the exile would happen, nothing is exiled.
         if (
           effect.untilSourceLeaves === true &&
@@ -1897,7 +1958,13 @@ function runEffect(
       const { [TIME_COUNTER]: _removed, ...others } = card.counters;
       const counters = time > 1 ? { ...others, [TIME_COUNTER]: time - 1 } : others;
       next = patchObject(next, card.id, { counters });
-      events.push({ kind: 'counterRemoved', object: card.id, counter: TIME_COUNTER, count: 1 });
+      events.push({
+        kind: 'counterRemoved',
+        object: card.id,
+        counter: TIME_COUNTER,
+        count: 1,
+        by: res.controller,
+      });
       return done(next, events);
     }
 
@@ -3126,6 +3193,29 @@ function runEffect(
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);
     case 'mayCast':
+      // CR 608.2d, 601.2, 611.2a (Mission Briefing): "choose an instant or sorcery card in your graveyard. You may cast it this turn": the controller chooses the card as the effect
+      // resolves (nothing is asked with one candidate, nothing happens with none), and the permission is then given to the card chosen, as it would be to a target.
+      if (effect.objects.kind === 'choose') {
+        return done(
+          state,
+          [],
+          [
+            {
+              kind: 'chooseMove' as const,
+              filter: effect.objects.filter,
+              count: 1,
+              to: 'graveyard' as const,
+              position: 'top' as const,
+              permit: {
+                cast: {
+                  ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
+                },
+              },
+              chosen: null,
+            },
+          ],
+        );
+      }
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);
 
@@ -3257,6 +3347,7 @@ function runEffect(
     case 'loseLife': {
       const everyone = amountOf(state, effect.amount, ctx, targets);
       let lost = 0;
+      let gainedAny = false;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
         const amount = lifeAmountFor(
@@ -3277,6 +3368,7 @@ function runEffect(
         if ('kind' in r && r.kind === 'gained') {
           next = r.state;
           events.push(...r.events);
+          if (r.events.length > 0) gainedAny = true;
           continue;
         }
         next = r.state;
@@ -3289,6 +3381,8 @@ function runEffect(
         ...done(next, events),
         ...(lost > 0 ? { lifeLost: lost } : {}),
         ...(effect.kind === 'loseLife' && lost > 0 ? { performed: 1 } : {}),
+        // Skyfisher Spider (CR 608.2c, 119.3): "you may gain 1 life for each ... If you do, ...": life was gained when the gain happened.
+        ...(effect.kind === 'gainLife' && gainedAny ? { performed: 1 } : {}),
       };
     }
 
@@ -3741,9 +3835,16 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
-    case 'clash':
+    case 'clash': {
       // CR 701.30b: the controller clashes with an opponent, in stages (rules/clash.ts); who won is what `clashWon` reads.
-      return done(state, [], [newClash()]);
+      if (effect.against === undefined) return done(state, [], [newClash()]);
+      // "Clash with defending player" (CR 508.5, 701.30b): the opponent is named, not chosen; with no defending player (it left combat or the game) there is no clash.
+      const [against] = resolvePlayers(state, effect.against, ctx, targets);
+      if (against === undefined || against === res.controller || getSeat(state, against).hasLost) {
+        return { ...done(state), clashWon: false };
+      }
+      return done(state, [], [newClash(against)]);
+    }
 
     case 'coinFlip': {
       // CR 705.2: the controller flips a coin with the call the option made (the `chooseOne` the player answered); they win the flip when it matches the result.
@@ -3944,6 +4045,18 @@ function runEffect(
           previous === effect.level
             ? []
             : [{ kind: 'classLevelReached', object: source.id, level: effect.level }],
+        performed: 1,
+      };
+    }
+
+    case 'solve': {
+      // CR 719.3a, 719.3b: "this Case becomes solved": the permanent the ability belongs to, if it is still on the battlefield and is not solved already (it stays solved until it
+      // leaves the battlefield).
+      const source = res.source === null ? undefined : state.objects[res.source];
+      if (source?.zone !== 'battlefield' || source.solved === true) return done(state);
+      return {
+        ...done(patchObject(state, source.id, { solved: true })),
+        events: [{ kind: 'becameSolved', object: source.id }],
         performed: 1,
       };
     }
@@ -4359,6 +4472,24 @@ function runEffect(
           ],
         );
       }
+      // CR 202.3, 608.2c, 608.2h (Counterpoint): "with mana value less than or equal to that spell's mana value": the mana value of the target spell (as it last was, now that it was
+      // countered) is worked out as the effect starts and the filter carries the number, because the question about the cards is asked and answered after this effect has ended.
+      const limit =
+        effect.objects.kind === 'choose' ? effect.objects.filter.manaValueAtMost : undefined;
+      const chosenFrom: typeof effect.objects =
+        effect.objects.kind === 'choose' &&
+        limit !== undefined &&
+        typeof limit === 'object' &&
+        limit.kind === 'manaValueOf' &&
+        limit.of.kind === 'target'
+          ? {
+              ...effect.objects,
+              filter: {
+                ...effect.objects.filter,
+                manaValueAtMost: Math.max(0, amountOf(state, limit, ctx, targets)),
+              },
+            }
+          : effect.objects;
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
       // Issue 97 (Kefka): "any number of spells from among cards exiled this way", remembering each spell: the cards offered are fixed as the effect begins, because `moved` then grows with the spells cast.
       const fixed =
@@ -4378,7 +4509,7 @@ function runEffect(
         [
           {
             kind: 'castFree',
-            objects: effect.objects,
+            objects: chosenFrom,
             play: effect.play === true,
             ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
             ...(caster === undefined ? {} : { seat: caster }),
@@ -4818,6 +4949,10 @@ function runEffect(
     case 'replaceEnchant':
       // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
       return runReplaceEnchant(state, effect, ctx, targets);
+
+    case 'becomeAura':
+      // CR 303.4, 613.1d, 613.1f: "it becomes an Aura with \"enchant ...\"" (rules/become-aura.ts).
+      return runBecomeAura(state, effect, ctx, targets);
 
     case 'revealTopBranches':
       // CR 701.20a, 608.2c: reveal the top card once and do each branch it matches (rules/reveal-top-branches.ts).

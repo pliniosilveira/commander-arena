@@ -136,6 +136,10 @@ const LEAVE_EXILE_RIDER =
 const SPELL_LEAVE_EXILE_RIDER =
   /^put [^.:]+ onto the battlefield[^.:]*\. (?:[^.:]+\. )*if (?:it|that creature) would leave the battlefield, exile it instead of putting it anywhere else\.$/i;
 
+/** "choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead." (Mission Briefing): the permission with its rider. */
+const CHOSEN_CAST_RIDER =
+  /(?:^|, then )choose an? [^.:]+ card in your graveyard\. you may cast it this turn\. if that spell would be put into your graveyard, exile it instead\./i;
+
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
 }
@@ -195,6 +199,22 @@ function insideSpellTypeList(text: string, at: number): boolean {
   );
 }
 
+/**
+ * Whether the comma at `at` separates two creature types in the subject of a trigger ("Whenever a Hamster, Mouse, Rat, or Squirrel you control enters, ..."; CR 205.3m, 603.2): the
+ * words before it are "Whenever a" and the types so far, and the words after it go on with types and end the list with "or <Type>". The comma after the event ends the condition.
+ */
+function insideSubjectTypeList(text: string, at: number): boolean {
+  const TYPE = "\\p{Lu}[\\p{L}'’-]*";
+  return (
+    new RegExp(`(?:[Ww]henever|[Ww]hen) (?:an?|another) ${TYPE}(?:, ${TYPE})*$`, 'u').test(
+      text.slice(Math.max(0, at - 120), at),
+    ) &&
+    new RegExp(`^, (?:${TYPE}, )*or ${TYPE}(?![\\p{L}\\p{N}'’-])`, 'u').test(
+      text.slice(at, at + 80),
+    )
+  );
+}
+
 const ABILITY_KIND = '(?:artifact|creature|land|enchantment|planeswalker)';
 
 /**
@@ -243,6 +263,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       !insideGraveyardEventList(text, i) &&
       // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
       !insideSpellTypeList(text, i) &&
+      // CR 205.3m: "Whenever a Hamster, Mouse, Rat, or Squirrel you control enters, ...": a comma between the creature types of the subject.
+      !insideSubjectTypeList(text, i) &&
       // Harsh Mentor (CR 602.2, 603.4): "an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability, ...": the commas of the condition are not its end.
       !insideActivationKindList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
@@ -927,9 +949,25 @@ const SPEND_BLUE_AS_ANY_COLOR =
  * the three sentences (or the first two, with no rider) are one instruction (`effect.cast-exiled-with-self`).
  */
 const CHOOSE_EXILED_WITH = /(?:^|: )choose target card exiled with ~\.$/i;
+
+/**
+ * "Surveil 2, then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead." (Mission Briefing, CR 608.2d,
+ * 601.2, 614.1a): "it" is the card chosen by the first sentence and "that spell" the one cast with the permission of the second, so the three sentences (or the first two, with no rider) are one
+ * instruction (`effect.choose-graveyard-card-may-cast-it`).
+ */
+const CHOOSE_GRAVEYARD_CARD_SENTENCE = /(?:^|, then )choose an? [^.:]+ card in your graveyard\.$/i;
+const MAY_CAST_IT_THIS_TURN = /^you may cast it this turn\.$/i;
 const MAY_CAST_THAT_FREE = /^you may cast that card this turn without paying its mana cost\.$/i;
 const BOTTOM_RIDER =
   /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
+
+/**
+ * "When ~ enters, each player chooses two nontoken, non-Vehicle creatures they control. Exile them until ~ leaves the battlefield." (Foreboding Steamboat, CR 610.3, 101.4, 608.2d): the
+ * second sentence says what is done with the creatures the first has each player choose, so the two are one instruction (`effect.each-player-chooses-exile-until`).
+ */
+const EACH_PLAYER_CHOOSES_CREATURES =
+  /(?:^|, )each player chooses \w+ [^.]*creatures they control\.$/i;
+const EXILE_THEM_UNTIL_LEAVES = /^exile them until ~ leaves the battlefield\.$/i;
 
 /**
  * "That player exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then that player puts the exiled
@@ -1583,6 +1621,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, CHOOSE_GRAVEYARD_CARD_SENTENCE) &&
+      said(b, MAY_CAST_IT_THIS_TURN) &&
+      said(c, EXILE_THAT_SPELL_INSTEAD_YOUR)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
@@ -1716,6 +1763,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
+        (said(a, CHOOSE_GRAVEYARD_CARD_SENTENCE) && said(b, MAY_CAST_IT_THIS_TURN)) ||
         (said(a, LOOK_AT_TOP) &&
           (said(b, PUT_HAND_REST_BOTTOM) ||
             said(b, PUT_HAND_REST_TOP) ||
@@ -1751,6 +1799,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)) ||
+        (said(a, EACH_PLAYER_CHOOSES_CREATURES) && said(b, EXILE_THEM_UNTIL_LEAVES)) ||
         (said(a, GAINS_ABILITIES_OF_TARGET) && said(b, SPEND_BLUE_AS_ANY_COLOR)) ||
         (said(a, GAINS_FLASHBACK) && said(b, FLASHBACK_COST_IS_MANA_COST)))
     ) {
@@ -1960,7 +2009,8 @@ export function splitSentences(text: string, start: number, end: number): Span[]
         ) ||
           // Issue 81 (White Sun's Twilight): a token's quoted ability ends with its period and the next sentence is the condition on X: `... "This token can't block." If X is 5 or more, ...`.
           /^\s+if x is\b/iu.test(text.slice(i + 1, end)) ||
-          (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&
+          // The same after "it becomes an Aura with "enchant creature put onto the battlefield with ~."" (Necromancy, CR 303.4, 702.5a).
+          (/\s(?:gains|becomes an aura with) "enchant [^"]*$/iu.test(text.slice(from, i)) &&
             /^\s+\S/u.test(text.slice(i + 1, end))))
       ) {
         const span = trimmed(text, from, i + 1);
@@ -2334,6 +2384,12 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
   // Finale of Promise (issue 121): "If a spell cast this way would be put into your graveyard, exile it instead." belongs to the permission the first sentence gives, not to a replacement
   // effect of a permanent: the text is a spell of four sentences.
   if (FINALE_CAST.test(text.split(/(?<=\.) /u)[0] ?? '')) {
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  // Mission Briefing (CR 608.2d, 614.1a): "..., then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it
+  // instead.": the rider belongs to the permission the sentence before it gives, so the text is a spell and not a replacement effect of a permanent.
+  if (CHOSEN_CAST_RIDER.test(text) && costColon(text) <= 0) {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 

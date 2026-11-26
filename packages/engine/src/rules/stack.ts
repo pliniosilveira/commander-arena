@@ -30,7 +30,11 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
-import { BLITZ_SACRIFICE_ABILITY, DASH_RETURN_ABILITY } from './derive-alt';
+import {
+  BLITZ_SACRIFICE_ABILITY,
+  DASH_RETURN_ABILITY,
+  FLASH_SACRIFICE_ABILITY,
+} from './derive-alt';
 import { roomChosen } from './dungeon';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
@@ -740,6 +744,21 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
               source: moved.newObject,
               controller: controllerOf(state, obj),
               ability: BLITZ_SACRIFICE_ABILITY,
+            },
+          ],
+        };
+      }
+      // CR 307.1, 603.7 (Necromancy): a spell cast when a sorcery could not have been creates, as it resolves, the delayed triggered ability that has the controller of the permanent it
+      // became sacrifice it at the beginning of the next cleanup step.
+      if (obj.stack?.sacrificeAtCleanup === true && moved.newObject !== null && permanent) {
+        next = {
+          ...next,
+          delayedTriggers: [
+            ...next.delayedTriggers,
+            {
+              source: moved.newObject,
+              controller: controllerOf(state, obj),
+              ability: FLASH_SACRIFICE_ABILITY,
             },
           ],
         };

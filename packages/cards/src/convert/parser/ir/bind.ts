@@ -429,6 +429,8 @@ class Binder {
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.thatCardOnly !== true ||
               /^that card$/iu.test(noun.filter.raw.trim()) ||
+              // Revenant Recon deck (Twilight Prophet): "Reveal the top card of your library and put it into your hand": "it" is the card revealed, the engine's `moved`.
+              (this.clauseVerb === 'putItIntoHand' && /^it$/iu.test(noun.filter.raw.trim())) ||
               (this.sentenceCastsIt &&
                 a.noun.ref === 'moved' &&
                 /^it$/iu.test(noun.filter.raw.trim()))) &&
@@ -453,6 +455,12 @@ class Binder {
                 !a.noun.plural &&
                 compatible(a.noun.filter, pronoun.type),
             ) ?? found;
+        }
+        // Necromancy (CR 701.3, 400.7): "Put target creature card from a graveyard onto the battlefield under your control and attach ~ to it": where the instruction before named a target,
+        // "it" of an attach is that target (the lowering reads it as the object the instruction put onto the battlefield).
+        if (found === undefined && noun.itWord === true && this.clauseVerb === 'attach') {
+          const [latest] = recent;
+          if (latest?.kind === 'object' && /^t\d+$/u.test(latest.noun.ref ?? '')) found = latest;
         }
         // Hero's Blade (CR 701.3): "attach ~ to it" where the sentence made no token: "it" is the object the trigger is about.
         if (found === undefined && noun.itWord === true) {
@@ -764,17 +772,22 @@ class Binder {
             arg.toughness !== undefined
               ? { itTokenGains: true as const }
               : {}),
-            noun: {
-              kind: 'noun',
-              det: 'a',
-              filter: { raw: 'token' },
-              upTo: false,
-              plural: false,
-              other: false,
-              span: arg.span,
-              rule: arg.rule,
-              ref,
-            },
+            // Hazel of the Rootbloom (CR 111.4, 608.2c): in "create a token that's a copy of target token you control. If that token is a Squirrel, ...", "that token" is the
+            // target token, which is what the instruction names (the copy is a new object that the sentence never refers to again).
+            noun:
+              copyOf?.det === 'target' && copyOf.filter.token === true
+                ? copyOf
+                : {
+                    kind: 'noun',
+                    det: 'a',
+                    filter: { raw: 'token' },
+                    upTo: false,
+                    plural: false,
+                    other: false,
+                    span: arg.span,
+                    rule: arg.rule,
+                    ref,
+                  },
           });
         }
         return {

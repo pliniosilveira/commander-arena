@@ -1203,6 +1203,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
+    case 'solve':
+      // CR 719.3a: the trigger of "To solve"; it is not a cost, so the label has nothing to show.
+      return '';
     case 'monstrosity':
       // CR 701.37a (D-445): "Monstrosity 5"; a count the game reads has no short word, so the label shows the cost only.
       return typeof effect.count === 'number' ? `Monstrosity ${effect.count}` : '';
@@ -1423,6 +1426,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? UNSAID
         : `This ${self} loses "enchant ${lost}" and gains "enchant ${gained}"`;
     }
+    case 'becomeAura': {
+      // CR 303.4, 702.5a (Necromancy): "It becomes an Aura with "enchant creature put onto the battlefield with this enchantment"".
+      const gained = enchantWords(effect.enchant.filter);
+      return gained === null
+        ? UNSAID
+        : `It becomes an Aura with "enchant ${gained.replace('this Aura', `this ${self}`)}"`;
+    }
     case 'may': {
       // CR 608.2c (D-135): "You may discard a card", "You may exile it".
       const inner = effectText(effect.effect, ability, self, defs);
@@ -1445,7 +1455,19 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       }
       return inner === '' ? '' : `When you do, ${lower(inner)}`;
     }
-    case 'mayCast':
+    case 'mayCast': {
+      // Mission Briefing (CR 608.2d, 601.2, 614.1a): "Choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it
+      // instead." The card is chosen as the effect resolves, not a target.
+      if (effect.objects.kind === 'choose') {
+        const { zone: _zone, ...described } = effect.objects.filter;
+        const phrase = filterPhrase(described, 'card');
+        if (phrase === null) return UNSAID;
+        return `Choose ${phrase} in your graveyard. You may cast it this turn${
+          effect.exileInstead === true
+            ? '. If that spell would be put into your graveyard, exile it instead'
+            : ''
+        }`;
+      }
       // Lorehold group 2 (CR 601.2, 118.9, 614.1a): "Choose target card exiled with this creature. You may cast that card this turn without paying its mana cost. If that spell would be
       // put into a graveyard, put it on the bottom of its owner's library instead."
       if (effect.from === 'exile') {
@@ -1473,6 +1495,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
           ? ''
           : '. When you cast it this turn, this creature gains all activated abilities of that card until end of turn'
       }`;
+    }
     case 'mayCastOneMilled':
       // CR 601.2, 611.2a (Locke, Treasure Hunter): "Until end of turn, you may cast a spell from among those cards".
       return 'Until end of turn, you may cast a spell from among those cards';

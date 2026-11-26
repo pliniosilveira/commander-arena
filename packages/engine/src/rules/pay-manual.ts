@@ -28,6 +28,8 @@ export interface ManualTap {
   readonly sacrifice?: ObjectId;
   /** "{T}, Tap an untapped creature you control: Add ..." (D-625): the permanent tapped; the engine chooses when it is left out and there is one candidate. */
   readonly tapped?: ObjectId;
+  /** "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors.": the permanents tapped, as many as `combination` has colors. */
+  readonly tappedMany?: readonly ObjectId[];
 }
 
 /** The state after the payment, or why the taps do not pay the cost (nothing changes then). */
@@ -61,6 +63,7 @@ export function payByTapping(
       tap.sacrifice,
       tap.tapped,
       tap.extraColors ?? null,
+      tap.tappedMany,
     );
     if ('error' in r) return { error: r.error };
     working = r.state;

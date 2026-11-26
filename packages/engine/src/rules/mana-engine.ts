@@ -14,6 +14,7 @@
  */
 
 import type { ManaAbility } from '../ast/types';
+import { COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { addToPool, type PaymentPlan, parseManaCost, planPayment } from '../mana';
 import type { ManaColor, ManaObject, ManaRestriction, ManaRider } from '../mana/types';
@@ -36,9 +37,11 @@ import {
   sacrificeFilterOf,
   showCost,
   tapFilterOf,
+  tapXFilterOf,
 } from './mana-abilities';
 import {
   acceptedCombination,
+  canonicalCombination,
   isCombinationProduction,
   productionOutcomes,
   sameCombination,
@@ -195,10 +198,15 @@ export function namesUnlistedCombination(
   combination: readonly ManaColor[] | undefined,
 ): boolean {
   const obj = state.objects[source];
-  if (obj === undefined || combination === undefined) return false;
+  if (obj === undefined) return false;
   const found = manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === abilityIndex);
+  if (found === undefined) return false;
+  // CR 107.3, 605.3b (Hazel of the Rootbloom): "Tap X untapped tokens you control: Add X mana in any combination of colors" has a play for every X, set of permanents and
+  // combination: the options hold a few, and any activation of it is taken to `activateManaAbility`, which checks it against the game as it is now.
+  if (tapXFilterOf(found.ability) !== null) return true;
   return (
-    found !== undefined && acceptedCombination(state, obj, found.ability, combination) !== null
+    combination !== undefined &&
+    acceptedCombination(state, obj, found.ability, combination) !== null
   );
 }
 
@@ -223,6 +231,8 @@ export function activateManaAbility(
   tapped?: ObjectId,
   /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b, 605.3b): required when the land has such an ability on it. */
   extraColors: readonly ManaColor[] | null = null,
+  /** The permanents a cost "Tap X untapped tokens you control" taps (Hazel of the Rootbloom): X of them, named by the player; the combination names X colors. */
+  tappedMany?: readonly ObjectId[],
 ): ActivationResult {
   // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player belongs to no permanent.
   if (isPlayerManaAbility(abilityIndex)) return activatePlayerMana(state, seat, source);
@@ -256,14 +266,42 @@ export function activateManaAbility(
       return refuse(`Choose which permanent to tap for ${name}`);
     }
   }
-  const picked = pickOutcome(
-    name,
-    found.ability,
-    productionOutcomes(state, obj, found.ability),
-    color,
-    combination,
-    combination === null ? null : acceptedCombination(state, obj, found.ability, combination),
-  );
+  // CR 107.3, 601.2b, 605.3b (Hazel of the Rootbloom): "Tap X untapped tokens you control: Add X mana in any combination of colors": the player chooses X as the ability is
+  // activated by naming the permanents they tap, and the color of each mana the ability adds; both are checked against the game as it is now.
+  const tapX = tapXFilterOf(found.ability) !== null;
+  if (!tapX && tappedMany !== undefined && tappedMany.length > 0) {
+    return refuse(`${name} taps no number of permanents`);
+  }
+  let xChosen: ManaColor[] | null = null;
+  if (tapX) {
+    const many = tappedMany ?? [];
+    const legal = manaTapCandidates(state, seat, source, found.ability);
+    if (color !== null) return refuse(`${name} makes a combination of mana, not one color`);
+    if (tapped !== undefined) return refuse(`${name} taps the permanents of a list, not one`);
+    if (new Set(many).size !== many.length) return refuse(`${name} cannot tap a permanent twice`);
+    if (!many.every((id) => legal.includes(id))) {
+      return refuse(`${name} cannot tap those permanents`);
+    }
+    const colors: readonly ManaColor[] = COLORS;
+    const named = combination ?? [];
+    if (named.length !== many.length || !named.every((c) => colors.includes(c))) {
+      return refuse(
+        `${name} adds as much mana as the permanents you tap (${many.length}), each of one of the five colors`,
+      );
+    }
+    xChosen = canonicalCombination(named);
+  }
+  const picked =
+    xChosen !== null
+      ? { chosen: xChosen }
+      : pickOutcome(
+          name,
+          found.ability,
+          productionOutcomes(state, obj, found.ability),
+          color,
+          combination,
+          combination === null ? null : acceptedCombination(state, obj, found.ability, combination),
+        );
   if ('error' in picked) return picked;
   const chosen = picked.chosen;
   const snow = derive(state, obj).supertypes.includes('snow');
@@ -282,7 +320,16 @@ export function activateManaAbility(
       manaPool: getSeat(working, seat).manaPool.filter((_, i) => !spent.has(i)),
     });
   }
-  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice, tapped);
+  const paid = payManaAbilityCosts(
+    working,
+    seat,
+    source,
+    found.ability,
+    sacrifice,
+    tapped,
+    undefined,
+    tappedMany,
+  );
   // CR 605.4a (D-139): the triggered mana abilities of "whenever you tap a permanent for {C}" resolve at once, into the same pool.
   const alternatives = additionalManaOptions(working, obj, found.ability, chosen);
   const only = alternatives[0];

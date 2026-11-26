@@ -7,6 +7,7 @@ import type {
   SpellText,
 } from '@commander-arena/engine';
 import type { UnparsedAbility } from '../../types';
+import { caseLine, solvedAbility, toSolveTrigger } from './case-labels';
 import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
 import { linkPutWith } from './link-put-with';
@@ -166,7 +167,10 @@ export function parseFaceText(
     // is read without it and is marked `exhaust` below, so that it can be activated once, never read as an unlimited one.
     const exhaustWord = /^Exhaust\s+[—–-]\s+(?=[{\p{Lu}])/u.exec(body)?.[0];
     const exhaust = exhaustWord !== undefined;
-    const reading = exhaust ? body.slice(exhaustWord.length) : body;
+    // CR 719.3, 702.169 (Case): "To solve — [condition]" and "Solved — [ability]" are read as what they stand for; a line with either word on a card that is not a Case is read as written.
+    const caseText = faceSubtypes.includes('Case') && !maxSpeedLine ? caseLine(body) : null;
+    const reading =
+      caseText !== null ? caseText.text : exhaust ? body.slice(exhaustWord.length) : body;
     const asWritten = compileLine(reading, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not
     // read as written, and the line is read again without it. A line that reads today never changes; a wrong strip can only turn an unread
@@ -179,6 +183,31 @@ export function parseFaceText(
     const result = bare === reading ? asWritten : compileLine(bare, lineOptions);
     if (!result.ok) {
       unparsed.push(unparsedAbility(faceIndex, index, text, result.failure));
+    } else if (caseText !== null) {
+      // CR 719.3a: the trigger of "To solve" with "and this Case is not solved"; CR 702.169: the abilities of "Solved" are gated on the designation. Anything else is refused whole.
+      const built =
+        result.kind !== 'abilities' || result.abilities.length === 0
+          ? null
+          : caseText.kind === 'toSolve'
+            ? toSolveTrigger(result.abilities)
+            : solvedAbility(result.abilities);
+      const blocked = missingFeatures(
+        caseText.kind === 'toSolve' ? ['ability:triggered'] : ['ability:solved'],
+      );
+      if (built === null || blocked.length > 0) {
+        unparsed.push(
+          unparsedAbility(faceIndex, index, text, {
+            reason: 'notRunnable',
+            stoppedAt: text,
+            closestRule: result.ruleId,
+            recognised: [],
+            ...(blocked.length > 0 ? { needs: blocked } : {}),
+          }),
+        );
+        continue;
+      }
+      abilities.push(built);
+      lineOf.push({ index, text, ruleId: result.ruleId });
     } else if (maxSpeedLine) {
       // The engine has the condition for an activated, a mana and a static ability only; any other line with the label is refused as a whole, never half run.
       const gated =
@@ -442,6 +471,15 @@ function exilesIn(effect: Effect): number {
     case 'exileTop':
       // Journey to the Lost City: or several cards ("exile the top four cards of your library"): every card is remembered as it is exiled.
       return effect.faceDown !== true && effect.from === undefined ? 1 : 0;
+    // CR 607.2a, 610.3 (Foreboding Steamboat): "each player chooses two creatures they control. Exile them until ~ leaves the battlefield": the creatures the players chose are what
+    // "a card exiled with it" names.
+    case 'moveToZone':
+      return effect.to === 'exile' &&
+        effect.objects.kind === 'choose' &&
+        effect.objects.players !== undefined &&
+        effect.until !== undefined
+        ? 1
+        : 0;
     // "you may exile that card from your graveyard" (stage P50, D-207).
     case 'may':
       return exilesIn(effect.effect);
@@ -570,6 +608,8 @@ function linkedEffect(effect: Effect): Effect {
       return { ...effect, linked: true };
     case 'exileTop':
       return { ...effect, linked: true };
+    case 'moveToZone':
+      return exilesIn(effect) > 0 ? { ...effect, linked: true } : effect;
     case 'may':
       return { ...effect, effect: linkedEffect(effect.effect) };
     case 'sequence':
@@ -664,11 +704,28 @@ function linkExile(abilities: readonly Ability[]): {
   }
   const [only] = exilers;
   const one = only !== undefined ? abilities[only] : undefined;
+  // Hazel's Brewmaster (CR 603.2c, 607.2a): "Whenever this creature enters or attacks, exile up to one target card from a graveyard ...": one ability of the text, which the lowering makes an
+  // ability of the engine for each event. The exilers are that one ability when they are triggered abilities that differ in their event only.
+  const sameAbility = (a: Ability, b: Ability | undefined): boolean => {
+    if (a.kind !== 'triggered' || b?.kind !== 'triggered') return false;
+    const { trigger: _a, ...restA } = a;
+    const { trigger: _b, ...restB } = b;
+    void _a;
+    void _b;
+    return JSON.stringify(restA) === JSON.stringify(restB);
+  };
+  const oneText =
+    one !== undefined &&
+    exilers.every((i) => {
+      const a = abilities[i];
+      return a !== undefined && sameAbility(a, one);
+    });
   // Shelob, Dread Weaver: several abilities may read the cards the one exile ability remembers.
   const linkable =
     readers.length >= 1 &&
     replacers.length === 0 &&
-    exilers.length === 1 &&
+    exilers.length >= 1 &&
+    (exilers.length === 1 || oneText) &&
     one !== undefined &&
     (one.kind === 'triggered' || one.kind === 'activated') &&
     exilesIn(one.effect) === 1;
@@ -691,7 +748,7 @@ function linkExile(abilities: readonly Ability[]): {
   }
   return {
     abilities: abilities.map((a, i) =>
-      i === only && (a.kind === 'triggered' || a.kind === 'activated')
+      exilers.includes(i) && (a.kind === 'triggered' || a.kind === 'activated')
         ? { ...a, effect: linkedEffect(a.effect) }
         : a,
     ),

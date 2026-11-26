@@ -335,7 +335,16 @@ function lowerManaAbility(
   ) {
     return failure(ability);
   }
-  if (defines && whereOf === undefined) return failure(ability);
+  // CR 107.3, 605.3b (Hazel of the Rootbloom): "Tap X untapped tokens you control: Add X mana in any combination of colors": X is what the cost taps, so no ", where X is" defines it
+  // (and with one, the mana would count two Xs: not read).
+  const tapsX = ability.costs.some((c) => c.kind === 'tapPermanentsX');
+  const xFromCost =
+    tapsX &&
+    spec?.kind === 'manaSpec' &&
+    spec.what.kind === 'anyCombinationX' &&
+    whereOf === undefined;
+  if (tapsX && !xFromCost) return failure(ability);
+  if (defines && whereOf === undefined && !xFromCost) return failure(ability);
   if (ability.body.sentences.some((s) => s.condition !== undefined || s.instead === true)) {
     return failure(ability);
   }
@@ -363,7 +372,9 @@ function lowerManaAbility(
   if (!restrictions.ok) return restrictions;
   // CR 106.1b, 605.3b: the count of mana of the one color chosen as the ability resolves, from the "for each" of the sentence or from the X its ", where X is" defines.
   let production: ManaProduction;
-  if (
+  if (xFromCost) {
+    production = { kind: 'anyCombinationTapped' };
+  } else if (
     spec.what.kind === 'thatColor' ||
     spec.what.kind === 'anyOneColorX' ||
     spec.what.kind === 'anyCombinationX'
@@ -504,6 +515,8 @@ function lowerManaAbility(
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
   // D-625 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
   const tapsOther = costs.value.filter((c) => c.kind === 'tapPermanents');
+  // CR 107.3 (Hazel of the Rootbloom): "Tap X untapped tokens you control", once, paired with the production of X mana in any combination of colors.
+  const tapsXs = costs.value.filter((c) => c.kind === 'tapPermanentsX');
   // CR 605.3b, 701.21a (stage P63, D-216): the permanent itself ("Sacrifice this artifact: Add ...") or one of a kind the controller has ("Sacrifice a Spirit:
   // Add {R}."), one only: the engine chooses it as the ability is activated, or the payment names it.
   const selfOnly = sacrifices.every((c) => c.kind === 'sacrifice' && c.count === undefined);
@@ -517,7 +530,8 @@ function lowerManaAbility(
       lives === 1 ||
       energies === 1 ||
       // Relic of Legends (CR 605.3b): "Tap an untapped legendary creature you control: Add one mana of any color." needs no {T} of its own.
-      tapsOther.length === 1) &&
+      tapsOther.length === 1 ||
+      tapsXs.length === 1) &&
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
@@ -527,8 +541,10 @@ function lowerManaAbility(
     exerts <= 1 &&
     sacrifices.length <= 1 &&
     tapsOther.length <= 1 &&
+    tapsXs.length <= 1 &&
     (tapsOther.length === 0 ||
       (sacrifices.length === 0 && tapsOther.every((c) => c.count === 1))) &&
+    (tapsXs.length === 0 || (sacrifices.length === 0 && tapsOther.length === 0)) &&
     selfOnly &&
     taps +
       manas +
@@ -539,7 +555,8 @@ function lowerManaAbility(
       additions +
       exerts +
       sacrifices.length +
-      tapsOther.length ===
+      tapsOther.length +
+      tapsXs.length ===
       costs.value.length &&
     effects.every(isAlso) &&
     rest.every(plainClause);
@@ -1259,6 +1276,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:anyColorAmount',
   'manaProduction:anyColorAmong',
   'manaProduction:anyCombinationAmount',
+  'manaProduction:anyCombinationTapped',
   'ability:activateOnlyIf',
   'ability:costReducedIf',
   'ability:costReducedBy',

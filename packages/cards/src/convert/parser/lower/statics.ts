@@ -677,6 +677,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes'];
     case 'castAsThoughFlash':
       return ['static:castAsThoughFlash'];
+    case 'selfFlashSacrificeAtCleanup':
+      return ['static:castAsThoughFlash', 'ability:flashSacrificeRider'];
     case 'opponentsCantCastSpells':
       return ['static:opponentsCantCastSpells'];
     case 'takeFromLinkedExile':
@@ -802,6 +804,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:unspentManaStays'];
     case 'unspentManaBecomesColorless':
       return ['static:unspentManaBecomesColorless'];
+    case 'surveilLookAdditional':
+      return ['static:surveilLookAdditional'];
+    case 'playSurveiledFromGraveyard':
+      return ['static:playSurveiledFromGraveyard'];
     case 'castFromTop':
       return ['static:castFromTopOfLibrary'];
     case 'graveyardPlay':
@@ -1566,6 +1572,33 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: reduction.rule,
     };
   }
+  // "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the
+  // next cleanup step." (Necromancy, CR 601.3b, 307.1, 603.7, 514.3a): the spell's own permission and its rider; no condition, nothing after it.
+  if (first.kind === 'selfFlashSacrificeAtCleanup' && statement.subject.det === 'self') {
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures([
+      'ability:static',
+      'static:castAsThoughFlash',
+      'ability:flashSacrificeRider',
+    ]);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'castAsThoughFlash',
+            spells: { kind: 'this' },
+            sacrificeIfCastAtInstantSpeed: true,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // "You may cast ~ as though it had flash if it targets a commander." (Danitha deck, D-408, CR 601.3b, 601.3d): the spell's own permission, with the condition
   // the engine reads as the spell is cast.
   if (first.kind === 'castAsThoughFlash' && statement.subject.det === 'self') {
@@ -1585,6 +1618,12 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       ],
       rule: ability.rule,
     };
+  }
+  // "During each opponent's end step, you may cast spells as though they had flash." (Revenant Recon deck, CR 513.1, 601.3b): a permanent's permission with the condition
+  // the engine reads where the permission is used.
+  if (first.kind === 'castAsThoughFlash' && statement.condition?.test.kind === 'opponentsEndStep') {
+    if (more.length > 0 || statement.also !== undefined) return failure(ability);
+    return lowerOwnStatic(ability, first, ctx);
   }
   if (statement.condition === undefined) {
     if (parts.length > 1) return failure(ability);
@@ -1763,7 +1802,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     first.kind === 'opponentsCantCastSpells'
   ) {
     if (more.length > 0) return failure(ability);
-    return lowerOwnStatic(ability, first);
+    return lowerOwnStatic(ability, first, ctx);
   }
   // "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3).
   if (first.kind === 'creatureOffBattlefield') {
@@ -1833,6 +1872,7 @@ function lowerOwnStatic(
         | 'opponentsCantCastSpells';
     }
   >,
+  ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', ...needsOf(effect)]);
@@ -1870,6 +1910,16 @@ function lowerOwnStatic(
     void stackKind;
     const spells = lowerFilter(noun(described));
     if (!spells.ok) return spells;
+    // "During each opponent's end step, you may cast ..." (CR 513.1): the permission works while the condition holds, read where it is used; no other condition is read.
+    let condition: Condition | undefined;
+    if (ability.statement.condition !== undefined) {
+      if (ability.statement.condition.test.kind !== 'opponentsEndStep') return failure(ability);
+      const lowered = lowerCondition(ability.statement.condition, false, ctx);
+      if (!lowered.ok) return lowered;
+      const blocked = missingFeatures(['ability:staticCondition']);
+      if (blocked.length > 0) return failure(ability, blocked);
+      condition = lowered.value;
+    }
     // "Any player may cast ..." (CR 601.3b): every player may, so no controller is named; "You may cast ..." names the controller.
     return {
       ok: true,
@@ -1880,6 +1930,7 @@ function lowerOwnStatic(
             effect.anyPlayer === true
               ? { kind: 'castAsThoughFlash', spells: spells.value, anyPlayer: true }
               : { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+          ...(condition === undefined ? {} : { condition }),
         },
       ],
       rule: ability.rule,

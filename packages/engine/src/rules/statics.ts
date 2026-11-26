@@ -65,6 +65,24 @@ export function landPlaysAllowed(state: GameState, seat: SeatId): number {
 }
 
 /**
+ * CR 701.25a (Surveil), 604.1: how many more cards than the surveil says `seat` looks at each time they surveil: `count` for each battlefield permanent they control with "You may look at an
+ * additional two cards each time you surveil" (Enhanced Surveillance); several add up. Read from the derived abilities, so a permanent that lost its abilities adds nothing.
+ */
+export function surveilExtraLook(state: GameState, seat: SeatId): number {
+  let extra = 0;
+  for (const id of state.battlefield) {
+    const obj = getObject(state, id);
+    if (controllerOf(state, obj) !== seat || !mayHaveStatic(state, obj, 'surveilLookAdditional')) {
+      continue;
+    }
+    for (const a of derive(state, obj).abilities) {
+      if (a.kind === 'static' && a.static.kind === 'surveilLookAdditional') extra += a.static.count;
+    }
+  }
+  return extra;
+}
+
+/**
  * CR 401.5 (Library), D-125: the top card of the library of `seat` that `viewer` (the player themselves when left out) may see now. The player may look at it
  * when they control a battlefield permanent that says "You may look at the top card of your library any time", and every player may see it while a permanent
  * their owner controls says "Play with the top card of your library revealed" (`revealTopOfLibrary`). Several do the same as one. Read from the derived

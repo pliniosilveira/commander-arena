@@ -254,7 +254,6 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
       "Create a token that's a copy of target creature, except the token isn't legendary.",
       'except',
     ],
-    ["Create a token that's a copy of target token you control.", 'token you control'],
     [
       "Create a token that's a copy of target creature card in your graveyard.",
       'card in your graveyard',
@@ -271,6 +270,15 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     const d = dropped(text, 'sorcery');
     expect(d.reason).toBe('unrecognised');
     expect(d.stoppedAt).toContain(part);
+  });
+
+  test('a copy of "target token you control" is read (Squirreled Away deck, group 1: the noun "token" alone, CR 111.1, 707.2)', () => {
+    const effect = readAll(
+      "Create a token that's a copy of target token you control.",
+      'sorcery',
+    ).spell;
+    expect(JSON.stringify(effect)).toContain('"token":true');
+    expect(JSON.stringify(effect)).toContain('"kind":"copyOf"');
   });
 
   test('"that creature" is read (issue 145, Bramble Sovereign) but has nothing to mean in a spell with no creature before it: dropped, never guessed', () => {

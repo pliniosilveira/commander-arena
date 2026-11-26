@@ -8,6 +8,8 @@ const LAYOUT_FACES: Readonly<Record<string, { layout: CardLayout; faces: number 
   saga: { layout: 'saga', faces: 1 },
   // CR 716 (stage P75, D-235): a Class, one face.
   class: { layout: 'class', faces: 1 },
+  // CR 719 (Case): one face, an enchantment with the subtype Case.
+  case: { layout: 'case', faces: 1 },
   split: { layout: 'split', faces: 2 },
   adventure: { layout: 'adventure', faces: 2 },
   transform: { layout: 'transform', faces: 2 },

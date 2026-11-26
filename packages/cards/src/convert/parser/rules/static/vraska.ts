@@ -10,7 +10,7 @@ import { statement } from './grants';
  * `static.during-your-turn`: "During your turn, equipped creature has flying." (CR 611.3a, 613.8: the effect applies only while it is your turn, which is
  * looked at all the time and which no layer changes). The statement after the comma is one of an attached permanent (`static.attached`: "equipped
  * creature gets +1/+0 and has flying"), so the condition is that of the whole statement. Not read: another turn ("during an opponent's turn"), a
- * condition after the statement ("equipped creature has flying during your turn"), a subject that is not the attached permanent, `~`, a group of permanents (`static.permanents`) or "each creature" (`static.each`, Baldin: "During your turn,
+ * condition after the statement ("equipped creature has flying during your turn"), a subject that is not the attached permanent, `~`, a group of permanents (`static.permanents`, Gourmand's Talent) or "each creature" (`static.each`, Baldin: "During your turn,
  * each creature assigns combat damage equal to its toughness rather than its power.").
  */
 export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
@@ -29,6 +29,9 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     // Flint deck (issue 685, At Knifepoint): a group of permanents, while it is your turn.
     'During your turn, creatures you control have flying.',
     'During your turn, outlaws you control have first strike.',
+    // Gourmand's Talent (CR 611.3a, 613.1d, 613.1f): a statement about a group of permanents, with its types or abilities.
+    'During your turn, artifacts you control are Foods in addition to their other types.',
+    'During your turn, artifacts you control are Foods in addition to their other types and have "{2}, {T}, Sacrifice this artifact: You gain 3 life."',
   ],
   rejects: [
     'During your turn, equipped creature has flying',

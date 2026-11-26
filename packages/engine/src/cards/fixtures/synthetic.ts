@@ -211,6 +211,7 @@ import { SYNTHETIC_SLIVER_B_LIST } from './synthetic-sliver-b';
 import { SYNTHETIC_SLIVER_C_LIST } from './synthetic-sliver-c';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
+import { SYNTHETIC_SQUIRREL_G1_LIST } from './synthetic-squirrel-g1';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
 import { SYNTHETIC_STATION_LIST } from './synthetic-station';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
@@ -218,6 +219,7 @@ import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
 import { SYNTHETIC_TAP_ALT_LIST } from './synthetic-tap-alt';
 import { SYNTHETIC_TAP_CHOICE_LIST } from './synthetic-tap-choice';
 import { SYNTHETIC_TAP_COST_LIST } from './synthetic-tap-cost';
+import { SYNTHETIC_TAP_X_LIST } from './synthetic-tap-x';
 import { SYNTHETIC_TARGETING_LIST } from './synthetic-targeting';
 import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
@@ -511,6 +513,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
+  ...SYNTHETIC_SQUIRREL_G1_LIST,
   ...SYNTHETIC_CANT_SACRIFICE_LIST,
   ...SYNTHETIC_COUNTERS_PLUS_LIST,
   ...SYNTHETIC_MANA_GROUP_F_LIST,
@@ -555,6 +558,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_EVOKE_GRANT_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
+  ...SYNTHETIC_TAP_X_LIST,
   ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,

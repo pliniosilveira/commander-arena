@@ -87,6 +87,40 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
+  // CR 107.3, 605.3b (Hazel of the Rootbloom): the X of "Add X mana in any combination of colors" is the number of permanents the one "Tap X untapped ..." cost taps, so each
+  // needs the other; that cost does not come with a choice of another kind (a sacrifice, a single permanent to tap, a counter) or a production that replaces its own.
+  const tapsX = (Array.isArray(a.cost) ? a.cost : []).filter((c) => c?.kind === 'tapPermanentsX');
+  if (tapsX.length > 1) {
+    issue(out, `${path}.cost`, 'a mana ability taps X permanents in one cost only');
+  }
+  if (tapsX.length === 1 && a.production?.kind !== 'anyCombinationTapped') {
+    issue(
+      out,
+      `${path}.production`,
+      'a cost that taps X permanents is paired with the production of X mana in any combination of colors',
+    );
+  }
+  if (a.production?.kind === 'anyCombinationTapped' && tapsX.length !== 1) {
+    issue(
+      out,
+      `${path}.cost`,
+      'the production of X mana in any combination of colors needs the cost that taps X permanents',
+    );
+  }
+  if (
+    tapsX.length > 0 &&
+    ((a.cost ?? []).some(
+      (c) => c?.kind === 'sacrifice' || c?.kind === 'tapPermanents' || c?.kind === 'removeCounters',
+    ) ||
+      a.instead !== undefined ||
+      a.putCounter !== undefined)
+  ) {
+    issue(
+      out,
+      `${path}.cost`,
+      'a mana ability that taps X permanents has no other choice to make: no sacrifice, other tap cost, counters or replacing production',
+    );
+  }
   if (a.production?.kind === 'producedType') {
     issue(
       out,

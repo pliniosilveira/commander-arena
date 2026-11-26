@@ -105,6 +105,114 @@ export const STATIC_UNSPENT_MANA = defineRule<IrStatic>({
   },
 });
 
+const COUNT_WORDS: Readonly<Record<string, number>> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+};
+
+/**
+ * `static.surveil-look-additional`: "You may look at an additional two cards each time you surveil." (Enhanced Surveillance; CR 701.25a, 604.1: each surveil of the controller looks at that
+ * many more cards). A number of one to six, written as a word; "one" takes the singular "card". Not read: a digit, another player, "scry", "whenever", a missing period, a second sentence.
+ */
+export const STATIC_SURVEIL_LOOK_ADDITIONAL = defineRule<IrStatic>({
+  id: 'static.surveil-look-additional',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 701.25a (Surveil)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    'You may look at an additional two cards each time you surveil.',
+    'You may look at an additional card each time you surveil.',
+    'You may look at an additional three cards each time you surveil.',
+  ],
+  rejects: [
+    'You may look at an additional two cards each time you surveil',
+    'You may look at an additional 2 cards each time you surveil.',
+    'You may look at an additional two cards each time you scry.',
+    'You may look at an additional two cards each time an opponent surveils.',
+    'You may look at an additional two cards whenever you surveil.',
+    'You may look at an additional card each time you surveil. Draw a card.',
+    'You may look at an additional two card each time you surveil.',
+    'You may look at an additional one cards each time you surveil.',
+    'You may look at two additional cards each time you surveil.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may look at an additional (?:(card)|(one|two|three|four|five|six) (cards)) each time you surveil\./iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const word = (r.value[2] ?? '').toLowerCase();
+    // "an additional card" is one, and "one cards" is not English.
+    if (word === 'one') return fail(ctx, pos);
+    const count = word === '' ? 1 : (COUNT_WORDS[word] ?? 0);
+    if (count < 1) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject: youNoun('static.surveil-look-additional', pos),
+        effects: [{ kind: 'surveilLookAdditional', count }],
+        span: { start: pos, end: r.pos },
+        rule: 'static.surveil-look-additional',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.play-surveiled-graveyard`: "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its
+ * mana value rather than paying its mana cost." (Eye of Duskmantle; CR 701.25a, 601.2a, 305.1, 118.9: the cards a surveil of the controller put into the graveyard this turn, played at the
+ * timing of their types, the spells paid for with life). Both sentences, as the card prints them. Not read: another player's graveyard, another span than "this turn", only lands or only
+ * spells, a payment other than life equal to the mana value, a missing second sentence.
+ */
+export const STATIC_PLAY_SURVEILED_GRAVEYARD = defineRule<IrStatic>({
+  id: 'static.play-surveiled-graveyard',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 701.25a (Surveil)',
+    'CR 601.2a (Casting Spells)',
+    'CR 305.1 (Lands)',
+    'CR 118.9 (Costs)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost.",
+    'You may play lands and cast spells from among cards in your graveyard you’ve surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost.',
+  ],
+  rejects: [
+    "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn.",
+    "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost. Draw a card.",
+    "You may play lands from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost.",
+    "You may play lands and cast spells from among cards in a graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost.",
+    "You may play lands and cast spells from among cards in your graveyard you've surveilled. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost.",
+    "You may play lands and cast spells from among cards in your graveyard you've scried this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost.",
+    "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay twice its mana value in life rather than paying its mana cost.",
+    "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value.",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may play lands and cast spells from among cards in your graveyard you['’]ve surveilled this turn\. if you cast a spell this way, you pay life equal to its mana value rather than paying its mana cost\./iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject: youNoun('static.play-surveiled-graveyard', pos),
+        effects: [{ kind: 'playSurveiledFromGraveyard' }],
+        span: { start: pos, end: r.pos },
+        rule: 'static.play-surveiled-graveyard',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 /** The kind of spell a cast-from-the-top permission names: card types, one creature type, or a choice of creature types. */
 interface SpellKind {
   readonly types: string[];
@@ -300,4 +408,9 @@ export const SELF_BECOMES_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   return { ok: true, value: { noun: self.value, effects }, pos: at };
 };
 
-export const DRAGON_STATIC_RULES = [STATIC_UNSPENT_MANA, STATIC_CAST_FROM_TOP].map(quietly);
+export const DRAGON_STATIC_RULES = [
+  STATIC_UNSPENT_MANA,
+  STATIC_SURVEIL_LOOK_ADDITIONAL,
+  STATIC_PLAY_SURVEILED_GRAVEYARD,
+  STATIC_CAST_FROM_TOP,
+].map(quietly);

@@ -297,7 +297,12 @@ function handlers(
           onObject: (id) => {
             const outcome = clickOutcome(d, id, index);
             if (outcome.kind === 'act') act(outcome.action);
-            else if (outcome.kind === 'choose' || outcome.kind === 'menu') ctl.openChooser(id);
+            else if (
+              outcome.kind === 'choose' ||
+              outcome.kind === 'menu' ||
+              outcome.kind === 'tapMany'
+            )
+              ctl.openChooser(id);
           },
         }),
         bar: bar(priorityPrompt(view, index), priorityButtons(view, ctl, d), {

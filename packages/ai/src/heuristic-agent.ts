@@ -52,6 +52,7 @@ import {
   startBudget,
   type Think,
 } from './heuristic-budget';
+import type { LookRecord } from './heuristic-combat-look';
 import { choosePriorityHeuristic, type PriorityChoice } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
@@ -59,11 +60,14 @@ import {
   choosePlan,
   firstAction,
   followPlan,
+  type Planning,
   type PlanRecord,
   type TurnPlan,
 } from './heuristic-plan';
 import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
+import { choosePlanOn } from './heuristic-plan-pool';
 import { type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
+import type { Line, PlayOutPool } from './heuristic-plan-types';
 import type { PlanWork } from './heuristic-plan-work';
 import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
@@ -86,6 +90,31 @@ export interface HeuristicAgentOptions {
   readonly weights?: AgentWeights;
 }
 
+/** Inner HeuristicAgents for a planner's play-outs: the same rules and weights, no sample, so no planning. */
+export function simAgentsOf(weights: AgentWeights): SimAgents {
+  return {
+    start: () => {
+      const agents = new Map<SeatId, HeuristicAgent>();
+      return (seat) => {
+        let agent = agents.get(seat);
+        if (agent === undefined) {
+          agent = new HeuristicAgent({ seed: 7919 + seat, weights });
+          agents.set(seat, agent);
+        }
+        const inner = agent;
+        return (view) => inner.decisionHandlers(view);
+      };
+    },
+  };
+}
+
+/** What a priority decision asks of whoever drives it when it plans: the planning of `lines` in `when`. */
+interface PlanQuery {
+  readonly view: GameView;
+  readonly when: Window;
+  readonly lines: readonly Line[];
+}
+
 export class HeuristicAgent implements ExplainingAgent {
   readonly name: string;
   private rng: RngState;
@@ -106,6 +135,8 @@ export class HeuristicAgent implements ExplainingAgent {
   private readonly searchList: SearchWork[] = [];
   /** The budget of the decision being answered (`decide`), read once it is answered. */
   private budget: Budget = NO_BUDGET;
+  /** What the combat look-ahead of the decision being answered did (`heuristic-combat-look.ts`), if it ran. */
+  private look: LookRecord | null = null;
   /** The plannings tried this turn (see `priorityChoice`). */
   private tries: { turn: number; count: number; failed: Set<Window> } = {
     turn: -1,
@@ -119,6 +150,7 @@ export class HeuristicAgent implements ExplainingAgent {
     this.overrides = options.handlerOverrides ?? {};
     this.weights = options.weights ?? DEFAULT_WEIGHTS;
     this.opponent = new OpponentModel(this.weights);
+    this.simAgents = simAgentsOf(this.weights);
   }
 
   get fallbacks(): readonly FallbackRecord[] {
@@ -144,33 +176,20 @@ export class HeuristicAgent implements ExplainingAgent {
     return this.searchList;
   }
 
-  /** Inner agents for the planner's play-outs: the same rules and weights, no sample, so no planning. */
-  private readonly simAgents: SimAgents = {
-    start: () => {
-      const agents = new Map<SeatId, HeuristicAgent>();
-      return (seat) => {
-        let agent = agents.get(seat);
-        if (agent === undefined) {
-          agent = new HeuristicAgent({ seed: 7919 + seat, weights: this.weights });
-          agents.set(seat, agent);
-        }
-        const inner = agent;
-        return (view) => inner.decisionHandlers(view);
-      };
-    },
-  };
+  /** Inner agents for the planner's play-outs (`simAgentsOf`). */
+  private readonly simAgents: SimAgents;
 
   /**
    * The priority choice: a step of the plan, a new plan, or today's choice (see `heuristic-plan.ts`).
    * `planning` is false without a sample (the inner agents of a play-out, a host that gives none).
    */
-  private priorityChoice(
+  private *priorityChoice(
     view: GameView,
     d: PriorityDecision,
     think: Think,
     answer: (v: GameView, pending: PendingDecision) => Action,
     planning: boolean,
-  ): PriorityChoice {
+  ): Generator<PlanQuery, PriorityChoice, Planning> {
     if (this.plan !== null && view.activeSeat === view.viewer && view.turn > this.plan.turn) {
       this.plan = null;
     }
@@ -203,7 +222,7 @@ export class HeuristicAgent implements ExplainingAgent {
       this.tries = { turn: view.turn, count: 0, failed: new Set() };
     if (this.tries.count >= MAX_PLANS_PER_TURN || this.tries.failed.has(when)) return today;
     this.tries.count += 1;
-    const { planned, work } = choosePlan(view, when, lines, think, this.simAgents);
+    const { planned, work } = yield { view, when, lines };
     this.workList.push(work);
     if (planned === null) {
       this.tries.failed.add(when);
@@ -220,6 +239,51 @@ export class HeuristicAgent implements ExplainingAgent {
       ...(reserve === null ? {} : { reserve }),
     };
   }
+
+  /** A priority decision's answer, as a generator that asks for its planning (see `PlanQuery`). */
+  private *prioritize(
+    view: GameView,
+    d: PriorityDecision,
+    think: Think,
+    answer: (v: GameView, pending: PendingDecision) => Action,
+    note: (reason: Reason) => void,
+    planning: boolean,
+  ): Generator<PlanQuery, Action, Planning> {
+    this.opponent.observe(view);
+    this.reserve = null;
+    const open = withoutTriedCasts(view, d, this.activations);
+    const choice = yield* this.priorityChoice(view, open, think, answer, planning);
+    noteCast(view, choice.action, this.activations);
+    this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
+    note(choice.reason);
+    return choice.action;
+  }
+
+  /**
+   * The same decision with its planning played by the context's pool of workers (`heuristic-plan-pool.ts`):
+   * the answer is the one `decisionHandlers` gives, for the planning is the same on a pool.
+   */
+  private async prioritizeOn(
+    view: GameView,
+    d: PriorityDecision,
+    ctx: DecideContext & { readonly playOuts: PlayOutPool },
+    note: (reason: Reason) => void,
+  ): Promise<Action> {
+    const think = this.think(ctx);
+    const run = this.prioritize(view, d, think, this.answerWith, note, true);
+    let step = run.next();
+    while (!step.done) {
+      const q = step.value;
+      step = run.next(
+        await choosePlanOn(q.view, q.when, q.lines, think, this.simAgents, ctx.playOuts),
+      );
+    }
+    return step.value;
+  }
+
+  /** What a simulated cast asks after the cast has started (targets, payment): the same handlers. */
+  private readonly answerWith = (v: GameView, pending: PendingDecision): Action =>
+    handleDecision(pending, this.decisionHandlers(v));
 
   private draw(maxExclusive: number): number {
     const [value, next] = nextInt(this.rng, maxExclusive);
@@ -255,20 +319,17 @@ export class HeuristicAgent implements ExplainingAgent {
   ): DecisionHandlers<Action> {
     const think = this.think(ctx);
     const casual = createCasualHandlers(view, think.draw, this.activations);
-    // What a simulated cast asks after the cast has started (targets, payment): the same handlers.
-    const answer = (v: GameView, pending: PendingDecision): Action =>
-      handleDecision(pending, this.decisionHandlers(v));
+    const answer = this.answerWith;
     return {
       ...casual,
       priority: (d) => {
-        this.opponent.observe(view);
-        this.reserve = null;
-        const open = withoutTriedCasts(view, d, this.activations);
-        const choice = this.priorityChoice(view, open, think, answer, ctx?.sample !== undefined);
-        noteCast(view, choice.action, this.activations);
-        this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
-        note(choice.reason);
-        return choice.action;
+        const run = this.prioritize(view, d, think, answer, note, ctx?.sample !== undefined);
+        let step = run.next();
+        while (!step.done) {
+          const q = step.value;
+          step = run.next(choosePlan(q.view, q.when, q.lines, think, this.simAgents));
+        }
+        return step.value;
       },
       payMana: (d) => {
         const hold = this.reserve;
@@ -315,7 +376,9 @@ export class HeuristicAgent implements ExplainingAgent {
           weights: this.weights,
           passiveWeight: this.opponent.passiveWeight,
           passiveWeightFor: (seat) => this.opponent.passiveWeightFor(seat),
+          agents: this.simAgents,
         });
+        this.look = choice.look ?? null;
         note(choice.reason);
         return choice.action;
       },
@@ -324,7 +387,9 @@ export class HeuristicAgent implements ExplainingAgent {
           sample: think.sample(),
           budget: think.budget,
           weights: this.weights,
+          agents: this.simAgents,
         });
+        this.look = choice.look ?? null;
         note(choice.reason);
         return choice.action;
       },
@@ -345,21 +410,26 @@ export class HeuristicAgent implements ExplainingAgent {
     };
   }
 
-  decide(view: GameView, decision: PendingDecision, ctx: DecideContext): Promise<Action> {
+  async decide(view: GameView, decision: PendingDecision, ctx: DecideContext): Promise<Action> {
     let reason: Reason = 'delegated';
     try {
-      const action = handleDecision(
-        decision,
-        this.decisionHandlers(
-          view,
-          (r) => {
-            reason = r;
-          },
-          ctx,
-        ),
-      );
+      const note = (r: Reason): void => {
+        reason = r;
+      };
+      const pool = ctx.playOuts;
+      // A priority decision plans on the context's pool of workers when it has two or more.
+      const action =
+        decision.kind === 'priority' &&
+        pool !== undefined &&
+        pool.size >= 2 &&
+        ctx.sample !== undefined &&
+        this.overrides.priority === undefined
+          ? await this.prioritizeOn(view, decision, { ...ctx, playOuts: pool }, note)
+          : handleDecision(decision, this.decisionHandlers(view, note, ctx));
       const budget = this.budget;
       this.budget = NO_BUDGET;
+      const look = this.look;
+      this.look = null;
       if (budget.calls() > 0) {
         this.searchList.push({
           kind: decision.kind,
@@ -369,6 +439,7 @@ export class HeuristicAgent implements ExplainingAgent {
           // The clock as the searches last read it: one more read would make the decision longer on a host
           // whose clock moves with every read.
           ms: budget.seen(),
+          ...(look === null ? {} : { look }),
         });
       }
       this.reasonList.push({
@@ -379,6 +450,7 @@ export class HeuristicAgent implements ExplainingAgent {
       return Promise.resolve(action);
     } catch (error) {
       this.budget = NO_BUDGET;
+      this.look = null;
       this.fallbackList.push({
         decisionKind: decision.kind,
         message: error instanceof Error ? error.message : String(error),

@@ -591,6 +591,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
   'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
+  'cost.tap-permanents-x': permanent((e) => `{T}, ${e}: Add X mana in any combination of colors.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
@@ -867,6 +868,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.damage-bonus-noncombat': asIs,
   'replacement.damage-double': asIs,
   'static.unspent-mana': asIs,
+  // Revenant Recon deck, surveil group: Enhanced Surveillance and Eye of Duskmantle say the whole ability, and the two triggers are those of Unshakable Tail and Watcher of Hours.
+  'static.surveil-look-additional': asIs,
+  'static.play-surveiled-graveyard': asIs,
+  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
+  'trigger.remove-counter-exiled': whenever,
   'static.cast-from-top': asIs,
   'trigger.attacks-first-time': whenever,
   'condition.attacking-most-life': permanent(
@@ -1071,7 +1077,6 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.begin-game-on-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
-  'trigger.enters-and-upkeep': permanent((e) => `When ${e}, you gain 1 life.`),
   // Sauron deck (March from the Black Gate): one ability that two events cause.
   'trigger.enters-and-attacks': permanent((e) => `When ${e}, you gain 1 life.`),
   'trigger.enters-causes-trigger': permanent((e) => `Whenever ${e}, you gain 1 life.`),
@@ -1117,6 +1122,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.roll-highest': whenever,
   // Setzer, Wandering Gambler (CR 705.2): "you win a coin flip" follows "Whenever"; "flip a coin" is an instruction of a spell.
   'trigger.win-coin-flip': whenever,
+  // Marvo, Deep Operative (CR 701.30d): "you win a clash" follows "Whenever".
+  'trigger.win-clash': whenever,
   // Secret council (Erestor of the Council, Model of Unity): "players finish voting" follows "Whenever"; the sentences read the record of the vote that finished.
   'trigger.players-finish-voting': whenever,
   'effect.secret-vote': spell((e) => `${cap(e)}.`),
@@ -1306,6 +1313,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.draw-redirect': asIs,
   'replacement.tokens-double': asIs,
+  'replacement.tokens-plus-that-many': asIs,
   'replacement.tokens-each-of': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
@@ -1333,6 +1341,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Danitha deck, group 5 (D-407, D-408): the blight cost of an ordinary ability, and the spell's own permission to be cast as though it had flash (a line of its own).
   'cost.blight': permanent((e) => `{1}, ${e}: Draw a card.`),
   'static.cast-self-as-though-flash': asIs,
+  'static.cast-self-flash-sacrifice-at-cleanup': asIs,
   // Group 9 of the Hashaton deck (D-390 to D-395): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
   'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
   'trigger.source-deals-damage': whenever,
@@ -1415,6 +1424,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
+  // Final-Word Phantom (CR 513.1, 601.3b): the permission of a permanent, said for each opponent's end step.
+  'static.during-opponents-end-step': asIs,
   // World Shaper deck: the permission to play the cards exiled with ~, a whole line; the condition after "as long as" of a permission to cast from the top of the library.
   'static.play-linked-exile': asIs,
   'static.play-linked-exile-lands-and-spells': asIs,
@@ -1478,6 +1489,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  'noun.target-permanent-and-same-name-permanents': spell((e) => `Destroy ${e}.`),
   'noun.target-permanent-and-same-name-others': spell((e) => `Exile ${e}.`),
   // Breaking of the Fellowship: a second target of the controller of the first.
   'noun.another-target-of-same-controller': spell(
@@ -1642,6 +1654,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
+  // Squirreled Away deck, group 4 (Garruk, Cursed Huntsman).
+  'noun.each-planeswalker-type': spell((e) => `Put a loyalty counter on ${e}.`),
   // D-270: a target of two zones, read by `exile`.
   'noun.target-creatures-battlefield-or-graveyard': spell((e) => `Exile ${e}.`),
   'amount.for-each-own-nontoken-destroyed': spell(
@@ -1650,6 +1664,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
   'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.copy-each-creature-token': permanent((e) => `At the beginning of your end step, ${e}.`),
+  'effect.copy-each-token-that-permanent': spell((e) => `${cap(e)}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),
@@ -1779,6 +1794,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
+  'effect.it-becomes-aura-with-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
   'condition.and': permanent((e) => `At the beginning of your end step, if ${e}, draw a card.`),

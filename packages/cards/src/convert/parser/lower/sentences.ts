@@ -262,6 +262,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
         : null;
     if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
       ctx.randomYardCard = true;
+    if (lowered.value.some((e) => e.kind === 'revealTopCard')) ctx.revealedTopCard = true;
     if (lowered.value.some((e) => e.kind === 'choosePlayer')) ctx.choseAPlayer = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
@@ -1054,6 +1055,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'removeChosenCounters',
   // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, ...": done when some life was lost.
   'loseLife',
+  // Skyfisher Spider (CR 608.2c, 119.3): "you may gain 1 life for each creature card in your graveyard. If you do, ...": done when some life was gained.
+  'gainLife',
 ]);
 
 /**
@@ -1322,6 +1325,18 @@ function lowerRepeatProcess(
  * engine's `repeatWhile`. The process is the one sentence before it, ending in a mill of the controller's library (so that it ends), with no choice of targets; a sentence with no test, or
  * one that repeats more than one sentence, is refused.
  */
+/** The offer "you may exile three cards from your graveyard" (`may` of a `moveToZone` to exile, of cards the controller chooses in their graveyard). */
+function isGraveyardExileOffer(effect: Effect | undefined): boolean {
+  return (
+    effect?.kind === 'may' &&
+    effect.effect.kind === 'moveToZone' &&
+    effect.effect.to === 'exile' &&
+    effect.effect.objects.kind === 'choose' &&
+    effect.effect.objects.filter.zone === 'graveyard' &&
+    effect.effect.objects.filter.controller === 'you'
+  );
+}
+
 function lowerRepeatWhile(
   sentence: IrSentence,
   steps: readonly Step[],
@@ -1340,22 +1355,33 @@ function lowerRepeatWhile(
     sentence.delayed !== undefined ||
     sentence.mayBy !== undefined ||
     clauses.some((c) => c.optional || c.condition !== undefined) ||
-    steps.length !== 1 ||
     process === undefined ||
-    ctx.targets.length > 0 ||
-    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same): a mill, or cards drawn before a clash (CR 701.30d, Hoarder's Greed).
-    !(
-      process.effects[process.effects.length - 1]?.kind === 'mill' ||
-      (process.effects[process.effects.length - 1]?.kind === 'clash' &&
-        process.effects.some((e) => e.kind === 'draw'))
-    )
+    ctx.targets.length > 0
   ) {
     return refuse(sentence);
   }
+  // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same): a mill, or cards drawn before a clash (CR 701.30d, Hoarder's Greed).
+  const processEffects = process.effects;
+  const endsInMillOrClash =
+    steps.length === 1 &&
+    (processEffects[processEffects.length - 1]?.kind === 'mill' ||
+      (processEffects[processEffects.length - 1]?.kind === 'clash' &&
+        processEffects.some((e) => e.kind === 'draw')));
+  // Squirreled Away deck, group 4 (Insatiable Frugivore): "Create a Food token, then you may exile three cards from your graveyard. If you do, repeat this process.": the whole of the
+  // ability before the sentence is the process, and it ends in the offer of exiling cards of the graveyard, so each pass takes cards out of it and the repeat ends (`validateCard` asks the same).
+  const all = steps.flatMap((step) => step.effects);
+  const endsInOffer = all.length > 0 && isGraveyardExileOffer(all[all.length - 1]);
+  if (!endsInMillOrClash && !endsInOffer) return refuse(sentence);
   const blocked = missingFeatures(['effect:repeatWhile']);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
-  // The condition is read as the clause before it was lowered, which is the mill of the process (`ctx.milled`).
-  const condition = lowerCondition(sentence.condition, false, ctx);
+  // The condition is read as the clause before it was lowered, which is the mill of the process (`ctx.milled`). "If you do" after the offer that ends the process is what the offer did.
+  const needsOffer = sentence.condition.test.kind === 'didPrevious';
+  if (needsOffer !== endsInOffer) return refuse(sentence);
+  const didBlocked = needsOffer ? missingFeatures(['condition:didPrevious']) : [];
+  if (didBlocked.length > 0) return { ...refuse(sentence), needs: didBlocked };
+  const condition: LowerResult<Condition> = needsOffer
+    ? { ok: true, value: { kind: 'didPrevious' }, rule: sentence.condition.rule }
+    : lowerCondition(sentence.condition, false, ctx);
   if (!condition.ok) return condition;
   const beforeClauses = clauses.slice(0, -1);
   const before =
@@ -1365,7 +1391,7 @@ function lowerRepeatWhile(
   if (!before.ok) return before;
   const effect: Effect = {
     kind: 'repeatWhile',
-    effects: process.effects,
+    effects: endsInMillOrClash ? process.effects : all,
     condition: condition.value,
     ...(before.value.length === 0 ? {} : { beforeAgain: before.value }),
   };
@@ -1580,6 +1606,11 @@ function lowerMay(
     return refuse(sentence);
   }
   const may: Effect = chooseAny ? only : { kind: 'may', effect: only };
+  // Squirreled Away deck, group 4 (Insatiable Frugivore): "..., then you may exile three cards from your graveyard. If you do, repeat this process.": the sentence after the offer is the
+  // repeat of the whole process, which `lowerRepeatWhile` reads with the offer, so only the offer is taken here.
+  if (!reflexive && next.clauses.some((c) => c.verb === 'repeatProcessAgain')) {
+    return { ok: true, value: [may], rule: sentence.clauses[0]?.rule ?? sentence.rule, last: i };
+  }
   if (!reflexive && next.mayBy !== undefined) {
     // "You may sacrifice a creature. If you do, each opponent may sacrifice a permanent of their choice that shares a card type with it. For each opponent who doesn't, ..." (Meren deck,
     // Braids; CR 608.2c, 608.2d, 101.4): the sentence after the offer asks the players, in turn order, and what is done for those who decline is the sentence after that.
@@ -2283,7 +2314,11 @@ function lowerDoneReflexive(
   ) {
     return refuse(sentence);
   }
-  if (next.instead === true || next.clauses.some((c) => c.optional)) {
+  // Dream Eater (CR 701.25a, 603.12): "Surveil 4. When you do, you may return target ... to its owner's hand.": the reflexive ability of a surveil may hold one instruction that its
+  // controller may decline (the question is asked as it resolves, after the target is chosen). Any other reflexive ability refuses an offer.
+  const offered =
+    clause.verb === 'surveil' && next.clauses.length === 1 && next.clauses[0]?.optional;
+  if (next.instead === true || (offered !== true && next.clauses.some((c) => c.optional))) {
     return refuse(next);
   }
   // A reflexive ability is the last effect of its sequence (`validateCard`); the sentences after the one of "When you do" are its own body, which only the exile of a graveyard before it reads
@@ -2305,13 +2340,14 @@ function lowerDoneReflexive(
   const [only, ...rest] = done.value;
   // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
   const madeToken = only?.kind === 'createToken';
+  // CR 701.25a: a surveil is done when the player looked at the cards and arranged them (the engine's `performed`, which `arrange` sets), even when it put none into the graveyard.
   // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done.
   // Earth Rumble: "Earthbend 2. When you do, ...": the land bent and the counters put on it are something done.
   const putCounter = only?.kind === 'addCounters' || only?.kind === 'earthbend';
   if (
     only === undefined ||
     rest.length > 0 ||
-    !(MAY_KINDS.has(only.kind) || madeToken || putCounter)
+    !(MAY_KINDS.has(only.kind) || madeToken || putCounter || only.kind === 'surveil')
   ) {
     return refuse(sentence);
   }
@@ -2336,9 +2372,24 @@ function lowerDoneReflexive(
         };
   const outerX = ctx.xIs;
   if (defined !== null) ctx.xIs = defined;
-  const effect = lowerReflexive(next, ctx);
+  // "When you do, you may ...": the offer is the engine's `may` around the instruction, asked as it resolves (CR 603.5); the reflexive ability still chooses its targets as it goes on the stack.
+  const effect = lowerReflexive(
+    offered === true
+      ? { ...next, clauses: next.clauses.map((c) => ({ ...c, optional: false })) }
+      : next,
+    ctx,
+  );
   ctx.xIs = outerX;
   if (!effect.ok) return effect;
+  if (offered === true && effect.value.kind === 'reflexive') {
+    const blockedMay = missingFeatures(['effect:may']);
+    if (blockedMay.length > 0) return { ...refuse(next), needs: blockedMay };
+    return {
+      ok: true,
+      value: [only, { ...effect.value, effect: { kind: 'may', effect: effect.value.effect } }],
+      rule: clause.rule,
+    };
+  }
   if (defined !== null) {
     if (!defined.used) return refuse(next);
     ctx.xDefined = true;
@@ -3330,7 +3381,8 @@ function lowerStep(
     if (last?.verb !== 'repeatProcessAgain') return stop(refuse(sentence));
     const repeated = lowerRepeatWhile(sentence, steps, ctx);
     if (!repeated.ok) return stop(repeated);
-    steps.pop();
+    // The process is the one step before it, or (an offer that exiles from the graveyard) every step of the ability.
+    steps.splice(0, steps.length);
     steps.push({ effects: repeated.value, replaceable: false });
     return { last: i };
   }

@@ -272,6 +272,9 @@ export function plainConditionHolds(
       return cardsInLibraryHolds(state, controller, condition.compare);
     case 'aPlayerCardsInHand':
       return aPlayerCardsInHandHolds(state, condition.compare);
+    case 'yourTurn':
+      // CR 611.3a, 613.8 (Gourmand's Talent): "During your turn": the active player is the controller of the permanent, which no layer changes.
+      return state.turn.activeSeat === controller;
     case 'ownTurnNumber': {
       if (state.turn.activeSeat !== controller) return false;
       const turns = getSeat(state, controller).turnsTaken;

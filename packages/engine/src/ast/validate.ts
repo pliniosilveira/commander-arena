@@ -1373,6 +1373,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.bearerChosen`, 'must be true when present');
       }
       break;
+    case 'removesCounterWhileExiled':
+      // CR 122.1, 702.62a (Watcher of Hours): the kind of counter the owner removes from the card in exile.
+      if (typeof t.counter !== 'string' || t.counter.trim() === '') {
+        issue(out, `${path}.counter`, 'the kind of counter removed needs its name');
+      }
+      break;
     case 'classLevel':
       if (!isCount(t.level) || t.level < 2) {
         issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
@@ -1423,9 +1429,20 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'surveils':
     case 'rollsHighest':
     case 'winsCoinFlip':
+    case 'winsClash':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      // Whispering Snitch (CR 603.2): "for the first time each turn" counts the surveils of the controller of the ability.
+      if (t.kind === 'surveils' && t.firstEachTurn !== undefined) {
+        if (t.firstEachTurn !== true || t.who !== 'you') {
+          issue(
+            out,
+            `${path}.firstEachTurn`,
+            'firstEachTurn must be true, and it goes with who "you"',
+          );
+        }
       }
       if (t.kind === 'activatesAbility') {
         for (const flag of ['xCost', 'anySource'] as const) {
@@ -1766,6 +1783,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;
+    case 'cleanupStep':
+      // CR 514.3a: the engine's own delayed trigger (`castAsThoughFlash.sacrificeIfCastAtInstantSpeed`); no card has it as a trigger of its own.
+      issue(
+        out,
+        path,
+        "cleanupStep is the engine's own trigger, written by the rider of a flash permission",
+      );
+      break;
     case 'step':
       if (!isOneOf(t.step, TRIGGER_STEPS)) {
         issue(out, `${path}.step`, `unknown step ${String(t.step)}`);
@@ -2000,6 +2025,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'dealtDamage':
     case 'leavesBattlefield':
     case 'countersAdded':
+    case 'lastCounterRemoved':
     case 'tapsForMana':
     case 'exerted':
       return 'permanent';
@@ -2311,8 +2337,30 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         issue(out, `${path}.abilities`, 'a class level bar adds at least one ability');
       } else {
         a.abilities.forEach((inner, i) => {
-          if (inner?.kind === 'level') {
+          if (inner?.kind === 'level' || inner?.kind === 'solved') {
             issue(out, `${path}.abilities[${i}]`, 'a class level bar does not hold another one');
+          } else {
+            checkAbility(inner, `${path}.abilities[${i}]`, out);
+          }
+        });
+      }
+      break;
+    case 'solved':
+      // CR 702.169, 719.3c: the abilities of a "Solved" label: one or more, none a level, a station symbol or another "Solved" (the card checks that only a Case has one).
+      if (!Array.isArray(a.abilities) || a.abilities.length === 0) {
+        issue(out, `${path}.abilities`, 'a "Solved" label gates at least one ability');
+      } else {
+        a.abilities.forEach((inner, i) => {
+          if (
+            inner?.kind === 'solved' ||
+            inner?.kind === 'stationLevel' ||
+            inner?.kind === 'level'
+          ) {
+            issue(
+              out,
+              `${path}.abilities[${i}]`,
+              `a "Solved" label does not hold a ${inner.kind} ability`,
+            );
           } else {
             checkAbility(inner, `${path}.abilities[${i}]`, out);
           }
@@ -2332,7 +2380,11 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         issue(out, `${path}.abilities`, 'a station symbol gates at least one ability');
       } else {
         a.abilities.forEach((inner, i) => {
-          if (inner?.kind === 'stationLevel' || inner?.kind === 'level') {
+          if (
+            inner?.kind === 'stationLevel' ||
+            inner?.kind === 'level' ||
+            inner?.kind === 'solved'
+          ) {
             issue(
               out,
               `${path}.abilities[${i}]`,
@@ -3458,6 +3510,7 @@ const LAYOUT_FACES: Readonly<Record<string, number>> = {
   normal: 1,
   saga: 1,
   class: 1,
+  case: 1,
   split: 2,
   adventure: 2,
   transform: 2,

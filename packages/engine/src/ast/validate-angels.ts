@@ -62,6 +62,15 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         }
       }
       return true;
+    case 'lastCounterRemoved':
+      // CR 702.63a: the permanent the ability belongs to, and the kind of counter it is about.
+      if ((t.what as { kind?: unknown } | null)?.kind !== 'this') {
+        issue(out, `${path}.what`, 'lastCounterRemoved names this permanent');
+      }
+      if (typeof t.counter !== 'string' || t.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      return true;
     case 'countersAdded':
       checkCountersAddedSubject(t, path, out);
       if (t.counter !== undefined && (typeof t.counter !== 'string' || t.counter === '')) {
@@ -295,7 +304,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
-      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double', 'eachOf'])) {
+      if (!isOneOf(r.mode, ['thatMany', 'plus', 'plusThatMany', 'double', 'eachOf'])) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }
       if (r.mode === 'eachOf') {

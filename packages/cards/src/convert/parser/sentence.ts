@@ -48,10 +48,31 @@ const LIST_COMMA: Parser<string> = (ctx, pos) => {
   return /^[^.]*, (?:and |then )/u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
 };
 
+const CLAUSE_ITEM = family<readonly IrClause[]>('effect');
+
 const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = listWithJoins(
-  family<readonly IrClause[]>('effect'),
+  CLAUSE_ITEM,
   choice(CLAUSE_JOIN, LIST_COMMA),
 );
+
+/** The join of "..., then you may ..." (CR 608.2d): the instruction after it is an offer. */
+export const THEN_YOU_MAY = ', then you may ';
+
+/**
+ * "Create a Food token, then you may exile three cards from your graveyard." (Squirreled Away deck, group 4, CR 608.2d): the join of an offer that follows an instruction in the same
+ * sentence. Only where the plain ", then" with what follows does not read (a text the grammar read before keeps its reading), so a "you may" the clause rules already know is theirs.
+ */
+const THEN_MAY_JOIN: Parser<string> = (ctx, pos) => {
+  const join = literal(THEN_YOU_MAY)(ctx, pos);
+  if (!join.ok) return join;
+  const plain = CLAUSE_JOIN(ctx, pos);
+  if (plain.ok && CLAUSE_ITEM(ctx, plain.pos).ok) return fail(ctx, pos);
+  return join;
+};
+
+/** The clauses of a sentence of a body that offers things (`may: true`): the same list, with the join of an offer in the middle. */
+const CLAUSES_WITH_OFFER: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> =
+  listWithJoins(CLAUSE_ITEM, choice(THEN_MAY_JOIN, CLAUSE_JOIN, LIST_COMMA));
 
 /**
  * The conditions of stage P30 (D-135) that may begin a sentence: "If it's a Zombie card, draw a card." (CR 608.2c: what an
@@ -717,7 +738,9 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             null,
           )
         : // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add ...": "you may" after a leading test only.
-          (options.may === true || options.may === 'afterTest') && !reflexive
+          // Dream Eater (CR 603.12): "When you do, you may return target ..." reads its "you may" after the lead of a reflexive ability too; the lowering of each reflexive reading
+          // refuses the offer unless it is one it can run.
+          options.may === true || (options.may === 'afterTest' && !reflexive)
           ? optional(
               choice<'you' | NonNullable<IrSentence['mayBy']>>(
                 map(
@@ -760,7 +783,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ? optional(TRAILING_IF, null)
         : (_ctx, p) => ({ ok: true, value: null, pos: p });
     const r = sequence(
-      CLAUSES,
+      options.may === true ? CLAUSES_WITH_OFFER : CLAUSES,
       trailing,
       optional(WHERE_X, null),
       unless,
@@ -780,12 +803,17 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
       return fail(ctx, prefix.pos);
     }
     const optionalClauses = prefix.value === 'you';
+    // "..., then you may ...": the offer is the last group only (the "you may" covers what follows it, and nothing is read between two offers).
+    if (joins.some((j, i) => j === THEN_YOU_MAY && (i !== joins.length - 1 || optionalClauses))) {
+      return fail(ctx, prefix.pos);
+    }
     // "Each player may discard a card.", "Target opponent may have you draw three cards." (stage P52, D-210): the question is the sentence's, not each clause's.
     const mayBy = prefix.value === null || prefix.value === 'you' ? undefined : prefix.value;
     const clauses = items.flatMap((group, i) => {
       const join = joins[i];
-      const marked = (optionalClauses ? group.map((c) => ({ ...c, optional: true })) : group).map(
-        (c) => (unlessPays === null ? c : { ...c, condition: unlessPays }),
+      const offered = optionalClauses || (i > 0 && joins[i - 1] === THEN_YOU_MAY);
+      const marked = (offered ? group.map((c) => ({ ...c, optional: true })) : group).map((c) =>
+        unlessPays === null ? c : { ...c, condition: unlessPays },
       );
       if (join === undefined) return marked;
       // The join after a group connects its last clause to the next group.

@@ -155,6 +155,46 @@ function readBody(
   return readSentences(sk.text, sk.sentences, rules, before, fallback, sentence);
 }
 
+/**
+ * "Create a Food token, then you may exile three cards from your graveyard." (Squirreled Away deck, group 4, CR 608.2d): the instructions before a ", then you may" and the offer
+ * after it are two sentences, as "Create a Food token. Then you may exile ..." is, so the lowering that reads an offer and what it buys ("If you do, ...") reads this one the same way. The
+ * sentence parser makes only the last clause optional for this join (`THEN_YOU_MAY`); a sentence with a test, a "where", a delay or another shape of its own is left as read.
+ */
+function splitOffer(sentence: IrSentence): IrSentence[] {
+  const clauses = sentence.clauses;
+  const offer = clauses[clauses.length - 1];
+  const before = clauses.slice(0, -1);
+  const lastBefore = before[before.length - 1];
+  if (
+    offer === undefined ||
+    lastBefore === undefined ||
+    !offer.optional ||
+    before.some((c) => c.optional) ||
+    lastBefore.connector !== 'then' ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.afterExile === true ||
+    sentence.afterDiscard !== undefined
+  ) {
+    return [sentence];
+  }
+  const { connector: _then, ...head } = lastBefore;
+  void _then;
+  return [
+    {
+      ...sentence,
+      clauses: [...before.slice(0, -1), head],
+      span: { start: sentence.span.start, end: lastBefore.span.end },
+    },
+    { ...sentence, clauses: [offer], span: { start: offer.span.start, end: sentence.span.end } },
+  ];
+}
+
 function readSentences(
   text: string,
   spans: readonly Span[],
@@ -184,7 +224,7 @@ function readSentences(
       seen.push(...halves[0].recognised, ...halves[1].recognised);
       continue;
     }
-    sentences.push(run.value);
+    sentences.push(...splitOffer(run.value));
     seen.push(...run.recognised);
   }
   const first = sentences[0];

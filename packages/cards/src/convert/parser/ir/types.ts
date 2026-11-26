@@ -545,6 +545,8 @@ export interface IrFilter {
   readonly powerAboveBase?: true;
   /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
   readonly basePowerIs?: number;
+  /** "with base power or toughness 1" (CR 208.4b): the engine's `basePowerOrToughnessIs`. */
+  readonly basePowerOrToughnessIs?: number;
   /**
    * "any number of target creature cards with total power 10 or less from your graveyard" (Reunion of the House, CR 115.1, 208.1): the powers of the targets of the slot add up to at
    * most this number; the engine's `TargetSpec.totalPowerAtMost`. Read only by the target slot of a noun of any number of targets (`declareTarget`).
@@ -1142,6 +1144,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'yourCombatPhase'; readonly first?: true }
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
+    // Revenant Recon deck (Final-Word Phantom, CR 513.1): "during each opponent's end step"
+    | { readonly kind: 'opponentsEndStep' }
     // Evendo Brushrazer (CR 701.21a): "you've sacrificed a nontoken permanent this turn": `types` the card types the permanent had, `token` false for "nontoken"
     | {
         readonly kind: 'sacrificedThisTurn';
@@ -1218,6 +1222,8 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
+    // "Tap X untapped tokens you control" (Hazel of the Rootbloom, CR 118.3, 107.3): `what` the permanents; X is how many the player taps
+    | { readonly kind: 'tapPermanentsX'; readonly what: IrNoun }
     // "Exile a face-down permanent you control face up" (Primordial Mist, CR 118.3, 406.3, 708.9): `what` the permanent
     | { readonly kind: 'exilePermanent'; readonly what: IrNoun }
     // "Untap two tapped creatures you control" (Hatsune Miku deck, CR 701.26b, 118.3): `what` the permanents, `count` how many
@@ -1924,6 +1930,11 @@ export interface IrTrigger extends IrNode {
   /** 'lifeLost' "for the first time during each of their turns" (Valgavoth; CR 119.3, 603.2): only a loss in a turn of the player who lost the life; with `firstEachTurn`. */
   readonly duringTheirTurn?: true;
   /**
+   * 'countersRemoved' "Whenever you remove a time counter from this card while it's exiled" (Watcher of Hours, CR 122.1, 702.62a): the player removes a counter of the kind `counter` from the
+   * card with the ability while it is in exile; the card is the subject (`~`).
+   */
+  readonly whileExiled?: true;
+  /**
    * 'countersAdded': the kind of counter ("+1/+1", "page"), none for "counters" of any kind (stage P33, D-150, CR 122.6); `by` is who put
    * them: `you` ("Whenever you put one or more +1/+1 counters on ~") or `any` ("Whenever one or more +1/+1 counters are put on ~").
    * 'noncombatDamageDealt' (issue 25, D-333): whose source dealt the damage, `you` ("a source you control") or `any` ("a source").
@@ -2247,6 +2258,11 @@ export type IrStaticEffect =
     }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter; readonly anyPlayer?: true }
+  /**
+   * "You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next
+   * cleanup step." (Necromancy, CR 601.3b, 307.1, 603.7, 514.3a): the spell's own permission with its rider, one whole line. The subject is `~`.
+   */
+  | { readonly kind: 'selfFlashSacrificeAtCleanup' }
   /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**
@@ -2484,6 +2500,14 @@ export type IrStaticEffect =
   | { readonly kind: 'unspentManaStays'; readonly colors: readonly string[] }
   /** "If you would lose unspent mana, that mana becomes colorless instead." (issue 81, Omnath, CR 106.4, 614.1a): the mana in the controller's pool is made colorless instead of lost. The subject is `you`. */
   | { readonly kind: 'unspentManaBecomesColorless' }
+  /** "You may look at an additional two cards each time you surveil." (Enhanced Surveillance, CR 701.25a): each surveil of the controller looks at `count` more cards. The subject is `you`. */
+  | { readonly kind: 'surveilLookAdditional'; readonly count: number }
+  /**
+   * "You may play lands and cast spells from among cards in your graveyard you've surveilled this turn. If you cast a spell this way, you pay life equal to its mana value rather than paying
+   * its mana cost." (Eye of Duskmantle, CR 701.25a, 601.2a, 118.9): the controller plays and casts the cards a surveil of theirs put into the graveyard this turn, paying life for the spells.
+   * The subject is `you`.
+   */
+  | { readonly kind: 'playSurveiledFromGraveyard' }
   /**
    * "~ gets +1/+1 for each unspent mana you have." (issue 81, Omnath, CR 106.4, 613.4c): +1 to each stat whose flag is set, for each mana in the controller's pool (the engine's `unspentMana`).
    */

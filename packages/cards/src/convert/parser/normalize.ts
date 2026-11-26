@@ -138,7 +138,7 @@ export function stripFlavorWord(line: string): string {
 }
 
 const SELF_NOUNS =
-  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class';
+  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class|case';
 const SELF_NOUN_RE = new RegExp(`\\bthis (?:${SELF_NOUNS})\\b`, 'gi');
 
 /**
@@ -327,11 +327,21 @@ export function withHalfRounding(line: string): string {
   );
 }
 
+/** The words before a planeswalker type that say it is a kind of permanent: "each Garruk you control", "another Jace". */
+const PLANESWALKER_TYPE_LEAD = /\b(?:each|another|other|an?|target|all|those) $/iu;
+
 export function normalizeOracleText(text: string, options: NormalizeOptions): string {
   let out = stripReminderText(text);
   for (const name of selfNames(options)) {
+    // CR 205.3j (Garruk, Cursed Huntsman: "put a loyalty counter on each Garruk you control"): a planeswalker type is also the short name of the card, but after a word that makes it a
+    // kind of permanent ("each", "another", "a", ...) it is the type, which the noun rules read, and not the card itself.
+    const type = PLANESWALKER_TYPES.includes(name);
     const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'gu');
-    out = out.replace(re, '~');
+    out = out.replace(re, (match, offset: number) =>
+      type && PLANESWALKER_TYPE_LEAD.test(out.slice(Math.max(0, offset - 12), offset))
+        ? match
+        : '~',
+    );
   }
   // A planeswalker "<Name> of <Title>" may be called by its first word ("Narset deals damage ..."), except as the type of a permanent ("a Narset planeswalker").
   const walker = options.legendary

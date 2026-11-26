@@ -162,7 +162,11 @@ export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
   family: 'effect',
   leading: ['put'],
   cites: ['CR 607.2a (Linked Abilities)', 'CR 406.3 (Exile)', 'CR 400.3 (General)'],
-  examples: ["put a card exiled with ~ into its owner's graveyard"],
+  examples: [
+    "put a card exiled with ~ into its owner's graveyard",
+    // Foreboding Steamboat (CR 607.2a): "it" is the permanent the ability belongs to, when the trigger is about it alone (the lowering checks).
+    "put a card exiled with it into its owner's graveyard",
+  ],
   rejects: [
     "put all cards exiled with ~ into their owners' graveyards",
     "put a card exiled with ~ into its owner's hand",
@@ -174,8 +178,14 @@ export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
   ],
   parse: single(
     'effect.put-exiled-with',
-    literal("put a card exiled with ~ into its owner's graveyard"),
-    () => ({ verb: 'putExiledWith', args: {} }),
+    spanned(
+      pattern(/put a card exiled with (~|it) into its owner['’]s graveyard(?![\p{L}\p{N}])/iu),
+    ),
+    ({ span, value: m }) => ({
+      verb: 'putExiledWith',
+      args:
+        m[1]?.toLowerCase() === 'it' ? { viaIt: flag('effect.put-exiled-with', true, span) } : {},
+    }),
   ),
 });
 

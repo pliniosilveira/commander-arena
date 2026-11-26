@@ -103,6 +103,7 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
     case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
     case 'anyCombinationAmount': // so is this one
+    case 'anyCombinationTapped': // paired with the cost that taps X permanents (validate-mana-ability.ts)
     case 'commanderIdentity':
       break;
     case 'eachColorAmong': // the filter is checked with the mana ability (validate-mana-ability.ts)
