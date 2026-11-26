@@ -1867,6 +1867,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.self-also-types': asIs,
   'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
+  // Embodiment of Fury (issue 692): the offer ("you may") is read by the sentence of the triggered ability.
+  'effect.may-have-target-land-become-creature': permanent(
+    (e) => `Whenever a land you control enters, you may ${e}.`,
+  ),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

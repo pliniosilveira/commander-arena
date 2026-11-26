@@ -4827,7 +4827,8 @@ export type Effect =
        * on again later does not bring it back). An object with no such counter as the effect begins gets nothing. With `duration` `permanent`, and no `basePt`.
        */
       readonly whileHasCounter?: string;
-      readonly duration: Duration;
+      /** `untilYourNextTurn` (CR 611.2a, 500.1; Sylvan Awakening): the objects named as the effect resolves (CR 611.2c) have the change (and `basePt`) until the next turn of the controller begins, the turn it resolves in not counted. */
+      readonly duration: Duration | 'untilYourNextTurn';
     }
   /**
    * "Target creature becomes blue": layer 5 (CR 613.1e). The new colors replace the old ones

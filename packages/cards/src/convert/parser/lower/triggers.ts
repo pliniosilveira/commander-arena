@@ -2140,7 +2140,17 @@ function lowerTriggeredAbility(
         player.of?.det === 'graveyardedThisWay'
       );
     });
-  const chain = returnChain || destroyChain;
+  // Embodiment of Fury (CR 608.2d, 603.5): "you may have target land you control become a 3/3 Elemental creature with haste until end of turn. It's still a land.": the one "you may" is of the
+  // whole animation (the types and base power and toughness, then each keyword), so the ability's own `optional` asks the one question.
+  const becomeChain =
+    first !== undefined &&
+    first.verb === 'becomes' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => c.optional && c.verb === 'grantKeyword') &&
+    sentences.filter(ownMay).length === 1 &&
+    others.slice(0, -1).every((c) => c.connector === 'and');
+  const chain = returnChain || destroyChain || becomeChain;
   // Sephiroth, Fallen Hero (CR 608.2d, 603.3d): "you may put a cell counter on target creature. Until end of turn, each modified creature you control has base power and toughness 7/5.":
   // the "you may" is of the first instruction alone (the target is chosen as the ability goes on the stack, the question is asked as it resolves), and the sentences after it are
   // not about what it did, so it is the engine's `may` of that one instruction and not the ability's own `optional`, which would also drop the rest.

@@ -22,6 +22,7 @@ import { colorLetter, itemsOf, lowerFilter, objectSelectorOf } from './nouns';
 import type { Lowering, LowerResult } from './types';
 
 const END = 'untilEndOfTurn' as const;
+const NEXT_TURN = 'untilYourNextTurn' as const;
 
 /** "It" may be the permanent whose event caused the trigger (D-133): the continuous effects read it. */
 const TRIGGER_SUBJECT = { triggerSubject: true } as const;
@@ -427,10 +428,18 @@ export const BECOMES: Lowering<IrClause, Effects> = {
     const types = arg(clause, 'types');
     const colors = arg(clause, 'colors');
     const base = arg(clause, 'basePt');
-    if (subject === undefined || !endsWithTurn(clause)) return failure(clause);
+    const nextTurn = endsWithYourNextTurn(clause);
+    if (subject === undefined || (!endsWithTurn(clause) && !nextTurn)) return failure(clause);
     if (types !== undefined && types.kind !== 'typeList') return failure(clause);
     if (colors !== undefined && colors.kind !== 'colorSpec') return failure(clause);
     if (base !== undefined && base.kind !== 'basePt') return failure(clause);
+    // CR 611.2a, 500.1 (Sylvan Awakening): "until your next turn" is run for the types and the base power and toughness (`setTypes`, `setPt`); the engine's `setColors` ends with the turn only.
+    if (nextTurn) {
+      if (colors !== undefined || types?.allCreatureTypes === true) return failure(clause);
+      const blocked = missingFeatures(['duration:untilYourNextTurn']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     const letters: Color[] = [];
     for (const word of colors?.colors ?? []) {
       const letter = colorLetter(word);
@@ -454,7 +463,9 @@ export const BECOMES: Lowering<IrClause, Effects> = {
     for (const item of itemsOf(subject)) {
       const objects = objectSelectorOf(item, ctx, TRIGGER_SUBJECT);
       if (!objects.ok) return objects;
-      effects.push(...becoming(objects.value, types, colors && letters, pt));
+      effects.push(
+        ...becoming(objects.value, types, colors && letters, pt, nextTurn ? NEXT_TURN : END),
+      );
     }
     return { ok: true, value: effects, rule: clause.rule };
   },
@@ -511,6 +522,7 @@ function becoming(
   types: IrTypeList | undefined,
   colors: readonly Color[] | undefined,
   base: { power: PtAmount; toughness: PtAmount } | undefined,
+  duration: typeof END | typeof NEXT_TURN,
 ): Effect[] {
   const out: Effect[] = [];
   // "Each noncreature artifact you control becomes a 4/4 artifact creature" (stage P64, D-217, CR 611.2c, 613.4b): a group is fixed once, as the effect begins, so its
@@ -532,7 +544,7 @@ function becoming(
         ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
         ...(types.additive === true ? { additive: true as const } : {}),
         basePt: { power: base.power, toughness: base.toughness },
-        duration: END,
+        duration,
       },
     ];
   }
@@ -545,11 +557,11 @@ function becoming(
       ...(types.cardTypes === undefined ? {} : { types: types.cardTypes as CardType[] }),
       ...(types.subtypes.length === 0 ? {} : { subtypes: types.subtypes }),
       ...(types.additive === true ? { additive: true as const } : {}),
-      duration: END,
+      duration,
     });
     // CR 205.3m, 613.1d: "with all creature types" is the layer 4 effect of its own (the engine keeps it apart from the types listed).
     if (types.allCreatureTypes === true) {
-      out.push({ kind: 'setTypes', objects, allCreatureTypes: true, duration: END });
+      out.push({ kind: 'setTypes', objects, allCreatureTypes: true, duration });
     }
   }
   if (colors !== undefined) out.push({ kind: 'setColors', objects, colors, duration: END });
@@ -559,7 +571,7 @@ function becoming(
       objects,
       power: base.power,
       toughness: base.toughness,
-      duration: END,
+      duration,
     });
   }
   return out;

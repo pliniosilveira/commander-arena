@@ -34,6 +34,7 @@ import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
 import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
 import { ANY_NUMBER_OPPONENTS_RULES } from './any-number-opponents';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -1483,6 +1484,8 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
+  // Issue 692 (Embodiment of Fury, Sylvan Awakening): lands that become creatures for a while.
+  ...ANIMATE_LANDS_EFFECT_RULES,
   // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
   // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
   ...GALADRIEL_G3_EFFECT_RULES,
