@@ -8538,19 +8538,10 @@
     "845b40b1-dc09-44fa-9910-22544c1424ba": {
       "name": "Hazel of the Rootbloom",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "cost.tap-permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "14466a38"
+      "ast": "ddbb4931"
     },
     "84adce5c-39c7-425e-b163-4a1a3977364b": {
       "name": "Skycat Sovereign",
@@ -16427,7 +16418,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1750,
+      "supported": 1751,
       "total": 1767
     }
   }
