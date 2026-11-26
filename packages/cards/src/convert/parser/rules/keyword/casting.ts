@@ -7,8 +7,8 @@
  * asks how many times to pay it, D-110). The forms the engine cannot run are still read, as their
  * own rules or as costs the lowering refuses, so the report says "the grammar reads this, but the
  * engine cannot run it yet" and names the rule: "Kicker {A} and/or {B}" (CR 702.33b, two kicker
- * costs), and a cost other than mana (flashback) or mana and life (kicker), written after an em
- * dash. Those have no `FeatureRef`, so `needs` stays empty and the rule id is the diagnostic.
+ * costs), and a cost other than mana (flashback) or mana, life and a sacrifice (kicker), written
+ * after an em dash. Those have no `FeatureRef`, so `needs` stays empty and the rule id is the diagnostic.
  */
 import {
   fail,
@@ -125,8 +125,8 @@ export const KEYWORD_MULTIKICKER = defineRule<readonly IrKeyword[]>({
 /**
  * `keyword.kicker`: "Kicker {2}" and "Kicker—Pay 3 life" (CR 702.33a: "You may pay an additional
  * [cost] as you cast this spell"). A cost after an em dash is any cost the grammar reads; the
- * lowering accepts mana and life, which the engine pays, and refuses the rest (a sacrifice, a
- * discard). "Kicker {X}" and hybrid costs are not read.
+ * lowering accepts mana, life and the sacrifice of one permanent, which the engine pays, and
+ * refuses the rest (a discard). "Kicker {X}" and hybrid costs are not read.
  */
 export const KEYWORD_KICKER = defineRule<readonly IrKeyword[]>({
   id: 'keyword.kicker',

@@ -345,10 +345,10 @@ export function checkContinuousEffect(
   } else if (e.kind === 'grantAbility' && e.duration === 'untilYourNextTurn') {
     // Issue 145 (Song of Freyalise, CR 611.2a, 500.1): the duration of a temporary grant of an activated, triggered or mana ability (`checkGrantAbility` checks the abilities).
   } else if (
-    (e.kind === 'setPt' || e.kind === 'loseAllAbilities') &&
+    (e.kind === 'setPt' || e.kind === 'loseAllAbilities' || e.kind === 'setTypes') &&
     e.duration === 'untilYourNextTurn'
   ) {
-    // CR 611.2a, 500.1 (Will Kenrith): "until your next turn" on base power and toughness and on losing all abilities (`runContinuous` ends it as the next turn of the controller begins).
+    // CR 611.2a, 500.1 (Will Kenrith, Sylvan Awakening): "until your next turn" on base power and toughness, on losing all abilities and on a change of types (`runContinuous` ends it as the next turn of the controller begins).
   } else if (!isOneOf(e.duration, DURATIONS)) {
     issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
   }

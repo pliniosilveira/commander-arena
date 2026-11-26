@@ -1,5 +1,5 @@
 // Planeswalker Party deck (issue 132), group 13: "each planeswalker you control becomes a 4/4 red Dragon creature" (the +1 of Sarkhan the Masterless), as a SYNTHETIC planeswalker with
-// that one ability, read through the grammar. Pins: CR 613.1d-e and 613.4b (types, color, base power and toughness), CR 205.1a (no longer a planeswalker), CR 606.3 (its loyalty
+// that one ability, read through the grammar. Pins: CR 613.1d-e and 613.4b (types, color, base power and toughness), CR 205.1a (no longer a planeswalker, so no planeswalker subtype either), CR 606.3 (its loyalty
 // abilities can still be activated), CR 302.6 (a creature that came under control this turn can't attack), CR 611.2c (the group is fixed as the effect resolves).
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, test } from 'vitest';
@@ -40,7 +40,7 @@ describe('each planeswalker becomes a Dragon creature', () => {
     g.expect.derived(`${OTHER_WALKER.name}[0]`, {
       types: ['creature'],
       colors: ['R'],
-      subtypes: ['Dragon', 'Nahiri'],
+      subtypes: ['Dragon'],
       keywords: ['flying'],
     });
     g.expect.pt(`${OTHER_WALKER.name}[0]`, 4, 4);

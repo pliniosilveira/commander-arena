@@ -68,6 +68,7 @@ const TRIGGER_KIND = {
   becomesTapped: 'becomesTapped',
   becomesUntapped: 'becomesUntapped',
   becomesMonstrous: 'becomesMonstrous',
+  turnedFaceUp: 'turnedFaceUp',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
   becomesUnblocked: 'becomesUnblocked',
@@ -329,6 +330,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (who === null) return failure(t);
       const blocked = missingFeatures(['trigger:winsCoinFlip']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'winsCoinFlip', who });
+    }
+    case 'turnedFaceUp': {
+      // CR 701.40b, 708.8: "~ is turned face up", "a permanent you control is turned face up", "you turn a permanent face up" (`by`: the player who turned it).
+      const blocked = missingFeatures(['trigger:turnedFaceUp']);
+      if (blocked.length > 0) return failure(t, blocked);
+      const what = whatOf(t, ctx);
+      if (!what.ok) return what;
+      return ok({
+        kind: 'turnedFaceUp',
+        what: what.value,
+        ...(t.by === 'you' ? { by: 'you' as const } : {}),
+      });
     }
     case 'dies':
     case 'blocks':
@@ -1327,12 +1340,16 @@ function eventAmountThatMany(ability: Triggered): Triggered {
     (e) =>
       e.event === 'lifeGained' ||
       (e.event === 'lifeLost' && e.batch !== true) ||
+      // CR 122.6 (Earth Kingdom General): "Whenever you put one or more +1/+1 counters on a creature, you gain that much life": the counters put on.
+      e.event === 'countersAdded' ||
       e.event === 'noncombatDamageDealt' ||
       e.event === 'playerDealtDamage' ||
       e.event === 'damageToPlayerPrevented' ||
       // Subterfuge: "Whenever ~ deals combat damage to a player, draw that many cards" (CR 510.2, 603.2): the combat damage the trigger is about.
       e.event === 'dealsCombatDamage' ||
-      e.event === 'dealsDamage',
+      e.event === 'dealsDamage' ||
+      // Body of Knowledge: "Whenever this creature is dealt damage, draw that many cards" (CR 120.3, 603.2g): the damage the permanent was dealt (the excess, for "excess damage").
+      e.event === 'dealtDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
   const attackers = events.every((e) => e.event === 'attackBatch');
@@ -1785,6 +1802,20 @@ function lowerTriggeredAbility(
       ...only,
       what: { ...only.what, subtypes: [...(only.what.subtypes ?? []), ifWritten.test.subtype] },
     };
+  } else if (ifWritten?.test.kind === 'discardedCardHasKeyword') {
+    // "Whenever you discard a card, if it has madness, ..." (Anje Falkenrath, CR 603.4, 702.35): the card the discard was about, as it is where it went, is a part of the event of the one
+    // `discarded` trigger (its `filter`, which the engine reads against that card). The card does not lose or gain madness in the graveyard or in exile, so reading it as it is discarded
+    // is the same as reading it again as the ability resolves.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'discarded' || only.batch === true) {
+      return failure(ifWritten, []);
+    }
+    const blocked = missingFeatures(['selector:hasMadness']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers[0] = {
+      ...only,
+      filter: { ...(only.filter ?? {}), hasMadness: true },
+    };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
@@ -2062,6 +2093,8 @@ function lowerTriggeredAbility(
       c.verb === 'putFromAmong' ||
       // Journey to the Lost City: "you may put a land card from among those cards onto the battlefield": the engine's choice of none or one exiled card is the offer.
       c.verb === 'putFromAmongExiled' ||
+      // Zimone, Mystery Unraveler: "Otherwise, you may turn a permanent you control face up": the engine's choice of none or one face-down permanent is the offer.
+      c.verb === 'turnFaceUpChosen' ||
       // Kimahri, Valiant Guardian (CR 707.9b): "Then you may have ~ become a copy of that creature, except ...": the lowering wraps the copy in the engine's `may`.
       c.verb === 'becomeCopyKeepingAbility' ||
       // Limit Break deck (Yuffie, Materia Hunter): "Then you may attach an Equipment you control to ~": the engine's choice of none or one Equipment is the offer.
@@ -2090,7 +2123,7 @@ function lowerTriggeredAbility(
   // "you may" is of the return, and every sentence after it is about the card it returned ("it"), which does nothing when the player does not return it; so the ability's own `optional`
   // asks the one question for the whole chain.
   const [first, ...rest] = others;
-  const chain =
+  const returnChain =
     first !== undefined &&
     first.verb === 'return' &&
     first.optional &&
@@ -2104,6 +2137,34 @@ function lowerTriggeredAbility(
         objects.det === 'anaphor'
       );
     });
+  // Terastodon (CR 608.2d, 608.2c): "you may destroy up to three target noncreature permanents. For each permanent put into a graveyard this way, its controller creates a 3/3 ... token.":
+  // the one "you may" is of the destroy, and the tokens are made only for what it put into graveyards (none when the player declines), so the ability's own `optional` asks the one question.
+  const destroyChain =
+    first !== undefined &&
+    first.verb === 'destroy' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => {
+      const player = arg(c, 'player');
+      return (
+        !c.optional &&
+        c.verb === 'createToken' &&
+        player?.kind === 'noun' &&
+        player.det === 'controllerOf' &&
+        player.of?.det === 'graveyardedThisWay'
+      );
+    });
+  // Embodiment of Fury (CR 608.2d, 603.5): "you may have target land you control become a 3/3 Elemental creature with haste until end of turn. It's still a land.": the one "you may" is of the
+  // whole animation (the types and base power and toughness, then each keyword), so the ability's own `optional` asks the one question.
+  const becomeChain =
+    first !== undefined &&
+    first.verb === 'becomes' &&
+    first.optional &&
+    rest.length > 0 &&
+    rest.every((c) => c.optional && c.verb === 'grantKeyword') &&
+    sentences.filter(ownMay).length === 1 &&
+    others.slice(0, -1).every((c) => c.connector === 'and');
+  const chain = returnChain || destroyChain || becomeChain;
   // Sephiroth, Fallen Hero (CR 608.2d, 603.3d): "you may put a cell counter on target creature. Until end of turn, each modified creature you control has base power and toughness 7/5.":
   // the "you may" is of the first instruction alone (the target is chosen as the ability goes on the stack, the question is asked as it resolves), and the sentences after it are
   // not about what it did, so it is the engine's `may` of that one instruction and not the ability's own `optional`, which would also drop the rest.
@@ -2349,6 +2410,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
   'trigger:becomesMonstrous',
+  'trigger:turnedFaceUp',
   'trigger:blocks',
   'trigger:becomesBlocked',
   'trigger:becomesUnblocked',

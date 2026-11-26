@@ -95,12 +95,12 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'enchantment',
-    text: 'As long as ~ has one or more quest counters on it, creatures you control get +2/+0.',
+    text: 'As long as ~ has no quest counters on it, creatures you control get +2/+0.',
     expect: no(
-      'one or more quest counters on it, creatures you control get +2/+0.',
+      'no quest counters on it, creatures you control get +2/+0.',
       'condition.this-counter-count',
     ),
-    note: 'a count of one is not read (the existing counter-count rules start at two)',
+    note: 'SYNTHETIC: "no counters" is not read ("one or more" is, as a counter condition of the permanent)',
   },
 ];
 

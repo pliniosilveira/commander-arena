@@ -94,9 +94,48 @@ describe('kicker', () => {
     }
   });
 
+  test('a kicker may sacrifice one permanent by a filter ("Kicker—Sacrifice a creature.", CR 702.33a, 701.21a)', () => {
+    const sac = (extra: object = {}): Cost =>
+      ({ kind: 'sacrifice', what: { types: ['creature'] }, ...extra }) as Cost;
+    expect(validateCard(spell([kicker(sac())], kickedGain))).toEqual([]);
+    const bad = 'a kicker sacrifice names one permanent by a filter';
+    expect(
+      structure(spell([kicker({ kind: 'sacrifice', what: { kind: 'this' } })], kickedGain)),
+    ).toEqual([bad]);
+    expect(structure(spell([kicker(sac({ count: 2 }))], kickedGain))).toEqual([bad]);
+    expect(structure(spell([kicker(sac({ countX: true }))], kickedGain))).toEqual([bad]);
+    expect(structure(spell([kicker(sac({ anyNumber: true }))], kickedGain))).toEqual([bad]);
+    expect(structure(spell([kicker(sac(), sac())], kickedGain))).toContain(
+      'a kicker cost has one sacrifice',
+    );
+  });
+
+  test('a multikicker never sacrifices, and a kicker sacrifice does not go with another sacrifice of the cast', () => {
+    const sac: Cost = { kind: 'sacrifice', what: { types: ['creature'] } };
+    expect(
+      structure(
+        spell([{ kind: 'keyword', keyword: { kind: 'multikicker', cost: [sac] } }], kickedGain),
+      ),
+    ).toContain('a kicker cost may be mana or life only');
+    const withAdditional = singleFace({
+      name: 'SYNTHETIC Test Card',
+      manaCost: ['1'],
+      types: ['sorcery'],
+      colors: [],
+      colorIdentity: [],
+      oracleText: 'text',
+      abilities: [kicker(sac)],
+      additionalCosts: [sac],
+      spell: kickedGain,
+    });
+    expect(structure(withAdditional)).toContain(
+      'a kicker sacrifice with another sacrifice in the cost of the spell is not supported',
+    );
+  });
+
   test('other costs, X, an empty cost and a zero life cost are not', () => {
     expect(structure(spell([kicker({ kind: 'tap' })], kickedGain))).toEqual([
-      'a kicker cost may be mana or life only',
+      'a kicker cost may be mana, life or a sacrifice only',
     ]);
     expect(structure(spell([kicker(mana('X'))], kickedGain))).toEqual([
       'X in a kicker cost is not supported',

@@ -44,6 +44,112 @@ export const LOOK_EXILE_FACE_DOWN_ONE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Look at the top nine cards of target opponent's library, exile two of them face down, then put the rest on the bottom of their library in a random order" (Black Cat, Cunning Thief) and
+ * "look at the top two cards of target opponent's library and exile those cards face down" (Petty Larceny; CR 401.2, 406.3, 701.20): the engine's `lookAtTop` of the library of the player
+ * the noun names with a fixed number of cards taken (`min` and `max` alike) into exile face down, remembered by nobody, the rest on the bottom of the library in a random order. The
+ * controller looked at the cards, so the permission after it may look at them (`ctx.exiledLookedAt`).
+ */
+export const LOOK_EXILE_FACE_DOWN_MANY: Lowering<IrClause, Effects> = {
+  head: 'lookExileFaceDownMany',
+  id: 'lower.look-exile-face-down-many',
+  needs: ['effect:lookAtTop', 'ability:lookTakeFromPlayer'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    const taken = amountArg(clause, 'taken', ctx);
+    if (!taken.ok) return taken;
+    if (typeof taken.value !== 'number' || taken.value < 1) return failure(clause);
+    const owner = arg(clause, 'from');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    ctx.exiled = 'top';
+    ctx.exiledFaceDown = true;
+    ctx.exiledLookedAt = true;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          from: from.value,
+          take: { filter: {}, max: taken.value, min: taken.value, to: 'exileFaceDownUnlinked' },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Look at the top three cards of target player's library" (Orcish Spy; CR 401.2, 701.20e): the engine's `lookAtTop` of the library of the player the noun names with nothing taken
+ * (`take.max` 0, `rest` `top`): the cards stay where they are. Nothing is exiled, so no later sentence may name "those cards".
+ */
+export const LOOK_ONLY: Lowering<IrClause, Effects> = {
+  head: 'lookOnly',
+  id: 'lower.look-only',
+  needs: ['effect:lookAtTop', 'ability:lookTakeFromPlayer', 'ability:lookTakeNothing'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    const owner = arg(clause, 'from');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          from: from.value,
+          take: { filter: {}, max: 0 },
+          rest: 'top',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist; CR 701.20a, 402.3, 608.2d, 701.13): the engine's `moveToZone` to exile of a
+ * `choose` selector over the nonland cards in the hand of the player the noun names, the hand revealed first (`fromHandOf`, `revealHand`). The card exiled is what `moved` names afterwards.
+ */
+export const REVEAL_HAND_CHOOSE_EXILE: Lowering<IrClause, Effects> = {
+  head: 'revealHandChooseExile',
+  id: 'lower.reveal-hand-choose-exile',
+  needs: ['effect:moveToZone', 'ability:chooseRevealedHand', 'selector:target'],
+  lower(clause, ctx) {
+    const owner = arg(clause, 'player');
+    if (owner?.kind !== 'noun') return failure(clause);
+    const from = playerSelectorOf(owner, ctx);
+    if (!from.ok) return from;
+    ctx.exiled = 'cards';
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: {
+            kind: 'choose',
+            filter: { zone: 'hand', notTypes: ['land'], controller: 'you', card: true },
+            fromHandOf: from.value,
+            revealHand: true,
+          },
+          to: 'exile',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const IMPULSE_EXILE_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  REVEAL_HAND_CHOOSE_EXILE,
+  LOOK_ONLY,
   LOOK_EXILE_FACE_DOWN_ONE,
+  LOOK_EXILE_FACE_DOWN_MANY,
 ];

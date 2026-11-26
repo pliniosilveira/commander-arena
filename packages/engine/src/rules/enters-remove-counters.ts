@@ -12,11 +12,16 @@ import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { matchesFilter } from './select';
 
-/** The filter of the "remove all counters from any number of ..." these abilities have as the permanent enters, or null. A face has at most one (`validateCard`). */
-export function entersRemoveCountersOf(abilities: readonly Ability[]): ObjectFilter | null {
+/**
+ * The "remove all counters from ..." these abilities have as the permanent enters, or null: the filter of the permanents, and whether it is "from all" of them (Thief of Blood, no
+ * choice) rather than "from any number of" them (Sin, a choice). A face has at most one (`validateCard`).
+ */
+export function entersRemoveCountersOf(
+  abilities: readonly Ability[],
+): { readonly filter: ObjectFilter; readonly all: boolean } | null {
   for (const a of abilities) {
     if (a.kind === 'replacement' && a.replacement.kind === 'asEntersRemoveCounters') {
-      return a.replacement.filter;
+      return { filter: a.replacement.filter, all: a.replacement.all === true };
     }
   }
   return null;

@@ -149,6 +149,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.bestow': asIs,
   // Stage P23: Spectacle, Unearth and Escape are lines of their own.
   'keyword.spectacle': asIs,
+  'keyword.freerunning': asIs,
   'keyword.unearth': asIs,
   // Stage P40: Encore is a line of its own, like Unearth.
   'keyword.encore': asIs,
@@ -174,6 +175,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.foretell': asIs,
   // Morph (CR 702.37) is a line of its own.
   'keyword.morph': asIs,
+  'keyword.megamorph': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,
   'keyword.gravestorm': asIs,
@@ -205,6 +207,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.as-enters-choose': asIs,
   'replacement.as-enters-pay-life': asIs,
   'replacement.as-enters-remove-counters': asIs,
+  'replacement.as-enters-remove-all-counters': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
   'static.attached-keywords-if': asIs,
@@ -267,6 +270,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
+  // Flint deck (issue 685): the count of the spell's own cost reduction.
+  'amount.for-each-opponents-life-lost': spell((e) => `~ costs {1} less to cast ${e}.`),
   // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
   'amount.for-each-scried': permanent(
     (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
@@ -366,6 +371,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 279 (Curse of the Swine).
   'noun.each-exiled-controller': spell(
     (e) => `Exile X target creatures. ${cap(e)} creates a 2/2 green Boar creature token.`,
+  ),
+  // Terastodon: the sentence after a destroy.
+  'noun.each-graveyarded-controller': spell(
+    (e) =>
+      `Destroy target noncreature permanent. ${cap(e)} creates a 3/3 green Elephant creature token.`,
   ),
   'noun.library-card': spell(
     (e) =>
@@ -577,6 +587,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.self-and-group': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
   'cost.untap': permanent((e) => `${e}: Draw a card.`),
   'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
@@ -657,6 +668,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.loyalty': permanent((e) => `${e}: Draw a card.`),
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
+  'cost.exile-face-down-permanent': permanent((e) => `{U}, ${e}: Draw a card.`),
   'trigger.combat-damage-batch': whenever,
   'trigger.damage-batch': whenever,
   'trigger.tapped-for-mana': whenever,
@@ -747,6 +759,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
   'static.others-enter-with-counters-equal-to': asIs,
+  'static.others-enter-with-x-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
@@ -1067,6 +1080,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.becomes-untapped': whenever,
   // Issue 103: "becomes monstrous" follows "Whenever"; the amount follows the damage to each opponent.
   'trigger.becomes-monstrous': whenever,
+  // CR 701.40b: "is turned face up", and "you turn a permanent face up".
+  'trigger.turned-face-up': whenever,
+  'trigger.you-turn-face-up': whenever,
   'amount.cards-in-hand-of-that-player': permanent(
     (e) => `At the beginning of each end step, ~ deals damage to each opponent ${e}.`,
   ),
@@ -1076,6 +1092,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,
+  'trigger.play-card-from-exile': whenever,
   'trigger.activate-ability': whenever,
   // Limit Break deck, group 4 (issue 96): the permanent whose ability is activated, the group the targets of an activated ability are among, the power of ~ and the first combat phase of a turn.
   'trigger.activate-ability-of-kind': whenever,
@@ -1168,6 +1185,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
   ),
   'trigger.n-or-more-attack-a-player': whenever,
+  'trigger.you-attack-player-with-one-or-more': whenever,
   'static.pt-counters-on-source': asIs,
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
@@ -1211,6 +1229,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.mana-spent-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
+  ),
+  // Flint deck (issue 685): the rider of the permission before it (the sentence leads with "When", which reads as a trigger alone).
+  'effect.owner-loses-life-for-spell-cast-this-way': spell(
+    (e) =>
+      `Exile the top card of your library. Until end of turn, you may play that card. ${e[0]?.toUpperCase()}${e.slice(1)}.`,
+  ),
+  // Flint deck (issue 685): the intervening "if" of a trigger about a spell that was cast.
+  'condition.discarded-card-has-madness': permanent(
+    (e) => `Whenever you discard a card, if ${e}, you gain 1 life.`,
+  ),
+  'condition.treasure-mana-spent': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, you gain 1 life.`,
   ),
   // Prismari deck, group 2 (D-646): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spell-mana-value-or-more': permanent(
@@ -1415,6 +1445,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
   ),
+  // Eldrazi Monument: the rider of a sacrifice the controller may be unable to make.
+  'condition.if-you-cant': permanent(
+    (e) => `At the beginning of your upkeep, sacrifice a creature. If ${e}, sacrifice ~.`,
+  ),
   'condition.control-or-returned': spell(
     (e) =>
       `Mill four cards. You may put a permanent card from among them into your hand. If ${e}, create a Food token.`,
@@ -1440,6 +1474,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Echoing Return: the target card and the cards with its name, returned together.
   'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'noun.target-permanent-and-same-name-tokens': spell((e) => `Exile ${e}.`),
+  'noun.target-permanent-and-same-name-others': spell((e) => `Exile ${e}.`),
   // Breaking of the Fellowship: a second target of the controller of the first.
   'noun.another-target-of-same-controller': spell(
     (e) => `Target creature an opponent controls deals damage equal to its power to ${e}.`,
@@ -1492,6 +1527,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever a card is put into an opponent's graveyard from anywhere, if ${e}, you may remove a time counter from this card.`,
   ),
   'trigger.self-put-into-graveyard': whenever,
+  'trigger.put-with-self-dies': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   // CR 603.2: a spell cast in a named turn, and two events of one sentence.
@@ -1592,6 +1628,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Ahoy Mateys deck, group 4.
   'noun.each-creature-that-is-subtype-or-subtype': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
+  ),
+  // Laughing Jasper Flint (issue 685): the same group in the plural, as a static ability.
+  'noun.creatures-you-control-but-dont-own': permanent(
+    (e) => `${e[0]?.toUpperCase()}${e.slice(1)} get +1/+1.`,
   ),
   'noun.each-creature-you-control-but-dont-own': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
@@ -1833,6 +1873,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-you-own': spell((e) => `Destroy ${e}.`),
   'noun.up-to-targets-controlled-by-different-players': spell((e) => `Exile ${e}.`),
   'static.creatures-without-keywords-cant-block-low-power': asIs,
+  // Jump Scare! deck, group C: a permission of the card read "as long as" the condition holds, and the card's own restriction lifted "unless" it holds.
+  'condition.this-power-parity': permanent(
+    (e) => `As long as ${e}, you may cast noncreature spells as though they had flash.`,
+  ),
+  'condition.you-have-many-cards-in-hand': permanent((e) => `~ can't attack or block unless ${e}.`),
   // The party (CR 700.8).
   'condition.full-party': permanent(
     (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,
@@ -1842,6 +1887,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.self-also-types': asIs,
   'effect.delayed-mana-any-combination': spell((e) => `Counter target spell. ${cap(e)}.`),
+  // Embodiment of Fury (issue 692): the offer ("you may") is read by the sentence of the triggered ability.
+  'effect.may-have-target-land-become-creature': permanent(
+    (e) => `Whenever a land you control enters, you may ${e}.`,
+  ),
   'noun.target-graveyard-card-shared-zone': spell(
     (e) => `Return ${e} and target land card from your graveyard to the battlefield.`,
   ),

@@ -26,7 +26,7 @@ const TOP_ID = 'effect.player-exiles-top-of-their-library';
 /**
  * `effect.player-exiles-top-of-their-library`: "that player exiles the top card of their library", "target opponent exiles the top four cards of their library", "target opponent exiles the
  * top X cards of their library" (CR 701.13, 401.1, 603.2): the player the text names exiles that many cards from the top of their own library, one after the other, face up; they are what
- * "those cards" names afterwards. The engine's `exileTop` with `from`. Not read: another player ("each opponent"), your own library, a number of one in the plural, face down, "until",
+ * "those cards" names afterwards. The engine's `exileTop` with `from`. Not read: another player ("each opponent"), your own library, a number of one in the plural, "until",
  * a trailing instruction in the same clause ("and ...").
  */
 export const EFFECT_PLAYER_EXILES_TOP = defineRule<Clauses>({
@@ -40,12 +40,14 @@ export const EFFECT_PLAYER_EXILES_TOP = defineRule<Clauses>({
     'target opponent exiles the top four cards of their library',
     'target opponent exiles the top X cards of their library',
     'target player exiles the top card of their library',
+    // Outrageous Robbery (issue 685, CR 406.3): the cards are exiled face down.
+    'target opponent exiles the top X cards of their library face down',
   ],
   rejects: [
     'each opponent exiles the top card of their library',
     'that player exiles the top card of your library',
     'that player exiles the top one cards of their library',
-    'that player exiles the top card of their library face down',
+    'that player exiles the top card of their library face up',
     'that player exiles the top cards of their library',
     'that player exiles cards from the top of their library until they exile a nonland card',
     'that player exiles the top card of their library and draws a card',
@@ -71,7 +73,7 @@ export const EFFECT_PLAYER_EXILES_TOP = defineRule<Clauses>({
       ),
     )(ctx, head.pos);
     if (!counted.ok) return counted;
-    const tail = pattern(new RegExp(` of their library${BOUNDARY}(?! face down)(?! and\\b)`, 'iu'))(
+    const tail = pattern(new RegExp(` of their library( face down)?${BOUNDARY}(?! and\\b)`, 'iu'))(
       ctx,
       counted.pos,
     );
@@ -81,7 +83,18 @@ export const EFFECT_PLAYER_EXILES_TOP = defineRule<Clauses>({
     return {
       ok: true,
       value: [
-        makeClause(TOP_ID, 'exileTop', { count, from: who.value }, { start: pos, end: tail.pos }),
+        makeClause(
+          TOP_ID,
+          'exileTop',
+          {
+            count,
+            from: who.value,
+            ...(tail.value[1] === undefined
+              ? {}
+              : { faceDown: flag(TOP_ID, true, { start: pos, end: tail.pos }) }),
+          },
+          { start: pos, end: tail.pos },
+        ),
       ],
       pos: tail.pos,
     };

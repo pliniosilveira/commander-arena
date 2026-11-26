@@ -17,18 +17,33 @@ export function lowerEntersRemoveCounters(ability: Replacement): LowerResult<rea
   const { event } = ability;
   const what = arg(event, 'what');
   const times = arg(event, 'times');
-  if (what?.kind !== 'noun' || times?.kind !== 'number') return failure(event);
+  const all = arg(event, 'all');
+  if (times?.kind !== 'number') return failure(event);
+  // "remove all counters from all permanents" (Thief of Blood): every permanent, no choice.
+  if (all === undefined ? what?.kind !== 'noun' : what !== undefined) return failure(event);
+  const noun = what?.kind === 'noun' ? what : undefined;
   const blocked = missingFeatures(['ability:replacement', 'replacement:asEntersRemoveCounters']);
   if (blocked.length > 0) return failure(event, blocked);
-  const filter = lowerFilter(what);
-  if (!filter.ok) return filter;
-  // The permanents are those of the battlefield, of any player: the noun names neither a zone nor a controller.
-  const { zone, controller, ...rest } = filter.value as ObjectFilter;
-  if (zone !== undefined || controller !== undefined) return failure(event);
+  let rest: ObjectFilter = {};
+  if (noun !== undefined) {
+    const filter = lowerFilter(noun);
+    if (!filter.ok) return filter;
+    // The permanents are those of the battlefield, of any player: the noun names neither a zone nor a controller.
+    const { zone, controller, ...others } = filter.value as ObjectFilter;
+    if (zone !== undefined || controller !== undefined) return failure(event);
+    rest = others;
+  }
   return {
     ok: true,
     value: [
-      { kind: 'replacement', replacement: { kind: 'asEntersRemoveCounters', filter: rest } },
+      {
+        kind: 'replacement',
+        replacement: {
+          kind: 'asEntersRemoveCounters',
+          filter: rest,
+          ...(all === undefined ? {} : { all: true as const }),
+        },
+      },
       {
         kind: 'replacement',
         replacement: {

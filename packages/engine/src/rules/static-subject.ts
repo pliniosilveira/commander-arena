@@ -90,6 +90,8 @@ export function subjectAffects(
     const partner = partnerOf(state, source);
     return partner !== null && (source.id === target.id || partner.id === target.id);
   }
+  // "This creature and land creatures you control" (`andThis`): the permanent itself too, whether or not the group's filter matches it.
+  if (subject.andThis === true && source.id === target.id) return true;
   const filter = filterOf(subject);
   const withModified = readsModified(filter)
     ? { ...view, modified: modifiedBeforeLayers(state, target) }

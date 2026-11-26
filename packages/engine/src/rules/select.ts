@@ -30,6 +30,7 @@ import { countersOfKind } from './counters-of-kind';
 import { defendingPlayerOfAbility } from './defending';
 import { derive } from './derive';
 import { keywordKindsOf } from './derive-keywords';
+import { isFaceDown } from './face-down';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { abilitiesHaveKeyword } from './keywords';
 import { manaValueOfCost } from './mana-value';
@@ -196,6 +197,10 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
           (e) => e.change.kind === 'goaded' && e.objects.includes(obj.id),
         ) || d.goadedBy.length > 0
       );
+    },
+    // CR 708.2: only a filter that says "face-down" or "face-up" reads it; only a permanent on the battlefield is face down.
+    get isFaceDown() {
+      return obj.zone === 'battlefield' && isFaceDown(obj);
     },
     // Only a filter that compares mana value reads it.
     get manaValue() {
@@ -933,6 +938,11 @@ export function resolveObjects(
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
+    case 'putIntoGraveyardThisWay':
+      // CR 608.2c, 400.7: the permanents the `destroy` effects of this resolution destroyed that are now in a graveyard (a replacement effect may have exiled one instead), by their old ids.
+      return (ctx.thisWay?.destroyedObjects ?? []).filter(
+        (id) => successorsOf(state, id, (o) => o.zone === 'graveyard').length > 0,
+      );
     case 'putCountersOn': {
       // CR 608.2c: the objects the `addCounters` effects of this resolution put counters on (of the kind the text names, when it names one), each once.
       const byKind = ctx.thisWay?.countersPutOn ?? {};
@@ -1028,9 +1038,11 @@ export function resolveObjects(
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
       // CR 712.21c (D-277): for a melded permanent that died, both cards.
+      // Earthbend: "when it dies or is exiled, return it": the card in exile counts too (`zones`).
+      const zones = selector.zones ?? ['graveyard'];
       return ctx.triggerSubject === undefined
         ? []
-        : successorsOf(state, ctx.triggerSubject, (o) => o.zone === 'graveyard');
+        : successorsOf(state, ctx.triggerSubject, (o) => zones.includes(o.zone as 'graveyard'));
     }
     case 'thisCard': {
       // CR 400.7, 603.10a: the card the source became when it left, if it is still in that zone. A

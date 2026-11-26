@@ -43,6 +43,7 @@ const ALTERNATIVES = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'morph',
   'tapPermanents',
   'sacrificePermanents',

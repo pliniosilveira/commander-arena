@@ -6,7 +6,7 @@
  * lowering sacrifices only the permanent the ability belongs to. Since stage P30 (D-135) "any number of other permanents" is read too
  * (CR 701.21a: the player chooses none, some or all), and since stage P41 (D-188) "one or more Treasures" (some or all, not none).
  */
-import { literal, sequence } from '../../combinators';
+import { literal, optional, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, family } from '../registry';
 import { type Clauses, single } from './operands';
@@ -37,6 +37,8 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
     'sacrifice one or more Treasures',
     'sacrifice one or more other creatures',
     'sacrifice a permanent of their choice that shares a card type with it',
+    // Rakdos, Patron of Chaos (issue 685): the player who sacrifices chooses anyway (CR 701.21a), so "of their choice" adds nothing.
+    'sacrifice two nonland, nontoken permanents of their choice',
   ],
   rejects: [
     'sacrifice target creature',
@@ -70,6 +72,7 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
           'noun.it',
         ],
       }),
+      optional(literal(' of their choice'), undefined),
     ),
     ([, objects]) => ({ verb: 'sacrifice', args: { objects } }),
   ),

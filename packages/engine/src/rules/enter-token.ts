@@ -73,12 +73,15 @@ export function tokenAsks(state: GameState, seat: SeatId, definition: TokenDefin
   );
 }
 
-/** Sin, Unending Cataclysm (CR 614.12): the token's definition removes counters as it enters, and there is a permanent to remove them from. */
+/** Sin, Unending Cataclysm (CR 614.12): the token's definition removes counters as it enters, and there is a permanent to remove them from (or it removes them from all). */
 function removesCounters(state: GameState, seat: SeatId, definition: TokenDefinition): boolean {
   const rule = entersRemoveCountersOf(definition.abilities);
   return (
     rule !== null &&
-    removeCountersCandidates(state, seat, rule, hypotheticalToken(seat, definition).id).length > 0
+    // "Remove all counters from all permanents" (Thief of Blood) asks nothing, but goes the same way: the counters come off as the token is made.
+    (rule.all ||
+      removeCountersCandidates(state, seat, rule.filter, hypotheticalToken(seat, definition).id)
+        .length > 0)
   );
 }
 
@@ -359,11 +362,13 @@ export function runEnterToken(
     const legal = removeCountersCandidates(
       state,
       seat,
-      removeRule,
+      removeRule.filter,
       hypotheticalToken(seat, definition).id,
     );
-    if (legal.length > 0) return asked(removeCountersDecision(seat, res.object, legal));
-    removed = [];
+    // Thief of Blood (CR 614.12): "remove all counters from all permanents" asks nothing.
+    if (removeRule.all) removed = legal;
+    else if (legal.length > 0) return asked(removeCountersDecision(seat, res.object, legal));
+    else removed = [];
   }
   // CR 119.4, 614.12 (pay any amount of life): the life the token's controller chose to pay is lost as the token enters.
   if (what === 'lifePaid' && (chosen?.lifePaid ?? 0) > 0) {

@@ -179,7 +179,7 @@ export function chosenIssues(
     } else if (
       a.replacement?.kind === 'entersTappedUnlessPays' ||
       a.replacement?.kind === 'entersAsCopy' ||
-      a.replacement?.kind === 'asEntersRemoveCounters'
+      (a.replacement?.kind === 'asEntersRemoveCounters' && a.replacement.all !== true)
     ) {
       questions += 1;
     }

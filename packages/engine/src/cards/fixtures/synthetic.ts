@@ -154,8 +154,11 @@ import { SYNTHETIC_MANA_PLUS_LIST } from './synthetic-mana-plus';
 import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
 import { SYNTHETIC_MANA_SPENT_LIST } from './synthetic-mana-spent';
 import { SYNTHETIC_MANA_TRIGGERS_LIST } from './synthetic-mana-triggers';
+import { SYNTHETIC_MANA_TURN_UP_LIST } from './synthetic-mana-turn-up';
 import { SYNTHETIC_MANIFEST_LIST } from './synthetic-manifest';
+import { SYNTHETIC_MANIFEST_B_LIST } from './synthetic-manifest-b';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
+import { SYNTHETIC_MEGAMORPH_LIST } from './synthetic-megamorph';
 import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
@@ -220,6 +223,7 @@ import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
 import { SYNTHETIC_TRIGGER_MORE_LIST } from './synthetic-triggers-more';
 import { SYNTHETIC_TROYAN_G4_LIST } from './synthetic-troyan-g4';
+import { SYNTHETIC_TURN_UP_LIST } from './synthetic-turn-up';
 import { SYNTHETIC_TURNLOG_LIST } from './synthetic-turnlog';
 import { SYNTHETIC_UNBLOCKED_LIST } from './synthetic-unblocked';
 import { SYNTHETIC_UNBOUND_I_LIST } from './synthetic-unbound-i';
@@ -440,6 +444,9 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_ROOM_LIST,
   ...SYNTHETIC_MANIFEST_LIST,
+  ...SYNTHETIC_MEGAMORPH_LIST,
+  ...SYNTHETIC_TURN_UP_LIST,
+  ...SYNTHETIC_MANIFEST_B_LIST,
   ...SYNTHETIC_MORPH_LIST,
   ...SYNTHETIC_MELD_LIST,
   ...SYNTHETIC_SAGA_LIST,
@@ -486,6 +493,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_COUNTER_DOUBLING_LIST,
   ...SYNTHETIC_MANA_RESTRICTED_LIST,
   ...SYNTHETIC_MANA_NOT_GENERIC_LIST,
+  ...SYNTHETIC_MANA_TURN_UP_LIST,
   ...SYNTHETIC_NIV_GROUP_2B_B_LIST,
   ...SYNTHETIC_HASHATON_G1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,

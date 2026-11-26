@@ -414,6 +414,14 @@ const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
 /** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
 const EXILE_COUNTERED_THEN_CAST =
   /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard, then you may cast it without paying its mana cost\.$/i;
+/**
+ * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard. You may cast that card without paying its mana cost for as long as
+ * it remains exiled." (Kheru Spellsnatcher, CR 701.6a, 614.1a, 611.2b): three sentences that are one instruction (`effect.counter-exile-cast-while-exiled`).
+ */
+const EXILE_COUNTERED_INSTEAD =
+  /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard\.$/i;
+const MAY_CAST_FREE_WHILE_EXILED =
+  /^you may cast that card without paying its mana cost for as long as it remains exiled\.$/i;
 const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
@@ -777,6 +785,18 @@ const FOR_EACH_OPPONENT_CHOOSE =
 const DESTROY_THE_CHOSEN_PERMANENTS = /^destroy the chosen permanents\.$/i;
 
 /**
+ * "For each opponent, choose up to one target artifact or enchantment that player controls. For each permanent chosen this way, its controller may exile it. Then if one or more of the chosen
+ * permanents are still on the battlefield, you search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle." (Disorienting Choice, CR 608.2d): the
+ * three sentences are one instruction, the second and third being about the permanents the first has chosen.
+ */
+const FOR_EACH_OPPONENT_CHOOSE_TARGET =
+  /^for each opponent, choose up to one target [^.,]* that player controls\.$/i;
+const CONTROLLER_MAY_EXILE_EACH_CHOSEN =
+  /^for each permanent chosen this way, its controller may exile it\.$/i;
+const THEN_IF_CHOSEN_STILL_SEARCH =
+  /^then if one or more of the chosen permanents are still on the battlefield, you search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle\.$/i;
+
+/**
  * "Exile the top card of your library. You may play that card until you exile another card with ~." (Furious Rise, CR 607.2a): the permission is of the card the permanent exiled
  * with this ability and ends as it exiles another, so the two sentences are read as one instruction (the first may follow the comma of a condition).
  */
@@ -1060,6 +1080,14 @@ const IF_ITS_LAND_OR_MAY_PUT =
 /** "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." (Galadriel deck, group 1, CR 205.1b): the second sentence keeps the old types. */
 const THEY_BECOME = /^they become [^.]*\.$/i;
 const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
+/**
+ * "Until your next turn, all lands you control become 2/2 Elemental creatures with reach, indestructible, and haste. They're still lands." (Sylvan Awakening, issue 692, CR 205.1b) and
+ * "Whenever a land you control enters, you may have target land you control become a 3/3 Elemental creature with haste until end of turn. It's still a land." (Embodiment of Fury): the
+ * second sentence keeps the land type (`effect.all-lands-become-creatures`, `effect.may-have-target-land-become-creature`).
+ */
+const ALL_LANDS_BECOME = /^(?:until [^.,]*, )?all lands you control become [^.]*\.$/i;
+const MAY_HAVE_TARGET_LAND_BECOME =
+  /(?:^|, )you may have target land [^.]* become an? \d+\/\d+ [^.]*\.$/i;
 /** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
 const BECOMES_LAND_CREATURE =
   /(?:^|: )until end of turn, ~ becomes an? (?:\d+|X)\/(?:\d+|X) [^.]*\.$/i;
@@ -1139,6 +1167,22 @@ const CAST_THIS_WAY_PAY_LIFE =
 const PLAYER_EXILES_UNTIL_CAST =
   /^(?:target (?:opponent|player) exiles cards from the top of their library until they exile|exile cards from the top of your library until you exile) [^.]*\.$/i;
 const MAY_CAST_THAT_CARD_FREE = /^you may cast that card without paying its mana cost\.$/i;
+/**
+ * "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, issue 685, CR 701.20a, 402.3, 608.2d): "it" is the hand the first sentence
+ * reveals and "that card" the one the second chooses, so the three sentences are one instruction (`effect.reveal-hand-choose-exile`).
+ */
+const REVEALS_THEIR_HAND = /^target (?:opponent|player) reveals their hand\.$/i;
+const YOU_CHOOSE_NONLAND_FROM_IT = /^you choose a nonland card from it\.$/i;
+const EXILE_THAT_CARD = /^exile that card\.$/i;
+/**
+ * "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, issue 685, CR 101.4, 701.13): "that player" is the opponent the first sentence chooses, so
+ * the two are one instruction (`effect.choose-random-opponent-exile-top`).
+ */
+const CHOOSE_RANDOM_OPPONENT_PLAIN = /^choose an opponent at random\.$/i;
+const EXILE_TOP_THAT_PLAYERS_LIBRARY = /^exile the top card of that player['’]s library\.$/i;
+/** The Infamous Cruelclaw (issue 685): the cast of the card found, with a card discarded rather than the mana cost paid. */
+const MAY_CAST_THAT_CARD_DISCARD =
+  /^you may cast that card by discarding a card rather than paying its mana cost\.$/i;
 const CREATURE_THIS_WAY_GAINS = /^if you cast a creature spell this way, it gains haste and ".*"$/i;
 /** Chaos Wand (CR 401.4): "Then put the exiled cards that weren't cast this way on the bottom of that library in a random order." closes the three sentences of the exile of a target player. */
 const THEN_PUT_EXILED_BOTTOM_THAT_LIBRARY =
@@ -1260,12 +1304,36 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 1;
       continue;
     }
+    // The Ruinous Powers (issue 685): the opponent chosen at random and the exile from their library are one instruction.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, CHOOSE_RANDOM_OPPONENT_PLAIN) &&
+      said(b, EXILE_TOP_THAT_PLAYERS_LIBRARY)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
+    // Cruelclaw's Heist (issue 685): the hand revealed, the card chosen from it and its exile are one instruction.
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      c !== undefined &&
+      said(a, REVEALS_THEIR_HAND) &&
+      said(b, YOU_CHOOSE_NONLAND_FROM_IT) &&
+      said(c, EXILE_THAT_CARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
     // Strago and Relm (issue 97): the exile until a card is found, the free cast of it and, when there is one, what a creature spell gains.
     if (
       a !== undefined &&
       b !== undefined &&
       said(a, PLAYER_EXILES_UNTIL_CAST) &&
-      said(b, MAY_CAST_THAT_CARD_FREE)
+      (said(b, MAY_CAST_THAT_CARD_FREE) || said(b, MAY_CAST_THAT_CARD_DISCARD))
     ) {
       const last =
         c !== undefined &&
@@ -1535,6 +1603,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, FOR_EACH_OPPONENT_CHOOSE_TARGET) &&
+      said(b, CONTROLLER_MAY_EXILE_EACH_CHOSEN) &&
+      said(c, THEN_IF_CHOSEN_STILL_SEARCH)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
       said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
       said(c, CANT_CHOOSE_TAP_IT)
@@ -1560,6 +1637,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_CARD_MAY_PUT_TAPPED)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
+        (said(a, ALL_LANDS_BECOME) && said(b, THEY_ARE_STILL)) ||
+        (said(a, MAY_HAVE_TARGET_LAND_BECOME) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, IT_BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, RETURN_IT_FACE_DOWN) && said(b, ITS_A_FOREST_LAND)) ||
@@ -1620,7 +1699,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
-      ((said(a, LOOK_AT_TOP) &&
+      (((said(a, LOOK_AT_TOP) || said(a, LOOK_TOP_X_WHERE)) &&
         (said(b, TAKE_FROM_AMONG) ||
           said(b, TAKE_ANY_OF_CHOSEN_TYPE) ||
           said(b, PUT_ANY_TOTAL) ||
@@ -1629,6 +1708,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, COUNTER_TARGET_SPELL) &&
+      said(b, EXILE_COUNTERED_INSTEAD) &&
+      said(c, MAY_CAST_FREE_WHILE_EXILED)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
@@ -1802,11 +1890,14 @@ export function splitSentences(text: string, start: number, end: number): Span[]
       // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
       // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
       // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).
+      // Issue 685 (At Knifepoint): `... create a token with "..." This ability triggers only once each turn.` is the same, the last sentence being the limit of the trigger.
       // The same after a quoted enchant ability (issue 89, Animate Dead, CR 702.5a): `... gains "enchant creature put onto the battlefield with ~." Return ...`.
       if (
         closes &&
         /\.['’]?$/u.test(text.slice(from, i)) &&
-        (/^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end)) ||
+        (/^\s+(?:activate\b|this ability costs\b|this ability triggers only once each turn\b)/iu.test(
+          text.slice(i + 1, end),
+        ) ||
           // Issue 81 (White Sun's Twilight): a token's quoted ability ends with its period and the next sentence is the condition on X: `... "This token can't block." If X is 5 or more, ...`.
           /^\s+if x is\b/iu.test(text.slice(i + 1, end)) ||
           (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&

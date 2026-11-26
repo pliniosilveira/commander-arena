@@ -12,16 +12,18 @@
  * value of a survivor is its scenarios' value the same way as at horizon 1 (`lineValue`); a line's value is
  * `(1 - plan.deepBlend) * v1 + plan.deepBlend * v2`.
  *
+ * The deepening never plays a line itself: like the planner it asks its driver for each play-out (a request of
+ * horizon 2, played and settled on `Budget.deep`), so a pool of workers plays them as it plays the others and
+ * the planning stays the same on one thread and on a pool (`heuristic-plan-trace.ts`).
+ *
  * It runs only when the work left covers one deep play-out (`DEEP_COST` times what a play-out of the
  * planning cost so far on average), on the stretched bounds of the deepening phase (`Budget.deep`), and
  * gives up with nothing (the planning keeps its horizon 1 choice) when any play-out of today's line is cut
  * or refused. Two players only: with more, the planner looks at two scenarios only and one turn of each
  * opponent already costs what the budget allows.
  */
-import type { SeatId } from '@commander-arena/engine';
-import { evaluate } from './evaluate';
 import type { Budget } from './heuristic-budget';
-import { type Line, type PlanStep, type PlayContext, playLine } from './heuristic-plan-sim';
+import type { PlanRequest, PlanStep, PlayScore } from './heuristic-plan-types';
 import type { PlanCounter } from './heuristic-plan-work';
 import type { Scenario } from './heuristic-threats';
 import type { AgentWeights } from './weights';
@@ -72,12 +74,12 @@ function meanSoFar(scores: readonly number[], scenarios: readonly Scenario[]): n
 }
 
 export interface Deepening {
+  /** The deepening's budget (`Budget.deep`). */
   readonly budget: Budget;
-  readonly me: SeatId;
-  readonly lines: readonly Line[];
+  /** How many lines the planner has (the indices of `scored` refer to them). */
+  readonly lines: number;
   readonly scored: readonly Scored[];
   readonly scenarios: readonly Scenario[];
-  readonly ctx: PlayContext;
   readonly weights: AgentWeights;
   readonly work: PlanCounter;
   /** The work units a play-out of the planning cost so far, on average. */
@@ -99,7 +101,9 @@ export function deepCandidates(scored: readonly Scored[], weights: AgentWeights)
  * The blended value of each line that was played deeper on every scenario, by line index, or null when
  * the deepening did not run or did not finish for today's line (the planning then keeps its horizon 1 choice).
  */
-export function deepen(d: Deepening): Map<number, number> | null {
+export function* deepen(
+  d: Deepening,
+): Generator<PlanRequest, Map<number, number> | null, PlayScore | null | undefined> {
   const { scenarios, weights, work } = d;
   if (weights.plan.deepBlend <= 0 || scenarios.length === 0) return null;
   const cands = deepCandidates(d.scored, weights);
@@ -107,29 +111,29 @@ export function deepen(d: Deepening): Map<number, number> | null {
   // The work left must cover one deep play-out; if it does not the planning stays as it is.
   if (d.budget.left() < DEEP_COST * d.perPlayOut) return null;
   const startUnits = d.budget.used();
-  const ctx: PlayContext = { ...d.ctx, budget: d.budget };
   const search = d.budget.search();
   const open = new Map<number, number[]>(cands.map((c) => [c.index, []]));
   let alive = cands.map((c) => c.index);
   try {
-    for (const [j, s] of scenarios.entries()) {
+    for (const [j] of scenarios.entries()) {
+      // Tells a pool which play-outs are about to be asked, so it can start them together.
+      yield { kind: 'ahead', scenario: j, lines: [...alive] };
       for (const index of [...alive]) {
         const why = search.expired(work.deepPlayOuts);
         if (why !== null || work.deepPlayOuts >= MAX_DEEP_PLAY_OUTS) {
           work.stop(why ?? 'work');
           return null;
         }
-        const line = d.lines[index] as Line;
-        const played = playLine(s.state, d.me, line, ctx, false, 2);
+        const played = yield { kind: 'play', line: index, scenario: j, record: false, horizon: 2 };
         work.deepPlayOuts += 1;
-        if (played === null) {
+        if (played === null || played === undefined) {
           // A play-out dropped by the budget ends the deepening; one the engine refused drops its line.
           if (d.budget.over() !== null || index === 0) return null;
           alive = alive.filter((i) => i !== index);
           open.delete(index);
           continue;
         }
-        open.get(index)?.push(evaluate(work.view(played.end, d.me), d.me, weights).score);
+        open.get(index)?.push(played.score);
       }
       if (j < scenarios.length - 1) alive = halve(alive, open, scenarios);
     }
