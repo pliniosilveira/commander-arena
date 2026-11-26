@@ -15,6 +15,8 @@ import { describe, expect, test } from 'vitest';
 import { evaluate } from '../src/evaluate';
 import {
   DEEP_FACTOR,
+  DEEP_HARD_SHARE,
+  DEEP_SEARCH_SHARE,
   DIRECT,
   HARD_SHARE,
   NO_BUDGET,
@@ -95,7 +97,7 @@ describe('the weights of the deepening', () => {
 });
 
 describe('the budget of the deepening phase', () => {
-  test('stretches the work bounds and the shares of the clock by DEEP_FACTOR, on the same work and clock', () => {
+  test('stretches the work bounds by DEEP_FACTOR and moves the clock cutoffs to the deep shares, on the same work and clock', () => {
     const g = position();
     const clock = { t: 0 };
     const budget = startBudget({ budgetMs: 1000, now: () => clock.t }, { budget: 100, limit: 120 });
@@ -107,16 +109,16 @@ describe('the budget of the deepening phase', () => {
     budget.engine.view(g.state, 0);
     expect(deep.used()).toBe(budget.used());
     expect(deep.left()).toBe(DEEP_FACTOR * 100 - budget.used());
-    // The clock: the search stops at its share of the budget, the deep one at DEEP_FACTOR times that.
+    // The clock: the search stops at its share of the budget, the deep one at its own, later share.
     clock.t = SEARCH_SHARE * 1000 + 1;
     expect(budget.search().expired(0)).toBe('clock');
     expect(deep.search().expired(0)).toBeNull();
     clock.t = HARD_SHARE * 1000 + 1;
     expect(budget.over()).toBe('clock');
     expect(deep.over()).toBeNull();
-    clock.t = DEEP_FACTOR * SEARCH_SHARE * 1000;
+    clock.t = DEEP_SEARCH_SHARE * 1000;
     expect(deep.search().expired(0)).toBe('clock');
-    clock.t = DEEP_FACTOR * HARD_SHARE * 1000;
+    clock.t = DEEP_HARD_SHARE * 1000;
     expect(deep.over()).toBe('clock');
     // What either cut is noted for the decision.
     expect(budget.cut()).toBe('clock');
