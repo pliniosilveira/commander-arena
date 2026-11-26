@@ -2,7 +2,12 @@
 // Oracle text of the card (the corpus's golden.jsonl) goes through the grammar as a card with no override and is played through applyAction in an engine scenario.
 // Pins: CR 614.1c and 614.12 (a replacement effect of a permanent on the battlefield, X worked out as the other creature enters, looking at the game without it), CR 122.1 (only counters of the
 // kind named), CR 122.6 (counters it enters with otherwise are added to), CR 702.82a (devour). Every test plays three seats: only the controller's creatures are affected.
-import { fixtureCard, syntheticCard, validateCard } from '@commander-arena/engine';
+import {
+  type CardDefinition,
+  fixtureCard,
+  syntheticCard,
+  validateCard,
+} from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { real } from './agatha-helpers';
@@ -213,7 +218,7 @@ describe('a token that enters (CR 111.2)', () => {
   const face = bolt.faces[0];
   if (face === undefined) throw new Error('no face');
   const COPIER = 'SYNTHETIC Creature Copier';
-  const copier = {
+  const copier: CardDefinition = {
     ...bolt,
     name: COPIER,
     faces: [
@@ -226,18 +231,18 @@ describe('a token that enters (CR 111.2)', () => {
             {
               id: 't1',
               what: {
-                kind: 'object' as const,
+                kind: 'object',
                 filter: {
-                  zone: 'battlefield' as const,
+                  zone: 'battlefield',
                   types: ['creature'],
-                  controller: 'you' as const,
+                  controller: 'you',
                 },
               },
             },
           ],
           effect: {
-            kind: 'createToken' as const,
-            token: { kind: 'copyOf' as const, object: { kind: 'target' as const, id: 't1' } },
+            kind: 'createToken',
+            token: { kind: 'copyOf', object: { kind: 'target', id: 't1' } },
             count: 1,
           },
         },
