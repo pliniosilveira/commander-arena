@@ -7322,6 +7322,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
     }
+    case 'delayedDiesTurn': {
+      // CR 603.7c, 603.10a, 700.4 (Massacre Girl): the permanents that die are named by a filter of the battlefield (any controller); what the ability does names no target and reads
+      // nothing of the spell.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the permanents that die are read as they were on the battlefield: no zone',
+        );
+      }
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
+    }
     case 'delayedCombatDamageToPlayer': {
       // Issue 144 (CR 603.7c, 510.3a): the sources are creatures the controller controls; the player is a target of the spell or ability; what the ability does names no target and
       // reads nothing of the spell (nothing of it is left when the ability triggers).

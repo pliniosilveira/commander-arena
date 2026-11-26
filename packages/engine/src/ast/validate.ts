@@ -253,6 +253,16 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (k.from === 'ringBearer') break;
       // CR 702.16a, 105.2: protection from sources of two or more colors names nothing to check.
       if (k.from === 'multicolored') break;
+      // CR 702.16a, 202.3: protection from sources with a stated mana value: a comparison and a whole number of at least 0.
+      if (k.from === 'manaValue') {
+        if (k.cmp !== 'atLeast' && k.cmp !== 'atMost' && k.cmp !== 'equal') {
+          issue(out, `${path}.cmp`, 'cmp must be atLeast, atMost or equal');
+        }
+        if (!Number.isSafeInteger(k.value) || k.value < 0) {
+          issue(out, `${path}.value`, 'mana value must be a whole number of at least 0');
+        }
+        break;
+      }
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
       // D-652 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).

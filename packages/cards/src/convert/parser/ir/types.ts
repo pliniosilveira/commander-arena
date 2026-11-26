@@ -1702,12 +1702,17 @@ export interface IrSentence extends IrNode {
       | 'thatCombat'
       | 'nextCast'
       | 'combatDamageToThatPlayer'
-      | 'combatDamageBatch';
+      | 'combatDamageBatch'
+      | 'creatureDies';
     /**
      * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
      * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
      */
     readonly whose: 'you' | 'each';
+    /**
+     * `creatureDies` (Massacre Girl, CR 603.7, 603.10a, 700.4): "Whenever a creature dies this turn, each creature other than ~ gets -1/-1 until end of turn": a delayed ability for the
+     * turn that triggers for each creature that dies.
+     */
     /**
      * `combatDamageBatch` (Forth Eorlingas!, CR 603.7, 603.2c, 510.2): "Whenever one or more creatures you control deal combat damage to one or more players this turn, you become
      * the monarch": a delayed ability for the turn that triggers once for the creatures that dealt the damage of one combat damage event.
@@ -2571,6 +2576,8 @@ export interface IrKeyword extends IrNode {
   readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
+  /** "Protection from mana value 3 or greater" (Mistmeadow Skulk, CR 702.16a, 202.3): the comparison and the number of the quality. */
+  readonly manaValue?: { readonly cmp: 'atLeast' | 'atMost' | 'equal'; readonly value: number };
   /** "Equip {2}. This ability costs {2} less to activate if you have one or fewer cards in hand." (Ahoy Mateys group 10, CR 601.2f, 602.2b): the reduction of the equip ability, as that of `IrRestriction.costReduction`. */
   readonly costReducedIf?: { readonly amount: IrAmount; readonly condition: IrCondition };
 }

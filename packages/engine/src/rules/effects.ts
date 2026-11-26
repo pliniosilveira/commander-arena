@@ -2085,6 +2085,26 @@ function runEffect(
         ],
       });
     }
+    case 'delayedDiesTurn':
+      // CR 603.7, 603.7c, 603.10a, 700.4, 514.2 (Massacre Girl): "Whenever a creature dies this turn, ...": a delayed ability of the controller, made as the effect resolves, that
+      // triggers each time a permanent the filter names dies until the end of the turn, once for each one.
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: { kind: 'dies' as const, what: effect.filter },
+              effect: effect.effect,
+            },
+          },
+        ],
+      });
     case 'delayedCombatDamageBatchTurn':
       // CR 603.7, 603.7c, 603.2c, 510.2, 514.2: "Whenever one or more creatures you control deal combat damage to one or more players this turn, ...": a delayed ability of the
       // controller that triggers like the batch trigger, once for each player damaged in one combat damage event, until the end of the turn.
