@@ -167,6 +167,8 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an Aura, Equipment, or Vehicle spell from your graveyard.',
     // Issue 102 (Kotis, Sibsig Champion): the spell cast exiles other cards of the graveyard as an additional cost.
     'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard in addition to paying its other costs.',
+    // Exploration Broodship: the spell cast sacrifices a land as an additional cost.
+    'Once during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs.',
     // Issue 97 (Banon, the Returners' Leader): only the cards put there this turn from anywhere but the battlefield.
     'Once during each of your turns, you may cast a creature spell from among cards in your graveyard that were put there from anywhere other than the battlefield this turn.',
   ],
@@ -199,6 +201,10 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an Aura and Equipment spell from your graveyard.',
     'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your graveyard.',
     'Once during each of your turns, you may cast a creature spell from your graveyard by exiling three other cards from your hand in addition to paying its other costs.',
+    'Once during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land.',
+    'Once during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs',
+    'Once during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a creature in addition to paying its other costs.',
+    'Once during each of your turns, you may play a land from your graveyard by sacrificing a land in addition to paying its other costs.',
     'Once during each of your turns, you may cast a creature spell from your graveyard by exiling one other card from your graveyard in addition to paying its other costs.',
   ],
   parse: (ctx, pos) => {
@@ -210,6 +216,7 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     let hasLand = false;
     let cast: IrFilter | undefined;
     let exileOthers: number | undefined;
+    let sacrifice: IrFilter | undefined;
     let putElsewhere = false;
     if (land.ok) {
       hasLand = true;
@@ -245,6 +252,12 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
       if (extra.ok && ctx.text[at] === ' ') {
         exileOthers = { two: 2, three: 3, four: 4, five: 5 }[(extra.value[1] ?? '').toLowerCase()];
         at = extra.pos;
+      }
+      // Exploration Broodship (CR 601.2b, 118.8): "by sacrificing a land in addition to paying its other costs".
+      const sac = literal(' by sacrificing a land in addition to paying its other costs')(ctx, at);
+      if (sac.ok && exileOthers === undefined) {
+        sacrifice = { types: ['land'], raw: 'a land' };
+        at = sac.pos;
       }
     }
     const stop = literal('.')(ctx, at);
@@ -297,6 +310,7 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
             entersTapped,
             ...(gains === undefined ? {} : { gains }),
             ...(exileOthers === undefined ? {} : { exileOthers }),
+            ...(sacrifice === undefined ? {} : { sacrifice }),
             ...(putElsewhere ? { putElsewhereThisTurn: true as const } : {}),
           },
         ],

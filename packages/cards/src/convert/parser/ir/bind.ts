@@ -646,6 +646,7 @@ class Binder {
       case 'aggregate':
       case 'colorsAmong':
       case 'cardTypesAmong':
+      case 'differentPowersAmong':
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
       case 'damageDealtToThisTurn':

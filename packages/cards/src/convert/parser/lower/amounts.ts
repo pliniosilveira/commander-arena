@@ -595,6 +595,17 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'differentPowersAmong': {
+      // "You control three or more creatures with different powers" (Augur of Autumn, CR 208.1): the engine's `differentPowersAmong`, of permanents on the battlefield.
+      const blocked = needs('differentPowersAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'differentPowersAmong', filter: filter.value }, rule };
+    }
     case 'differentManaValuesAmong': {
       // "For each different mana value among instant and sorcery cards in your graveyard" (issue 121, CR 202.3): the engine's `differentManaValuesAmong`, of a zone outside the battlefield.
       const blocked = needs('differentManaValuesAmong');
@@ -1296,6 +1307,7 @@ export const AMOUNT_NEEDS = [
   'amount:creatureTypesAmong',
   'amount:differentManaValuesAmong',
   'amount:differentNamesAmong',
+  'amount:differentPowersAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',

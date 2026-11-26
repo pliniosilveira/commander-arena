@@ -1382,6 +1382,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.alt-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'condition.additional-cost-paid': spell((e) => `Draw a card. If ${e}, draw two cards instead.`),
   'static.during-your-turn': asIs,
+  // World Shaper deck: the permission to play the cards exiled with ~, a whole line; the condition after "as long as" of a permission to cast from the top of the library.
+  'static.play-linked-exile': asIs,
+  'condition.control-different-powers': permanent(
+    (e) => `As long as ${e}, you may cast creature spells from the top of your library.`,
+  ),
+  'condition.sacrificed-this-turn': permanent(
+    (e) => `During your turn, as long as ${e}, you may play cards exiled with ~.`,
+  ),
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),

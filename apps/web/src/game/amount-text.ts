@@ -373,6 +373,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       const things = thingsPhrase(amount.filter, true);
       return things === null ? UNKNOWN_AMOUNT : `the number of colors among ${things}`;
     }
+    case 'differentPowersAmong':
+      // CR 208.1 (Augur of Autumn).
+      return 'the number of different powers among permanents';
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2).
       return 'the number of differently named permanents';
