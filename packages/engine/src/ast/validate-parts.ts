@@ -8315,12 +8315,34 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'exile',
           'castFree',
           'top',
+          'manifest',
         ])
       ) {
         issue(
           out,
           `${path}.take.to`,
           `the cards taken go to the hand, the battlefield or exile face down, are cast, or stay on top, not ${JSON.stringify(e.take.to)}`,
+        );
+      }
+      // CR 701.62a (Manifest dread): one card of those looked at, unrevealed, put onto the battlefield face down; the rest go into the graveyard.
+      if (
+        e.take?.to === 'manifest' &&
+        (e.take.max !== 1 ||
+          e.take.min !== 1 ||
+          e.take.hidden !== true ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.all !== undefined ||
+          e.take.kinds !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.revealAll !== undefined ||
+          e.from !== undefined ||
+          e.rest !== 'graveyard')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'manifesting one of the cards looked at takes one card (min and max 1, hidden) of any kind, with the rest in the graveyard and nothing revealed',
         );
       }
       // CR 401.2, 401.4: "Put one of those cards on top of your library and the rest on the bottom": one card, unrevealed, left in the library; the rest goes to the bottom or the graveyard.

@@ -1799,7 +1799,14 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'castFree' | 'top';
+      readonly to?:
+        | 'hand'
+        | 'battlefield'
+        | 'exileFaceDown'
+        | 'exile'
+        | 'castFree'
+        | 'top'
+        | 'manifest';
       /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
       readonly libraryOf?: SeatId;
       /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
