@@ -35,6 +35,7 @@
 
 import type { Ability, Cost } from '../ast/types';
 import { CARD_TYPES, type CardType, COLORS } from '../characteristics';
+import { isOutlaw } from '../data/outlaw';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -1924,6 +1925,10 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
             // Quandrix Unlimited group E: the spell has an {X} in its mana cost (CR 107.3).
             ...(xSymbolCount(derive(next, getObject(next, casting.object)).manaCost ?? []) > 0
               ? { hasX: true as const }
+              : {}),
+            // CR 700.12 (Discreet Retreat): "your first outlaw spell each turn".
+            ...(isOutlaw(derive(next, getObject(next, casting.object)).subtypes)
+              ? { outlaw: true as const }
               : {}),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),

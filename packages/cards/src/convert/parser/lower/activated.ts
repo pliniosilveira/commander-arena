@@ -22,6 +22,7 @@ import {
   type Effect,
   type ManaAbility,
   type ManaProduction,
+  OUTLAW_CREATURE_TYPES,
 } from '@commander-arena/engine';
 import type {
   IrAbility,
@@ -145,6 +146,17 @@ function spellKindsOf(
   filter: IrFilter,
 ): { types?: CardType[]; subtypes?: string[]; chosenType?: true } | null {
   const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw', 'chosen']);
+  // CR 700.12 (Discreet Retreat): "outlaw spells" are the spells of at least one of the five outlaw creature types, which is the engine's list of creature types.
+  if (filter.outlaw === true) {
+    const { outlaw: _outlaw, ...rest } = filter;
+    if (
+      Object.keys(rest).some((key) => !['zone', 'stackKind', 'raw'].includes(key)) ||
+      filter.types !== undefined
+    ) {
+      return null;
+    }
+    return { subtypes: [...OUTLAW_CREATURE_TYPES] };
+  }
   if (Object.keys(filter).some((key) => !known.has(key))) return null;
   // Issue 199 (CR 106.6, 607.2d): "a creature spell of the chosen type": the card types, and the creature type the permanent chose as it entered; not with named creature types.
   if (filter.chosen === 'type') {

@@ -3262,6 +3262,8 @@ export interface TurnLog {
     readonly fromGraveyard?: true;
     /** The spell was cast from exile (Wild-Magic Sorcerer, CR 601.2a: "the first spell you cast from exile each turn"). */
     readonly fromExile?: true;
+    /** The spell was an outlaw as it was cast (CR 700.12): "your first outlaw spell each turn" tells it from the others. */
+    readonly outlaw?: true;
     /** The subtypes of the sources that made the mana spent on the spell (Rain of Riches, CR 601.2h: "the first spell you cast each turn that mana from a Treasure was spent to cast"). */
     readonly manaSubtypes?: readonly string[];
   }[];

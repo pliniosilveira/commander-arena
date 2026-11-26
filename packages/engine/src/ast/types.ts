@@ -6171,7 +6171,7 @@ export type Trigger =
       readonly nth?: number;
       /**
        * "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i, 603.2): only the first spell of the card types `filter` names (`types` or the `types` of its `anyOf`
-       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
+       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`), or (Discreet Retreat, CR 700.12) is `outlaw: true`: the first outlaw spell the caster casts this turn.
        */
       readonly firstOfKind?: true;
       /**
