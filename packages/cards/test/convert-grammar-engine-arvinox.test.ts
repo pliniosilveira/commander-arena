@@ -236,10 +236,23 @@ describe('the end step trigger: the bottom card of each opponent, face down (CR 
   });
 
   test('it does not trigger at the end step of another player', () => {
-    const g = ready();
-    g.advanceTo('end', { turn: 2 });
+    // The game starts on seat 1's turn, so the first end step it reaches is not Arvinox's controller's.
+    const g = scenario({ seats: 3 })
+      .seat(0)
+      .define(ARVINOX.definition)
+      .battlefield(NAME)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER, BOLT)
+      .seat(2)
+      .library(...FILLER, ANGEL)
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('end');
     g.passAll();
     expect(Object.values(g.state.objects).filter((o) => o.zone === 'exile')).toEqual([]);
+    expect(g.state.seats[1]?.library.length).toBe(FILLER.length + 1);
+    expect(g.state.seats[2]?.library.length).toBe(FILLER.length + 1);
   });
 
   describe('the controller may cast permanent spells from among them, with mana of any color (CR 601.2, 609.4b)', () => {

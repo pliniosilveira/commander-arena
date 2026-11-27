@@ -419,6 +419,7 @@ describe('supported feature gate', () => {
         'ringTempted',
         // Galadriel group 3: "Whenever you roll a die's highest natural result".
         'rollsHighest',
+        'roomFullyUnlocked',
         // D-513: "Whenever you scry".
         'scries',
         'state',
