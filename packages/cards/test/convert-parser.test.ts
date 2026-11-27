@@ -1093,6 +1093,7 @@ describe('unmatched abilities', () => {
       'effect.shuffle-graveyard',
       'effect.shuffle-hand-and-graveyard',
       'effect.require-attack',
+      'effect.return-up-to-one-of-each-kind',
       'effect.pump-targets',
       'effect.may-play-while-exiled',
       'effect.put-them-owners-graveyard',
