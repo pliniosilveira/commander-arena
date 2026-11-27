@@ -70,8 +70,7 @@ describe('removal waits for the commander', () => {
 });
 
 describe('the counterspell waits for the commander', () => {
-  // Today: it counters the Bears (reason `counter`): any spell of mana value 2 or more is countered, and a response is never planned.
-  test.fails('Counterspell is not spent on Grizzly Bears while six untapped Forests can cast the 6/6 flying commander', async () => {
+  test('Counterspell is not spent on Grizzly Bears while six untapped Forests can cast the 6/6 flying commander', async () => {
     // Wrong to counter here: a 2/2 is no threat, the two Islands pay for one counter only, and the commander can follow this turn.
     const g = scenario()
       .define(DRAGON)
@@ -88,8 +87,10 @@ describe('the counterspell waits for the commander', () => {
       .build();
     g.act(1).cast(BEARS).pay();
     g.act(1).pass();
-    const action = await askHeuristic(g, blunderAgent());
+    const agent = blunderAgent();
+    const action = await askHeuristic(g, agent);
     expect(action).not.toMatchObject({ kind: 'castSpell', object: g.id('Counterspell') });
+    expect(lastReason(agent)?.reason).toBe('hold');
   });
 });
 
