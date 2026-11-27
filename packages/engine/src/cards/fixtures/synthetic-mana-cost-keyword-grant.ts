@@ -101,8 +101,8 @@ export const SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST: readonly CardDefinition[] =
     name: 'SYNTHETIC Costless Shrine',
     manaCost: null,
     types: ['enchantment'],
-    colors: ['W'],
-    colorIdentity: ['W'],
+    colors: [],
+    colorIdentity: [],
     oracleText: '',
   }),
   // "Return target card from a graveyard to its owner's hand.": a card put into a hand without being drawn.
