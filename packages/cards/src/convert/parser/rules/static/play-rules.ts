@@ -775,6 +775,52 @@ export const STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
 });
 
 /**
+ * `static.play-lands-and-cast-from-top`: "You may play lands and cast spells from the top of your library." (One with the Multiverse; CR 305.1, 601.3, 401.5, 604.1): the two
+ * permissions of the top card of the controller's library, `playLandsFromTopOfLibrary` and `castFromTopOfLibrary` of every spell, at the timing and for the costs each has. Not read:
+ * a kind of land or of spell, another zone or player, "once during each of your turns", a line with more text (after a condition the sentence is `static.conditional`'s).
+ */
+export const STATIC_PLAY_LANDS_AND_CAST_FROM_TOP = defineRule<IrStatic>({
+  id: 'static.play-lands-and-cast-from-top',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 305.1 (Lands)',
+    'CR 601.3 (Casting Spells)',
+    'CR 401.5 (Library)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: ['You may play lands and cast spells from the top of your library.'],
+  rejects: [
+    'You may play lands and cast spells from the top of your library',
+    'You may play lands and cast creature spells from the top of your library.',
+    'You may play Forests and cast spells from the top of your library.',
+    'You may play lands and cast spells from your graveyard.',
+    "You may play lands and cast spells from the top of an opponent's library.",
+    'You may play lands and cast spells from the top of your library this turn.',
+    'You may play lands and cast spells from the top of your library. Draw a card.',
+    'You may cast spells and play lands from the top of your library.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.play-lands-and-cast-from-top';
+    const r = pattern(
+      /you may play lands and cast spells from the top of your library\.(?!\s*\S)/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject('you', 'you', { start: pos, end: pos + 3 }, id);
+    return {
+      ok: true,
+      value: statement(
+        id,
+        who,
+        { kind: 'playLandsFromTopOfLibrary', alsoCast: true },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `static.activate-as-though-haste`: "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, Thousand-Year Elixir; CR 702.10b, 302.6,
  * 604.1: the creatures' abilities with {T} or {Q} in the cost are not held back by summoning sickness; attacking is not an activation). Not read: another group of creatures, "as
  * though they had haste" of a spell, a line with more text.
@@ -873,6 +919,7 @@ export const PLAY_RULE_STATIC_RULES = [
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_GRAVEYARD_PLAY_EACH_TYPE,
   STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
+  STATIC_PLAY_LANDS_AND_CAST_FROM_TOP,
   STATIC_ACTIVATE_AS_THOUGH_HASTE,
   STATIC_LOYALTY_ACTIVATION_LIMIT,
   STATIC_ATTACK_TAX,

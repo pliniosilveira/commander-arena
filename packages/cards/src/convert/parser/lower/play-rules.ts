@@ -66,7 +66,9 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
     case 'playLandsFromTopOfLibrary':
       return effect.alsoLook === true
         ? ['static:lookAtTopOfLibrary', 'static:playLandsFromTopOfLibrary']
-        : ['static:playLandsFromTopOfLibrary'];
+        : effect.alsoCast === true
+          ? ['static:playLandsFromTopOfLibrary', 'static:castFromTopOfLibrary']
+          : ['static:playLandsFromTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
     case 'graveyardPlayEachType':
@@ -137,7 +139,10 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
         value:
           effect.alsoLook === true
             ? [{ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } }, play]
-            : [play],
+            : effect.alsoCast === true
+              ? // "You may play lands and cast spells from the top of your library." (One with the Multiverse, CR 305.1, 601.3): both permissions, every spell.
+                [play, { kind: 'static', static: { kind: 'castFromTopOfLibrary', spells: {} } }]
+              : [play],
         rule: at.rule,
       };
     }

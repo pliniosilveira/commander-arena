@@ -1774,6 +1774,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAlternativeCostToSpells',
     // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (CR 118.9, 107.14).
     'grantEnergyAlternative',
+    // "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost." (CR 118.9, 601.2b).
+    'castOnceEachTurn',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -2112,6 +2114,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payLife',
     // CR 118.9 (Baleful Mastery): "You may pay {1}{B} rather than pay this spell's mana cost".
     'payMana',
+    // CR 118.9 (Demon of Fate's Design): life equal to the spell's mana value rather than its mana cost, by an effect (`nextSpellPayLife`) or a permanent's permission (`castOnceEachTurn`).
+    'lifeForMana',
   ],
 };
 
@@ -3164,6 +3168,8 @@ export const STATIC_KINDS = [
   'grantAlternativeCostToSpells',
   /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14). */
   'grantEnergyAlternative',
+  /** "Once during each of your turns, you may cast a spell ... by paying life equal to its mana value rather than paying its mana cost" or "... without paying its mana cost" (CR 118.9, 601.2b). */
+  'castOnceEachTurn',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "The monarch controls enchanted creature." (CR 613.1b, 725.1): the engine's `controlAttached`. */

@@ -731,6 +731,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAlternativeCostToSpells'];
     case 'energyAlternative':
       return ['static:grantEnergyAlternative'];
+    case 'castOnceEachTurn':
+      return ['static:castOnceEachTurn', `castAlternative:${effect.alternative}`];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
     case 'legendRuleDoesntApply':
@@ -1415,6 +1417,38 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
             energy: first.count,
             ...(first.fromExile === true ? { from: 'exile' as const } : {}),
             ...(first.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
+  // Issue 109 (CR 118.9, 601.2b): "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost."
+  if (first.kind === 'castOnceEachTurn') {
+    if (
+      more.length > 0 ||
+      ability.statement.condition !== undefined ||
+      ability.statement.also !== undefined ||
+      ability.statement.functionsIn !== undefined
+    ) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures([
+      'ability:static',
+      'static:castOnceEachTurn',
+      `castAlternative:${first.alternative}`,
+    ]);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'castOnceEachTurn',
+            spells: first.types === undefined ? {} : { types: [...first.types] as never },
+            ...(first.from === undefined ? {} : { from: [...first.from] }),
+            alternative: first.alternative,
           },
         },
       ],

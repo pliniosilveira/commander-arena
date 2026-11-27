@@ -28,6 +28,7 @@ import {
   castAs,
   isNamedAlternative,
 } from './cast-cost';
+import { onceCastGrant } from './cast-once';
 import { castInOwnMainPhase } from './cast-phase';
 import {
   castForbiddenByOpponentsPermanent,
@@ -37,7 +38,7 @@ import {
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
-import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { flashPermissionSources, libraryCastSources, onceCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
@@ -658,6 +659,10 @@ export function castZone(
   }
   // CR 601.3 (D-151): "You may cast creature spells with power 4 or greater from the top of your library".
   if (obj.zone === 'library') {
+    // CR 118.9, 601.2a (`castOnceEachTurn`): "you may cast a spell from ... the top of your library without paying its mana cost", any castable face of the card.
+    if (alternative === 'free' || alternative === 'lifeForMana') {
+      return onceCastUse(state, seat, obj, faceIndex, alternative) !== null ? 'library' : null;
+    }
     return alternative === undefined &&
       faceIndex === 0 &&
       libraryCastPermission(state, seat, obj) !== null
@@ -860,6 +865,38 @@ export function alternativeCostAllowed(
 }
 
 /**
+ * CR 118.9a, 601.2b (`castOnceEachTurn`): the permanent whose once-a-turn permission a cast of the card `obj` as `face` for `alternative` would use, or null: no permanent gives that
+ * spell the alternative cost now, or the cast is allowed another way and uses no permission (the card's own "without paying its mana cost", an effect "rather than pay the mana cost of
+ * the next spell you cast this turn").
+ */
+export function onceCastUse(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  face: number,
+  alternative: CastAlternative | undefined,
+): ObjectId | null {
+  if (alternative !== 'free' && alternative !== 'lifeForMana') return null;
+  if (onceCastSources(state).length === 0) return null;
+  if (obj.zone !== 'hand' && obj.zone !== 'command' && obj.zone !== 'library') return null;
+  if (obj.prepareOf !== undefined) return null;
+  if (obj.zone !== 'library') {
+    if (alternative === 'lifeForMana' && mayPayLifeForMana(state, seat)) return null;
+    if (alternative === 'free' && alternativeCostAllowed(state, seat, obj, face, 'free')) {
+      return null;
+    }
+  }
+  return onceCastGrant(
+    state,
+    seat,
+    obj,
+    castAs(obj, seat, face, alternative),
+    alternative,
+    face === 0 && libraryCastPermission(state, seat, obj) !== null,
+  );
+}
+
+/**
  * Whether the seat may cast the card `obj` as `face` now (CR 601.2). Only that face is evaluated
  * (CR 709.3a, 712.11c, 715.3a), so it is looked at as the spell it would be on the stack: its own
  * types for the timing, its own targets and its total cost (rules/cast-cost.ts): the mana cost or
@@ -894,9 +931,12 @@ export function canCast(
     obj.onAdventure !== true &&
     obj.prepareOf === undefined &&
     (freeCastSlots(state, seat, obj, face).length > 0 || mayCastPlotted(state, seat, obj));
+  // CR 118.9 (`castOnceEachTurn`): or a permanent's "once during each of your turns, you may cast a spell ... without paying its mana cost" / "by paying life equal to its mana value".
+  const once = onceCastUse(state, seat, obj, face, alternative);
   if (
     (alternative === 'free' || isNamedAlternative(alternative)) &&
     !byPermission &&
+    once === null &&
     !alternativeCostAllowed(state, seat, obj, face, alternative)
   ) {
     return false;
@@ -905,6 +945,7 @@ export function canCast(
   // CR 118.9 (Eye of Duskmantle): or a permanent's permission to cast a card of the graveyard for life (`castZone` has checked it).
   if (
     alternative === 'lifeForMana' &&
+    once === null &&
     !mayPayLifeForMana(state, seat) &&
     !(zone === 'graveyard' && obj.zone === 'graveyard') &&
     // Nashi: a card in exile a permission lets the seat cast by paying life.
@@ -929,7 +970,8 @@ export function canCast(
     state,
     seat,
     spell,
-    hasX(spellXCost(faceOf(state, spell), alternative)),
+    // CR 107.3b: a spell cast with a `castOnceEachTurn` permission has X 0, as one cast without paying its mana cost.
+    hasX(spellXCost(faceOf(state, spell), once === null ? alternative : 'free')),
   );
   if (least === null) return false;
   const timing = castTiming(state, seat, spell);
@@ -1228,6 +1270,10 @@ export function alternativeCastObjects(
             !onAdventure.includes(id) &&
             mayPlayFromExile(state, seat, getObject(state, id), false, false, true),
         )
+      : []),
+    // CR 118.9 (`castOnceEachTurn`): the top card of the library, which a permanent may let the seat cast for the alternative cost ("from your hand or the top of your library").
+    ...((kind === 'free' || kind === 'lifeForMana') && onceCastSources(state).length > 0
+      ? getSeat(state, seat).library.slice(0, 1)
       : []),
     // Tlincalli Hunter (CR 118.9): the cards in exile the seat may cast, for an alternative cost a permanent gives for spells cast from exile.
     ...(kind === 'energyGrant'

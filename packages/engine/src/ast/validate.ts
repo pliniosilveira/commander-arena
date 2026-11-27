@@ -683,6 +683,39 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'castOnceEachTurn':
+      // CR 118.9, 601.2b: "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost."
+      if (s.alternative !== 'lifeForMana' && s.alternative !== 'free') {
+        issue(out, `${path}.alternative`, "the alternative cost is 'lifeForMana' or 'free'");
+      }
+      if (
+        s.from !== undefined &&
+        (!Array.isArray(s.from) ||
+          s.from.length === 0 ||
+          new Set(s.from).size !== s.from.length ||
+          s.from.some((z) => z !== 'hand' && z !== 'libraryTop'))
+      ) {
+        issue(out, `${path}.from`, "from lists 'hand' and 'libraryTop', each at most once");
+      }
+      checkFilter(s.spells, `${path}.spells`, out);
+      if (
+        filterSome(
+          s.spells,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.controller !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.spells`,
+          'the spells are named by what they are: no zone, owner, controller, stackKind or combat',
+        );
+      }
+      break;
     case 'grantEnergyAlternative':
       // CR 118.9, 107.14 (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast": a whole number of one or more, for the spells of the controller.
       if (!isCount(s.energy) || (s.energy < 1 && !(s.energy === 0 && s.oncePerTurn === true))) {

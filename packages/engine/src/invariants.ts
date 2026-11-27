@@ -475,6 +475,8 @@ export function checkInvariants(state: GameState): string[] {
         );
       } else if (
         obj.stack.byEffect !== true &&
+        // CR 118.9 (`castOnceEachTurn`): a permanent's permission gives the alternative cost, the card lists none.
+        obj.stack.castOnce === undefined &&
         face?.alternativeCosts?.some((a) => a.kind === 'free') !== true
       ) {
         problems.push(

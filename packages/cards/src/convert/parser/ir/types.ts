@@ -2198,7 +2198,12 @@ export type IrStaticEffect =
    * "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. `alsoLook` is the sentence "You may look at the top card of
    * your library any time, and you may play lands from the top of your library.", which is both abilities (issue 345).
    */
-  | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
+  | {
+      readonly kind: 'playLandsFromTopOfLibrary';
+      readonly alsoLook?: true;
+      /** "You may play lands and cast spells from the top of your library." (One with the Multiverse, CR 305.1, 601.3): also the permission to cast every spell from there. */
+      readonly alsoCast?: true;
+    }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1): the subject is `you`. */
@@ -2362,6 +2367,17 @@ export type IrStaticEffect =
       readonly oncePerTurn?: true;
       /** The card types of the spells the grant is for ("a creature spell"); left out for permanent spells. */
       readonly types?: readonly string[];
+    }
+  /**
+   * "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost." (issue 109, CR 118.9, 601.2b): one
+   * spell in each turn of the controller for the alternative cost `alternative`; `types` is the card type the spell must have (any spell when left out), `from` the zones the words
+   * name (none: wherever the spell is cast from). The subject is `you`.
+   */
+  | {
+      readonly kind: 'castOnceEachTurn';
+      readonly alternative: 'lifeForMana' | 'free';
+      readonly types?: readonly string[];
+      readonly from?: readonly ('hand' | 'libraryTop')[];
     }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
