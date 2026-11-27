@@ -3,25 +3,23 @@
  * empty room at both ends (half the view, board.css `.board-row-scroll`) lets the outermost card be
  * brought to the middle of the screen, clear of the stack panel on the right.
  */
-import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { useHiddenCards } from './useHiddenCards';
 
 /** What keeps its own mouse behavior: a press on it never starts a scroll drag. A card that may be
  *  picked up (native drag and drop) is one; any other card, a button too, scrolls the rows. */
 const INTERACTIVE = 'a, input, select, textarea, [draggable="true"]';
 /** How far (px) the mouse moves before a press becomes a scroll drag, not a click. */
 const DRAG_SLOP = 5;
+/** The cards of a battlefield; a card attached to another is drawn with its host. */
+const CARD = '[data-object-id]:not([data-attached-to])';
 
 export function FieldRows({ children }: { readonly children: ReactNode }) {
   const scroller = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
-  const [more, setMore] = useState({ left: false, right: false });
-  const update = useCallback(() => {
-    const el = scroller.current;
-    if (el === null) return;
-    const left = el.scrollLeft > 1;
-    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
-    setMore((m) => (m.left === left && m.right === right ? m : { left, right }));
-  }, []);
+  // The arrows show only when a card lies outside the view: the empty room at the ends of the rows
+  // always lets them scroll, so the scroll extent says nothing about hidden cards.
+  const { hidden, refresh } = useHiddenCards(scroller, CARD);
   // At rest the cards are centred by scrolling to the middle; a change of the track's width (cards
   // arriving or leaving, the window resizing) re-centres.
   useLayoutEffect(() => {
@@ -30,14 +28,14 @@ export function FieldRows({ children }: { readonly children: ReactNode }) {
     if (el === null || inner === null) return;
     const centre = () => {
       el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
-      update();
+      refresh();
     };
     centre();
     const observer = new ResizeObserver(centre);
     observer.observe(inner);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [update]);
+  }, [refresh]);
   // Dragging with the mouse, on the empty room or on a card, scrolls the rows sideways, as a swipe
   // does on a trackpad. A card that can be picked up keeps native drag and drop, a press that
   // does not move is still a click, and a drag that moved never ends in one.
@@ -95,29 +93,29 @@ export function FieldRows({ children }: { readonly children: ReactNode }) {
   const scrollBy = (dx: number) => scroller.current?.scrollBy({ left: dx, behavior: 'smooth' });
   return (
     <div className="board-field-rows-wrap">
-      <div className="board-field-rows" ref={scroller} onScroll={update}>
+      <div className="board-field-rows" ref={scroller}>
         <div className="board-field-track" ref={track}>
           {children}
         </div>
       </div>
-      {more.left && (
+      {hidden.left > 0 && (
         <button
           type="button"
           className="board-scroll board-scroll-left"
-          aria-label="Scroll battlefield left"
+          aria-label={`Scroll battlefield left, ${hidden.left} hidden`}
           onClick={() => scrollBy(-240)}
         >
-          ‹
+          ‹<span className="board-scroll-count">{hidden.left}</span>
         </button>
       )}
-      {more.right && (
+      {hidden.right > 0 && (
         <button
           type="button"
           className="board-scroll board-scroll-right"
-          aria-label="Scroll battlefield right"
+          aria-label={`Scroll battlefield right, ${hidden.right} hidden`}
           onClick={() => scrollBy(240)}
         >
-          ›
+          ›<span className="board-scroll-count">{hidden.right}</span>
         </button>
       )}
     </div>
