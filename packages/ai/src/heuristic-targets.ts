@@ -186,16 +186,23 @@ export interface TargetPick {
   readonly reason: 'target-commander' | 'target-best';
 }
 
+/** The answers to a targets decision for a removal spell: today's pick first, then the other targets worth it, best first. */
+export interface RemovalOptions {
+  readonly picks: readonly TargetPick[];
+  /** The value of each pick (`threatValue` plus the lethal-commander bonus; 0 for burn at a player). */
+  readonly values: readonly number[];
+}
+
 /**
- * The answer to a targets decision for a removal spell, or null to leave it to the casual handler (a
- * spell this does not read, several slots, or nothing worth aiming at).
+ * The answers to a targets decision for a removal spell, today's pick first (see `chooseRemovalTargets`), or
+ * null to leave it to the casual handler (a spell this does not read, several slots, or nothing worth aiming at).
  */
-export function chooseRemovalTargets(
+export function removalOptions(
   view: GameView,
   source: ObjectView,
   specs: readonly { specId: string; min: number; max: number; legal: readonly ChosenTarget[] }[],
   weights: AgentWeights,
-): TargetPick | null {
+): RemovalOptions | null {
   const [spec] = specs;
   if (specs.length !== 1 || spec === undefined || spec.max !== 1 || !isRemovalSpell(source)) {
     return null;
@@ -212,26 +219,45 @@ export function chooseRemovalTargets(
   const opponent =
     player?.kind === 'player' ? view.seats.find((s) => s.id === player.seat) : undefined;
   if (player !== undefined && opponent !== undefined && ctx.kind === 'damage') {
-    if (ctx.damage >= opponent.life) return { targets: [player], reason: 'target-best' };
+    if (ctx.damage >= opponent.life) {
+      return { picks: [{ targets: [player], reason: 'target-best' }], values: [0] };
+    }
   }
   const defending = view.combat !== null && view.activeSeat !== view.viewer;
   const attackers = defending ? attackersAgainst(view, view.viewer) : [];
   const preferred = pool.filter((o) => attackers.some((a) => a.id === o.id));
-  const ranked = rankTargets(view, preferred.length > 0 ? preferred : pool, ctx);
-  const best = ranked[0] ?? rankTargets(view, pool, ctx)[0];
-  if (best !== undefined) {
-    const hit = legalObjects.find((x) => x.o.id === best.object.id);
-    if (hit !== undefined) {
-      return {
-        targets: [hit.t],
-        reason: best.object.isCommander ? 'target-commander' : 'target-best',
-      };
-    }
+  const first = rankTargets(view, preferred.length > 0 ? preferred : pool, ctx);
+  const ranked = first.length > 0 ? first : rankTargets(view, pool, ctx);
+  const picks: TargetPick[] = [];
+  const values: number[] = [];
+  for (const r of ranked) {
+    const hit = legalObjects.find((x) => x.o.id === r.object.id);
+    if (hit === undefined) continue;
+    picks.push({
+      targets: [hit.t],
+      reason: r.object.isCommander ? 'target-commander' : 'target-best',
+    });
+    values.push(r.value);
   }
+  if (picks.length > 0) return { picks, values };
   // Nothing worth a creature spell: burn with a player target goes face rather than at a bad creature.
-  if (player !== undefined && ctx.kind === 'damage')
-    return { targets: [player], reason: 'target-best' };
+  if (player !== undefined && ctx.kind === 'damage') {
+    return { picks: [{ targets: [player], reason: 'target-best' }], values: [0] };
+  }
   return null;
+}
+
+/**
+ * The answer to a targets decision for a removal spell, or null to leave it to the casual handler (a
+ * spell this does not read, several slots, or nothing worth aiming at).
+ */
+export function chooseRemovalTargets(
+  view: GameView,
+  source: ObjectView,
+  specs: readonly { specId: string; min: number; max: number; legal: readonly ChosenTarget[] }[],
+  weights: AgentWeights,
+): TargetPick | null {
+  return removalOptions(view, source, specs, weights)?.picks[0] ?? null;
 }
 
 /**

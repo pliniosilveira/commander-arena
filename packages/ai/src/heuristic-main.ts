@@ -30,7 +30,8 @@
  *  - the opponent's end step (empty stack): the set of instant-speed plays that uses the most mana
  *    (card draw, flash creatures, removal with a target), reason `end-step`;
  *  - in response to an opponent's spell (their object on top of the stack): a counterspell for a spell of
- *    mana value `main.counterMinValue` or more, reason `counter`.
+ *    mana value `main.counterMinValue` or more, reason `counter`; with a sample it is held (pass, reason `hold`)
+ *    when playing the turn on without it scores better by `main.counterLookMargin` (`heuristic-response-look.ts`).
  *
  * The numbers named `main.*` are fields of `AgentWeights` (`weights.ts`), read from `Think.weights`.
  */
@@ -49,10 +50,13 @@ import {
 } from './casual-priority';
 import { manaValueOf } from './casual-view';
 import type { Think } from './heuristic-budget';
+import type { LookRecord } from './heuristic-combat-look';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { ownUnits } from './heuristic-mana';
+import type { SimAgents } from './heuristic-plan-sim';
 import { protectionPlay, protectionReserve } from './heuristic-protect';
+import { lookAtCounter } from './heuristic-response-look';
 import {
   bestSet,
   castAction,
@@ -70,6 +74,8 @@ export interface PriorityChoice {
   readonly reason: Reason;
   /** The mana symbols the payment of this cast keeps open for a protection spell (`heuristic-protect.ts`). */
   readonly reserve?: readonly string[];
+  /** What the look-ahead of the choice did (`heuristic-response-look.ts`), when it ran. */
+  readonly look?: LookRecord;
 }
 
 /** The casual rules for what is left: the options without the lands and the hand casts. */
@@ -206,6 +212,7 @@ function windowPlay(
   think: Think,
   activations: Set<string>,
   answer: Answer,
+  agents: SimAgents | undefined,
 ): PriorityChoice | null {
   const me = view.viewer;
   const weights = think.weights;
@@ -227,7 +234,14 @@ function windowPlay(
       .filter((p) => isCounter(p.obj))
       .sort((a, b) => spendOf(a) - spendOf(b))[0];
     if (counter !== undefined && manaValueOf(top) >= weights.main.counterMinValue) {
-      return { action: castAction(counter), reason: 'counter' };
+      // With a sample: the counterspell is held when playing the turn on without it scores better (a bigger spell may follow).
+      const action = castAction(counter);
+      const looked = lookAtCounter(view, action, think, agents, answer);
+      const look =
+        looked === null ? {} : { look: { playOuts: looked.playOuts, changed: looked.index === 1 } };
+      return looked?.index === 1
+        ? { action: { kind: 'pass' }, reason: 'hold', ...look }
+        : { action, reason: 'counter', ...look };
     }
     return null;
   }
@@ -289,6 +303,8 @@ export function choosePriorityHeuristic(
   think: Think,
   activations: Set<string>,
   answer: Answer,
+  /** The inner agents of the look-ahead; without them (a play-out, a test) nothing is looked ahead. */
+  agents?: SimAgents,
 ): PriorityChoice {
   const me = view.viewer;
   const mainWindow =
@@ -298,7 +314,7 @@ export function choosePriorityHeuristic(
   if (mainWindow) return mainPhase(view, d, think, activations, answer);
   const faceUp = faceUpWindow(view, d, think, answer);
   if (faceUp !== null) return faceUp;
-  const play = windowPlay(view, d, think, activations, answer);
+  const play = windowPlay(view, d, think, activations, answer, agents);
   if (play !== null) return play;
   const rest = casualRemainder(view, d, think, activations);
   return { action: rest, reason: rest.kind === 'pass' ? 'no-play' : 'delegated' };

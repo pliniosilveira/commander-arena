@@ -71,7 +71,8 @@ import type { Line, PlayOutPool } from './heuristic-plan-types';
 import type { PlanWork } from './heuristic-plan-work';
 import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
-import { chooseRemovalTargets, creatureToHelp } from './heuristic-targets';
+import { pickRemovalTargets } from './heuristic-response-look';
+import { creatureToHelp } from './heuristic-targets';
 import { chooseVoteByOutcome } from './heuristic-vote';
 import { firstSafeAction } from './legal';
 import { MIN_KEEP_SIZE } from './random-agent';
@@ -204,7 +205,14 @@ export class HeuristicAgent implements ExplainingAgent {
         };
       }
     }
-    const today = choosePriorityHeuristic(view, d, think, this.activations, answer);
+    const today = choosePriorityHeuristic(
+      view,
+      d,
+      think,
+      this.activations,
+      answer,
+      planning ? this.simAgents : undefined,
+    );
     if (when === null || when === 'attack') return today;
     let lines: ReturnType<typeof mainLines>;
     if (when === 'main1' || when === 'main2') {
@@ -255,6 +263,7 @@ export class HeuristicAgent implements ExplainingAgent {
     const choice = yield* this.priorityChoice(view, open, think, answer, planning);
     noteCast(view, choice.action, this.activations);
     this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
+    this.look = choice.look ?? null;
     note(choice.reason);
     return choice.action;
   }
@@ -346,10 +355,18 @@ export class HeuristicAgent implements ExplainingAgent {
         const plain = d.forTrigger !== true && d.forCopy !== true && d.forChange !== true;
         const simple = d.specs.every((s) => s.mode === undefined && s.divide === undefined);
         if (source !== undefined && plain && simple) {
-          const pick = chooseRemovalTargets(view, source, d.specs, this.weights);
-          if (pick !== null) {
-            note(pick.reason);
-            return { kind: 'chooseTargets', targets: pick.targets };
+          const picked = pickRemovalTargets(
+            view,
+            d,
+            source,
+            think,
+            ctx?.sample === undefined ? undefined : this.simAgents,
+            answer,
+          );
+          if (picked !== null) {
+            this.look = picked.look;
+            note(picked.pick.reason);
+            return { kind: 'chooseTargets', targets: picked.pick.targets };
           }
           const [spec] = d.specs;
           if (
