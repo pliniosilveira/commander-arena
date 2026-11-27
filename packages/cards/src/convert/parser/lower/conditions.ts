@@ -872,6 +872,14 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'manaSpentAtLeast', count: test.count });
     }
+    case 'manaSpentLessThanManaValue': {
+      // CR 601.2h, 202.3 (Ancient Cellarspawn): "it" is the spell that caused a cast trigger; in any other text no spell is named, so it is not lowered. "Equal to the difference" after it is the gap.
+      if (ctx?.castTrigger !== true) return failure(c, []);
+      const blocked = missingFeatures(['condition:manaSpentLessThanManaValue']);
+      if (blocked.length > 0) return failure(c, blocked);
+      ctx.comparedSpellMana = true;
+      return ok({ kind: 'manaSpentLessThanManaValue' });
+    }
     case 'movedTotalManaValue': {
       // CR 202.3, 608.2c (D-661): the cards an instruction before this one exiled (`moved`), added up; no other cards are named.
       if (ctx?.lastEffectKind !== 'exileTopAnyNumber' && ctx?.lastEffectKind !== 'exileTop') {
@@ -1196,6 +1204,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:thisAttackedThisTurn',
   'condition:yourTurn',
   'condition:manaSpentAtLeast',
+  'condition:manaSpentLessThanManaValue',
   'condition:cardLeftYourGraveyard',
   'condition:descendedThisTurn',
   'condition:playedLandThisTurn',

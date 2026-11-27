@@ -152,7 +152,13 @@ type Pronoun =
   | { readonly kind: 'player' }
   | { readonly kind: 'plural'; readonly each?: true }
   | { readonly kind: 'other' }
-  | { readonly kind: 'single'; readonly type: string | null; readonly youControl?: true };
+  | {
+      readonly kind: 'single';
+      readonly type: string | null;
+      readonly youControl?: true;
+      /** "The chosen card": only a target the text named before is meant, never an object a later instruction chose (Spirit-Sister's Call). */
+      readonly chosen?: true;
+    };
 
 function classify(raw: string): Pronoun | null {
   const word = raw.trim().toLowerCase();
@@ -170,6 +176,10 @@ function classify(raw: string): Pronoun | null {
   if (word === 'them' || /^(?:each of )?those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
   if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
+  // Spirit-Sister's Call: "the chosen card" is the one card of the target phrase the text chose before.
+  if (/^the chosen (?:[\p{L}-]+ )?card$/u.test(word)) {
+    return { kind: 'single', type: null, chosen: true };
+  }
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
   if (/^that (?:[\p{L}-]+ )+card$/u.test(word)) return { kind: 'single', type: null };
   if (word === 'it' || word === 'her' || word === 'him' || word === 'she' || word === 'he')
@@ -437,6 +447,7 @@ class Binder {
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             a.groupLine !== true &&
             !a.noun.plural &&
+            (pronoun.chosen !== true || a.noun.det === 'target') &&
             compatible(a.noun.filter, pronoun.type) &&
             (pronoun.youControl !== true || a.noun.filter.controller === 'you'),
         );
@@ -528,6 +539,9 @@ class Binder {
     if (antecedent.ref === 'trig') return { ...noun, det: 'triggerSubject', ref: 'trig' };
     if (antecedent.ref === 'trigActor') return { ...noun, det: 'triggerActor', ref: 'trigActor' };
     const ref = pronoun?.kind === 'other' ? `${antecedent.ref ?? ''}.2` : antecedent.ref;
+    // Spirit-Sister's Call: "..., return the chosen card ... and it gains ...": naming the chosen card again makes it the most recent object, so "it" after an instruction that
+    // chose another permanent (the sacrifice) means the chosen card, as the sentence reads.
+    if (pronoun?.kind === 'single' && pronoun.chosen === true) this.antecedents.push(found);
     return ref === undefined ? { ...noun } : { ...noun, ref };
   }
 

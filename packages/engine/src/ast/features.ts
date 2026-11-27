@@ -180,9 +180,17 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseRevealedHand',
     // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
     'exileTopRandomOpponent',
+    // Arvinox, the Mind Flail (CR 401.1, 406.3): "Exile the bottom card of each opponent's library face down" (`exileTop.bottom`).
+    'exileTopBottom',
     'mayPlayWhenCast',
     // Manifest dread (CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the rest into your graveyard" (`lookAtTop` `take.to` `manifest`).
     'lookTakeManifest',
+    // CR 401.2, 115.1: "Look at the top three cards of target player's library, then put them back in any order" (`lookAndReorder.from`).
+    'lookReorderFromPlayer',
+    // CR 401.2, 608.2c: "Put one of those cards into your hand, one on top of your library, and one on the bottom of your library" (`lookAndSplit.top`).
+    'lookSplitTop',
+    // CR 401.4, 108.3: "Put all creatures on the bottom of their owners' libraries" (`moveToZone.ownersArrange`).
+    'moveOwnersArrange',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -730,6 +738,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putIntoGraveyard',
     // CR 709.5h: "When you unlock this door" (Room).
     'doorUnlocked',
+    // CR 709.5i: "Whenever you fully unlock a Room".
+    'roomFullyUnlocked',
     // CR 702.110b: "When this creature exploits a creature" (Exploit).
     'exploits',
     'becomesTarget',
@@ -1679,6 +1689,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'descendedThisTurn',
     'playedLandThisTurn',
     'manaSpentAtLeast',
+    'manaSpentLessThanManaValue',
     'manaSpentFromSubtype',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
@@ -1782,10 +1793,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantKeywordToSpells',
     // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
     'grantFlashbackToGraveyardCards',
+    // "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}." (CR 702.94a, 702.138a).
+    'grantKeywordFromManaCost',
     // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
     'grantAlternativeCostToSpells',
     // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (CR 118.9, 107.14).
     'grantEnergyAlternative',
+    // "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost." (CR 118.9, 601.2b).
+    'castOnceEachTurn',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1800,6 +1815,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playLandsFromTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
+    // CR 122.1d: "Stun counters can't be removed from permanents your opponents control."
+    'cantRemoveCounters',
     // D-647: "Inklings can't attack you or planeswalkers you control."
     'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
@@ -1922,6 +1939,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'giveChosenCreatureType',
     // "Land cards you own that aren't on the battlefield are Deserts in addition to their other types." (CR 613.1d, 205.1b).
     'giveTypesToCardsOffBattlefield',
+    // "Permanent spells you control are enchantments in addition to their other types." (CR 613.1d, 205.1b).
+    'giveTypesToPermanentSpells',
     'grantEncoreToGraveyardCards',
     // "Each creature card in your graveyard that's a Cleric ... has unearth {1}{B}" (CR 702.84a).
     'grantUnearthToGraveyardCards',
@@ -2128,6 +2147,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payLife',
     // CR 118.9 (Baleful Mastery): "You may pay {1}{B} rather than pay this spell's mana cost".
     'payMana',
+    // CR 118.9 (Demon of Fate's Design): life equal to the spell's mana value rather than its mana cost, by an effect (`nextSpellPayLife`) or a permanent's permission (`castOnceEachTurn`).
+    'lifeForMana',
   ],
 };
 
@@ -2360,10 +2381,18 @@ export const ABILITY_FEATURES = [
   'chooseRevealedHand',
   /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
   'exileTopRandomOpponent',
+  /** "Exile the bottom card of each opponent's library face down" (Arvinox, the Mind Flail, CR 401.1, 406.3): the engine's `exileTop.bottom`. */
+  'exileTopBottom',
   /** "When you cast a spell this way, its owner loses life equal to its mana value" (The Ruinous Powers, CR 603.7): the engine's `mayPlay.whenCast`. */
   'mayPlayWhenCast',
   /** "Manifest dread" (CR 701.62a): the engine's `lookAtTop` with `take.to` `manifest`, one card of the top two put onto the battlefield face down and the rest into the graveyard. */
   'lookTakeManifest',
+  /** "Look at the top three cards of target player's library, then put them back in any order" (CR 401.2, 115.1): the engine's `lookAndReorder` with `from`. */
+  'lookReorderFromPlayer',
+  /** "Put one of those cards into your hand, one on top of your library, and one on the bottom of your library" (CR 401.2, 608.2c): the engine's `lookAndSplit` with `top`. */
+  'lookSplitTop',
+  /** "Put all creatures on the bottom of their owners' libraries" (CR 401.4, 108.3): the engine's `moveToZone.ownersArrange`, each owner ordering their cards. */
+  'moveOwnersArrange',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -3041,6 +3070,8 @@ export const CONDITION_KINDS = [
   'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
+  /** "If the amount of mana spent to cast it was less than its mana value" (Ancient Cellarspawn, CR 601.2h, 603.4): the engine's `manaSpentLessThanManaValue`. */
+  'manaSpentLessThanManaValue',
   /** "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h): the engine's `manaSpentFromSubtype`. */
   'manaSpentFromSubtype',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
@@ -3182,10 +3213,14 @@ export const STATIC_KINDS = [
   'grantKeywordToSpells',
   /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
   'grantFlashbackToGraveyardCards',
+  /** "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}." and the escape of the cards of a graveyard (CR 702.94a, 702.138a). */
+  'grantKeywordFromManaCost',
   /** "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9). */
   'grantAlternativeCostToSpells',
   /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14). */
   'grantEnergyAlternative',
+  /** "Once during each of your turns, you may cast a spell ... by paying life equal to its mana value rather than paying its mana cost" or "... without paying its mana cost" (CR 118.9, 601.2b). */
+  'castOnceEachTurn',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "The monarch controls enchanted creature." (CR 613.1b, 725.1): the engine's `controlAttached`. */
@@ -3200,6 +3235,8 @@ export const STATIC_KINDS = [
   'playLandsFromTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
+  /** "Stun counters can't be removed from permanents your opponents control." (CR 122.1d): the engine's `cantRemoveCounters`. */
+  'cantRemoveCounters',
   /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): the engine's `cantAttackYou`. */
   'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
@@ -3324,6 +3361,8 @@ export const STATIC_KINDS = [
   'giveChosenCreatureType',
   /** "Land cards you own that aren't on the battlefield are Deserts in addition to their other types" (CR 613.1d, 205.1b, Dune Chanter): the engine's `giveTypesToCardsOffBattlefield`. */
   'giveTypesToCardsOffBattlefield',
+  /** "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types" (CR 613.1d, 205.1b, Secret Arcade): the engine's `giveTypesToPermanentSpells`. */
+  'giveTypesToPermanentSpells',
   /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
   'grantEncoreToGraveyardCards',
   /** "Each creature card in your graveyard that's a Cleric has unearth {1}{B}" (CR 702.84a): the engine's `grantUnearthToGraveyardCards`. */
@@ -3653,8 +3692,12 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeNothing: true,
   chooseRevealedHand: true,
   exileTopRandomOpponent: true,
+  exileTopBottom: true,
   mayPlayWhenCast: true,
   lookTakeManifest: true,
+  lookReorderFromPlayer: true,
+  lookSplitTop: true,
+  moveOwnersArrange: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   chooseFromExileOwnedBy: true,
@@ -3978,6 +4021,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   exiledFromLibraryOrGraveyard: true,
   putIntoGraveyard: true,
   doorUnlocked: true,
+  roomFullyUnlocked: true,
   exploits: true,
   becomesTarget: true,
   chapter: true,

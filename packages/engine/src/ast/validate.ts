@@ -645,6 +645,34 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'grantKeywordFromManaCost':
+      // CR 702.94a, 702.138a: "Each enchantment card in your hand has miracle", "... in your graveyard has escape": the cards of the controller's zone a filter names, as the cards they are.
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a hand or a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      if (s.grant.kind === 'miracle') {
+        if (!Number.isSafeInteger(s.grant.reduce) || s.grant.reduce < 0) {
+          issue(out, `${path}.grant.reduce`, 'the reduction is a whole number of generic mana');
+        }
+      } else if (!Number.isSafeInteger(s.grant.exile) || s.grant.exile < 0) {
+        issue(out, `${path}.grant.exile`, 'the number of other cards exiled is a whole number');
+      }
+      break;
     case 'grantAlternativeCostToSpells':
       // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4}": only evoke with a mana cost, for the spells of the permanent's controller a filter names,
       // as the spells they are on the stack, cast from the hand.
@@ -681,6 +709,39 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           out,
           `${path}.what`,
           'the spells are named by what they are: no zone, owner, stackKind, keywords, targets, combat or source',
+        );
+      }
+      break;
+    case 'castOnceEachTurn':
+      // CR 118.9, 601.2b: "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost."
+      if (s.alternative !== 'lifeForMana' && s.alternative !== 'free') {
+        issue(out, `${path}.alternative`, "the alternative cost is 'lifeForMana' or 'free'");
+      }
+      if (
+        s.from !== undefined &&
+        (!Array.isArray(s.from) ||
+          s.from.length === 0 ||
+          new Set(s.from).size !== s.from.length ||
+          s.from.some((z) => z !== 'hand' && z !== 'libraryTop'))
+      ) {
+        issue(out, `${path}.from`, "from lists 'hand' and 'libraryTop', each at most once");
+      }
+      checkFilter(s.spells, `${path}.spells`, out);
+      if (
+        filterSome(
+          s.spells,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.controller !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.spells`,
+          'the spells are named by what they are: no zone, owner, controller, stackKind or combat',
         );
       }
       break;
@@ -806,6 +867,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, path, 'giveTypesToCardsOffBattlefield names at least one type or subtype');
       }
       break;
+    case 'giveTypesToPermanentSpells':
+      // CR 613.1d: the permanent spells of the controller get card types in addition to their own.
+      checkEnumList(out, `${path}.types`, s.types, CARD_TYPES, 'card type');
+      if (!Array.isArray(s.types) || s.types.length === 0) {
+        issue(out, `${path}.types`, 'giveTypesToPermanentSpells names at least one card type');
+      }
+      break;
     case 'grantUnearthToGraveyardCards':
     case 'grantEncoreToGraveyardCards':
       // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.
@@ -893,6 +961,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'attackTax':
       checkAttackTax(s, path, out);
+      break;
+    case 'cantRemoveCounters':
+      // CR 122.1d: a kind of counter and a filter of battlefield permanents, read for the controller of the permanent.
+      if (typeof s.counter !== 'string' || s.counter.length === 0) {
+        issue(out, `${path}.counter`, 'a counter kind is needed');
+      }
+      checkBattlefieldFilter(s.permanents, `${path}.permanents`, out);
       break;
     case 'cantAttackYou':
       // D-647: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
@@ -1737,6 +1812,10 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'exploits':
       // CR 702.110b: no parameters; the creature with the ability.
       break;
+    case 'roomFullyUnlocked':
+      // CR 709.5i: the controller of the ability fully unlocks any Room.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      break;
     case 'doorUnlocked':
       // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -2117,6 +2196,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       // One card for each occurrence; a batch is about several cards and has no one subject.
       return t.batch === true ? undefined : 'permanent';
     case 'doorUnlocked':
+    case 'roomFullyUnlocked':
     case 'exploits':
       return 'permanent';
     default:

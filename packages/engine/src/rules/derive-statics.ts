@@ -304,6 +304,14 @@ export interface FlashbackGrantSource {
   readonly condition?: Condition;
 }
 
+/** A static ability of a permanent that gives the cards of its controller's hand or graveyard a keyword whose cost is made from their mana cost (`grantKeywordFromManaCost`, CR 702.94a, 702.138a, 613.1f). */
+export interface ManaCostKeywordGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly grant: Extract<StaticEffect, { kind: 'grantKeywordFromManaCost' }>['grant'];
+  readonly condition?: Condition;
+}
+
 /**
  * A static ability of a permanent that gives an alternative cost to the spells its controller casts from the hand (`grantAlternativeCostToSpells`, CR 702.74a, 118.9, 613.1f): read
  * where casting is decided (`rules/alt-cost-grant.ts`), never by `derive`: an alternative cost is no characteristic of the spell. A permanent that lost all its abilities has none.
@@ -320,6 +328,18 @@ export interface AltCostGrantSource {
         readonly from?: 'hand' | 'exile';
         readonly oncePerTurn?: true;
       };
+  readonly condition?: Condition;
+}
+
+/**
+ * A static ability of a permanent that lets its controller, once during each of their turns, cast a spell for an alternative cost (`castOnceEachTurn`, CR 118.9, 601.2b): read where
+ * casting is decided (`rules/cast-once.ts`). A permanent that lost all its abilities has none (CR 613.1f).
+ */
+export interface OnceCastSource {
+  readonly object: GameObject;
+  readonly spells: ObjectFilter;
+  readonly from?: readonly ('hand' | 'libraryTop')[];
+  readonly alternative: 'lifeForMana' | 'free';
   readonly condition?: Condition;
 }
 
@@ -369,8 +389,12 @@ interface BoardIndex {
   readonly legendExemptions: readonly LegendExemptionSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
+  /** Permanents with a `grantKeywordFromManaCost` static ability, in battlefield order. */
+  readonly manaCostKeywordGrants: readonly ManaCostKeywordGrantSource[];
   /** Permanents with a `grantAlternativeCostToSpells` static ability, in battlefield order. */
   readonly altCostGrants: readonly AltCostGrantSource[];
+  /** The `castOnceEachTurn` static abilities, in battlefield order. */
+  readonly onceCasts: readonly OnceCastSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -690,6 +714,29 @@ function flashbackGrantsOf(
   return out;
 }
 
+function manaCostKeywordGrantsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): ManaCostKeywordGrantSource[] {
+  const out: ManaCostKeywordGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantKeywordFromManaCost' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        grant: a.static.grant,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  return out;
+}
+
 function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): AltCostGrantSource[] {
   const out: AltCostGrantSource[] = [];
   for (const a of abilities) {
@@ -745,7 +792,9 @@ function buildIndex(state: GameState): BoardIndex {
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
+  const manaCostKeywordGrants: ManaCostKeywordGrantSource[] = [];
   const altCostGrants: AltCostGrantSource[] = [];
+  const onceCasts: OnceCastSource[] = [];
   const legendExemptions: LegendExemptionSource[] = [];
   const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
@@ -796,7 +845,24 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
+    manaCostKeywordGrants.push(...manaCostKeywordGrantsOf(object, printed));
     altCostGrants.push(...altCostGrantsOf(object, printed));
+    for (const a of printed) {
+      // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+      if (
+        a.kind === 'static' &&
+        a.static.kind === 'castOnceEachTurn' &&
+        (a.functionsIn ?? 'battlefield') === 'battlefield'
+      ) {
+        onceCasts.push({
+          object,
+          spells: a.static.spells,
+          alternative: a.static.alternative,
+          ...(a.static.from === undefined ? {} : { from: a.static.from }),
+          ...(a.condition === undefined ? {} : { condition: a.condition }),
+        });
+      }
+    }
     legendExemptions.push(...legendExemptionsOf(object, printed));
     encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
@@ -891,7 +957,9 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants,
     spellGrants,
     flashbackGrants,
+    manaCostKeywordGrants,
     altCostGrants,
+    onceCasts,
     legendExemptions,
     encoreGrants,
     attachments,
@@ -999,9 +1067,21 @@ export function flashbackGrantSources(state: GameState): readonly FlashbackGrant
   return indexOf(state).flashbackGrants;
 }
 
+/** The static abilities of the permanents on the battlefield that give the cards of their controller's hand or graveyard a keyword whose cost is made from their mana cost (CR 702.94a, 702.138a). */
+export function manaCostKeywordGrantSources(
+  state: GameState,
+): readonly ManaCostKeywordGrantSource[] {
+  return indexOf(state).manaCostKeywordGrants;
+}
+
 /** The static abilities of the permanents on the battlefield that give an alternative cost to the spells their controller casts from the hand (CR 702.74a, 118.9). */
 export function altCostGrantSources(state: GameState): readonly AltCostGrantSource[] {
   return indexOf(state).altCostGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that let their controller cast one spell in each of their turns for an alternative cost (`castOnceEachTurn`, CR 118.9). */
+export function onceCastSources(state: GameState): readonly OnceCastSource[] {
+  return indexOf(state).onceCasts;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */
@@ -1354,6 +1434,7 @@ export function staticEffectsOn(
       grants.push({
         ability: null,
         loses: mod.keyword.kind,
+        ...(mod.cantHave === true ? { cantHave: true as const } : {}),
         timestamp: source.object.timestamp,
       });
     } else if (mod.kind === 'loseAllAbilities') {

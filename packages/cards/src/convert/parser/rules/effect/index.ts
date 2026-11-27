@@ -39,6 +39,7 @@ import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
+import { ARVINOX_EFFECT_RULES } from './arvinox';
 import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
@@ -837,6 +838,46 @@ const RETURN_CHOSEN = map(
   }),
 );
 
+/**
+ * "return a nonland permanent you own to your hand" (Phenomenon Investigators; CR 108.3, 400.3, 608.2d): the controller chooses, as the instruction resolves, among the permanents they
+ * own, whoever controls them (a permanent of theirs under another player's control too), and it goes to their hand, which is its owner's. One object, not "another", no controller
+ * said: "you own" is the whole of who. Quiet: a line without the words stops where it always did.
+ */
+const RETURN_CHOSEN_OWNED: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  (ctx, pos) => {
+    const r = sequence(
+      literal('return '),
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.a-permanent'] }),
+        (noun) =>
+          noun.filter.controller === undefined &&
+          noun.filter.player === undefined &&
+          !noun.plural &&
+          !noun.other &&
+          noun.count === undefined,
+      ),
+      spanned(pattern(/ you own(?![\p{L}\p{N}'’])/iu)),
+      spanned(pattern(/ to your hand(?![\p{L}\p{N}])/iu)),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, noun, own, to] = r.value;
+    const objects: IrNoun = {
+      ...noun,
+      filter: {
+        ...noun.filter,
+        ownedByYou: true,
+        raw: ctx.text.slice(noun.span.start, own.span.end),
+      },
+      span: { start: noun.span.start, end: own.span.end },
+    };
+    return {
+      ok: true,
+      value: { objects, to: zone('effect.return', to.span, 'hand', { whose: 'owner' }) },
+      pos: r.pos,
+    };
+  },
+);
+
 /** "return target spell or creature to its owner's hand" (issue 81, Fatehold Charm): the slot of a spell on the stack or a creature on the battlefield. */
 const RETURN_SPELL_OR_CREATURE_TO_HAND = map(
   sequence(
@@ -977,9 +1018,11 @@ const RETURN_THE_CHOSEN_CARDS: Parser<{ objects: IrNoun | IrNounList; to: IrZone
     sequence(
       literal('return '),
       operands(['noun.the-chosen-cards'], 'effect.return'),
+      // Spirit-Sister's Call: "return the chosen card from your graveyard to the battlefield", the zone said (a target of your graveyard, which the lowering checks).
+      optional(literal(' from your graveyard'), null),
       TO_THE_BATTLEFIELD,
     ),
-    ([, objects, to]) => ({ objects, to }),
+    ([, objects, , to]) => ({ objects, to }),
   ),
 );
 
@@ -1174,6 +1217,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
     "return a Forest you control to its owner's hand",
+    // Phenomenon Investigators (CR 108.3): a permanent you own, whoever controls it, to your hand.
+    'return a nonland permanent you own to your hand',
+    'return a creature you own to your hand',
     // Stage P33 (D-150): the card an earlier instruction chose, and the card of the source.
     'return that card to the battlefield',
     'return that nonland permanent card to the battlefield',
@@ -1184,6 +1230,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     // D-362 (Victimize): the cards an earlier sentence chose as targets.
     'return the chosen cards to the battlefield',
     'return the chosen cards to the battlefield tapped',
+    // Spirit-Sister's Call: the one card chosen, with its zone said.
+    'return the chosen card from your graveyard to the battlefield',
+    'return the chosen card to the battlefield',
     // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
     'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
     // Thwart the Grave (CR 404.1, 115.1): two targets of your graveyard, the zone said once.
@@ -1205,6 +1254,11 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return another creature you control to its owner's hand",
     "return two lands you control to their owners' hands",
     'return a land you control to your hand',
+    'return a land you control you own to your hand',
+    'return another creature you own to your hand',
+    'return two lands you own to your hand',
+    "return a land you own to an opponent's hand",
+    'return a land you owned to your hand',
     'return a land you control to the battlefield',
     "return ~ to its owner's hand tapped",
     'return ~ to the battlefield',
@@ -1228,7 +1282,6 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from a graveyard to the battlefield at the beginning of the next end step',
     'return the chosen cards to your hand',
     "return the chosen cards to their owners' hands",
-    'return the chosen card to the battlefield',
     'return the chosen cards to the battlefield under their owners control',
     'return target creature card from your graveyard to your hand attached to that token',
     'return target creature card from your graveyard to the battlefield attached to target creature',
@@ -1247,6 +1300,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
+      RETURN_CHOSEN_OWNED,
       RETURN_SAME_NAME,
       RETURN_PAIR_FROM_YOUR_GRAVEYARD,
       RETURN_FROM_GRAVEYARD,
@@ -1440,6 +1494,8 @@ export const EFFECT_RULES = [
   ...AHOY_G1B_EFFECT_RULES,
   // Brainstealer Dragon: "exile the top card of each opponent's library" and the any-color rider sentence start like the plain exile and "if" rules, and are tried first.
   ...BRAINSTEALER_G9_EFFECT_RULES,
+  // Arvinox, the Mind Flail: "exile the bottom card of each opponent's library face down" and the permission sentence for those cards start like the plain exile and "for as long as" rules, and are tried first.
+  ...ARVINOX_EFFECT_RULES,
   ...FLINT_RIDER_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
   ...AHOY_G10_EFFECT_RULES,

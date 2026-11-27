@@ -291,6 +291,8 @@ export const lifeAction: Action = (subject, you, rule) => {
                         ...EQUAL_AMOUNTS,
                         'amount.life-lost-this-way',
                         'amount.damage-dealt-this-way',
+                        // Cramped Vents (CR 120.10): "You gain life equal to the excess damage dealt this way."
+                        'amount.excess-damage-dealt-this-way',
                       ]
                     : // D-365: "loses life equal to the life that player lost this turn" (a loss only; the lowering reads it for another player than "you").
                       [
@@ -772,6 +774,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain 2 life for each time it was kicked',
     'you gain life equal to that creature’s toughness',
     'you gain life equal to the life lost this way',
+    // Cramped Vents (CR 120.10): the damage beyond lethal damage the instruction before it dealt.
+    'you gain life equal to the excess damage dealt this way',
     'each opponent loses X life',
     'you draw X cards and lose X life',
     // CR 613.1b: the player of the trigger takes the permanent with the ability.

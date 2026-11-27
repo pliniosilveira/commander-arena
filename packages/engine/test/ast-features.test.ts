@@ -182,6 +182,7 @@ describe('the dimensions', () => {
       'descendedThisTurn',
       'playedLandThisTurn',
       'manaSpentAtLeast',
+      'manaSpentLessThanManaValue',
       'manaSpentFromSubtype',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
@@ -254,10 +255,14 @@ describe('the dimensions', () => {
       'grantKeywordToSpells',
       // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
       'grantFlashbackToGraveyardCards',
+      // "Each enchantment card in your hand has miracle." and the escape of a graveyard (CR 702.94a, 702.138a).
+      'grantKeywordFromManaCost',
       // "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (CR 702.74a, 118.9).
       'grantAlternativeCostToSpells',
       // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
       'grantEnergyAlternative',
+      // "Once during each of your turns, you may cast a spell ... for an alternative cost" (CR 118.9, 601.2b).
+      'castOnceEachTurn',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
@@ -268,6 +273,7 @@ describe('the dimensions', () => {
       'revealTopOfLibrary',
       'playLandsFromTopOfLibrary',
       'attackTax',
+      'cantRemoveCounters',
       // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
       'optionalUntap',
@@ -360,6 +366,7 @@ describe('the dimensions', () => {
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
       'giveTypesToCardsOffBattlefield',
+      'giveTypesToPermanentSpells',
       'grantEncoreToGraveyardCards',
       'grantUnearthToGraveyardCards',
     ]);

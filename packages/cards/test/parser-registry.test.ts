@@ -122,6 +122,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.look-at-top': asIs,
   'static.reveal-top': asIs,
   'static.play-lands-from-top': asIs,
+  'static.play-lands-and-cast-from-top': asIs,
+  'static.cast-once-each-turn': asIs,
   'static.play-lands-from-graveyard': asIs,
   'static.graveyard-play-each-type': asIs,
   // Issue 345: the play-from-the-top lines are lines of their own.
@@ -130,6 +132,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.loyalty-activation-limit': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
+  'static.attack-tax-x': asIs,
+  'static.stun-counters-cant-be-removed': asIs,
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
@@ -197,6 +201,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
   // Endless Evil: a copy of the enchanted creature with a set power and toughness.
   'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
+  // Nightmare Shepherd: a copy with a set power and toughness and one more creature type.
+  'token.copy-except-pt-subtype': permanent(
+    (e) => `Whenever another creature enters, create ${e}.`,
+  ),
   'token.copy-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),
@@ -420,6 +428,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // A Saga's chapter symbol (CR 714.2): the numerals, an em dash and the effect.
   'trigger.chapter': asChapter,
   'condition.control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
+  // Arvinox, the Mind Flail.
+  'condition.control-at-least-not-owned': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-at-most': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-a': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-exact-pt-creature': permanent((e) => `~ enters tapped unless ${e}.`),
@@ -619,6 +629,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
+  'static.self-isnt-creature-unless': asIs,
   'static.cast-from-graveyard': asIs,
   'replacement.would-die': asIs,
   'replacement.exile-instead-of-opponent-graveyard': asIs,
@@ -863,6 +874,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-exile-two': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
+  // Miracle Worker deck build (issue 109), Mirrormade.
+  'replacement.enters-as-copy-plain': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'replacement.damage-bonus-noncombat': asIs,
@@ -1046,6 +1059,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
   ),
   'trigger.unlock-this-door': whenever,
+  'trigger.fully-unlock-room': whenever,
+  'trigger.or-subjects-and-unlock': whenever,
   'amount.for-each-color': permanent((e) => `Equipped creature gets +1/+1 ${e}.`),
   'static.opponents-cant-cast': asIs,
   'static.opponents-cant-cast-spells': asIs,
@@ -1182,6 +1197,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.hand-cards-have-cycling': asIs,
   'static.group-is-equipment': asIs,
   'static.graveyard-cards-have-flashback': asIs,
+  'static.cards-have-keyword-from-mana-cost': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
@@ -1219,6 +1235,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  // Miracle Worker deck (issue 109, Secret Arcade).
+  'noun.nonland-permanents-and-permanent-spells': permanent(
+    (e) => `${cap(e)} are enchantments in addition to their other types.`,
+  ),
   'noun.permanents-and-cards-off-battlefield': permanent(
     (e) => `${cap(e)} are Deserts in addition to their other types.`,
   ),
@@ -1245,6 +1265,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 279 (Windbrisk Heights).
   'condition.attacked-with-creatures': permanent(
     (e) => `{W}, {T}: You may play the exiled card without paying its mana cost if ${e}.`,
+  ),
+  // Miracle Worker deck (issue 109, Ancient Cellarspawn): the intervening "if" of a trigger about a spell that was cast.
+  'condition.mana-spent-less-than-mana-value': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, you gain 1 life.`,
   ),
   'condition.mana-spent-or-more': permanent(
     (e) =>
@@ -1492,6 +1516,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.a-permanent-sharing-type': permanent(
     (e) =>
       `At the beginning of your end step, you may sacrifice a creature. If you do, each opponent may sacrifice ${e}.`,
+  ),
+  // Spirit-Sister's Call: what the controller may sacrifice after choosing a card of the graveyard.
+  'noun.a-permanent-sharing-type-with-chosen': permanent(
+    (e) =>
+      `At the beginning of your end step, choose target permanent card in your graveyard. You may sacrifice ${e}. If you do, return the chosen card to the battlefield.`,
+  ),
+  // Spirit-Sister's Call: the replacement the returned permanent gains, in the same sentence as the return.
+  'effect.it-gains-exile-instead-when-leaving': permanent(
+    (e) =>
+      `At the beginning of your end step, return target creature card from your graveyard to the battlefield and ${e.charAt(0).toLowerCase()}${e.slice(1)}.`,
   ),
   // Witch-king of Angmar: what an opponent sacrifices after combat damage to the controller.
   'noun.a-creature-that-dealt-damage-to-you': permanent(

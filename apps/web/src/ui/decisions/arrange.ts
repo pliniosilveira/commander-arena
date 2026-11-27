@@ -24,7 +24,7 @@ export interface Arrangement {
   readonly other: readonly ObjectId[];
 }
 
-type Looked = Pick<ArrangeCardsDecision, 'cards' | 'purpose'>;
+type Looked = Pick<ArrangeCardsDecision, 'cards' | 'purpose' | 'libraryOf'>;
 
 export const NO_ARRANGEMENT: Arrangement = { top: [], other: [] };
 
@@ -187,11 +187,14 @@ export function arrangePrompt(decision: Looked): string {
         ? 'Surveil 1: keep the card on top or put it into your graveyard.'
         : `Surveil ${n}: choose the cards to put into your graveyard and the order of the rest.`;
     case 'reorder':
-      return `Look at the top ${plural(n, 'card')}: put them back in any order.`;
+      // CR 401.2: the cards of another player's library ("target player's library"), which only the player who looks sees.
+      return decision.libraryOf === undefined
+        ? `Look at the top ${plural(n, 'card')}: put them back in any order.`
+        : `Look at the top ${plural(n, 'card')} of that player's library: put them back in any order.`;
     case 'bottom':
       return n === 1
         ? 'Put the card on the bottom of your library.'
-        : `Put the other ${n} cards on the bottom of your library in any order.`;
+        : `Put these ${n} cards on the bottom of your library in any order.`;
   }
 }
 

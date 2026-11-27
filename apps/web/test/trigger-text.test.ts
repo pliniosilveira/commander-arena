@@ -241,6 +241,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   dungeonCompleted: { kind: 'dungeonCompleted' },
   expend: { kind: 'expend', amount: 4 },
   doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
+  roomFullyUnlocked: { kind: 'roomFullyUnlocked', who: 'you' },
   exploits: { kind: 'exploits' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },

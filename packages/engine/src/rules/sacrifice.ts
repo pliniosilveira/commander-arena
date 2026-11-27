@@ -9,6 +9,7 @@
  */
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
+import type { ChosenTarget } from '../state/chosen';
 import type { GameEvent } from '../state/events';
 import { objectsInZone } from '../state/ops';
 import type { GameState } from '../state/types';
@@ -56,6 +57,8 @@ export function controlledCandidates(
   filter: ObjectFilter,
   /** The permanents the resolution sacrificed before (`sharesCardTypeWith: 'sacrificed'`, Braids). */
   sacrificed?: readonly ObjectId[],
+  /** The targets of the ability that is resolving (`sharesCardTypeWith: 'target'`, Spirit-Sister's Call). */
+  targets?: readonly ChosenTarget[],
 ): ObjectId[] {
   const scoped: ObjectFilter = { ...filter, zone: 'battlefield', controller: 'you' };
   return objectsInZone(state, 'battlefield').filter((id) => {
@@ -66,6 +69,7 @@ export function controlledCandidates(
         controller: seat,
         source,
         ...(sacrificed === undefined ? {} : { sacrificed }),
+        ...(targets === undefined ? {} : { targets }),
       })
     );
   });
@@ -81,8 +85,9 @@ export function sacrificeCandidates(
   source: ObjectId | null,
   filter: ObjectFilter,
   sacrificed?: readonly ObjectId[],
+  targets?: readonly ChosenTarget[],
 ): ObjectId[] {
-  return controlledCandidates(state, seat, source, filter, sacrificed).filter(
+  return controlledCandidates(state, seat, source, filter, sacrificed, targets).filter(
     (id) => !cantBeSacrificed(state, id),
   );
 }

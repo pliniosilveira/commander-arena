@@ -16,14 +16,35 @@
  *           exile and puts a card exiled by madness into the graveyard.
  * The cast can be taken back with `cancel` at any question (CR 733): that rewinds to the question, as it was asked.
  */
-import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import type { SeatId } from '../ids';
+import type { GameObject, GameState, Instruction, ResolutionContext } from '../state/types';
 import { namedAlternativeCostOf } from './alt-costs';
 import { moveInstructions } from './effect-support';
 import { canCastDuringResolution, faceOf } from './legality';
+import { miracleCostOf, miracleFaces } from './miracle';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
 
 export type CastExiledInstruction = Extract<Instruction, { kind: 'castExiled' }>;
+
+/**
+ * The first face after `after` that `seat` could cast `card`, in its hand, for its miracle cost (CR 702.94a): the front face, or for a split card a permanent gave miracle either
+ * half (CR 709.3). Null when there is none.
+ */
+export function nextMiracleFace(
+  state: GameState,
+  seat: SeatId,
+  card: GameObject,
+  after: number,
+): number | null {
+  for (const face of miracleFaces(state, card)) {
+    if (face <= after) continue;
+    if (canCastDuringResolution(state, seat, card, 'miracle', false, undefined, false, face)) {
+      return face;
+    }
+  }
+  return null;
+}
 
 /** Runs one stage of the `castExiled` instruction. */
 export function runCastExiled(
@@ -36,7 +57,10 @@ export function runCastExiled(
     const info = sourceInfo(state, res.source);
     const altCost =
       ins.mode !== 'suspend' && card !== undefined
-        ? namedAlternativeCostOf(faceOf(state, card), ins.mode)
+        ? ins.mode === 'miracle'
+          ? // The printed cost, or the one a permanent gave the card it was revealed for (of the half asked about).
+            miracleCostOf(state, card, ins.face ?? 0)
+          : namedAlternativeCostOf(faceOf(state, card), ins.mode)
         : null;
     return {
       state,
@@ -51,6 +75,7 @@ export function runCastExiled(
         purpose: ins.mode,
         ...(ins.card === null ? {} : { subject: ins.card }),
         ...(altCost === null ? {} : { cost: altCost }),
+        ...(ins.face === undefined ? {} : { face: ins.face }),
       },
     };
   }
@@ -58,7 +83,23 @@ export function runCastExiled(
   // still its owner's.
   const home = ins.mode === 'miracle' ? 'hand' : 'exile';
   if (card === undefined || card.zone !== home || card.owner !== res.controller) return done(state);
-  if (
+  if (ins.mode === 'miracle') {
+    const face = nextMiracleFace(state, res.controller, card, -1);
+    if (face !== null) {
+      return done(
+        state,
+        [],
+        [
+          {
+            ...ins,
+            stage: 'ask',
+            card: card.id,
+            ...(miracleFaces(state, card).length > 1 ? { face } : {}),
+          },
+        ],
+      );
+    }
+  } else if (
     canCastDuringResolution(state, res.controller, card, ins.mode === 'suspend' ? 'free' : ins.mode)
   ) {
     return done(state, [], [{ ...ins, stage: 'ask', card: card.id }]);

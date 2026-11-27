@@ -141,6 +141,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 
 - "Put onto the battlefield with this ability" (Kodama of the East Tree) is remembered per source object, not per ability: a permanent with two such abilities would not tell them apart. No card has both.
 - Necromancy's rider tests only the main-phase, empty-stack timing of a sorcery (CR 307.1); an effect that lets sorceries be cast at other times is not read. Scryfall rulings for it were unavailable: unverified.
+- Mirrormade (issue 109): a copy of an Aura that enchants a player (a Curse) is not offered a player to enchant, so the spell goes to the graveyard (CR 303.4g), as for any Aura an effect enters.
 - A choice by each player exiled until the source leaves (Foreboding Steamboat): each player's creatures are exiled in a separate move, not one simultaneous event. CR numbers cited for it are unchecked.
 - Earthbend: its delayed return stays in the game state until the land dies or is exiled, even after the land left to another zone (harmless). The Comprehensive Rules text here has no earthbend rule.
 - Skaab Ruinator shape: an additional cost of exiling graveyard cards is a fixed count, alone; it is not X cards and not one way of an "or" choice.

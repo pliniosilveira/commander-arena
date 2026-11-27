@@ -29,6 +29,7 @@ import {
 } from './activation-exile';
 import { blightCandidates } from './blight-candidates';
 import { controllerOf } from './control';
+import { counterRemovalLocked } from './counter-lock';
 import { counterBlocked } from './counter-prevention';
 import { crewRefusal } from './crew';
 import { derive } from './derive';
@@ -41,7 +42,7 @@ import { type RemoveCountersSpec, removeCountersRefusal } from './remove-counter
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
 import { cantBeSacrificed } from './sacrifice-prevention';
-import { untapPermanent } from './untap';
+import { STUN_COUNTER, untapPermanent } from './untap';
 import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
@@ -408,6 +409,9 @@ function immediateRefusal(
   // CR 107.6, 602.5a: an untapped permanent can't be untapped to pay the cost, and a creature's {Q} ability needs it under control since the turn began.
   if (costs.untap) {
     if (source.zone !== 'battlefield' || !source.tapped) return 'it is already untapped';
+    // CR 122.1d, 701.26b (Fear of Sleep Paralysis): a tapped permanent whose stun counter can't be removed can't be untapped.
+    if (counterRemovalLocked(state, source, STUN_COUNTER))
+      return 'its stun counter can’t be removed';
     if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
   }
   // CR 119.4: life can be paid only if the life total is at least the amount.
@@ -421,6 +425,8 @@ function immediateRefusal(
     return `you have fewer than ${costs.energy} energy counters`;
   }
   for (const { counter, count } of costs.counters) {
+    if (counterRemovalLocked(state, source, counter))
+      return `its ${counter} counters can’t be removed`;
     if (source.zone !== 'battlefield' || (source.counters[counter] ?? 0) < count) {
       return `it has fewer than ${count} ${counter} counters`;
     }

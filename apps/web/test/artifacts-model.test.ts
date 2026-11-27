@@ -612,6 +612,9 @@ describe('the card choices: discard unless, look and take, put onto the battlefi
       'Island',
       'Grizzly Bears',
     ]);
+    // "One on top of your library" (CR 608.2c): the second pile of a split into the hand, the top and the bottom.
+    expect(confirmLabel({ ...split, to: 'top' } as never, ['o20'])).toBe('Put on top');
+    expect(confirmLabel(split as never, ['o20'])).toBe('Put on the bottom');
     // Not the opponent's question, and not another question.
     expect(lookedCards(state, 1)).toEqual([]);
     expect(lookedCards({ ...state, pending: discard } as GameState, 0)).toEqual([]);

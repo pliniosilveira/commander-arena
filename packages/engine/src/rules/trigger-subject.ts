@@ -58,6 +58,7 @@ export function readsTriggerSubject(ability: Ability): boolean {
     // Galadriel group 1: the creature the Ring tempted its controller to choose, read again as the ability resolves.
     condition.includes('"ringBearerChosen"') ||
     condition.includes('"manaSpentAtLeast"') ||
+    condition.includes('"manaSpentLessThanManaValue"') ||
     condition.includes('"manaSpentFromSubtype"') ||
     condition.includes('"subjectControllerHasMore"')
   );

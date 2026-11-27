@@ -18,6 +18,12 @@ const SPHERE_OF_SAFETY =
 const SUPPORTED: readonly Line[] = [
   {
     kind: 'enchantment',
+    text: SPHERE_OF_SAFETY,
+    expect: OK,
+    note: 'the real Sphere of Safety: the cost counts the enchantments you control (X)',
+  },
+  {
+    kind: 'enchantment',
     text: 'You may play an additional land on each of your turns.',
     expect: OK,
     note: 'the real line; SYNTHETIC card around it',
@@ -129,12 +135,9 @@ const SUPPORTED: readonly Line[] = [
 const UNREAD: readonly Line[] = [
   {
     kind: 'enchantment',
-    text: SPHERE_OF_SAFETY,
-    expect: no(
-      '{X} for each of those creatures, where X is the number of enchantments you control.',
-      'static.attack-tax',
-    ),
-    note: 'the real shape of Sphere of Safety: the cost counts something (X), not built (D-125)',
+    text: "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures.",
+    expect: no('{X} for each of those creatures.', 'static.attack-tax'),
+    note: 'SYNTHETIC: an X that nothing says the value of is not read',
   },
   {
     kind: 'enchantment',

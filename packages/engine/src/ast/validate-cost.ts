@@ -671,4 +671,8 @@ export function checkAttackTax(
   if (s.perCounter !== undefined && s.perCounter !== true) {
     issue(out, `${path}.perCounter`, 'perCounter is true or absent');
   }
+  if (s.times !== undefined) {
+    if (s.perCounter === true) issue(out, `${path}.times`, 'times excludes perCounter');
+    checkStateAmount(s.times, `${path}.times`, out, 'an attack tax');
+  }
 }

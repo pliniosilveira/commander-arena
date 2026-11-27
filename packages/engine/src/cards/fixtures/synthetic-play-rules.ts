@@ -235,6 +235,26 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
     abilities: [attackTax(['1'], undefined, undefined, true)],
   }),
   singleFace({
+    name: 'SYNTHETIC Tax Enchantments',
+    manaCost: ['2', 'W'],
+    types: ['enchantment'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control.",
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'attackTax',
+          cost: [{ kind: 'mana', symbols: ['1'] }],
+          planeswalkers: true,
+          times: { kind: 'countOf', filter: { types: ['enchantment'], controller: 'you' } },
+        },
+      },
+    ],
+  }),
+  singleFace({
     name: 'SYNTHETIC Tax Counter',
     manaCost: ['2', 'W'],
     types: ['enchantment'],

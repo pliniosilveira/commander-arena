@@ -239,7 +239,11 @@ export function confirmLabel(
   if (decision.purpose === 'putOnTop') return 'Put on top';
   // D-216: the piles of the cards looked at (Expressive Iteration): the hand, then the bottom of the library; the rest is exiled.
   if (decision.purpose === 'lookSplit') {
-    return decision.to === 'bottom' ? 'Put on the bottom' : 'Put into hand';
+    return decision.to === 'bottom'
+      ? 'Put on the bottom'
+      : decision.to === 'top'
+        ? 'Put on top'
+        : 'Put into hand';
   }
   if (decision.purpose === 'exile') return 'Exile';
   // D-139: put a card from the hand or graveyard onto the battlefield; take a looked-at card into the hand.
@@ -359,7 +363,7 @@ export function foundBadge(
           : 'Take';
   }
   if (decision.purpose === 'lookSplit') {
-    return decision.to === 'bottom' ? 'Bottom' : 'Hand';
+    return decision.to === 'bottom' ? 'Bottom' : decision.to === 'top' ? 'Top' : 'Hand';
   }
   if (decision.purpose === 'putOnTop') {
     return decision.max > 1 ? pickOrderLabel(decision, at + 1) : 'On top';

@@ -12,7 +12,7 @@
 import type { ObjectId } from '../ids';
 import type { ChooseCardsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getSeat } from '../state/ops';
+import { getSeat, patchSeat } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { moveInstructions } from './effect-support';
 import { done, type StepOutcome } from './step-outcome';
@@ -20,11 +20,15 @@ import { done, type StepOutcome } from './step-outcome';
 type LookSplit = Extract<Instruction, { kind: 'lookSplit' }>;
 
 /** The words of the question of one pile. */
-function promptFor(looked: number, pile: 'hand' | 'bottom', count: number): string {
+function promptFor(looked: number, pile: 'hand' | 'top' | 'bottom', count: number): string {
   const cards = `${looked} card${looked === 1 ? '' : 's'}`;
   const what = count === 1 ? 'one of them' : `${count} of them`;
   return `Look at the top ${cards} of your library. Put ${what} ${
-    pile === 'hand' ? 'into your hand' : 'on the bottom of your library'
+    pile === 'hand'
+      ? 'into your hand'
+      : pile === 'top'
+        ? 'on top of your library'
+        : 'on the bottom of your library'
   }`;
 }
 
@@ -37,14 +41,22 @@ export function runLookSplit(
   const looked = getSeat(state, seat).library.slice(0, Math.max(ins.count, 0));
   if (looked.length === 0) return done(state);
 
-  // The pile being sorted now: the hand first, then the bottom; both are done in this order and the cards left are exiled.
-  const stage: 'hand' | 'bottom' | 'move' =
-    ins.toHand === undefined ? 'hand' : ins.toBottom === undefined ? 'bottom' : 'move';
+  // The pile being sorted now: the hand first, then (`top`, "one on top of your library") the top of the library, then the bottom; they are done in this order and the cards
+  // left are exiled.
+  const stage: 'hand' | 'top' | 'bottom' | 'move' =
+    ins.toHand === undefined
+      ? 'hand'
+      : ins.top !== undefined && ins.toTop === undefined
+        ? 'top'
+        : ins.toBottom === undefined
+          ? 'bottom'
+          : 'move';
 
   if (stage !== 'move') {
-    const taken: readonly ObjectId[] = ins.toHand ?? [];
+    const taken: readonly ObjectId[] = [...(ins.toHand ?? []), ...(ins.toTop ?? [])];
     const candidates = looked.filter((id) => !taken.includes(id));
-    const wanted = Math.min(stage === 'hand' ? ins.hand : ins.bottom, candidates.length);
+    const size = stage === 'hand' ? ins.hand : stage === 'top' ? (ins.top ?? 0) : ins.bottom;
+    const wanted = Math.min(size, candidates.length);
     // A pile that takes every card still there (or needs none) is decided: nothing to ask.
     let chosen: readonly ObjectId[] | null =
       wanted === 0 ? [] : candidates.length === wanted ? candidates : ins.chosen;
@@ -57,7 +69,7 @@ export function runLookSplit(
         zone: 'library',
         legal: candidates,
         looked,
-        to: stage === 'hand' ? 'hand' : 'bottom',
+        to: stage,
         min: wanted,
         max: wanted,
         reveal: false,
@@ -69,15 +81,27 @@ export function runLookSplit(
     const next: LookSplit =
       stage === 'hand'
         ? { ...ins, toHand: chosen, chosen: null }
-        : { ...ins, toBottom: chosen, chosen: null };
+        : stage === 'top'
+          ? { ...ins, toTop: chosen, chosen: null }
+          : { ...ins, toBottom: chosen, chosen: null };
     return done(state, [], [next]);
   }
 
   const toHand = ins.toHand ?? [];
   const toBottom = ins.toBottom ?? [];
-  const exiled = looked.filter((id) => !toHand.includes(id) && !toBottom.includes(id));
   // CR 401.2: the cards looked at are seen by their owner only; nobody else is told which went where, only how many.
   const events: GameEvent[] = [{ kind: 'topCardsLooked', seat, count: looked.length }];
+  if (ins.top !== undefined) {
+    // "One on top of your library, and one on the bottom of your library" (CR 401.2): these cards stay in the library, so nothing changes zone (as for a scry, CR 701.22a): the
+    // card for the top stays where it is and the card for the bottom goes below every other card. The card for the hand is taken by an ordinary move, unrevealed.
+    const library = getSeat(state, seat).library;
+    const next = patchSeat(state, seat, {
+      library: [...library.filter((id) => !toBottom.includes(id)), ...toBottom],
+    });
+    if (toBottom.length > 0) events.push({ kind: 'cardsBottomed', seat, count: toBottom.length });
+    return { ...done(next, events, moveInstructions(toHand, 'hand')), lastMoved: [] };
+  }
+  const exiled = looked.filter((id) => !toHand.includes(id) && !toBottom.includes(id));
   return {
     ...done(state, events, [
       ...moveInstructions(toHand, 'hand'),

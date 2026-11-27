@@ -7,8 +7,8 @@
  * `reports/templates.json`, and a near miss (another subject, another cost, a count in the cost) is not read.
  */
 import { fail, type Parser, pattern, satisfy } from '../../combinators';
-import type { IrCost, IrNoun, IrStatic, IrStaticEffect, Span } from '../../ir/types';
-import { defineRule } from '../registry';
+import type { IrAmount, IrCost, IrNoun, IrStatic, IrStaticEffect, Span } from '../../ir/types';
+import { defineRule, family } from '../registry';
 
 type Det = IrNoun['det'];
 
@@ -732,6 +732,70 @@ export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
 });
 
 /**
+ * `static.attack-tax-x`: "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you
+ * control." (Sphere of Safety; CR 508.1d, 508.1h, 118.12a, 107.3c): the attack tax of `static.attack-tax` with an X the text defines (`amount.where-x`), read as the attackers are declared:
+ * the engine's `attackTax` with `times`, {1} paid X times for each attacker. Not read: an X the text does not define, a cost with more than {X}, the form without the planeswalkers.
+ */
+export const STATIC_ATTACK_TAX_X = defineRule<IrStatic>({
+  id: 'static.attack-tax-x',
+  family: 'static',
+  leading: ['creatures'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 508.1h (Declare Attackers Step)',
+    'CR 118.12a (Costs)',
+    'CR 107.3c (Numbers and Symbols)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control.",
+    "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of creatures you control.",
+  ],
+  rejects: [
+    "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control",
+    "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures.",
+    "Creatures can't attack you unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control.",
+    "Creatures can't attack you or planeswalkers you control unless their controller pays {2}{X} for each of those creatures, where X is the number of enchantments you control.",
+    "Creatures can't attack you or planeswalkers you control unless you pay {X} for each of those creatures, where X is the number of enchantments you control.",
+    "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each creature they control that's attacking you, where X is the number of enchantments you control.",
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(
+      /creatures can['’]t attack you or planeswalkers you control unless their controller pays \{X\} for each of those creatures, /iy,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const amount = family<IrAmount>('amount', { only: ['amount.where-x'] })(ctx, head.pos);
+    if (!amount.ok) return amount;
+    const end = pattern(/\./y)(ctx, amount.pos);
+    if (!end.ok) return end;
+    const costNode: IrCost = {
+      kind: 'mana',
+      symbols: ['1'],
+      span: { start: pos, end: head.pos },
+      rule: 'static.attack-tax-x',
+    };
+    const who = subject(
+      'each',
+      'creatures',
+      { start: pos, end: pos + 'creatures'.length },
+      'static.attack-tax-x',
+      ['creature'],
+    );
+    const effect: IrStaticEffect = {
+      kind: 'attackTax',
+      cost: costNode,
+      planeswalkers: true,
+      times: amount.value,
+    };
+    return {
+      ok: true,
+      value: statement('static.attack-tax-x', who, effect, { start: pos, end: end.pos }),
+      pos: end.pos,
+    };
+  },
+});
+
+/**
  * `static.look-and-play-lands-from-top`: "You may look at the top card of your library any time, and you may play lands from the top of your library." (CR 401.5, 305.1,
  * 604.1): the two abilities of `static.look-at-top` and `static.play-lands-from-top` in one sentence. Not read: the order reversed, another zone or card kind, a line with more text.
  */
@@ -767,6 +831,52 @@ export const STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
         'static.look-and-play-lands-from-top',
         who,
         { kind: 'playLandsFromTopOfLibrary', alsoLook: true },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.play-lands-and-cast-from-top`: "You may play lands and cast spells from the top of your library." (One with the Multiverse; CR 305.1, 601.3, 401.5, 604.1): the two
+ * permissions of the top card of the controller's library, `playLandsFromTopOfLibrary` and `castFromTopOfLibrary` of every spell, at the timing and for the costs each has. Not read:
+ * a kind of land or of spell, another zone or player, "once during each of your turns", a line with more text (after a condition the sentence is `static.conditional`'s).
+ */
+export const STATIC_PLAY_LANDS_AND_CAST_FROM_TOP = defineRule<IrStatic>({
+  id: 'static.play-lands-and-cast-from-top',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 305.1 (Lands)',
+    'CR 601.3 (Casting Spells)',
+    'CR 401.5 (Library)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: ['You may play lands and cast spells from the top of your library.'],
+  rejects: [
+    'You may play lands and cast spells from the top of your library',
+    'You may play lands and cast creature spells from the top of your library.',
+    'You may play Forests and cast spells from the top of your library.',
+    'You may play lands and cast spells from your graveyard.',
+    "You may play lands and cast spells from the top of an opponent's library.",
+    'You may play lands and cast spells from the top of your library this turn.',
+    'You may play lands and cast spells from the top of your library. Draw a card.',
+    'You may cast spells and play lands from the top of your library.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.play-lands-and-cast-from-top';
+    const r = pattern(
+      /you may play lands and cast spells from the top of your library\.(?!\s*\S)/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject('you', 'you', { start: pos, end: pos + 3 }, id);
+    return {
+      ok: true,
+      value: statement(
+        id,
+        who,
+        { kind: 'playLandsFromTopOfLibrary', alsoCast: true },
         { start: pos, end: r.pos },
       ),
       pos: r.pos,
@@ -873,10 +983,12 @@ export const PLAY_RULE_STATIC_RULES = [
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_GRAVEYARD_PLAY_EACH_TYPE,
   STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
+  STATIC_PLAY_LANDS_AND_CAST_FROM_TOP,
   STATIC_ACTIVATE_AS_THOUGH_HASTE,
   STATIC_LOYALTY_ACTIVATION_LIMIT,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,
+  STATIC_ATTACK_TAX_X,
   STATIC_OPTIONAL_UNTAP,
   STATIC_UNTAP_IN_OTHERS_STEP,
 ];

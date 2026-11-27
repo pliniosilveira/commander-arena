@@ -487,6 +487,8 @@ export function checkInvariants(state: GameState): string[] {
         );
       } else if (
         obj.stack.byEffect !== true &&
+        // CR 118.9 (`castOnceEachTurn`): a permanent's permission gives the alternative cost, the card lists none.
+        obj.stack.castOnce === undefined &&
         face?.alternativeCosts?.some((a) => a.kind === 'free') !== true
       ) {
         problems.push(
@@ -504,6 +506,7 @@ export function checkInvariants(state: GameState): string[] {
       } else if (
         face?.alternativeCosts?.some((a) => a.kind === obj.stack?.alt) !== true &&
         !(obj.stack.alt === 'escape' && obj.stack.escapeGrant !== undefined) &&
+        !(obj.stack.alt === 'miracle' && obj.stack.miracleGrant !== undefined) &&
         !(obj.stack.alt === 'evoke' && obj.stack.evokeGrant !== undefined)
       ) {
         problems.push(

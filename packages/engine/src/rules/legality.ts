@@ -27,7 +27,9 @@ import {
   canPayRequest,
   castAs,
   isNamedAlternative,
+  spellXCostOf,
 } from './cast-cost';
+import { onceCastGrant } from './cast-once';
 import { castInOwnMainPhase } from './cast-phase';
 import {
   castForbiddenByOpponentsPermanent,
@@ -37,7 +39,7 @@ import {
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
-import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { flashPermissionSources, libraryCastSources, onceCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
@@ -47,6 +49,7 @@ import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
 import { linkedExilePlayPermitted } from './linked-exile-play';
+import { staticEscapeOf } from './mana-cost-keyword-grant';
 import { isCommanderCardId, isCommanderObject } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { mayPayLifeForMana } from './next-spell-life';
@@ -56,7 +59,7 @@ import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
 import { flashSlotOf, sameControllerFillable, slotCanBeFilled } from './target-choice';
-import { hasX, spellXCost } from './x-value';
+import { hasX } from './x-value';
 
 export type { CastAlternative, CastFrom };
 
@@ -584,9 +587,12 @@ export function castZone(
       : null;
   }
   if (alternative === 'escape') {
-    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    if (obj.zone !== 'graveyard' || obj.card === null) return null;
     // CR 702.138a: a printed escape cost, or the one an effect gave the card until end of turn (rules/escape-grant.ts).
-    return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    if (faceIndex === 0)
+      return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    // CR 709.3: the other half of a split card a permanent gives escape (`grantKeywordFromManaCost`): that half is cast for its own mana cost.
+    return staticEscapeOf(state, asFace(obj, faceIndex)) === null ? null : 'graveyard';
   }
   // CR 702.152a, 601.2a: "You may cast this card from your graveyard using its blitz ability": a blitz cast from a graveyard, when the card says so and its condition holds (it is cast
   // from the hand otherwise, below).
@@ -658,6 +664,10 @@ export function castZone(
   }
   // CR 601.3 (D-151): "You may cast creature spells with power 4 or greater from the top of your library".
   if (obj.zone === 'library') {
+    // CR 118.9, 601.2a (`castOnceEachTurn`): "you may cast a spell from ... the top of your library without paying its mana cost", any castable face of the card.
+    if (alternative === 'free' || alternative === 'lifeForMana') {
+      return onceCastUse(state, seat, obj, faceIndex, alternative) !== null ? 'library' : null;
+    }
     return alternative === undefined &&
       faceIndex === 0 &&
       libraryCastPermission(state, seat, obj) !== null
@@ -839,7 +849,9 @@ export function alternativeCostAllowed(
     // CR 702.74a, 118.9: an evoke cost a static ability gives a spell as it is cast from the hand (`grantAlternativeCostToSpells`, rules/alt-cost-grant.ts).
     if (kind === 'evoke')
       return grantedEvokeOf(state, seat, castAs(obj, seat, face), obj.zone) !== null;
-    return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+    return (
+      kind === 'escape' && grantedEscapeOf(state, face === 0 ? obj : asFace(obj, face)) !== null
+    );
   }
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
@@ -856,6 +868,38 @@ export function alternativeCostAllowed(
   return (
     alt.condition === undefined ||
     evaluateCondition(state, alt.condition, { controller: seat, source: obj.id })
+  );
+}
+
+/**
+ * CR 118.9a, 601.2b (`castOnceEachTurn`): the permanent whose once-a-turn permission a cast of the card `obj` as `face` for `alternative` would use, or null: no permanent gives that
+ * spell the alternative cost now, or the cast is allowed another way and uses no permission (the card's own "without paying its mana cost", an effect "rather than pay the mana cost of
+ * the next spell you cast this turn").
+ */
+export function onceCastUse(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  face: number,
+  alternative: CastAlternative | undefined,
+): ObjectId | null {
+  if (alternative !== 'free' && alternative !== 'lifeForMana') return null;
+  if (onceCastSources(state).length === 0) return null;
+  if (obj.zone !== 'hand' && obj.zone !== 'command' && obj.zone !== 'library') return null;
+  if (obj.prepareOf !== undefined) return null;
+  if (obj.zone !== 'library') {
+    if (alternative === 'lifeForMana' && mayPayLifeForMana(state, seat)) return null;
+    if (alternative === 'free' && alternativeCostAllowed(state, seat, obj, face, 'free')) {
+      return null;
+    }
+  }
+  return onceCastGrant(
+    state,
+    seat,
+    obj,
+    castAs(obj, seat, face, alternative),
+    alternative,
+    face === 0 && libraryCastPermission(state, seat, obj) !== null,
   );
 }
 
@@ -894,9 +938,12 @@ export function canCast(
     obj.onAdventure !== true &&
     obj.prepareOf === undefined &&
     (freeCastSlots(state, seat, obj, face).length > 0 || mayCastPlotted(state, seat, obj));
+  // CR 118.9 (`castOnceEachTurn`): or a permanent's "once during each of your turns, you may cast a spell ... without paying its mana cost" / "by paying life equal to its mana value".
+  const once = onceCastUse(state, seat, obj, face, alternative);
   if (
     (alternative === 'free' || isNamedAlternative(alternative)) &&
     !byPermission &&
+    once === null &&
     !alternativeCostAllowed(state, seat, obj, face, alternative)
   ) {
     return false;
@@ -905,6 +952,7 @@ export function canCast(
   // CR 118.9 (Eye of Duskmantle): or a permanent's permission to cast a card of the graveyard for life (`castZone` has checked it).
   if (
     alternative === 'lifeForMana' &&
+    once === null &&
     !mayPayLifeForMana(state, seat) &&
     !(zone === 'graveyard' && obj.zone === 'graveyard') &&
     // Nashi: a card in exile a permission lets the seat cast by paying life.
@@ -925,11 +973,12 @@ export function canCast(
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
   if (castForbiddenByOwnAbility(state, seat, spell)) return false;
   // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-282) "... with mana value 3 or less", read with the least X the spell can be cast with.
+  // CR 107.3b: a spell cast with a `castOnceEachTurn` permission has X 0, as one cast without paying its mana cost.
   const least = leastAllowedX(
     state,
     seat,
     spell,
-    hasX(spellXCost(faceOf(state, spell), alternative)),
+    hasX(spellXCostOf(state, spell, once === null ? alternative : 'free')),
   );
   if (least === null) return false;
   const timing = castTiming(state, seat, spell);
@@ -1026,6 +1075,8 @@ export function canCastDuringResolution(
   payInstead?: readonly Cost[],
   /** CR 608.2g, 402.3 (Silent-Blade Oni, Extract Brain): the card is in a hand, whoever's it is: an effect named it and the caster looked at it (`castFree.fromHand`). */
   fromAnyHand = false,
+  /** CR 709.3: the half of a split card that is cast, for a miracle a permanent gave it (`grantKeywordFromManaCost`); the front face for every other cast. */
+  face = 0,
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
@@ -1053,11 +1104,18 @@ export function canCastDuringResolution(
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (
     (alternative === 'madness' || alternative === 'miracle') &&
-    alternativeOf(faceOf(state, obj), alternative) === null
+    alternativeOf(faceOf(state, obj), alternative) === null &&
+    // CR 702.94a: or the miracle a permanent gave the card, which it was revealed for (`GameObject.miracleGrant`); a card with no mana cost has a cost that cannot be paid (CR 118.6).
+    !(
+      alternative === 'miracle' &&
+      obj.miracleGrant !== undefined &&
+      obj.card !== null &&
+      (definitionOf(state, obj.card).faces[face]?.manaCost?.length ?? 0) > 0
+    )
   ) {
     return false;
   }
-  const spell = castAs(obj, seat, 0);
+  const spell = castAs(obj, seat, face);
   if (derive(state, spell).types.includes('land')) return false;
   if (castForbiddenByOwnAbility(state, seat, spell)) return false; // CR 101.2 (D-149)
   if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-282: a free cast has X 0, CR 107.3b)
@@ -1229,6 +1287,10 @@ export function alternativeCastObjects(
             mayPlayFromExile(state, seat, getObject(state, id), false, false, true),
         )
       : []),
+    // CR 118.9 (`castOnceEachTurn`): the top card of the library, which a permanent may let the seat cast for the alternative cost ("from your hand or the top of your library").
+    ...((kind === 'free' || kind === 'lifeForMana') && onceCastSources(state).length > 0
+      ? getSeat(state, seat).library.slice(0, 1)
+      : []),
     // Tlincalli Hunter (CR 118.9): the cards in exile the seat may cast, for an alternative cost a permanent gives for spells cast from exile.
     ...(kind === 'energyGrant'
       ? state.exile.filter(
@@ -1248,9 +1310,10 @@ export function foretellCastObjects(state: GameState, seat: SeatId): ObjectId[] 
 }
 
 /** The cards in the seat's graveyard it could cast now for their escape cost (CR 702.138a, D-124). */
-export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
-  return zoneList(state, 'graveyard', seat).filter((id) =>
-    canCast(state, seat, getObject(state, id), 'escape'),
+export function escapeObjects(state: GameState, seat: SeatId): FaceOption[] {
+  // One option for each half of a split card a permanent gives escape (CR 709.3); the front face for every other card.
+  return faceOptions(state, zoneList(state, 'graveyard', seat), (obj, face) =>
+    canCast(state, seat, obj, 'escape', face),
   );
 }
 
