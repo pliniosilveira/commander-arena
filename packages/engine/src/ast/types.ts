@@ -8425,6 +8425,13 @@ export type Condition =
    */
   | { readonly kind: 'manaSpentAtLeast'; readonly count: number }
   /**
+   * "If the amount of mana spent to cast it was less than its mana value" (Ancient Cellarspawn, CR 601.2h, 202.3, 603.4): the spell that caused a cast trigger (its `triggerSubject`) was cast
+   * with less mana spent on its cost (`StackData.manaSpent.total`: what Convoke, Improvise and Delve paid and life paid for Phyrexian mana are not counted) than its mana value, which counts
+   * the X the spell was cast with while it is on the stack (CR 202.3e) and, once it has left the stack (countered, resolved), is its last-known information (CR 113.7a, 608.2h); a spell cast
+   * for free has spent 0. Only in the intervening "if" of a `castSpell` trigger of other spells, read as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'manaSpentLessThanManaValue' }
+  /**
    * "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h, 603.4, 205.3i): the spell that caused a cast trigger (its `triggerSubject`) was paid, in part, with
    * mana that a source with the subtype `subtype` made (`StackData.manaSpent.fromSubtypes`, as the filter `manaSpentFromSubtype` reads it). A copy of a spell was not cast and has none
    * (CR 707.10). Only in the intervening "if" of a `castSpell` trigger, or "if" of its effect, like `manaSpentAtLeast`.
@@ -10218,6 +10225,13 @@ export type StaticEffect =
       readonly subtypes?: readonly Subtype[];
       readonly types?: readonly CardType[];
     }
+  /**
+   * "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types." (Secret Arcade, CR 613.1d, 205.1b, 604.3, 110.4a): the permanent spells
+   * its controller controls on the stack (a spell that is an artifact, creature, enchantment, planeswalker or battle spell, as it is after layer 1 and the effects of resolved spells) also
+   * have these `types`, in layer 4 with the permanent's timestamp, so a trigger or a count about "an enchantment spell" sees it as it is cast. At least one type. The permanents on the
+   * battlefield are the business of a `setTypes` static of their own. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | { readonly kind: 'giveTypesToPermanentSpells'; readonly types: readonly CardType[] }
   /**
    * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (CR 702.141a, 613.1f, 604.3, 202.3): a static ability of a permanent on the battlefield that
    * gives the cards in its controller's graveyard that `what` matches (the cards as they are in the graveyard: its types and the like; no zone, controller or owner) an Encore ability

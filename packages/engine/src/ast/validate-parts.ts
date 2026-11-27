@@ -4522,6 +4522,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.count`, 'the mana spent is a whole number of 1 or more');
       }
       break;
+    case 'manaSpentLessThanManaValue':
+      // CR 601.2h, 202.3 (Ancient Cellarspawn): no field; the spell that caused a cast trigger.
+      break;
     case 'manaSpentFromSubtype':
       // CR 601.2h (Smaug, Wicked Worm): the mana of a source of this subtype spent on the spell that caused a cast trigger.
       if (typeof c.subtype !== 'string' || c.subtype === '') {

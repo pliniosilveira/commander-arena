@@ -155,6 +155,8 @@ function groupSubject(noun: IrNoun, keywords = false): LowerResult<StaticSubject
 function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResult<StaticSubject> {
   // The cards outside the battlefield that the noun also names are given types by `lowerGroupAndCardsOffBattlefield` alone; any other reading would drop them.
   if (noun.alsoCardsYouOwnOffBattlefield === true) return failure(noun);
+  // The permanent spells that the noun also names are given types by `lowerPermanentsAndPermanentSpells` alone.
+  if (noun.alsoPermanentSpellsYouControl === true) return failure(noun);
   // `~` is the ability's own permanent, or the spell for "This spell can't be countered".
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
@@ -464,7 +466,7 @@ function effectOf(
             kind: 'setTypes',
             subject,
             additive: true,
-            subtypes: [...effect.subtypes],
+            ...(effect.subtypes.length === 0 ? {} : { subtypes: [...effect.subtypes] }),
             ...(effect.types === undefined ? {} : { types: effect.types as CardType[] }),
           })
         : failure(at);
@@ -1474,6 +1476,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (statement.subject.alsoCardsYouOwnOffBattlefield === true) {
     return lowerGroupAndCardsOffBattlefield(ability, ctx);
   }
+  // Miracle Worker deck (Secret Arcade, CR 613.1d): "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types."
+  if (statement.subject.alsoPermanentSpellsYouControl === true) {
+    return lowerPermanentsAndPermanentSpells(ability, ctx);
+  }
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
     ...(statement.also ?? []),
@@ -2070,6 +2076,54 @@ function lowerGroupAndCardsOffBattlefield(
   };
 }
 
+/**
+ * "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types." (Secret Arcade, CR 613.1d, 205.1b, 110.4a): two static abilities in
+ * layer 4, the engine's `setTypes` for the permanents and `giveTypesToPermanentSpells` for the permanent spells its controller controls on the stack. Only the one effect "are [card
+ * types] in addition to their other types", with no condition, no subtype and no other subject: a spell takes no other effect of a group (a bonus would have nothing to work on there).
+ */
+function lowerPermanentsAndPermanentSpells(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const [only, ...more] = statement.effects;
+  if (
+    only?.kind !== 'addTypes' ||
+    more.length > 0 ||
+    statement.condition !== undefined ||
+    statement.also !== undefined ||
+    only.subtypes.length > 0 ||
+    only.types === undefined ||
+    only.types.length === 0
+  ) {
+    return failure(ability);
+  }
+  const { alsoPermanentSpellsYouControl: _also, ...plain } = statement.subject;
+  const group = subjectOf(plain, ctx);
+  if (!group.ok) return group;
+  if (group.value.kind !== 'filter' || group.value.other === true) return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'staticSubject:filter',
+    'static:setTypes',
+    'static:giveTypesToPermanentSpells',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const permanents = effectOf(only, group.value, ability, ctx);
+  if (!permanents.ok) return permanents;
+  return {
+    ok: true,
+    value: [
+      { kind: 'static', static: permanents.value },
+      {
+        kind: 'static',
+        static: { kind: 'giveTypesToPermanentSpells', types: only.types as CardType[] },
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** Features the static lowerings can name, for the dimension test. */
 export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
@@ -2091,6 +2145,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:loseTypes',
   'static:allCreatureTypes',
   'static:giveTypesToCardsOffBattlefield',
+  'static:giveTypesToPermanentSpells',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
   'static:grantKeywordFromManaCost',

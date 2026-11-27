@@ -1215,6 +1215,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  // Miracle Worker deck (issue 109, Secret Arcade).
+  'noun.nonland-permanents-and-permanent-spells': permanent(
+    (e) => `${cap(e)} are enchantments in addition to their other types.`,
+  ),
   'noun.permanents-and-cards-off-battlefield': permanent(
     (e) => `${cap(e)} are Deserts in addition to their other types.`,
   ),
@@ -1241,6 +1245,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 279 (Windbrisk Heights).
   'condition.attacked-with-creatures': permanent(
     (e) => `{W}, {T}: You may play the exiled card without paying its mana cost if ${e}.`,
+  ),
+  // Miracle Worker deck (issue 109, Ancient Cellarspawn): the intervening "if" of a trigger about a spell that was cast.
+  'condition.mana-spent-less-than-mana-value': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, you gain 1 life.`,
   ),
   'condition.mana-spent-or-more': permanent(
     (e) =>

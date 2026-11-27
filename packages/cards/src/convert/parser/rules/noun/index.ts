@@ -74,6 +74,7 @@ import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
 import { NOUN_OTHER_SUBTYPE_PAIR } from './other-subtype-pair';
 import { PAIR_NOUN_RULES } from './pair';
+import { PERMANENT_SPELLS_NOUN_RULES } from './permanent-spells';
 import {
   graveyardPhrase,
   PLURAL_TYPE_UNION,
@@ -1304,6 +1305,8 @@ export const NOUN_RULES = [
   NOUN_SELF_AND_GROUP,
   // Desert Bloom deck, group G5 (Dune Chanter): "lands you control and land cards you own that aren't on the battlefield", which `noun.plain-permanents` would stop in the middle of.
   ...DESERT_BLOOM_NOUN_RULES,
+  // Miracle Worker deck (Secret Arcade): "nonland permanents you control and permanent spells you control", before `noun.plain-permanents`.
+  ...PERMANENT_SPELLS_NOUN_RULES,
   // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
   NOUN_OTHER_SUBTYPE_PAIR,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.

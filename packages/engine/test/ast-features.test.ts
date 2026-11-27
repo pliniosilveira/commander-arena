@@ -180,6 +180,7 @@ describe('the dimensions', () => {
       'descendedThisTurn',
       'playedLandThisTurn',
       'manaSpentAtLeast',
+      'manaSpentLessThanManaValue',
       'manaSpentFromSubtype',
       'castFromZone',
       // Issue 100: "When this creature enters, if you cast it".
@@ -360,6 +361,7 @@ describe('the dimensions', () => {
       'legendRuleDoesntApply',
       'giveChosenCreatureType',
       'giveTypesToCardsOffBattlefield',
+      'giveTypesToPermanentSpells',
       'grantEncoreToGraveyardCards',
       'grantUnearthToGraveyardCards',
     ]);

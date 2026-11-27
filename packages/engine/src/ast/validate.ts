@@ -866,6 +866,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, path, 'giveTypesToCardsOffBattlefield names at least one type or subtype');
       }
       break;
+    case 'giveTypesToPermanentSpells':
+      // CR 613.1d: the permanent spells of the controller get card types in addition to their own.
+      checkEnumList(out, `${path}.types`, s.types, CARD_TYPES, 'card type');
+      if (!Array.isArray(s.types) || s.types.length === 0) {
+        issue(out, `${path}.types`, 'giveTypesToPermanentSpells names at least one card type');
+      }
+      break;
     case 'grantUnearthToGraveyardCards':
     case 'grantEncoreToGraveyardCards':
       // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.

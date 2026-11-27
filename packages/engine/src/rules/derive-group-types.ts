@@ -55,6 +55,11 @@ interface OffBattlefieldTypes {
   readonly types: readonly CardType[];
 }
 
+interface PermanentSpellTypes {
+  readonly kind: 'permanentSpells';
+  readonly types: readonly CardType[];
+}
+
 interface ChosenCreatureType {
   readonly kind: 'chosenCreatureType';
   readonly alsoCardsAndSpells: boolean;
@@ -70,6 +75,7 @@ interface TypeSource {
     | LostTypes
     | AllCreatureTypes
     | OffBattlefieldTypes
+    | PermanentSpellTypes
     | ChosenCreatureType;
   /** "As long as ..." (D-151, Celebration): a condition that reads no characteristic, read each time the effects are looked at (CR 611.3a). */
   readonly condition?: Condition;
@@ -82,6 +88,13 @@ interface Index {
   readonly sources: readonly TypeSource[];
 }
 
+const PERMANENT_TYPES: readonly CardType[] = [
+  'artifact',
+  'creature',
+  'enchantment',
+  'planeswalker',
+  'battle',
+];
 const NONE: readonly ContinuousEffect[] = [];
 const cache = new WeakMap<object, Index>();
 
@@ -120,6 +133,14 @@ function scan(state: GameState): Index {
             subtypes: s.subtypes ?? [],
             types: s.types ?? [],
           },
+          ...condition,
+        });
+      } else if (s.kind === 'giveTypesToPermanentSpells') {
+        // CR 613.1d, 205.1b: "permanent spells you control are enchantments in addition to their other types".
+        sources.push({
+          object,
+          subject: { kind: 'filter', filter: { controller: 'you' } },
+          what: { kind: 'permanentSpells', types: s.types },
           ...condition,
         });
       } else if (s.kind === 'setTypes' && s.chosenType === undefined) {
@@ -338,6 +359,11 @@ export function groupTypeEffects(
       ) {
         continue;
       }
+    } else if (src.what.kind === 'permanentSpells') {
+      // CR 110.4a, 205.1b: a permanent spell is an artifact, creature, enchantment, planeswalker or battle spell; its controller is the player who cast it.
+      if (target.zone !== 'stack' || target.stack?.kind !== 'spell') continue;
+      if (controllerOf(state, target) !== controllerOf(state, src.object)) continue;
+      if (!view.types.some((t) => PERMANENT_TYPES.includes(t))) continue;
     } else if (src.what.kind === 'chosenCreatureType') {
       // CR 607.2d: what the permanent chose as it entered; it chose none: nothing to give.
       if (src.object.chosen?.creatureType === undefined) continue;
@@ -381,6 +407,10 @@ export function groupTypeEffects(
           ...(src.what.types.length === 0 ? {} : { types: src.what.types }),
         },
       });
+      continue;
+    }
+    if (src.what.kind === 'permanentSpells') {
+      out.push({ ...base, change: { kind: 'setTypes', additive: true, types: src.what.types } });
       continue;
     }
     if (src.what.kind === 'named') {

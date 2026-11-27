@@ -536,6 +536,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'manaSpentAtLeast':
       // D-206 (CR 601.2h): "if at least four mana was spent to cast it".
       return `${negate ? 'fewer than' : 'at least'} ${condition.count} mana was spent to cast it`;
+    case 'manaSpentLessThanManaValue':
+      // CR 601.2h, 202.3 (Ancient Cellarspawn): "if the amount of mana spent to cast it was less than its mana value".
+      return `the amount of mana spent to cast it was ${negate ? 'not ' : ''}less than its mana value`;
     case 'castFromZone':
       // D-206 (CR 601.2a): "if this spell was cast from a graveyard".
       return `this spell was ${negate ? 'not ' : ''}cast from ${condition.zone === 'graveyard' ? 'a graveyard' : `its ${condition.zone}`}`;

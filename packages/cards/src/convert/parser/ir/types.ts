@@ -176,6 +176,11 @@ export interface IrNoun extends IrNode {
    */
   readonly alsoCardsYouOwnOffBattlefield?: true;
   /**
+   * "nonland permanents you control and permanent spells you control" (Secret Arcade, CR 613.1d): the group is `filter` (the nonland permanents you control) and also the permanent spells you control on
+   * the stack. Only a static "are enchantments in addition to their other types" reads it; every other lowering refuses a noun that has it.
+   */
+  readonly alsoPermanentSpellsYouControl?: true;
+  /**
    * "each of up to two other targets" (stage P34, D-152, CR 115.3): the targets of this slot are none of the targets of the slot of the same
    * ability before it, which a target noun without it may share.
    */
@@ -1160,6 +1165,8 @@ export interface IrCondition extends IrNode {
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
     // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
+    // Ancient Cellarspawn (CR 601.2h, 202.3): "the amount of mana spent to cast it was less than its mana value": the spell that caused a cast trigger; lowered in such a trigger only.
+    | { readonly kind: 'manaSpentLessThanManaValue' }
     // Prismari deck, group 2 (D-646, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
     | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
     // Flint deck (issue 685, CR 601.2h): "mana from a Treasure was spent to cast it": the spell of a cast trigger was paid in part with mana a source of this subtype made.
