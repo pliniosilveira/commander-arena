@@ -1,0 +1,3587 @@
+{
+  "id": "miracle-worker-duskmourn-house-of-horror-commander",
+  "name": "Miracle Worker",
+  "blurb": "A Commander precon led by Aminatou, Veil Piercer.",
+  "source": "oracle_cards-2026-11-24T22-02-02-009-00-00.jsonl.gz",
+  "decklist": "Commander\n1x Aminatou, Veil Piercer\n\nMainboard\n1x Adarkar Wastes\n1x Aminatou's Augury\n1x Ancient Cellarspawn\n1x Arcane Denial\n1x Arcane Sanctum\n1x Arcane Signet\n1x Archetype of Imagination\n1x Arvinox, the Mind Flail\n1x Ash Barrens\n1x Athreos, Shroud-Veiled\n1x Auramancer\n1x Azorius Chancery\n1x Azorius Signet\n1x Bojuka Bog\n1x Bottomless Pool // Locker Room\n1x Brainstone\n1x Brainstorm\n1x Burnished Hart\n1x Cast Out\n1x Caves of Koilos\n1x Command Tower\n1x Commander's Sphere\n1x Cramped Vents // Access Maze\n1x Demon of Fate's Design\n1x Diabolic Vision\n1x Dimir Aqueduct\n1x Doomwake Giant\n1x Dream Eater\n1x Entreat the Angels\n1x Evolving Wilds\n1x Extravagant Replication\n1x Fear of Sleep Paralysis\n1x Halimar Depths\n1x Hall of Heliod's Generosity\n1x Inkshield\n1x Life Insurance\n1x Mesa Enchantress\n1x Metamorphosis Fanatic\n1x Mind Stone\n1x Mirrormade\n1x Monologue Tax\n1x Moon-Blessed Cleric\n1x Nightmare Shepherd\n1x Obscura Storefront\n1x Ondu Spiritdancer\n1x One with the Multiverse\n1x Orzhov Basilica\n1x Orzhov Signet\n1x Otherworldly Gaze\n1x Phenomenon Investigators\n1x Ponder\n1x Portent\n1x Prognostic Sphinx\n1x Read the Bones\n1x Redress Fate\n1x Return to Dust\n1x Secret Arcade // Dusty Parlor\n1x Shark Typhoon\n1x Sigil of the Empty Throne\n1x Soaring Lightbringer\n1x Sol Ring\n1x Solemn Simulacrum\n1x Sphere of Safety\n1x Spirit-Sister's Call\n1x Starfield Mystic\n1x Swords to Plowshares\n1x Tainted Field\n1x Tainted Isle\n1x Telling Time\n1x Temple of Deceit\n1x Temple of Enlightenment\n1x Temple of Silence\n1x Terminus\n1x Terramorphic Expanse\n1x The Eldest Reborn\n1x The Master of Keys\n1x Thirst for Meaning\n1x Thriving Heath\n1x Thriving Isle\n1x Thriving Moor\n1x Time Wipe\n1x Timely Ward\n1x Underground River\n1x Utter End\n1x Verge Rangers\n4x Island\n5x Plains\n5x Swamp\n",
+  "set": "Duskmourn: House of Horror Commander",
+  "year": 2024,
+  "cards": [
+    {
+      "oracleId": "d5ad26cc-2bdb-46b7-b8bf-dd099d5fa09b",
+      "scryfallId": "42e0aa15-639a-4e88-9bd8-ce5e7c7d7649",
+      "name": "Adarkar Wastes",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Adarkar Wastes",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {U}. This land deals 1 damage to you.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/2/42e0aa15-639a-4e88-9bd8-ce5e7c7d7649.jpg?1783906017",
+            "large": "https://cards.scryfall.io/large/front/4/2/42e0aa15-639a-4e88-9bd8-ce5e7c7d7649.jpg?1783906017",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/42e0aa15-639a-4e88-9bd8-ce5e7c7d7649.jpg?1783906017"
+          },
+          "artist": "Piotr Dura"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "C",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 143,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c9160997-0305-47f5-9a2f-77588d167da0",
+      "scryfallId": "503448da-d14f-4759-85b6-0db2e90e0241",
+      "name": "Aminatou's Augury",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Aminatou's Augury",
+          "manaCost": "{6}{U}{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/0/503448da-d14f-4759-85b6-0db2e90e0241.jpg?1783909645",
+            "large": "https://cards.scryfall.io/large/front/5/0/503448da-d14f-4759-85b6-0db2e90e0241.jpg?1783909645",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/503448da-d14f-4759-85b6-0db2e90e0241.jpg?1783909645"
+          },
+          "artist": "Loïc Canavaggia"
+        }
+      ],
+      "cmc": 8,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2494,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "bf45f5ee-4d5f-4920-b612-b5492c2f035d",
+      "scryfallId": "9f868023-6035-403d-ba91-7a4840c6c392",
+      "name": "Aminatou, Veil Piercer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Aminatou, Veil Piercer",
+          "manaCost": "{1}{W}{U}{B}",
+          "typeLine": "Legendary Creature — Human Wizard",
+          "oracleText": "At the beginning of your upkeep, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nEach enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}. (You may cast a card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+          "power": "2",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/f/9f868023-6035-403d-ba91-7a4840c6c392.jpg?1783909663",
+            "large": "https://cards.scryfall.io/large/front/9/f/9f868023-6035-403d-ba91-7a4840c6c392.jpg?1783909663",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/f/9f868023-6035-403d-ba91-7a4840c6c392.jpg?1783909663"
+          },
+          "artist": "David Palumbo"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "B",
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Surveil"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5902,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b8510b34-0e5f-4639-9db1-1ba40d84b800",
+      "scryfallId": "27e2477d-4f04-408d-8c39-8a886ac81f44",
+      "name": "Ancient Cellarspawn",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ancient Cellarspawn",
+          "manaCost": "{1}{B}{B}",
+          "typeLine": "Enchantment Creature — Horror",
+          "oracleText": "Each spell you cast that's a Demon, Horror, or Nightmare costs {1} less to cast.\nWhenever you cast a spell, if the amount of mana spent to cast it was less than its mana value, target opponent loses life equal to the difference.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/7/27e2477d-4f04-408d-8c39-8a886ac81f44.jpg?1783909661",
+            "large": "https://cards.scryfall.io/large/front/2/7/27e2477d-4f04-408d-8c39-8a886ac81f44.jpg?1783909661",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/7/27e2477d-4f04-408d-8c39-8a886ac81f44.jpg?1783909661"
+          },
+          "artist": "Alexandre Honoré"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2564,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ab1cc360-b9de-48d9-9983-4dfe4a7d2a37",
+      "scryfallId": "5eb843ef-b223-40d0-a461-54b16d188d0e",
+      "name": "Arcane Denial",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arcane Denial",
+          "manaCost": "{1}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/e/5eb843ef-b223-40d0-a461-54b16d188d0e.jpg?1783903242",
+            "large": "https://cards.scryfall.io/large/front/5/e/5eb843ef-b223-40d0-a461-54b16d188d0e.jpg?1783903242",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/e/5eb843ef-b223-40d0-a461-54b16d188d0e.jpg?1783903242"
+          },
+          "artist": "Bastien L. Deharme"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 52,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7d7cf15c-06b9-4062-a1eb-32614c458a3b",
+      "scryfallId": "23d77f67-11a3-49b1-9594-68461cd08b04",
+      "name": "Arcane Sanctum",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arcane Sanctum",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\n{T}: Add {W}, {U}, or {B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/3/23d77f67-11a3-49b1-9594-68461cd08b04.jpg?1793021244",
+            "large": "https://cards.scryfall.io/large/front/2/3/23d77f67-11a3-49b1-9594-68461cd08b04.jpg?1793021244",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/3/23d77f67-11a3-49b1-9594-68461cd08b04.jpg?1793021244"
+          },
+          "artist": "Bastien Grivet"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 350,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0bc7f093-bef0-4f1a-852c-4b75ebf54838",
+      "scryfallId": "795df2ee-fbfc-4961-852c-e3ec50cc52da",
+      "name": "Arcane Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arcane Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/9/795df2ee-fbfc-4961-852c-e3ec50cc52da.jpg?1793021117",
+            "large": "https://cards.scryfall.io/large/front/7/9/795df2ee-fbfc-4961-852c-e3ec50cc52da.jpg?1793021117",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/9/795df2ee-fbfc-4961-852c-e3ec50cc52da.jpg?1793021117"
+          },
+          "artist": "Tomáš Honz"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a5458de0-0f61-49a3-a013-d90f92559809",
+      "scryfallId": "204972f7-8111-4e7d-97c4-53bcdc222230",
+      "name": "Archetype of Imagination",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Archetype of Imagination",
+          "manaCost": "{4}{U}{U}",
+          "typeLine": "Enchantment Creature — Human Wizard",
+          "oracleText": "Creatures you control have flying.\nCreatures your opponents control lose flying and can't have or gain flying.",
+          "power": "3",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/0/204972f7-8111-4e7d-97c4-53bcdc222230.jpg?1783909628",
+            "large": "https://cards.scryfall.io/large/front/2/0/204972f7-8111-4e7d-97c4-53bcdc222230.jpg?1783909628",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/0/204972f7-8111-4e7d-97c4-53bcdc222230.jpg?1783909628"
+          },
+          "artist": "Robbie Trevino"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1914,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "9abecd23-a2d9-43c7-8d01-f8afdc53026e",
+      "scryfallId": "f81e3110-857c-4074-9c55-7e87c22051c9",
+      "name": "Arvinox, the Mind Flail",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arvinox, the Mind Flail",
+          "manaCost": "{4}{B}{B}{B}",
+          "typeLine": "Legendary Enchantment Creature — Horror",
+          "oracleText": "Arvinox isn't a creature unless you control three or more permanents you don't own.\nAt the beginning of your end step, exile the bottom card of each opponent's library face down. For as long as those cards remain exiled, you may look at them, you may cast permanent spells from among them, and you may spend mana as though it were mana of any color to cast those spells.",
+          "power": "9",
+          "toughness": "9",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/8/f81e3110-857c-4074-9c55-7e87c22051c9.jpg?1783909623",
+            "large": "https://cards.scryfall.io/large/front/f/8/f81e3110-857c-4074-9c55-7e87c22051c9.jpg?1783909623",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/8/f81e3110-857c-4074-9c55-7e87c22051c9.jpg?1783909623"
+          },
+          "artist": "Nikola Matkovic"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5124,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "58257464-278e-45fa-8e0b-bcd9a7500bc1",
+      "scryfallId": "e8510205-4baa-4f1c-bf64-5d931e2ddf48",
+      "name": "Ash Barrens",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ash Barrens",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\nBasic landcycling {1} ({1}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/8/e8510205-4baa-4f1c-bf64-5d931e2ddf48.jpg?1783904155",
+            "large": "https://cards.scryfall.io/large/front/e/8/e8510205-4baa-4f1c-bf64-5d931e2ddf48.jpg?1783904155",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e8510205-4baa-4f1c-bf64-5d931e2ddf48.jpg?1783904155"
+          },
+          "artist": "Lucas Staniec"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [
+        "Landcycling",
+        "Basic landcycling",
+        "Typecycling",
+        "Cycling"
+      ],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 211,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "9aacc1ce-8d0d-4a24-9a15-74635f2f127d",
+      "scryfallId": "f50ffa76-f704-4d53-a15c-8316b07c1d12",
+      "name": "Athreos, Shroud-Veiled",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Athreos, Shroud-Veiled",
+          "manaCost": "{4}{W}{B}",
+          "typeLine": "Legendary Enchantment Creature — God",
+          "oracleText": "Indestructible\nAs long as your devotion to white and black is less than seven, Athreos isn't a creature.\nAt the beginning of your end step, put a coin counter on another target creature.\nWhenever a creature with a coin counter on it dies or is put into exile, return that card to the battlefield under your control.",
+          "power": "4",
+          "toughness": "7",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/5/f50ffa76-f704-4d53-a15c-8316b07c1d12.jpg?1783909597",
+            "large": "https://cards.scryfall.io/large/front/f/5/f50ffa76-f704-4d53-a15c-8316b07c1d12.jpg?1783909597",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f50ffa76-f704-4d53-a15c-8316b07c1d12.jpg?1783909597"
+          },
+          "artist": "Igor Kieryluk"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [
+        "Indestructible"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3375,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "bd5eb181-6a69-4dc2-93a0-fa000291bc3d",
+      "scryfallId": "d0957032-6d98-4cac-889b-890e9bfe1f86",
+      "name": "Auramancer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Auramancer",
+          "manaCost": "{2}{W}",
+          "typeLine": "Creature — Human Wizard",
+          "oracleText": "When this creature enters, you may return target enchantment card from your graveyard to your hand.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/0/d0957032-6d98-4cac-889b-890e9bfe1f86.jpg?1783909633",
+            "large": "https://cards.scryfall.io/large/front/d/0/d0957032-6d98-4cac-889b-890e9bfe1f86.jpg?1783909633",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0957032-6d98-4cac-889b-890e9bfe1f86.jpg?1783909633"
+          },
+          "artist": "Rebecca Guay"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4560,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "189fc8f4-17ac-4f1d-82c8-8401445bdaf4",
+      "scryfallId": "50ef0ac3-e911-4d67-a751-8d86160ae843",
+      "name": "Azorius Chancery",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Azorius Chancery",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {W}{U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/0/50ef0ac3-e911-4d67-a751-8d86160ae843.jpg?1783909580",
+            "large": "https://cards.scryfall.io/large/front/5/0/50ef0ac3-e911-4d67-a751-8d86160ae843.jpg?1783909580",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/50ef0ac3-e911-4d67-a751-8d86160ae843.jpg?1783909580"
+          },
+          "artist": "John Avon"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 484,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e018773f-95b3-49a3-9674-6f04ddef2092",
+      "scryfallId": "af690536-b0bc-4d85-8bb8-f6856b9f927b",
+      "name": "Azorius Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Azorius Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{1}, {T}: Add {W}{U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829",
+            "large": "https://cards.scryfall.io/large/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829"
+          },
+          "artist": "Raoul Vitale"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 210,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "04b7362d-0490-4cb0-b5d7-2a7732f659ce",
+      "scryfallId": "55b5b094-9d2d-4d96-b90c-78fecdae725a",
+      "name": "Bojuka Bog",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Bojuka Bog",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, exile target player's graveyard.\n{T}: Add {B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/5/55b5b094-9d2d-4d96-b90c-78fecdae725a.jpg?1783903734",
+            "large": "https://cards.scryfall.io/large/front/5/5/55b5b094-9d2d-4d96-b90c-78fecdae725a.jpg?1783903734",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/5/55b5b094-9d2d-4d96-b90c-78fecdae725a.jpg?1783903734"
+          },
+          "artist": "Howard Lyon"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 24,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b9ac4856-5cdb-479f-b0f5-7fa0b232a5ff",
+      "scryfallId": "606fe87c-d17b-4fa7-8e82-e7002d8229ef",
+      "name": "Bottomless Pool // Locker Room",
+      "layout": "split",
+      "faces": [
+        {
+          "name": "Bottomless Pool",
+          "manaCost": "{U}",
+          "typeLine": "Enchantment — Room",
+          "oracleText": "When you unlock this door, return up to one target creature to its owner's hand.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1783909499",
+            "large": "https://cards.scryfall.io/large/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1783909499",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1783909499"
+          },
+          "artist": "Diana Franco"
+        },
+        {
+          "name": "Locker Room",
+          "manaCost": "{4}{U}",
+          "typeLine": "Enchantment — Room",
+          "oracleText": "Whenever one or more creatures you control deal combat damage to a player, draw a card.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1783909499",
+            "large": "https://cards.scryfall.io/large/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1783909499",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1783909499"
+          },
+          "artist": "Diana Franco"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6703,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ffac1923-99d0-48e6-b1e7-168e5c324a80",
+      "scryfallId": "6e86ad39-2a90-466d-b188-056216429f4e",
+      "name": "Brainstone",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Brainstone",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "{2}, {T}, Sacrifice this artifact: Draw three cards, then put two cards from your hand on top of your library in any order.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/e/6e86ad39-2a90-466d-b188-056216429f4e.jpg?1783909587",
+            "large": "https://cards.scryfall.io/large/front/6/e/6e86ad39-2a90-466d-b188-056216429f4e.jpg?1783909587",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/e/6e86ad39-2a90-466d-b188-056216429f4e.jpg?1783909587"
+          },
+          "artist": "Drew Tucker"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4755,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "36cd2364-d113-47d1-b2c4-b088d9eb88dd",
+      "scryfallId": "1ede3080-8c47-48a0-b757-92c3fa91fac0",
+      "name": "Brainstorm",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Brainstorm",
+          "manaCost": "{U}",
+          "typeLine": "Instant",
+          "oracleText": "Draw three cards, then put two cards from your hand on top of your library in any order.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/e/1ede3080-8c47-48a0-b757-92c3fa91fac0.jpg?1793281332",
+            "large": "https://cards.scryfall.io/large/front/1/e/1ede3080-8c47-48a0-b757-92c3fa91fac0.jpg?1793281332",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1ede3080-8c47-48a0-b757-92c3fa91fac0.jpg?1793281332"
+          },
+          "artist": "Andreas Zafiratos"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 72,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "893fed41-c144-433f-af88-bc7d419b7fb3",
+      "scryfallId": "65ebbff0-fbe6-4310-a33f-e00bb2534979",
+      "name": "Burnished Hart",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Burnished Hart",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Elk",
+          "oracleText": "{3}, Sacrifice this creature: Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/5/65ebbff0-fbe6-4310-a33f-e00bb2534979.jpg?1783909049",
+            "large": "https://cards.scryfall.io/large/front/6/5/65ebbff0-fbe6-4310-a33f-e00bb2534979.jpg?1783909049",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/65ebbff0-fbe6-4310-a33f-e00bb2534979.jpg?1783909049"
+          },
+          "artist": "Yeong-Hao Han"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 532,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f90b00f6-36e0-4988-9409-57297483a952",
+      "scryfallId": "4b491874-4be1-496a-bf04-abe1f5af4482",
+      "name": "Cast Out",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Cast Out",
+          "manaCost": "{3}{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "Flash\nWhen this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.\nCycling {W} ({W}, Discard this card: Draw a card.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/b/4b491874-4be1-496a-bf04-abe1f5af4482.jpg?1783909633",
+            "large": "https://cards.scryfall.io/large/front/4/b/4b491874-4be1-496a-bf04-abe1f5af4482.jpg?1783909633",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/b/4b491874-4be1-496a-bf04-abe1f5af4482.jpg?1783909633"
+          },
+          "artist": "Magali Villeneuve"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flash",
+        "Cycling"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5564,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "33de01e9-ce5a-42d4-afcb-343cd54a6d80",
+      "scryfallId": "ca814c7c-9908-4727-b556-3f85bfd653ca",
+      "name": "Caves of Koilos",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Caves of Koilos",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/a/ca814c7c-9908-4727-b556-3f85bfd653ca.jpg?1789599896",
+            "large": "https://cards.scryfall.io/large/front/c/a/ca814c7c-9908-4727-b556-3f85bfd653ca.jpg?1789599896",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca814c7c-9908-4727-b556-3f85bfd653ca.jpg?1789599896"
+          },
+          "artist": "Julian Kok Joon Wen"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "C",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 123,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0895c9b7-ae7d-4bb3-af17-3b75deb50a25",
+      "scryfallId": "a73297d2-580c-4174-a427-265f6916d09f",
+      "name": "Command Tower",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Command Tower",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/7/a73297d2-580c-4174-a427-265f6916d09f.jpg?1793021256",
+            "large": "https://cards.scryfall.io/large/front/a/7/a73297d2-580c-4174-a427-265f6916d09f.jpg?1793021256",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/7/a73297d2-580c-4174-a427-265f6916d09f.jpg?1793021256"
+          },
+          "artist": "Arthur Yuan"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 2,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Command Tower",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Tower Winder",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "0b67c4e2-f88b-4e01-85a1-9d5f5b8db13b",
+      "scryfallId": "a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13",
+      "name": "Commander's Sphere",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Commander's Sphere",
+          "manaCost": "{3}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.\nSacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/1/a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13.jpg?1793021131",
+            "large": "https://cards.scryfall.io/large/front/a/1/a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13.jpg?1793021131",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13.jpg?1793021131"
+          },
+          "artist": "Eric Wilkerson"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 57,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "1e847d69-e527-4bb9-a624-17c25ac4fed4",
+      "scryfallId": "7ba1e27e-ed0d-438c-9ec6-a48a04718512",
+      "name": "Cramped Vents // Access Maze",
+      "layout": "split",
+      "faces": [
+        {
+          "name": "Cramped Vents",
+          "manaCost": "{3}{B}",
+          "typeLine": "Enchantment — Room",
+          "oracleText": "When you unlock this door, this Room deals 6 damage to target creature an opponent controls. You gain life equal to the excess damage dealt this way.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/b/7ba1e27e-ed0d-438c-9ec6-a48a04718512.jpg?1783909659",
+            "large": "https://cards.scryfall.io/large/front/7/b/7ba1e27e-ed0d-438c-9ec6-a48a04718512.jpg?1783909659",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/b/7ba1e27e-ed0d-438c-9ec6-a48a04718512.jpg?1783909659"
+          },
+          "artist": "Arthur Yuan"
+        },
+        {
+          "name": "Access Maze",
+          "manaCost": "{5}{B}{B}",
+          "typeLine": "Enchantment — Room",
+          "oracleText": "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/b/7ba1e27e-ed0d-438c-9ec6-a48a04718512.jpg?1783909659",
+            "large": "https://cards.scryfall.io/large/front/7/b/7ba1e27e-ed0d-438c-9ec6-a48a04718512.jpg?1783909659",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/b/7ba1e27e-ed0d-438c-9ec6-a48a04718512.jpg?1783909659"
+          },
+          "artist": "Arthur Yuan"
+        }
+      ],
+      "cmc": 11,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 8098,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "53716e0b-4d4e-40b0-8370-38e11f73d195",
+      "scryfallId": "0d3668fe-78d9-4c2c-8c83-5cace9d39e03",
+      "name": "Demon of Fate's Design",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Demon of Fate's Design",
+          "manaCost": "{4}{B}{B}",
+          "typeLine": "Enchantment Creature — Demon",
+          "oracleText": "Flying, trample\nOnce during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost.\n{2}{B}, Sacrifice another enchantment: This creature gets +X/+0 until end of turn, where X is the sacrificed enchantment's mana value.",
+          "power": "6",
+          "toughness": "6",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/d/0d3668fe-78d9-4c2c-8c83-5cace9d39e03.jpg?1783909621",
+            "large": "https://cards.scryfall.io/large/front/0/d/0d3668fe-78d9-4c2c-8c83-5cace9d39e03.jpg?1783909621",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0d3668fe-78d9-4c2c-8c83-5cace9d39e03.jpg?1783909621"
+          },
+          "artist": "Fajareka Setiawan"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Flying",
+        "Trample"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3474,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "6b7b1a71-812d-4ff5-b38b-94d1cf634143",
+      "scryfallId": "c360753a-af32-4f1d-a1c7-c3f3c075ecc0",
+      "name": "Diabolic Vision",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Diabolic Vision",
+          "manaCost": "{U}{B}",
+          "typeLine": "Sorcery",
+          "oracleText": "Look at the top five cards of your library. Put one of them into your hand and the rest on top of your library in any order.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/3/c360753a-af32-4f1d-a1c7-c3f3c075ecc0.jpg?1783909637",
+            "large": "https://cards.scryfall.io/large/front/c/3/c360753a-af32-4f1d-a1c7-c3f3c075ecc0.jpg?1783909637",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c360753a-af32-4f1d-a1c7-c3f3c075ecc0.jpg?1783909637"
+          },
+          "artist": "Mirko Failoni"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "B",
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7876,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "378a1d57-e2f1-4b84-9692-1564602e9e99",
+      "scryfallId": "84bf9d60-64b8-4209-acfe-e07eefc6bf1f",
+      "name": "Dimir Aqueduct",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dimir Aqueduct",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {U}{B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/4/84bf9d60-64b8-4209-acfe-e07eefc6bf1f.jpg?1783909578",
+            "large": "https://cards.scryfall.io/large/front/8/4/84bf9d60-64b8-4209-acfe-e07eefc6bf1f.jpg?1783909578",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/84bf9d60-64b8-4209-acfe-e07eefc6bf1f.jpg?1783909578"
+          },
+          "artist": "John Avon"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 395,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ba069664-9f92-47c7-b556-9e5143a22579",
+      "scryfallId": "0be3f848-ba01-4890-a3a1-ed0dfb564632",
+      "name": "Doomwake Giant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Doomwake Giant",
+          "manaCost": "{4}{B}",
+          "typeLine": "Enchantment Creature — Giant",
+          "oracleText": "Constellation — Whenever this creature or another enchantment you control enters, creatures your opponents control get -1/-1 until end of turn.",
+          "power": "4",
+          "toughness": "6",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/b/0be3f848-ba01-4890-a3a1-ed0dfb564632.jpg?1783903786",
+            "large": "https://cards.scryfall.io/large/front/0/b/0be3f848-ba01-4890-a3a1-ed0dfb564632.jpg?1783903786",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/b/0be3f848-ba01-4890-a3a1-ed0dfb564632.jpg?1783903786"
+          },
+          "artist": "Kev Walker"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Constellation"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1946,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4ec84bb3-796a-4074-ac9a-1bd277158896",
+      "scryfallId": "c721d449-fc77-4d86-8baf-158181e37087",
+      "name": "Dream Eater",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dream Eater",
+          "manaCost": "{4}{U}{U}",
+          "typeLine": "Creature — Nightmare Sphinx",
+          "oracleText": "Flash\nFlying\nWhen this creature enters, surveil 4. When you do, you may return target nonland permanent an opponent controls to its owner's hand. (To surveil 4, look at the top four cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
+          "power": "4",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/7/c721d449-fc77-4d86-8baf-158181e37087.jpg?1783909628",
+            "large": "https://cards.scryfall.io/large/front/c/7/c721d449-fc77-4d86-8baf-158181e37087.jpg?1783909628",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/7/c721d449-fc77-4d86-8baf-158181e37087.jpg?1783909628"
+          },
+          "artist": "Daarken"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Surveil",
+        "Flash"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 8704,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b349f018-c20b-48b0-9e65-d5fd56b24b88",
+      "scryfallId": "ff4411bc-ed4e-4d54-9e1b-21fc77b0e415",
+      "name": "Entreat the Angels",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Entreat the Angels",
+          "manaCost": "{X}{X}{W}{W}{W}",
+          "typeLine": "Sorcery",
+          "oracleText": "Create X 4/4 white Angel creature tokens with flying.\nMiracle {X}{W}{W} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/f/ff4411bc-ed4e-4d54-9e1b-21fc77b0e415.jpg?1783909633",
+            "large": "https://cards.scryfall.io/large/front/f/f/ff4411bc-ed4e-4d54-9e1b-21fc77b0e415.jpg?1783909633",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ff4411bc-ed4e-4d54-9e1b-21fc77b0e415.jpg?1783909633"
+          },
+          "artist": "Todd Lockwood"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Miracle"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5263,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Angel",
+          "component": "token"
+        },
+        {
+          "name": "Entreat the Angels",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "a75445d3-1303-4bb5-89ad-26ea93fecd48",
+      "scryfallId": "6e01ec28-d815-47a8-ab0f-d383a4736ebe",
+      "name": "Evolving Wilds",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Evolving Wilds",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/e/6e01ec28-d815-47a8-ab0f-d383a4736ebe.jpg?1793021295",
+            "large": "https://cards.scryfall.io/large/front/6/e/6e01ec28-d815-47a8-ab0f-d383a4736ebe.jpg?1793021295",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/e/6e01ec28-d815-47a8-ab0f-d383a4736ebe.jpg?1793021295"
+          },
+          "artist": "Hector Ortiz"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 19,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3a646245-b8b7-4f91-a312-d5eea9a9e49a",
+      "scryfallId": "6a41dfae-bc7e-4105-8f7e-fd0109197ad8",
+      "name": "Extravagant Replication",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Extravagant Replication",
+          "manaCost": "{4}{U}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "At the beginning of your upkeep, create a token that's a copy of another target nonland permanent you control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/a/6a41dfae-bc7e-4105-8f7e-fd0109197ad8.jpg?1783909081",
+            "large": "https://cards.scryfall.io/large/front/6/a/6a41dfae-bc7e-4105-8f7e-fd0109197ad8.jpg?1783909081",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/a/6a41dfae-bc7e-4105-8f7e-fd0109197ad8.jpg?1783909081"
+          },
+          "artist": "Pauline Voss"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1827,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Extravagant Replication",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Copy",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "a3a1f149-febe-4ff6-9e34-8b82ef21c2ee",
+      "scryfallId": "845e9d68-11a9-4759-a031-13464d337e12",
+      "name": "Fear of Sleep Paralysis",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Fear of Sleep Paralysis",
+          "manaCost": "{5}{U}",
+          "typeLine": "Enchantment Creature — Nightmare",
+          "oracleText": "Flying\nEerie — Whenever this creature or another enchantment you control enters and whenever you fully unlock a Room, tap up to one target creature and put a stun counter on it.\nStun counters can't be removed from permanents your opponents control. (They won't untap if they have stun counters.)",
+          "power": "6",
+          "toughness": "6",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/4/845e9d68-11a9-4759-a031-13464d337e12.jpg?1783909663",
+            "large": "https://cards.scryfall.io/large/front/8/4/845e9d68-11a9-4759-a031-13464d337e12.jpg?1783909663",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/845e9d68-11a9-4759-a031-13464d337e12.jpg?1783909663"
+          },
+          "artist": "Joshua Raphael"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Eerie"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3805,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "42d121a2-5266-483a-ab16-e0a8073cd6a3",
+      "scryfallId": "63eb18e0-c723-4de4-8498-c5362c75b2b4",
+      "name": "Halimar Depths",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Halimar Depths",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, look at the top three cards of your library, then put them back in any order.\n{T}: Add {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/3/63eb18e0-c723-4de4-8498-c5362c75b2b4.jpg?1783909574",
+            "large": "https://cards.scryfall.io/large/front/6/3/63eb18e0-c723-4de4-8498-c5362c75b2b4.jpg?1783909574",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/63eb18e0-c723-4de4-8498-c5362c75b2b4.jpg?1783909574"
+          },
+          "artist": "Volkan Baǵa"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1384,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "2fc070dc-f2f7-4648-8069-31d74790a39c",
+      "scryfallId": "f08dfd99-59fa-4a6c-bd69-c647f639de4d",
+      "name": "Hall of Heliod's Generosity",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hall of Heliod's Generosity",
+          "manaCost": "",
+          "typeLine": "Legendary Land",
+          "oracleText": "{T}: Add {C}.\n{1}{W}, {T}: Put target enchantment card from your graveyard on top of your library.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/0/f08dfd99-59fa-4a6c-bd69-c647f639de4d.jpg?1783909573",
+            "large": "https://cards.scryfall.io/large/front/f/0/f08dfd99-59fa-4a6c-bd69-c647f639de4d.jpg?1783909573",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/0/f08dfd99-59fa-4a6c-bd69-c647f639de4d.jpg?1783909573"
+          },
+          "artist": "Daniel Ljunggren"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 444,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "da93264e-4e04-401a-9809-e4e1056cf604",
+      "scryfallId": "3362ade8-d585-40be-8486-382cad6efaf8",
+      "name": "Inkshield",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Inkshield",
+          "manaCost": "{3}{W}{B}",
+          "typeLine": "Instant",
+          "oracleText": "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/3/3362ade8-d585-40be-8486-382cad6efaf8.jpg?1783903751",
+            "large": "https://cards.scryfall.io/large/front/3/3/3362ade8-d585-40be-8486-382cad6efaf8.jpg?1783903751",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/3/3362ade8-d585-40be-8486-382cad6efaf8.jpg?1783903751"
+          },
+          "artist": "Jarel Threat"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 789,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Inkshield",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Inkling",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "b2c6aa39-2d2a-459c-a555-fb48ba993373",
+      "scryfallId": "1335d293-3dd2-4f13-bd2c-22181f4528ee",
+      "name": "Island",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Island",
+          "manaCost": "",
+          "typeLine": "Basic Land — Island",
+          "oracleText": "({T}: Add {U}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424",
+            "large": "https://cards.scryfall.io/large/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424"
+          },
+          "artist": "Eren Arik"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "50779f73-c538-4364-aca4-4ab069a00814",
+      "scryfallId": "60e1921e-6c98-4c60-88f4-8fbb6f30236e",
+      "name": "Life Insurance",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Life Insurance",
+          "manaCost": "{3}{W}{B}",
+          "typeLine": "Enchantment",
+          "oracleText": "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nWhenever a nontoken creature dies, you lose 1 life and create a Treasure token.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/0/60e1921e-6c98-4c60-88f4-8fbb6f30236e.jpg?1783909592",
+            "large": "https://cards.scryfall.io/large/front/6/0/60e1921e-6c98-4c60-88f4-8fbb6f30236e.jpg?1783909592",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/60e1921e-6c98-4c60-88f4-8fbb6f30236e.jpg?1783909592"
+          },
+          "artist": "Brian Valeza"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [
+        "Extort",
+        "Treasure"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6065,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Life Insurance",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "8f4b8a19-72f4-48ed-ac05-62a7c7525797",
+      "scryfallId": "c4f9e9fc-8b89-40ee-9b20-10e4a23e6333",
+      "name": "Mesa Enchantress",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mesa Enchantress",
+          "manaCost": "{1}{W}{W}",
+          "typeLine": "Creature — Human Druid",
+          "oracleText": "Whenever you cast an enchantment spell, you may draw a card.",
+          "power": "0",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/4/c4f9e9fc-8b89-40ee-9b20-10e4a23e6333.jpg?1783909643",
+            "large": "https://cards.scryfall.io/large/front/c/4/c4f9e9fc-8b89-40ee-9b20-10e4a23e6333.jpg?1783909643",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c4f9e9fc-8b89-40ee-9b20-10e4a23e6333.jpg?1783909643"
+          },
+          "artist": "Eelis Kyttanen"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 872,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "017aa9b3-a8ea-4588-9c50-e914a7d8e4ee",
+      "scryfallId": "16448d95-ee21-4def-b880-26f6f159c213",
+      "name": "Metamorphosis Fanatic",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Metamorphosis Fanatic",
+          "manaCost": "{4}{B}{B}",
+          "typeLine": "Creature — Human Cleric",
+          "oracleText": "Lifelink\nWhen this creature enters, return up to one target creature card from your graveyard to the battlefield with a lifelink counter on it.\nMiracle {1}{B} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/6/16448d95-ee21-4def-b880-26f6f159c213.jpg?1783909658",
+            "large": "https://cards.scryfall.io/large/front/1/6/16448d95-ee21-4def-b880-26f6f159c213.jpg?1783909658",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/6/16448d95-ee21-4def-b880-26f6f159c213.jpg?1783909658"
+          },
+          "artist": "Andreas Zafiratos"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Lifelink",
+        "Miracle"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2949,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c97361b5-af16-4a7b-af85-a429dbaf4ad2",
+      "scryfallId": "091600ae-6578-4353-8e0f-d170f555bcd0",
+      "name": "Mind Stone",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mind Stone",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}.\n{1}, {T}, Sacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/9/091600ae-6578-4353-8e0f-d170f555bcd0.jpg?1793965409",
+            "large": "https://cards.scryfall.io/large/front/0/9/091600ae-6578-4353-8e0f-d170f555bcd0.jpg?1793965409",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/9/091600ae-6578-4353-8e0f-d170f555bcd0.jpg?1793965409"
+          },
+          "artist": "Racrufi"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 32,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Mind Stone",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Boisterous Clique",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "79a71fe5-38ce-4bb5-aea0-c9b9a856d397",
+      "scryfallId": "a26cbfbe-fbb8-4804-b065-ab2c42ddad9b",
+      "name": "Mirrormade",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mirrormade",
+          "manaCost": "{1}{U}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "You may have this enchantment enter as a copy of any artifact or enchantment on the battlefield.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/2/a26cbfbe-fbb8-4804-b065-ab2c42ddad9b.jpg?1783909627",
+            "large": "https://cards.scryfall.io/large/front/a/2/a26cbfbe-fbb8-4804-b065-ab2c42ddad9b.jpg?1783909627",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a26cbfbe-fbb8-4804-b065-ab2c42ddad9b.jpg?1783909627"
+          },
+          "artist": "Volkan Baǵa"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1162,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ace8e88e-ca6a-4bdf-8c6d-1b914fc00259",
+      "scryfallId": "ee68d390-11cb-4617-a9ee-6e8cf7ff0e55",
+      "name": "Monologue Tax",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Monologue Tax",
+          "manaCost": "{2}{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "Whenever an opponent casts their second spell each turn, you create a Treasure token.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/e/ee68d390-11cb-4617-a9ee-6e8cf7ff0e55.jpg?1783903246",
+            "large": "https://cards.scryfall.io/large/front/e/e/ee68d390-11cb-4617-a9ee-6e8cf7ff0e55.jpg?1783903246",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/ee68d390-11cb-4617-a9ee-6e8cf7ff0e55.jpg?1783903246"
+          },
+          "artist": "Vilhelmas Banys"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Treasure"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1011,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Monologue Tax",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "89ed0598-a3ee-4d14-9a35-25e0dd80d9fb",
+      "scryfallId": "0555e095-8c6f-4436-80fe-99b641fad2df",
+      "name": "Moon-Blessed Cleric",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Moon-Blessed Cleric",
+          "manaCost": "{2}{W}",
+          "typeLine": "Creature — Human Elf Cleric",
+          "oracleText": "Divine Intervention — When this creature enters, you may search your library for an enchantment card, reveal it, then shuffle and put that card on top.",
+          "power": "3",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/5/0555e095-8c6f-4436-80fe-99b641fad2df.jpg?1783909642",
+            "large": "https://cards.scryfall.io/large/front/0/5/0555e095-8c6f-4436-80fe-99b641fad2df.jpg?1783909642",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/5/0555e095-8c6f-4436-80fe-99b641fad2df.jpg?1783909642"
+          },
+          "artist": "Mark Poole"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1979,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b8ee0dfc-f588-43b6-ab96-f3a3c58a8a3d",
+      "scryfallId": "c03c1ad6-3122-4267-80d6-94ecf1ff3884",
+      "name": "Nightmare Shepherd",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Nightmare Shepherd",
+          "manaCost": "{2}{B}{B}",
+          "typeLine": "Enchantment Creature — Demon",
+          "oracleText": "Flying\nWhenever another nontoken creature you control dies, you may exile it. If you do, create a token that's a copy of that creature, except it's 1/1 and it's a Nightmare in addition to its other types.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/0/c03c1ad6-3122-4267-80d6-94ecf1ff3884.jpg?1783909617",
+            "large": "https://cards.scryfall.io/large/front/c/0/c03c1ad6-3122-4267-80d6-94ecf1ff3884.jpg?1783909617",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c03c1ad6-3122-4267-80d6-94ecf1ff3884.jpg?1783909617"
+          },
+          "artist": "Tyler Jacobson"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4526,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Copy",
+          "component": "token"
+        },
+        {
+          "name": "Nightmare Shepherd",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "dc31a6f8-6228-4a25-b937-5d8d78514333",
+      "scryfallId": "d8eaf8d2-8029-49d9-a94b-a72dc31fc81f",
+      "name": "Obscura Storefront",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Obscura Storefront",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "When this land enters, sacrifice it. When you do, search your library for a basic Plains, Island, or Swamp card, put it onto the battlefield tapped, then shuffle and you gain 1 life.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/8/d8eaf8d2-8029-49d9-a94b-a72dc31fc81f.jpg?1783909570",
+            "large": "https://cards.scryfall.io/large/front/d/8/d8eaf8d2-8029-49d9-a94b-a72dc31fc81f.jpg?1783909570",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/8/d8eaf8d2-8029-49d9-a94b-a72dc31fc81f.jpg?1783909570"
+          },
+          "artist": "Muhammad Firdaus"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1753,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "d2ae893f-52af-4645-8712-d62fb78f901e",
+      "scryfallId": "ee1c6432-54d7-4b57-a554-f7194d74e03c",
+      "name": "Ondu Spiritdancer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ondu Spiritdancer",
+          "manaCost": "{4}{W}",
+          "typeLine": "Creature — Kor Cleric",
+          "oracleText": "Whenever an enchantment you control enters, you may create a token that's a copy of it. Do this only once each turn.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/e/ee1c6432-54d7-4b57-a554-f7194d74e03c.jpg?1783909632",
+            "large": "https://cards.scryfall.io/large/front/e/e/ee1c6432-54d7-4b57-a554-f7194d74e03c.jpg?1783909632",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/ee1c6432-54d7-4b57-a554-f7194d74e03c.jpg?1783909632"
+          },
+          "artist": "Tran Nguyen"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1727,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Copy",
+          "component": "token"
+        },
+        {
+          "name": "Ondu Spiritdancer",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "06bb4272-25d1-46db-8585-15f919267e1e",
+      "scryfallId": "1c85ae22-ccd0-4649-a736-1915043daae7",
+      "name": "One with the Multiverse",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "One with the Multiverse",
+          "manaCost": "{6}{U}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "You may look at the top card of your library any time.\nYou may play lands and cast spells from the top of your library.\nOnce during each of your turns, you may cast a spell from your hand or the top of your library without paying its mana cost.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/c/1c85ae22-ccd0-4649-a736-1915043daae7.jpg?1783909627",
+            "large": "https://cards.scryfall.io/large/front/1/c/1c85ae22-ccd0-4649-a736-1915043daae7.jpg?1783909627",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/c/1c85ae22-ccd0-4649-a736-1915043daae7.jpg?1783909627"
+          },
+          "artist": "Liiga Smilshkalne"
+        }
+      ],
+      "cmc": 8,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2042,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "aa00ae0b-7c0f-427e-8102-ce0e2a6af5df",
+      "scryfallId": "9c7c08fc-b6ee-498c-8ab6-fd6be27c9d97",
+      "name": "Orzhov Basilica",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Orzhov Basilica",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {W}{B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/c/9c7c08fc-b6ee-498c-8ab6-fd6be27c9d97.jpg?1783909569",
+            "large": "https://cards.scryfall.io/large/front/9/c/9c7c08fc-b6ee-498c-8ab6-fd6be27c9d97.jpg?1783909569",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9c7c08fc-b6ee-498c-8ab6-fd6be27c9d97.jpg?1783909569"
+          },
+          "artist": "John Avon"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 431,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "de3dcb5d-775a-479f-99f5-d1883ed9b1b5",
+      "scryfallId": "90894726-1940-4291-a05c-b85cefbfa344",
+      "name": "Orzhov Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Orzhov Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{1}, {T}: Add {W}{B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/0/90894726-1940-4291-a05c-b85cefbfa344.jpg?1783907008",
+            "large": "https://cards.scryfall.io/large/front/9/0/90894726-1940-4291-a05c-b85cefbfa344.jpg?1783907008",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/90894726-1940-4291-a05c-b85cefbfa344.jpg?1783907008"
+          },
+          "artist": "Martina Pilcerova"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 191,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "be668c2d-71ea-4346-8980-1fbf5e4cbed3",
+      "scryfallId": "40bafd2b-acd4-46f0-abb2-139e2918ae99",
+      "name": "Otherworldly Gaze",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Otherworldly Gaze",
+          "manaCost": "{U}",
+          "typeLine": "Instant",
+          "oracleText": "Surveil 3. (Look at the top three cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nFlashback {1}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/0/40bafd2b-acd4-46f0-abb2-139e2918ae99.jpg?1783909625",
+            "large": "https://cards.scryfall.io/large/front/4/0/40bafd2b-acd4-46f0-abb2-139e2918ae99.jpg?1783909625",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40bafd2b-acd4-46f0-abb2-139e2918ae99.jpg?1783909625"
+          },
+          "artist": "Chris Cold"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Surveil",
+        "Flashback"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2493,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "cc9088c4-6f6b-4a1a-90f1-794eb1e938c6",
+      "scryfallId": "57195155-6bdf-43c3-9f2e-11c31aef6b9c",
+      "name": "Phenomenon Investigators",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Phenomenon Investigators",
+          "manaCost": "{2}{U}{B}",
+          "typeLine": "Creature — Human Detective",
+          "oracleText": "As this creature enters, choose Believe or Doubt.\n• Believe — Whenever a nontoken creature you control dies, create a 2/2 black Horror enchantment creature token.\n• Doubt — At the beginning of your end step, you may return a nonland permanent you own to your hand. If you do, draw a card.",
+          "power": "3",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/7/57195155-6bdf-43c3-9f2e-11c31aef6b9c.jpg?1794587813",
+            "large": "https://cards.scryfall.io/large/front/5/7/57195155-6bdf-43c3-9f2e-11c31aef6b9c.jpg?1794587813",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/7/57195155-6bdf-43c3-9f2e-11c31aef6b9c.jpg?1794587813"
+          },
+          "artist": "Viko Menezes"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "B",
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 17524,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Horror",
+          "component": "token"
+        },
+        {
+          "name": "Phenomenon Investigators",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "bc71ebf6-2056-41f7-be35-b2e5c34afa99",
+      "scryfallId": "09ac862f-0a51-44dd-b86f-9412b8218b13",
+      "name": "Plains",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Plains",
+          "manaCost": "",
+          "typeLine": "Basic Land — Plains",
+          "oracleText": "({T}: Add {W}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/9/09ac862f-0a51-44dd-b86f-9412b8218b13.jpg?1791578423",
+            "large": "https://cards.scryfall.io/large/front/0/9/09ac862f-0a51-44dd-b86f-9412b8218b13.jpg?1791578423",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/9/09ac862f-0a51-44dd-b86f-9412b8218b13.jpg?1791578423"
+          },
+          "artist": "Shahab Alizadeh"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "02090581-61aa-4348-ad57-451be8ee91c2",
+      "scryfallId": "0cb673af-dae0-478c-a5d3-b697338f6c0e",
+      "name": "Ponder",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ponder",
+          "manaCost": "{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/c/0cb673af-dae0-478c-a5d3-b697338f6c0e.jpg?1793281344",
+            "large": "https://cards.scryfall.io/large/front/0/c/0cb673af-dae0-478c-a5d3-b697338f6c0e.jpg?1793281344",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0cb673af-dae0-478c-a5d3-b697338f6c0e.jpg?1793281344"
+          },
+          "artist": "Berto Martinez"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 148,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Ponder",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Preponderant Pearl",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "e744dbb6-2d56-462a-8d49-d79c73944048",
+      "scryfallId": "5b360632-9c81-4b9c-8b9f-ac0b51c974a0",
+      "name": "Portent",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Portent",
+          "manaCost": "{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle.\nDraw a card at the beginning of the next turn's upkeep.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/b/5b360632-9c81-4b9c-8b9f-ac0b51c974a0.jpg?1783909642",
+            "large": "https://cards.scryfall.io/large/front/5/b/5b360632-9c81-4b9c-8b9f-ac0b51c974a0.jpg?1783909642",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/b/5b360632-9c81-4b9c-8b9f-ac0b51c974a0.jpg?1783909642"
+          },
+          "artist": "Bartek Fedyczak"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4283,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "92c470c9-1373-4f3a-9805-5e9613874793",
+      "scryfallId": "d9d36763-2975-4b5c-aeda-2d0159cb5191",
+      "name": "Prognostic Sphinx",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Prognostic Sphinx",
+          "manaCost": "{3}{U}{U}",
+          "typeLine": "Creature — Sphinx",
+          "oracleText": "Flying\nDiscard a card: This creature gains hexproof until end of turn. Tap it.\nWhenever this creature attacks, scry 3.",
+          "power": "3",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/9/d9d36763-2975-4b5c-aeda-2d0159cb5191.jpg?1783909624",
+            "large": "https://cards.scryfall.io/large/front/d/9/d9d36763-2975-4b5c-aeda-2d0159cb5191.jpg?1783909624",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/9/d9d36763-2975-4b5c-aeda-2d0159cb5191.jpg?1783909624"
+          },
+          "artist": "Jesper Ejsing"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Scry",
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 9444,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5bf4d8d9-a2b2-4dba-ac05-9d4470a89db2",
+      "scryfallId": "f411a143-2580-4358-b46e-d390cdba965f",
+      "name": "Read the Bones",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Read the Bones",
+          "manaCost": "{2}{B}",
+          "typeLine": "Sorcery",
+          "oracleText": "Scry 2, then draw two cards. You lose 2 life. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/4/f411a143-2580-4358-b46e-d390cdba965f.jpg?1783908713",
+            "large": "https://cards.scryfall.io/large/front/f/4/f411a143-2580-4358-b46e-d390cdba965f.jpg?1783908713",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f411a143-2580-4358-b46e-d390cdba965f.jpg?1783908713"
+          },
+          "artist": "Lars Grant-West"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Scry"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 500,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e8ff6780-5f22-42fa-a7c1-7406e8203063",
+      "scryfallId": "19f56096-f692-4719-af38-6a4955f2b65c",
+      "name": "Redress Fate",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Redress Fate",
+          "manaCost": "{6}{W}{W}",
+          "typeLine": "Sorcery",
+          "oracleText": "Return all artifact and enchantment cards from your graveyard to the battlefield.\nMiracle {3}{W} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/9/19f56096-f692-4719-af38-6a4955f2b65c.jpg?1783909662",
+            "large": "https://cards.scryfall.io/large/front/1/9/19f56096-f692-4719-af38-6a4955f2b65c.jpg?1783909662",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/9/19f56096-f692-4719-af38-6a4955f2b65c.jpg?1783909662"
+          },
+          "artist": "Julie Dillon"
+        }
+      ],
+      "cmc": 8,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Miracle"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3991,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3029df1d-d02a-4fed-8ab4-000a2096f823",
+      "scryfallId": "3e8e99f7-749f-4270-8732-2bc27f27f339",
+      "name": "Return to Dust",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Return to Dust",
+          "manaCost": "{2}{W}{W}",
+          "typeLine": "Instant",
+          "oracleText": "Exile target artifact or enchantment. If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/e/3e8e99f7-749f-4270-8732-2bc27f27f339.jpg?1793021056",
+            "large": "https://cards.scryfall.io/large/front/3/e/3e8e99f7-749f-4270-8732-2bc27f27f339.jpg?1793021056",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3e8e99f7-749f-4270-8732-2bc27f27f339.jpg?1793021056"
+          },
+          "artist": "Lordigan"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1667,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c8abde48-a07a-42a0-a43b-c357e6d9cad4",
+      "scryfallId": "fe050c16-9be5-42ef-988f-0531a8bb2352",
+      "name": "Secret Arcade // Dusty Parlor",
+      "layout": "split",
+      "faces": [
+        {
+          "name": "Secret Arcade",
+          "manaCost": "{4}{W}",
+          "typeLine": "Enchantment — Room",
+          "oracleText": "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/e/fe050c16-9be5-42ef-988f-0531a8bb2352.jpg?1783909661",
+            "large": "https://cards.scryfall.io/large/front/f/e/fe050c16-9be5-42ef-988f-0531a8bb2352.jpg?1783909661",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe050c16-9be5-42ef-988f-0531a8bb2352.jpg?1783909661"
+          },
+          "artist": "Arthur Yuan"
+        },
+        {
+          "name": "Dusty Parlor",
+          "manaCost": "{2}{W}",
+          "typeLine": "Enchantment — Room",
+          "oracleText": "Whenever you cast an enchantment spell, put a number of +1/+1 counters equal to that spell's mana value on up to one target creature.\n(You may cast either half. That door unlocks on the battlefield. As a sorcery, you may pay the mana cost of a locked door to unlock it.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/e/fe050c16-9be5-42ef-988f-0531a8bb2352.jpg?1783909661",
+            "large": "https://cards.scryfall.io/large/front/f/e/fe050c16-9be5-42ef-988f-0531a8bb2352.jpg?1783909661",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe050c16-9be5-42ef-988f-0531a8bb2352.jpg?1783909661"
+          },
+          "artist": "Arthur Yuan"
+        }
+      ],
+      "cmc": 8,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4758,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8c0520fa-276b-4d21-b4a9-dce1fce59f6b",
+      "scryfallId": "605ca3c0-7c9a-4bc1-9795-82aeb6f552ee",
+      "name": "Shark Typhoon",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Shark Typhoon",
+          "manaCost": "{5}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "Whenever you cast a noncreature spell, create an X/X blue Shark creature token with flying, where X is that spell's mana value.\nCycling {X}{1}{U} ({X}{1}{U}, Discard this card: Draw a card.)\nWhen you cycle this card, create an X/X blue Shark creature token with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/0/605ca3c0-7c9a-4bc1-9795-82aeb6f552ee.jpg?1789599836",
+            "large": "https://cards.scryfall.io/large/front/6/0/605ca3c0-7c9a-4bc1-9795-82aeb6f552ee.jpg?1789599836",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/605ca3c0-7c9a-4bc1-9795-82aeb6f552ee.jpg?1789599836"
+          },
+          "artist": "Caio Monteiro"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Cycling"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1230,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Shark Typhoon",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Shark",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "3b9b5b22-5a7d-4e37-a870-ca0f0efa4f36",
+      "scryfallId": "6875be24-1515-488f-a899-929c8e480dfd",
+      "name": "Sigil of the Empty Throne",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sigil of the Empty Throne",
+          "manaCost": "{3}{W}{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "Whenever you cast an enchantment spell, create a 4/4 white Angel creature token with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/8/6875be24-1515-488f-a899-929c8e480dfd.jpg?1783909633",
+            "large": "https://cards.scryfall.io/large/front/6/8/6875be24-1515-488f-a899-929c8e480dfd.jpg?1783909633",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/8/6875be24-1515-488f-a899-929c8e480dfd.jpg?1783909633"
+          },
+          "artist": "Cyril Van Der Haegen"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1493,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Sigil of the Empty Throne",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Angel",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "65ea7eb1-751b-4ecd-83cb-e9b6015ec194",
+      "scryfallId": "fc7895bf-a5fe-45bd-bc57-c4abe0703900",
+      "name": "Soaring Lightbringer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Soaring Lightbringer",
+          "manaCost": "{4}{W}",
+          "typeLine": "Enchantment Creature — Bird Glimmer",
+          "oracleText": "Flying\nOther enchantment creatures you control have flying.\nWhenever you attack a player, create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player.",
+          "power": "4",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/c/fc7895bf-a5fe-45bd-bc57-c4abe0703900.jpg?1783909663",
+            "large": "https://cards.scryfall.io/large/front/f/c/fc7895bf-a5fe-45bd-bc57-c4abe0703900.jpg?1783909663",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/c/fc7895bf-a5fe-45bd-bc57-c4abe0703900.jpg?1783909663"
+          },
+          "artist": "Michele Giorgi"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4253,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Soaring Lightbringer",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Glimmer",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "6ad8011d-3471-4369-9d68-b264cc027487",
+      "scryfallId": "fc817e07-c1f3-469f-9cf7-0945dea7400f",
+      "name": "Sol Ring",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sol Ring",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}{C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/c/fc817e07-c1f3-469f-9cf7-0945dea7400f.jpg?1793021181",
+            "large": "https://cards.scryfall.io/large/front/f/c/fc817e07-c1f3-469f-9cf7-0945dea7400f.jpg?1793021181",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/c/fc817e07-c1f3-469f-9cf7-0945dea7400f.jpg?1793021181"
+          },
+          "artist": "Hector Ortiz"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "00c0543c-2a1f-4425-8283-4062d74a1637",
+      "scryfallId": "daafd816-f7c1-4630-9e5c-a1e5db570a35",
+      "name": "Solemn Simulacrum",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Solemn Simulacrum",
+          "manaCost": "{4}",
+          "typeLine": "Artifact Creature — Golem",
+          "oracleText": "When this creature enters, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.\nWhen this creature dies, you may draw a card.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/a/daafd816-f7c1-4630-9e5c-a1e5db570a35.jpg?1783903212",
+            "large": "https://cards.scryfall.io/large/front/d/a/daafd816-f7c1-4630-9e5c-a1e5db570a35.jpg?1783903212",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/a/daafd816-f7c1-4630-9e5c-a1e5db570a35.jpg?1783903212"
+          },
+          "artist": "Flavio Greco Paglia"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 44,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "92f6c063-a740-4c3c-a60a-569fd298854d",
+      "scryfallId": "5c4e3031-ffc2-4d4d-a9f9-e85820059315",
+      "name": "Sphere of Safety",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sphere of Safety",
+          "manaCost": "{4}{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/c/5c4e3031-ffc2-4d4d-a9f9-e85820059315.jpg?1783909633",
+            "large": "https://cards.scryfall.io/large/front/5/c/5c4e3031-ffc2-4d4d-a9f9-e85820059315.jpg?1783909633",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/c/5c4e3031-ffc2-4d4d-a9f9-e85820059315.jpg?1783909633"
+          },
+          "artist": "Slawomir Maniak"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 697,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "83914a83-4de2-4d64-9770-f68a12014167",
+      "scryfallId": "bc495d03-9340-47cd-afc2-82a1677e69df",
+      "name": "Spirit-Sister's Call",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Spirit-Sister's Call",
+          "manaCost": "{3}{W}{B}",
+          "typeLine": "Enchantment",
+          "oracleText": "At the beginning of your end step, choose target permanent card in your graveyard. You may sacrifice a permanent that shares a card type with the chosen card. If you do, return the chosen card from your graveyard to the battlefield and it gains \"If this permanent would leave the battlefield, exile it instead of putting it anywhere else.\"",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/c/bc495d03-9340-47cd-afc2-82a1677e69df.jpg?1783909590",
+            "large": "https://cards.scryfall.io/large/front/b/c/bc495d03-9340-47cd-afc2-82a1677e69df.jpg?1783909590",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc495d03-9340-47cd-afc2-82a1677e69df.jpg?1783909590"
+          },
+          "artist": "Dominik Mayer"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 13340,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "2975590d-6a5b-41e5-8a3b-e9325e71226a",
+      "scryfallId": "e8f2fcb4-8d06-49ac-9c70-9c54d77c6d86",
+      "name": "Starfield Mystic",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Starfield Mystic",
+          "manaCost": "{1}{W}",
+          "typeLine": "Creature — Human Cleric",
+          "oracleText": "Enchantment spells you cast cost {1} less to cast.\nWhenever an enchantment you control is put into a graveyard from the battlefield, put a +1/+1 counter on this creature.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/8/e8f2fcb4-8d06-49ac-9c70-9c54d77c6d86.jpg?1783903798",
+            "large": "https://cards.scryfall.io/large/front/e/8/e8f2fcb4-8d06-49ac-9c70-9c54d77c6d86.jpg?1783903798",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e8f2fcb4-8d06-49ac-9c70-9c54d77c6d86.jpg?1783903798"
+          },
+          "artist": "Eric Deschamps"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1264,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "56719f6a-1a6c-4c0a-8d21-18f7d7350b68",
+      "scryfallId": "b233b117-9369-45c1-80c5-cc857386b6be",
+      "name": "Swamp",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Swamp",
+          "manaCost": "",
+          "typeLine": "Basic Land — Swamp",
+          "oracleText": "({T}: Add {B}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/2/b233b117-9369-45c1-80c5-cc857386b6be.jpg?1791578437",
+            "large": "https://cards.scryfall.io/large/front/b/2/b233b117-9369-45c1-80c5-cc857386b6be.jpg?1791578437",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b233b117-9369-45c1-80c5-cc857386b6be.jpg?1791578437"
+          },
+          "artist": "Maojin Lee"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b1544f21-7e98-461b-aed5-e748b0168c52",
+      "scryfallId": "4645eebf-c9fc-4ee7-b646-61dc1205b4b0",
+      "name": "Swords to Plowshares",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Swords to Plowshares",
+          "manaCost": "{W}",
+          "typeLine": "Instant",
+          "oracleText": "Exile target creature. Its controller gains life equal to its power.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/6/4645eebf-c9fc-4ee7-b646-61dc1205b4b0.jpg?1793111861",
+            "large": "https://cards.scryfall.io/large/front/4/6/4645eebf-c9fc-4ee7-b646-61dc1205b4b0.jpg?1793111861",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/4645eebf-c9fc-4ee7-b646-61dc1205b4b0.jpg?1793111861"
+          },
+          "artist": "Pablo Mendoza"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 11,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "439de49b-1091-4688-9ffb-80a025df31c2",
+      "scryfallId": "c6eeab6f-a738-4005-91c2-a5f81df5c569",
+      "name": "Tainted Field",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Tainted Field",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {B}. Activate only if you control a Swamp.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/6/c6eeab6f-a738-4005-91c2-a5f81df5c569.jpg?1783909567",
+            "large": "https://cards.scryfall.io/large/front/c/6/c6eeab6f-a738-4005-91c2-a5f81df5c569.jpg?1783909567",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c6eeab6f-a738-4005-91c2-a5f81df5c569.jpg?1783909567"
+          },
+          "artist": "Alayna Danner"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "C",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 461,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0222414f-98b5-458a-a0fd-831a66cd8b07",
+      "scryfallId": "70e8e7e2-e9ea-4358-805e-c5110c8d8443",
+      "name": "Tainted Isle",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Tainted Isle",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {B}. Activate only if you control a Swamp.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/0/70e8e7e2-e9ea-4358-805e-c5110c8d8443.jpg?1783909566",
+            "large": "https://cards.scryfall.io/large/front/7/0/70e8e7e2-e9ea-4358-805e-c5110c8d8443.jpg?1783909566",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/70e8e7e2-e9ea-4358-805e-c5110c8d8443.jpg?1783909566"
+          },
+          "artist": "Alan Pollack"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "C",
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 542,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "192f3c8a-1120-4f7f-ae0f-fe9bde59cd08",
+      "scryfallId": "c2616749-699b-4928-8984-aba630d3397a",
+      "name": "Telling Time",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Telling Time",
+          "manaCost": "{1}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Look at the top three cards of your library. Put one of those cards into your hand, one on top of your library, and one on the bottom of your library.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/2/c2616749-699b-4928-8984-aba630d3397a.jpg?1783909641",
+            "large": "https://cards.scryfall.io/large/front/c/2/c2616749-699b-4928-8984-aba630d3397a.jpg?1783909641",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/2/c2616749-699b-4928-8984-aba630d3397a.jpg?1783909641"
+          },
+          "artist": "L.A. Draws"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6094,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "33b9b3bd-33ca-46f3-b8bb-a978bc3d1085",
+      "scryfallId": "e18748ce-e52e-4cd1-89d4-cd2578a0d574",
+      "name": "Temple of Deceit",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Temple of Deceit",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {U} or {B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/1/e18748ce-e52e-4cd1-89d4-cd2578a0d574.jpg?1783908897",
+            "large": "https://cards.scryfall.io/large/front/e/1/e18748ce-e52e-4cd1-89d4-cd2578a0d574.jpg?1783908897",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e18748ce-e52e-4cd1-89d4-cd2578a0d574.jpg?1783908897"
+          },
+          "artist": "Jonas De Ro"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "U"
+      ],
+      "keywords": [
+        "Scry"
+      ],
+      "producedMana": [
+        "B",
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 378,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "89f43e27-790b-4ca1-8ba7-0882b31e0783",
+      "scryfallId": "f8509382-b2f1-4b1d-98e5-4f622bebd9a4",
+      "name": "Temple of Enlightenment",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Temple of Enlightenment",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/8/f8509382-b2f1-4b1d-98e5-4f622bebd9a4.jpg?1795411060",
+            "large": "https://cards.scryfall.io/large/front/f/8/f8509382-b2f1-4b1d-98e5-4f622bebd9a4.jpg?1795411060",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/8/f8509382-b2f1-4b1d-98e5-4f622bebd9a4.jpg?1795411060"
+          },
+          "artist": "David Álvarez"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Scry"
+      ],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 321,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e6e6fce8-0f6a-4b84-865e-d4e4a4182f9f",
+      "scryfallId": "f7d3770f-cde6-4e29-8cbf-fe841634a5d7",
+      "name": "Temple of Silence",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Temple of Silence",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {W} or {B}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/7/f7d3770f-cde6-4e29-8cbf-fe841634a5d7.jpg?1783903716",
+            "large": "https://cards.scryfall.io/large/front/f/7/f7d3770f-cde6-4e29-8cbf-fe841634a5d7.jpg?1783903716",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f7d3770f-cde6-4e29-8cbf-fe841634a5d7.jpg?1783903716"
+          },
+          "artist": "Karl Kopinski"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [
+        "Scry"
+      ],
+      "producedMana": [
+        "B",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 314,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3dd196b6-a85a-4e3e-bb57-ec34241f8117",
+      "scryfallId": "4c53c684-37f9-4b95-88be-a42b9600c47c",
+      "name": "Terminus",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Terminus",
+          "manaCost": "{4}{W}{W}",
+          "typeLine": "Sorcery",
+          "oracleText": "Put all creatures on the bottom of their owners' libraries.\nMiracle {W} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/c/4c53c684-37f9-4b95-88be-a42b9600c47c.jpg?1783909643",
+            "large": "https://cards.scryfall.io/large/front/4/c/4c53c684-37f9-4b95-88be-a42b9600c47c.jpg?1783909643",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4c53c684-37f9-4b95-88be-a42b9600c47c.jpg?1783909643"
+          },
+          "artist": "Jarel Threat"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Miracle"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5319,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "1bd3e453-aa21-4ee6-95c2-d6d920ee8e7a",
+      "scryfallId": "58ebd718-982d-4370-b4af-ef49b978d97d",
+      "name": "Terramorphic Expanse",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Terramorphic Expanse",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/8/58ebd718-982d-4370-b4af-ef49b978d97d.jpg?1793021389",
+            "large": "https://cards.scryfall.io/large/front/5/8/58ebd718-982d-4370-b4af-ef49b978d97d.jpg?1793021389",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/8/58ebd718-982d-4370-b4af-ef49b978d97d.jpg?1793021389"
+          },
+          "artist": "Tomáš Honz"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 30,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "44ed4c0c-a012-4895-a547-b04150553bba",
+      "scryfallId": "4d29351e-5608-40e8-8220-6c9635d48ad4",
+      "name": "The Eldest Reborn",
+      "layout": "saga",
+      "faces": [
+        {
+          "name": "The Eldest Reborn",
+          "manaCost": "{4}{B}",
+          "typeLine": "Enchantment — Saga",
+          "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Each opponent sacrifices a creature or planeswalker of their choice.\nII — Each opponent discards a card.\nIII — Put target creature or planeswalker card from a graveyard onto the battlefield under your control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/d/4d29351e-5608-40e8-8220-6c9635d48ad4.jpg?1783909619",
+            "large": "https://cards.scryfall.io/large/front/4/d/4d29351e-5608-40e8-8220-6c9635d48ad4.jpg?1783909619",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4d29351e-5608-40e8-8220-6c9635d48ad4.jpg?1783909619"
+          },
+          "artist": "Ravenna Tran"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2069,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "37dc566e-a91a-448c-9967-b178a93ffb62",
+      "scryfallId": "3545341b-dacc-4ac8-976e-39754a62bbc3",
+      "name": "The Master of Keys",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "The Master of Keys",
+          "manaCost": "{X}{W}{U}{B}",
+          "typeLine": "Legendary Enchantment Creature — Horror",
+          "oracleText": "Flying\nWhen The Master of Keys enters, put X +1/+1 counters on it and mill twice X cards.\nEach enchantment card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/5/3545341b-dacc-4ac8-976e-39754a62bbc3.jpg?1783909663",
+            "large": "https://cards.scryfall.io/large/front/3/5/3545341b-dacc-4ac8-976e-39754a62bbc3.jpg?1783909663",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/5/3545341b-dacc-4ac8-976e-39754a62bbc3.jpg?1783909663"
+          },
+          "artist": "Wisnu Tan"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "B",
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying",
+        "Mill"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5752,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "70e58068-90d2-4720-a11c-5d243046b4a3",
+      "scryfallId": "b91bd773-b36b-4a7a-a9e4-3a07cff90646",
+      "name": "Thirst for Meaning",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thirst for Meaning",
+          "manaCost": "{2}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Draw three cards. Then discard two cards unless you discard an enchantment card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/9/b91bd773-b36b-4a7a-a9e4-3a07cff90646.jpg?1783909622",
+            "large": "https://cards.scryfall.io/large/front/b/9/b91bd773-b36b-4a7a-a9e4-3a07cff90646.jpg?1783909622",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/9/b91bd773-b36b-4a7a-a9e4-3a07cff90646.jpg?1783909622"
+          },
+          "artist": "Brian Valeza"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 8506,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "d1946630-e224-40db-8f0d-388b09622288",
+      "scryfallId": "bb089097-1eed-4e72-a715-579ddd8307a0",
+      "name": "Thriving Heath",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thriving Heath",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped. As it enters, choose a color other than white.\n{T}: Add {W} or one mana of the chosen color.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/b/bb089097-1eed-4e72-a715-579ddd8307a0.jpg?1783903089",
+            "large": "https://cards.scryfall.io/large/front/b/b/bb089097-1eed-4e72-a715-579ddd8307a0.jpg?1783903089",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/b/bb089097-1eed-4e72-a715-579ddd8307a0.jpg?1783903089"
+          },
+          "artist": "Pablo Mendoza"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1106,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "69fc70b8-b143-4662-ac95-e2743037239d",
+      "scryfallId": "58a3b5a5-eba0-4b4e-869a-5387ec7dd2b8",
+      "name": "Thriving Isle",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thriving Isle",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped. As it enters, choose a color other than blue.\n{T}: Add {U} or one mana of the chosen color.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/8/58a3b5a5-eba0-4b4e-869a-5387ec7dd2b8.jpg?1783903089",
+            "large": "https://cards.scryfall.io/large/front/5/8/58a3b5a5-eba0-4b4e-869a-5387ec7dd2b8.jpg?1783903089",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/8/58a3b5a5-eba0-4b4e-869a-5387ec7dd2b8.jpg?1783903089"
+          },
+          "artist": "Pablo Mendoza"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1017,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "bff416bb-d193-4c45-b2c1-7c297dbfad08",
+      "scryfallId": "5d5eea5f-b9e8-4a10-8e7f-c42493a728cd",
+      "name": "Thriving Moor",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thriving Moor",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped. As it enters, choose a color other than black.\n{T}: Add {B} or one mana of the chosen color.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/d/5d5eea5f-b9e8-4a10-8e7f-c42493a728cd.jpg?1783903088",
+            "large": "https://cards.scryfall.io/large/front/5/d/5d5eea5f-b9e8-4a10-8e7f-c42493a728cd.jpg?1783903088",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/d/5d5eea5f-b9e8-4a10-8e7f-c42493a728cd.jpg?1783903088"
+          },
+          "artist": "Pablo Mendoza"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1231,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "36c78a5f-0148-4596-a346-f8e35037b694",
+      "scryfallId": "eb4b75e6-3080-412b-bf40-b6029ea8bbfe",
+      "name": "Time Wipe",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Time Wipe",
+          "manaCost": "{2}{W}{W}{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Return a creature you control to its owner's hand, then destroy all creatures.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/b/eb4b75e6-3080-412b-bf40-b6029ea8bbfe.jpg?1783907017",
+            "large": "https://cards.scryfall.io/large/front/e/b/eb4b75e6-3080-412b-bf40-b6029ea8bbfe.jpg?1783907017",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/eb4b75e6-3080-412b-bf40-b6029ea8bbfe.jpg?1783907017"
+          },
+          "artist": "Svetlin Velinov"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1498,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8e589dca-d31e-4d2f-81b1-18e5f9198795",
+      "scryfallId": "d61f8db1-0148-47bd-ae97-9aedccb83813",
+      "name": "Timely Ward",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Timely Ward",
+          "manaCost": "{2}{W}",
+          "typeLine": "Enchantment — Aura",
+          "oracleText": "You may cast this spell as though it had flash if it targets a commander.\nEnchant creature\nEnchanted creature has indestructible.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/6/d61f8db1-0148-47bd-ae97-9aedccb83813.jpg?1783909630",
+            "large": "https://cards.scryfall.io/large/front/d/6/d61f8db1-0148-47bd-ae97-9aedccb83813.jpg?1783909630",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d61f8db1-0148-47bd-ae97-9aedccb83813.jpg?1783909630"
+          },
+          "artist": "Matt Stewart"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Enchant"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1794,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "857febd9-cdd7-4f8e-a852-d88084b0cfbc",
+      "scryfallId": "e0747d8a-c878-496f-bdb0-0dddae536e7c",
+      "name": "Underground River",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Underground River",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {B}. This land deals 1 damage to you.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/0/e0747d8a-c878-496f-bdb0-0dddae536e7c.jpg?1793021401",
+            "large": "https://cards.scryfall.io/large/front/e/0/e0747d8a-c878-496f-bdb0-0dddae536e7c.jpg?1793021401",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/0/e0747d8a-c878-496f-bdb0-0dddae536e7c.jpg?1793021401"
+          },
+          "artist": "Piotr Dura"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "B",
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "C",
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 139,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "cba94732-1f1f-4ffd-9aba-45db990043fa",
+      "scryfallId": "1819a0af-0775-431d-9637-13f8f10830f5",
+      "name": "Utter End",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Utter End",
+          "manaCost": "{2}{W}{B}",
+          "typeLine": "Instant",
+          "oracleText": "Exile target nonland permanent.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "B",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/8/1819a0af-0775-431d-9637-13f8f10830f5.jpg?1783909636",
+            "large": "https://cards.scryfall.io/large/front/1/8/1819a0af-0775-431d-9637-13f8f10830f5.jpg?1783909636",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/1819a0af-0775-431d-9637-13f8f10830f5.jpg?1783909636"
+          },
+          "artist": "Nicholas Gregory"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "B",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1804,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "aece819e-3678-48bc-9677-d06ebfa58b4e",
+      "scryfallId": "c63a5253-b3b7-48d0-8c2c-700fbd0e4c3f",
+      "name": "Verge Rangers",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Verge Rangers",
+          "manaCost": "{2}{W}",
+          "typeLine": "Creature — Human Scout Ranger",
+          "oracleText": "First strike\nYou may look at the top card of your library any time.\nAs long as an opponent controls more lands than you, you may play lands from the top of your library. (You can play a land this way only if you have an available land play remaining.)",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/6/c63a5253-b3b7-48d0-8c2c-700fbd0e4c3f.jpg?1783909629",
+            "large": "https://cards.scryfall.io/large/front/c/6/c63a5253-b3b7-48d0-8c2c-700fbd0e4c3f.jpg?1783909629",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c63a5253-b3b7-48d0-8c2c-700fbd0e4c3f.jpg?1783909629"
+          },
+          "artist": "Livia Prima"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "First strike"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5637,
+      "gameChanger": false,
+      "relatedParts": []
+    }
+  ]
+}
