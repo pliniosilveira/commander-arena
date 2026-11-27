@@ -1900,6 +1900,21 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
   if (!casting) return fail('No cast in progress');
   const obj = getObject(state, casting.object);
   let next: GameState = { ...state, casting: null, pending: null };
+  // CR 700.14 (Expend), 601.2h: the mana spent on this spell joins what its caster spent on spells this turn. Only a spell: mana spent on an ability is not counted.
+  const spentOnSpell = casting.activation === null ? (obj.stack?.manaSpent?.total ?? 0) : 0;
+  const spentBefore = next.turnLog.manaSpentOnSpells?.[casting.seat] ?? 0;
+  if (spentOnSpell > 0) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        manaSpentOnSpells: {
+          ...next.turnLog.manaSpentOnSpells,
+          [casting.seat]: spentBefore + spentOnSpell,
+        },
+      },
+    };
+  }
   // CR 702.40a (D-129): the spell remembers how many spells were cast this turn before it (Storm counts them),
   // and now it is one of them. A copy of a spell is not cast and is not counted (CR 707.10).
   if (obj.stack !== null) {
@@ -1998,6 +2013,9 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     ...(obj.face !== 0 ? { face: obj.face } : {}),
     ...(obj.stack?.x == null ? {} : { x: obj.stack.x }),
     ...(obj.stack?.suspended === true ? { suspended: true as const } : {}),
+    ...(spentOnSpell > 0
+      ? { expend: { before: spentBefore, after: spentBefore + spentOnSpell } }
+      : {}),
   });
   next = { ...next, turn: { ...next.turn, passedInSuccession: [] } };
   // CR 608.2g: a spell cast during resolution is the topmost object of the stack and no player receives

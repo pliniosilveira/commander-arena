@@ -3349,6 +3349,11 @@ export interface TurnLog {
   }[];
   /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
   readonly oncePerTurnGrants?: readonly ObjectId[];
+  /**
+   * CR 700.14 (Expend): the mana each player has spent to cast spells this turn, by seat (CR 601.2h: the mana actually spent, whatever the spell's cost was). Absent until a player
+   * spends mana on a spell, and a seat that spent none has no entry.
+   */
+  readonly manaSpentOnSpells?: Readonly<Record<number, number>>;
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {

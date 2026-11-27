@@ -783,6 +783,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'ringTempted',
     // CR 309.7, 701.49c: "Whenever you complete a dungeon".
     'dungeonCompleted',
+    // CR 700.14: "Whenever you expend N".
+    'expend',
     // D-598: "When this Class becomes level N" (CR 716.2).
     'classLevel',
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
@@ -3982,6 +3984,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   exerted: true,
   ringTempted: true,
   dungeonCompleted: true,
+  expend: true,
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,

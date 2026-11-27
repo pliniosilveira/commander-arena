@@ -239,6 +239,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   putIntoGraveyard: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
   ringTempted: { kind: 'ringTempted' },
   dungeonCompleted: { kind: 'dungeonCompleted' },
+  expend: { kind: 'expend', amount: 4 },
   doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
   exploits: { kind: 'exploits' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
@@ -394,6 +395,7 @@ describe('"Whenever you attack the player who has the initiative" (Loot Dispute,
     expect(triggerWording({ kind: 'dungeonCompleted' }, ctx)).toBe(
       'Whenever you complete a dungeon',
     );
+    expect(triggerWording({ kind: 'expend', amount: 6 }, ctx)).toBe('Whenever you expend 6');
   });
 });
 

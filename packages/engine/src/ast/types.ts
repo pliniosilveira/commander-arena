@@ -6484,6 +6484,12 @@ export type Trigger =
   | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
   /** "Whenever you complete a dungeon" (CR 309.7, 701.49c; the `dungeonCompleted` event): once each time the dungeon of the controller of the ability is completed. */
   | { readonly kind: 'dungeonCompleted' }
+  /**
+   * "Whenever you expend N" (CR 700.14): the controller of the ability pays a cost to cast a spell, and the mana they spent to cast spells this turn was less than `amount` before
+   * that payment and is at least `amount` after it (`TurnLog.manaSpentOnSpells`, the `expend` of the `spellCast` event). At most once a turn, since the total never goes down; it
+   * counts the mana actually spent, whatever the cost was, and the mana spent before the permanent with the ability entered.
+   */
+  | { readonly kind: 'expend'; readonly amount: number }
   /** "When this Class becomes level N" (CR 716.2, D-235): once as its level changes to `level`. */
   | { readonly kind: 'classLevel'; readonly level: number }
   /**

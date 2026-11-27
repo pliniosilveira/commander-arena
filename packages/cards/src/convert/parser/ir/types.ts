@@ -1831,6 +1831,8 @@ export interface IrTrigger extends IrNode {
   readonly exceptFirstInDrawStep?: true;
   /** 'cast': only the first spell of the kind the subject names that the actor casts each turn ("your first instant or sorcery spell each turn", CR 601.2i). */
   readonly firstOfKind?: true;
+  /** 'expend': the N of "you expend N" (CR 700.14). */
+  readonly expend?: number;
   /** 'classLevel': the level a Class became (CR 716.2). */
   readonly level?: number;
   /** 'cast' and 'sacrifice' (the latter only `you`): only while the active player is an opponent of this ability's controller (`opponent`) or is the controller (`you`, "during your turn"). */
