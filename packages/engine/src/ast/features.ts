@@ -610,6 +610,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDropThisTurn',
     // Exit from Exile deck (Stomp): "Damage can't be prevented this turn." (CR 615.12).
     'damageCantBePreventedThisTurn',
+    // Domri, Anarch of Bolas: "Creature spells you cast this turn can't be countered." (CR 101.2, 701.6a).
+    'spellsCantBeCounteredThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
     // Gatewatch Beacon: "move a loyalty counter from this artifact onto that planeswalker" (CR 122.1).
@@ -3916,6 +3918,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   blight: true,
   additionalLandDropThisTurn: true,
   damageCantBePreventedThisTurn: true,
+  spellsCantBeCounteredThisTurn: true,
   moveCountersOnto: true,
   moveCounterFromThis: true,
   forgetLoyaltyActivations: true,

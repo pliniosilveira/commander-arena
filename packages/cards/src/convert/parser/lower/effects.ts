@@ -223,6 +223,7 @@ import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SHELL_GAME_LOWERINGS } from './shell-game';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
+import { SPELLS_CANT_BE_COUNTERED_THIS_TURN_LOWERINGS } from './spells-cant-be-countered-this-turn';
 import { SQUIRRELED_G4_LOWERINGS } from './squirreled-g4';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { THEN_MAY_RETURN_LOWERINGS } from './then-may-return';
@@ -1522,6 +1523,25 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
                 kind: 'addMana',
                 mana: { kind: 'fixed', mana: Array.from({ length: count }, () => color) },
               } as Effect,
+            })),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    // "+1: Add {R} or {G}." (Domri, Anarch of Bolas, CR 106.1b, 608.2d, 605.1a): a loyalty ability is no mana ability (CR 605.1a), so it uses the stack and the color is chosen as it
+    // resolves: the engine's `chooseOne` of the colors named, each option adding the mana of that one color.
+    if (spec.what.kind === 'oneOf' && !stays) {
+      const blocked = missingFeatures(['effect:chooseOne']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseOne',
+            options: spec.what.colors.map((color) => ({
+              label: `{${color}}`,
+              effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color as ManaColor] } },
             })),
           },
         ],
@@ -3354,6 +3374,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...PLAYER_CHOOSES_ATTACKER_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...DAMAGE_UNPREVENTABLE_LOWERINGS,
+  ...SPELLS_CANT_BE_COUNTERED_THIS_TURN_LOWERINGS,
   ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
   ...CHOOSE_ONE_OF_THEM_LOWERINGS,
   ...PUT_ALL_LINKED_EXILED_LOWERINGS,

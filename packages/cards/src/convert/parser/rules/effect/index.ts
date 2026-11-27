@@ -307,6 +307,7 @@ import { SHELL_GAME_EFFECT_RULES } from './shell-game';
 import { SLIVER_D_EFFECT_RULES } from './sliver-d';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPELL_GAINS_EFFECT_RULES } from './spell-gains';
+import { SPELLS_CANT_BE_COUNTERED_THIS_TURN_EFFECT_RULES } from './spells-cant-be-countered-this-turn';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { SQUIRRELED_G4_EFFECT_RULES } from './squirreled-g4';
 import { THE_TOKEN_EFFECT_RULES } from './the-token';
@@ -1521,6 +1522,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_IT_COUNT_EFFECT_RULES,
   ...DAMAGE_THEIR_CREATURES_EFFECT_RULES,
   ...DAMAGE_UNPREVENTABLE_EFFECT_RULES,
+  ...SPELLS_CANT_BE_COUNTERED_THIS_TURN_EFFECT_RULES,
   ...DESTROY_COUNTERED_SOURCE_EFFECT_RULES,
   ...CHOOSE_ONE_OF_THEM_EFFECT_RULES,
   ...PUT_FROM_AMONG_EXILED_EFFECT_RULES,
