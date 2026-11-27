@@ -503,9 +503,14 @@ export function checkFilter(
   if (
     f.attackingOpponents !== undefined &&
     f.attackingOpponents !== true &&
-    f.attackingOpponents !== 'players'
+    f.attackingOpponents !== 'players' &&
+    f.attackingOpponents !== 'triggerAttacked'
   ) {
-    issue(out, `${path}.attackingOpponents`, "attackingOpponents must be true or 'players'");
+    issue(
+      out,
+      `${path}.attackingOpponents`,
+      "attackingOpponents must be true, 'players' or 'triggerAttacked'",
+    );
   }
   // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
   if (f.attachedTo !== undefined) {

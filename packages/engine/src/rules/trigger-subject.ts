@@ -129,6 +129,10 @@ export function readsTriggerAttacked(ability: Ability): boolean {
       JSON.stringify([ability.effect, ability.modes ?? [], ability.interveningIf ?? null]).includes(
         '"triggerAttackedPlayer"',
       ) ||
+      // CR 508.6 (Echoing Assault): a target filter "attacking that player" reads the player the declaration attacked, as the targets are chosen and again as the ability resolves.
+      JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+        '"triggerAttacked"',
+      ) ||
       // D-643: the intervening "if" reads whom each creature attacked, as the ability triggers and again as it resolves.
       JSON.stringify(ability.interveningIf ?? null).includes('"attackersAtYouAtLeast"') ||
       // D-648: the intervening "if" reads the player attacked, as the ability triggers and again as it resolves.

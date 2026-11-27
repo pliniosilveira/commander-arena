@@ -1189,6 +1189,10 @@ const PUT_CREATURE_FROM_IT_ATTACKING =
   /^you may put a creature card from it onto the battlefield under your control tapped and attacking that player or a planeswalker they control\.$/i;
 const CREATE_NAMED_TOKEN = /(?:^|, )create [^.]*, a legendary [^.]* creature token(?: [^.]*)?\.$/i;
 const NAMED_TOKEN_ENTERS_TAPPED_ATTACKING = /^[^.]+ enters tapped and attacking\.$/i;
+/** "Create a token that's a copy of that creature, except it's 1/1. The token enters tapped and attacking that player." (Echoing Assault, CR 508.4, 508.6): one instruction (`effect.create-token`). */
+const CREATE_COPY_TOKEN = /(?:^|, )create a token that['’]s a copy of [^.]*\.$/i;
+const TOKEN_ENTERS_TAPPED_ATTACKING_THAT_PLAYER =
+  /^the token enters tapped and attacking that player\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 /**
  * "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put
@@ -1278,6 +1282,15 @@ const PUT_REST_ANY_ORDER = /^put the rest on the bottom of your library in any o
 const CAST_THAT_CARD_WHILE_EXILED = /^for as long as that card remains exiled, you may cast it\.$/i;
 const THAT_SPELL_HAS_UNDAUNTED = /^that spell has undaunted\.$/i;
 /**
+ * "Look at the top six cards of your library. You may put a creature card from among them onto the battlefield tapped and attacking. Put the rest on the bottom of your library in a random
+ * order. Return that creature to its owner's hand at end of combat." (Arthur, Marigold Knight, CR 508.4, 603.7c): four sentences, one instruction (`effect.look-put-attacking-return`).
+ */
+const MAY_PUT_CREATURE_TAPPED_ATTACKING =
+  /^you may put [^.]* from among them onto the battlefield tapped and attacking\.$/i;
+const PUT_REST_BOTTOM_RANDOM = /^put the rest on the bottom of your library in a random order\.$/i;
+const RETURN_THAT_CREATURE_END_OF_COMBAT =
+  /^return that creature to its owner['’]s hand at end of combat\.$/i;
+/**
  * "Look at the top three cards of your library. Exile one face down and put the rest on the bottom of your library in any order. For as long as it remains exiled, you may cast it if it's a
  * creature spell." (Vivien, Champion of the Wilds, CR 401.2, 406.3): three sentences, one instruction (`effect.look-exile-face-down-cast-creature`).
  */
@@ -1331,6 +1344,19 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: e.end });
       i += 4;
+      continue;
+    }
+    // Arthur, Marigold Knight: the look, the creature put onto the battlefield attacking, the rest and the return at end of combat.
+    if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, LOOK_AT_TOP_OWN) &&
+      said(b, MAY_PUT_CREATURE_TAPPED_ATTACKING) &&
+      said(c, PUT_REST_BOTTOM_RANDOM) &&
+      said(d, RETURN_THAT_CREATURE_END_OF_COMBAT)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
       continue;
     }
     // Barbflare Gremlin: the mana the player who tapped the land adds, and the damage the land deals to them.
@@ -1759,6 +1785,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_NAMED_TOKEN) && said(b, NAMED_TOKEN_ENTERS_TAPPED_ATTACKING)) ||
+        (said(a, CREATE_COPY_TOKEN) && said(b, TOKEN_ENTERS_TAPPED_ATTACKING_THAT_PLAYER)) ||
         (said(a, LOOK_AT_DEFENDERS_HAND) && said(b, PUT_CREATURE_FROM_IT_ATTACKING)) ||
         (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||

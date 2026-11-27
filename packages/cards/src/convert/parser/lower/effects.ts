@@ -114,6 +114,7 @@ import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { F144_LOWERINGS } from './f144';
+import { FAMILY_MATTERS_C_LOWERINGS } from './family-matters-c';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FEDERATION_D_LOWERINGS } from './federation-d';
@@ -2786,7 +2787,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     // "You create ..." is the controller of the ability, which is who creates a token unless the node says otherwise.
     if (selector.value.kind !== 'you') by = { controller: selector.value };
   }
-  if (token.copyOf !== undefined) return lowerCopyToken(token, token.copyOf, clause, ctx, by);
+  if (token.copyOf !== undefined) {
+    return lowerCopyToken(token, token.copyOf, clause, ctx, by, entersTapped);
+  }
   if (token.predefined !== undefined) {
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
@@ -3334,6 +3337,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...RIDERS_B_LOWERINGS,
   ...COPY_CHOSEN_TOKEN_LOWERINGS,
   ...FLEET_E_LOWERINGS,
+  ...FAMILY_MATTERS_C_LOWERINGS,
   // Federation Fleet deck, group F: creatures can't attack you until your next turn, a commander into the hand, Tuvok's reselection, Troi's free cast.
   ...FEDERATION_F_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,

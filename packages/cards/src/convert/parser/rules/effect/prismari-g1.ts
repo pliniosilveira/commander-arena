@@ -34,7 +34,7 @@ const endsSentence = (ctx: { text: string }, pos: number): boolean =>
 export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
   id: 'effect.made-tokens-gain-keywords',
   family: 'effect',
-  leading: ['the', 'they', 'those'],
+  leading: ['the', 'they', 'those', 'that'],
   cites: [
     'CR 611.2a (Continuous Effects)',
     'CR 613.1f (Interaction of Continuous Effects)',
@@ -42,6 +42,9 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
   ],
   examples: [
     'the token created this way gains haste',
+    // Helm of the Host (Family Matters deck, group C): "That token gains haste." with no duration.
+    'that token gains haste',
+    'That token gains haste',
     'The token created this way gains haste',
     'they gain haste',
     'They gain haste',
@@ -66,13 +69,16 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
     'they gain haste and draw a card',
     'it gains haste',
     'those token gain haste',
+    // "That token gains haste until end of turn" is `effect.gain-keyword`'s, which also reads what the token must do.
+    'that token gains haste until end of turn',
+    'that token gain haste',
+    'that tokens gain haste',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.made-tokens-gain-keywords';
-    const head = pattern(/(?:the token created this way (gains)|(?:they|those tokens) (gain)) /iu)(
-      ctx,
-      pos,
-    );
+    const head = pattern(
+      /(?:the token created this way (gains)|(?:they|those tokens) (gain)|(that token) gains) /iu,
+    )(ctx, pos);
     if (!head.ok) return head;
     const gains = spanned(KEYWORD_WORDS)(ctx, head.pos);
     if (!gains.ok) return gains;
@@ -87,6 +93,8 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
     if (!until.ok) return until;
     const end = until.value === null ? gains.pos : until.pos;
     if (!endsSentence(ctx, end)) return fail(ctx, pos);
+    // "That token gains ..." with a duration is `effect.gain-keyword`'s.
+    if (head.value[3] !== undefined && until.value !== null) return fail(ctx, pos);
     const duration = until.value === null ? undefined : until.value[1];
     const words = gains.value.value;
     const clauses = words.map((name, i): Clauses[number] => {

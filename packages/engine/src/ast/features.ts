@@ -1478,6 +1478,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackingYou',
     // D-218: "creatures attacking your opponents and/or planeswalkers they control" (`ObjectFilter.attackingOpponents`).
     'attackingOpponents',
+    // CR 508.6 (Echoing Assault): "creatures attacking that player" (`ObjectFilter.attackingOpponents: 'triggerAttacked'`).
+    'attackingTriggerAttacked',
     // D-229: "attacking or blocking" (`ObjectFilter.attackingOrBlocking`).
     'attackingOrBlocking',
     'all',
@@ -2843,6 +2845,8 @@ export const SELECTOR_KINDS = [
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
   'attackingOpponents',
+  /** "Creature that's attacking that player" of a trigger about one attacked player (CR 508.6, Echoing Assault): the engine's `ObjectFilter.attackingOpponents: 'triggerAttacked'`. */
+  'attackingTriggerAttacked',
   /** "Attacking or blocking creatures" (CR 506.4, 509.1g, D-229): the engine's `ObjectFilter.attackingOrBlocking`. */
   'attackingOrBlocking',
   /** "You and target opponent each ...": several players in one selector (D-131), the engine's `PlayerSelector` `all`. */

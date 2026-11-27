@@ -120,6 +120,8 @@ export interface FilterContext {
    * from the combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfOpponents?: readonly ObjectId[];
+  /** The creatures attacking the player the trigger is about, for `attackingOpponents: 'triggerAttacked'` (CR 508.6). */
+  readonly attackersOfTriggerAttacked?: readonly ObjectId[];
   /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-650). */
   readonly attackersOfOpponentPlayers?: readonly ObjectId[];
   /**
@@ -340,6 +342,13 @@ export function matchesFilterWith(
   }
   // D-218: "attacking your opponents and/or planeswalkers they control".
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
+    return false;
+  }
+  // CR 508.1b, 508.6 (Echoing Assault): "attacking that player" is an attacker whose target is the player the trigger is about.
+  if (
+    filter.attackingOpponents === 'triggerAttacked' &&
+    !(ctx.attackersOfTriggerAttacked ?? []).includes(obj.id)
+  ) {
     return false;
   }
   // D-650 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
