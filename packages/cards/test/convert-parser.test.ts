@@ -882,6 +882,7 @@ describe('unmatched abilities', () => {
       'effect.damage-opponents-and-their-creatures',
       'effect.damage-it-opponents-and-their-creatures',
       'effect.damage-cant-be-prevented-this-turn',
+      'effect.spells-you-cast-this-turn-cant-be-countered',
       'effect.destroy-countered-ability-source',
       'effect.choose-one-of-them',
       'effect.put-from-among-those-cards-onto-battlefield',

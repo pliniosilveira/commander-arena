@@ -8210,6 +8210,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'damageCantBePreventedThisTurn':
       // CR 615.12: no parameters.
       break;
+    case 'spellsCantBeCounteredThisTurn':
+      // CR 101.2: the filter of the spells, as they are on the stack.
+      if (e.spells === undefined) {
+        issue(out, `${path}.spells`, 'spellsCantBeCounteredThisTurn needs a filter of the spells');
+      } else {
+        checkFilter(e.spells, `${path}.spells`, out);
+      }
+      break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
       if (typeof e.count === 'number' ? !isCount(e.count) || e.count < 1 : e.count === undefined) {

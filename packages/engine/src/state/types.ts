@@ -848,6 +848,12 @@ export interface SeatState {
   readonly handSizeMax: number | null;
 }
 
+/** One "spells you cast this turn can't be countered" effect (`TurnState.uncounterableSpells`). */
+export interface UncounterableSpells {
+  readonly seat: SeatId;
+  readonly spells: ObjectFilter;
+}
+
 export interface TurnState {
   /** 1-based turn counter for the whole game. */
   readonly number: number;
@@ -862,6 +868,11 @@ export interface TurnState {
   readonly extraLandDrops: number;
   /** "Damage can't be prevented this turn" (CR 615.12, Exit from Exile deck): set by the effect, gone with the turn (the next turn is built without it). */
   readonly damageUnpreventable?: true;
+  /**
+   * "Creature spells you cast this turn can't be countered" (CR 101.2, 701.6a, 611.2a; Domri, Anarch of Bolas): each effect that resolved this turn, with the seat that controlled it
+   * ("you" in its filter) and the filter of the spells; gone with the turn. Read by `canBeCountered`. Absent when none.
+   */
+  readonly uncounterableSpells?: readonly UncounterableSpells[];
   /**
    * Phases added to this turn that have not begun yet (CR 500.8, D-151, D-187), in the order they will occur. An effect that adds a phase "after this
    * phase" puts it directly after the phase that is going on, so it goes first in this list (CR 500.8: the most recently created one occurs first);

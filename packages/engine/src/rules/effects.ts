@@ -2809,6 +2809,19 @@ function runEffect(
       // CR 615.12, 611.2a: for the rest of this turn no damage is prevented (read by `damageCantBePrevented`, `rules/global-statics.ts`).
       return done({ ...state, turn: { ...state.turn, damageUnpreventable: true } });
 
+    case 'spellsCantBeCounteredThisTurn':
+      // CR 101.2, 611.2a: for the rest of this turn the spells the filter names are not countered (read by `canBeCountered`, `rules/restrictions.ts`).
+      return done({
+        ...state,
+        turn: {
+          ...state.turn,
+          uncounterableSpells: [
+            ...(state.turn.uncounterableSpells ?? []),
+            { seat: res.controller, spells: effect.spells },
+          ],
+        },
+      });
+
     case 'additionalLandDropThisTurn':
       // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.
       return done(

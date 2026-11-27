@@ -18,12 +18,13 @@ const ALLOWED: ReadonlySet<string> = new Set([
   'colors',
   'supertypes',
   'anyOf',
+  'castFromHand',
 ]);
 
 /**
  * `static.spells-you-cast-have-keyword`: "Creature spells you cast have demonstrate." A static ability of a permanent that gives a keyword to the spells its controller casts that the
  * subject names, as they are cast (CR 702.144a: Demonstrate triggers when its spell is cast; CR 702.51a: Convoke applies while its spell is on the stack). The engine's
- * `grantKeywordToSpells`, for the keywords it reads from a spell as it is cast: Demonstrate, Convoke and Improvise (CR 702.126a). The subject is the same one the cost reductions of spells read ("Artifact spells",
+ * `grantKeywordToSpells`, for the keywords it reads from a spell as it is cast: Demonstrate, Convoke, Improvise (CR 702.126a) and Cascade (CR 702.85a). "you cast from your hand" limits the spells to those cast from the hand (CR 601.2a). The subject is the same one the cost reductions of spells read ("Artifact spells",
  * "Creature spells", "Red creature spells", "Instant and sorcery spells"). Not read: spells of other players or of every player ("Creature spells have ...", "... your opponents cast"),
  * other qualities of the spell ("with flying", "with power 4 or greater"), other keywords, two keywords, a keyword with a cost, a duration, no period.
  */
@@ -45,6 +46,8 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
     'Noncreature spells you cast have demonstrate.',
     'Red creature spells you cast have convoke.',
     'Legendary creature spells you cast have convoke.',
+    'Enchantment spells you cast from your hand have cascade.',
+    'Creature spells you cast have cascade.',
     'Instant and sorcery spells you cast have demonstrate.',
   ],
   rejects: [
@@ -54,6 +57,12 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
     'Creature spells you control have demonstrate.',
     'Creature spells you cast has demonstrate.',
     'Creature spells you cast have flying.',
+    'Enchantment spells you cast from your hand have flying.',
+    'Enchantment spells you cast from your hand have cascade and demonstrate.',
+    'Enchantment spells you cast from your hand has cascade.',
+    "Enchantment spells you cast from your opponent's hand have cascade.",
+    'Enchantment spells you cast from exile have cascade.',
+    'Enchantment spells you cast from your hand have cascade until end of turn.',
     'Creature spells you cast have demonstrate and convoke.',
     'Creature spells you cast have demonstrate {1}.',
     'Creature spells you cast have demonstrate until end of turn.',
@@ -72,9 +81,16 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
       quiet(
         sequence(
           spellSubject(undefined, { supertypes: true }),
-          literal(' you cast have '),
+          literal(' you cast'),
+          // CR 601.2a: "from your hand" is the zone the spell is cast from (the engine's `castFromHand`).
+          optional(
+            map(literal(' from your hand'), () => true as const),
+            undefined,
+          ),
+          literal(' have '),
           choice(
             map(literal('demonstrate'), () => 'demonstrate' as const),
+            map(literal('cascade'), () => 'cascade' as const),
             map(literal('convoke'), () => 'convoke' as const),
             map(literal('improvise'), () => 'improvise' as const),
           ),
@@ -83,7 +99,8 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
       literal('.'),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, , keyword]] = r.value;
+    const [[spells, , fromHand, , keyword]] = r.value;
+    const filter: IrFilter = fromHand === true ? { ...spells, castFromHand: true } : spells;
     // The spells are named by what they are: types, colors and subtypes. A quality the engine's filter of a granted spell does not read is never dropped.
     if (!Object.keys(filter).every((k) => ALLOWED.has(k))) return fail(ctx, pos);
     const rule = 'static.spells-you-cast-have-keyword';
@@ -94,7 +111,7 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
       upTo: false,
       plural: true,
       other: false,
-      span: { start: pos, end: pos + filter.raw.length },
+      span: { start: pos, end: pos + spells.raw.length },
       rule,
     };
     return {

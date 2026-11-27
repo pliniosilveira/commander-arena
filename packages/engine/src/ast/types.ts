@@ -5199,6 +5199,13 @@ export type Effect =
    */
   | { readonly kind: 'damageCantBePreventedThisTurn' }
   /**
+   * "Creature spells you cast this turn can't be countered." (Domri, Anarch of Bolas; CR 101.2, 701.6a, 611.2a): until the end of this turn the spells `spells` matches (the spell as it is
+   * on the stack: its types, colors, mana value; `controller` is relative to the controller of the effect: "you") are not countered by a spell or ability that tries to; they stay on the
+   * stack and resolve. It begins as the effect resolves and applies to a spell cast before or after that, as long as the turn lasts. A spell or ability that counters can still target the
+   * spell, and its other effects still happen. Read where a counter is applied (`canBeCountered`, `rules/restrictions.ts`).
+   */
+  | { readonly kind: 'spellsCantBeCounteredThisTurn'; readonly spells: ObjectFilter }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
