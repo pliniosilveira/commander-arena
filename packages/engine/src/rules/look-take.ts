@@ -132,7 +132,8 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   if (to === 'castFree') {
     return done(
       state,
-      [{ kind: 'topCardsLooked', seat, count: looked.length }],
+      // CR 701.20a: with `revealAll` (Sunbird's Invocation) the cards were shown to everyone, so nothing is said of a look.
+      ins.revealAll === true ? [] : [{ kind: 'topCardsLooked', seat, count: looked.length }],
       [
         ...(legal.length === 0
           ? []

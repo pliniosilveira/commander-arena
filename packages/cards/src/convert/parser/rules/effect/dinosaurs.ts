@@ -539,6 +539,9 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast the exiled card without paying its mana cost',
     // Death Toll deck, group D: in a triggered ability the "you may" is the ability's own.
     'play the exiled card without paying its mana cost',
+    // Evercoat Ursine: one of the cards an intervening "if there are cards exiled with it" counted.
+    'you may play one of them without paying its mana cost',
+    'cast one of them without paying its mana cost',
   ],
   rejects: [
     'you may cast a spell with mana value 5 or less from your hand',
@@ -557,12 +560,20 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may play a card from your hand without paying its mana cost',
     'you may play the exiled card',
     'you may play the exiled cards without paying their mana costs',
+    'you may play two of them without paying their mana costs',
+    'you may play one of them',
     'you may cast a spell with mana value 5 or less from your hand without paying its mana cost and draw a card',
     'you may cast a spell with mana value 5 or less from your hand without paying its mana cost this turn',
   ],
   parse: single(
     'effect.cast-free',
-    choice<{ objects: IrNoun; play: boolean; written: boolean; any?: true }>(
+    choice<{
+      objects: IrNoun;
+      play: boolean;
+      written: boolean;
+      any?: true;
+      oneOfThem?: true;
+    }>(
       (ctx, pos) => {
         // "you may cast ..."; inside a triggered ability the "you may" is the ability's (the clause is optional), so "cast ..." is read too, and the lowering asks for one of the two.
         const head = pattern(/(you may )?cast an? /iu)(ctx, pos);
@@ -645,14 +656,16 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
       (ctx, pos) => {
         const r = spanned(
           pattern(
-            /(you may )?(cast|play) the exiled card without paying its mana cost(?![\p{L}\p{N}])/iu,
+            /(you may )?(cast|play) (the exiled card|one of them) without paying its mana cost(?![\p{L}\p{N}])/iu,
           ),
         )(ctx, pos);
         if (!r.ok) return r;
+        // "one of them" (Evercoat Ursine, "if there are cards exiled with it, you may play one of them"): the cards the intervening "if" counted, which the lowering checks.
+        const oneOfThem = (r.value.value[3] ?? '').toLowerCase() === 'one of them';
         const objects: IrNoun = {
           kind: 'noun',
           det: 'linkedExile',
-          filter: { raw: 'the exiled card' },
+          filter: { raw: oneOfThem ? 'one of them' : 'the exiled card' },
           upTo: false,
           plural: false,
           other: false,
@@ -666,12 +679,13 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
             play: (r.value.value[2] ?? '').toLowerCase() === 'play',
             // Inside a triggered ability the "you may" is the ability's (the clause is optional), as for the cast of a spell of the hand above.
             written: r.value.value[1] !== undefined,
+            ...(oneOfThem ? { oneOfThem: true as const } : {}),
           },
           pos: r.pos,
         };
       },
     ),
-    ({ objects, play, written, any }) => ({
+    ({ objects, play, written, any, oneOfThem }) => ({
       verb: 'castFree',
       args: {
         objects,
@@ -679,6 +693,7 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
         // Whether the sentence said "you may" itself (a triggered ability's own "you may" makes the clause optional instead).
         mayWritten: flag('effect.cast-free', written, objects.span),
         ...(any === true ? { anyNumber: flag('effect.cast-free', true, objects.span) } : {}),
+        ...(oneOfThem === true ? { oneOfThem: flag('effect.cast-free', true, objects.span) } : {}),
       },
     }),
   ),

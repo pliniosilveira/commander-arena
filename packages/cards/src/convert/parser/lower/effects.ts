@@ -2003,6 +2003,14 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (blocked.length > 0) return failure(clause, blocked);
       if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
     }
+    // CR 701.20a (Sunbird's Invocation, "Reveal the top X cards ... cast a spell from among cards revealed this way"): the cards are shown to every player first; read only with the free cast.
+    const revealing = arg(clause, 'revealAll');
+    const revealAll = revealing?.kind === 'flag' && revealing.value;
+    if (revealAll) {
+      if (!castFree) return failure(clause);
+      const blockedReveal = missingFeatures(['ability:lookRevealCastFree']);
+      if (blockedReveal.length > 0) return failure(clause, blockedReveal);
+    }
     // "You may reveal any number of cards of the chosen type from among them": every card looked at may be taken, so `max` is the number looked at (a number, not an amount read later).
     const any = arg(clause, 'anyNumber');
     const anyNumber = any?.kind === 'flag' && any.value;
@@ -2012,6 +2020,7 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
+      ...(revealAll ? { revealAll: true as const } : {}),
       take: {
         filter: filter.value,
         max: anyNumber && typeof count.value === 'number' ? count.value : 1,

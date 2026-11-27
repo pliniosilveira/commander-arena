@@ -454,6 +454,10 @@ const EXILE_COUNTERED_INSTEAD =
 const MAY_CAST_FREE_WHILE_EXILED =
   /^you may cast that card without paying its mana cost for as long as it remains exiled\.$/i;
 const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
+/** "Reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest ..." (Sunbird's Invocation): the first two sentences of `effect.reveal-x-cast-free`. */
+const REVEAL_TOP_X_WHERE = /^reveal the top X cards of your library, where X is [^.]*\.$/i;
+const CAST_FROM_AMONG_REVEALED =
+  /^you may cast [^.]* from among cards revealed this way without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
  * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
@@ -1824,7 +1828,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, PUT_UP_TO_FROM_AMONG) ||
           said(b, PUT_FROM_AMONG_ONTO) ||
           said(b, CAST_FROM_AMONG_FREE))) ||
-        (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
+        (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED)) ||
+        (said(a, REVEAL_TOP_X_WHERE) && said(b, CAST_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {
       out.push({ start: a.start, end: c.end });

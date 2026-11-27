@@ -257,6 +257,8 @@ export function lowerCondition(
       ]);
       if (blocked.length > 0) return failure(c, blocked);
       if (ctx?.interveningCondition !== true) return failure(c, []);
+      // "... if there are cards exiled with it" (Evercoat Ursine): "it" is the source only when the trigger is about `~` itself ("Whenever ~ ...", "When ~ ...").
+      if (test.viaIt === true && !/^(?:whenever|when) ~ /iu.test(ctx.text)) return failure(c, []);
       ctx.exiledWithCondition = true;
       return ok({
         kind: 'amountIs',

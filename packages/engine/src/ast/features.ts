@@ -213,6 +213,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlayOneLifeForMana',
     // Grand Larceny deck, group B (Silent-Blade Oni, Extract Brain): "You may cast a spell from among those cards without paying its mana cost" after looking at a hand (`castFree.fromHand`).
     'castFreeFromHand',
+    // Sunbird's Invocation (CR 701.20a, 608.2g): "Reveal the top X cards of your library ... You may cast a spell ... from among cards revealed this way without paying its mana cost" (`lookAtTop` with `revealAll` and `take.to` `castFree`).
+    'lookRevealCastFree',
     // Nalfeshnee (CR 707.10f, 613.1f): "If it's a permanent spell, the copy gains haste and ..." (`copySpell.permanentGains`).
     'copySpellPermanentGains',
     // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
@@ -2392,6 +2394,8 @@ export const ABILITY_FEATURES = [
   'mayPlayOneLifeForMana',
   /** "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain, CR 608.2g, 402.3): the engine's `castFree.fromHand`. */
   'castFreeFromHand',
+  /** "Reveal the top X cards of your library. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost" (Sunbird's Invocation, CR 701.20a, 608.2g): the engine's `lookAtTop` with `revealAll` and `take.to` `castFree`. */
+  'lookRevealCastFree',
   /** "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 613.1f): the engine's `copySpell.permanentGains`. */
   'copySpellPermanentGains',
   /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
@@ -3665,6 +3669,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   castFreeCreatureGains: true,
   castFreeDiscardInstead: true,
   castFreeFromHand: true,
+  lookRevealCastFree: true,
   mayPlayOneLifeForMana: true,
   copySpellPermanentGains: true,
   castPayingFromLinkedExile: true,

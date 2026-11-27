@@ -993,7 +993,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'thisOnBattlefield' }
     // Valakut Exploration (CR 603.4, 607.2a): "there are cards exiled with ~": at least one card the permanent exiled with its linked ability is still in exile
     // `atLeast` (Colfenor's Urn, "if three or more cards have been exiled with ~"): at least that many of them; left out, one.
-    | { readonly kind: 'cardsExiledWithSelf'; readonly atLeast?: number }
+    // `viaIt` (Evercoat Ursine, "if there are cards exiled with it"): the permanent is named by the pronoun "it", which the lowering reads only where "it" is the subject of the trigger, `~`.
+    | { readonly kind: 'cardsExiledWithSelf'; readonly atLeast?: number; readonly viaIt?: true }
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller

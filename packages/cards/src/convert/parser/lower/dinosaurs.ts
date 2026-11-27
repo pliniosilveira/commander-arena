@@ -287,6 +287,9 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
       };
     }
     if (objects.det === 'linkedExile') {
+      // "you may play one of them" (Evercoat Ursine): "them" are the cards the intervening "if there are cards exiled with it" counted; without that condition they name nothing.
+      const oneOfThem = arg(clause, 'oneOfThem')?.kind === 'flag';
+      if (oneOfThem && !ctx.exiledWithCondition) return failure(clause);
       // D-664 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
       // ability to belong to: "Reveal cards from the top of your library until you reveal a nonland card. Exile that card ... You may cast the exiled card without paying its mana cost."
       if (ctx.owner === 'spell' && ctx.lastEffectKind === 'revealUntil' && !play.value) {
