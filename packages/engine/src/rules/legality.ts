@@ -40,7 +40,6 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
-import { staticEscapeOf } from './mana-cost-keyword-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardCastTypes, graveyardPlayPermission } from './graveyard-play';
@@ -49,6 +48,7 @@ import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
 import { linkedExilePlayPermitted } from './linked-exile-play';
+import { staticEscapeOf } from './mana-cost-keyword-grant';
 import { isCommanderCardId, isCommanderObject } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { mayPayLifeForMana } from './next-spell-life';
@@ -588,7 +588,8 @@ export function castZone(
   if (alternative === 'escape') {
     if (obj.zone !== 'graveyard' || obj.card === null) return null;
     // CR 702.138a: a printed escape cost, or the one an effect gave the card until end of turn (rules/escape-grant.ts).
-    if (faceIndex === 0) return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    if (faceIndex === 0)
+      return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
     // CR 709.3: the other half of a split card a permanent gives escape (`grantKeywordFromManaCost`): that half is cast for its own mana cost.
     return staticEscapeOf(state, asFace(obj, faceIndex)) === null ? null : 'graveyard';
   }
@@ -931,12 +932,7 @@ export function canCast(
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
   if (castForbiddenByOwnAbility(state, seat, spell)) return false;
   // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-282) "... with mana value 3 or less", read with the least X the spell can be cast with.
-  const least = leastAllowedX(
-    state,
-    seat,
-    spell,
-    hasX(spellXCostOf(state, spell, alternative)),
-  );
+  const least = leastAllowedX(state, seat, spell, hasX(spellXCostOf(state, spell, alternative)));
   if (least === null) return false;
   const timing = castTiming(state, seat, spell);
   if (!timing.allowed) return false;

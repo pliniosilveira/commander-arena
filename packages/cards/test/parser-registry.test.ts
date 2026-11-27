@@ -1176,6 +1176,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.hand-cards-have-cycling': asIs,
   'static.group-is-equipment': asIs,
   'static.graveyard-cards-have-flashback': asIs,
+  'static.cards-have-keyword-from-mana-cost': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),

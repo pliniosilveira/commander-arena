@@ -39,9 +39,7 @@ export function nextMiracleFace(
 ): number | null {
   for (const face of miracleFaces(state, card)) {
     if (face <= after) continue;
-    if (
-      canCastDuringResolution(state, seat, card, 'miracle', false, undefined, false, face)
-    ) {
+    if (canCastDuringResolution(state, seat, card, 'miracle', false, undefined, false, face)) {
       return face;
     }
   }

@@ -93,7 +93,8 @@ export function escapeGrantData(
   | { readonly escapeGrant: { readonly cost: readonly Cost[]; readonly exile: number } }
   | Record<never, never> {
   if (obj.card === null) return {};
-  if (alternativeOf(definitionOf(state, obj.card).faces[face] ?? null, 'escape') !== null) return {};
+  if (alternativeOf(definitionOf(state, obj.card).faces[face] ?? null, 'escape') !== null)
+    return {};
   // The card as the face it is cast as: a cost made from the mana cost is that face's (CR 709.3).
   const granted = grantedEscapeOf(
     state,

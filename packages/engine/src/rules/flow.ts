@@ -38,12 +38,7 @@ import { dredgeCandidate, dredgeQuestion, performDredge } from './dredge';
 import { drawCard } from './effect-support';
 import { discardOne } from './madness';
 import { emptyManaPools } from './mana-engine';
-import {
-  miracleOffer,
-  miracleQuestion,
-  noteMiracleReveal,
-  revealMiracleEvents,
-} from './miracle';
+import { miracleOffer, miracleQuestion, noteMiracleReveal, revealMiracleEvents } from './miracle';
 import { phaseInFor } from './phasing';
 import { grantPriority, type Outcome } from './priority';
 import { hasOptionalUntap, hasRestriction } from './restrictions';

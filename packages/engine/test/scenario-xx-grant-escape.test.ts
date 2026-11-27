@@ -138,7 +138,9 @@ describe('the cast: the mana cost and three other cards (CR 702.138a, 601.2h, 70
     g.act(0).chooseCards('Grizzly Bears', 'Giant Spider', 'Typhoid Rats');
     g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
     g.expect.zone('Youthful Knight', 'graveyard', { seat: 0 });
-    g.expect.eventLog([{ kind: 'spellCast', seat: 0, fromZone: 'graveyard', alternative: 'escape' }]);
+    g.expect.eventLog([
+      { kind: 'spellCast', seat: 0, fromZone: 'graveyard', alternative: 'escape' },
+    ]);
     expect(g.object({ name: CHARM, zone: 'stack' }).stack?.escapeGrant).toEqual({
       cost: [{ kind: 'mana', symbols: ['1', 'W', 'W'] }],
       exile: 3,
@@ -179,19 +181,21 @@ describe('the cast: the mana cost and three other cards (CR 702.138a, 601.2h, 70
     const g = scenario()
       .seat(0)
       .battlefield(WARDEN)
+      .library('Forest', 'Forest', 'Forest')
       .graveyard(CHARM)
       .graveyard(...FILLER.slice(0, 3))
       .battlefield('Plains', { count: 3 })
       .seat(1)
       .hand('Murder')
       .battlefield('Swamp', { count: 3 })
+      .library('Forest', 'Forest', 'Forest')
       .at('precombatMain', { active: 1 })
       .build();
     g.act(1).cast('Murder', { pay: true, targets: [WARDEN] });
     g.pass();
     g.pass();
     g.expect.zone(WARDEN, 'graveyard', { seat: 0 });
-    g.advanceTo('precombatMain', { active: 0 });
+    g.advanceTo('precombatMain', { turn: 'next' });
     expect(escapeOptions(g)).toEqual([]);
     g.expect.illegal(0, { cast: CHARM, alternative: 'escape' });
   });
@@ -279,7 +283,15 @@ describe('a Room in the graveyard: either half is cast for its own mana cost (CR
   });
 
   test('without the permanent neither half has escape', () => {
-    const g = board([ROOM], 3, [['Plains', 2], ['Swamp', 1]], false);
+    const g = board(
+      [ROOM],
+      3,
+      [
+        ['Plains', 2],
+        ['Swamp', 1],
+      ],
+      false,
+    );
     expect(escapeOptions(g)).toEqual([]);
     const room = g.id({ name: ROOM, zone: 'graveyard' });
     for (const face of [0, 1]) {

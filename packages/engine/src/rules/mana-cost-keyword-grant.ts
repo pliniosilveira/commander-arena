@@ -89,7 +89,9 @@ export function grantedMiracleCost(
   read: (symbols: readonly string[]) => readonly string[] = (symbols) => symbols,
 ): readonly Cost[] | null {
   const symbols = manaCostOf(face);
-  return symbols === null ? null : [{ kind: 'mana', symbols: reduceGeneric(read(symbols), reduce) }];
+  return symbols === null
+    ? null
+    : [{ kind: 'mana', symbols: reduceGeneric(read(symbols), reduce) }];
 }
 
 /**
