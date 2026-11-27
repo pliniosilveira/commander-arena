@@ -365,6 +365,7 @@ describe('unmatched abilities', () => {
       'replacement.enters-as-copy-graveyard',
       'replacement.enters-as-copy-except-types',
       'replacement.enters-as-copy-except-quoted',
+      'replacement.enters-as-copy-plain',
       'replacement.enters-as-copy-exile-two',
       'replacement.redirect-damage',
       'replacement.damage-bonus',
