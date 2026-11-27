@@ -310,6 +310,18 @@ export interface AltCostGrantSource {
   readonly condition?: Condition;
 }
 
+/**
+ * A static ability of a permanent that lets its controller, once during each of their turns, cast a spell for an alternative cost (`castOnceEachTurn`, CR 118.9, 601.2b): read where
+ * casting is decided (`rules/cast-once.ts`). A permanent that lost all its abilities has none (CR 613.1f).
+ */
+export interface OnceCastSource {
+  readonly object: GameObject;
+  readonly spells: ObjectFilter;
+  readonly from?: readonly ('hand' | 'libraryTop')[];
+  readonly alternative: 'lifeForMana' | 'free';
+  readonly condition?: Condition;
+}
+
 interface BoardIndex {
   readonly battlefield: readonly ObjectId[];
   readonly definitions: GameState['definitions'];
@@ -358,6 +370,8 @@ interface BoardIndex {
   readonly flashbackGrants: readonly FlashbackGrantSource[];
   /** Permanents with a `grantAlternativeCostToSpells` static ability, in battlefield order. */
   readonly altCostGrants: readonly AltCostGrantSource[];
+  /** The `castOnceEachTurn` static abilities, in battlefield order. */
+  readonly onceCasts: readonly OnceCastSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -698,6 +712,7 @@ function buildIndex(state: GameState): BoardIndex {
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
   const altCostGrants: AltCostGrantSource[] = [];
+  const onceCasts: OnceCastSource[] = [];
   const legendExemptions: LegendExemptionSource[] = [];
   const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
@@ -743,6 +758,22 @@ function buildIndex(state: GameState): BoardIndex {
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
     altCostGrants.push(...altCostGrantsOf(object, printed));
+    for (const a of printed) {
+      // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+      if (
+        a.kind === 'static' &&
+        a.static.kind === 'castOnceEachTurn' &&
+        (a.functionsIn ?? 'battlefield') === 'battlefield'
+      ) {
+        onceCasts.push({
+          object,
+          spells: a.static.spells,
+          alternative: a.static.alternative,
+          ...(a.static.from === undefined ? {} : { from: a.static.from }),
+          ...(a.condition === undefined ? {} : { condition: a.condition }),
+        });
+      }
+    }
     legendExemptions.push(...legendExemptionsOf(object, printed));
     encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
@@ -838,6 +869,7 @@ function buildIndex(state: GameState): BoardIndex {
     spellGrants,
     flashbackGrants,
     altCostGrants,
+    onceCasts,
     legendExemptions,
     encoreGrants,
     attachments,
@@ -948,6 +980,11 @@ export function flashbackGrantSources(state: GameState): readonly FlashbackGrant
 /** The static abilities of the permanents on the battlefield that give an alternative cost to the spells their controller casts from the hand (CR 702.74a, 118.9). */
 export function altCostGrantSources(state: GameState): readonly AltCostGrantSource[] {
   return indexOf(state).altCostGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that let their controller cast one spell in each of their turns for an alternative cost (`castOnceEachTurn`, CR 118.9). */
+export function onceCastSources(state: GameState): readonly OnceCastSource[] {
+  return indexOf(state).onceCasts;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */

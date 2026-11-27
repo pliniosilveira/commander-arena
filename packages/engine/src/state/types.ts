@@ -478,6 +478,11 @@ export interface StackData {
   /** The permanent whose "once each turn" alternative cost the spell was cast for (`grantEnergyAlternative` with `oncePerTurn`), recorded in the turn log as the spell is cast. */
   readonly energyGrantOnce?: ObjectId;
   /**
+   * The permanent whose "once during each of your turns, you may cast ..." permission the spell was cast with (`castOnceEachTurn`, CR 118.9, 601.2b), recorded in the turn log as the
+   * spell becomes cast. With it the spell's X is 0 (CR 107.3b).
+   */
+  readonly castOnce?: ObjectId;
+  /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
    * difference to it: the gift happens as the spell resolves, once, for the spell that was cast.
@@ -3358,7 +3363,10 @@ export interface TurnLog {
     /** The subtypes of the sources that made the mana spent on the spell (Rain of Riches, CR 601.2h: "the first spell you cast each turn that mana from a Treasure was spent to cast"). */
     readonly manaSubtypes?: readonly string[];
   }[];
-  /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
+  /**
+   * The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`, Tlincalli Hunter) or "once during each of your turns" cast permission
+   * (`castOnceEachTurn`) was used this turn (CR 601.2b). Absent until one is.
+   */
   readonly oncePerTurnGrants?: readonly ObjectId[];
 }
 

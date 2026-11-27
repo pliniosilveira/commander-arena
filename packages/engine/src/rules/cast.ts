@@ -115,6 +115,7 @@ import {
   mayCastFromGraveyard,
   mayCastPlotted,
   mayPlayFromExile,
+  onceCastUse,
   playPermissionBottoms,
   targetSpecsOf,
   targetsPossible,
@@ -266,6 +267,7 @@ export function beginCast(
     !resolving && alternative === 'free' && obj.zone === 'exile' && obj.onAdventure !== true
       ? freeCastSlotToUse(state, seat, obj, face)
       : null;
+  const once = resolving ? null : onceCastUse(state, seat, obj, face, alternative);
   const moved = moveObject(state, { object: objectId, to: 'stack', face });
   if (moved.kind !== 'done' || moved.newObject === null) return fail('The card could not move');
   const stackId = moved.newObject;
@@ -316,6 +318,8 @@ export function beginCast(
         : {}),
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
+      // CR 118.9, 601.2b (`castOnceEachTurn`): the permanent whose once-a-turn permission gives the alternative cost.
+      ...(once === null ? {} : { castOnce: once }),
       // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
       ...(alternative === 'energyGrant'
         ? (() => {
@@ -1922,12 +1926,14 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       turnLog: {
         ...next.turnLog,
         // CR 601.2b (Tlincalli Hunter): "once each turn": the permanent whose alternative cost this spell was cast for has been used.
-        ...(obj.stack.energyGrantOnce === undefined
+        // CR 601.2b, 601.2i (`castOnceEachTurn`): and the permanent whose "once during each of your turns, you may cast ..." this spell was cast with.
+        ...(obj.stack.energyGrantOnce === undefined && obj.stack.castOnce === undefined
           ? {}
           : {
               oncePerTurnGrants: [
                 ...(next.turnLog.oncePerTurnGrants ?? []),
-                obj.stack.energyGrantOnce,
+                ...(obj.stack.energyGrantOnce === undefined ? [] : [obj.stack.energyGrantOnce]),
+                ...(obj.stack.castOnce === undefined ? [] : [obj.stack.castOnce]),
               ],
             }),
         castSpells: [

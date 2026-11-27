@@ -425,7 +425,11 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             : null))
         : null;
   // CR 702.33a, 107.3a ("Kicker {X}"): a kicked spell announces the X of its kicker cost too.
-  const perX = spellXCost(face, alternative, (request.kicks ?? (request.kicked ? 1 : 0)) > 0);
+  const perX = spellXCost(
+    face,
+    xAlternativeOf(spell, alternative),
+    (request.kicks ?? (request.kicked ? 1 : 0)) > 0,
+  );
   const x = hasX(perX) ? (request.x ?? 0) : 0;
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
@@ -700,6 +704,19 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   };
 }
 
+/**
+ * CR 107.3b: a spell cast with the once-a-turn permission of a permanent (`castOnceEachTurn`, `StackData.castOnce`) pays neither its mana cost nor an alternative cost that includes
+ * X, so its X is 0 and none is announced: for X it is read as a spell cast without paying its mana cost. (The life of the effect `nextSpellPayLife` counts the X announced.)
+ */
+function xAlternativeOf(
+  spell: GameObject,
+  alternative: CastAlternative | undefined,
+): CastAlternative | undefined {
+  return alternative === 'lifeForMana' && spell.stack?.castOnce !== undefined
+    ? 'free'
+    : alternative;
+}
+
 /** What one point of X costs for this spell cast as `alternative` (see `spellXCost`). */
 export function spellXCostOf(
   state: GameState,
@@ -707,7 +724,11 @@ export function spellXCostOf(
   alternative: CastAlternative | undefined,
 ): XCost {
   // CR 702.33a: the {X} of the kicker cost counts once the spell is kicked (`StackData.kicked`).
-  return spellXCost(faceOfSpell(state, spell), alternative, spell.stack?.kicked === true);
+  return spellXCost(
+    faceOfSpell(state, spell),
+    xAlternativeOf(spell, alternative),
+    spell.stack?.kicked === true,
+  );
 }
 
 /**

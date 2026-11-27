@@ -9281,6 +9281,23 @@ export type StaticEffect =
       readonly oncePerTurn?: true;
     }
   /**
+   * "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost." (Demon of Fate's Design), "... you may
+   * cast a spell from your hand or the top of your library without paying its mana cost." (One with the Multiverse; CR 118.9, 118.9a, 601.2b, 601.2f, 107.3b, 119.4, 613.1f): a static
+   * ability of a permanent on the battlefield that, in each turn of its controller, lets that player cast one spell `spells` matches for the alternative cost `alternative`: `lifeForMana`
+   * (no mana cost; life equal to the spell's mana value) or `free` (nothing for the mana cost). The spell is cast as `CastAlternative` `lifeForMana` or `free`, beside the ordinary cast:
+   * at the timing of its types, with its additional costs and cost increases paid, with no other alternative cost, and with X 0 when its mana cost has an {X}. `from` names the zones the
+   * card may be in: the hand, the top of the controller's own library (the ability is then also the permission to cast it from there); left out, the card is cast from where its
+   * controller could cast it anyway (the hand, the command zone, the top of the library when another ability lets it be cast from there). The use is recorded for the permanent
+   * (`TurnLog.oncePerTurnGrants`) as the spell becomes cast: each permanent with the ability gives its own use, and a permanent that left and came back is a new object with a new one
+   * (CR 400.7). `spells` is a filter of the spell as it is on the stack, with no zone, owner, controller, stack kind or combat. A permanent that lost all its abilities gives nothing.
+   */
+  | {
+      readonly kind: 'castOnceEachTurn';
+      readonly spells: ObjectFilter;
+      readonly from?: readonly ('hand' | 'libraryTop')[];
+      readonly alternative: 'lifeForMana' | 'free';
+    }
+  /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
    * a characteristic-defining ability of the card it is printed on, working in every zone but the battlefield (a hand, a library, a graveyard, the stack, exile): the object is also a
    * creature of the creature types `subtypes` (layer 4, applied first like Changeling) and its power and toughness are `power` and `toughness` (layer 7a). The ability is of the

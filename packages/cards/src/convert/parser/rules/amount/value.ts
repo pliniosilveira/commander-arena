@@ -505,7 +505,7 @@ const STAT_OF =
   };
 
 const MANA_VALUE_OF_HEAD =
-  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s|the sacrificed (?:creature|permanent|artifact)['’]s) mana value(?![\p{L}\p{N}])/iu;
+  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s|the sacrificed (?:creature|permanent|artifact|enchantment)['’]s) mana value(?![\p{L}\p{N}])/iu;
 
 /** "its mana value", "that card's mana value" (CR 202.3). */
 const MANA_VALUE_OF =
@@ -513,7 +513,7 @@ const MANA_VALUE_OF =
   (ctx, pos) => {
     // "the mana value of the sacrificed permanent" (Shadow, Mysterious Assassin; CR 202.3, 113.7a): the same value, as the permanent last existed on the battlefield.
     const lead = pattern(
-      /the mana value of (the sacrificed (?:creature|permanent|artifact))(?![\p{L}\p{N}'’])/iu,
+      /the mana value of (the sacrificed (?:creature|permanent|artifact|enchantment))(?![\p{L}\p{N}'’])/iu,
     )(ctx, pos);
     if (lead.ok) {
       const name = lead.value[1] ?? '';
@@ -931,6 +931,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the number of opponents you have',
     'equal to the mana value of the sacrificed permanent',
     'equal to the mana value of the sacrificed creature',
+    'equal to the mana value of the sacrificed enchantment',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
     // Toph, the Blind Bandit (CR 122.1): the counters of a kind on the permanents of a group.
@@ -1096,6 +1097,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the amassed Army’s power',
     // Fall of Cair Andros (CR 120.10): the excess of the damage the trigger is about.
     'where X is that excess damage',
+    // Demon of Fate's Design (CR 202.3, 602.2c, 113.7a): the enchantment the cost of the ability sacrificed.
+    "where X is the sacrificed enchantment's mana value",
   ],
   rejects: [
     "where X is the amassed Army's toughness",

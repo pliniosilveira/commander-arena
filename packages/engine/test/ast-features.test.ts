@@ -256,6 +256,8 @@ describe('the dimensions', () => {
       'grantAlternativeCostToSpells',
       // Issue 105: "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
       'grantEnergyAlternative',
+      // "Once during each of your turns, you may cast a spell ... for an alternative cost" (CR 118.9, 601.2b).
+      'castOnceEachTurn',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
