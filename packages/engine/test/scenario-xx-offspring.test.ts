@@ -6,7 +6,7 @@
 // paid at most once, a countered spell makes no token, the token is not cast and makes no other token, a creature without the ability as it enters does not trigger.
 // Cards: the SYNTHETIC cards of this file, and the real Lightning Bolt, Counterspell and basic lands.
 import { describe, expect, test } from 'vitest';
-import { checkInvariants, getLegalActions, validateCard } from '../src/index';
+import { type CardDefinition, checkInvariants, getLegalActions, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 import { singleFaceCard } from './dsl-helpers';
 import { confirmOptionalDecision } from './pending-helpers';
@@ -302,7 +302,7 @@ describe('validateCard and offspring (CR 702.175a)', () => {
       },
     ],
   });
-  const messages = (card: unknown) => validateCard(card).map((i) => i.message);
+  const messages = (card: unknown) => validateCard(card as CardDefinition).map((i) => i.message);
 
   test('a mana cost on a permanent is valid', () => {
     expect(messages(mouse)).toEqual([]);
