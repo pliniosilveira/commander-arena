@@ -71,6 +71,7 @@ const EXECUTABLE_KEYWORDS = [
   'ninjutsu', // scenario-xx-ninjutsu (CR 702.49a, unverified)
   'multikicker', // scenario-xx-multikicker
   'buyback', // scenario-xx-galadriel-g3-spells
+  'offspring', // scenario-xx-offspring
   'skulk', // scenario-xx-keywords2-combat
   'battleCry', // scenario-xx-keywords2-combat
   'mentor', // scenario-xx-keywords2-combat
@@ -203,6 +204,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   ninjutsu: { kind: 'ninjutsu', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
   multikicker: { kind: 'multikicker', cost: [{ kind: 'mana', symbols: ['2'] }] },
   buyback: { kind: 'buyback', cost: [{ kind: 'mana', symbols: ['2'] }] },
+  offspring: { kind: 'offspring', cost: [{ kind: 'mana', symbols: ['1'] }] },
   skulk: { kind: 'skulk' },
   battleCry: { kind: 'battleCry' },
   mentor: { kind: 'mentor' },
@@ -398,6 +400,8 @@ describe('supported feature gate', () => {
         'entersCausesTrigger',
         // Glorybringer: "When you do" after exerting.
         'exerted',
+        // CR 700.14: "Whenever you expend N".
+        'expend',
         'exiledFromLibraryOrGraveyard',
         'exploits',
         'landfall',
