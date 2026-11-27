@@ -24,7 +24,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrNoun, IrQuotedAbility, IrToken } from '../../ir/types';
+import type { IrAmount, IrNoun, IrQuotedAbility, IrToken } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family } from '../registry';
 import { TOKEN_QUOTED_ABILITY } from '../static/quoted';
@@ -308,7 +308,6 @@ export const EFFECT_INVESTIGATE = defineRule<Clauses>({
     'investigate once for each creature you control',
   ],
   rejects: [
-    'investigate twice',
     'investigates',
     'investigate a Clue',
     'investigate for each land',
@@ -338,6 +337,65 @@ export const EFFECT_INVESTIGATE = defineRule<Clauses>({
     return {
       ok: true,
       value: [makeClause('effect.investigate', 'createToken', { token }, span)] as Clauses,
+      pos: end,
+    };
+  },
+});
+
+/**
+ * `effect.investigate-times`: "Investigate twice.", "Investigate three times.", "Investigate X times, where X is the number of opponents you have." (CR 701.16a:
+ * investigating is creating a Clue token, so doing it N times in a row creates N Clues, CR 608.2c; the X of the spell or ability, or a number, is the count).
+ * Not read: "once" (the rule above), "a Clue", a count that is not a number or X, and the words after the count.
+ */
+export const EFFECT_INVESTIGATE_TIMES = defineRule<Clauses>({
+  id: 'effect.investigate-times',
+  family: 'effect',
+  leading: ['investigate'],
+  cites: [
+    'CR 701.16a (Investigate)',
+    'CR 111.10f (Tokens)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 107.3 (Variables)',
+  ],
+  examples: ['investigate twice', 'investigate three times', 'investigate X times'],
+  rejects: [
+    'investigate',
+    'investigate once',
+    'investigate times',
+    'investigate X',
+    'investigate that many times',
+    'investigate a Clue',
+  ],
+  parse: (ctx, pos) => {
+    const word = pattern(/investigate(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!word.ok) return word;
+    const twice = pattern(/ twice(?![\p{L}\p{N}])/iu)(ctx, word.pos);
+    let count: IrAmount;
+    let end: number;
+    if (twice.ok) {
+      end = twice.pos;
+      count = { kind: 'number', value: 2, span: { start: word.pos, end } };
+    } else {
+      const times = sequence(
+        literal(' '),
+        family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
+        literal(' times'),
+      )(ctx, word.pos);
+      if (!times.ok) return times;
+      count = times.value[1];
+      end = times.pos;
+    }
+    const span = { start: pos, end };
+    const token: IrToken = {
+      kind: 'token',
+      predefined: 'Clue',
+      count,
+      span,
+      rule: 'effect.investigate-times',
+    };
+    return {
+      ok: true,
+      value: [makeClause('effect.investigate-times', 'createToken', { token }, span)] as Clauses,
       pos: end,
     };
   },
@@ -447,5 +505,6 @@ export const TOKEN_EFFECT_RULES = [
   EFFECT_CREATE_THREE_TOKENS,
   EFFECT_CREATE_TWO_TOKENS,
   EFFECT_CREATE_TOKEN,
+  EFFECT_INVESTIGATE_TIMES,
   EFFECT_INVESTIGATE,
 ];
