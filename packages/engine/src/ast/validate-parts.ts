@@ -865,12 +865,13 @@ export function checkFilter(
   if (
     f.sharesCardTypeWith !== undefined &&
     f.sharesCardTypeWith !== 'triggerSubject' &&
-    f.sharesCardTypeWith !== 'sacrificed'
+    f.sharesCardTypeWith !== 'sacrificed' &&
+    f.sharesCardTypeWith !== 'target'
   ) {
     issue(
       out,
       `${path}.sharesCardTypeWith`,
-      "sharesCardTypeWith is 'triggerSubject' or 'sacrificed'",
+      "sharesCardTypeWith is 'triggerSubject', 'sacrificed' or 'target'",
     );
   } else if (f.sharesCardTypeWith === 'sacrificed' && where.afterSacrifice !== true) {
     issue(

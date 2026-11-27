@@ -1015,9 +1015,11 @@ const RETURN_THE_CHOSEN_CARDS: Parser<{ objects: IrNoun | IrNounList; to: IrZone
     sequence(
       literal('return '),
       operands(['noun.the-chosen-cards'], 'effect.return'),
+      // Spirit-Sister's Call: "return the chosen card from your graveyard to the battlefield", the zone said (a target of your graveyard, which the lowering checks).
+      optional(literal(' from your graveyard'), null),
       TO_THE_BATTLEFIELD,
     ),
-    ([, objects, to]) => ({ objects, to }),
+    ([, objects, , to]) => ({ objects, to }),
   ),
 );
 
@@ -1225,6 +1227,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     // D-362 (Victimize): the cards an earlier sentence chose as targets.
     'return the chosen cards to the battlefield',
     'return the chosen cards to the battlefield tapped',
+    // Spirit-Sister's Call: the one card chosen, with its zone said.
+    'return the chosen card from your graveyard to the battlefield',
+    'return the chosen card to the battlefield',
     // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
     'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
     // Thwart the Grave (CR 404.1, 115.1): two targets of your graveyard, the zone said once.
@@ -1274,7 +1279,6 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from a graveyard to the battlefield at the beginning of the next end step',
     'return the chosen cards to your hand',
     "return the chosen cards to their owners' hands",
-    'return the chosen card to the battlefield',
     'return the chosen cards to the battlefield under their owners control',
     'return target creature card from your graveyard to your hand attached to that token',
     'return target creature card from your graveyard to the battlefield attached to target creature',

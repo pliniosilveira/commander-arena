@@ -12,31 +12,38 @@ type Bare = Omit<IrNoun, 'span' | 'rule'>;
 /**
  * `noun.the-chosen-cards`: "the chosen cards", "the chosen creature cards" (CR 608.2c: the cards an earlier instruction of the text chose, CR 601.2c: as targets). The binding
  * pass finds the antecedent, the most recent plural noun of the text, as it does for "those cards", and the lowering accepts it only for target cards of a graveyard.
- * Only the plural: "the chosen card" is another sentence.
+ * The singular "the chosen card" (Spirit-Sister's Call, one target card) is the same noun with `plural` false. Not read: "the chosen" alone, another noun than a card.
  */
 export const NOUN_THE_CHOSEN_CARDS = defineRule<IrNoun>({
   id: 'noun.the-chosen-cards',
   family: 'noun',
   leading: ['the'],
   cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 601.2c (Casting Spells)'],
-  examples: ['the chosen cards', 'the chosen creature cards', 'The chosen cards'],
-  rejects: [
+  examples: [
+    'the chosen cards',
+    'the chosen creature cards',
+    'The chosen cards',
     'the chosen card',
+    'the chosen permanent card',
+  ],
+  rejects: [
     'the chosen',
     'the chosen creatures',
     'chosen cards',
     'those cards',
     'the chosen cards from your graveyard',
+    'the chosen card from your graveyard',
+    'the chosen cardinal',
   ],
   parse: node<RegExpExecArray, IrNoun>(
     'noun.the-chosen-cards',
-    pattern(new RegExp(`the chosen (?:[\\p{L}-]+ )?cards${BOUNDARY}`, 'iu')),
+    pattern(new RegExp(`the chosen (?:[\\p{L}-]+ )?cards?${BOUNDARY}`, 'iu')),
     (m): Bare => ({
       kind: 'noun',
       det: 'anaphor',
       filter: { raw: m[0] },
       upTo: false,
-      plural: true,
+      plural: /cards$/iu.test(m[0]),
       other: false,
     }),
   ),

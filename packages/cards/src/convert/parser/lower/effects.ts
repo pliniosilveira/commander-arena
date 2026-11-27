@@ -795,7 +795,10 @@ const RETURN: Lowering<IrClause, Effects> = {
         value: [
           {
             kind: 'moveToZone',
-            objects: { kind: 'triggerCard' },
+            objects:
+              ctx.triggerCardZones === undefined
+                ? { kind: 'triggerCard' }
+                : { kind: 'triggerCard', zones: [...ctx.triggerCardZones] },
             to: 'battlefield',
             controller: to.whose ?? 'you',
             ...(to.tapped === true ? { tapped: true } : {}),

@@ -160,6 +160,7 @@ export function runChooseSacrifice(
     res.source,
     instruction.filter,
     res.sacrificed,
+    res.legalTargets,
   );
   // CR 603.2c, 400.7 (Descendants' Fury): "sacrifice one of them" is one of the creatures that dealt the damage, as long as each is still the permanent that did.
   const namedByTrigger =
