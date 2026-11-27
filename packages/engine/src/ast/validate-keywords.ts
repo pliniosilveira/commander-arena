@@ -208,6 +208,20 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         });
       }
       return true;
+    case 'offspring':
+      // CR 702.175a: an additional cost paid as the spell is cast: mana, no X.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost)) {
+        if (k.cost.length === 0) issue(out, `${path}.cost`, 'offspring needs a cost to pay');
+        k.cost.forEach((c, i) => {
+          if (c?.kind !== 'mana') {
+            issue(out, `${path}.cost[${i}]`, 'an offspring cost may be mana only in this engine');
+          } else if (c.symbols?.includes('X')) {
+            issue(out, `${path}.cost[${i}]`, 'X in an offspring cost is not supported');
+          }
+        });
+      }
+      return true;
     case 'escalate':
       // CR 702.120a (D-145): an additional cost for each mode chosen beyond the first: mana, no X.
       checkCosts(k.cost, `${path}.cost`, out);

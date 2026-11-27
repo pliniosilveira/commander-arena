@@ -994,6 +994,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'replicate',
     // Galadriel group 3: Buyback (CR 702.27a).
     'buyback',
+    // CR 702.175a: Offspring.
+    'offspring',
     'gravestorm',
     // CR 702.88a: Rebound.
     'rebound',
@@ -1650,6 +1652,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 602.2b, 701.9a (Moria Scavenger): "If the discarded card was a creature card".
     'discardedAsCostMatches',
     'giftPromised',
+    // CR 702.175a: "if its offspring cost was paid".
+    'offspringPaid',
     'opponentControlsAtLeast',
     // D-139: "if you control the artifact with the greatest mana value or tied for the greatest mana value".
     'controlsGreatest',
@@ -2987,6 +2991,8 @@ export const CONDITION_KINDS = [
   'discardedAsCostMatches',
   /** "If the gift was promised" (CR 702.174k, D-135): the engine's `giftPromised`. */
   'giftPromised',
+  /** "If its offspring cost was paid" (CR 702.175a): the engine's `offspringPaid`. */
+  'offspringPaid',
   /** "If an opponent controls four or more nonbasic lands" (D-135): the engine's `opponentControlsAtLeast`. */
   'opponentControlsAtLeast',
   /** "If you do" (CR 603.12, D-135): the engine's `didPrevious`, after a `may` effect. */
@@ -4049,6 +4055,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   reconfigure: true,
   kicker: true,
   buyback: true,
+  offspring: true,
   flashback: true,
   prowess: true,
   ward: true,

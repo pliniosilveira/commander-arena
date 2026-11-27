@@ -249,6 +249,11 @@ export interface GameObject {
    */
   readonly giftTo?: SeatId;
   /**
+   * True for a permanent that came from a spell whose offspring cost was paid (CR 702.175a): "when this permanent enters, if its offspring cost was paid" reads it, from
+   * last-known information once the permanent has left. Absent otherwise; a permanent that was not cast never has it.
+   */
+  readonly offspringPaid?: true;
+  /**
    * The zone the spell this permanent came from was cast from (CR 601.2a, 603.4: "When this creature enters, if you cast it, ..."): remembered by the permanent the spell
    * became. Absent for a permanent that was put onto the battlefield without being cast (and for one that came from a copy of a spell).
    */
@@ -471,6 +476,11 @@ export interface StackData {
    * difference to it: a copy is not a card and ceases to exist.
    */
   readonly boughtBack?: true;
+  /**
+   * True when the offspring cost was paid as the spell was cast (CR 702.175a): the permanent the spell becomes remembers it (`GameObject.offspringPaid`) and its enters trigger
+   * reads it. Absent for a spell with no offspring and for one whose caster did not pay it. A copy of the spell has it too (CR 707.10).
+   */
+  readonly offspringPaid?: true;
   /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
   readonly lifeForMana?: true;
   /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */

@@ -80,6 +80,7 @@ const KEYWORD_RULE = {
   replicate: 'keyword.replicate',
   escalate: 'keyword.escalate',
   buyback: 'keyword.buyback',
+  offspring: 'keyword.offspring',
   plot: 'keyword.plot',
   ninjutsu: 'keyword.ninjutsu',
 } as const;
@@ -101,6 +102,7 @@ type CostedKeyword =
   | 'replicate'
   | 'escalate'
   | 'buyback'
+  | 'offspring'
   | 'plot'
   | 'ninjutsu';
 
@@ -263,6 +265,7 @@ function lowerCostedKeyword(
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'buyback' ||
+    name === 'offspring' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
@@ -681,6 +684,7 @@ export function lowerKeyword(
     ability.name === 'replicate' ||
     ability.name === 'escalate' ||
     ability.name === 'buyback' ||
+    ability.name === 'offspring' ||
     ability.name === 'plot' ||
     ability.name === 'ninjutsu' ||
     ability.name === 'ward'
@@ -1526,6 +1530,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:escalate',
   'keyword:replicate',
   'keyword:buyback',
+  'keyword:offspring',
   'keyword:plot',
   'keyword:ninjutsu',
   'keyword:echo',

@@ -93,6 +93,7 @@ import {
   spellXCostOf,
 } from './cast-cost';
 import { answerGift, toGift } from './cast-gift';
+import { answerOffspring as answerOffspringWith, toOffspring } from './cast-offspring';
 import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
@@ -731,7 +732,7 @@ function toBuyback(state: GameState, events: GameEvent[]): Result {
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
   const cost = buybackCostOf(faceOf(state, spell));
-  if (cost === null) return toGift(state, events, toCostChoice);
+  if (cost === null) return toOffspring(state, events, afterOffspring);
   const before = casting.snapshot;
   const card = getObject(before, casting.from);
   const request = {
@@ -747,7 +748,7 @@ function toBuyback(state: GameState, events: GameEvent[]): Result {
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
   } as const;
   if (!canPayRequest(before, casting.seat, request.spell, { ...request, bought: true })) {
-    return toGift(state, events, toCostChoice);
+    return toOffspring(state, events, afterOffspring);
   }
   const info = sourceInfo(state, casting.object);
   return ok(
@@ -782,7 +783,17 @@ export function answerBuyback(state: GameState, accept: boolean): Result {
   const next = patchObject({ ...state, pending: null }, casting.object, {
     stack: accept ? { ...stack, boughtBack: true } : stack,
   });
-  return toGift(next, [], toCostChoice);
+  return toOffspring(next, [], afterOffspring);
+}
+
+/** The cast goes on after the offspring question: to the gift, the cost choice, X and the targets. */
+function afterOffspring(state: GameState, events: GameEvent[]): Result {
+  return toGift(state, events, toCostChoice);
+}
+
+/** The answer to "pay the offspring cost?" (CR 702.175a, 601.2b); `rules/cast-offspring.ts`. */
+export function answerOffspring(state: GameState, accept: boolean): Result {
+  return answerOffspringWith(state, accept, afterOffspring);
 }
 
 /**
@@ -862,6 +873,7 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     modeSet: stack.chosenModes,
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
+    offspring: stack.offspringPaid === true,
   } as const;
   const payable = choice
     .map((_, option) => option)
@@ -1993,6 +2005,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     ...(obj.stack?.kicks === undefined ? {} : { kicks: obj.stack.kicks }),
     ...(obj.stack?.replicated === undefined ? {} : { replicas: obj.stack.replicated }),
     ...(obj.stack?.boughtBack === true ? { boughtBack: true as const } : {}),
+    ...(obj.stack?.offspringPaid === true ? { offspring: true as const } : {}),
     ...(obj.stack?.giftTo === undefined ? {} : { gift: obj.stack.giftTo }),
     ...(cast === undefined ? {} : { alternative: cast }),
     ...(obj.face !== 0 ? { face: obj.face } : {}),

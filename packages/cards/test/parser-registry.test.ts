@@ -1146,6 +1146,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
   'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
   'keyword.buyback': asIs,
+  'keyword.offspring': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
   // Ninjutsu (CR 702.49a): the keyword line stands alone.

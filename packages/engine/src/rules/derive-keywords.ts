@@ -810,6 +810,23 @@ function giftAbility(gift: Extract<Keyword, { kind: 'gift' }>['gift']): Ability 
   };
 }
 
+/**
+ * CR 702.175a (Offspring), the trigger half: "When this permanent enters, if its offspring cost was paid, create a token that's a copy of it, except it's 1/1." The condition is
+ * checked as it triggers and as it resolves (CR 603.4) and the permanent remembers the payment (`GameObject.offspringPaid`). The token copies the copiable values of the
+ * permanent (CR 707.2), from its last-known information when it has left (CR 608.2h); "1/1" is part of the copiable values of the token (CR 707.9b). The cost half is asked as
+ * the spell is cast (`rules/cast-offspring.ts`).
+ */
+const OFFSPRING_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+  interveningIf: { kind: 'offspringPaid' },
+  effect: {
+    kind: 'createToken',
+    token: { kind: 'copyOf', object: { kind: 'this' }, setPt: { power: 1, toughness: 1 } },
+    count: 1,
+  },
+};
+
 /** CR 702.92a: the token of Living weapon, "a 0/0 black Phyrexian Germ creature token". */
 const GERM_TOKEN: TokenDefinition = {
   name: 'Phyrexian Germ',
@@ -1037,6 +1054,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [cumulativeUpkeepAbility(ability.keyword.cost)];
     case 'gift':
       return [giftAbility(ability.keyword.gift)];
+    case 'offspring':
+      return [OFFSPRING_ABILITY];
     case 'livingWeapon':
       return [LIVING_WEAPON_ABILITY];
     case 'jobSelect':

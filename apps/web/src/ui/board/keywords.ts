@@ -108,6 +108,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   cipher: ['Cph', 'Cipher'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
+  // Offspring (CR 702.175a): the cost rides in the chip (`PARAMETERIZED`).
+  offspring: ['Off', 'Offspring'],
   // Gift a card (D-135).
   gift: ['Gft', 'Gift a card'],
   // The Artifacts slice (D-139): the reminder text rides in the tooltip (CR 702.92a).
@@ -192,6 +194,11 @@ const PARAMETERIZED: Readonly<
   buyback: (text) =>
     [...text.matchAll(/buyback\s*((?:\{[^}]+\})+)/gi)].map(
       (m) => ['Bb', withCost('Buyback', m[1] ?? '')] as const,
+    ),
+  // "Offspring {1}": one chip per instance (CR 702.175a).
+  offspring: (text) =>
+    [...text.matchAll(/offspring\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Off', withCost('Offspring', m[1] ?? '')] as const,
     ),
   // "Escalate {G}": the cost of each mode beyond the first (CR 702.120a), one chip per instance.
   escalate: (text) =>
