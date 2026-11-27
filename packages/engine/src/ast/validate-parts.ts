@@ -448,6 +448,7 @@ export function checkFilter(
     'exiledThisWay',
     'powerAtMostMoved',
     'putWithSource',
+    'notCast',
     'singleTarget',
     'modified',
     'goaded',

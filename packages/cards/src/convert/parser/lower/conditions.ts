@@ -775,6 +775,14 @@ export function lowerCondition(
       if (!itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'wasCast' });
     }
+    case 'notCast': {
+      // CR 601.2a, 603.4 (Rapid Augmenter): "if it wasn't cast", the intervening "if" of a trigger about another permanent that enters: the permanent did not come from a cast spell
+      // (the engine's `subjectMatches` with `notCast`). "It" is the permanent of the event, never the source.
+      const blocked = missingFeatures(['condition:subjectMatches', 'selector:notCast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectMatches', filter: { notCast: true } });
+    }
     case 'opponentControls': {
       // CR 109.4 (stage P30, D-135): some one opponent controls that many permanents that match.
       const blocked = missingFeatures(['condition:opponentControlsAtLeast']);

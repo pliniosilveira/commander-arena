@@ -956,6 +956,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'enteredFromGraveyard' }
     // "it wasn't put onto the battlefield with this ability" (Kodama of the East Tree, CR 603.4, 400.7): the intervening "if" of a trigger about a permanent that enters
     | { readonly kind: 'notPutWithThisAbility' }
+    // "it wasn't cast" (Rapid Augmenter, CR 601.2a, 603.4): the intervening "if" of a trigger about another permanent that enters
+    | { readonly kind: 'notCast' }
     // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
     | { readonly kind: 'costContainsX' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)

@@ -141,6 +141,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 
 - Offspring given to spells (Zinnia, Valley's Voice): the permanent keeps the token trigger after the giver leaves, and a spell with printed offspring is asked about its own cost only. Rulings and CR 702.156 (Ravenous) numbering unverified.
 - "Put onto the battlefield with this ability" (Kodama of the East Tree) is remembered per source object, not per ability: a permanent with two such abilities would not tell them apart. No card has both.
+- "You may pay {X}. When you do, ..." (Rose Room Treasurer) is a pay-any-amount: paying X = 0 triggers nothing, though the CR would trigger the reflexive ability with X = 0 (missing "becomes the target" triggers).
 - Necromancy's rider tests only the main-phase, empty-stack timing of a sorcery (CR 307.1); an effect that lets sorceries be cast at other times is not read. Scryfall rulings for it were unavailable: unverified.
 - Mirrormade (issue 109): a copy of an Aura that enchants a player (a Curse) is not offered a player to enchant, so the spell goes to the graveyard (CR 303.4g), as for any Aura an effect enters.
 - A choice by each player exiled until the source leaves (Foreboding Steamboat): each player's creatures are exiled in a separate move, not one simultaneous event. CR numbers cited for it are unchecked.

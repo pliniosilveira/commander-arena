@@ -25,8 +25,14 @@ export const CONDITION_RESOLVED_TIMES = defineRule<IrCondition>({
     'This is the third time this ability has resolved this turn',
     'this is the fourth time this ability has resolved this turn',
     'this is the first time this ability has resolved this turn',
+    // Rose Room Treasurer (CR 608.2c): either of two counts.
+    'this is the first or second time this ability has resolved this turn',
   ],
   rejects: [
+    'this is the second or first time this ability has resolved this turn',
+    'this is the second or second time this ability has resolved this turn',
+    'this is the first or fifth time this ability has resolved this turn',
+    'this is the first or second time this ability has resolved',
     'this is the first time this ability has resolved',
     'this is the second time this ability has resolved',
     'this is the second time this spell has resolved this turn',
@@ -41,21 +47,36 @@ export const CONDITION_RESOLVED_TIMES = defineRule<IrCondition>({
   parse: (ctx, pos) => {
     const r = pattern(
       new RegExp(
-        `this is the (first|second|third|fourth) time this ability has resolved this turn${BOUNDARY}(?! and\\b)`,
+        `this is the (first|second|third|fourth)(?: or (first|second|third|fourth))? time this ability has resolved this turn${BOUNDARY}(?! and\\b)`,
         'iu',
       ),
     )(ctx, pos);
     if (!r.ok) return r;
     const times = ORDINALS[(r.value[1] ?? '').toLowerCase()];
     if (times === undefined) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    const one = (n: number): IrCondition => ({
+      kind: 'condition',
+      test: { kind: 'abilityResolvedTimes', times: n },
+      span,
+      rule: 'condition.resolved-times',
+    });
+    // Rose Room Treasurer: "the first or second time this ability has resolved this turn": either count, in increasing order as the card says it.
+    const other = r.value[2] === undefined ? undefined : ORDINALS[r.value[2].toLowerCase()];
+    if (r.value[2] !== undefined && (other === undefined || other <= times)) {
+      return fail(ctx, pos);
+    }
     return {
       ok: true,
-      value: {
-        kind: 'condition',
-        test: { kind: 'abilityResolvedTimes', times },
-        span: { start: pos, end: r.pos },
-        rule: 'condition.resolved-times',
-      },
+      value:
+        other === undefined
+          ? one(times)
+          : {
+              kind: 'condition',
+              test: { kind: 'or', terms: [one(times), one(other)] },
+              span,
+              rule: 'condition.resolved-times',
+            },
       pos: r.pos,
     };
   },

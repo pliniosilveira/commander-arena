@@ -570,8 +570,12 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Creatures you control can attack as though they didn't have defender.",
     "Creatures you control with defender can attack as though they didn't have defender.",
     'Creatures you control assign combat damage equal to their toughness rather than their power.',
+    // Tetsuko Umezawa, Fugitive (CR 509.1b, 208.1): a group named by its power or its toughness, a restriction read after the layers.
+    "Creatures you control with power or toughness 1 or less can't be blocked.",
   ],
   rejects: [
+    "Creatures you control with power or toughness 1 or less can't be blocked",
+    "Creatures you control with power or toughness or less can't be blocked.",
     "Creatures you control can attack as though it didn't have defender.",
     "Creatures you control can attack as though they didn't have flying.",
     'Creatures you control assigns combat damage equal to their toughness rather than their power.',
