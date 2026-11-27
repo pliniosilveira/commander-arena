@@ -1604,6 +1604,9 @@ export const TRIGGER_RULES = [
   ...NOT_OWNED_DIES_TRIGGER_RULES,
   TRIGGER_ENTERS_AND_CAST,
   TRIGGER_ENTERS_AND_UPKEEP,
+  // CR 709.5h, 709.5i: "you unlock this door", "you fully unlock a Room" (a Room), and "~ or another enchantment enters and whenever you fully unlock a Room", which comes before the
+  // `trigger.or-subjects` it extends.
+  ...ROOM_TRIGGER_RULES,
   // Watcher of Hours: "you remove a time counter from this card while it's exiled" starts like no other trigger rule reads.
   ...EXILE_COUNTER_TRIGGER_RULES,
   // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
@@ -1664,8 +1667,6 @@ export const TRIGGER_RULES = [
   // Syr Konrad: "another creature dies, or a creature card is put into a graveyard from anywhere other than the battlefield, or a creature card leaves your graveyard" (a prefix
   // of which `trigger.dies` would read, so it comes first).
   ...GRAVEYARD_EVENTS_TRIGGER_RULES,
-  // CR 709.5h: "you unlock this door" (a Room).
-  ...ROOM_TRIGGER_RULES,
   // Jeskai free-cast cards (issue 100): "you cast your first instant or sorcery spell each turn".
   ...JESKAI_CASTFREE_TRIGGER_RULES,
   // Stage P30 (D-135): "enters untapped" and "dies or is put into exile from the battlefield" read the words after the event

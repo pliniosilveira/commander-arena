@@ -6895,6 +6895,12 @@ export type Trigger =
    */
   | { readonly kind: 'doorUnlocked'; readonly who: 'you'; readonly door: 'this' }
   /**
+   * "Whenever you fully unlock a Room" (CR 709.5i, 709.5h; Fear of Sleep Paralysis): the player `who` ("you": the controller of the ability) gave a Room (a permanent with a shared type
+   * line) the unlocked designation it lacked, so that it now has both: when one door was already unlocked, or when both become unlocked at once. Any Room, not only the permanent with the
+   * ability. `triggerSubject` is the Room.
+   */
+  | { readonly kind: 'roomFullyUnlocked'; readonly who: 'you' }
+  /**
    * "When this creature exploits a creature" (CR 702.110b, Exploit; the rules text was not available to check the number): the creature with this ability, whose exploit ability
    * resolved and whose controller sacrificed a creature (itself or another) as it did. The trigger of the creature itself only. `triggerSubject` is the creature. It triggers also when the
    * creature sacrificed itself (it is looked at as it was on the battlefield, CR 603.10a).
@@ -9430,6 +9436,12 @@ export type StaticEffect =
        * taxed, and it pays `cost` once for each counter on it.
        */
       readonly perCounter?: true;
+      /**
+       * "... unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control." (CR 508.1d, 508.1h, 118.12a; Sphere of Safety): `cost`
+       * is paid `times` times for each attacker, `times` a state amount (`countOf`, ...) read for the controller of the ability as the attackers are declared. 0 taxes nothing. Not
+       * with `perCounter`.
+       */
+      readonly times?: Amount;
     }
   /**
    * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): while the permanent has the ability, no creature `creatures` describes can be declared as
@@ -9442,6 +9454,18 @@ export type StaticEffect =
       readonly kind: 'cantAttackYou';
       readonly creatures: ObjectFilter;
       readonly planeswalkers?: true;
+    }
+  /**
+   * "Stun counters can't be removed from permanents your opponents control." (Fear of Sleep Paralysis, CR 122.1, 122.1d, 614.1, 701.26b): while the permanent has the ability, no counter of
+   * the kind `counter` is removed from a permanent on the battlefield that `permanents` describes (a filter read for the controller of the permanent: "you" is its controller, `controller`
+   * `opponent` any of its opponents), whatever removes it: the stun counter that would be removed instead of untapping stays (the permanent stays tapped, and a tapped permanent with a
+   * stun counter can't be untapped to pay a cost either), an effect that removes or moves the counter takes none off. It is read from the derived abilities of the permanents on the
+   * battlefield (CR 604.1), as the counters are about to come off.
+   */
+  | {
+      readonly kind: 'cantRemoveCounters';
+      readonly counter: string;
+      readonly permanents: ObjectFilter;
     }
   /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (CR 509.1b, 509.1d, 118.12a, D-149): while the permanent has the
@@ -9566,6 +9590,12 @@ export type StaticEffect =
       readonly kind: 'loseKeyword';
       readonly subject: StaticSubject;
       readonly keyword: Keyword;
+      /**
+       * "Creatures your opponents control lose flying and can't have or gain flying." (Archetype of Imagination, CR 613.1f, 613.7): the subject also can't have the keyword from any
+       * other effect, whatever its timestamp (a later effect that gives it is ignored while this applies). The ability applies to the creatures the subject describes at any moment,
+       * whenever they came to be.
+       */
+      readonly cantHave?: true;
     }
   /**
    * "~ can't block", "Equipped creature can't be blocked", "~ attacks each combat if able", "~

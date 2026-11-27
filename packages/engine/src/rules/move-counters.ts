@@ -8,6 +8,7 @@ import type { ObjectId } from '../ids';
 import { patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { counterRemovalLocked } from './counter-lock';
 import { counterBlocked } from './counter-prevention';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -39,6 +40,8 @@ export function runMoveCounters(
   const source = state.objects[res.source];
   if (source === undefined || source.zone !== 'battlefield') return done(state);
   if ((source.counters[ins.counter] ?? 0) <= 0) return done(state);
+  // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed does not move.
+  if (counterRemovalLocked(state, source, ins.counter)) return done(state);
   const legal = counterDestinations(state, res, ins);
   if (legal.length === 0) return done(state);
   if (ins.chosen === null) {

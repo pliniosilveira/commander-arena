@@ -564,6 +564,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ? failure(t, blocked)
         : ok({ kind: 'doorUnlocked', who: 'you', door: 'this' });
     }
+    case 'roomFullyUnlocked': {
+      // "Whenever you fully unlock a Room" (Fear of Sleep Paralysis, CR 709.5i): any Room, by the controller.
+      if (t.actor?.det !== 'you') return failure(t);
+      const blocked = missingFeatures(['trigger:roomFullyUnlocked']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'roomFullyUnlocked', who: 'you' });
+    }
     case 'cycled': {
       // "When you cycle this card" (stage P37, D-180, CR 702.29c): the card with the ability, which the engine finds in the zone it wound up in.
       if (t.actor?.det !== 'you' || t.subject?.det !== 'self') return failure(t);
@@ -2594,6 +2602,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:exerted',
   'trigger:playsCard',
   'trigger:doorUnlocked',
+  'trigger:roomFullyUnlocked',
   'trigger:exploits',
   'static:exertOnAttack',
   'trigger:tappedForMana',

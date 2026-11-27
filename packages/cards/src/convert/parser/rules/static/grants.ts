@@ -285,11 +285,32 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
         );
   // CR 613.1f (Colossus Hammer): "gets +10/+10 and loses flying", "has haste and loses flying": the keywords the subject no longer has.
   const loses = plural ? 'lose ' : 'loses ';
-  const loseWhat = map(
-    sequence(pattern(new RegExp(`${loses}`, 'i')), KEYWORD_WORDS),
-    ([, words]): Effects =>
-      words.map((keyword): IrStaticEffect => ({ kind: 'loseKeyword', keyword })),
+  const loseWords = sequence(
+    pattern(new RegExp(`${loses}`, 'i')),
+    KEYWORD_WORDS,
+    // CR 613.1f, 613.7 (Archetype of Imagination): "lose flying and can't have or gain flying": the same keyword, kept off whatever gives it later.
+    optional(sequence(pattern(/ and can['’]t have or gain /iu), KEYWORD_WORDS), null),
   );
+  const loseWhat: Parser<Effects> = (ctx, pos) => {
+    const r = loseWords(ctx, pos);
+    if (!r.ok) return r;
+    const [, words, never] = r.value;
+    // The prohibition names the keyword that is lost and no other: anything else is not read.
+    const same =
+      never !== null && words.length === 1 && never[1].length === 1 && never[1][0] === words[0];
+    if (never !== null && !same) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: words.map(
+        (keyword): IrStaticEffect => ({
+          kind: 'loseKeyword',
+          keyword,
+          ...(same ? { cantHave: true as const } : {}),
+        }),
+      ),
+      pos: r.pos,
+    };
+  };
   const andLoses =
     mode === 'self' || mode === 'selfGrant'
       ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
@@ -511,6 +532,9 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control get +1/+1.',
     'Other creatures you control get +1/+1.',
     'Creatures you control have vigilance.',
+    // Archetype of Imagination (CR 613.1f, 613.7): lose a keyword and can't have or gain it.
+    "Creatures your opponents control lose flying and can't have or gain flying.",
+    'Creatures you control lose flying.',
     'Other creatures you control get +1/+1 and have flying.',
     'Other Elves you control get +1/+1.',
     'Other Wolves and Werewolves you control have trample.',
@@ -562,6 +586,10 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control have flash.',
     'All creature have haste.',
     'Creatures you control have flying and flying.',
+    "Creatures your opponents control lose flying and can't have or gain trample.",
+    "Creatures your opponents control lose flying and can't have or gain flying and trample.",
+    "Creatures your opponents control lose flying and can't have flying.",
+    "Creatures your opponents control lose flying and can't have or gain flying",
     'Creature tokens you control have flash.',
     'Other creature you control gets +1/+1.',
     'Elf you control gets +1/+1.',

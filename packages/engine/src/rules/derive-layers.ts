@@ -154,6 +154,8 @@ export interface StaticGrant {
   readonly timestamp: number;
   /** "Equipped creature loses flying" (CR 613.1f): the keyword taken away at this timestamp (`ability` is null); the object keeps its other abilities. */
   readonly loses?: Keyword['kind'];
+  /** "... and can't have or gain flying" (CR 613.1f, 613.7): the keyword is taken out after every step, whatever its timestamp. */
+  readonly cantHave?: true;
 }
 
 /**
@@ -284,6 +286,10 @@ export function applyAbilityLayer(
   }
   // CR 702.11b, 702.18a, 613.1f (D-649): "can't have hexproof or shroud" holds for every timestamp, so the two are taken out after all the steps.
   const noHexproofShroud = effects.some((e) => e.change.kind === 'loseHexproofShroud');
+  // CR 613.1f, 613.7 (Archetype of Imagination): "can't have or gain" a keyword holds for every timestamp, so it is taken out after all the steps.
+  const cantHave = new Set<Keyword['kind']>(
+    grants.flatMap((g) => (g.cantHave === true && g.loses !== undefined ? [g.loses] : [])),
+  );
   if (steps.length === 0 && !noHexproofShroud) return printed;
   // `sort` is stable, so grants with one timestamp (one permanent) keep their written order.
   steps.sort((a, b) => a.timestamp - b.timestamp);
@@ -320,10 +326,14 @@ export function applyAbilityLayer(
         : [...abilities, step.grant];
     }
   }
-  if (noHexproofShroud) {
+  if (noHexproofShroud || cantHave.size > 0) {
     return abilities.filter(
       (a) =>
-        !(a.kind === 'keyword' && (a.keyword.kind === 'hexproof' || a.keyword.kind === 'shroud')),
+        !(
+          a.kind === 'keyword' &&
+          ((noHexproofShroud && (a.keyword.kind === 'hexproof' || a.keyword.kind === 'shroud')) ||
+            cantHave.has(a.keyword.kind))
+        ),
     );
   }
   return abilities;

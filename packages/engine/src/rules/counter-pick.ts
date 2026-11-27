@@ -15,6 +15,7 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { counterRemovalLocked } from './counter-lock';
 import { counterBlocked } from './counter-prevention';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
@@ -47,6 +48,8 @@ export function counterPickOptions(state: GameState, ins: CounterPick): CounterP
     for (const [counter, count] of Object.entries(obj.counters)) {
       if (count <= 0) continue;
       if (ins.counterKind !== undefined && counter !== ins.counterKind) continue;
+      // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed can't be taken or moved.
+      if (counterRemovalLocked(state, obj, counter)) continue;
       if (ins.mode === 'move' && to != null && counterBlocked(state, to, counter)) continue;
       out.push({ object: id, counter, count });
     }

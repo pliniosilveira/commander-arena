@@ -271,6 +271,7 @@ describe('the dimensions', () => {
       'revealTopOfLibrary',
       'playLandsFromTopOfLibrary',
       'attackTax',
+      'cantRemoveCounters',
       // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
       'optionalUntap',
