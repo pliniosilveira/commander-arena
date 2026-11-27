@@ -92,7 +92,68 @@ export const NOUN_TARGET_CREATURE_ATTACKING_YOU_PLAIN = defineRule<IrNoun>({
   },
 });
 
+/**
+ * `noun.target-creature-attacking-that-player`: "target nontoken creature that's attacking that player" (Echoing Assault, CR 508.1b, 508.6, 115.1): one creature on the battlefield (a nontoken
+ * one when the words say so) declared as an attacker whose attack target is the player the trigger is about, as a player; a planeswalker or battle they control does not count. The engine's
+ * `ObjectFilter.attackingOpponents: 'triggerAttacked'`, read as the target is chosen and again as the ability resolves (CR 608.2b); the lowering reads it only in a trigger with one
+ * occurrence for each player attacked ("Whenever you attack a player"). Not read: "that opponent", "or a planeswalker", another kind of permanent, several targets, a controller.
+ */
+export const NOUN_TARGET_CREATURE_ATTACKING_THAT_PLAYER = defineRule<IrNoun>({
+  id: 'noun.target-creature-attacking-that-player',
+  family: 'noun',
+  leading: ['target'],
+  cites: [
+    'CR 508.1b (Declare Attackers Step)',
+    'CR 508.6 (Declare Attackers Step)',
+    'CR 115.1 (Targets)',
+  ],
+  examples: [
+    "target nontoken creature that's attacking that player",
+    "target creature that's attacking that player",
+    'target creature attacking that player',
+    'target nontoken creature attacking that player',
+  ],
+  rejects: [
+    "target nontoken creature that's attacking that opponent",
+    "target creature that's attacking that player or a planeswalker they control",
+    "target creature that's attacking that player and",
+    "target creatures that's attacking that player",
+    "target creature you control that's attacking that player",
+    "target permanent that's attacking that player",
+    "target nontoken permanent that's attacking that player",
+    "nontoken creature that's attacking that player",
+    "target creature that's attacking that players",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      new RegExp(
+        `target (nontoken )?creature (?:that['’]s )?attacking that player(?! (?:or|and)\\b)${BOUNDARY}(?!['’])`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: {
+        zone: 'battlefield',
+        types: ['creature'],
+        ...(r.value[1] === undefined ? {} : { token: false }),
+        attackingOpponents: 'triggerAttacked',
+        raw: r.value[0],
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: 'noun.target-creature-attacking-that-player',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
 export const ATTACKING_YOU_NOUN_RULES = [
   NOUN_TARGET_CREATURE_ATTACKING_YOU,
   NOUN_TARGET_CREATURE_ATTACKING_YOU_PLAIN,
+  NOUN_TARGET_CREATURE_ATTACKING_THAT_PLAYER,
 ];

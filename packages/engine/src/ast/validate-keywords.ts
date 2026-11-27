@@ -60,6 +60,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'cipher',
   'livingWeapon',
   'exploit',
+  'ravenous',
   'jobSelect',
 ];
 

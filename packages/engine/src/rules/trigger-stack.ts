@@ -269,6 +269,10 @@ function runQueue(input: GameState): PutResult {
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
       ...(trigger.damaged === undefined ? {} : { triggerDamaged: trigger.damaged }),
       ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
+      // CR 508.6 (Echoing Assault): a target filter "attacking that player" reads the player the attack event of the trigger is about.
+      ...(trigger.attacked === undefined || !readsTriggerAttacked(trigger.ability)
+        ? {}
+        : { triggerAttacked: trigger.attacked }),
       // CR 603.12, 400.7j: "target creature card exiled this way" of a reflexive ability reads what the resolution that created it exiled.
       ...(trigger.movedBefore === undefined ? {} : { moved: trigger.movedBefore }),
       // CR 603.3d: a target filter that reads the object that caused the trigger ("mana value ... that spell's mana value").
@@ -565,6 +569,7 @@ export function answerTriggerModes(
       ? {}
       : { triggerTargetCount: stack.triggerTargetCount }),
     ...(stack.triggerSubject === undefined ? {} : { triggerSubject: stack.triggerSubject }),
+    ...(stack.triggerAttacked === undefined ? {} : { triggerAttacked: stack.triggerAttacked }),
   };
   const patched = patchObject({ ...state, pending: null }, stackObject, {
     stack: { ...stack, chosenModes: chosen },

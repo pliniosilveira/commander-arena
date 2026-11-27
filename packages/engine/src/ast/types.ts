@@ -522,6 +522,12 @@ export type Amount =
    */
   | { readonly kind: 'cardsDrawnThisTurn' }
   /**
+   * "For each creature that attacked this turn" (Rowdy Research; CR 508.1, 601.2f): the number of different creatures that were declared as attackers this turn by any player, in any combat
+   * phase (a creature that attacked twice counts once; one put onto the battlefield attacking was never declared, CR 508.4; one that has since left the battlefield still counts), read from
+   * `TurnLog.attackedWith`. Read as the amount is evaluated (a cost reduction reads it as the cost is determined). Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'creaturesAttackedThisTurn' }
+  /**
    * "The number of experience counters you have" (CR 122.1, Meren of Clan Nel Toth): the experience counters the controller of the spell or ability has now
    * (`SeatState.experience`, 0 when they have none), read as the instruction runs. A state amount, so valid wherever an amount is; a static ability is not refreshed when
    * the number changes (`validateCard` refuses it there).
@@ -993,6 +999,12 @@ export interface ObjectFilter {
    */
   readonly putWithSource?: true;
   /**
+   * "If it wasn't cast" (Rapid Augmenter, CR 601.2a, 603.4, 400.7): the object is a permanent that did not come from a spell that was cast (it was put onto the battlefield by an
+   * effect, or came from a copy of a spell, CR 707.10): it remembers no zone it was cast from (`GameObject.castFrom`). Read from the permanent itself, so it works in a trigger's
+   * intervening "if" about another permanent that entered (`subjectMatches`); the filter's zone is the battlefield.
+   */
+  readonly notCast?: true;
+  /**
    * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
    */
@@ -1124,9 +1136,10 @@ export interface ObjectFilter {
    * Only creatures attacking an opponent of the controller of this ability as a player, or a planeswalker or battle that opponent controls or protects
    * (CR 508.1b, 506.3, D-218): "creatures attacking your opponents and/or planeswalkers they control". It implies `attacking`. Read where `attacking` is
    * read, and refused where it is refused. `'players'` (D-650): "creatures attacking one of your opponents", only the attackers whose attack target is an opponent as a player,
-   * not one attacking a planeswalker or battle (CR 508.1b).
+   * not one attacking a planeswalker or battle (CR 508.1b). `'triggerAttacked'` (Echoing Assault, "target nontoken creature that's attacking that player", CR 508.1b, 508.6): only
+   * the attackers whose attack target is the one player the trigger is about (`triggerAttackedPlayer`, valid where that selector is); with no such player, or with no combat, nothing matches.
    */
-  readonly attackingOpponents?: true | 'players';
+  readonly attackingOpponents?: true | 'players' | 'triggerAttacked';
   /**
    * Only creatures that are attacking or blocking (CR 506.4, 508.1k, 509.1g, D-229): "target attacking or blocking creature". A creature declared as an
    * attacker or as a blocker that is still in combat. Read where `attacking` is read, and refused where it is refused.
@@ -1207,7 +1220,9 @@ export interface ObjectFilter {
   readonly powerAboveBase?: true;
   /**
    * "Creatures you control with base power 0" (CR 208.4b): the object's base power, the power layer 7b leaves before counters and "+N/+N" effects, is this whole number. An object with no power
-   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is.
+   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is, except in the count of a
+   * "+N/+N" static ability (Zinnia, Valley's Voice: "+X/+0, where X is the number of other creatures you control with base power 1"), which reads the base values of the objects it counts
+   * without their own static abilities, as `basePowerOrToughnessIs` does (CR 613.8); not in a characteristic-defining ability.
    */
   readonly basePowerIs?: number;
   /**
@@ -5412,6 +5427,12 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly player?: PlayerSelector;
       readonly duration: ControlDuration;
+      /**
+       * "You gain control of that creature for as long as it has a shield counter on it" (Shield Broker, CR 611.2b, 122.1, 613.1b): each permanent the selector names as the effect
+       * begins is controlled by the player only while it is on the battlefield with a counter of this kind, and for good no longer once it stops (a counter put on again later does
+       * not bring it back); a permanent with none as the effect begins is not taken. With `duration` `permanent`.
+       */
+      readonly whileHasCounter?: string;
     }
   /**
    * "Each player gains control of all creatures they own." (issue 160, D-628, CR 613.1b, 613.7b, 611.2a, 611.2c): for each owner, one layer 2 effect with no duration gives that
@@ -7947,6 +7968,12 @@ export type Keyword =
    */
   | { readonly kind: 'exploit' }
   /**
+   * CR 702.156a (Ravenous; the number was not checked against the repository's CR text, which was not available): "This permanent enters with X +1/+1 counters on it. When this
+   * permanent enters, if X is 5 or more, draw a card." The X is the one of the spell it came from (CR 107.3m; 0 for a permanent that was not cast). `entersWithCounters` reads
+   * the keyword for the counters and the engine expands it into the triggered ability (`rules/derive-keywords.ts`). Only on a card whose mana cost has an {X} (`validateCard`).
+   */
+  | { readonly kind: 'ravenous' }
+  /**
    * CR 702.182a (Job select, D-206): "When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it." A triggered
    * ability the engine writes itself (`rules/derive-keywords.ts`), as for Living weapon; only on an Equipment (`validateCard`).
    */
@@ -8794,8 +8821,11 @@ export type Replacement =
         | Extract<Amount, { readonly kind: 'diedThisTurn' }>
         /** "... where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the greatest or the total of a stat over a group, read as the permanent enters, without it. */
         | Extract<Amount, { readonly kind: 'aggregate' }>
-        /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
-        | { readonly kind: 'sum'; readonly of: readonly CountAmount[] }
+        /**
+         * "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. A part may be a whole number of 1 or
+         * more ("... equal to one plus the number of other creatures you control", Boss's Chauffeur).
+         */
+        | { readonly kind: 'sum'; readonly of: readonly (CountAmount | number)[] }
         /**
          * "... where X is twice the number of counters removed this way" (Sin, Unending Cataclysm, CR 614.12, 122.1): the counters the controller took off permanents as it entered
          * (`asEntersRemoveCounters` on the same face), multiplied by `times` (2 or more; 1 when absent). 0 for a permanent that removed none.
@@ -9294,12 +9324,21 @@ export type StaticEffect =
    * `replicateAtManaCost` ("Each Sliver spell you cast has replicate. The replicate cost is equal to its mana cost.", CR 702.56a, 118.9): the spell has a Replicate ability whose cost is
    * the mana cost of that spell as it is on the stack (after copy effects), asked as its other Replicate is, with the count the caster chooses as the spell is cast (`StackData.replicated`).
    * A spell with no mana cost or with {X} in it gets none. A spell that has a replicate cost of its own keeps that one (CR 702.56b: more than one replicate ability is redundant).
+   *
+   * `offspring` ("Creature spells you cast gain offspring {2} as you cast them.", Zinnia, Valley's Voice, CR 702.175a, 601.2b, 613.1f): the spell has an Offspring ability with that cost, which the
+   * caster is asked about as it is cast (`rules/cast-offspring.ts`). A spell with an offspring cost of its own is asked about that one only. The permanent a spell that paid the granted cost
+   * becomes still has the trigger that makes the token (`StackData.offspringGranted`, `GameObject.offspringGranted`), whether or not the permanent that gave the cost is still there.
    */
   | {
       readonly kind: 'grantKeywordToSpells';
       readonly what: ObjectFilter;
       readonly keyword:
-        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
+        | Extract<
+            Keyword,
+            {
+              readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' | 'offspring';
+            }
+          >
         | { readonly kind: 'replicateAtManaCost' };
     }
   /**

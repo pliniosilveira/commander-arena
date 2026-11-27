@@ -92,6 +92,8 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
     // Death Kiss (CR 701.10): the possessive of "it", the creature an earlier part of the ability is about.
     'double its power until end of turn',
     'double its power and toughness until end of turn',
+    // Devilish Valet (CR 701.10): the possessive of the source itself.
+    "double ~'s power until end of turn",
   ],
   rejects: [
     'double its power',
@@ -111,6 +113,8 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
     'double power and toughness of each creature you control until end of turn',
     'double the power and toughness of each creature you control for each artifact until end of turn',
     'double the number of counters on target creature',
+    "double ~'s power",
+    "double ~'s mana value until end of turn",
   ],
   parse: single(
     'effect.double-pt',
@@ -132,6 +136,36 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
             (noun) => !noun.plural && !noun.upTo && noun.count === undefined,
           ),
           literal("'s "),
+          spanned(STATS),
+          literal(' '),
+          family<IrDuration>('duration'),
+        ),
+        ([, objects, , stats, , duration]): DoubleParts => [
+          'double the ',
+          stats,
+          ' of ',
+          objects,
+          ' ',
+          duration,
+        ],
+      ),
+      // Devilish Valet: "double ~'s power until end of turn", the possessive of the source itself.
+      map(
+        sequence(
+          literal('double '),
+          node<RegExpExecArray, IrNoun>(
+            'effect.double-pt',
+            pattern(/~'s(?![\p{L}\p{N}])/iu),
+            () => ({
+              kind: 'noun',
+              det: 'self',
+              filter: { raw: '~' },
+              upTo: false,
+              plural: false,
+              other: false,
+            }),
+          ),
+          literal(' '),
           spanned(STATS),
           literal(' '),
           family<IrDuration>('duration'),

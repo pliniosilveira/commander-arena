@@ -339,9 +339,55 @@ export const CONDITION_NO_SPELL_CAST_THIS_TURN = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.cast-a-spell-this-turn`: "you've cast a spell this turn" (Fortune Teller's Talent; CR 601.2i: a spell is cast once it is on the stack with its costs paid;
+ * CR 707.10: a copy is not cast). The engine's `spellsCastThisTurn` of one, any kind of spell, any zone, read as an "as long as" of a static ability. The sentence rules
+ * leave it unread (`condition.spells-cast-this-turn` rejects it); only the "as long as" of a static ability asks for this rule. Not read: "or more", a kind of spell, "an
+ * opponent has cast", "this game", a trailing word.
+ */
+export const CONDITION_CAST_A_SPELL_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.cast-a-spell-this-turn',
+  family: 'condition',
+  leading: ["you've", 'you’ve', 'you'],
+  cites: ['CR 601.2i (Casting Spells)', 'CR 707.10 (Copying Objects)'],
+  examples: [
+    "you've cast a spell this turn",
+    'you’ve cast a spell this turn',
+    'you have cast a spell this turn',
+  ],
+  rejects: [
+    "you've cast a spell",
+    "you've cast a spell this turn.",
+    "you've cast a spell this game",
+    "you've cast a creature spell this turn",
+    "you've cast two or more spells this turn",
+    "you've cast a spell this turn and",
+    'an opponent has cast a spell this turn',
+    'you cast a spell this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(new RegExp(`you(?:'ve|’ve| have) cast a spell this turn${BOUNDARY}`, 'iu'))(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'spellsCastThisTurn', atLeast: 1 },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.cast-a-spell-this-turn',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const SPELLS_CAST_CONDITION_RULES = [
   CONDITION_SPELLS_CAST_THIS_TURN,
   CONDITION_SPELLS_CAST_LAST_TURN,
   CONDITION_NO_SPELL_CAST_THIS_TURN,
   CONDITION_ATTACKED_WITH_CREATURES,
+  CONDITION_CAST_A_SPELL_THIS_TURN,
 ];

@@ -1023,6 +1023,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'livingWeapon',
     // CR 702.110: Exploit.
     'exploit',
+    // CR 702.156: Ravenous.
+    'ravenous',
     // D-206: Job select (CR 702.182).
     'jobSelect',
     // D-145: Escalate (CR 702.120) and Hideaway (CR 702.75).
@@ -1329,6 +1331,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
+    // Rapid Augmenter: "if it wasn't cast" (`ObjectFilter.notCast`).
+    'notCast',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     // Zack Fair: "an Equipment that was attached to ~" (`AttachedTo` `sacrificedCost`, last-known information, CR 113.7a).
@@ -1478,6 +1482,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackingYou',
     // D-218: "creatures attacking your opponents and/or planeswalkers they control" (`ObjectFilter.attackingOpponents`).
     'attackingOpponents',
+    // CR 508.6 (Echoing Assault): "creatures attacking that player" (`ObjectFilter.attackingOpponents: 'triggerAttacked'`).
+    'attackingTriggerAttacked',
     // D-229: "attacking or blocking" (`ObjectFilter.attackingOrBlocking`).
     'attackingOrBlocking',
     'all',
@@ -2078,6 +2084,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesForObject',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    'creaturesAttackedThisTurn',
     // CR 122.1: "the number of experience counters you have".
     'experienceCounters',
     // CR 700.8: "the number of creatures in your party".
@@ -2655,6 +2662,8 @@ export const SELECTOR_KINDS = [
   'powerAtMostMoved',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
+  /** "If it wasn't cast" (CR 601.2a, 603.4, Rapid Augmenter): the engine's `ObjectFilter.notCast`. */
+  'notCast',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
   'putWithThis',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
@@ -2843,6 +2852,8 @@ export const SELECTOR_KINDS = [
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
   'attackingOpponents',
+  /** "Creature that's attacking that player" of a trigger about one attacked player (CR 508.6, Echoing Assault): the engine's `ObjectFilter.attackingOpponents: 'triggerAttacked'`. */
+  'attackingTriggerAttacked',
   /** "Attacking or blocking creatures" (CR 506.4, 509.1g, D-229): the engine's `ObjectFilter.attackingOrBlocking`. */
   'attackingOrBlocking',
   /** "You and target opponent each ...": several players in one selector (D-131), the engine's `PlayerSelector` `all`. */
@@ -3539,6 +3550,8 @@ export const AMOUNT_KINDS = [
   'votesForObject',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "For each creature that attacked this turn" (CR 508.1, Rowdy Research): the engine's `creaturesAttackedThisTurn`. */
+  'creaturesAttackedThisTurn',
   /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
   'experienceCounters',
   /** "The number of creatures in your party" (CR 700.8): the engine's `partySize`, an effect's amount, a cost reduction's, a condition's (a full party) or a characteristic-defining ability's. */
@@ -4200,6 +4213,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   gift: true,
   livingWeapon: true,
   exploit: true,
+  ravenous: true,
   jobSelect: true,
   escalate: true,
   hideaway: true,

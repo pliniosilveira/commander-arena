@@ -251,14 +251,14 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
       'except',
     ],
     [
-      "Create a token that's a copy of target creature, except the token isn't legendary.",
+      "Create a token that's a copy of target creature, except the token isn't a creature.",
       'except',
     ],
     [
       "Create a token that's a copy of target creature card in your graveyard.",
       'card in your graveyard',
     ],
-    ["Create a token that's a copy of equipped creature.", 'equipped creature'],
+    ["Create a token that's a copy of equipped creature.", '.'],
     ["Create a token that's a copy of target creatures.", 'creatures'],
     ["Create a token that's a copy of two target creatures.", '.'],
     ["Create one token that's a copy of target creature.", "token that's a copy"],
@@ -270,6 +270,15 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     const d = dropped(text, 'sorcery');
     expect(d.reason).toBe('unrecognised');
     expect(d.stoppedAt).toContain(part);
+  });
+
+  test('"except the token isn\'t legendary" is read (Helm of the Host, CR 707.9b): the copy is not legendary', () => {
+    const effect = readAll(
+      "Create a token that's a copy of target creature, except the token isn't legendary.",
+      'sorcery',
+    ).spell;
+    expect(JSON.stringify(effect)).toContain('"kind":"copyOf"');
+    expect(JSON.stringify(effect)).toContain('"notLegendary":true');
   });
 
   test('a copy of "target token you control" is read (Squirreled Away deck, group 1: the noun "token" alone, CR 111.1, 707.2)', () => {

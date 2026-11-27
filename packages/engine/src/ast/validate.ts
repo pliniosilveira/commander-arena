@@ -405,8 +405,14 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           issue(out, `${path}.count.of`, 'a sum of counts needs at least two counts');
         } else {
           parts.forEach((part, i) => {
-            if (kindOf(part) !== 'countOf') {
-              issue(out, `${path}.count.of[${i}]`, 'an enters-with sum is made of countOf amounts');
+            if (isCount(part) && part >= 1) {
+              // A whole number of 1 or more ("one plus the number of ...").
+            } else if (kindOf(part) !== 'countOf') {
+              issue(
+                out,
+                `${path}.count.of[${i}]`,
+                'an enters-with sum is made of countOf amounts and whole numbers of 1 or more',
+              );
             } else {
               checkStateAmount(
                 part as Amount,
@@ -588,14 +594,17 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         s.keyword?.kind !== 'convoke' &&
         s.keyword?.kind !== 'improvise' &&
         s.keyword?.kind !== 'cascade' &&
+        s.keyword?.kind !== 'offspring' &&
         s.keyword?.kind !== 'replicateAtManaCost'
       ) {
         issue(
           out,
           `${path}.keyword`,
-          'only demonstrate and convoke (and improvise, cascade, replicateAtManaCost) can be given to spells',
+          'only demonstrate and convoke (and improvise, cascade, offspring, replicateAtManaCost) can be given to spells',
         );
       }
+      // CR 702.175a: the cost of an offspring given to spells is checked as the keyword's own is (mana, no {X}).
+      if (s.keyword?.kind === 'offspring') checkBatchKeyword(s.keyword, `${path}.keyword`, out);
       checkFilter(s.what, `${path}.what`, out);
       if (
         s.what?.controller !== 'you' ||
@@ -3495,6 +3504,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.abilities[${i}].replacement.count`,
         'enters with X counters but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 702.156a (Ravenous): the counters and the draw read the X of the spell, so the mana cost needs an {X}.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'keyword' &&
+      a.keyword?.kind === 'ravenous' &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'ravenous reads the X of the mana cost, which has none',
       );
     }
   });

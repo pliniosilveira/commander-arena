@@ -466,7 +466,7 @@ describe('Hall of Oracles: "Activate only as a sorcery and only if you\'ve cast 
     "{T}: Draw a card. Activate only as a sorcery and only if you've cast an instant or sorcery spell this turn and only once each turn.",
     "{T}: Draw a card. Activate only as a sorcery and if you've cast an instant or sorcery spell this turn.",
     "{T}: Draw a card. Activate only as an instant and only if you've cast an instant or sorcery spell this turn.",
-    "{T}: Draw a card. Activate only as a sorcery and only if you've cast a spell this turn.",
+    "{T}: Draw a card. Activate only as a sorcery and only if you've cast a spell with mana value 3 or greater this turn.",
     "{T}: Draw a card. Activate only as a sorcery and only if you've cast a noncreature spell this turn.",
     "{T}: Draw a card. Activate only as a sorcery and only if you've cast an instant, sorcery spell this turn.",
     "{T}: Draw a card. Activate only as a sorcery and only if you've cast a instant or sorcery spell this turn.",

@@ -965,6 +965,9 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'an opponent casts a noncreature spell',
     'an opponent casts an instant or sorcery spell',
     'an opponent casts a spell with mana value 3 or less',
+    // Pollywog Prodigy (CR 202.3, 208.1): the mana value is below the power of this permanent.
+    "an opponent casts a noncreature spell with mana value less than ~'s power",
+    'an opponent casts a spell with mana value less than this creature’s power',
     'you cast a spell with one or more targets',
     // Stage P49 (D-206): what the spell targets.
     'you cast an instant or sorcery spell that targets a creature',
@@ -995,6 +998,12 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'the chosen players casts a spell',
     'the chosen opponent casts a spell',
     'the chosen player casts spells',
+    "an opponent casts a spell with mana value less than ~'s",
+    "an opponent casts a spell with mana value less than or equal to ~'s power",
+    "an opponent casts a spell with mana value 3 or less with mana value less than ~'s power",
+    "an opponent casts a spell with mana value less than ~'s power you don't own",
+    "an opponent casts a spell with mana value less than ~'s power that targets a creature",
+    "an opponent casts a spell with mana value less than ~'s toughness",
     'you cast a spell that shares a creature type with',
     'you cast a spell that shares a creature type with it',
     'you cast a spell that shares a creature type with ~ that targets a creature',
@@ -1069,6 +1078,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
         ),
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
+      // Pollywog Prodigy (CR 202.3, 208.1): "a noncreature spell with mana value less than ~'s power", the mana value below the power of this permanent.
+      optional(
+        pattern(/ with mana value less than (?:this creature|~)['’]s power(?![\p{L}\p{N}'’])/iu),
+        null,
+      ),
       // Don Andres (CR 108.3): "a noncreature spell you don't own", a spell whose owner is not the controller of the ability.
       optional(pattern(/ you don['’]t own(?![\p{L}\p{N}'’])/iu), null),
       // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
@@ -1085,7 +1099,19 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, unowned, colored, shares, aimed, alternative] = r.value;
+    const [actor, spell, below, unowned, colored, shares, aimed, alternative] = r.value;
+    // The limit is the filter's one mana value test: not with a number of its own, nor with the other words after the spell.
+    if (
+      below !== null &&
+      (spell.value[1].manaValue !== undefined ||
+        unowned !== null ||
+        colored !== null ||
+        shares !== null ||
+        aimed !== null ||
+        alternative !== null)
+    ) {
+      return fail(ctx, pos);
+    }
     if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
     if (
       shares !== null &&
@@ -1097,7 +1123,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       return fail(ctx, pos);
     }
     const spellBase: IrFilter =
-      unowned === null ? spell.value[1] : { ...spell.value[1], notOwnedByYou: true };
+      below !== null
+        ? { ...spell.value[1], manaValueBelowSourcePower: true }
+        : unowned === null
+          ? spell.value[1]
+          : { ...spell.value[1], notOwnedByYou: true };
     if (colored !== null && (spellBase.colors !== undefined || spellBase.colorless === true)) {
       return fail(ctx, pos);
     }

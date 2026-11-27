@@ -42,12 +42,22 @@ describe('"Activate only if you\'ve cast three or more spells this turn" (Stella
     expect(JSON.stringify(parsed.abilities)).toContain('"atLeast":5');
   });
 
+  test('"you\'ve cast a spell this turn" is one spell at least (SYNTHETIC)', () => {
+    const parsed = readAll(
+      "{T}: You gain 1 life. Activate only if you've cast a spell this turn.",
+      'artifact',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain(
+      '"activateOnlyIf":{"kind":"spellsCastThisTurn","atLeast":1}',
+    );
+  });
+
   test.each([
     "{T}: You gain 1 life. Activate only if you've cast three or more spells.",
     "{T}: You gain 1 life. Activate only if you've cast three or fewer spells this turn.",
     '{T}: You gain 1 life. Activate only if an opponent has cast three or more spells this turn.',
     "{T}: You gain 1 life. Activate only if you've cast three or more instant or sorcery spells this turn.",
-    "{T}: You gain 1 life. Activate only if you've cast a spell this turn.",
+    "{T}: You gain 1 life. Activate only if you've cast a spell with mana value 3 or greater this turn.",
   ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
     expect(dropped(text, 'artifact').reason).toBe('unrecognised');
   });

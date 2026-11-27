@@ -354,7 +354,7 @@ export interface IrFilter {
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
   readonly attackingYou?: true | 'orPlaneswalkers';
   /** "creatures attacking your opponents and/or planeswalkers they control" (stage P65, D-218, CR 508.1b, 506.3): attackers of an opponent or of a permanent of an opponent. */
-  readonly attackingOpponents?: true | 'players';
+  readonly attackingOpponents?: true | 'players' | 'triggerAttacked';
   /** "attacking or blocking creatures" (stage P68, D-229, CR 506.4, 509.1g): creatures declared as attackers or as blockers that are still in combat. */
   readonly attackingOrBlocking?: true;
   /** "attacking creatures" (stage P31, CR 508.1k): creatures that are attacking, whoever they attack. */
@@ -583,6 +583,8 @@ export interface IrFilter {
   readonly controllerOfNamed?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
+  /** "with mana value less than ~'s power" (Pollywog Prodigy, CR 202.3, 208.1): the engine's `manaValueBelow` of the power of the permanent with the ability, as it is when the spell is cast. */
+  readonly manaValueBelowSourcePower?: true;
   /** "that creature has greater power than ~" (Conformer Shuriken, CR 208.1): the engine's `powerGreaterThanSource`. */
   readonly powerGreaterThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
@@ -659,6 +661,8 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
+  // "for each creature that attacked this turn" (Rowdy Research, CR 508.1): the different creatures declared as attackers this turn
+  | { readonly kind: 'creaturesAttackedThisTurn'; readonly span: Span }
   // "the number of experience counters you have" (Meren of Clan Nel Toth, CR 122.1): the experience counters the controller has now
   | { readonly kind: 'experienceCounters'; readonly span: Span }
   // "the number of creatures in your party" (CR 700.8): the party of the controller, up to one each of Cleric, Rogue, Warrior and Wizard
@@ -952,6 +956,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'enteredFromGraveyard' }
     // "it wasn't put onto the battlefield with this ability" (Kodama of the East Tree, CR 603.4, 400.7): the intervening "if" of a trigger about a permanent that enters
     | { readonly kind: 'notPutWithThisAbility' }
+    // "it wasn't cast" (Rapid Augmenter, CR 601.2a, 603.4): the intervening "if" of a trigger about another permanent that enters
+    | { readonly kind: 'notCast' }
     // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
     | { readonly kind: 'costContainsX' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
@@ -2376,6 +2382,11 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'spellEvoke'; readonly cost: IrCost }
   /**
+   * "Creature spells you cast gain offspring {2} as you cast them." (Zinnia, Valley's Voice; CR 702.175a, 601.2b, 613.1f): the spells the subject names (a noun with the controller `you`)
+   * are given an offspring cost `cost` (a mana cost) as they are cast.
+   */
+  | { readonly kind: 'spellOffspring'; readonly cost: IrCost }
+  /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
    */
@@ -2861,6 +2872,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',
+  'creaturesAttackedThisTurn',
   'experienceCounters',
   'partySize',
   'spellsCastThisTurn',

@@ -126,6 +126,7 @@ import { EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES } from './exile-until-put-rest
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
+import { FAMILY_MATTERS_C_EFFECT_RULES } from './family-matters-c';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -242,6 +243,7 @@ import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
+import { PAY_X_REFLEXIVE_EFFECT_RULES } from './pay-x-reflexive';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import { PLANESWALKER_PARTY_EFFECT_RULES } from './planeswalker-party';
@@ -1839,6 +1841,8 @@ export const EFFECT_RULES = [
   ...TYPE_SHARERS_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
+  // Rose Room Treasurer: "pay {X}", the offer whose "When you do, ..." reads X.
+  ...PAY_X_REFLEXIVE_EFFECT_RULES,
   // D-270: "return the exiled cards to their owners' hands" (Angel of Serenity).
   ...CROSS_ZONE_EFFECT_RULES,
   // Stage P69 (D-271): rolling a die, "roll a four-sided die".
@@ -1897,6 +1901,7 @@ export const EFFECT_RULES = [
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
   ...LOOK_ELSE_EFFECT_RULES,
+  ...FAMILY_MATTERS_C_EFFECT_RULES,
   ...LIBRARY_TOP_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,

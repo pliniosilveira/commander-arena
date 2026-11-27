@@ -63,8 +63,10 @@ import {
 import {
   isSpellEvokeStatic,
   isSpellKeywordStatic,
+  isSpellOffspringStatic,
   lowerSpellEvokeStatic,
   lowerSpellKeywordStatic,
+  lowerSpellOffspringStatic,
 } from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -761,6 +763,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:castOnceEachTurn', `castAlternative:${effect.alternative}`];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
+    case 'spellOffspring':
+      return ['static:grantKeywordToSpells', 'keyword:offspring'];
     case 'legendRuleDoesntApply':
     case 'chosenTypeGroups':
     case 'graveyardEncore':
@@ -1502,6 +1506,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them."
 
   if (isSpellEvokeStatic(first)) return lowerSpellEvokeStatic(ability);
+  // CR 702.175a, 613.1f: "Creature spells you cast gain offspring {2} as you cast them."
+  if (isSpellOffspringStatic(first)) return lowerSpellOffspringStatic(ability);
   // Issue 133 (CR 704.5j, 613.1d, 702.141a): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."

@@ -851,6 +851,59 @@ function lowerPayAnyAmount(
 }
 
 /**
+ * "You may pay {X}. When you do, ~ deals X damage to any target." (Rose Room Treasurer, CR 107.3f, 118.1, 603.12): the offer and the reflexive ability after it are one engine
+ * `payAnyAmount` of a generic {1}, paid as many times as the player chooses (X, from none to as many as they could pay), and when they paid at least once the reflexive ability goes
+ * on the stack with its own targets, X being the number they paid (`triggerDamage`). The offer is one clause that "you may" made optional; the sentence after it is "When you do," and
+ * is the last of the body. Null when the sentence is not such an offer; one that does not fit is refused, never guessed.
+ */
+function lowerPayXReflexive(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'payX') return null;
+  const next = sentences[i + 1];
+  if (
+    more.length > 0 ||
+    !clause.optional ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    next?.reflexive !== true ||
+    next.condition !== undefined ||
+    next.where !== undefined ||
+    next.instead === true ||
+    next.clauses.some((c) => c.optional) ||
+    i + 2 < sentences.length
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:payAnyAmount', 'effect:reflexive']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  // The targets of the reflexive ability are its own (CR 603.12), and the X of its text is the number paid.
+  const before = ctx.targets.length;
+  const wasPayXReflexive = ctx.payXReflexive;
+  ctx.payXReflexive = true;
+  const after = lowerClauses(next.clauses, ctx);
+  ctx.payXReflexive = wasPayXReflexive;
+  if (!after.ok) return after;
+  const own = ctx.targets.splice(before);
+  const effect: Effect = {
+    kind: 'payAnyAmount',
+    symbol: '1',
+    reflexive: {
+      ...(own.length > 0 ? { targets: own } : {}),
+      effect: ownSource(oneEffect(after.value), ctx),
+    },
+  };
+  return { ok: true, value: [effect], rule: clause.rule };
+}
+
+/**
  * "You may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards." (D-257, CR 107.3f, 118.1, 608.2c): the
  * offer and the sentence after it are one engine `payAnyAmount` of a generic {1} with a most (`atMost`, the life gained) and an "If you do" (`ifPaid`): the
  * controller chooses X as the ability resolves, pays it, and when they paid at least one the instruction after runs at once with X the number paid, not as
@@ -3302,6 +3355,17 @@ function lowerStep(
     ) {
       return stop(refuse(sentence));
     }
+    // "Otherwise, you may pay {X}. When you do, ~ deals X damage to any target." (Rose Room Treasurer, CR 608.2c, 603.12): the offer and its reflexive ability are the `else`.
+    const otherPayX = lowerPayXReflexive(sentence, sentences, i, ctx);
+    if (otherPayX !== null) {
+      if (!otherPayX.ok) return stop(otherPayX);
+      steps.pop();
+      steps.push({
+        effects: [{ ...before, else: oneEffect(otherPayX.value) }],
+        replaceable: false,
+      });
+      return { last: i + 1 };
+    }
     // "Otherwise, you may cast it without paying its mana cost." (D-394, CR 608.2c): a clause the text made optional is lowered only by an instruction that asks the question
     // itself (`acceptsOptional`: the engine's `castFree`); any other optional clause makes `lowerClauses` fail, so it is never run as if it were not a choice.
     const other = lowerClauses(sentence.clauses, ctx);
@@ -3417,6 +3481,12 @@ function lowerStep(
       last: i + 1,
       ...(sentences[i + 1]?.where === undefined ? {} : { whereRead: true as const }),
     };
+  }
+  const payXReflexive = lowerPayXReflexive(sentence, sentences, i, ctx);
+  if (payXReflexive !== null) {
+    if (!payXReflexive.ok) return stop(payXReflexive);
+    steps.push({ effects: payXReflexive.value, replaceable: false });
+    return { last: i + 1 };
   }
   const payX = lowerPayXAtMost(sentence, sentences, i, ctx);
   if (payX !== null) {

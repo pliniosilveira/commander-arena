@@ -89,6 +89,7 @@ const EXECUTABLE_KEYWORDS = [
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'jumpStart', // scenario-xx-jump-start
   'exploit', // scenario-xx-exploit
+  'ravenous', // scenario-xx-family-matters-a
   'plot', // scenario-xx-plot
   'compleated', // convert-grammar-engine-blight-curse-oneoffs-b
   'aftermath', // scenario-xx-aftermath
@@ -130,6 +131,14 @@ function cardWithKeyword(keyword: Keyword): CardDefinition {
     ...base,
     faces: [{ ...face, abilities: [{ kind: 'keyword', keyword }] }],
   };
+}
+
+/** CR 702.156a: ravenous reads the X of the mana cost, so its sample has an {X} in the cost. */
+function xCardWithKeyword(keyword: Keyword): CardDefinition {
+  const card = cardWithKeyword(keyword);
+  const face = card.faces[0];
+  if (!face) throw new Error('no face');
+  return { ...card, faces: [{ ...face, manaCost: ['X', '1'] }] };
 }
 
 /** CR 702.88a: rebound is on an instant or a sorcery, so its sample is a sorcery with a spell. */
@@ -222,6 +231,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   retrace: { kind: 'retrace' },
   jumpStart: { kind: 'jumpStart' },
   exploit: { kind: 'exploit' },
+  ravenous: { kind: 'ravenous' },
   plot: { kind: 'plot', cost: [{ kind: 'mana', symbols: ['2', 'U'] }] },
   compleated: { kind: 'compleated' },
   aftermath: { kind: 'aftermath' },
@@ -328,7 +338,9 @@ describe('supported feature gate', () => {
                                 syntheticCard('SYNTHETIC Reconfigure Blade')
                               : kind === 'rebound' || kind === 'cipher'
                                 ? sorceryWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
-                                : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                                : kind === 'ravenous'
+                                  ? xCardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword)
+                                  : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
