@@ -963,6 +963,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,
   ),
   'amount.damage-dealt-to-player-this-turn': permanent((e) => `When ~ enters, draw cards ${e}.`),
+  'amount.damage-dealt-to-this-by-their-sources': permanent(
+    (e) => `When ~ leaves the battlefield, each player draws cards ${e}.`,
+  ),
+  // Grothama, All-Devouring: the card's name inside a quotation that says "this creature" (read inside the quotation; the line is the same ability without it).
+  'noun.granter': permanent((e) => `Whenever ~ attacks, you may have it fight ${e}.`),
   'noun.one-two-or-three-targets-bare': spell(
     (e) => `~ deals 3 damage divided as you choose among ${e}.`,
   ),
@@ -1161,6 +1166,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Locke, Treasure Hunter (issue 97): a spell cast from among the cards a mill before it milled.
   'effect.may-cast-one-from-among-those': spell((e) => `${cap(e)}.`),
   'keyword.buyback': asIs,
+  'keyword.offspring': asIs,
   // Plot (issue 121): the keyword line stands alone.
   'keyword.plot': asIs,
   // Ninjutsu (CR 702.49a): the keyword line stands alone.
@@ -1221,6 +1227,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Twilight Diviner: the intervening "if" of a trigger about one or more creatures entering.
   'condition.entered-from-graveyard': permanent(
     (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
+  ),
+  // Kodama of the East Tree: the intervening "if" of a trigger about another permanent that enters.
+  'condition.not-put-with-this-ability': permanent(
+    (e) =>
+      `Whenever another permanent you control enters, if ${e}, you may put a permanent card with equal or lesser mana value from your hand onto the battlefield.`,
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
@@ -1359,6 +1370,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.opponent-attacks-you-or-planeswalkers': whenever,
   'trigger.you-attack-initiative-holder': whenever,
   'trigger.you-complete-dungeon': whenever,
+  'trigger.you-expend': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),
@@ -1686,6 +1698,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-creature-you-control-but-dont-own': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
   ),
+  // Issue 110 (Brightcap Badger, Bello): "Each Fungus and Saproling you control has ...", the noun in the singular of "each".
+  'noun.each-pair': permanent((e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`),
+  'static.each-is-creature': asIs,
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
   // Squirreled Away deck, group 4 (Garruk, Cursed Huntsman).
@@ -1823,6 +1838,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Grand Larceny deck, group D1 (Bladegriff Prototype).
   'noun.target-permanent-of-that-players-choice': permanent(
     (e) => `Whenever ~ deals combat damage to a player, destroy ${e}.`,
+  ),
+  // Issue 110 (Evercoat Ursine).
+  'condition.cards-exiled-with-it': permanent(
+    (e) => `Whenever ~ attacks, if ${e}, you gain 1 life.`,
   ),
   'condition.cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,

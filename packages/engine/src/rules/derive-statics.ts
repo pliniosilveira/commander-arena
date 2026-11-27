@@ -33,10 +33,18 @@ import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { characteristicPtOf, staticAmountOf } from './derive-count';
-import { linkedCardOf, linkedCardsOf, topCardOf } from './derive-group-types';
+import {
+  type AnimateStatic,
+  animateAppliesTo,
+  linkedCardOf,
+  linkedCardsOf,
+  topCardOf,
+} from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
+import { typeViewOf } from './derive-view';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
+import { boundToGranter } from './granter';
 import { intrinsicManaAbilities } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { isCommanderCardId } from './melded';
@@ -68,6 +76,11 @@ type Modifier = Extract<
   readonly condition?: Condition;
   /** `JSON.stringify(condition)`, made once when the index is built: the key the answers are kept under. */
   readonly conditionKey?: string;
+  /**
+   * The static `animate` this is the layer 6 or 7b part of (CR 613.6): it applies to the permanents that effect began to apply to in layer 4 (`animateAppliesTo`), whose subject
+   * and condition were read there, and it is not asked again.
+   */
+  readonly animate?: AnimateStatic;
 };
 
 interface ModifierSource {
@@ -440,6 +453,41 @@ function staticModifiers(
   return made;
 }
 
+const animateModifiersOf = new WeakMap<readonly Ability[], readonly Modifier[]>();
+const NO_MODIFIERS: readonly Modifier[] = [];
+
+/**
+ * The parts of the static `animate` abilities of an ability list that apply in layers 6 and 7b (CR 613.1f, 613.4b): a base power and toughness, and each keyword and ability
+ * given, as the modifiers the separate static abilities would be, each marked with the effect it is a part of. Made once for each list, as `staticModifiers` is.
+ */
+function animateModifiers(abilities: readonly Ability[]): readonly Modifier[] {
+  const known = animateModifiersOf.get(abilities);
+  if (known !== undefined) return known;
+  const made: Modifier[] = [];
+  for (const a of abilities) {
+    if (a.kind !== 'static' || a.static.kind !== 'animate') continue;
+    if ((a.functionsIn ?? 'battlefield') !== 'battlefield') continue;
+    const animate = a.static;
+    const { subject } = animate;
+    for (const keyword of animate.keywords ?? []) {
+      made.push({ kind: 'grantKeyword', subject, keyword, animate });
+    }
+    for (const ability of animate.abilities ?? []) {
+      made.push({ kind: 'grantAbility', subject, ability, animate });
+    }
+    made.push({
+      kind: 'setPt',
+      subject,
+      power: animate.power,
+      toughness: animate.toughness,
+      animate,
+    });
+  }
+  const out = made.length === 0 ? NO_MODIFIERS : made;
+  animateModifiersOf.set(abilities, out);
+  return out;
+}
+
 function costReductionsOf(
   object: GameObject,
   abilities: readonly Ability[],
@@ -754,8 +802,14 @@ function buildIndex(state: GameState): BoardIndex {
     const object = state.objects[id];
     if (object === undefined) continue;
     // CR 613.1f: a permanent that lost all abilities has no static ability left to apply.
-    const printed = hasLostAbilities(state, id) ? [] : printedAbilities(state, object);
-    const modifiers = staticModifiers(printed);
+    const own = printedAbilities(state, object);
+    const printed = hasLostAbilities(state, id) ? [] : own;
+    // CR 613.6: a static `animate` began to apply in layer 4, so its parts in layers 6 and 7b apply whether or not the permanent lost its abilities in layer 6.
+    const animating = animateModifiers(own);
+    const modifiers =
+      animating.length === 0
+        ? staticModifiers(printed)
+        : [...staticModifiers(printed), ...animating];
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
     if (printed.some(givesCostIncrease)) hasCostIncrease = true;
@@ -1332,10 +1386,15 @@ export function staticEffectsOn(
   const sets: StaticSet[] = [];
   const blockLimits: BlockLimit[] = [];
   const apply = (source: ModifierSource, mod: Modifier, view: FilterSubject): boolean => {
-    if (!subjectAffects(state, source.object, mod.subject, target, view, source.context))
+    if (mod.animate !== undefined) {
+      // CR 613.6: the same set of objects as in layer 4, which the type line of the target settled (asked first, so the answer is there).
+      typeViewOf(state, target);
+      if (!animateAppliesTo(state, source.object.id, target.id, mod.animate)) return false;
+    } else if (!subjectAffects(state, source.object, mod.subject, target, view, source.context))
       return false;
     // D-133: "as long as ...": the permanent's condition, read as the effects are looked at (CR 611.3a, 613.8).
     if (
+      mod.animate === undefined &&
       mod.condition !== undefined &&
       !conditionHolds(state, mod.condition, mod.conditionKey ?? '', source.object)
     ) {
@@ -1383,7 +1442,11 @@ export function staticEffectsOn(
       grants.push({ ability: null, timestamp: source.object.timestamp });
     } else if (mod.kind === 'grantAbility') {
       // D-099: a mana ability given to the subject, in layer 6 like a keyword.
-      grants.push({ ability: mod.ability, timestamp: source.object.timestamp });
+      // CR 113.6 (`granter`): the instance this permanent gets names the permanent that gives it.
+      grants.push({
+        ability: boundToGranter(mod.ability, source.object.id),
+        timestamp: source.object.timestamp,
+      });
     } else if (mod.kind === 'restriction') {
       // CR 613.11: a rules-modifying effect, read where the rule acts (no layer, no timestamp).
       if (!restrictions.includes(mod.restriction)) restrictions.push(mod.restriction);

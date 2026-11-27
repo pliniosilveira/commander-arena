@@ -13,6 +13,7 @@ import {
   kickerLikeCostOf,
   manaCostAsFlashbackCost,
   multikickerCostOf,
+  offspringCostOf,
   replicateCostOf,
 } from './rules/alt-costs';
 import { derive } from './rules/derive';
@@ -206,6 +207,13 @@ export function checkInvariants(state: GameState): string[] {
     ) {
       problems.push(`${id} was bought back but is not a spell with buyback`);
     }
+    // CR 702.175a: an offspring cost was paid only for a spell whose face has an offspring cost.
+    if (
+      obj.stack?.offspringPaid === true &&
+      (obj.stack.kind !== 'spell' || offspringCostOf(face) === null)
+    ) {
+      problems.push(`${id} paid an offspring cost but is not a spell with offspring`);
+    }
     // CR 107.3a (D-103): an X was announced only for a spell or activated ability on the stack that
     // has an {X} or "pay X life" to announce (a spell cast without paying its mana cost has none, CR
     // 107.3b), and is a whole number.
@@ -299,6 +307,10 @@ export function checkInvariants(state: GameState): string[] {
         !(faces.some((f) => kickerLikeCostOf(f) !== null) || tokenKicker))
     ) {
       problems.push(`${id} remembers being kicked but is not a permanent with kicker`);
+    }
+    // CR 702.175a: only a permanent on the battlefield remembers that its offspring cost was paid.
+    if (obj.offspringPaid === true && obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+      problems.push(`${id} remembers a paid offspring cost but is not a permanent`);
     }
     // D-110: a permanent that remembers a count of kicks remembers being kicked, and the count is at least 1.
     if (obj.kicks !== undefined && (obj.kicked !== true || !(obj.kicks >= 1))) {

@@ -404,6 +404,7 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         d.purpose === 'gift' ||
         d.purpose === 'costChoice' ||
         d.purpose === 'buyback' ||
+        d.purpose === 'offspring' ||
         d.purpose === 'exert'
           ? [{ kind: 'cancel' as const }]
           : []),

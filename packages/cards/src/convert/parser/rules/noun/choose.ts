@@ -47,6 +47,24 @@ export const NOUN_SELF = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.granter`: the card's name inside a quoted ability that also says "this creature" (normalization writes it `¤`, CR 113.6, 201.5): in "Other creatures have \"Whenever this
+ * creature attacks, you may have it fight Grothama, All-Devouring.\"" the creature that has the ability is "this creature" and the name is the permanent that grants it.
+ */
+export const NOUN_GRANTER = defineRule<IrNoun>({
+  id: 'noun.granter',
+  family: 'noun',
+  leading: ['¤'],
+  cites: ['CR 113.6 (Abilities)', 'CR 201.5 (Name)'],
+  examples: ['¤'],
+  rejects: ['~', '¤s', 'it', 'target creature'],
+  parse: node<string, IrNoun>(
+    'noun.granter',
+    map(literal('¤'), (raw) => raw),
+    (raw) => bare('granter', { raw }),
+  ),
+});
+
 /** A permanent phrase without a zone, and not "an opponent controls": you only have your own. */
 function chosenPhrase(plural: boolean): Parser<IrFilter> {
   return satisfy(
@@ -649,6 +667,7 @@ export const NOUN_A_TOKEN = defineRule<IrNoun>({
 
 export const CHOOSE_NOUN_RULES = [
   NOUN_SELF,
+  NOUN_GRANTER,
   NOUN_A_GREATEST_PERMANENT,
   // Meren deck, Braids: "a permanent of their choice that shares a card type with it", before the plain "a permanent" that would read its first words.
   ...BRAIDS_NOUN_RULES,

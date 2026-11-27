@@ -666,6 +666,9 @@ export const STATIC_EACH = defineRule<IrStatic>({
     // CR 510.1a, 609.4 (Felothar the Steadfast, Assault Formation): what each creature assigns.
     'Each creature you control assigns combat damage equal to its toughness rather than its power.',
     "Each creature you control can attack as though it didn't have defender.",
+    // Issue 110 (Brightcap Badger, CR 613.1f, 605.1a): two kinds of permanent under one "each".
+    'Each Fungus and Saproling you control has "{T}: Add {G}."',
+    'Each Fungus and Saproling you control gets +1/+1.',
   ],
   rejects: [
     'Each creature you control assign combat damage equal to its toughness rather than its power.',
@@ -677,11 +680,14 @@ export const STATIC_EACH = defineRule<IrStatic>({
     "Each creature you control can't be blocked by more than one creature until end of turn.",
     'Each creature gets +1/+1 until end of turn.',
     "Each creatures you control can't be blocked by more than one creature.",
+    'Each Fungus and Saproling you control have "{T}: Add {G}."',
   ],
   parse: statement(
     'static.each',
     // D-647: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
     [
+      // Issue 110 (Brightcap Badger): "Each Fungus and Saproling you control has "{T}: Add {G}."", read before `noun.each-permanent` by the order of the noun rules.
+      'noun.each-pair',
       'noun.each-permanent',
       'noun.each-creature-enchanted-by-you',
       // Ahoy Mateys deck, group 4: "Each other creature you control that's a Skeleton or Pirate gets +1/+1." and "Each creature you control but don't own gets +2/+2".

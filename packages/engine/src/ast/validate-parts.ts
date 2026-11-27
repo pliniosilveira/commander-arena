@@ -1825,6 +1825,10 @@ export function checkRef(
         );
       }
       break;
+    case 'granter':
+      // CR 113.6, 613.1f: the permanent that grants the ability; where it may be written is checked for the whole face (`validate-granter.ts`).
+      if (expect === 'player') issue(out, path, "'granter' is a permanent, not a player");
+      break;
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
       if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");
@@ -3118,6 +3122,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'opponentCount':
     case 'opponentsAttackedThisCombat':
+      break;
+    case 'damageToThisThisTurn':
+      // CR 120.3: the damage the permanent of the ability was dealt, by the sources of the player who is "you" as it is read.
+      if (a.by !== 'you') issue(out, `${path}.by`, "by is 'you'");
+      if (scope.owner === 'spell') {
+        issue(out, path, "'damageToThisThisTurn' is only valid in abilities of a permanent");
+      }
       break;
     case 'movedCount':
       // CR 608.2c: what the instruction before it moved (`moved`): a trailing amount of the same resolution, never a number a static ability reads.
@@ -4471,6 +4482,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
       break;
     case 'giftPromised': // D-135: the face must have the Gift keyword (`checkCastFace`)
+    case 'offspringPaid': // CR 702.175a: the face must have the Offspring keyword (`checkCastFace`)
       break;
     case 'lifeTotal':
       if (c.player !== undefined && c.player !== 'opponent') {
@@ -8208,6 +8220,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'damageCantBePreventedThisTurn':
       // CR 615.12: no parameters.
       break;
+    case 'spellsCantBeCounteredThisTurn':
+      // CR 101.2: the filter of the spells, as they are on the stack.
+      if (e.spells === undefined) {
+        issue(out, `${path}.spells`, 'spellsCantBeCounteredThisTurn needs a filter of the spells');
+      } else {
+        checkFilter(e.spells, `${path}.spells`, out);
+      }
+      break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
       if (typeof e.count === 'number' ? !isCount(e.count) || e.count < 1 : e.count === undefined) {
@@ -8693,6 +8713,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 202.3, 603.2c (Kodama of the East Tree): "a permanent card with equal or lesser mana value": the limit is the mana value of the permanent the trigger is about.
+      if (kindOf(e.objects) === 'choose') {
+        const limit = (e.objects as ChooseSelector).filter?.manaValueAtMost;
+        if (
+          typeof limit === 'object' &&
+          limit.kind === 'manaValueOf' &&
+          kindOf(limit.of) === 'triggerSubject' &&
+          scope.triggerSubject !== 'permanent'
+        ) {
+          issue(
+            out,
+            `${path}.objects.filter.manaValueAtMost`,
+            'the mana value of the permanent the trigger is about is a limit only in an ability triggered by a permanent',
+          );
+        }
+      }
       // CR 400.7 (Animate Dead): the permanent put onto the battlefield remembers the permanent whose ability put it there.
       if (e.putWithSource !== undefined) {
         if (e.putWithSource !== true) {
@@ -8705,8 +8741,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'only an ability of a permanent that puts a card onto the battlefield remembers it',
           );
         }
-        if (kindOf(e.objects) === 'choose') {
-          issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
+        // CR 400.7 (Kodama of the East Tree): a card chosen from the hand or the graveyard as the effect runs is remembered too; a permanent chosen on the battlefield is not put there.
+        if (
+          kindOf(e.objects) === 'choose' &&
+          (e.objects as ChooseSelector).filter?.zone !== 'hand' &&
+          (e.objects as ChooseSelector).filter?.zone !== 'graveyard'
+        ) {
+          issue(
+            out,
+            `${path}.putWithSource`,
+            'a choice remembered is of a card of the hand or the graveyard',
+          );
         }
       }
       // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
@@ -8971,12 +9016,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           e.take.tapped !== undefined ||
           e.take.totalManaValue !== undefined ||
           e.take.hidden !== undefined ||
-          e.revealAll !== undefined)
+          (e.revealAll !== undefined && e.revealAll !== true))
       ) {
         issue(
           out,
           `${path}.take`,
-          'a spell cast from among the cards looked at is one card (max 1), with no min, tapped, totalManaValue or hidden, and nothing revealed',
+          'a spell cast from among the cards looked at or revealed is one card (max 1), with no min, tapped, totalManaValue or hidden',
         );
       }
       if (
@@ -9004,6 +9049,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
           checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else if (
+          typeof limit === 'object' &&
+          limit?.kind === 'manaValueOf' &&
+          kindOf(limit.of) === 'triggerSubject'
+        ) {
+          // CR 202.3, 603.3d (Sunbird's Invocation): "mana value X or less, where X is that spell's mana value": the spell of a cast trigger, read as the effect runs.
+          checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);
         } else if (typeof limit === 'object' && limit?.kind === 'x') {
           // CR 107.3a, 202.3 (Genesis Wave): "mana value X or less", the X announced for the spell.
           checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);

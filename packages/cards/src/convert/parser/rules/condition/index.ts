@@ -82,6 +82,7 @@ import { PARTY_CONDITION_RULES } from './party';
 import { PLAYED_LAND_CONDITION_RULES } from './played-land';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
+import { PUT_WITH_THIS_ABILITY_CONDITION_RULES } from './put-with-this-ability';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { REVOLT_CONDITION_RULES } from './revolt';
@@ -682,6 +683,8 @@ export const CONDITION_RULES = [
   ...MARDU_SURGE_CONDITION_RULES,
   // Twilight Diviner (Meren deck): "they entered or were cast from a graveyard".
   ...ENTERED_FROM_GRAVEYARD_CONDITION_RULES,
+  // Kodama of the East Tree: "it wasn't put onto the battlefield with this ability".
+  ...PUT_WITH_THIS_ABILITY_CONDITION_RULES,
   // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
   ...UNBOUND_I_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".

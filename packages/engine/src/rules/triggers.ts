@@ -889,6 +889,15 @@ function occurrences(
             },
           ]
         : [];
+    case 'expend':
+      // CR 700.14: the payment of a spell's cost took the mana its caster spent on spells this turn from less than N to at least N. The total only grows, so this happens at most once a
+      // turn; a cast that spent no mana has no `expend`.
+      return event.kind === 'spellCast' &&
+        event.expend !== undefined &&
+        event.expend.before < trigger.amount &&
+        event.expend.after >= trigger.amount
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'dungeonCompleted':
       // CR 309.7, 701.49c: once each time a player's dungeon is completed.
       return event.kind === 'dungeonCompleted'
@@ -1351,6 +1360,9 @@ function matches(
       return occ.seat === candidate.controller;
     case 'dungeonCompleted':
       // CR 309.7: "Whenever you complete a dungeon": the player whose dungeon was completed controls the ability.
+      return occ.seat === candidate.controller;
+    case 'expend':
+      // CR 700.14: "Whenever you expend N": the player who paid for the spell controls the ability.
       return occ.seat === candidate.controller;
     case 'landfall':
       // "Whenever a land enters under your control": the land's controller is the ability's.

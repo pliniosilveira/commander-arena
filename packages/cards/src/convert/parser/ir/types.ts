@@ -162,6 +162,7 @@ export interface IrNoun extends IrNode {
     | 'selfAndGroup' // "~ and land creatures you control" (Sylvan Advocate, CR 611.3a): the permanent itself and the group the filter names
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'graveyardedThisWay' // "each permanent put into a graveyard this way" (Terastodon, CR 608.2c): what the destroy effects before it put into graveyards
+    | 'granter' // the card's name inside a quoted ability that says "this creature" (Grothama, All-Devouring, CR 113.6): the permanent that grants the ability
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -727,6 +728,8 @@ export type IrAmount =
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
   // "the damage dealt to target opponent this turn" (CR 120.3): all the damage dealt to the player so far this turn
   | { readonly kind: 'damageDealtToThisTurn'; readonly of: IrNoun; readonly span: Span }
+  // "the amount of damage dealt to ~ this turn by sources they controlled" (Grothama, All-Devouring, CR 120.3): what sources of each player dealt to the permanent of the ability
+  | { readonly kind: 'damageToThisThisTurn'; readonly span: Span }
   // "the greatest number of artifacts an opponent controls" (CR 109.4): the most of those objects any one opponent controls
   | { readonly kind: 'greatestCountOfAnOpponent'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it
@@ -947,6 +950,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'damageDealtByType'; readonly subtype: string }
     // "they entered or were cast from a graveyard" (Twilight Diviner, CR 603.4, 603.6a): part of the event of "one or more creatures enter", read by the trigger's lowering
     | { readonly kind: 'enteredFromGraveyard' }
+    // "it wasn't put onto the battlefield with this ability" (Kodama of the East Tree, CR 603.4, 400.7): the intervening "if" of a trigger about a permanent that enters
+    | { readonly kind: 'notPutWithThisAbility' }
     // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
     | { readonly kind: 'costContainsX' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
@@ -1000,7 +1005,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'thisOnBattlefield' }
     // Valakut Exploration (CR 603.4, 607.2a): "there are cards exiled with ~": at least one card the permanent exiled with its linked ability is still in exile
     // `atLeast` (Colfenor's Urn, "if three or more cards have been exiled with ~"): at least that many of them; left out, one.
-    | { readonly kind: 'cardsExiledWithSelf'; readonly atLeast?: number }
+    // `viaIt` (Evercoat Ursine, "if there are cards exiled with it"): the permanent is named by the pronoun "it", which the lowering reads only where "it" is the subject of the trigger, `~`.
+    | { readonly kind: 'cardsExiledWithSelf'; readonly atLeast?: number; readonly viaIt?: true }
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
@@ -1855,6 +1861,8 @@ export interface IrTrigger extends IrNode {
   readonly exceptFirstInDrawStep?: true;
   /** 'cast': only the first spell of the kind the subject names that the actor casts each turn ("your first instant or sorcery spell each turn", CR 601.2i). */
   readonly firstOfKind?: true;
+  /** 'expend': the N of "you expend N" (CR 700.14). */
+  readonly expend?: number;
   /** 'classLevel': the level a Class became (CR 716.2). */
   readonly level?: number;
   /** 'cast' and 'sacrifice' (the latter only `you`): only while the active player is an opponent of this ability's controller (`opponent`) or is the controller (`you`, "during your turn"). */
@@ -2373,6 +2381,19 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'handCycling'; readonly cardTypes: readonly string[]; readonly cost: IrCost }
   /**
+   * "is a 4/4 Elemental creature in addition to its other types and has indestructible, haste, and "Whenever ~ deals combat damage to a player, draw a card."" (Bello, Bard of
+   * the Brambles; CR 613.1d, 613.1f, 613.4b, 613.6): the group of the statement has the card types and creature types as well as its own, the base power and toughness, and
+   * what `grants` gives (keywords and quoted abilities), as one effect.
+   */
+  | {
+      readonly kind: 'animate';
+      readonly power: number;
+      readonly toughness: number;
+      readonly cardTypes: readonly string[];
+      readonly subtypes: readonly string[];
+      readonly grants: readonly IrStaticEffect[];
+    }
+  /**
    * `are Equipment in addition to their other types and have "Equipped creature gets +2/+0," equip Pirate {1}, and equip {3}` (CR 613.1d, 613.1f, 702.6a, 702.6c): the group of
    * the statement is Equipment as well, has the quoted "+N/+N" for the creature it equips and each equip ability (`subtype`: the creature type an "equip [type]" may target).
    */
@@ -2857,6 +2878,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'commanderManaValue',
   'commanderCasts',
   'damageDealtToThisTurn',
+  'damageToThisThisTurn',
   'greatestCountOfAnOpponent',
   'half',
   'multiple',

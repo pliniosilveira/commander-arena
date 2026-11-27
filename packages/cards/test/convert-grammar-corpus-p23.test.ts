@@ -215,8 +215,8 @@ const UNREAD: readonly Line[] = [
     kind: 'enchantment',
     text: "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard.",
     expect: no(
-      "nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard.",
-      'static.cards-have-keyword-from-mana-cost',
+      "card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard.",
+      'noun.each-permanent',
     ),
     note: 'the real shape of Underworld Breach: "nonland" is no card type the grant of escape reads (it reads "Each enchantment card"), so it stays dropped',
   },

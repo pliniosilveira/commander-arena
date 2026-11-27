@@ -52,4 +52,41 @@ export const AMOUNT_DAMAGE_DEALT_TO_PLAYER_THIS_TURN = defineRule<IrAmount>({
   },
 });
 
-export const HOSTS_MISC_AMOUNT_RULES = [AMOUNT_DAMAGE_DEALT_TO_PLAYER_THIS_TURN];
+/**
+ * `amount.damage-dealt-to-this-by-their-sources`: "equal to the amount of damage dealt to ~ this turn by sources they controlled" (Grothama, All-Devouring, CR 120.3, 608.2h): the
+ * damage the permanent of the ability was dealt this turn by sources the player in question controlled as they dealt it, the engine's `damageToThisThisTurn`. It is read for each
+ * player of an "each player" instruction. Not read: another permanent, "you controlled", a missing "this turn", "combat damage".
+ */
+export const AMOUNT_DAMAGE_TO_THIS_BY_THEIR_SOURCES = defineRule<IrAmount>({
+  id: 'amount.damage-dealt-to-this-by-their-sources',
+  family: 'amount',
+  leading: ['equal'],
+  cites: ['CR 120.3 (Damage)', 'CR 608.2h (Resolving Spells and Abilities)'],
+  examples: [
+    'equal to the amount of damage dealt to ~ this turn by sources they controlled',
+    'equal to the amount of damage dealt to ~ this turn by sources they control',
+  ],
+  rejects: [
+    'equal to the amount of damage dealt to target creature this turn by sources they controlled',
+    'equal to the amount of damage dealt to ~ this turn by sources you controlled',
+    'equal to the amount of damage dealt to ~ by sources they controlled',
+    'equal to the amount of combat damage dealt to ~ this turn by sources they controlled',
+    'equal to the damage dealt to ~ this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /equal to the amount of damage dealt to ~ this turn by sources they (?:controlled|control)(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'damageToThisThisTurn', span: { start: pos, end: r.pos } },
+      pos: r.pos,
+    };
+  },
+});
+
+export const HOSTS_MISC_AMOUNT_RULES = [
+  AMOUNT_DAMAGE_DEALT_TO_PLAYER_THIS_TURN,
+  AMOUNT_DAMAGE_TO_THIS_BY_THEIR_SOURCES,
+];

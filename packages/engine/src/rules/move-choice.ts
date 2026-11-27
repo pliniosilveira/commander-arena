@@ -9,13 +9,14 @@ import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { objectsInZone, seatsInOrder, zoneList } from '../state/ops';
-import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import type { ChosenTarget, GameState, Instruction, ResolutionContext } from '../state/types';
+import { amountOf } from './amounts';
 import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
 import { greatestAmong } from './sacrifice-choice';
-import { matchesFilter } from './select';
+import { matchesFilter, type SelectContext } from './select';
 import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -30,6 +31,22 @@ export function isCardZoneChoice(filter: ObjectFilter): boolean {
     // Issue 103 (Hellkite Courser): "a commander you own from the command zone".
     filter.zone === 'command'
   );
+}
+
+/**
+ * "A permanent card with equal or lesser mana value" in the ability of a trigger about a permanent (Kodama of the East Tree, CR 202.3, 603.2c): the limit is the mana value of the
+ * permanent that entered, worked out as the effect starts, because the cards are asked about after this effect has ended. Any other filter is returned as it is.
+ */
+export function fixedLimit(
+  state: GameState,
+  filter: ObjectFilter,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): ObjectFilter {
+  const limit = filter.manaValueAtMost;
+  if (typeof limit !== 'object' || limit.kind !== 'manaValueOf') return filter;
+  if (limit.of.kind !== 'triggerSubject') return filter;
+  return { ...filter, manaValueAtMost: Math.max(0, amountOf(state, limit, ctx, targets)) };
 }
 
 /** The cards `seat` owns in the zone the filter names that match it (`source` is what "another" excludes). */
@@ -245,6 +262,8 @@ export function runChooseMove(
         instruction.withCounters,
       ).map((i) => {
         if (i.kind !== 'move') return i;
+        // CR 400.7: "put onto the battlefield with this ability": the permanent remembers the source.
+        if (instruction.putWith !== undefined) return { ...i, putWith: instruction.putWith };
         // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
         if (instruction.linkTo !== undefined || instruction.untilLeaves !== undefined) {
           return {

@@ -350,6 +350,14 @@ const EXILE_INSTEAD_SENTENCE = /^if that spell would be put into a graveyard, ex
 const MAY_CAST_ANY_TYPE_END =
   /(?:^|, )(?:you may )?cast (?:it|that card) this turn, and mana of any type can be spent to cast that spell\.$/i;
 
+/**
+ * "Target land you control becomes a 3/3 Elemental creature with haste until end of turn. It's still a land." (Llanowar Loamspeaker, CR 205.1b, issue 110): the second sentence says
+ * the types are added to, so the two are read as one (`effect.becomes-creature-with-keywords`).
+ */
+const STILL_A_TYPE_SENTENCE = /^it['’]s still an? (?:artifact|enchantment|land)\.$/i;
+const BECOMES_CREATURE_WITH_END =
+  /\bbecomes an? \d+\/\d+ [^.]* creature with [^.]* until end of turn\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
@@ -362,6 +370,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
   if (COPY_GAINS_SENTENCE.test(said)) return COPY_WITH_NEW_TARGETS_END.test(beforeText);
   if (ROUND_UP_SENTENCE.test(said)) return HALF_COPY_END.test(beforeText);
+  if (STILL_A_TYPE_SENTENCE.test(said)) return BECOMES_CREATURE_WITH_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
@@ -445,6 +454,10 @@ const EXILE_COUNTERED_INSTEAD =
 const MAY_CAST_FREE_WHILE_EXILED =
   /^you may cast that card without paying its mana cost for as long as it remains exiled\.$/i;
 const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
+/** "Reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest ..." (Sunbird's Invocation): the first two sentences of `effect.reveal-x-cast-free`. */
+const REVEAL_TOP_X_WHERE = /^reveal the top X cards of your library, where X is [^.]*\.$/i;
+const CAST_FROM_AMONG_REVEALED =
+  /^you may cast [^.]* from among cards revealed this way without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
  * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
@@ -1830,7 +1843,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           said(b, PUT_UP_TO_FROM_AMONG) ||
           said(b, PUT_FROM_AMONG_ONTO) ||
           said(b, CAST_FROM_AMONG_FREE))) ||
-        (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
+        (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED)) ||
+        (said(a, REVEAL_TOP_X_WHERE) && said(b, CAST_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {
       out.push({ start: a.start, end: c.end });

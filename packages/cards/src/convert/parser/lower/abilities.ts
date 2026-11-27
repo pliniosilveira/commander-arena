@@ -80,6 +80,7 @@ const KEYWORD_RULE = {
   replicate: 'keyword.replicate',
   escalate: 'keyword.escalate',
   buyback: 'keyword.buyback',
+  offspring: 'keyword.offspring',
   plot: 'keyword.plot',
   ninjutsu: 'keyword.ninjutsu',
 } as const;
@@ -101,6 +102,7 @@ type CostedKeyword =
   | 'replicate'
   | 'escalate'
   | 'buyback'
+  | 'offspring'
   | 'plot'
   | 'ninjutsu';
 
@@ -263,6 +265,7 @@ function lowerCostedKeyword(
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'buyback' ||
+    name === 'offspring' ||
     name === 'plot' ||
     name === 'ninjutsu'
       ? ['mana']
@@ -681,6 +684,7 @@ export function lowerKeyword(
     ability.name === 'replicate' ||
     ability.name === 'escalate' ||
     ability.name === 'buyback' ||
+    ability.name === 'offspring' ||
     ability.name === 'plot' ||
     ability.name === 'ninjutsu' ||
     ability.name === 'ward'
@@ -873,7 +877,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (!lowered.ok) return lowered;
     const { zone, ...filter } = lowered.value;
     void zone;
-    return built({ kind: 'damageDouble', sources: filter });
+    // CR 109.2 (Gratuitous Violence): "a creature you control" is a permanent, so the source is read on the battlefield (or as it last was there), never as a spell.
+    const permanents = event.args.permanents?.kind === 'flag' && event.args.permanents.value;
+    return built({
+      kind: 'damageDouble',
+      sources: permanents ? { ...filter, zone: 'battlefield' as const } : filter,
+    });
   }
   if (event.verb === 'countersPlus') {
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
@@ -1526,6 +1535,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:escalate',
   'keyword:replicate',
   'keyword:buyback',
+  'keyword:offspring',
   'keyword:plot',
   'keyword:ninjutsu',
   'keyword:echo',

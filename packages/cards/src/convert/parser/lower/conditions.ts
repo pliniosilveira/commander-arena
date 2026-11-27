@@ -257,6 +257,8 @@ export function lowerCondition(
       ]);
       if (blocked.length > 0) return failure(c, blocked);
       if (ctx?.interveningCondition !== true) return failure(c, []);
+      // "... if there are cards exiled with it" (Evercoat Ursine): "it" is the source only when the trigger is about `~` itself ("Whenever ~ ...", "When ~ ...").
+      if (test.viaIt === true && !/^(?:whenever|when) ~ /iu.test(ctx.text)) return failure(c, []);
       ctx.exiledWithCondition = true;
       return ok({
         kind: 'amountIs',
@@ -750,6 +752,21 @@ export function lowerCondition(
       // CR 702.174k (stage P30, D-135): the spell was cast with its gift cost paid; the face has to have the keyword.
       const blocked = missingFeatures(['condition:giftPromised']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'giftPromised' });
+    }
+    case 'notPutWithThisAbility': {
+      // CR 603.4, 400.7 (Kodama of the East Tree): the intervening "if" of a trigger about another permanent that enters: the permanent does not remember this source as the one whose
+      // ability put it onto the battlefield (the engine's `subjectMatches` with `putWithSource`, negated). The trigger's lowering marks the effect that puts the card there.
+      const blocked = missingFeatures([
+        'condition:subjectMatches',
+        'condition:not',
+        'selector:putWithSource',
+      ]);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({
+        kind: 'not',
+        term: { kind: 'subjectMatches', filter: { putWithSource: true } },
+      });
     }
     case 'wasCast': {
       // CR 601.2a, 603.4: "if you cast it" is read only as the intervening "if" of a trigger about the source itself, where "it" is the permanent the spell became.

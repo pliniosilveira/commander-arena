@@ -14,6 +14,7 @@ import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
 import { ALSO_TYPES_STATIC_RULES } from './also-types';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
+import { ANIMATE_STATIC_RULES } from './animate';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
 import { ARWEN_STATIC_RULES } from './arwen';
 import { ATTACHED_CONDITION_STATIC_RULES } from './attached-conditions';
@@ -128,6 +129,8 @@ export const STATIC_RULES = [
   ...ETERNAL_MIGHT_STATIC_RULES,
   // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.
   ...EQUIPMENT_KIT_STATIC_RULES,
+  // Issue 110 (Bello, Bard of the Brambles): a statement of its own, whose subject `static.each` reads too.
+  ...ANIMATE_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
   // Aminatou, Veil Piercer; The Master of Keys: "Each enchantment card in your hand has miracle. ...", "... in your graveyard has escape. ...".
   ...MANA_COST_KEYWORD_GRANT_STATIC_RULES,

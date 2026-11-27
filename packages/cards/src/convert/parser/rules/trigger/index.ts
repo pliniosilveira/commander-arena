@@ -56,6 +56,7 @@ import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
 import { EXILE_CAST_TRIGGER_RULES } from './exile-cast';
 import { EXILE_COUNTER_TRIGGER_RULES } from './exile-counter';
+import { EXPEND_TRIGGER_RULES } from './expend';
 import { FLINT_TRIGGER_RULES } from './flint';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
@@ -1660,6 +1661,8 @@ export const TRIGGER_RULES = [
   ...OPPONENT_ATTACKS_YOU_TRIGGER_RULES,
   ...ATTACKS_YOU_OR_WALKERS_TRIGGER_RULES,
   ...LOOT_DISPUTE_TRIGGER_RULES,
+  // CR 700.14: "you expend N".
+  ...EXPEND_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,

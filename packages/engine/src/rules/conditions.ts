@@ -188,6 +188,14 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.replicated ?? 0) > 0;
     }
+    case 'offspringPaid': {
+      // CR 702.175a, 603.4: the spell carries the fact on the stack and the permanent it became keeps it (`GameObject.offspringPaid`); once either has left, its last-known
+      // information says (CR 113.7a), so the token is still made when the creature left before the trigger resolved.
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return (
+        source !== null && (source.stack?.offspringPaid === true || source.offspringPaid === true)
+      );
+    }
     case 'additionalCostPaid': {
       // CR 118.8, 701.68a: "if this spell's additional cost was paid" (the optional blight): the spell carries the fact on the stack, or its last-known information does once it has left (CR 113.7a).
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);

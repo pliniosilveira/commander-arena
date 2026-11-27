@@ -167,6 +167,8 @@ describe('the dimensions', () => {
       'objectMatches',
       'discardedAsCostMatches',
       'giftPromised',
+      // CR 702.175a: "if its offspring cost was paid".
+      'offspringPaid',
       'opponentControlsAtLeast',
       // D-139: "if you control the artifact with the greatest mana value or tied".
       'controlsGreatest',
@@ -295,6 +297,8 @@ describe('the dimensions', () => {
       'castFromGraveyard',
       // D-139: base power and toughness, "can't be blocked by Walls", "exiled with", "as though they had flash".
       'loseTypes',
+      // Bello, Bard of the Brambles: layers 4, 6 and 7b in one effect (CR 613.6).
+      'animate',
       'setPt',
       'cantBeBlockedBy',
       'takeFromLinkedExile',

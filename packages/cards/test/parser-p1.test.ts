@@ -108,7 +108,17 @@ describe('mana abilities (CR 605.1a)', () => {
   });
 
   test('anything else after the mana makes it an ordinary activated ability, not read as a mana ability', () => {
-    const result = compileLine('{T}: Add {U} or {B}. ~ deals 1 damage to target creature.', {
+    // A target after the mana makes it an ordinary activated ability (CR 605.1a), and the colour is chosen as it resolves: read since the Animated Army deck (issue 110, Domri).
+    const ordinary = compileLine('{T}: Add {U} or {B}. ~ deals 1 damage to target creature.', {
+      rules: buildRuleSet(ALL_RULES),
+      face: 'permanent',
+    });
+    expect(ordinary).toMatchObject({ ok: true, kind: 'abilities' });
+    if (ordinary.ok && ordinary.kind === 'abilities') {
+      expect(ordinary.abilities[0]?.kind).toBe('activated');
+    }
+    // Drawing after the mana, with no target, is still a mana ability the engine cannot run.
+    const result = compileLine('{T}: Add {U} or {B}. Draw a card.', {
       rules: buildRuleSet(ALL_RULES),
       face: 'permanent',
     });

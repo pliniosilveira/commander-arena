@@ -1011,6 +1011,11 @@ export function resolveObjects(
       const host = source?.attachedTo ?? null;
       return host !== null && state.objects[host] !== undefined ? [host] : [];
     }
+    case 'granter': {
+      // CR 113.6, 400.7: the permanent that gave this ability, while it is on the battlefield as the object it was then (`derive` wrote its id in as it gave the ability).
+      const granter = selector.object === undefined ? undefined : state.objects[selector.object];
+      return granter !== undefined && granter.zone === 'battlefield' ? [granter.id] : [];
+    }
     case 'ringBearer': {
       // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer", the creature that has the designation of the controller and is under their control now.
       const bearer = ringBearerOf(state, ctx.controller);

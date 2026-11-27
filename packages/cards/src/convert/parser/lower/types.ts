@@ -353,6 +353,13 @@ export interface LowerContext {
   /** True in the body of a triggered ability whose every event is a batch of permanents entering (Twilight Diviner, CR 603.2c): "one of them" names the permanents that triggered it. */
   entersBatchTrigger: boolean;
   /**
+   * True in the body of a triggered ability whose intervening "if" says the permanent that entered "wasn't put onto the battlefield with this ability" (Kodama of the East Tree, CR 400.7):
+   * the card the body puts onto the battlefield is remembered as put there by this ability (`moveToZone.putWithSource`).
+   */
+  putWithThis: boolean;
+  /** True in the body of a triggered ability about one permanent that enters (not the source itself): "that permanent's mana value" is a limit the body may read (`manaValueOf` the `triggerSubject`). */
+  entersPermanentTrigger: boolean;
+  /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
    */
@@ -556,6 +563,8 @@ export function newContext(
     discardBatchTrigger: false,
     graveyardBatchTrigger: false,
     entersBatchTrigger: false,
+    putWithThis: false,
+    entersPermanentTrigger: false,
     didSearch: false,
     putCounters: [],
     searched: null,
