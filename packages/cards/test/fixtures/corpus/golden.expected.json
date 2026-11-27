@@ -1,5 +1,5 @@
 {
-  "parserVersion": 224,
+  "parserVersion": 225,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -517,6 +517,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d8a653a4"
+    },
+    "06bb4272-25d1-46db-8585-15f919267e1e": {
+      "name": "One with the Multiverse",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "50a5e83d"
     },
     "06ccec61-27d2-4079-80b5-29ebd3a980ee": {
       "name": "Cache Grab",
@@ -1658,6 +1666,14 @@
       "reasons": [],
       "ast": "1b453ff1"
     },
+    "192f3c8a-1120-4f7f-ae0f-fe9bde59cd08": {
+      "name": "Telling Time",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "57da1f4e"
+    },
     "19b5c94b-b4fa-41a9-b649-51c4e6f03602": {
       "name": "Might of the Meek",
       "group": "acceptance",
@@ -1977,6 +1993,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "db1d116e"
+    },
+    "1e847d69-e527-4bb9-a624-17c25ac4fed4": {
+      "name": "Cramped Vents // Access Maze",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bbf84da1"
     },
     "1e9b0fd6-5aae-401a-8df5-d94ce6442696": {
       "name": "Prosper, Tome-Bound",
@@ -3711,6 +3735,14 @@
       "reasons": [],
       "ast": "09871086"
     },
+    "37dc566e-a91a-448c-9967-b178a93ffb62": {
+      "name": "The Master of Keys",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "faaf5cf8"
+    },
     "38515f89-348b-4cf3-b7bd-1f6fe4ce2fba": {
       "name": "Adeline, Resplendent Cathar",
       "group": "acceptance",
@@ -3880,6 +3912,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "15e7102e"
+    },
+    "3a646245-b8b7-4f91-a312-d5eea9a9e49a": {
+      "name": "Extravagant Replication",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2a18f695"
     },
     "3a92b235-196b-4f46-9d20-06f4d3653d36": {
       "name": "Aberrant Return",
@@ -4144,6 +4184,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffd3bd2b"
+    },
+    "3dd196b6-a85a-4e3e-bb57-ec34241f8117": {
+      "name": "Terminus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aa11ed13"
     },
     "3e0e3676-e634-4e64-bdfd-4aaa5885461f": {
       "name": "Abstract Performance",
@@ -5451,6 +5499,14 @@
       "reasons": [],
       "ast": "d0d26e10"
     },
+    "53716e0b-4d4e-40b0-8370-38e11f73d195": {
+      "name": "Demon of Fate's Design",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9e231942"
+    },
     "53987a39-c18c-4c13-b1ea-fd1b2a369f9e": {
       "name": "Whip of Erebos",
       "group": "acceptance",
@@ -6688,6 +6744,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "88d8b82b"
+    },
+    "65ea7eb1-751b-4ecd-83cb-e9b6015ec194": {
+      "name": "Soaring Lightbringer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "87fc78b6"
     },
     "65f1dd09-0640-47f8-8bfd-7aceaa5646a6": {
       "name": "Restless Dreams",
@@ -7986,6 +8050,14 @@
       "reasons": [],
       "ast": "7cc77327"
     },
+    "79a71fe5-38ce-4bb5-aea0-c9b9a856d397": {
+      "name": "Mirrormade",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f28dc290"
+    },
     "79b69b38-c01d-499a-a865-8c1cecf9fae0": {
       "name": "Tlincalli Hunter // Retrieve Prey",
       "group": "acceptance",
@@ -8646,6 +8718,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "120145af"
+    },
+    "83914a83-4de2-4d64-9770-f68a12014167": {
+      "name": "Spirit-Sister's Call",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fef76099"
     },
     "83917116-d2d8-4701-a79f-af17486706ae": {
       "name": "Light the Way",
@@ -9594,6 +9674,14 @@
       "reasons": [],
       "ast": "325dd6e9"
     },
+    "92f6c063-a740-4c3c-a60a-569fd298854d": {
+      "name": "Sphere of Safety",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d6d93b34"
+    },
     "93438939-3909-4e59-bfe4-760ec73eb57d": {
       "name": "Graywater's Fixer",
       "group": "acceptance",
@@ -10074,6 +10162,14 @@
       "reasons": [],
       "ast": "b9062661"
     },
+    "9aacc1ce-8d0d-4a24-9a15-74635f2f127d": {
+      "name": "Athreos, Shroud-Veiled",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "659c17eb"
+    },
     "9aace0d3-89e6-4254-b96f-ee3a878f2f91": {
       "name": "Conqueror's Flail",
       "group": "acceptance",
@@ -10081,6 +10177,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b994a887"
+    },
+    "9abecd23-a2d9-43c7-8d01-f8afdc53026e": {
+      "name": "Arvinox, the Mind Flail",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "14c346d9"
     },
     "9ad730b5-8950-4215-9319-387e2970dd22": {
       "name": "Exemplar of Light",
@@ -10754,6 +10858,14 @@
       "reasons": [],
       "ast": "9171f689"
     },
+    "a3a1f149-febe-4ff6-9e34-8b82ef21c2ee": {
+      "name": "Fear of Sleep Paralysis",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8ccb35f1"
+    },
     "a3afd8b9-d499-40f7-be41-f8fee6636a1d": {
       "name": "Twilight Prophet",
       "group": "acceptance",
@@ -10857,6 +10969,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f4b129e3"
+    },
+    "a5458de0-0f61-49a3-a013-d90f92559809": {
+      "name": "Archetype of Imagination",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "124cde82"
     },
     "a554aa2c-d947-4fc6-929d-d5891f467615": {
       "name": "Nahiri, the Lithomancer",
@@ -12103,6 +12223,14 @@
       "reasons": [],
       "ast": "11b5a0e9"
     },
+    "b8510b34-0e5f-4639-9db1-1ba40d84b800": {
+      "name": "Ancient Cellarspawn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e7141a02"
+    },
     "b8602f19-6fc2-43c4-b0c4-2cd11d5dbda2": {
       "name": "Keen Duelist",
       "group": "acceptance",
@@ -12150,6 +12278,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "da389a49"
+    },
+    "b8ee0dfc-f588-43b6-ab96-f3a3c58a8a3d": {
+      "name": "Nightmare Shepherd",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ecacf87f"
     },
     "b8f566ea-8283-4afa-9ac8-737e26419283": {
       "name": "Explore",
@@ -12230,6 +12366,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a9341526"
+    },
+    "b9ac4856-5cdb-479f-b0f5-7fa0b232a5ff": {
+      "name": "Bottomless Pool // Locker Room",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1739eac8"
     },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
@@ -12527,6 +12671,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c8c6700c"
+    },
+    "bf45f5ee-4d5f-4920-b612-b5492c2f035d": {
+      "name": "Aminatou, Veil Piercer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4c90170b"
     },
     "bfb5104b-01e3-4d37-ac93-1dc342121531": {
       "name": "Enhanced Surveillance",
@@ -13128,6 +13280,14 @@
       "reasons": [],
       "ast": "8b908782"
     },
+    "c8abde48-a07a-42a0-a43b-c357e6d9cad4": {
+      "name": "Secret Arcade // Dusty Parlor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1f9af8b0"
+    },
     "c8b143ad-43ec-4e0d-a440-e348daa31391": {
       "name": "Swiftfoot Boots",
       "group": "training",
@@ -13440,6 +13600,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "671845ef"
+    },
+    "cc9088c4-6f6b-4a1a-90f1-794eb1e938c6": {
+      "name": "Phenomenon Investigators",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d5aa14cb"
     },
     "cca33482-0bc5-4fe4-89dc-ba33b2e93831": {
       "name": "Feasting Hobbit",
@@ -13816,6 +13984,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "88294173"
+    },
+    "d2ae893f-52af-4645-8712-d62fb78f901e": {
+      "name": "Ondu Spiritdancer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3e81ca6d"
     },
     "d30d8968-ec24-4155-97e2-28efd52c8810": {
       "name": "Malevolent Rumble",
@@ -15098,6 +15274,14 @@
       "reasons": [],
       "ast": "690e6368"
     },
+    "e744dbb6-2d56-462a-8d49-d79c73944048": {
+      "name": "Portent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93fd0c54"
+    },
     "e7564d66-767c-4cd9-a5f0-0f2488a4a74b": {
       "name": "Heliod's Intervention",
       "group": "acceptance",
@@ -15225,6 +15409,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d3bd879b"
+    },
+    "e8ff6780-5f22-42fa-a7c1-7406e8203063": {
+      "name": "Redress Fate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5a33e938"
     },
     "e91240bc-4a13-4131-9379-5ddac6555f4a": {
       "name": "Adaptive Omnitool",
@@ -16818,8 +17010,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1801,
-      "total": 1817
+      "supported": 1825,
+      "total": 1841
     }
   }
 }
