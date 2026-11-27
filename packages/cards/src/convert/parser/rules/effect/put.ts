@@ -271,6 +271,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a Vehicle card from your hand onto the battlefield',
     // Terrain Generator (CR 205.4): the supertype basic.
     'you may put a basic land card from your hand onto the battlefield tapped',
+    // Kodama of the East Tree (CR 202.3): the mana value of the permanent the trigger is about.
+    'you may put a permanent card with equal or lesser mana value from your hand onto the battlefield',
   ],
   rejects: [
     'you may put a basic card from your hand onto the battlefield',
@@ -299,6 +301,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a Dragon card from your hand onto the battlefield',
     'you may put a Spacecraft Dragon card from your hand onto the battlefield',
     'you may put a card from your hand onto the battlefield',
+    'you may put a permanent card with equal or lesser mana value from your library onto the battlefield',
+    'you may put a permanent card with equal or lesser mana values from your hand onto the battlefield',
+    'you may put a permanent card with equal or less mana value from your hand onto the battlefield',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -337,14 +342,19 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
                 // CR 107.3a, 202.3: "with mana value X or less", the X of the spell (Mind into Matter); read as the effect resolves.
                 // Issue 103 (CR 202.3, 603.2c): "with mana value less than or equal to that damage", the damage the trigger event carries (`true`).
                 optional(
-                  choice<IrArg | true>(
+                  choice<IrArg | true | 'subject'>(
                     map(
                       sequence(
                         literal(' with mana value '),
                         family<IrArg>('amount', { only: ['amount.x'] }),
                         literal(' or less'),
                       ),
-                      ([, x]): IrArg | true => x,
+                      ([, x]): IrArg | true | 'subject' => x,
+                    ),
+                    // Kodama of the East Tree (CR 202.3, 603.2c): "with equal or lesser mana value", the mana value of the permanent the trigger is about.
+                    map(
+                      pattern(/ with equal or lesser mana value(?![\p{L}\p{N}])/iu),
+                      () => 'subject' as const,
                     ),
                     map(
                       pattern(
@@ -393,7 +403,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
       }
       // "a permanent card" (CR 110.1, 400.1): a card of any permanent type, never an instant or a sorcery.
       const anyPermanent = typeWordsRead.includes(PERMANENT_MARK);
-      const atMostX = limit === true || limit === null ? null : limit;
+      const atMostX = limit === true || limit === 'subject' || limit === null ? null : limit;
       const types = anyPermanent ? [] : typeWordsRead;
       const objects: IrNoun = {
         kind: 'noun',
@@ -453,9 +463,19 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: FROM_HAND_RULE,
       };
-      return { ok: true, value: { objects, to, may: flag, both, votes, atMostX }, pos: r.pos };
+      const subjectLimit: IrFlag = {
+        kind: 'flag',
+        value: limit === 'subject',
+        span: card.span,
+        rule: FROM_HAND_RULE,
+      };
+      return {
+        ok: true,
+        value: { objects, to, may: flag, both, votes, atMostX, subjectLimit },
+        pos: r.pos,
+      };
     },
-    ({ objects, to, may, both, votes, atMostX }) => ({
+    ({ objects, to, may, both, votes, atMostX, subjectLimit }) => ({
       verb: 'putFromZone',
       args: {
         objects,
@@ -463,6 +483,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         may,
         ...(both.value ? { alsoGraveyard: both } : {}),
         ...(atMostX === null ? {} : { manaValueAtMost: atMostX }),
+        ...(subjectLimit.value ? { manaValueAtMostSubject: subjectLimit } : {}),
         ...(votes === null ? {} : { count: votes }),
       },
     }),

@@ -753,6 +753,21 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:giftPromised']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'giftPromised' });
     }
+    case 'notPutWithThisAbility': {
+      // CR 603.4, 400.7 (Kodama of the East Tree): the intervening "if" of a trigger about another permanent that enters: the permanent does not remember this source as the one whose
+      // ability put it onto the battlefield (the engine's `subjectMatches` with `putWithSource`, negated). The trigger's lowering marks the effect that puts the card there.
+      const blocked = missingFeatures([
+        'condition:subjectMatches',
+        'condition:not',
+        'selector:putWithSource',
+      ]);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({
+        kind: 'not',
+        term: { kind: 'subjectMatches', filter: { putWithSource: true } },
+      });
+    }
     case 'wasCast': {
       // CR 601.2a, 603.4: "if you cast it" is read only as the intervening "if" of a trigger about the source itself, where "it" is the permanent the spell became.
       const blocked = missingFeatures(['condition:wasCast']);

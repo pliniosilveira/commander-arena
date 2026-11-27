@@ -940,6 +940,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'damageDealtByType'; readonly subtype: string }
     // "they entered or were cast from a graveyard" (Twilight Diviner, CR 603.4, 603.6a): part of the event of "one or more creatures enter", read by the trigger's lowering
     | { readonly kind: 'enteredFromGraveyard' }
+    // "it wasn't put onto the battlefield with this ability" (Kodama of the East Tree, CR 603.4, 400.7): the intervening "if" of a trigger about a permanent that enters
+    | { readonly kind: 'notPutWithThisAbility' }
     // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
     | { readonly kind: 'costContainsX' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)

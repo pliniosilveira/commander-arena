@@ -8688,6 +8688,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 202.3, 603.2c (Kodama of the East Tree): "a permanent card with equal or lesser mana value": the limit is the mana value of the permanent the trigger is about.
+      if (kindOf(e.objects) === 'choose') {
+        const limit = (e.objects as ChooseSelector).filter?.manaValueAtMost;
+        if (
+          typeof limit === 'object' &&
+          limit.kind === 'manaValueOf' &&
+          kindOf(limit.of) === 'triggerSubject' &&
+          scope.triggerSubject !== 'permanent'
+        ) {
+          issue(
+            out,
+            `${path}.objects.filter.manaValueAtMost`,
+            'the mana value of the permanent the trigger is about is a limit only in an ability triggered by a permanent',
+          );
+        }
+      }
       // CR 400.7 (Animate Dead): the permanent put onto the battlefield remembers the permanent whose ability put it there.
       if (e.putWithSource !== undefined) {
         if (e.putWithSource !== true) {
@@ -8700,8 +8716,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'only an ability of a permanent that puts a card onto the battlefield remembers it',
           );
         }
-        if (kindOf(e.objects) === 'choose') {
-          issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
+        // CR 400.7 (Kodama of the East Tree): a card chosen from the hand or the graveyard as the effect runs is remembered too; a permanent chosen on the battlefield is not put there.
+        if (
+          kindOf(e.objects) === 'choose' &&
+          (e.objects as ChooseSelector).filter?.zone !== 'hand' &&
+          (e.objects as ChooseSelector).filter?.zone !== 'graveyard'
+        ) {
+          issue(
+            out,
+            `${path}.putWithSource`,
+            'a choice remembered is of a card of the hand or the graveyard',
+          );
         }
       }
       // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.

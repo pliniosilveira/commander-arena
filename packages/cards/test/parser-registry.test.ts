@@ -1212,6 +1212,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.entered-from-graveyard': permanent(
     (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
   ),
+  // Kodama of the East Tree: the intervening "if" of a trigger about another permanent that enters.
+  'condition.not-put-with-this-ability': permanent(
+    (e) =>
+      `Whenever another permanent you control enters, if ${e}, you may put a permanent card with equal or lesser mana value from your hand onto the battlefield.`,
+  ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.permanents-and-cards-off-battlefield': permanent(

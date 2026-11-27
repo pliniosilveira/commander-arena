@@ -1759,6 +1759,13 @@ function lowerTriggeredAbility(
     triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.batch === true);
   // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
   ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
+  // Kodama of the East Tree (CR 603.2, 603.6a): "Whenever another permanent you control enters": the permanent that entered is the trigger's subject, whose mana value is a limit.
+  ctx.entersPermanentTrigger =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) => t.kind === 'entersBattlefield' && !('kind' in t.what && t.what.kind === 'this'),
+    );
+  ctx.putWithThis = false;
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
@@ -1876,6 +1883,11 @@ function lowerTriggeredAbility(
     ctx.interveningCondition = false;
     if (!lowered.ok) return lowered;
     interveningIf = lowered.value;
+    // Kodama of the East Tree (CR 400.7): "if it wasn't put onto the battlefield with this ability": the card this ability puts onto the battlefield remembers this ability's source.
+    ctx.putWithThis = ifWritten.test.kind === 'notPutWithThisAbility' && ctx.entersPermanentTrigger;
+    if (ifWritten.test.kind === 'notPutWithThisAbility' && !ctx.entersPermanentTrigger) {
+      return failure(ifWritten, []);
+    }
     // "if you chose a creature other than ~ as your Ring-bearer" (Galadriel deck, group 1, CR 701.54a): only the tempting of the Ring chooses a creature; the engine reads it from that event.
     if (
       interveningIf.kind === 'ringBearerChosen' &&
