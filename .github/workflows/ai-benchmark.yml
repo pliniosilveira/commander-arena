@@ -4,13 +4,24 @@ name: AI benchmark
 # against the agent of the baseline ref, on the real precons, paired seeds with the seats swapped, in 8
 # shards. The report (verdict, score with its 95% interval, score per precon) is the run's summary.
 # Manual only: start it on a branch that changes the agent, with main as the baseline.
+# `opponent: greedy` plays the fixed GreedyAgent of the branch instead of a baseline, and `candidate`
+# plays the HeuristicAgent of another ref (an old commit) instead of the branch's: together they score
+# builds that each came out even against their parent against one opponent that does not change.
 
 on:
   workflow_dispatch:
     inputs:
       baseline:
-        description: The ref whose agent is the baseline (a branch, tag or commit)
+        description: The ref whose agent is the baseline (a branch, tag or full commit); unused with opponent greedy
         default: main
+      opponent:
+        description: heuristic (the baseline ref's HeuristicAgent) or greedy (the GreedyAgent of this branch, a fixed opponent)
+        type: choice
+        options: [heuristic, greedy]
+        default: heuristic
+      candidate:
+        description: The ref whose HeuristicAgent is the candidate (a branch, tag or full commit); empty for the branch the workflow runs on
+        default: ''
       games:
         description: Total games, a multiple of 16 (each seed is played twice, over 8 shards)
         default: '400'
@@ -18,8 +29,9 @@ on:
         description: The first game seed
         default: '1'
 
+# Runs with other inputs on the same branch (two candidates against greedy) play side by side.
 concurrency:
-  group: ai-benchmark-${{ github.ref }}
+  group: ai-benchmark-${{ github.ref }}-${{ github.event.inputs.candidate }}-${{ github.event.inputs.opponent }}-${{ github.event.inputs.baseline }}
   cancel-in-progress: true
 
 permissions:
@@ -36,6 +48,8 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
       BASELINE: ${{ github.event.inputs.baseline }}
+      OPPONENT: ${{ github.event.inputs.opponent }}
+      CANDIDATE: ${{ github.event.inputs.candidate }}
       GAMES: ${{ github.event.inputs.games }}
       SEED: ${{ github.event.inputs.seed }}
     steps:
@@ -49,13 +63,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Extract the baseline agent
+        if: env.OPPONENT != 'greedy'
         run: |
           git fetch --no-tags origin "$BASELINE"
           node tools/ai/baseline.ts --ref FETCH_HEAD
+      - name: Extract the candidate agent
+        if: env.CANDIDATE != ''
+        run: |
+          git fetch --no-tags origin "$CANDIDATE"
+          node tools/ai/baseline.ts --ref FETCH_HEAD --out tools/ai/.candidate
       - name: Play the shard
-        run: >
-          node tools/ai/benchmark.ts --games "$GAMES" --seed "$SEED"
-          --shard ${{ matrix.shard }}/8 --out shard-${{ matrix.shard }}.json
+        run: |
+          args=(--games "$GAMES" --seed "$SEED" --shard ${{ matrix.shard }}/8 --out shard-${{ matrix.shard }}.json)
+          if [ "$OPPONENT" = greedy ]; then args+=(--opponent greedy); fi
+          if [ -n "$CANDIDATE" ]; then args+=(--candidate tools/ai/.candidate); fi
+          node tools/ai/benchmark.ts "${args[@]}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: benchmark-shard-${{ matrix.shard }}
@@ -66,8 +88,8 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     env:
-      BASELINE: ${{ github.event.inputs.baseline }}
-      CANDIDATE: ${{ github.ref_name }}
+      BASELINE: ${{ github.event.inputs.opponent == 'greedy' && 'greedy' || github.event.inputs.baseline }}
+      CANDIDATE: ${{ github.event.inputs.candidate || github.ref_name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

@@ -1,11 +1,18 @@
 // The AI benchmark (issue 624, phase 1): the HeuristicAgent of the working tree against a frozen baseline
-// (the agent of another commit, `tools/ai/baseline.ts`), on the real precons, paired seeds with the
-// seats swapped.
+// (the agent of another commit, `tools/ai/baseline.ts`), or against the fixed GreedyAgent of the working
+// tree (`--opponent greedy`), on the real precons, paired seeds with the seats swapped.
 //
 //   node tools/ai/baseline.ts --ref main
 //   node tools/ai/benchmark.ts --games 400 --seed 1 [--shard 1/4] [--out shard-1.json]
 //   node tools/ai/benchmark-report.ts shard-*.json
 //
+// An old build against the fixed opponent, to compare builds that each scored even against their parent:
+//
+//   node tools/ai/baseline.ts --ref <commit> --out tools/ai/.candidate
+//   node tools/ai/benchmark.ts --candidate tools/ai/.candidate --opponent greedy --games 400 --seed 1
+//
+// --opponent   heuristic (default): the baseline folder's HeuristicAgent; greedy: this tree's GreedyAgent,
+//              the same opponent for every candidate (--baseline and --baseline-weights are refused)
 // --baseline   the folder of the baseline's agent code (default tools/ai/.baseline)
 // --candidate  a folder of agent code to play instead of the working tree's (default: the working tree)
 // --candidate-weights, --baseline-weights  a JSON file of a partial AgentWeights (packages/ai/src/weights.ts)
@@ -31,6 +38,7 @@ import { formatSummary } from './benchmark-stats.ts';
 
 const { values } = parseArgs({
   options: {
+    opponent: { type: 'string', default: 'heuristic' },
     baseline: { type: 'string' },
     candidate: { type: 'string' },
     'candidate-weights': { type: 'string' },
@@ -67,8 +75,14 @@ const positive = (text: string | undefined, name: string): number | undefined =>
 };
 const maxTurns = positive(values['max-turns'], 'max-turns');
 const maxActions = positive(values['max-actions'], 'max-actions');
+const opponent = values.opponent;
+if (opponent !== 'heuristic' && opponent !== 'greedy')
+  fail('--opponent must be heuristic or greedy');
+if (opponent === 'greedy' && (values.baseline ?? values['baseline-weights']) !== undefined) {
+  fail('--opponent greedy plays the GreedyAgent: --baseline and --baseline-weights do not apply');
+}
 
-const { HeuristicAgent, MATCH_LIMITS, playMatch, withWeights } = await import(
+const { GreedyAgent, HeuristicAgent, MATCH_LIMITS, playMatch, withWeights } = await import(
   '@commander-arena/ai'
 );
 const { loadPreconDecks, mirrorPairs } = await import('./precons.ts');
@@ -125,13 +139,16 @@ async function moduleFrom(folder: string): Promise<AgentModule> {
 }
 
 const baselineFolder = values.baseline ?? DEFAULT_BASELINE_FOLDER;
-const baseline = heuristicOf(
-  await moduleFrom(baselineFolder),
-  baselineFolder,
-  'baseline',
-  readWeights(values['baseline-weights'], 'baseline-weights'),
-  'baseline-weights',
-);
+const baseline: AgentFactory =
+  opponent === 'greedy'
+    ? { label: 'baseline', create: (s) => new GreedyAgent({ seed: s }) }
+    : heuristicOf(
+        await moduleFrom(baselineFolder),
+        baselineFolder,
+        'baseline',
+        readWeights(values['baseline-weights'], 'baseline-weights'),
+        'baseline-weights',
+      );
 const candidate = heuristicOf(
   values.candidate === undefined
     ? { HeuristicAgent, withWeights }
@@ -183,9 +200,9 @@ for (let i = 0; i < games / 2; i += 1) {
 if (values.out !== undefined) {
   writeFileSync(
     values.out,
-    `${JSON.stringify({ seed, games, shard: values.shard, deckNames, pairs }, null, 1)}\n`,
+    `${JSON.stringify({ seed, games, shard: values.shard, opponent, deckNames, pairs }, null, 1)}\n`,
   );
 }
 process.stdout.write(
-  `${formatSummary(pairs, { candidate: 'candidate', baseline: 'baseline', deckNames })}\n`,
+  `${formatSummary(pairs, { candidate: 'candidate', baseline: opponent === 'greedy' ? 'greedy' : 'baseline', deckNames })}\n`,
 );
