@@ -1,5 +1,5 @@
 {
-  "parserVersion": 224,
+  "parserVersion": 225,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -655,6 +655,14 @@
       "reasons": [],
       "ast": "5a8f9b3c"
     },
+    "08377424-619e-48ae-bc3c-fb199cd77cf9": {
+      "name": "Llanowar Loamspeaker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d6eef996"
+    },
     "0895c9b7-ae7d-4bb3-af17-3b75deb50a25": {
       "name": "Command Tower",
       "group": "training",
@@ -1168,6 +1176,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a407f84a"
+    },
+    "10d482fd-e034-4187-b148-51fe15885360": {
+      "name": "Sunbird's Invocation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a73ad211"
     },
     "11284767-7095-4e0e-bc60-c69d58098348": {
       "name": "Wakestone Gargoyle",
@@ -2674,6 +2690,14 @@
       "reasons": [],
       "ast": "95b3d0b8"
     },
+    "2a14670b-2ab6-4e1d-9b33-610a87bdb7ce": {
+      "name": "Prosperous Bandit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2b46eadd"
+    },
     "2a18b3f0-8a78-46d8-b60f-3cd634062f1b": {
       "name": "Refute Destiny",
       "group": "acceptance",
@@ -3429,6 +3453,14 @@
       "reasons": [],
       "ast": "c67593fb"
     },
+    "34fd52c1-3d81-4005-b826-eeefbd7fd874": {
+      "name": "Grothama, All-Devouring",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5fa26a5c"
+    },
     "3525e263-e29a-49bf-a29f-fb3ce43bbd33": {
       "name": "Heraldic Banner",
       "group": "training",
@@ -3534,6 +3566,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e71e09a8"
+    },
+    "35a03b0f-9dac-476a-97e9-67767c1e453e": {
+      "name": "Pyreswipe Hawk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eb3b9bee"
     },
     "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
       "name": "Goddric, Cloaked Reveler",
@@ -5878,6 +5918,14 @@
       "reasons": [],
       "ast": "b1b544c9"
     },
+    "5a2dfff5-9dba-42f5-bcca-918c16f23807": {
+      "name": "Alchemist's Talent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6fc7e9f0"
+    },
     "5a57fba3-01e3-4852-8c45-7c910502bd03": {
       "name": "Bitterthorn, Nissa's Animus",
       "group": "acceptance",
@@ -6006,6 +6054,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9dc3bfb9"
+    },
+    "5ba19dbe-9dbb-4cc9-81a3-18c26f27bd0f": {
+      "name": "Teapot Slinger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d6f9dd62"
     },
     "5bb32efd-9e58-4021-bbda-4ffccfa1d601": {
       "name": "Druid of Purification",
@@ -6672,6 +6728,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dadc1005"
+    },
+    "65c32889-3d70-449f-af76-05385c78c5a9": {
+      "name": "Evercoat Ursine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "465aebd4"
     },
     "65c5e120-7a3d-475f-9bb2-8ddb5062e4ba": {
       "name": "Surrounded by Orcs",
@@ -8122,6 +8186,14 @@
       "reasons": [],
       "ast": "09b647ae"
     },
+    "7c340a39-4ee0-4ba1-bb66-6674f8020fda": {
+      "name": "Gratuitous Violence",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ce8f3525"
+    },
     "7c35f3fd-c64e-4944-a4d5-37ce916d23c3": {
       "name": "Altered Ego",
       "group": "acceptance",
@@ -9354,6 +9426,14 @@
       "reasons": [],
       "ast": "db0042ec"
     },
+    "8e7b079d-9ede-421c-bd2b-f9a5126a8e6f": {
+      "name": "Esika's Chariot",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ffee30e"
+    },
     "8ea10a5a-b698-4f7d-a9c8-520f8d835f34": {
       "name": "Sweet-Gum Recluse",
       "group": "acceptance",
@@ -10274,6 +10354,14 @@
       "reasons": [],
       "ast": "ffd5f3d6"
     },
+    "9ceac4c6-e62e-4445-852c-b2c621e4a83b": {
+      "name": "Wildsear, Scouring Maw",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "37f61c69"
+    },
     "9cfc01a7-e291-4388-bd09-94846d72e291": {
       "name": "Rumbleweed",
       "group": "acceptance",
@@ -10281,6 +10369,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5ddafff1"
+    },
+    "9d14c7bd-7802-401c-b02b-c7f3c51b007f": {
+      "name": "Wandertale Mentor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "36b41ee1"
     },
     "9d2aea05-f55c-4355-950f-bfdc4e985e80": {
       "name": "Selvala's Stampede",
@@ -11659,6 +11755,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c93b85e3"
+    },
+    "afc2269c-d3b5-487d-9445-800c7a8e526b": {
+      "name": "Domri, Anarch of Bolas",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c67c0c3"
     },
     "afc9e1d3-b012-49e9-8d22-89abbee03c22": {
       "name": "Primordial Mist",
@@ -13314,20 +13418,11 @@
     },
     "cb1afab6-b9c8-4b9c-840b-24106523a783": {
       "name": "Kodama of the East Tree",
-      "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever another permanent you control enters, if it wasn't put onto the battlefield with this ability, you may put a permanent card with equal or lesser mana value from your hand onto the battlefield.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "dbeec17a"
+      "ast": "d6aaae01"
     },
     "cb377c27-39a6-42b4-8c89-80a9a2350e81": {
       "name": "Solar Transformer",
@@ -13856,6 +13951,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d1def719"
+    },
+    "d38646dc-d1ea-473c-aaf1-df8ba327459f": {
+      "name": "Trailtracker Scout",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d2c8815a"
     },
     "d39b9f64-dc9b-413f-8d05-e21ef46d6756": {
       "name": "Oblivion Sower",
@@ -14505,6 +14608,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9fee82e9"
+    },
+    "dc0593c2-ccb4-4648-a592-c5bcd121dc72": {
+      "name": "Greater Good",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6a4be1b0"
     },
     "dc29cb25-57f5-4cac-9764-efa644b41296": {
       "name": "Legions to Ashes",
@@ -16182,6 +16293,14 @@
       "reasons": [],
       "ast": "ae7f3981"
     },
+    "f61c0fc0-7241-455e-bbf5-f1f3862d46e3": {
+      "name": "Brightcap Badger // Fungus Frolic",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5d77861a"
+    },
     "f62250c6-0832-46c8-a800-806589504f5f": {
       "name": "Titan of Littjara",
       "group": "acceptance",
@@ -16574,6 +16693,14 @@
       "reasons": [],
       "ast": "6a63a653"
     },
+    "fb773114-6161-46a3-ab30-1853958fbcb0": {
+      "name": "Bello, Bard of the Brambles",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eb1673ab"
+    },
     "fb88fb3d-6a85-4bb1-b316-7f759b45a0fa": {
       "name": "The Chain Veil",
       "group": "acceptance",
@@ -16811,15 +16938,15 @@
   "summary": {
     "training": {
       "supported": 159,
-      "total": 175
+      "total": 174
     },
     "holdout": {
       "supported": 53,
       "total": 56
     },
     "acceptance": {
-      "supported": 1801,
-      "total": 1817
+      "supported": 1819,
+      "total": 1835
     }
   }
 }
