@@ -709,6 +709,7 @@ describe('unmatched abilities', () => {
       'condition.youre-defending-player',
       'condition.damage-dealt-by-type',
       'condition.entered-from-graveyard',
+      'condition.not-put-with-this-ability',
       'condition.cost-contains-x',
       'condition.card-types-among',
       'condition.host-is-tapped',

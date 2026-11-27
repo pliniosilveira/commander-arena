@@ -1707,6 +1707,8 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "Put onto the battlefield with this ability" (`moveToZone.putWithSource`, CR 400.7): the permanent whose ability puts the card there; the new permanent remembers it (`GameObject.putWith`). */
+      readonly putWith?: ObjectId;
       /** "Exile them until this Vehicle leaves the battlefield" (`moveToZone.until`, CR 610.3): the permanent whose leaving returns the cards exiled. */
       readonly untilLeaves?: ObjectId;
       /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`, or of a choice with `players`): the choice is among the candidates with the greatest (smallest) value of the stat. */

@@ -1068,6 +1068,26 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       if (!x.ok) return x;
       limit = x.value;
     }
+    // Kodama of the East Tree (CR 202.3, 603.2c, 608.2d): "a permanent card with equal or lesser mana value": the mana value of the permanent the trigger is about (an {X} is 0 in the
+    // hand and on the battlefield, CR 202.3e), read as the effect starts.
+    const subjectLimit = arg(clause, 'manaValueAtMostSubject');
+    if (subjectLimit !== undefined) {
+      if (
+        limit !== undefined ||
+        !ctx.entersPermanentTrigger ||
+        to?.zone !== 'battlefield' ||
+        named.filter.zone !== 'hand'
+      ) {
+        return failure(clause);
+      }
+      const blocked = missingFeatures([
+        'selector:manaValueAtMost',
+        'amount:manaValueOf',
+        'selector:triggerSubject',
+      ]);
+      if (blocked.length > 0) return failure(clause, blocked);
+      limit = { kind: 'manaValueOf', of: { kind: 'triggerSubject' } };
+    }
     // "You may return a creature card from your graveyard to your hand" (stage P35, D-176, CR 608.2d): a card chosen from the graveyard,
     // none when the player may and does not.
     if (to?.zone === 'hand') {
@@ -1101,6 +1121,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       value: limit === undefined ? lowered.value : { ...lowered.value, manaValueAtMost: limit },
     };
     const optional = may?.kind === 'flag' && may.value;
+    if (ctx.putWithThis) {
+      const blocked = missingFeatures(['ability:putWithSource']);
+      if (blocked.length > 0) return failure(clause, blocked);
+    }
     // Extract from Darkness (CR 404.1, 608.2d): "you put a creature card from a graveyard onto the battlefield under your control": the cards of every graveyard are the candidates
     // (`fromAnyGraveyard`; the validator asks for `controller: 'you'`, which the engine does not read for it).
     const everyGraveyard = arg(clause, 'everyGraveyard');
@@ -1174,6 +1198,8 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       },
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
+      // CR 400.7 (Kodama of the East Tree): the card put there remembers this ability's source, for "it wasn't put onto the battlefield with this ability".
+      ...(ctx.putWithThis ? { putWithSource: true as const } : {}),
       // "... to the battlefield with a finality counter on it" (CR 122.6): the counter it enters with.
       ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
     };
@@ -3463,6 +3489,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'youAreDefendingPlayer' ||
         kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
+        kind === 'notPutWithThisAbility' ||
         kind === 'discardedCardHasKeyword' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||
