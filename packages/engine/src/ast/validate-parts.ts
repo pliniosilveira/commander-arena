@@ -8958,12 +8958,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           e.take.tapped !== undefined ||
           e.take.totalManaValue !== undefined ||
           e.take.hidden !== undefined ||
-          e.revealAll !== undefined)
+          (e.revealAll !== undefined && e.revealAll !== true))
       ) {
         issue(
           out,
           `${path}.take`,
-          'a spell cast from among the cards looked at is one card (max 1), with no min, tapped, totalManaValue or hidden, and nothing revealed',
+          'a spell cast from among the cards looked at or revealed is one card (max 1), with no min, tapped, totalManaValue or hidden',
         );
       }
       if (
@@ -8991,6 +8991,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             );
           }
           checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else if (
+          typeof limit === 'object' &&
+          limit?.kind === 'manaValueOf' &&
+          kindOf(limit.of) === 'triggerSubject'
+        ) {
+          // CR 202.3, 603.3d (Sunbird's Invocation): "mana value X or less, where X is that spell's mana value": the spell of a cast trigger, read as the effect runs.
+          checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);
         } else if (typeof limit === 'object' && limit?.kind === 'x') {
           // CR 107.3a, 202.3 (Genesis Wave): "mana value X or less", the X announced for the spell.
           checkAmount(limit, `${path}.take.manaValueAtMost`, scope, out);

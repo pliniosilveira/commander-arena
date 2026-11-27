@@ -181,6 +181,82 @@ export const EFFECT_LOOK_CAST_FREE_ANY = defineRule<Clauses>({
 });
 
 /**
+ * `effect.reveal-x-cast-free`: "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed
+ * this way without paying its mana cost. Put the rest on the bottom of your library in a random order." (Sunbird's Invocation; CR 701.20a, 608.2g, 118.9, 202.3, 401.4, 603.3d). Three
+ * sentences that `splitSentences` keeps together, in the effect of a trigger about a cast spell. The engine's `lookAtTop` of a reveal (`revealAll`) whose card taken is cast
+ * (`take.to: 'castFree'`) from the library, none or one, with a mana value at most the same amount, the rest on the bottom in a random order. Not read: another amount for the cards
+ * revealed, another limit than the same X, a kind of spell, another place for the rest, "any order", a sentence missing.
+ */
+export const EFFECT_REVEAL_X_CAST_FREE = defineRule<Clauses>({
+  id: 'effect.reveal-x-cast-free',
+  family: 'effect',
+  leading: ['reveal'],
+  cites: [
+    'CR 701.20a (Reveal)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 202.3 (Mana Value)',
+    'CR 401.4 (Library)',
+  ],
+  examples: [
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest on the bottom of your library in a random order",
+  ],
+  rejects: [
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost",
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest into your graveyard",
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest on the bottom of your library in any order",
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell with mana value X or less from among cards revealed this way. Put the rest on the bottom of your library in a random order",
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a creature spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest on the bottom of your library in a random order",
+    "reveal the top X cards of your library, where X is that spell's mana value. You may cast a spell from among cards revealed this way without paying its mana cost. Put the rest on the bottom of your library in a random order",
+    "reveal the top X cards of your library, where X is that card's mana value. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest on the bottom of your library in a random order",
+    'reveal the top three cards of your library. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost. Put the rest on the bottom of your library in a random order',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      pattern(/reveal the top X cards of your library, where X is /iu),
+      family<IrAmount>('amount', { only: ['amount.that-spells-mana-value'] }),
+      pattern(
+        /\. you may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost\. put the rest on the bottom of your library in a random order(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const id = 'effect.reveal-x-cast-free';
+    const span = { start: pos, end: r.pos };
+    const take: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { notTypes: ['land'], card: true, raw: 'a spell' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: id,
+    };
+    const flag = (value: boolean) => ({ kind: 'flag' as const, value, span, rule: id });
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'lookTake',
+          {
+            count: r.value[1],
+            take,
+            toGraveyard: flag(false),
+            ontoBattlefield: flag(false),
+            castFree: flag(true),
+            revealAll: flag(true),
+            manaValueAtMost: r.value[1],
+          },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.counter-exile-cast`: "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without
  * paying its mana cost." (CR 701.6a, 614.1a, 608.2g: Transcendent Dragon). Two sentences that `splitSentences` keeps together. The engine's `counter` with `exileInstead`, then a
  * `castFree` of the card exiled. Not read: a counter with a condition ("unless"), another place for the spell, a cast that costs mana, the second sentence alone.
@@ -279,6 +355,7 @@ export const EFFECT_DESTROYED_CONTROLLER_EXILE_CAST = defineRule<Clauses>({
 export const JESKAI_CASTFREE_EFFECT_RULES = [
   EFFECT_LOOK_CAST_FREE,
   EFFECT_LOOK_CAST_FREE_ANY,
+  EFFECT_REVEAL_X_CAST_FREE,
   EFFECT_COUNTER_EXILE_CAST,
   EFFECT_DESTROYED_CONTROLLER_EXILE_CAST,
 ].map(quietly);

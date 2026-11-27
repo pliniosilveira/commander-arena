@@ -1800,6 +1800,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-permanent-of-that-players-choice': permanent(
     (e) => `Whenever ~ deals combat damage to a player, destroy ${e}.`,
   ),
+  // Issue 110 (Evercoat Ursine).
+  'condition.cards-exiled-with-it': permanent(
+    (e) => `Whenever ~ attacks, if ${e}, you gain 1 life.`,
+  ),
   'condition.cards-exiled-with-self': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),

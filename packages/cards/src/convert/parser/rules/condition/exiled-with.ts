@@ -18,7 +18,7 @@ export const CONDITION_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
   rejects: [
     'there is a card exiled with ~',
     'there are no cards exiled with ~',
-    'there are cards exiled with it',
+    'there are cards exiled with them',
     'there are cards exiled with target creature',
     'there are three or more cards exiled with ~',
     'there are cards in exile',
@@ -130,8 +130,46 @@ export const CONDITION_A_CARD_EXILED_WITH_SELF = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.cards-exiled-with-it`: "there are cards exiled with it" (Evercoat Ursine; CR 603.4 intervening "if", 607.2a linked abilities): the same test as
+ * `condition.cards-exiled-with-self` with the permanent said by the pronoun. The lowering accepts it only where "it" is the subject of the trigger (`~`), so that "it" is the
+ * permanent the linked ability belongs to. Not read: "cards exiled with them", "a card exiled with it", "no cards exiled with it", another source, a trailing word.
+ */
+export const CONDITION_CARDS_EXILED_WITH_IT = defineRule<IrCondition>({
+  id: 'condition.cards-exiled-with-it',
+  family: 'condition',
+  leading: ['there'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 607.2a (Linked Abilities)'],
+  examples: ['there are cards exiled with it'],
+  rejects: [
+    'there are cards exiled with them',
+    'there is a card exiled with it',
+    'there are no cards exiled with it',
+    'there are cards exiled with it.',
+    'there are cards exiled with it and',
+    'there are creature cards exiled with it',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/there are cards exiled with it(?![\p{L}\p{N}'’])(?!\s+(?:and|or)\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'cardsExiledWithSelf', viaIt: true },
+        span: r.value.span,
+        rule: 'condition.cards-exiled-with-it',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const EXILED_WITH_CONDITION_RULES = [
   CONDITION_A_CARD_EXILED_WITH_SELF,
+  CONDITION_CARDS_EXILED_WITH_IT,
   CONDITION_CARDS_EXILED_WITH_SELF,
   CONDITION_N_CARDS_EXILED_WITH_SELF,
 ].map(quietly);
