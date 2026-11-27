@@ -3598,6 +3598,13 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     }
     return;
   }
+  // Issue 128 (Knowledge Is Power, CR 121.1): "the number of cards you've drawn this turn": plain (+N/+N) only, the controller's own count now.
+  if (amount?.kind === 'cardsDrawnThisTurn') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not cards drawn');
+    }
+    return;
+  }
   // CR 122.1 (Call for Unity): "for each unity counter on this enchantment": plain (+N/+N) only, the counters of one kind on the permanent that has the ability.
   if (amount?.kind === 'countersOnSource') {
     if (!plain) {

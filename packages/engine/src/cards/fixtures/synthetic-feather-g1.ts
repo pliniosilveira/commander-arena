@@ -16,6 +16,27 @@ const CREATURE_YOU_CONTROL = {
 } as const;
 
 export const SYNTHETIC_FEATHER_G1_LIST: readonly CardDefinition[] = [
+  // "Creatures you control get +X/+X, where X is the number of cards you've drawn this turn." (issue 128: a static ability reads the count as the layers are worked out)
+  singleFace({
+    name: 'SYNTHETIC Drawn Anthem',
+    manaCost: ['2', 'U'],
+    types: ['enchantment'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText:
+      "Creatures you control get +X/+X, where X is the number of cards you've drawn this turn.",
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'modifyPt',
+          subject: { kind: 'filter', filter: { types: ['creature'], controller: 'you' } },
+          power: { kind: 'cardsDrawnThisTurn' },
+          toughness: { kind: 'cardsDrawnThisTurn' },
+        },
+      },
+    ],
+  }),
   // "Target creature you control gains protection from the color of your choice until end of turn."
   singleFace({
     name: 'SYNTHETIC Feather Ward',

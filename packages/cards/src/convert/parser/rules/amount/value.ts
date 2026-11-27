@@ -353,6 +353,16 @@ const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
   return r.ok ? { ok: true, value: { kind: 'opponentCount', span: r.value.span }, pos: r.pos } : r;
 };
 
+/** "the number of cards you've drawn this turn" (CR 121.1, 608.2h: the cards the controller has drawn so far this turn, `cardsDrawnThisTurn`; Knowledge Is Power's "where X is ..."). */
+const CARDS_DRAWN_THIS_TURN: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(/the number of cards you(?:['’]ve| have) drawn this turn(?![\p{L}\p{N}'’])/iu),
+  )(ctx, pos);
+  return r.ok
+    ? { ok: true, value: { kind: 'cardsDrawnThisTurn', span: r.value.span }, pos: r.pos }
+    : r;
+};
+
 /**
  * "the number of times ~ was kicked" (Marshal's Anthem: "return up to X target creature cards ..., where X is the number of times ~ was kicked", CR 702.33c, 702.33d): the kicks of the
  * spell the permanent came from, read as `timesKicked` is for "for each time it was kicked". The lowering decides which object "it" is.
@@ -680,6 +690,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     DEVOTION,
     COMMANDER_COLORS,
     OPPONENT_COUNT,
+    CARDS_DRAWN_THIS_TURN,
     NUMBER_OF_TIMES_KICKED,
     // Limit Break deck, group 4 (Heidegger, Shinra Executive): "the number of opponents who control more creatures than you".
     NUMBER_OF_OPPONENTS_WITH_MORE,
@@ -1030,6 +1041,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies you control',
     // CR 102.2: the opponents still in the game.
     'where X is the number of opponents you have',
+    // CR 121.1 (Knowledge Is Power): the cards the controller has drawn this turn.
+    "where X is the number of cards you've drawn this turn",
     // CR 702.33c: the kicks of a permanent's spell (Marshal's Anthem).
     'where X is the number of times ~ was kicked',
     'where X is the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
@@ -1136,6 +1149,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest mana value of a commander an opponent owns on the battlefield or in the command zone',
     'where X is the number of Zombies you control.',
     'where X is the number of cards in your hand minus',
+    'where X is the number of cards an opponent has drawn this turn',
+    "where X is the number of cards you've drawn",
     'where X is the number of cards in your hand minus 0',
     'where X is the number of cards in your hand minus four',
     'where X is the number of cards in your hand minus X',

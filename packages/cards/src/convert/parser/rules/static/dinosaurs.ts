@@ -371,6 +371,9 @@ export const STATIC_PT_AMOUNT = defineRule<IrStatic>({
     'Enchanted creature gets +X/+0, where X is the greatest mana value among your commanders.',
     '~ gets +0/+X, where X is the number of artifacts you control.',
     'Equipped creature gets +X/+X, where X is the number of creatures you control.',
+    // Issue 128 (Knowledge Is Power, CR 613.4c, 611.3a): a group of permanents gets the bonus.
+    'Creatures you control get +X/+X, where X is the greatest mana value among your commanders.',
+    "Creatures you control get +X/+X, where X is the number of cards you've drawn this turn.",
   ],
   rejects: [
     'Equipped creature gets +X/+X, where X is the greatest mana value among your commanders',
@@ -381,15 +384,21 @@ export const STATIC_PT_AMOUNT = defineRule<IrStatic>({
     'Equipped creature gets -X/-X, where X is the greatest mana value among your commanders.',
     'Equipped creature gets +X/+X until end of turn, where X is the greatest mana value among your commanders.',
     'Equipped creature get +X/+X, where X is the greatest mana value among your commanders.',
-    'Creatures you control get +X/+X, where X is the greatest mana value among your commanders.',
+    'Creatures you control gets +X/+X, where X is the greatest mana value among your commanders.',
     'Equipped creature gets +X/+Y, where X is the greatest mana value among your commanders.',
   ],
   parse: (ctx, pos) => {
     const subject = quiet(
-      family<IrNoun>('noun', { only: ['noun.self', 'noun.attached-permanent'] }),
+      family<IrNoun>('noun', {
+        only: ['noun.self', 'noun.attached-permanent', 'noun.plain-permanents'],
+      }),
     )(ctx, pos);
     if (!subject.ok) return subject;
-    const stats = pattern(/ gets \+(X|0)\/\+(X|0), (?=where X is )/u)(ctx, subject.pos);
+    const stats = pattern(
+      subject.value.det === 'each'
+        ? / get \+(X|0)\/\+(X|0), (?=where X is )/u
+        : / gets \+(X|0)\/\+(X|0), (?=where X is )/u,
+    )(ctx, subject.pos);
     if (!stats.ok) return stats;
     const power = stats.value[1] === 'X';
     const toughness = stats.value[2] === 'X';

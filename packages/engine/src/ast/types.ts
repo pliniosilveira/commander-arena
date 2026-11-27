@@ -744,6 +744,11 @@ export type StaticPtAmount =
    */
   | { readonly kind: 'unspentMana' }
   /**
+   * "Creatures you control get +X/+X, where X is the number of cards you've drawn this turn" (issue 128, Knowledge Is Power; CR 121.1, 613.4c, 611.3a): the cards the controller of the
+   * ability has drawn so far this turn (`SeatState.cardsDrawnThisTurn`), read each time the characteristics are worked out. Plain (+N/+N) only, in a `modifyPt` of any subject.
+   */
+  | { readonly kind: 'cardsDrawnThisTurn' }
+  /**
    * "Creatures you control get +1/+1 for each unity counter on this enchantment" (CR 122.1, 613.4c, 611.3a): the counters of the kind `counter` on the permanent that has the
    * static ability (not on the permanent it affects), read each time the characteristics are worked out. Left out ("Equipped creature gets +1/+1 for each counter on this Equipment",
    * Gavel of the Righteous): the counters of every kind on it added together. Plain (+N/+N) only, in a `modifyPt` of any subject.
