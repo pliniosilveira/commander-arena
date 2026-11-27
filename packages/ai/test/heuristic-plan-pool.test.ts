@@ -74,6 +74,12 @@ const board = (b: ReturnType<typeof scenario>) =>
     .battlefield('Grizzly Bears', 'Giant Spider', V3)
     .hand('Grizzly Bears')
     .library('Grizzly Bears', { count: 10 });
+// Creatures on both sides: the opponent's attack and block searches run inside the play-outs (issue 653).
+const crowd = (b: ReturnType<typeof scenario>) =>
+  b
+    .battlefield(V3, V3, V3, 'Grizzly Bears')
+    .hand('Grizzly Bears')
+    .library('Grizzly Bears', { count: 10 });
 
 /** The pool a test gives the agent: runs everything in process, answers out of order, and counts. */
 class FakePool implements PlayOutPool {
@@ -81,6 +87,8 @@ class FakePool implements PlayOutPool {
   opened = 0;
   runs = 0;
   closed = 0;
+  /** The steps of the traces answered in which an opponent's combat search ran (`TraceMove.side`). */
+  searched = 0;
   private readonly fail: 'none' | 'run' | 'open';
   private next = 0;
 
@@ -103,6 +111,7 @@ class FakePool implements PlayOutPool {
         for (let i = 0; i < (this.next * 7) % 5; i += 1) await Promise.resolve();
         if (this.fail === 'run') throw new Error('worker crashed');
         const trace = service.run(1, line, scenarioIndex, record, horizon);
+        this.searched += trace.moves.filter((m) => m.side !== undefined).length;
         return JSON.parse(JSON.stringify(trace)) as PlayOutTrace;
       },
       close: () => {
@@ -170,21 +179,29 @@ const outcome = (r: { planning: ReturnType<typeof choosePlan>; used: number }) =
   work: timeless(r.planning.work),
 });
 
-const positions: [string, () => ScenarioGame][] = [
-  ['spells to plan', () => mainPhase([V2, V3], FORESTS, quiet)],
+/** Each position, and whether the opponent has creatures to attack or block with in its play-outs. */
+const positions: [string, () => ScenarioGame, boolean][] = [
+  ['spells to plan', () => mainPhase([V2, V3], FORESTS, quiet), false],
   [
     'a counterspell held against threats',
     () =>
       mainPhase(['Counterspell', 'Divination'], ['Island', 'Island', 'Island', 'Island'], angels),
+    true,
   ],
-  ['a board with a spell in hand', () => mainPhase(['Grizzly Bears', V2], FORESTS, board)],
+  ['a board with a spell in hand', () => mainPhase(['Grizzly Bears', V2], FORESTS, board), true],
+  [
+    'creatures on both sides, the opponent searching its attacks and blocks',
+    () => mainPhase([V2], [...FORESTS, V3, 'Giant Spider'], crowd),
+    true,
+  ],
 ];
 
 describe('the planner on a pool of workers', () => {
   test.each(positions)(
     '%s: the same plan, work and budget as on one thread, whatever the budget, for several samples',
-    async (_, make) => {
+    async (_, make, fights) => {
       let compared = 0;
+      let searched = 0;
       for (const seed of [1, 2, 3, 4]) {
         const probe = decisionOf(make(), seed).single(budgetOf(UNBOUNDED));
         const vetting = decisionOf(make(), seed).single(budgetOf({ budget: 1, limit: 1e9 })).used;
@@ -202,10 +219,13 @@ describe('the planner on a pool of workers', () => {
           expect(outcome(many)).toEqual(outcome(one));
           expect(pool.closed).toBe(pool.opened);
           compared += one.planning.work.playOuts;
+          searched += pool.searched;
         }
       }
       // The pool did the play-outs: the comparison is not of two empty plannings.
       expect(compared).toBeGreaterThan(10);
+      // Where the opponent has creatures, its combat searches ran inside the pool's play-outs.
+      if (fights) expect(searched).toBeGreaterThan(0);
     },
     60_000,
   );
@@ -313,7 +333,10 @@ describe('the planner on a pool of workers', () => {
       engine: settledEngine,
       charge: (u: number) => settledEngine.charge(u),
     };
+    let searched = 0;
     for (const [i, line] of lines.entries()) {
+      const trace = runner.run(i, 0, i === 0);
+      searched += trace.moves.filter((m) => m.side !== undefined).length;
       const played = playLine(
         sample,
         0,
@@ -323,7 +346,7 @@ describe('the planner on a pool of workers', () => {
       );
       const scored =
         played === null ? null : evaluate(direct.view(played.end, 0), 0, DEFAULT_WEIGHTS).score;
-      const result = settle(settled, own, 0, root, runner.run(i, 0, i === 0));
+      const result = settle(settled, own, 0, root, trace);
       expect(result === null ? null : result.score).toBe(scored);
       expect(settled.steps).toBe(direct.steps);
       expect(settled.views).toBe(direct.views);
@@ -333,6 +356,8 @@ describe('the planner on a pool of workers', () => {
     }
     // The bound was crossed, and what is shared before it was not paid for twice.
     expect(direct.applies).toBeGreaterThan(KEEP);
+    // The opponent's attack search ran inside the play-outs, and its calls were settled as they were made.
+    expect(searched).toBeGreaterThan(0);
   });
 });
 
@@ -378,6 +403,7 @@ describe('a game with a pool', () => {
       60,
     ],
     ['a board with a spell in hand', () => mainPhase(['Grizzly Bears', V2], FORESTS, board), 80],
+    ['creatures on both sides', () => mainPhase([V2], [...FORESTS, V3, 'Giant Spider'], crowd), 80],
   ];
 
   test.each(games)(

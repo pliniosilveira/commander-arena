@@ -124,12 +124,20 @@ export const callCost = (state: GameState): number => CALL_COST + state.battlefi
 /** The engine itself, uncounted: for a play-out outside any decision's budget (a vote, a test). */
 export const DIRECT: Engine = { view: getView, apply: applyAction };
 
-/** The engine calls of one decision, counted (`calls`) and weighed (`units`, see `CALL_COST`). */
+/**
+ * The engine calls of one decision, counted (`calls`) and weighed (`units`, see `CALL_COST`). `base` makes the
+ * calls: the engine itself, or the counted engine of a play-out for a search inside it (`innerBudget`).
+ */
 export class Work implements Engine {
   /** The `getView` and `applyAction` calls made so far. */
   calls = 0;
   /** Their work units. */
   units = 0;
+  private readonly base: Engine;
+
+  constructor(base: Engine = DIRECT) {
+    this.base = base;
+  }
 
   private count(state: GameState): void {
     this.charge(callCost(state));
@@ -143,12 +151,12 @@ export class Work implements Engine {
 
   readonly view = (state: GameState, seat: SeatId): GameView => {
     this.count(state);
-    return getView(state, seat);
+    return this.base.view(state, seat);
   };
 
   readonly apply = (state: GameState, seat: SeatId, action: Action): ApplyResult => {
     this.count(state);
-    return applyAction(state, seat, action);
+    return this.base.apply(state, seat, action);
   };
 }
 
@@ -204,13 +212,17 @@ export interface WorkBounds {
 
 export const WORK_BOUNDS: WorkBounds = { budget: WORK_BUDGET, limit: WORK_LIMIT };
 
-/** The budget of one decision of `ctx`; `bounds` replaces the work bounds (tests). */
+/**
+ * The budget of one decision of `ctx`; `bounds` replaces the work bounds (tests), `base` the engine its calls
+ * go to (`innerBudget`).
+ */
 export function startBudget(
   ctx: Pick<DecideContext, 'budgetMs' | 'now'>,
   bounds: WorkBounds = WORK_BOUNDS,
+  base: Engine = DIRECT,
 ): Budget {
   const start = ctx.now();
-  const work = new Work();
+  const work = new Work(base);
   // The clock is read only where the searches check it, as before the work budget: a host measures the
   // decision on the same clock, and a slow one moves with every read.
   let last = 0;
@@ -260,6 +272,25 @@ export function startBudget(
   };
   const deeper = make(DEEP_FACTOR, [DEEP_SEARCH_SHARE, DEEP_HARD_SHARE]);
   return make(1, [SEARCH_SHARE, HARD_SHARE]);
+}
+
+/**
+ * The work bounds of one combat search of an opponent inside a play-out (issue 653): the attack or block search
+ * of `heuristic-attacks.ts` and `heuristic-blocks.ts`, run by an inner agent on the play-out's state
+ * (`innerBudget`). A bound of the search, not a weight: it lets the search score its first candidates and
+ * keeps one search a small part of a play-out's share of the decision's `WORK_BUDGET`.
+ */
+export const INNER_BOUNDS: WorkBounds = { budget: 4_000, limit: 5_000 };
+
+/**
+ * The budget of a combat search that an inner agent runs inside a play-out (`heuristic-plan-sim.ts`): its calls
+ * go to `engine`, the play-out's counted engine, so they are paid from the decision's budget, and it stops on
+ * its own `bounds` of work, counted on every call it makes, kept or not. It reads no clock: what it decides is a
+ * pure function of the play-out's state, the same on one thread and on a worker (`heuristic-plan-trace.ts`). The
+ * decision's own limits are checked by the play-out between its steps.
+ */
+export function innerBudget(engine: Engine, bounds: WorkBounds = INNER_BOUNDS): Budget {
+  return startBudget({ budgetMs: Number.POSITIVE_INFINITY, now: () => 0 }, bounds, engine);
 }
 
 /** A budget that never runs out and counts nothing (a decision answered from the view alone). */

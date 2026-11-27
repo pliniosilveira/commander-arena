@@ -121,3 +121,30 @@ describe('no race into a crack-back from the hand', () => {
     expect(lastReason(agent)?.reason).toBe('crack-back');
   });
 });
+
+describe('the crack-back the opponent would really make', () => {
+  // Passes since the opponents in play-outs attack with the attack search (issue 653): the weaker rule sent no 3/3 into the 4/4.
+  test('at 10 life, the 3/3 flier stays home when four 3/3s untap against the 4/4 alone', async () => {
+    // Wrong to attack here: 3 damage to a player at 40 wins nothing, and four 3/3s against the 4/4 alone deal 9 to a player at 10.
+    const flier = creature('SYNTHETIC Flier 3/3', 3, 3, ['flying']);
+    const wall = creature('SYNTHETIC Vanilla 4/4', 4, 4);
+    const g = scenario()
+      .define(flier)
+      .define(wall)
+      .seat(0)
+      .life(10)
+      .battlefield(flier.name, wall.name)
+      .library('Island', LIBRARY)
+      .seat(1)
+      .life(40)
+      .battlefield(V3, V3, V3, V3)
+      .library('Island', LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    const action = await askHeuristic(g, blunderAgent());
+    if (action.kind !== 'declareAttackers')
+      throw new Error(`declareAttackers expected: ${action.kind}`);
+    expect(action.attacks).toEqual([]);
+  });
+});
