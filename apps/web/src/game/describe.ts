@@ -505,7 +505,7 @@ export function describeEvent(
           ? ''
           : `, replicated ${event.replicas === 1 ? 'once' : `${event.replicas} times`}`;
       // Gift (CR 702.174a, D-135): "promising Opponent a gift".
-      const how = `${alternative}${x}${kickedText(event)}${replicas}${event.boughtBack === true ? ', with buyback' : ''}${giftedText(event.gift, viewer, seatCount)}${suspended}`;
+      const how = `${alternative}${x}${kickedText(event)}${replicas}${event.boughtBack === true ? ', with buyback' : ''}${event.offspring === true ? ', with its offspring cost paid' : ''}${giftedText(event.gift, viewer, seatCount)}${suspended}`;
       // The face cast is named, never the card's "A // B" (CR 709.3, 715.3, 712.11b).
       const cast = faceNameIn(after, event.object, event.face ?? 0) ?? name(event.object);
       return line(

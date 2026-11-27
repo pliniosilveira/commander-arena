@@ -7317,6 +7317,15 @@ export type Keyword =
    */
   | { readonly kind: 'buyback'; readonly cost: readonly Cost[] }
   /**
+   * CR 702.175a (Offspring): two abilities of a permanent card. An optional additional cost: the caster is asked while casting (CR 601.2b, after the kicker, replicate and buyback
+   * questions and before the gift, X and the targets) and a spell whose offspring cost was paid pays it on top of its others (CR 601.2f), once. And an enters trigger with an
+   * intervening "if its offspring cost was paid" (`offspringPaid`, CR 603.4) that creates a token that's a copy of the permanent, except it's 1/1, which the engine writes from
+   * the keyword (`rules/derive-keywords.ts`): a permanent that has lost the keyword as it enters does not trigger, and the copy is made from last-known information when the
+   * permanent has left (CR 608.2h). The spell and the permanent it becomes remember the payment (`StackData.offspringPaid`, `GameObject.offspringPaid`); a token is not cast, so
+   * the copy makes no other. One offspring per card (CR 702.175b is not supported), only `mana` costs without {X}.
+   */
+  | { readonly kind: 'offspring'; readonly cost: readonly Cost[] }
+  /**
    * CR 702.34a (Flashback), on an instant or sorcery: it may be cast from its owner's graveyard by
    * paying `cost` rather than its mana cost (an alternative cost, CR 118.9), and a spell cast that
    * way is exiled instead of going anywhere else when it leaves the stack. `mana` and `payLife` costs, and one `sacrifice` of `count` permanents that match a filter
@@ -8329,6 +8338,12 @@ export type Condition =
    * information once either has left (CR 113.7a), as `kicked` is. The face must have the Gift keyword (`validateCard`).
    */
   | { readonly kind: 'giftPromised' }
+  /**
+   * "If its offspring cost was paid" (CR 702.175a, 603.4): the spell was cast with its offspring cost paid, or the permanent came from such a spell. Read from the spell on the
+   * stack, from the permanent that remembers it, or from last-known information once either has left (CR 113.7a), as `kicked` is. Written by the engine for the Offspring
+   * keyword, which the face must have (`validateCard`).
+   */
+  | { readonly kind: 'offspringPaid' }
   /**
    * "If an opponent controls four or more nonbasic lands" (D-135): some one opponent of the controller controls at least
    * `count` permanents on the battlefield that match the filter (not the opponents together). `filter` names no zone or

@@ -1127,6 +1127,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     ...(to === 'battlefield' && old.stack?.kind === 'spell' && old.stack.castFrom !== undefined
       ? { castFrom: old.stack.castFrom }
       : {}),
+    // CR 702.175a: a permanent that came from a spell whose offspring cost was paid remembers it ("if its offspring cost was paid").
+    ...(to === 'battlefield' && old.stack?.offspringPaid === true
+      ? { offspringPaid: true as const }
+      : {}),
     // CR 702.174 (D-135): a permanent remembers the opponent its spell's gift was promised to.
     ...(to === 'battlefield' && old.stack?.giftTo !== undefined
       ? { giftTo: old.stack.giftTo }

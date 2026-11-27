@@ -20,6 +20,7 @@ const DIALOG_LABELS: Readonly<
   optional: 'Optional ability',
   kicker: 'Kicker',
   buyback: 'Buyback',
+  offspring: 'Offspring',
   ward: 'Ward',
   counterUnlessPays: 'Counterspell',
   unlessPays: 'Unless you pay',

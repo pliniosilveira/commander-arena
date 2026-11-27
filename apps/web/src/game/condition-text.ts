@@ -314,6 +314,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return negate
         ? "you didn't sacrifice a permanent to cast it"
         : 'you sacrificed one or more permanents to cast it';
+    case 'offspringPaid':
+      // CR 702.175a: "if its offspring cost was paid".
+      return negate ? "its offspring cost wasn't paid" : 'its offspring cost was paid';
     case 'giftPromised':
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';

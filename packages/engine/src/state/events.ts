@@ -209,6 +209,8 @@ export type GameEvent =
       readonly replicas?: number;
       /** Present (true) when the buyback cost was paid (CR 702.27a). */
       readonly boughtBack?: true;
+      /** Present (true) when the offspring cost was paid (CR 702.175a). */
+      readonly offspring?: true;
       /** The opponent the gift was promised to (CR 702.174a, D-135); present when the caster promised one. */
       readonly gift?: SeatId;
       /**

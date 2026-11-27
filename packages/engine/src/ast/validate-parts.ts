@@ -4470,6 +4470,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
       break;
     case 'giftPromised': // D-135: the face must have the Gift keyword (`checkCastFace`)
+    case 'offspringPaid': // CR 702.175a: the face must have the Offspring keyword (`checkCastFace`)
       break;
     case 'lifeTotal':
       if (c.player !== undefined && c.player !== 'opponent') {
