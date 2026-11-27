@@ -55,6 +55,22 @@ export function withX(symbols: readonly string[], x: number): string[] {
   return x === 0 ? rest : [String(count * x), ...rest];
 }
 
+const NUMERIC = /^[0-9]+$/;
+
+/**
+ * CR 118.7a, 601.2f: reduces the generic mana of a cost by `by`, never below zero, leaving the
+ * colored mana alone. A cost with no generic mana is not changed. A cost reduced to nothing is {0}:
+ * an empty list.
+ */
+export function reduceGeneric(symbols: readonly string[], by: number): string[] {
+  const numeric = symbols.filter((s) => NUMERIC.test(s));
+  if (by <= 0 || numeric.length === 0) return [...symbols];
+  const generic = numeric.reduce((n, s) => n + Number(s), 0);
+  const left = Math.max(0, generic - by);
+  const rest = symbols.filter((s) => !NUMERIC.test(s));
+  return left > 0 ? [String(left), ...rest] : rest;
+}
+
 /** What one point of X costs in an activated ability's cost (CR 602.2b). */
 export function abilityXCost(costs: readonly Cost[]): XCost {
   let mana = 0;
@@ -93,8 +109,13 @@ export function spellXCost(
   alternative: CastAlternativeKind | undefined,
   /** "Kicker {X}" (CR 702.33a, 107.3a): the spell was kicked, so the {X} of its kicker cost is announced too, whatever way it is cast. */
   kicked = false,
+  /**
+   * The escape cost something gave the card, when the spell is cast for it (`rules/escape-grant.ts`, CR 702.138a): a cost equal to the mana cost has the {X} of it, which is
+   * announced (CR 107.3a).
+   */
+  grantedEscape: readonly Cost[] | null = null,
 ): XCost {
-  const base = spellXCostOfMana(face, alternative);
+  const base = spellXCostOfMana(face, alternative, grantedEscape);
   const kickerX = kicked ? xSymbolCount(manaSymbolsOf(kickerCostOf(face) ?? [])) : 0;
   return kickerX === 0 ? base : { ...base, mana: base.mana + kickerX };
 }
@@ -102,6 +123,7 @@ export function spellXCost(
 function spellXCostOfMana(
   face: CardFace | null,
   alternative: CastAlternativeKind | undefined,
+  grantedEscape: readonly Cost[] | null,
 ): XCost {
   if (face === null) return NO_X;
   const life = (face.additionalCosts ?? []).filter((c) => c.kind === 'payXLife').length;
@@ -112,11 +134,21 @@ function spellXCostOfMana(
   ).length;
   const extra = { ...(discard > 0 ? { discard } : {}), ...(sacrifice > 0 ? { sacrifice } : {}) };
   if (alternative === 'miracle') {
+    const printedMiracle = namedAlternativeCostOf(face, 'miracle');
     return {
-      mana: xSymbolCount(manaSymbolsOf(namedAlternativeCostOf(face, 'miracle') ?? [])),
+      // A miracle a permanent gave the card (`grantKeywordFromManaCost`) costs the mana cost reduced: the {X} of the mana cost is the one announced.
+      mana:
+        printedMiracle === null
+          ? xSymbolCount(face.manaCost ?? [])
+          : xSymbolCount(manaSymbolsOf(printedMiracle)),
       life,
       ...extra,
     };
+  }
+  // CR 702.138a, 107.3a: an escape cost equal to the mana cost (a permanent gave the card escape) has the {X} of it.
+  if (alternative === 'escape' && grantedEscape !== null) {
+    const granted = xSymbolCount(manaSymbolsOf(grantedEscape));
+    if (granted > 0) return { mana: granted, life, ...extra };
   }
   // CR 702.180a, 107.3a: the {X} of a harmonize cost is the X announced, as for a miracle cost.
   if (alternative === 'harmonize') {

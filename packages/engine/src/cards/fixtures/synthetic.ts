@@ -148,6 +148,7 @@ import { SYNTHETIC_LOREHOLD_G2_LIST } from './synthetic-lorehold-g2';
 import { SYNTHETIC_LOREHOLD_G3_LIST } from './synthetic-lorehold-g3';
 import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
+import { SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST } from './synthetic-mana-cost-keyword-grant';
 import { SYNTHETIC_MANA_GROUP_F_LIST } from './synthetic-mana-group-f';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
 import { SYNTHETIC_MANA_NOT_GENERIC_LIST } from './synthetic-mana-not-generic';
@@ -578,6 +579,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_BOOK_EXALTED_LIST,
   ...SYNTHETIC_LATER_LIST,
   ...SYNTHETIC_MIRACLE_LIST,
+  ...SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST,
   ...SYNTHETIC_DELAYED_RETURN_LIST,
   ...SYNTHETIC_DIES_RETURN_LIST,
   ...SYNTHETIC_SOULBOND_LIST,

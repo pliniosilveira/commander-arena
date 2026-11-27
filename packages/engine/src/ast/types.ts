@@ -9246,6 +9246,22 @@ export type StaticEffect =
    */
   | { readonly kind: 'grantFlashbackToGraveyardCards'; readonly what: ObjectFilter }
   /**
+   * "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}." and "Each enchantment card in your graveyard has escape. The escape
+   * cost is equal to the card's mana cost plus exile three other cards from your graveyard." (CR 702.94a, 702.138a, 118.9, 613.1f, 604.3): a static ability of a permanent on the
+   * battlefield that gives the cards `what` matches, in its controller's hand (`miracle`) or graveyard (`escape`), a keyword whose cost is made from the card's own mana cost:
+   * `miracle` with the generic mana of it reduced by `reduce` (CR 118.7a: only the generic part), `escape` with `exile` other cards of the graveyard exiled besides. Read where the
+   * reveal and the cast are decided (`rules/mana-cost-keyword-grant.ts`), never by `derive`. A card with no mana cost gets a cost that cannot be paid (CR 118.6); a card that prints the
+   * keyword is cast for its printed cost. The {X} of the mana cost is announced as the spell is cast (CR 107.3a). `what` is a filter of the card as it is in that zone, with no zone,
+   * controller, owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantKeywordFromManaCost';
+      readonly what: ObjectFilter;
+      readonly grant:
+        | { readonly kind: 'miracle'; readonly reduce: number }
+        | { readonly kind: 'escape'; readonly exile: number };
+    }
+  /**
    * "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them." (Ashling, the Limitless; CR 702.74a, 118.9, 613.1f, 601.2b): a static ability of a permanent
    * on the battlefield that gives the spells its controller casts from `from` (only the hand) that `what` matches an alternative cost, only evoke so far (`alt`, a mana cost). The
    * spell is cast for it as for a printed evoke cost (`CastAlternative` `evoke`), unless the card has an evoke cost of its own. The grant is read as the spell is cast and kept on the

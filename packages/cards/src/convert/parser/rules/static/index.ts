@@ -48,6 +48,7 @@ import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
 import { LINKED_EXILE_PLAY_STATIC_RULES } from './linked-exile-play';
+import { MANA_COST_KEYWORD_GRANT_STATIC_RULES } from './mana-cost-keyword-grant';
 import { MELD_STATIC_RULES } from './meld';
 import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
@@ -127,6 +128,8 @@ export const STATIC_RULES = [
   // Issue 134: a group made Equipment, with a quoted "+N/+N" and equip abilities.
   ...EQUIPMENT_KIT_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
+  // Aminatou, Veil Piercer; The Master of Keys: "Each enchantment card in your hand has miracle. ...", "... in your graveyard has escape. ...".
+  ...MANA_COST_KEYWORD_GRANT_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   // Multiclass Baldric: "Equipped creature has lifelink if you control a Cleric, deathtouch if ...", "As long as you have a full party, prevent all damage that would be dealt to equipped creature."
   ...ATTACHED_CONDITION_STATIC_RULES,

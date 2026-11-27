@@ -44,6 +44,10 @@ import { lowerGrantedGroupStatics } from './granted-group-static';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
+import {
+  isManaCostKeywordGrantStatic,
+  lowerManaCostKeywordGrantStatic,
+} from './mana-cost-keyword-grant';
 import { colorLetter, lowerFilter } from './nouns';
 import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
@@ -727,6 +731,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes', 'static:grantAbility', 'static:grantKeyword', 'keyword:equip'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
+    case 'manaCostKeywordGrant':
+      return ['static:grantKeywordFromManaCost'];
     case 'spellEvoke':
       return ['static:grantAlternativeCostToSpells'];
     case 'energyAlternative':
@@ -1462,6 +1468,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
+  // CR 702.94a, 702.138a, 118.9: "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}.", the escape of a graveyard.
+  if (isManaCostKeywordGrantStatic(first)) return lowerManaCostKeywordGrantStatic(ability);
   // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types."
   if (statement.subject.alsoCardsYouOwnOffBattlefield === true) {
     return lowerGroupAndCardsOffBattlefield(ability, ctx);
@@ -2085,6 +2093,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:giveTypesToCardsOffBattlefield',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
+  'static:grantKeywordFromManaCost',
   'static:grantAlternativeCostToSpells',
   ...SLIVER_LORD_NEEDS,
   'static:castFromGraveyard',

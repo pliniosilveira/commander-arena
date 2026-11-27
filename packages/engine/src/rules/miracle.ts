@@ -26,19 +26,62 @@ import type { Cost } from '../ast/types';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { definitionOf, getSeat } from '../state/ops';
+import { definitionOf, getSeat, patchObject } from '../state/ops';
 import type { GameObject, GameState, Instruction, ResolutionContext } from '../state/types';
 import { namedAlternativeCostOf } from './alt-costs';
 import { derive } from './derive';
+import { grantedMiracleCost, grantedMiracleOf } from './mana-cost-keyword-grant';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
+import { reduceGeneric } from './x-value';
 
 type MiracleInstruction = Extract<Instruction, { kind: 'miracleReveal' }>;
 
-/** The miracle cost of the card's front face (CR 702.94a), or null when it has none. */
-function miracleCostOf(state: GameState, obj: GameObject): readonly Cost[] | null {
+/**
+ * The miracle cost of the card's front face (CR 702.94a), or null when it has none: the printed one, else the one a permanent of its owner gives the card in the hand
+ * (`grantKeywordFromManaCost`: the mana cost with its generic mana reduced, as it is shown before any X is announced). A card that was revealed for a given miracle keeps the cost
+ * it was revealed for (`GameObject.miracleGrant`, CR 113.7a). A card with no mana cost has a given miracle cost that cannot be paid (CR 118.6): it is null here, so the reveal is
+ * not offered for a cast that can never happen.
+ */
+export function miracleCostOf(
+  state: GameState,
+  obj: GameObject,
+  /** The half of a split card a given miracle is read for (CR 709.3); a printed miracle is the front face's. */
+  faceIndex = 0,
+): readonly Cost[] | null {
   if (obj.card === null) return null;
-  return namedAlternativeCostOf(definitionOf(state, obj.card).faces[0] ?? null, 'miracle');
+  const def = definitionOf(state, obj.card);
+  const printed = namedAlternativeCostOf(def.faces[0] ?? null, 'miracle');
+  if (printed !== null) return faceIndex === 0 ? printed : null;
+  const granted = obj.miracleGrant ?? grantedMiracleOf(state, obj);
+  if (granted === null) return null;
+  return grantedMiracleCost(def.faces[faceIndex] ?? null, granted.reduce, reduceGeneric);
+}
+
+/**
+ * The faces of `obj`, a card in a hand, that a miracle could cast (CR 702.94a, 709.3): either half of a split card that a permanent gave miracle (each half has a mana cost of its
+ * own, and the player chooses which to cast), the front face of every other card.
+ */
+export function miracleFaces(state: GameState, obj: GameObject): readonly number[] {
+  if (obj.card === null) return [0];
+  const def = definitionOf(state, obj.card);
+  if (def.layout !== 'split' || namedAlternativeCostOf(def.faces[0] ?? null, 'miracle') !== null) {
+    return [0];
+  }
+  return def.faces.map((_, index) => index);
+}
+
+/**
+ * The state once `card` is revealed as it is drawn (CR 702.94a, 603.11, 113.7a): a card revealed for a miracle a permanent gave it notes the cost of the ability that triggers
+ * (`GameObject.miracleGrant`); a card that prints miracle notes nothing.
+ */
+export function noteMiracleReveal(state: GameState, card: ObjectId): GameState {
+  const obj = state.objects[card];
+  if (obj === undefined || obj.card === null || obj.zone !== 'hand') return state;
+  const face = definitionOf(state, obj.card).faces[0] ?? null;
+  if (namedAlternativeCostOf(face, 'miracle') !== null) return state;
+  const granted = grantedMiracleOf(state, obj);
+  return granted === null ? state : patchObject(state, card, { miracleGrant: granted });
 }
 
 /**
@@ -54,7 +97,9 @@ export function miracleOffer(
     if (e.kind !== 'cardDrawn' || e.seat !== seat || e.nth !== 1) continue;
     const card = state.objects[e.object];
     if (card === undefined || card.zone !== 'hand' || card.owner !== seat) continue;
-    if (miracleCostOf(state, card) !== null) return card.id;
+    if (miracleFaces(state, card).some((face) => miracleCostOf(state, card, face) !== null)) {
+      return card.id;
+    }
   }
   return null;
 }
@@ -63,7 +108,13 @@ export function miracleOffer(
 export function miracleQuestion(state: GameState, seat: SeatId, card: ObjectId): NewDecision {
   const obj = state.objects[card];
   const info = sourceInfo(state, card);
-  const cost = obj === undefined ? null : miracleCostOf(state, obj);
+  // The cost shown is the first half's that has one (the cast asks about each half, `rules/cast-exiled.ts`).
+  const cost =
+    obj === undefined
+      ? null
+      : (miracleFaces(state, obj)
+          .map((face) => miracleCostOf(state, obj, face))
+          .find((c) => c !== null) ?? null);
   return {
     kind: 'confirmOptional',
     seat,
@@ -110,5 +161,6 @@ export function runMiracleReveal(
   if (ins.answer === null) {
     return { state, events: [], front: [], needs: miracleQuestion(state, ins.seat, ins.card) };
   }
-  return done(state, ins.answer ? revealMiracleEvents(state, ins.seat, ins.card) : []);
+  if (!ins.answer) return done(state);
+  return done(noteMiracleReveal(state, ins.card), revealMiracleEvents(state, ins.seat, ins.card));
 }

@@ -288,6 +288,12 @@ export interface GameObject {
    */
   readonly foretoldTurn?: number;
   /**
+   * Present on a card in a hand that its owner revealed as they drew it for a miracle ability a permanent gave it (`grantKeywordFromManaCost`, CR 702.94a, 603.11): the generic mana
+   * its miracle cost is reduced by, noted as the card is revealed because the linked triggered ability exists independently of what gave it (CR 113.7a) and names that cost. Read only
+   * as that ability resolves. It is the hand object's own: a new object after any zone change (CR 400.7) has none. Absent otherwise, and for a card that prints miracle.
+   */
+  readonly miracleGrant?: { readonly reduce: number };
+  /**
    * Present on a card in exile that its owner plotted (CR 702.170a-d): the number of the turn in which it became plotted. Its owner may cast it from exile without paying its mana cost
    * during their main phase while the stack is empty, in any turn after that one. The card is face up. It is the exile object's own: a new object after any zone change (CR 400.7)
    * has none. Absent otherwise.
@@ -513,6 +519,11 @@ export interface StackData {
    * is a new object on the stack (CR 400.7) that the effect did not name. Absent for a card with a printed escape cost and for every other spell.
    */
   readonly escapeGrant?: { readonly cost: readonly Cost[]; readonly exile: number };
+  /**
+   * The miracle cost a card was cast for when a permanent gave it miracle (`grantKeywordFromManaCost`, CR 702.94a): the generic mana its mana cost is reduced by, kept on the spell
+   * because the card is a new object on the stack (CR 400.7). Absent for a card with a printed miracle cost and for every other spell.
+   */
+  readonly miracleGrant?: { readonly reduce: number };
   /**
    * The evoke cost a card was cast for when a static ability gave its spell evoke as it was cast (`grantAlternativeCostToSpells`, CR 702.74a, 118.9): kept on the spell, so the permanent
    * it becomes has the evoke sacrifice trigger even when the permanent that gave the cost has left the battlefield before the spell resolves. A copy of the spell has none (CR 707.10).
@@ -2215,6 +2226,12 @@ export type Instruction =
       readonly kind: 'castExiled';
       readonly mode: 'suspend' | 'madness' | 'miracle';
       readonly stage: 'start' | 'ask';
+      /**
+       * The half of a split card the question is about, when a permanent gave the card miracle with the cost made from its mana cost (`grantKeywordFromManaCost`, CR 709.3: the
+       * player chooses which half to cast, and its mana cost is the cost): the halves that could be cast are asked about in order, the next one when one is declined. Absent for
+       * every other card, whose front face is cast.
+       */
+      readonly face?: number;
       readonly card: ObjectId | null;
     }
   /**

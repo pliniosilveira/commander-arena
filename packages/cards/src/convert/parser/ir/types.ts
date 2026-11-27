@@ -2370,6 +2370,18 @@ export type IrStaticEffect =
    * controller that `cards` names (a noun with no zone and no controller). The subject of the statement is `you`.
    */
   | { readonly kind: 'graveyardFlashback'; readonly cards: IrNoun }
+  /**
+   * "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}." and "Each enchantment card in your graveyard has escape. The escape cost is
+   * equal to the card's mana cost plus exile three other cards from your graveyard." (CR 702.94a, 702.138a, 118.9, 613.1f): the cards `cards` names (no zone, no controller) of the hand
+   * (miracle, with the generic mana of the cost reduced by `reduce`) or the graveyard (escape, with `exile` other cards exiled) of the controller. The subject is `you`.
+   */
+  | {
+      readonly kind: 'manaCostKeywordGrant';
+      readonly cards: IrNoun;
+      readonly keyword: 'miracle' | 'escape';
+      readonly reduce: number;
+      readonly exile: number;
+    }
   /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14): the permanent spells of the controller may be cast for `count` energy counters. The subject is `you`. */
   | {
       readonly kind: 'energyAlternative';

@@ -1729,6 +1729,7 @@ describe('unmatched abilities', () => {
       'static.hand-cards-have-cycling',
       'static.group-is-equipment',
       'static.graveyard-cards-have-flashback',
+      'static.cards-have-keyword-from-mana-cost',
       'static.attached',
       'static.permanents',
       'static.each',
