@@ -417,7 +417,10 @@ describe('becomes an artifact creature, with or without "in addition to its othe
     // Without "in addition" and without "creature", an artifact type replaces the card types
     // (CR 205.1a): a different effect, not read.
     ['Target creature becomes an artifact until end of turn.', 'artifact until'],
-    ['Target creature becomes a 3/3 artifact creature until end of turn.', 'artifact creature until'],
+    [
+      'Target creature becomes a 3/3 artifact creature until end of turn.',
+      'artifact creature until',
+    ],
     ['Target creature becomes an artifact creature.', '.'],
     ['Target creature becomes an artifact creature until your next turn.', 'until your next turn'],
     ['Target creature becomes an artifact creature in addition to its other types.', '.'],
