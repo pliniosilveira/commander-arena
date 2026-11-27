@@ -433,9 +433,9 @@ describe('spell clauses: players, mana and the library', () => {
     });
   });
 
-  test('"any color" mana of a spell is read as a choice made as it resolves; a choice between two is still not', () => {
+  test('"any color" mana of a spell and a choice between two colors are read as a choice made as it resolves', () => {
     expect(spellFace('Add one mana of any color.').unparsed).toHaveLength(0);
-    expect(spellFace('Add {G} or {U}.').unparsed).toHaveLength(1);
+    expect(spellFace('Add {G} or {U}.').unparsed).toHaveLength(0);
   });
 });
 

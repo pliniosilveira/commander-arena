@@ -420,11 +420,17 @@ const P1_MANA_AND_LANDS: readonly Line[] = [
   {
     kind: 'land',
     text: '{T}: Add {U} or {B}. ~ deals 1 damage to target creature.',
-    expect: no('{U} or {B}. ~ deals 1 damage to target creature.', 'effect.add-mana', {
+    expect: OK,
+    note: 'with a target it is not a mana ability (CR 605.1a), so the colour is chosen as it resolves (read since the Animated Army deck, issue 110)',
+  },
+  {
+    kind: 'land',
+    text: '{T}: Add {U} or {B}. Draw a card.',
+    expect: no('{T}: Add {U} or {B}. Draw a card.', 'ability.activated', {
       reason: 'notRunnable',
-      needs: ['selector:colorChoice'],
+      needs: ['manaAlso:draw'],
     }),
-    note: 'with a target it is not a mana ability (CR 605.1a), so the colour is chosen as it resolves',
+    note: 'still unsupported: drawing after the mana, with no target, leaves it a mana ability (CR 605.1a), and the engine runs only damage and life after the mana',
   },
   {
     kind: 'land',

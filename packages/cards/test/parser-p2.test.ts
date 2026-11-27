@@ -175,16 +175,24 @@ describe('mana abilities the engine cannot represent are never built as activati
   });
 
   test('a target after the mana makes it an ordinary activation (not a mana ability)', () => {
-    // With a fixed colour the engine can run it; the colour choice of "{U} or {B}" it cannot.
+    // With a fixed colour the engine runs it, and so it does with the colour choice of "{U} or {B}": made as the ability resolves (CR 605.1a, 106.1b; Domri, issue 110).
     const ok = compileLine('{T}: Add {G}. ~ deals 1 damage to target creature.', {
       rules: SET,
       face: 'permanent',
     });
     expect(ok).toMatchObject({ ok: true, kind: 'abilities' });
     if (ok.ok && ok.kind === 'abilities') expect(ok.abilities[0]?.kind).toBe('activated');
-    expect(failure('{T}: Add {U} or {B}. ~ deals 1 damage to target creature.')).toMatchObject({
+    const choice = compileLine('{T}: Add {U} or {B}. ~ deals 1 damage to target creature.', {
+      rules: SET,
+      face: 'permanent',
+    });
+    expect(choice).toMatchObject({ ok: true, kind: 'abilities' });
+    if (choice.ok && choice.kind === 'abilities')
+      expect(choice.abilities[0]?.kind).toBe('activated');
+    // Drawing after the mana, with no target, stays a mana ability the engine cannot run.
+    expect(failure('{T}: Add {U} or {B}. Draw a card.')).toMatchObject({
       reason: 'notRunnable',
-      needs: ['selector:colorChoice'],
+      needs: ['manaAlso:draw'],
     });
   });
 
