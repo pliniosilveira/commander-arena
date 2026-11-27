@@ -1,5 +1,5 @@
 {
-  "parserVersion": 227,
+  "parserVersion": 228,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -186,14 +186,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 1,
-          "text": "+1: Tap up to one target artifact or creature. It doesn't untap during its controller's next untap step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.damage-hand-of-player"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "−X: Exile target nonland permanent card with mana value X from your graveyard. Create a token that's a copy of that card.",
           "reason": "unrecognised",
@@ -212,7 +204,7 @@
       "reasons": [
         "Unknown mana symbol \"G/U/P\" (hybrid Phyrexian symbols (CR 107.4f) are not representable in ManaCost yet)"
       ],
-      "ast": "4b33fa06"
+      "ast": "46a1105c"
     },
     "025939a0-424a-41bf-8fc9-2ef9ea5485f7": {
       "name": "Fire Covenant",
@@ -397,6 +389,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca9e6b63"
+    },
+    "05878e49-93ad-4144-9c50-a0bb86126c2e": {
+      "name": "Chart a Course",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "27e3e523"
     },
     "05899372-9784-4bdb-9c28-504c71fed906": {
       "name": "Witch's Clinic",
@@ -750,6 +750,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "de520104"
+    },
+    "098a43e3-341d-4b27-8c17-ef5990e21b0a": {
+      "name": "Rapid Augmenter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "45653201"
     },
     "099ae8f2-5c84-43ab-aaa1-ea69f2bba784": {
       "name": "Elrond, Lord of Rivendell",
@@ -1730,6 +1738,14 @@
       "reasons": [],
       "ast": "de917214"
     },
+    "1a33a5c2-5aa1-48e5-95a8-d52cdce980de": {
+      "name": "Rowdy Research",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "447fa58e"
+    },
     "1ae29791-aa7c-4050-bf72-dd0f739b11b8": {
       "name": "Will of the Abzan",
       "group": "acceptance",
@@ -1777,6 +1793,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "963af456"
+    },
+    "1b430f67-3686-4452-8594-b060f1a5a04e": {
+      "name": "Fortune Teller's Talent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0f04fb8c"
     },
     "1b5e6560-ff2e-4475-96cb-63f64c8a86db": {
       "name": "Soul-Guide Lantern",
@@ -4777,6 +4801,14 @@
       "reasons": [],
       "ast": "bd288408"
     },
+    "481234e5-fbfd-46e8-8b9a-a4e708dd2195": {
+      "name": "Shield Broker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "97918872"
+    },
     "48534bbf-06b6-46a0-8a86-b14f38caee58": {
       "name": "Sin, Unending Cataclysm",
       "group": "acceptance",
@@ -5990,6 +6022,14 @@
       "reasons": [],
       "ast": "6fc7e9f0"
     },
+    "5a343a5f-3f9b-43c3-8532-8391de7a5443": {
+      "name": "Jacked Rabbit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6060588e"
+    },
     "5a57fba3-01e3-4852-8c45-7c910502bd03": {
       "name": "Bitterthorn, Nissa's Animus",
       "group": "acceptance",
@@ -5997,6 +6037,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c375aa82"
+    },
+    "5a6176cc-98bf-43ac-815a-1f19c4e9329c": {
+      "name": "Boss's Chauffeur",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e434527f"
     },
     "5a682ec5-78e6-4238-b5c2-e94b7a8f8066": {
       "name": "Gate to the Afterlife",
@@ -6095,6 +6143,14 @@
       "reasons": [],
       "ast": "2312e04b"
     },
+    "5b677e88-bcc9-4a55-9c89-8bbd0e2344dc": {
+      "name": "Junk Winder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cc38d115"
+    },
     "5b6d933e-2830-4f5a-b244-a421aa9615dc": {
       "name": "Eumidian Hatchery",
       "group": "acceptance",
@@ -6126,6 +6182,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d6f9dd62"
+    },
+    "5bafd0e0-8bf8-4e06-a54a-81cc6cc4bdb7": {
+      "name": "Stolen by the Fae",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4f2aa0b0"
     },
     "5bb32efd-9e58-4021-bbda-4ffccfa1d601": {
       "name": "Druid of Purification",
@@ -8831,6 +8895,14 @@
       "reasons": [],
       "ast": "e6155983"
     },
+    "83b43aba-bf9c-4da2-967d-9daa632e97d2": {
+      "name": "Helm of the Host",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e822b5b6"
+    },
     "83c61083-b357-4775-a855-5a9013cc2bdf": {
       "name": "Verdant Kraken",
       "group": "acceptance",
@@ -8910,6 +8982,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6f5208ff"
+    },
+    "84e7be36-b8cd-4111-a91b-3628f421d5d5": {
+      "name": "Murmuration",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "825280ee"
     },
     "84ee74e9-b3e3-4f47-8b3c-5c1a70f5cad6": {
       "name": "Seraph of the Sword",
@@ -9408,6 +9488,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c20762ee"
+    },
+    "8d6ce07f-b21b-42eb-a3d6-df810664e2be": {
+      "name": "Arthur, Marigold Knight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "37cf8dc9"
     },
     "8d6f82d9-5c5b-4c41-8857-c0936f2d894c": {
       "name": "Hearthhull, the Worldseed",
@@ -10209,6 +10297,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "84caf11d"
+    },
+    "99a3cea9-f4ab-4da3-a085-c09dc93fc8cb": {
+      "name": "Pollywog Prodigy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d4cdb3a1"
     },
     "99c2d3ef-e5b4-48cd-b3f5-de9b02c7c36a": {
       "name": "Ureni of the Unwritten",
@@ -11706,6 +11802,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "22fc6d32"
+    },
+    "ad3add32-cb87-4cd4-8c36-a737a897a8c8": {
+      "name": "Illusory Ambusher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5d7e43b2"
     },
     "ad3bf726-e0c2-4038-a66e-9a9dff439563": {
       "name": "Raffine's Guidance",
@@ -13848,6 +13952,14 @@
       "reasons": [],
       "ast": "d101b11a"
     },
+    "ceeeacbc-01b0-4421-aaca-2ce6cdbe45d7": {
+      "name": "Tetsuko Umezawa, Fugitive",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93c61334"
+    },
     "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
       "name": "Fertile Ground",
       "group": "acceptance",
@@ -14015,6 +14127,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ec33b7e1"
+    },
+    "d15dba3a-3b85-43fb-b5f3-c4d8d1e23b1d": {
+      "name": "Echoing Assault",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b7b4d212"
     },
     "d16298ac-67bd-4f9d-9979-23c1b7e4b359": {
       "name": "Starlit Sanctum",
@@ -14416,6 +14536,14 @@
       "reasons": [],
       "ast": "1d05c81c"
     },
+    "d73f02e0-53fa-4437-ab3a-89a9a1db27c5": {
+      "name": "Rose Room Treasurer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "11956d45"
+    },
     "d7407920-7596-497a-a135-b9343909a0cb": {
       "name": "Kessig Cagebreakers",
       "group": "acceptance",
@@ -14511,6 +14639,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f77bb13d"
+    },
+    "d8c16a3a-dd9d-410c-a5d5-06339a89970f": {
+      "name": "Zinnia, Valley's Voice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7b13d8d6"
     },
     "d8ccbd72-6429-43cb-a0a9-ab56e97a2d53": {
       "name": "Elsha, Threefold Master",
@@ -15129,6 +15265,14 @@
       "reasons": [],
       "ast": "f7e805e0"
     },
+    "e1a2bd31-b800-47cd-8866-1b849a601b09": {
+      "name": "Agate Instigator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c8b84dc"
+    },
     "e1c9783a-1d1b-40d7-872e-0ca11b229ce6": {
       "name": "Uthros Research Craft",
       "group": "acceptance",
@@ -15144,6 +15288,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4a691c90"
+    },
+    "e1e0dc37-20c9-4236-ae01-e0891ce83afb": {
+      "name": "Devilish Valet",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "39440145"
     },
     "e229d55c-9513-437d-bd67-015ac46aaa18": {
       "name": "The Infamous Cruelclaw",
@@ -17161,8 +17313,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1846,
-      "total": 1862
+      "supported": 1866,
+      "total": 1882
     }
   }
 }
