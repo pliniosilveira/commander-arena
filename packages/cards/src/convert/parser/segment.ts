@@ -350,6 +350,14 @@ const EXILE_INSTEAD_SENTENCE = /^if that spell would be put into a graveyard, ex
 const MAY_CAST_ANY_TYPE_END =
   /(?:^|, )(?:you may )?cast (?:it|that card) this turn, and mana of any type can be spent to cast that spell\.$/i;
 
+/**
+ * "Target land you control becomes a 3/3 Elemental creature with haste until end of turn. It's still a land." (Llanowar Loamspeaker, CR 205.1b, issue 110): the second sentence says
+ * the types are added to, so the two are read as one (`effect.becomes-creature-with-keywords`).
+ */
+const STILL_A_TYPE_SENTENCE = /^it['’]s still an? (?:artifact|enchantment|land)\.$/i;
+const BECOMES_CREATURE_WITH_END =
+  /\bbecomes an? \d+\/\d+ [^.]* creature with [^.]* until end of turn\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
@@ -362,6 +370,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
   if (COPY_GAINS_SENTENCE.test(said)) return COPY_WITH_NEW_TARGETS_END.test(beforeText);
   if (ROUND_UP_SENTENCE.test(said)) return HALF_COPY_END.test(beforeText);
+  if (STILL_A_TYPE_SENTENCE.test(said)) return BECOMES_CREATURE_WITH_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&

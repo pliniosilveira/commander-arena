@@ -1825,6 +1825,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromGraveyard',
     // D-229: "~ isn't a creature" (layer 4, with a condition that reads no characteristic).
     'loseTypes',
+    // Bello, Bard of the Brambles: "each ... is a 4/4 Elemental creature in addition to its other types and has ...": one effect of layers 4, 6 and 7b (CR 613.6).
+    'animate',
     // D-139: base power and toughness, "can't be blocked by Walls", "has the power, toughness and creature types of the last creature
     // card exiled with it", "You may cast artifact spells as though they had flash".
     'setPt',
@@ -3218,6 +3220,8 @@ export const STATIC_KINDS = [
   'castFromGraveyard',
   /** "~ isn't a creature" (CR 613.1d, 205.1a, D-229): the engine's static `loseTypes`, layer 4. */
   'loseTypes',
+  /** "Each ... is a 4/4 Elemental creature in addition to its other types and has ..." (CR 613.1d, 613.1f, 613.4b, 613.6): the engine's static `animate`. */
+  'animate',
   /** "Other creatures you control have base power and toughness 5/3" (CR 613.4b, D-139): the engine's static `setPt`. */
   'setPt',
   /** "Juggernauts you control can't be blocked by Walls" (CR 509.1b, D-139): the engine's `cantBeBlockedBy`. */

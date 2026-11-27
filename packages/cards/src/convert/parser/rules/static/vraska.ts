@@ -32,6 +32,8 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     // Gourmand's Talent (CR 611.3a, 613.1d, 613.1f): a statement about a group of permanents, with its types or abilities.
     'During your turn, artifacts you control are Foods in addition to their other types.',
     'During your turn, artifacts you control are Foods in addition to their other types and have "{2}, {T}, Sacrifice this artifact: You gain 3 life."',
+    // Bello, Bard of the Brambles (CR 613.6): a group that is creatures of a stated size as well, with what they have.
+    'During your turn, each non-Equipment artifact and non-Aura enchantment you control with mana value 4 or greater is a 4/4 Elemental creature in addition to its other types and has indestructible, haste, and "Whenever ~ deals combat damage to a player, draw a card."',
   ],
   rejects: [
     'During your turn, equipped creature has flying',
@@ -43,6 +45,7 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     'During your turn, ~ has banana.',
     'During your turn, draw a card.',
     'During your turn, equipped creature has banana.',
+    'During your turn, each artifact you control is a 4/4 Elemental creature.',
   ],
   parse: (ctx, pos) => {
     const lead = literal('during your turn, ')(ctx, pos);
@@ -52,7 +55,13 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
     const inner = own.ok
       ? own
       : family<IrStatic>('static', {
-          only: ['static.attached', 'static.each', 'static.permanents'],
+          only: [
+            'static.attached',
+            // Issue 110 (Bello, Bard of the Brambles): "During your turn, each ... is a 4/4 Elemental creature in addition to its other types and has ...".
+            'static.each-is-creature',
+            'static.each',
+            'static.permanents',
+          ],
         })(ctx, lead.pos);
     if (!inner.ok) return inner;
     if (inner.value.condition !== undefined) return fail(ctx, pos);

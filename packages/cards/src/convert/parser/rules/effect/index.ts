@@ -34,6 +34,7 @@ import { AHOY_G7_EFFECT_RULES } from './ahoy-g7';
 import { AHOY_G8_EFFECT_RULES } from './ahoy-g8';
 import { AHOY_G10_EFFECT_RULES } from './ahoy-g10';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ANIMATE_LAND_EFFECT_RULES } from './animate-land';
 import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -1473,6 +1474,8 @@ export const EFFECT_RULES = [
   // rules, and are tried first.
   // Blue Mage's Cane: "exile ... from defending player's graveyard. If you do, copy it. You may cast the copy by paying {3} rather than paying its mana cost."
   ...COPY_CAST_PAYING_EFFECT_RULES,
+  // Issue 110 (Llanowar Loamspeaker): "target land you control becomes a 3/3 Elemental creature with haste until end of turn. It's still a land", before `effect.becomes`, which stops at "3/3".
+  ...ANIMATE_LAND_EFFECT_RULES,
   ...PRISMARI_G2_EFFECT_RULES,
   ...MNEMONIC_DELUGE_EFFECT_RULES,
   ...MARDU_SURGE_EFFECT_RULES,
