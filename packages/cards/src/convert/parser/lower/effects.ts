@@ -66,7 +66,7 @@ import {
   RESTRICT,
   SET_PT,
 } from './continuous';
-import { EXCHANGE_CONTROL_OF_ALL, GAIN_CONTROL } from './control';
+import { EXCHANGE_CONTROL_OF_ALL, GAIN_CONTROL, GAIN_CONTROL_WHILE_COUNTER } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { CONTROLLERS_MAY_EXILE_LOWERINGS } from './controllers-may-exile';
 import { lowerCopyToken } from './copies';
@@ -3473,6 +3473,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   BECOMES_LOSES_ALL,
   GIVE_POISON,
   GAIN_CONTROL,
+  GAIN_CONTROL_WHILE_COUNTER,
   EXCHANGE_CONTROL_OF_ALL,
 ];
 

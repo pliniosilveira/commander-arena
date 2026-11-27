@@ -7440,6 +7440,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           '"for as long as you control this" is the effect of an ability of a permanent',
         );
       }
+      // CR 611.2b (Shield Broker): "for as long as it has a shield counter on it": a counter kind, for good (`permanent`).
+      if (e.whileHasCounter !== undefined) {
+        if (typeof e.whileHasCounter !== 'string' || e.whileHasCounter === '') {
+          issue(out, `${path}.whileHasCounter`, 'whileHasCounter names a kind of counter');
+        }
+        if (e.duration !== 'permanent') {
+          issue(out, `${path}.duration`, 'whileHasCounter goes with the duration permanent');
+        }
+      }
       break;
     }
     case 'returnControlToOwners':

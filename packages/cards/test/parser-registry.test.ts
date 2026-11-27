@@ -1262,6 +1262,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.discarded-most-this-way': spell(
     (e) => `Each player discards their hand, then draws cards ${e}.`,
   ),
+  // Fortune Teller's Talent: the "as long as" of a static ability that lets the controller play from the top of the library.
+  'condition.cast-a-spell-this-turn': permanent(
+    (e) => `As long as ${e}, you may play lands and cast spells from the top of your library.`,
+  ),
   // Issue 279 (Windbrisk Heights).
   'condition.attacked-with-creatures': permanent(
     (e) => `{W}, {T}: You may play the exiled card without paying its mana cost if ${e}.`,

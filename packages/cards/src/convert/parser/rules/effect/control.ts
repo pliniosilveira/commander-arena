@@ -3,7 +3,7 @@
  * (CR 613.1b, 611.2).
  */
 import { choice, literal, map, optional, pattern, refuseAt, sequence } from '../../combinators';
-import type { IrArg, IrClause, IrDuration, IrNoun } from '../../ir/types';
+import type { IrArg, IrClause, IrDuration, IrNameArg, IrNoun } from '../../ir/types';
 import { BOUNDARY, permanentPhrase } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { perOpponentNoun } from './angels';
@@ -486,8 +486,73 @@ export const EFFECT_EXCHANGE_CONTROL_OF_ALL = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.gain-control-while-counter`: "You gain control of that creature for as long as it has a shield counter on it." (Shield Broker, CR 611.2b, 122.1, 613.1b): the permanent an
+ * earlier instruction of the text named is controlled by the controller of the ability only while it has a counter of the kind, and not after it loses the last one (the effect
+ * ends for good). The engine's `gainControl` with `whileHasCounter`. Not read: another subject than "you", a target in place of "that" permanent, a plural, "a" counter of no kind,
+ * "its" or another word for the permanent in the second half, another duration after it.
+ */
+export const EFFECT_GAIN_CONTROL_WHILE_COUNTER = defineRule<Clauses>({
+  id: 'effect.gain-control-while-counter',
+  family: 'effect',
+  leading: ['you'],
+  cites: [
+    'CR 611.2b (Continuous Effects)',
+    'CR 613.1b (Interaction of Continuous Effects)',
+    'CR 122.1 (Counters)',
+  ],
+  examples: [
+    'you gain control of that creature for as long as it has a shield counter on it',
+    'you gain control of that permanent for as long as it has a vow counter on it',
+  ],
+  rejects: [
+    'you gain control of target creature for as long as it has a shield counter on it',
+    'you gain control of those creatures for as long as they have a shield counter on them',
+    'you gain control of that creature for as long as it has a counter on it',
+    'you gain control of that creature for as long as it has a shield counter',
+    'you gain control of that creature for as long as that creature has a shield counter on it',
+    'you gain control of that creature for as long as it has a shield counter on it until end of turn',
+    'target opponent gains control of that creature for as long as it has a shield counter on it',
+    'that player gains control of that creature for as long as it has a shield counter on it',
+    'you gain control of that creature until end of turn',
+    'gain control of that creature for as long as it has a shield counter on it',
+    'you gain control of that creature for as long as it has two shield counters on it',
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.gain-control-while-counter';
+    const head = pattern(/you gain control of /iu)(ctx, pos);
+    if (!head.ok) return head;
+    const object = refuseAt(
+      family<IrNoun>('noun', { only: ['noun.that-object'] }),
+      (n) => !n.plural,
+      (_n, _ctx, start) => start,
+    )(ctx, head.pos);
+    if (!object.ok) return object;
+    const tail = pattern(
+      new RegExp(` for as long as it has an? ([a-z]+) counter on it${BOUNDARY}`, 'iu'),
+    )(ctx, object.pos);
+    if (!tail.ok) return tail;
+    const kind = (tail.value[1] ?? '').toLowerCase();
+    const span = { start: pos, end: tail.pos };
+    const named: IrNameArg = { kind: 'name', name: kind, span, rule };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          rule,
+          'gainControlWhileCounter',
+          { objects: object.value, counter: named },
+          span,
+        ),
+      ],
+      pos: tail.pos,
+    };
+  },
+});
+
 export const CONTROL_EFFECT_RULES = [
   EFFECT_GAIN_CONTROL,
+  EFFECT_GAIN_CONTROL_WHILE_COUNTER,
   EFFECT_LEAD_GAIN_CONTROL,
   EFFECT_GAIN_CONTROL_PER_OPPONENT,
   EFFECT_GAIN_CONTROL_FOR_PLAYER,

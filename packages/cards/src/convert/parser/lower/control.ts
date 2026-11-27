@@ -4,7 +4,7 @@
  */
 import type { ControlDuration } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
-import { type Effects, eachObject, failure } from './clauses';
+import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
 import { objectSelectorOf, playerSelectorOf } from './nouns';
 import type { Lowering } from './types';
@@ -64,6 +64,36 @@ export const GAIN_CONTROL: Lowering<IrClause, Effects> = {
       'objects',
       TRIGGER_SUBJECT,
     );
+  },
+};
+
+/**
+ * "You gain control of that creature for as long as it has a shield counter on it" (Shield Broker; CR 611.2b, 122.1, 613.1b): the engine's `gainControl` of the permanent an earlier
+ * instruction named (a target), with `whileHasCounter`. The controller of the ability takes it.
+ */
+export const GAIN_CONTROL_WHILE_COUNTER: Lowering<IrClause, Effects> = {
+  head: 'gainControlWhileCounter',
+  id: 'lower.gain-control-while-counter',
+  needs: ['effect:gainControl', 'duration:whileHasCounter'],
+  lower(clause, ctx) {
+    const subject = operand(clause, 'objects');
+    const counter = arg(clause, 'counter');
+    if (subject?.kind !== 'noun' || counter?.kind !== 'name') return failure(clause);
+    const objects = objectSelectorOf(subject, ctx);
+    if (!objects.ok) return objects;
+    if (objects.value.kind !== 'target') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'gainControl',
+          objects: objects.value,
+          duration: 'permanent',
+          whileHasCounter: counter.name,
+        },
+      ],
+      rule: clause.rule,
+    };
   },
 };
 

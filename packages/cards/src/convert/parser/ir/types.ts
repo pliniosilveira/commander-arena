@@ -583,6 +583,8 @@ export interface IrFilter {
   readonly controllerOfNamed?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
+  /** "with mana value less than ~'s power" (Pollywog Prodigy, CR 202.3, 208.1): the engine's `manaValueBelow` of the power of the permanent with the ability, as it is when the spell is cast. */
+  readonly manaValueBelowSourcePower?: true;
   /** "that creature has greater power than ~" (Conformer Shuriken, CR 208.1): the engine's `powerGreaterThanSource`. */
   readonly powerGreaterThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
