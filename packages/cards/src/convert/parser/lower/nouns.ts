@@ -326,6 +326,7 @@ function lowerFilterAt(
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
   if (filter.blocking === true) parts.push('selector:blocking');
   if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
+  if (filter.manaValueBelowSourcePower === true) parts.push('selector:manaValueBelow');
   if (filter.powerGreaterThanSource === true) parts.push('selector:powerGreaterThanSource');
   // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
   if (filter.controller === 'monarch') parts.push('selector:monarchController');
@@ -708,6 +709,9 @@ function lowerFilterAt(
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
     ...(filter.blocking === true ? { blocking: true as const } : {}),
     ...(filter.powerLessThanSource === true ? { powerLessThanSource: true as const } : {}),
+    ...(filter.manaValueBelowSourcePower === true
+      ? { manaValueBelow: { kind: 'powerOf' as const, of: { kind: 'this' as const } } }
+      : {}),
     ...(filter.powerGreaterThanSource === true ? { powerGreaterThanSource: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}

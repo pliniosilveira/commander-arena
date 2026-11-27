@@ -5412,6 +5412,12 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly player?: PlayerSelector;
       readonly duration: ControlDuration;
+      /**
+       * "You gain control of that creature for as long as it has a shield counter on it" (Shield Broker, CR 611.2b, 122.1, 613.1b): each permanent the selector names as the effect
+       * begins is controlled by the player only while it is on the battlefield with a counter of this kind, and for good no longer once it stops (a counter put on again later does
+       * not bring it back); a permanent with none as the effect begins is not taken. With `duration` `permanent`.
+       */
+      readonly whileHasCounter?: string;
     }
   /**
    * "Each player gains control of all creatures they own." (issue 160, D-628, CR 613.1b, 613.7b, 611.2a, 611.2c): for each owner, one layer 2 effect with no duration gives that
