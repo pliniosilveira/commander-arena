@@ -2067,7 +2067,10 @@ export type IrStaticEffect =
     }
   | { readonly kind: 'grantKeyword'; readonly keyword: string; readonly params?: readonly IrArg[] }
   // Colossus Hammer (CR 613.1f): "loses flying": a keyword without parameters the subject no longer has (the engine's `loseKeyword`).
-  | { readonly kind: 'loseKeyword'; readonly keyword: string }
+  // Fear of Sleep Paralysis (CR 122.1d): "Stun counters can't be removed from permanents your opponents control": the subject is the group of permanents (the engine's `cantRemoveCounters`).
+  | { readonly kind: 'cantRemoveCounters'; readonly counter: string }
+  // Archetype of Imagination: `cantHave` is "and can't have or gain" the same keyword (it also stops later effects from giving it).
+  | { readonly kind: 'loseKeyword'; readonly keyword: string; readonly cantHave?: true }
   // Puresteel Paladin (CR 702.6a): "have equip {0}": the Equip ability a group of Equipment is given, with a plain mana cost (the engine's `grantKeyword` of `equip`).
   | { readonly kind: 'grantEquip'; readonly cost: IrCost }
   /**
@@ -2238,6 +2241,8 @@ export type IrStaticEffect =
       readonly planeswalkersOnly?: true;
       /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
       readonly perCounter?: true;
+      /** "pays {X} for each of those creatures, where X is the number of enchantments you control": `cost` ({1}) once for each of the amount, read as the attackers are declared (engine `times`). */
+      readonly times?: IrAmount;
     }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }

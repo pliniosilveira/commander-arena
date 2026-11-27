@@ -575,6 +575,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'doorUnlocked':
       // CR 709.5h (Room): the half whose text has the ability.
       return 'When you unlock this door';
+    case 'roomFullyUnlocked':
+      // CR 709.5i (Room): any Room whose second half the controller unlocks.
+      return 'Whenever you fully unlock a Room';
     case 'exploits':
       // CR 702.110b (Exploit): the creature with the ability.
       return 'When this creature exploits a creature';

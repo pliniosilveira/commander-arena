@@ -82,6 +82,7 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { counterBonuses, counterCountOn } from './counter-bonus';
+import { counterRemovalLocked } from './counter-lock';
 import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import { putCountersOn } from './counter-put';
@@ -2859,7 +2860,7 @@ function runEffect(
       }
       const have = source.counters[effect.counter] ?? 0;
       const moved = Math.min(effect.count, have);
-      if (moved <= 0) return done(state);
+      if (moved <= 0 || counterRemovalLocked(state, source, effect.counter)) return done(state);
       const [destination] = resolveObjects(state, effect.to, ctx, targets);
       if (destination === undefined || destination === sourceId) return done(state);
       if (state.objects[destination]?.zone !== 'battlefield') return done(state);
@@ -4699,6 +4700,8 @@ function runEffect(
       let toCounters = { ...to.counters };
       for (const [counter, count] of Object.entries(from.counters)) {
         if (count <= 0 || counterBlocked(state, to, counter)) continue;
+        // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed does not move.
+        if (counterRemovalLocked(state, from, counter)) continue;
         delete fromCounters[counter];
         toCounters = { ...toCounters, [counter]: (toCounters[counter] ?? 0) + count };
         events.push(
@@ -4814,11 +4817,14 @@ function runEffect(
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = cleared.objects[id];
         if (obj?.zone !== 'battlefield') continue;
+        // CR 122.1d (Fear of Sleep Paralysis): the kinds that can't be removed stay on the permanent.
+        const kept: Record<string, number> = {};
         for (const [counter, count] of Object.entries(obj.counters)) {
-          if (count > 0) removed.push({ kind: 'counterRemoved', object: id, counter, count });
+          if (count > 0 && counterRemovalLocked(cleared, obj, counter)) kept[counter] = count;
+          else if (count > 0) removed.push({ kind: 'counterRemoved', object: id, counter, count });
         }
         if (Object.keys(obj.counters).length > 0)
-          cleared = patchObject(cleared, id, { counters: {} });
+          cleared = patchObject(cleared, id, { counters: kept });
       }
       // Nexus Mentality: "for each counter removed this way" counts every counter that came off.
       const total = removed.reduce((n, e) => (e.kind === 'counterRemoved' ? n + e.count : n), 0);
@@ -5234,6 +5240,8 @@ function runEffect(
         const obj = next.objects[id];
         // CR 122.1: counters stay on a permanent and on a card in exile (a suspended card's time counters, CR 702.62b).
         if (obj?.zone !== 'battlefield' && obj?.zone !== 'exile') continue;
+        // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed stays.
+        if (counterRemovalLocked(next, obj, effect.counter)) continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;

@@ -65,6 +65,7 @@ import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
 import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
+import { STUN_LOCK_STATIC_RULES } from './stun-lock';
 import { TREASURE_SPELL_GRANT_STATIC_RULES } from './treasure-spell-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 import { WORLD_RULES_STATIC_RULES } from './world-rules';
@@ -172,6 +173,7 @@ export const STATIC_RULES = [
   ...MELD_STATIC_RULES,
   // Stage P43 (D-193): all damage that would be dealt to you and other permanents you control dealt to ~ instead, damage that stays through cleanup steps.
   ...ADAMANTOISE_STATIC_RULES,
+  ...STUN_LOCK_STATIC_RULES,
   // Stage P67 (D-220): "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time."
   ...EDHREC_STATIC_RULES,
   // Aetherdrift energy deck (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."

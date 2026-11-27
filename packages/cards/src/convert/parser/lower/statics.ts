@@ -309,7 +309,12 @@ function effectOf(
       // CR 613.1f (Colossus Hammer): a keyword without parameters; the engine takes it away in layer 6.
       const keyword = grantedKeyword(effect.keyword);
       if (keyword === undefined || Object.keys(keyword).length !== 1) return failure(at);
-      return ok({ kind: 'loseKeyword', subject, keyword });
+      return ok({
+        kind: 'loseKeyword',
+        subject,
+        keyword,
+        ...(effect.cantHave === true ? { cantHave: true as const } : {}),
+      });
     }
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
@@ -567,6 +572,14 @@ function effectOf(
       }
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
+    case 'cantRemoveCounters':
+      // CR 122.1d (Fear of Sleep Paralysis): a group of permanents, read for the controller of the ability as "you"; "other" is not said.
+      if (subject.kind !== 'filter' || subject.other === true) return failure(at);
+      return ok({
+        kind: 'cantRemoveCounters',
+        counter: effect.counter,
+        permanents: subject.filter,
+      });
     case 'cantAttackYou':
       // CR 508.1a, 303.4 (Vow of Duty): "Enchanted creature can't attack you or planeswalkers you control.": the creature the Aura is attached to, read for the Aura's controller as "you".
       if (subject.kind === 'attached') {
@@ -655,6 +668,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
+    case 'cantRemoveCounters':
+      return ['static:cantRemoveCounters'];
     case 'controlByMonarch':
       return ['static:controlAttached'];
     case 'grantAbility':
@@ -1707,7 +1722,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           (only.kind !== 'attackTax' && only.kind !== 'playLandsFromTopOfLibrary')
         )
           return failure(ability);
-        const lowered = lowerPlayRule(ability, only);
+        const lowered = lowerPlayRule(ability, only, ctx);
         if (!lowered.ok) return lowered;
         abilities.push(...lowered.value.map((a): Ability => ({ ...a, condition }) as Ability));
         continue;
@@ -1883,7 +1898,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isPlayRule(first)) {
     // Stage P24, D-125: a statement of one effect whose subject is the rule's own (a player, `~`, creatures).
     if (more.length > 0) return failure(ability);
-    return lowerPlayRule(ability, first);
+    return lowerPlayRule(ability, first, ctx);
   }
   return lowerPart(parts[0] as IrStaticPart, ability, undefined, ctx);
 }

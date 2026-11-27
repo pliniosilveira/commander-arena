@@ -732,6 +732,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putIntoGraveyard',
     // CR 709.5h: "When you unlock this door" (Room).
     'doorUnlocked',
+    // CR 709.5i: "Whenever you fully unlock a Room".
+    'roomFullyUnlocked',
     // CR 702.110b: "When this creature exploits a creature" (Exploit).
     'exploits',
     'becomesTarget',
@@ -1796,6 +1798,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playLandsFromTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
+    // CR 122.1d: "Stun counters can't be removed from permanents your opponents control."
+    'cantRemoveCounters',
     // D-647: "Inklings can't attack you or planeswalkers you control."
     'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
@@ -3196,6 +3200,8 @@ export const STATIC_KINDS = [
   'playLandsFromTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
+  /** "Stun counters can't be removed from permanents your opponents control." (CR 122.1d): the engine's `cantRemoveCounters`. */
+  'cantRemoveCounters',
   /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): the engine's `cantAttackYou`. */
   'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
@@ -3971,6 +3977,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   exiledFromLibraryOrGraveyard: true,
   putIntoGraveyard: true,
   doorUnlocked: true,
+  roomFullyUnlocked: true,
   exploits: true,
   becomesTarget: true,
   chapter: true,

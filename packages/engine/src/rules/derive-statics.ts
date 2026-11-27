@@ -1332,6 +1332,7 @@ export function staticEffectsOn(
       grants.push({
         ability: null,
         loses: mod.keyword.kind,
+        ...(mod.cantHave === true ? { cantHave: true as const } : {}),
         timestamp: source.object.timestamp,
       });
     } else if (mod.kind === 'loseAllAbilities') {

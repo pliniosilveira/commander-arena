@@ -926,6 +926,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'attackTax':
       checkAttackTax(s, path, out);
       break;
+    case 'cantRemoveCounters':
+      // CR 122.1d: a kind of counter and a filter of battlefield permanents, read for the controller of the permanent.
+      if (typeof s.counter !== 'string' || s.counter.length === 0) {
+        issue(out, `${path}.counter`, 'a counter kind is needed');
+      }
+      checkBattlefieldFilter(s.permanents, `${path}.permanents`, out);
+      break;
     case 'cantAttackYou':
       // D-647: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
       checkBattlefieldFilter(s.creatures, `${path}.creatures`, out);
@@ -1694,6 +1701,10 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'exploits':
       // CR 702.110b: no parameters; the creature with the ability.
       break;
+    case 'roomFullyUnlocked':
+      // CR 709.5i: the controller of the ability fully unlocks any Room.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      break;
     case 'doorUnlocked':
       // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -2074,6 +2085,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       // One card for each occurrence; a batch is about several cards and has no one subject.
       return t.batch === true ? undefined : 'permanent';
     case 'doorUnlocked':
+    case 'roomFullyUnlocked':
     case 'exploits':
       return 'permanent';
     default:

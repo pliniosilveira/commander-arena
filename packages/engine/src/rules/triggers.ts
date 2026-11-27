@@ -629,6 +629,14 @@ function occurrences(
       return event.kind === 'doorUnlocked'
         ? [{ subject: event.object, seat: event.seat, door: event.door }]
         : [];
+    case 'roomFullyUnlocked': {
+      // CR 709.5i, 709.5h: a half was unlocked and the Room has both unlocked designations now (the other half was unlocked before, or both were given at once).
+      if (event.kind !== 'doorUnlocked') return [];
+      const unlocked = state.objects[event.object]?.unlockedDoors ?? [];
+      return unlocked.includes(0) && unlocked.includes(1)
+        ? [{ subject: event.object, seat: event.seat, door: event.door }]
+        : [];
+    }
     case 'putIntoGraveyard':
       // CR 603.2, 404.1: a card (never a token) put into a graveyard from another zone, by the player who owns it ("your graveyard"); `from` is the zone it came from.
       return event.kind === 'zoneChanged' &&
@@ -1110,6 +1118,9 @@ function matches(
     case 'doorUnlocked':
       // CR 709.5h: "you unlock this door": the player is the controller of the ability and the Room is its source; whether the half is the ability's own is checked by the caller.
       return occ.seat === candidate.controller && subject?.id === candidate.id;
+    case 'roomFullyUnlocked':
+      // CR 709.5i: "you fully unlock a Room": the player is the controller of the ability, whichever Room it is.
+      return occ.seat === candidate.controller;
     case 'putIntoGraveyard':
       // CR 603.6c: "When ~ is put into a graveyard from anywhere": only the card with the ability itself.
       if (trigger.self === true) return subject !== null && subject.id === candidate.id;
