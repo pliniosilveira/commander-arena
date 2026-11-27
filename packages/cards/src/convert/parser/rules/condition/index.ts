@@ -27,6 +27,7 @@ import { AHOY_G10_CONDITION_RULES } from './ahoy-g10';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
+import { ARVINOX_CONDITION_RULES } from './arvinox';
 import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
@@ -590,6 +591,8 @@ export const CONDITION_RULES = [
   // Mogis, God of Slaughter: "your devotion to black and red is less than seven".
   ...DEVOTION_CONDITION_RULES,
   // Ahoy Mateys deck, group 8: "you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
+  // Arvinox, the Mind Flail: "you control three or more permanents you don't own", before the plain count whose phrase is a prefix of it.
+  ...ARVINOX_CONDITION_RULES,
   ...AHOY_G8_CONDITION_RULES,
   // Jump Scare! deck, group C (Augur of Autumn): "you control three or more creatures with different powers", before the plain count whose phrase is a prefix of it.
   ...JUMP_SCARE_C_CONDITION_RULES,

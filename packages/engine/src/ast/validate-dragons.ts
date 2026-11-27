@@ -63,6 +63,16 @@ export function checkDragonsEffect(
       if (e.faceDown !== undefined && e.faceDown !== true) {
         issue(out, `${path}.faceDown`, 'faceDown must be true when present');
       }
+      if (e.bottom !== undefined) {
+        if (e.bottom !== true) issue(out, `${path}.bottom`, 'bottom must be true when present');
+        if (e.linked === true || e.lookAt === true || e.randomOpponent === true) {
+          issue(
+            out,
+            `${path}.bottom`,
+            'the bottom cards are exiled without linked, lookAt or randomOpponent',
+          );
+        }
+      }
       if (e.lookAt !== undefined) {
         if (e.lookAt !== true) issue(out, `${path}.lookAt`, 'lookAt must be true when present');
         if (e.linked !== true || e.faceDown !== true) {

@@ -3385,6 +3385,11 @@ export type Effect =
        * as it was exiled and may go on looking at it (only they, even if another player gains control of the permanent), while it stays in exile.
        */
       readonly lookAt?: true;
+      /**
+       * "Exile the bottom card of each opponent's library face down" (Arvinox, the Mind Flail, CR 401.1, 406.3, 701.13): the cards exiled are the bottom `count` of each library `from` names
+       * (the last cards of it, the one at the very bottom last) and not the top ones. Not with `linked`, `lookAt` or `randomOpponent`.
+       */
+      readonly bottom?: true;
     }
   /**
    * "Each player exiles a card from their graveyard" (CR 701.13, 101.4, D-231): each player `players` names, in turn order starting with the active player, chooses a card

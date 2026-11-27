@@ -426,6 +426,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // A Saga's chapter symbol (CR 714.2): the numerals, an em dash and the effect.
   'trigger.chapter': asChapter,
   'condition.control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
+  // Arvinox, the Mind Flail.
+  'condition.control-at-least-not-owned': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-at-most': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-a': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.control-exact-pt-creature': permanent((e) => `~ enters tapped unless ${e}.`),
@@ -625,6 +627,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
+  'static.self-isnt-creature-unless': asIs,
   'static.cast-from-graveyard': asIs,
   'replacement.would-die': asIs,
   'replacement.exile-instead-of-opponent-graveyard': asIs,

@@ -52,6 +52,22 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
     const lookAt = arg(clause, 'lookAt');
     if (linked !== undefined && linked.kind !== 'flag') return failure(clause);
     if (lookAt !== undefined && lookAt.kind !== 'flag') return failure(clause);
+    // Arvinox, the Mind Flail (CR 401.1, 406.3): "exile the bottom card of each opponent's library face down": the last card of each library, face down, remembered by nothing.
+    const bottom = arg(clause, 'bottom');
+    if (bottom !== undefined) {
+      const blockedBottom = missingFeatures(['ability:exileTopBottom']);
+      if (
+        bottom.kind !== 'flag' ||
+        faceDown?.value !== true ||
+        linked !== undefined ||
+        lookAt !== undefined ||
+        random !== undefined ||
+        from === undefined
+      ) {
+        return failure(clause);
+      }
+      if (blockedBottom.length > 0) return failure(clause, blockedBottom);
+    }
     ctx.exiled = 'top';
     ctx.exiledFaceDown = faceDown?.value === true;
     ctx.exiledLookedAt = false;
@@ -66,12 +82,22 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
           ...(faceDown?.value === true ? { faceDown: true as const } : {}),
           ...(linked?.value === true ? { linked: true as const } : {}),
           ...(lookAt?.value === true ? { lookAt: true as const } : {}),
+          ...(bottom?.value === true ? { bottom: true as const } : {}),
         },
       ],
       rule: clause.rule,
     };
   },
 };
+
+/** The card types of a permanent spell (CR 110.4 Permanents, 305.1 Lands): a land is no spell, so it is not among them. */
+const NONLAND_PERMANENT_TYPES = [
+  'artifact',
+  'battle',
+  'creature',
+  'enchantment',
+  'planeswalker',
+] as const;
 
 const PLAY_UNTIL: Readonly<Record<string, PlayUntil>> = {
   thisTurn: 'endOfTurn',
@@ -165,6 +191,14 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
         return failure(clause);
       }
     }
+    // Arvinox, the Mind Flail (CR 601.2, 305.1): "you may cast permanent spells from among them": only the cards that are permanent cards but not lands (a land card is no spell), so only
+    // with `castOnly`.
+    const permanentOnly = arg(clause, 'permanentSpellsOnly');
+    if (permanentOnly !== undefined) {
+      if (permanentOnly.kind !== 'flag' || arg(clause, 'castOnly')?.kind !== 'flag') {
+        return failure(clause);
+      }
+    }
     ctx.mayPlayLasts = lasts;
     return {
       ok: true,
@@ -173,6 +207,9 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           kind: 'mayPlay',
           objects: { kind: 'moved' },
           lasts,
+          ...(permanentOnly?.value === true
+            ? { cards: { anyOf: NONLAND_PERMANENT_TYPES.map((type) => ({ types: [type] })) } }
+            : {}),
           ...(look === undefined && !lookedAtOnExile ? {} : { lookAt: true as const }),
           // "You may cast it this turn" (Lorehold group 1): the permission is to cast, a land card is not played.
           ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),

@@ -180,6 +180,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseRevealedHand',
     // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
     'exileTopRandomOpponent',
+    // Arvinox, the Mind Flail (CR 401.1, 406.3): "Exile the bottom card of each opponent's library face down" (`exileTop.bottom`).
+    'exileTopBottom',
     'mayPlayWhenCast',
     // Manifest dread (CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the rest into your graveyard" (`lookAtTop` `take.to` `manifest`).
     'lookTakeManifest',
@@ -2356,6 +2358,8 @@ export const ABILITY_FEATURES = [
   'chooseRevealedHand',
   /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
   'exileTopRandomOpponent',
+  /** "Exile the bottom card of each opponent's library face down" (Arvinox, the Mind Flail, CR 401.1, 406.3): the engine's `exileTop.bottom`. */
+  'exileTopBottom',
   /** "When you cast a spell this way, its owner loses life equal to its mana value" (The Ruinous Powers, CR 603.7): the engine's `mayPlay.whenCast`. */
   'mayPlayWhenCast',
   /** "Manifest dread" (CR 701.62a): the engine's `lookAtTop` with `take.to` `manifest`, one card of the top two put onto the battlefield face down and the rest into the graveyard. */
@@ -3649,6 +3653,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeNothing: true,
   chooseRevealedHand: true,
   exileTopRandomOpponent: true,
+  exileTopBottom: true,
   mayPlayWhenCast: true,
   lookTakeManifest: true,
   lookReorderFromPlayer: true,
