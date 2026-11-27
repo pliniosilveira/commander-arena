@@ -639,7 +639,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Academy Manufactor: the Clue, Food and Treasure it makes enter untapped and carry nothing the instruction said of the replaced token ("create a tapped Treasure"); no ruling for that case was read.
 - Graveyard permissions with a sacrifice (Exploration Broodship): when several permanents give a card a permission to be cast from the graveyard, the first in battlefield order is used; the caster cannot pick the one with the cheaper additional cost.
 - Case cards: "When this Case becomes solved" has no trigger wording (the `becameSolved` event exists); "To solve" with a condition the grammar cannot read leaves the Case unsupported.
-- AI look-ahead: the opponents inside its play-outs (deepening, combat and response looks) are the inner agents, which never run the attack search, so a line is judged against a weaker crack-back than it meets.
 - AI look-ahead: a line's next-turn value comes from one sample of the hidden cards; a second sample at depth 2 was measured and gave no gain.
 - AI look-ahead: with three or four seats the planner does not look a turn further, and combat keeps the crack-back formula.
 - AI play-out pool: the first play-out of a planning runs on a worker without a budget, so on a slow device the planner can wait past the safety clock until the host's watchdog replaces its answer.
