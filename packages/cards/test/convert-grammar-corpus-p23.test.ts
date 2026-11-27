@@ -218,7 +218,7 @@ const UNREAD: readonly Line[] = [
       "card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard.",
       'noun.each-permanent',
     ),
-    note: 'the real shape of Underworld Breach: a grant of escape to the cards of a graveyard, not built (D-124)',
+    note: 'the real shape of Underworld Breach: "nonland" is no card type the grant of escape reads (it reads "Each enchantment card"), so it stays dropped',
   },
   {
     kind: 'creature',

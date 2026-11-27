@@ -89,8 +89,8 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
     options.push({ kind: 'castSpell', object, alternative: 'retrace' });
   }
   // CR 702.138a (Escape, D-124): a card in the graveyard is cast for its escape cost, one option for each.
-  for (const object of escapeObjects(state, seat)) {
-    options.push({ kind: 'castSpell', object, alternative: 'escape' });
+  for (const spell of escapeObjects(state, seat)) {
+    options.push({ kind: 'castSpell', ...spell, alternative: 'escape' });
   }
   // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
   for (const object of sacrificeFromGraveyardObjects(state, seat)) {

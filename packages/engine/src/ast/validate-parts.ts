@@ -865,12 +865,13 @@ export function checkFilter(
   if (
     f.sharesCardTypeWith !== undefined &&
     f.sharesCardTypeWith !== 'triggerSubject' &&
-    f.sharesCardTypeWith !== 'sacrificed'
+    f.sharesCardTypeWith !== 'sacrificed' &&
+    f.sharesCardTypeWith !== 'target'
   ) {
     issue(
       out,
       `${path}.sharesCardTypeWith`,
-      "sharesCardTypeWith is 'triggerSubject' or 'sacrificed'",
+      "sharesCardTypeWith is 'triggerSubject', 'sacrificed' or 'target'",
     );
   } else if (f.sharesCardTypeWith === 'sacrificed' && where.afterSacrifice !== true) {
     issue(
@@ -4533,6 +4534,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.count`, 'the mana spent is a whole number of 1 or more');
       }
       break;
+    case 'manaSpentLessThanManaValue':
+      // CR 601.2h, 202.3 (Ancient Cellarspawn): no field; the spell that caused a cast trigger.
+      break;
     case 'manaSpentFromSubtype':
       // CR 601.2h (Smaug, Wicked Worm): the mana of a source of this subtype spent on the spell that caused a cast trigger.
       if (typeof c.subtype !== 'string' || c.subtype === '') {
@@ -5396,7 +5400,13 @@ function checkChooseMove(
       );
     }
   }
-  if (sel.filter?.controller !== 'you') {
+  // CR 108.3 (Phenomenon Investigators): "a nonland permanent you own": among the permanents the controller owns, whoever controls them; no controller is then said.
+  const owned =
+    sel.filter?.ownedByYou === true &&
+    sel.filter.controller === undefined &&
+    (sel.filter.zone === undefined || sel.filter.zone === 'battlefield') &&
+    sel.players === undefined;
+  if (sel.filter?.controller !== 'you' && !owned) {
     issue(
       out,
       `${path}.filter.controller`,
@@ -8417,6 +8427,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       ) {
         issue(out, `${path}.random`, "random is true, with to 'library' and position 'bottom'");
       }
+      // CR 401.4: "on the bottom of their owners' libraries": each owner arranges the cards that reach the bottom of their library.
+      if (
+        e.ownersArrange !== undefined &&
+        (e.ownersArrange !== true ||
+          e.to !== 'library' ||
+          e.position !== 'bottom' ||
+          e.random !== undefined ||
+          e.objects.kind === 'choose')
+      ) {
+        issue(
+          out,
+          `${path}.ownersArrange`,
+          "ownersArrange is true, with to 'library', position 'bottom', no random and no choose selector",
+        );
+      }
       // CR 610.3 (Foreboding Steamboat): "exile them until ~ leaves the battlefield": the permanent chosen by each player, exiled by an ability of a permanent.
       if (e.until !== undefined) {
         if (e.until !== 'sourceLeaves') {
@@ -10924,6 +10949,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'lookAndReorder':
+      checkAmount(e.count, `${path}.count`, scope, out);
+      // CR 401.2, 115.1: "the top three cards of target player's library": the one player whose library it is.
+      if (e.from !== undefined) checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      break;
     case 'putFromHandOnTop':
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
@@ -10971,11 +11000,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (!isCount(e[pile]))
           issue(out, `${path}.${pile}`, `${pile} must be a non-negative integer`);
       }
-      if (typeof e.count === 'number' && e.count !== e.hand + e.bottom + e.exile) {
+      // "One on top of your library, and one on the bottom of your library" (CR 401.2, 608.2c): one card stays on top and at most one goes to the bottom, so no order is
+      // asked (CR 401.4 is about two or more cards); nothing is exiled.
+      if (e.top !== undefined && (e.top !== 1 || e.bottom > 1 || e.exile !== 0)) {
+        issue(out, `${path}.top`, 'top is 1, with bottom 0 or 1 and exile 0');
+      }
+      if (typeof e.count === 'number' && e.count !== e.hand + e.bottom + e.exile + (e.top ?? 0)) {
         issue(
           out,
           `${path}.count`,
-          'the cards looked at are all placed: count is hand + bottom + exile',
+          'the cards looked at are all placed: count is hand + top + bottom + exile',
         );
       }
       break;

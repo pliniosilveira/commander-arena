@@ -177,6 +177,11 @@ export interface IrNoun extends IrNode {
    */
   readonly alsoCardsYouOwnOffBattlefield?: true;
   /**
+   * "nonland permanents you control and permanent spells you control" (Secret Arcade, CR 613.1d): the group is `filter` (the nonland permanents you control) and also the permanent spells you control on
+   * the stack. Only a static "are enchantments in addition to their other types" reads it; every other lowering refuses a noun that has it.
+   */
+  readonly alsoPermanentSpellsYouControl?: true;
+  /**
    * "each of up to two other targets" (stage P34, D-152, CR 115.3): the targets of this slot are none of the targets of the slot of the same
    * ability before it, which a target noun without it may share.
    */
@@ -416,6 +421,11 @@ export interface IrFilter {
    * text sacrificed had, as it last was. Read in the filter of a sacrifice only; the engine's `sharesCardTypeWith: 'sacrificed'`.
    */
   readonly sharesCardTypeWithSacrificed?: true;
+  /**
+   * "a permanent that shares a card type with the chosen card" (Spirit-Sister's Call, CR 205.2a, 608.2c): the permanent has a card type the card an earlier "choose target ... card in your
+   * graveyard" chose as a target has. Read in the filter of a sacrifice; the engine's `sharesCardTypeWith: 'target'`.
+   */
+  readonly sharesCardTypeWithChosen?: true;
   /**
    * "up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found share a land type among them, which is a condition on the whole
    * choice and not on a card. A filter that still has it is not lowered; the search lowering takes it off (the engine's `search.sharedLandType`).
@@ -1161,6 +1171,8 @@ export interface IrCondition extends IrNode {
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
     // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
+    // Ancient Cellarspawn (CR 601.2h, 202.3): "the amount of mana spent to cast it was less than its mana value": the spell that caused a cast trigger; lowered in such a trigger only.
+    | { readonly kind: 'manaSpentLessThanManaValue' }
     // Prismari deck, group 2 (D-646, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
     | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
     // Flint deck (issue 685, CR 601.2h): "mana from a Treasure was spent to cast it": the spell of a cast trigger was paid in part with mana a source of this subtype made.
@@ -1436,6 +1448,8 @@ export interface IrZoneSpec extends IrNode {
   readonly attacking?: true;
   /** `top`, `bottom`, or "third from the top" as 3 (stage P30, CR 401.7): a number of 2 or more. */
   readonly position?: 'top' | 'bottom' | number;
+  /** "on the bottom of their owners' libraries" (CR 401.4): a group of permanents goes to several libraries, and each owner arranges the cards that reach theirs. */
+  readonly owners?: true;
   /** How many of the cards a search found go here: "put one onto ... and the other into ...". */
   readonly count?: number;
 }
@@ -1556,6 +1570,11 @@ export interface IrToken extends IrNode {
    * an attacker. Only in the effect of "whenever one or more ... you control attack".
    */
   readonly tappedAndAttacking?: true;
+  /**
+   * "... token that's tapped and attacking that player" (CR 508.4, 508.6): the token enters tapped and attacking the one player the trigger is about ("Whenever you attack a
+   * player"), never declared as an attacker. Written by `effect.create-token`, in place of `tappedAndAttacking`.
+   */
+  readonly tappedAttackingThatPlayer?: true;
   /** "Smaug, a legendary 6/6 red Dragon creature token" (stage P45, D-197, CR 205.4): the token has the supertype legendary. */
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
@@ -1611,6 +1630,11 @@ export interface IrToken extends IrNode {
   readonly copySetTypes?: readonly string[];
   /** "..., except the token is 1/1" (Endless Evil, CR 707.9b): with `copyOf`, the copy has this power and toughness and keeps its colors, types and abilities (the engine's `copyOf.setPt`). */
   readonly copySetPt?: { readonly power: number; readonly toughness: number };
+  /**
+   * "..., except it's 1/1 and it's a Nightmare in addition to its other types" (Nightmare Shepherd, CR 707.9b): with `copyOf`, the creature types the copy has besides the ones it
+   * copies, as written (the engine's `copyOf.addSubtypes`); the power and toughness of the same words are `copySetPt`.
+   */
+  readonly copyAddsSubtypes?: readonly string[];
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   /** "create a tapped and attacking X/X ... creature token" (CR 508.4): the tokens enter tapped and attacking, never declared as attackers; with `tapped`. */
@@ -2063,7 +2087,10 @@ export type IrStaticEffect =
     }
   | { readonly kind: 'grantKeyword'; readonly keyword: string; readonly params?: readonly IrArg[] }
   // Colossus Hammer (CR 613.1f): "loses flying": a keyword without parameters the subject no longer has (the engine's `loseKeyword`).
-  | { readonly kind: 'loseKeyword'; readonly keyword: string }
+  // Fear of Sleep Paralysis (CR 122.1d): "Stun counters can't be removed from permanents your opponents control": the subject is the group of permanents (the engine's `cantRemoveCounters`).
+  | { readonly kind: 'cantRemoveCounters'; readonly counter: string }
+  // Archetype of Imagination: `cantHave` is "and can't have or gain" the same keyword (it also stops later effects from giving it).
+  | { readonly kind: 'loseKeyword'; readonly keyword: string; readonly cantHave?: true }
   // Puresteel Paladin (CR 702.6a): "have equip {0}": the Equip ability a group of Equipment is given, with a plain mana cost (the engine's `grantKeyword` of `equip`).
   | { readonly kind: 'grantEquip'; readonly cost: IrCost }
   /**
@@ -2206,7 +2233,12 @@ export type IrStaticEffect =
    * "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. `alsoLook` is the sentence "You may look at the top card of
    * your library any time, and you may play lands from the top of your library.", which is both abilities (issue 345).
    */
-  | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
+  | {
+      readonly kind: 'playLandsFromTopOfLibrary';
+      readonly alsoLook?: true;
+      /** "You may play lands and cast spells from the top of your library." (One with the Multiverse, CR 305.1, 601.3): also the permission to cast every spell from there. */
+      readonly alsoCast?: true;
+    }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /** "During each of your turns, you may play a land and cast a permanent spell of each permanent type from your graveyard." (CR 601.2a, 305.1): the subject is `you`. */
@@ -2229,6 +2261,8 @@ export type IrStaticEffect =
       readonly planeswalkersOnly?: true;
       /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
       readonly perCounter?: true;
+      /** "pays {X} for each of those creatures, where X is the number of enchantments you control": `cost` ({1}) once for each of the amount, read as the attackers are declared (engine `times`). */
+      readonly times?: IrAmount;
     }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
@@ -2374,6 +2408,18 @@ export type IrStaticEffect =
    * controller that `cards` names (a noun with no zone and no controller). The subject of the statement is `you`.
    */
   | { readonly kind: 'graveyardFlashback'; readonly cards: IrNoun }
+  /**
+   * "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}." and "Each enchantment card in your graveyard has escape. The escape cost is
+   * equal to the card's mana cost plus exile three other cards from your graveyard." (CR 702.94a, 702.138a, 118.9, 613.1f): the cards `cards` names (no zone, no controller) of the hand
+   * (miracle, with the generic mana of the cost reduced by `reduce`) or the graveyard (escape, with `exile` other cards exiled) of the controller. The subject is `you`.
+   */
+  | {
+      readonly kind: 'manaCostKeywordGrant';
+      readonly cards: IrNoun;
+      readonly keyword: 'miracle' | 'escape';
+      readonly reduce: number;
+      readonly exile: number;
+    }
   /** "You may pay eight {E} rather than pay the mana cost for permanent spells you cast." (issue 105, CR 118.9, 107.14): the permanent spells of the controller may be cast for `count` energy counters. The subject is `you`. */
   | {
       readonly kind: 'energyAlternative';
@@ -2383,6 +2429,17 @@ export type IrStaticEffect =
       readonly oncePerTurn?: true;
       /** The card types of the spells the grant is for ("a creature spell"); left out for permanent spells. */
       readonly types?: readonly string[];
+    }
+  /**
+   * "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost." (issue 109, CR 118.9, 601.2b): one
+   * spell in each turn of the controller for the alternative cost `alternative`; `types` is the card type the spell must have (any spell when left out), `from` the zones the words
+   * name (none: wherever the spell is cast from). The subject is `you`.
+   */
+  | {
+      readonly kind: 'castOnceEachTurn';
+      readonly alternative: 'lifeForMana' | 'free';
+      readonly types?: readonly string[];
+      readonly from?: readonly ('hand' | 'libraryTop')[];
     }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }

@@ -19,12 +19,13 @@
  *   attack if able and has only taxed targets is not required (`untaxedTargets`).
  */
 
-import type { ObjectFilter } from '../ast/types';
+import type { Amount, ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget } from '../state/combat-types';
 import { getObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { manaSymbolsOf } from './alt-costs';
+import { amountOf } from './amounts';
 import { declareAttackers } from './combat';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -41,6 +42,8 @@ interface Tax {
   readonly planeswalkers: boolean;
   readonly planeswalkersOnly: boolean;
   readonly perCounter: boolean;
+  /** CR 508.1h, 118.12a (`times`): the cost is paid this many times for each attacker, read as the attackers are declared. */
+  readonly times?: number;
   /** CR 508.1d, 508.1h (`creaturesCantAttackYou` with `tax`): only the creatures this filter matches are taxed. */
   readonly creatures?: ObjectFilter;
 }
@@ -54,6 +57,9 @@ function symbolsFor(state: GameState, tax: Tax, attacker: ObjectId): readonly st
       matchesFilter(state, obj, { ...tax.creatures, zone: 'battlefield' }, ctx)
       ? tax.symbols
       : [];
+  }
+  if (tax.times !== undefined) {
+    return Array.from({ length: tax.times }, () => tax.symbols).flat();
   }
   if (!tax.perCounter) return tax.symbols;
   const counters = Object.values(state.objects[attacker]?.counters ?? {}).reduce(
@@ -85,6 +91,16 @@ function taxesOnBoard(state: GameState): Tax[] {
         planeswalkers: a.static.planeswalkers === true || a.static.planeswalkersOnly === true,
         planeswalkersOnly: a.static.planeswalkersOnly === true,
         perCounter: a.static.perCounter === true,
+        ...(a.static.times === undefined
+          ? {}
+          : {
+              times: amountOf(
+                state,
+                a.static.times as Amount,
+                { controller: controllerOf(state, obj), source: id },
+                [],
+              ),
+            }),
       });
     }
   }

@@ -38,7 +38,7 @@ import type {
 } from '../state/types';
 import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
-import { runArrange, runPutOnTop } from './arrange';
+import { runArrange, runArrangeMoved, runPutOnTop } from './arrange';
 import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject, unattach } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
@@ -82,6 +82,7 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { counterBonuses, counterCountOn } from './counter-bonus';
+import { counterRemovalLocked } from './counter-lock';
 import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import { putCountersOn } from './counter-put';
@@ -425,6 +426,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'discard') return runDiscard(state, res, instruction);
   if (instruction.kind === 'arrange') return runArrange(state, res, instruction);
+  if (instruction.kind === 'arrangeMoved') return runArrangeMoved(state, res);
   if (instruction.kind === 'drawUpTo') return runDrawUpTo(state, res, instruction);
   if (instruction.kind === 'chooseNumber') return runChooseNumber(state, res, instruction);
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
@@ -528,8 +530,14 @@ export function runInstruction(
         (offered.kind === 'sacrifice' &&
           offered.objects.kind === 'choose' &&
           offered.player === undefined &&
-          sacrificeCandidates(state, player, res.source, offered.objects.filter, res.sacrificed)
-            .length === 0) ||
+          sacrificeCandidates(
+            state,
+            player,
+            res.source,
+            offered.objects.filter,
+            res.sacrificed,
+            res.legalTargets,
+          ).length === 0) ||
         // CR 701.9 (Discard): a player with no card in hand cannot discard one, so they do not and the "if they don't" instruction is done for them (Professor Onyx's last
         // loyalty ability rules: an opponent with an empty hand loses the life). Nobody is asked about a discard of nothing when "if they don't" follows; without it the question is
         // asked as it always was (it is what the players who did the thing are counted from, Mog, Moogle Warrior).
@@ -685,6 +693,7 @@ export function runInstruction(
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersCopyOther === undefined ? {} : { entersCopyOther: res.entersCopyOther }),
+      ...(res.entersAuraHost === undefined ? {} : { entersAuraHost: res.entersAuraHost }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
@@ -1825,6 +1834,10 @@ function runEffect(
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
       // D-283 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
       const together = recordTogether(shuffledState, moves);
+      // CR 401.4 ("on the bottom of their owners' libraries"): once the cards are there, each owner of two or more of them arranges theirs (rules/arrange.ts).
+      if (effect.ownersArrange === true && effect.to === 'library') {
+        return moving(together.state, [...together.instructions, { kind: 'arrangeMoved' }]);
+      }
       return moving(together.state, together.instructions);
     }
 
@@ -2873,7 +2886,7 @@ function runEffect(
       }
       const have = source.counters[effect.counter] ?? 0;
       const moved = Math.min(effect.count, have);
-      if (moved <= 0) return done(state);
+      if (moved <= 0 || counterRemovalLocked(state, source, effect.counter)) return done(state);
       const [destination] = resolveObjects(state, effect.to, ctx, targets);
       if (destination === undefined || destination === sourceId) return done(state);
       if (state.objects[destination]?.zone !== 'battlefield') return done(state);
@@ -4347,6 +4360,8 @@ function runEffect(
             hand: effect.hand,
             bottom: effect.bottom,
             exile: effect.exile,
+            // "One on top of your library" (CR 608.2c): the pile left on top, chosen after the hand.
+            ...(effect.top === undefined ? {} : { top: effect.top }),
             chosen: null,
           },
         ],
@@ -4624,10 +4639,23 @@ function runEffect(
     case 'lookAndReorder': {
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // CR 401.2, 115.1 ("the top three cards of target player's library"): the library of the one player the selector names; with none (the target is gone) nothing is looked at.
+      const [libraryOf] =
+        effect.from === undefined ? [] : resolvePlayers(state, effect.from, ctx, targets);
+      if (effect.from !== undefined && libraryOf === undefined) return done(state);
       return done(
         state,
         [],
-        [{ kind: 'arrange', purpose: 'reorder', seat: res.controller, count, arranged: null }],
+        [
+          {
+            kind: 'arrange',
+            purpose: 'reorder',
+            seat: res.controller,
+            count,
+            ...(libraryOf === undefined ? {} : { libraryOf }),
+            arranged: null,
+          },
+        ],
       );
     }
 
@@ -4698,6 +4726,8 @@ function runEffect(
       let toCounters = { ...to.counters };
       for (const [counter, count] of Object.entries(from.counters)) {
         if (count <= 0 || counterBlocked(state, to, counter)) continue;
+        // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed does not move.
+        if (counterRemovalLocked(state, from, counter)) continue;
         delete fromCounters[counter];
         toCounters = { ...toCounters, [counter]: (toCounters[counter] ?? 0) + count };
         events.push(
@@ -4813,11 +4843,14 @@ function runEffect(
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = cleared.objects[id];
         if (obj?.zone !== 'battlefield') continue;
+        // CR 122.1d (Fear of Sleep Paralysis): the kinds that can't be removed stay on the permanent.
+        const kept: Record<string, number> = {};
         for (const [counter, count] of Object.entries(obj.counters)) {
-          if (count > 0) removed.push({ kind: 'counterRemoved', object: id, counter, count });
+          if (count > 0 && counterRemovalLocked(cleared, obj, counter)) kept[counter] = count;
+          else if (count > 0) removed.push({ kind: 'counterRemoved', object: id, counter, count });
         }
         if (Object.keys(obj.counters).length > 0)
-          cleared = patchObject(cleared, id, { counters: {} });
+          cleared = patchObject(cleared, id, { counters: kept });
       }
       // Nexus Mentality: "for each counter removed this way" counts every counter that came off.
       const total = removed.reduce((n, e) => (e.kind === 'counterRemoved' ? n + e.count : n), 0);
@@ -5233,6 +5266,8 @@ function runEffect(
         const obj = next.objects[id];
         // CR 122.1: counters stay on a permanent and on a card in exile (a suspended card's time counters, CR 702.62b).
         if (obj?.zone !== 'battlefield' && obj?.zone !== 'exile') continue;
+        // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed stays.
+        if (counterRemovalLocked(next, obj, effect.counter)) continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;

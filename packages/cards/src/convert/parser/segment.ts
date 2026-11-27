@@ -552,6 +552,19 @@ const PUT_HAND_REST_TOP =
   /^put one of them into your hand and the rest on top of your library in any order\.$/i;
 const PUT_HAND_OTHER_BOTTOM =
   /^put one of them into your hand and the other on the bottom of your library\.$/i;
+/**
+ * "Look at the top three cards of your library. Put one of those cards into your hand, one on top of your library, and one on the bottom of your library." (Telling Time, CR 401.2,
+ * 608.2c): the second sentence says where each of the cards looked at goes, so the two are read as one instruction (`effect.look-split-top`).
+ */
+const PUT_HAND_TOP_BOTTOM =
+  /^put one of those cards into your hand, one on top of your library, and one on the bottom of your library\.$/i;
+/**
+ * "Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle." (Portent, CR 401.2, 701.24): the second sentence
+ * names the player of the first one and is decided knowing the cards, so the two are read as one instruction (`effect.look-reorder-player`).
+ */
+const LOOK_REORDER_TARGET_PLAYER =
+  /^look at the top [^.]* cards of target (?:player|opponent)['’]s library, then put them back in any order\.$/i;
+const MAY_HAVE_THAT_PLAYER_SHUFFLE = /^you may have that player shuffle\.$/i;
 
 /**
  * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the second sentence
@@ -1781,7 +1794,9 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
           (said(b, PUT_HAND_REST_BOTTOM) ||
             said(b, PUT_HAND_REST_TOP) ||
             said(b, PUT_HAND_OTHER_BOTTOM) ||
+            said(b, PUT_HAND_TOP_BOTTOM) ||
             said(b, PUT_HAND_REST_GRAVEYARD))) ||
+        (said(a, LOOK_REORDER_TARGET_PLAYER) && said(b, MAY_HAVE_THAT_PLAYER_SHUFFLE)) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||

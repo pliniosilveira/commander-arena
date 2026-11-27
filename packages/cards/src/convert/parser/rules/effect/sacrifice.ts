@@ -37,6 +37,7 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
     'sacrifice one or more Treasures',
     'sacrifice one or more other creatures',
     'sacrifice a permanent of their choice that shares a card type with it',
+    'sacrifice a permanent that shares a card type with the chosen card',
     // Rakdos, Patron of Chaos (issue 685): the player who sacrifices chooses anyway (CR 701.21a), so "of their choice" adds nothing.
     'sacrifice two nonland, nontoken permanents of their choice',
   ],
@@ -62,6 +63,8 @@ export const EFFECT_SACRIFICE = defineRule<Clauses>({
         only: [
           'noun.self',
           'noun.a-permanent-sharing-type',
+          // Spirit-Sister's Call: "a permanent that shares a card type with the chosen card".
+          'noun.a-permanent-sharing-type-with-chosen',
           'noun.a-permanent',
           // Shire Shirriff: "sacrifice a token", a token of any kind.
           'noun.a-token',

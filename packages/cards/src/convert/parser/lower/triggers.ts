@@ -54,6 +54,16 @@ const ON_A_PERMANENT: ReadonlySet<string> = new Set([
   'loseAllAbilities',
   'restrict',
 ]);
+/**
+ * "that spell's mana value" of a cast trigger names the spell on the stack, not an object the effect acts on (CR 202.3, 601.2i): the amount `manaValueOf` of the engine's `triggerSubject`
+ * (Dusty Parlor: "put a number of +1/+1 counters equal to that spell's mana value on up to one target creature"). Only that amount is left out of the check of "it" in the body.
+ */
+function withoutManaValueAmounts(clause: IrClause): IrClause {
+  const args = Object.fromEntries(
+    Object.entries(clause.args).filter(([, a]) => !(isIrAmount(a) && a.kind === 'manaValueOf')),
+  );
+  return { ...clause, args };
+}
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
 
 function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
@@ -554,6 +564,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ? failure(t, blocked)
         : ok({ kind: 'doorUnlocked', who: 'you', door: 'this' });
     }
+    case 'roomFullyUnlocked': {
+      // "Whenever you fully unlock a Room" (Fear of Sleep Paralysis, CR 709.5i): any Room, by the controller.
+      if (t.actor?.det !== 'you') return failure(t);
+      const blocked = missingFeatures(['trigger:roomFullyUnlocked']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'roomFullyUnlocked', who: 'you' });
+    }
     case 'cycled': {
       // "When you cycle this card" (stage P37, D-180, CR 702.29c): the card with the ability, which the engine finds in the zone it wound up in.
       if (t.actor?.det !== 'you' || t.subject?.det !== 'self') return failure(t);
@@ -1046,6 +1064,13 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   // CR 508.6 (Firkraag): "that player" of "attack an opponent" is the opponent attacked, which the engine gives as the trigger player.
   if (only.event === 'attackBatch' && only.eachAttackedOpponent === true) {
     return { selector: { kind: 'triggerPlayer' }, needs: ['selector:triggerPlayer'] };
+  }
+  // CR 508.6, 603.2c (Soaring Lightbringer): "that player" of "whenever you attack a player" is the player this occurrence of the trigger attacked, not the attacking player.
+  if (only.event === 'attackBatch' && only.eachAttackedPlayer === true) {
+    return {
+      selector: { kind: 'triggerAttackedPlayer' },
+      needs: ['selector:triggerAttackedPlayer'],
+    };
   }
   if (only.actor?.det === 'you') {
     return { selector: { kind: 'you' }, needs: ['selector:you'] };
@@ -1645,6 +1670,24 @@ function foldCostContainsX(triggers: readonly Trigger[]): Trigger[] | null {
   );
 }
 
+/** The zones the card a `dies` / `leavesBattlefield` trigger is about can be in, when one of them goes to exile as well; undefined for the graveyard alone. */
+function triggerCardZonesOf(
+  triggers: readonly Trigger[],
+): readonly ('graveyard' | 'exile')[] | undefined {
+  const zones = new Set<'graveyard' | 'exile'>();
+  for (const t of triggers) {
+    if (t.kind === 'dies') zones.add('graveyard');
+    else if (t.kind === 'leavesBattlefield' && t.to !== undefined) {
+      for (const z of Array.isArray(t.to) ? t.to : [t.to]) {
+        if (z === 'graveyard' || z === 'exile') zones.add(z);
+      }
+    } else return undefined;
+  }
+  return zones.has('exile')
+    ? (['graveyard', 'exile'] as const).filter((z) => zones.has(z))
+    : undefined;
+}
+
 /**
  * A triggered ability, and for "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h) the two abilities the paragraph is: the static ability that
  * offers the optional cost of attacking (`exertOnAttack`) and the triggered ability linked to it, which the engine triggers when the creature is exerted.
@@ -1729,6 +1772,17 @@ function lowerTriggeredAbility(
     triggers[0]?.kind === 'attackBatch' &&
     triggers[0].who === 'you' &&
     triggers[0].attackedEnchantedPlayer !== true
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
+  // CR 508.4, 508.6 (Soaring Lightbringer): "that's tapped and attacking that player" after "whenever you attack a player": the one player this occurrence of the trigger is about.
+  ctx.eachAttackedPlayer =
+    triggers.length === 1 &&
+    triggers[0]?.kind === 'attackBatch' &&
+    triggers[0].who === 'you' &&
+    (triggers[0].eachAttackedPlayer === true || triggers[0].eachAttackedOpponent === true)
       ? {
           selector: { kind: 'triggerAttackedPlayer' },
           needs: ['selector:triggerAttackedPlayer'],
@@ -2002,6 +2056,8 @@ function lowerTriggeredAbility(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
+  // Athreos (CR 400.7, 603.10a): "dies or is put into exile ... return that card": the card is looked for in each zone the events name.
+  ctx.triggerCardZones = triggerCardZonesOf(triggers);
   ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
   ctx.attackBatchThose =
     triggers.length > 0 &&
@@ -2059,7 +2115,9 @@ function lowerTriggeredAbility(
   if (
     triggers.some((t) => t.kind === 'castSpell') &&
     clauses.some(
-      (c) => ON_A_PERMANENT.has(c.verb) && nounsOfClause(c).some((n) => n.det === 'triggerSubject'),
+      (c) =>
+        ON_A_PERMANENT.has(c.verb) &&
+        nounsOfClause(withoutManaValueAmounts(c)).some((n) => n.det === 'triggerSubject'),
     )
   ) {
     return failure(ability);
@@ -2562,6 +2620,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:exerted',
   'trigger:playsCard',
   'trigger:doorUnlocked',
+  'trigger:roomFullyUnlocked',
   'trigger:exploits',
   'static:exertOnAttack',
   'trigger:tappedForMana',

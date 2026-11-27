@@ -138,7 +138,7 @@ export function stripFlavorWord(line: string): string {
 }
 
 const SELF_NOUNS =
-  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class|case';
+  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class|case|room';
 const SELF_NOUN_RE = new RegExp(`\\bthis (?:${SELF_NOUNS})\\b`, 'gi');
 
 /**
@@ -245,6 +245,10 @@ export function selfNames(options: NormalizeOptions): string[] {
  * writes with a capital letter ("target Goblin", "a Treasure"). Creature types come from the engine's table (CR 205.3m).
  */
 const NOT_A_GIVEN_NAME = new Set<string>([
+  // An article is no given name: "The Master of Keys" is not called "The" (a text that says "The escape cost" is not about the card).
+  'The',
+  'A',
+  'An',
   ...CREATURE_TYPES,
   'Mountain',
   'Island',

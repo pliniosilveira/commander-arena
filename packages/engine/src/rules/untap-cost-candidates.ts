@@ -4,8 +4,10 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameState } from '../state/types';
+import { counterRemovalLockedById } from './counter-lock';
 import { canTapForMana, hasCost, manaAbilitiesOf } from './mana-abilities';
 import { controlledCandidates } from './sacrifice';
+import { STUN_COUNTER } from './untap';
 
 /** The permanents `seat` may untap for "untap N tapped <filter> you control" (CR 701.26b): the tapped ones it controls that match. */
 export function untapCandidates(
@@ -14,7 +16,10 @@ export function untapCandidates(
   source: ObjectId | null,
   filter: ObjectFilter,
 ): ObjectId[] {
-  return controlledCandidates(state, seat, source, { ...filter, tapped: true });
+  // CR 122.1d, 701.26b (Fear of Sleep Paralysis): a permanent whose stun counter can't be removed can't be untapped.
+  return controlledCandidates(state, seat, source, { ...filter, tapped: true }).filter(
+    (id) => !counterRemovalLockedById(state, id, STUN_COUNTER),
+  );
 }
 
 /**

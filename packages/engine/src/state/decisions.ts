@@ -688,12 +688,12 @@ export interface ChooseCardsDecision extends DecisionBase {
   /**
    * For `'lookSplit'` (D-216, "Put one of them into your hand, put one of them on the bottom of your library, and exile one of them"): every card looked
    * at is in `looked` (only `seat` sees them), `legal` are those still to place and exactly `min` = `max` of them are chosen for this pile, `to` says which:
-   * the hand or the bottom of the library. Absent for every other question.
+   * the hand or the bottom of the library, or (`lookAndSplit.top`, "one on top of your library") the top, where the card chosen stays. Absent for every other question.
    *
    * For `'separate'` (D-303, CR 700.3, "An opponent separates those cards into two piles"): `seat` is the player who separates, `legal` the revealed cards, still in a library
    * (`zone`), and the cards chosen (`min` 0, `max` all of them) are pile 1; the cards not chosen are pile 2 (CR 700.3a, 700.3d: either may be empty). All are public (`reveal`).
    */
-  readonly to?: 'hand' | 'bottom';
+  readonly to?: 'hand' | 'bottom' | 'top';
   /**
    * True when the discard is a cost being paid: of a spell being cast (an additional cost, CR 601.2h)
    * or of an ability being activated (CR 602.2b), with `source` the spell or ability on the stack and
@@ -725,6 +725,8 @@ export interface ArrangeCardsDecision extends DecisionBase {
   readonly purpose: 'scry' | 'surveil' | 'reorder' | 'bottom';
   readonly cards: readonly ObjectId[];
   readonly piles: readonly ('top' | 'bottom' | 'graveyard')[];
+  /** For `'reorder'` of another player's library (CR 401.2, "the top three cards of target player's library"): the player whose library the cards are in. Absent when it is `seat`'s own. */
+  readonly libraryOf?: SeatId;
 }
 
 /** One distinct waiting triggered ability in an orderTriggers decision. */
@@ -903,8 +905,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
   /**
    * For a land card played from the hand that asks to pay to enter untapped (`cost` set, no
    * `purpose`, `source` in the hand): the face of the card being played, which is not 0 for the
-   * back face of a modal double-faced card (CR 712.12). Absent for face 0 and for every other
-   * question.
+   * back face of a modal double-faced card (CR 712.12). For purpose `'miracle'` when a permanent gave a split card miracle with the cost made from its mana cost (CR 709.3): the
+   * half of `subject` that accepting casts, whose reduced mana cost `cost` is; declining asks about the next half that could be cast. Absent for face 0 of a land and for every
+   * other question.
    */
   readonly face?: number;
 }

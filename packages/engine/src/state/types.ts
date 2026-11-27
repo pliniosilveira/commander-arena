@@ -293,6 +293,12 @@ export interface GameObject {
    */
   readonly foretoldTurn?: number;
   /**
+   * Present on a card in a hand that its owner revealed as they drew it for a miracle ability a permanent gave it (`grantKeywordFromManaCost`, CR 702.94a, 603.11): the generic mana
+   * its miracle cost is reduced by, noted as the card is revealed because the linked triggered ability exists independently of what gave it (CR 113.7a) and names that cost. Read only
+   * as that ability resolves. It is the hand object's own: a new object after any zone change (CR 400.7) has none. Absent otherwise, and for a card that prints miracle.
+   */
+  readonly miracleGrant?: { readonly reduce: number };
+  /**
    * Present on a card in exile that its owner plotted (CR 702.170a-d): the number of the turn in which it became plotted. Its owner may cast it from exile without paying its mana cost
    * during their main phase while the stack is empty, in any turn after that one. The card is face up. It is the exile object's own: a new object after any zone change (CR 400.7)
    * has none. Absent otherwise.
@@ -488,6 +494,11 @@ export interface StackData {
   /** The permanent whose "once each turn" alternative cost the spell was cast for (`grantEnergyAlternative` with `oncePerTurn`), recorded in the turn log as the spell is cast. */
   readonly energyGrantOnce?: ObjectId;
   /**
+   * The permanent whose "once during each of your turns, you may cast ..." permission the spell was cast with (`castOnceEachTurn`, CR 118.9, 601.2b), recorded in the turn log as the
+   * spell becomes cast. With it the spell's X is 0 (CR 107.3b).
+   */
+  readonly castOnce?: ObjectId;
+  /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
    * difference to it: the gift happens as the spell resolves, once, for the spell that was cast.
@@ -518,6 +529,11 @@ export interface StackData {
    * is a new object on the stack (CR 400.7) that the effect did not name. Absent for a card with a printed escape cost and for every other spell.
    */
   readonly escapeGrant?: { readonly cost: readonly Cost[]; readonly exile: number };
+  /**
+   * The miracle cost a card was cast for when a permanent gave it miracle (`grantKeywordFromManaCost`, CR 702.94a): the generic mana its mana cost is reduced by, kept on the spell
+   * because the card is a new object on the stack (CR 400.7). Absent for a card with a printed miracle cost and for every other spell.
+   */
+  readonly miracleGrant?: { readonly reduce: number };
   /**
    * The evoke cost a card was cast for when a static ability gave its spell evoke as it was cast (`grantAlternativeCostToSpells`, CR 702.74a, 118.9): kept on the spell, so the permanent
    * it becomes has the evoke sacrifice trigger even when the permanent that gave the cost has left the battlefield before the spell resolves. A copy of the spell has none (CR 707.10).
@@ -1769,6 +1785,9 @@ export type Instruction =
       readonly hand: number;
       readonly bottom: number;
       readonly exile: number;
+      /** `lookAndSplit.top`: the pile left on top of the library, chosen after the hand (`toTop` once chosen); the cards left then go to the bottom, unasked. */
+      readonly top?: number;
+      readonly toTop?: readonly ObjectId[];
       readonly toHand?: readonly ObjectId[];
       readonly toBottom?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -2042,19 +2061,27 @@ export type Instruction =
    * and, for a surveil, the cards put into the graveyard are moved. Purpose `bottom` (D-324, CR 401.4:
    * "put the rest on the bottom of your library in any order") arranges `cards`, the cards named by
    * the effect that are still in the library, which go to the bottom in the order chosen (answered in
-   * `other`); `count` is how many there are. See rules/arrange.ts.
+   * `other`); `count` is how many there are. `libraryOf` (purpose `reorder` only, CR 401.2: "look at the
+   * top three cards of target player's library, then put them back in any order"): the player whose
+   * library it is when it is not `seat`'s; `seat` still looks and arranges. See rules/arrange.ts.
    */
   | {
       readonly kind: 'arrange';
       readonly purpose: 'scry' | 'surveil' | 'reorder' | 'bottom';
       readonly seat: SeatId;
       readonly count: number;
+      readonly libraryOf?: SeatId;
       readonly cards?: readonly ObjectId[];
       readonly arranged: {
         readonly top: readonly ObjectId[];
         readonly other: readonly ObjectId[];
       } | null;
     }
+  /**
+   * "Put all creatures on the bottom of their owners' libraries" (`moveToZone.ownersArrange`, CR 401.4): after the moves, each owner of two or more of the cards the moves
+   * put into a library (`ResolutionContext.lastMoved`) arranges theirs on the bottom, an `arrange` of purpose `bottom` for each, in turn order. See rules/arrange.ts.
+   */
+  | { readonly kind: 'arrangeMoved' }
   /**
    * "Put N cards from your hand on top of your library in any order": `seat` chooses `count` cards
    * of their hand (all of it when it holds fewer). `chosen` is null until they have answered the
@@ -2222,6 +2249,12 @@ export type Instruction =
       readonly kind: 'castExiled';
       readonly mode: 'suspend' | 'madness' | 'miracle';
       readonly stage: 'start' | 'ask';
+      /**
+       * The half of a split card the question is about, when a permanent gave the card miracle with the cost made from its mana cost (`grantKeywordFromManaCost`, CR 709.3: the
+       * player chooses which half to cast, and its mana cost is the cost): the halves that could be cast are asked about in order, the next one when one is declined. Absent for
+       * every other card, whose front face is cast.
+       */
+      readonly face?: number;
       readonly card: ObjectId | null;
     }
   /**
@@ -2479,6 +2512,8 @@ export interface ResolutionContext {
   readonly entersCopy?: ObjectId | null;
   /** The answer to the second question of `entersAsCopy.exileTwoFromGraveyards` (The Mimeoplasm, CR 707.9b) for the move that asked it: the other card exiled, whose power gives the counters. Cleared once that move is done. */
   readonly entersCopyOther?: ObjectId;
+  /** The permanent a permanent that enters as a copy of an Aura chose to enchant (CR 303.4f, Mirrormade), for the move that asked it. Cleared once that move is done. */
+  readonly entersAuraHost?: ObjectId;
   /** The creature the controller of a resolving spell with Cipher chose to encode the card on (CR 702.99), or null for none. Absent until answered; the spell is then put where it goes. */
   readonly cipherOn?: ObjectId | null;
   /** The protector the controller of a battle chose as it entered (CR 310.9a), for the move that asked. Absent until answered; cleared once that move is done. */
@@ -3377,7 +3412,10 @@ export interface TurnLog {
     /** The subtypes of the sources that made the mana spent on the spell (Rain of Riches, CR 601.2h: "the first spell you cast each turn that mana from a Treasure was spent to cast"). */
     readonly manaSubtypes?: readonly string[];
   }[];
-  /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
+  /**
+   * The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`, Tlincalli Hunter) or "once during each of your turns" cast permission
+   * (`castOnceEachTurn`) was used this turn (CR 601.2b). Absent until one is.
+   */
   readonly oncePerTurnGrants?: readonly ObjectId[];
   /**
    * CR 700.14 (Expend): the mana each player has spent to cast spells this turn, by seat (CR 601.2h: the mana actually spent, whatever the spell's cost was). Absent until a player

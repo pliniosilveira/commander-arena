@@ -133,6 +133,14 @@ export interface LowerContext {
     readonly selector: PlayerSelector;
     readonly needs: readonly FeatureRef[];
   } | null;
+  /**
+   * "that's tapped and attacking that player" of a trigger that has one occurrence for each player attacked ("Whenever you attack a player", CR 508.4, 508.6): that player, the
+   * engine's `triggerAttackedPlayer`; null for any other trigger.
+   */
+  eachAttackedPlayer: {
+    readonly selector: PlayerSelector;
+    readonly needs: readonly FeatureRef[];
+  } | null;
   /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
@@ -258,6 +266,11 @@ export interface LowerContext {
   itDied: boolean;
   /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
+  /**
+   * The zones "that card" may be found in, in the body of a trigger about a permanent that went to a graveyard or to exile (Athreos, CR 400.7, 603.10a): the zones the
+   * `leavesBattlefield` events name, when every event is a `dies` or a `leavesBattlefield` with `to`. Undefined elsewhere (the graveyard, the engine's default).
+   */
+  triggerCardZones: readonly ('graveyard' | 'exile')[] | undefined;
   /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
   damageBatchTrigger: boolean;
   /**
@@ -460,6 +473,11 @@ export interface LowerContext {
    */
   comparedPowerOf: ObjectRef | null;
   /**
+   * Ancient Cellarspawn (CR 601.2h, 202.3): the intervening "if" "the amount of mana spent to cast it was less than its mana value" compared the mana spent on the spell of a cast trigger with its mana value,
+   * which "equal to the difference" after it is of. False before one.
+   */
+  comparedSpellMana: boolean;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -525,6 +543,7 @@ export function newContext(
     askedActs: false,
     attackedPlayer: null,
     attackBatchPlayer: null,
+    eachAttackedPlayer: null,
     enchantedPlayerTrigger: false,
     attachedTrigger: false,
     xIs: null,
@@ -573,6 +592,7 @@ export function newContext(
     choseAPlayer: false,
     comparedStat: null,
     comparedPowerOf: null,
+    comparedSpellMana: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,
@@ -601,6 +621,7 @@ export function newContext(
     returnedDyingCard: false,
     itDied: false,
     diesTrigger: false,
+    triggerCardZones: undefined,
     damageBatchTrigger: false,
     attackBatchThose: false,
     selfAttackTrigger: false,

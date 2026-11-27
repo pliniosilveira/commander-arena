@@ -45,6 +45,10 @@ import { lowerGrantedGroupStatics } from './granted-group-static';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
+import {
+  isManaCostKeywordGrantStatic,
+  lowerManaCostKeywordGrantStatic,
+} from './mana-cost-keyword-grant';
 import { colorLetter, lowerFilter } from './nouns';
 import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
@@ -152,6 +156,8 @@ function groupSubject(noun: IrNoun, keywords = false): LowerResult<StaticSubject
 function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResult<StaticSubject> {
   // The cards outside the battlefield that the noun also names are given types by `lowerGroupAndCardsOffBattlefield` alone; any other reading would drop them.
   if (noun.alsoCardsYouOwnOffBattlefield === true) return failure(noun);
+  // The permanent spells that the noun also names are given types by `lowerPermanentsAndPermanentSpells` alone.
+  if (noun.alsoPermanentSpellsYouControl === true) return failure(noun);
   // `~` is the ability's own permanent, or the spell for "This spell can't be countered".
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
@@ -310,7 +316,12 @@ function effectOf(
       // CR 613.1f (Colossus Hammer): a keyword without parameters; the engine takes it away in layer 6.
       const keyword = grantedKeyword(effect.keyword);
       if (keyword === undefined || Object.keys(keyword).length !== 1) return failure(at);
-      return ok({ kind: 'loseKeyword', subject, keyword });
+      return ok({
+        kind: 'loseKeyword',
+        subject,
+        keyword,
+        ...(effect.cantHave === true ? { cantHave: true as const } : {}),
+      });
     }
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
@@ -461,7 +472,7 @@ function effectOf(
             kind: 'setTypes',
             subject,
             additive: true,
-            subtypes: [...effect.subtypes],
+            ...(effect.subtypes.length === 0 ? {} : { subtypes: [...effect.subtypes] }),
             ...(effect.types === undefined ? {} : { types: effect.types as CardType[] }),
           })
         : failure(at);
@@ -568,6 +579,14 @@ function effectOf(
       }
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
+    case 'cantRemoveCounters':
+      // CR 122.1d (Fear of Sleep Paralysis): a group of permanents, read for the controller of the ability as "you"; "other" is not said.
+      if (subject.kind !== 'filter' || subject.other === true) return failure(at);
+      return ok({
+        kind: 'cantRemoveCounters',
+        counter: effect.counter,
+        permanents: subject.filter,
+      });
     case 'cantAttackYou':
       // CR 508.1a, 303.4 (Vow of Duty): "Enchanted creature can't attack you or planeswalkers you control.": the creature the Aura is attached to, read for the Aura's controller as "you".
       if (subject.kind === 'attached') {
@@ -656,6 +675,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
+    case 'cantRemoveCounters':
+      return ['static:cantRemoveCounters'];
     case 'controlByMonarch':
       return ['static:controlAttached'];
     case 'grantAbility':
@@ -730,10 +751,14 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:animate'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
+    case 'manaCostKeywordGrant':
+      return ['static:grantKeywordFromManaCost'];
     case 'spellEvoke':
       return ['static:grantAlternativeCostToSpells'];
     case 'energyAlternative':
       return ['static:grantEnergyAlternative'];
+    case 'castOnceEachTurn':
+      return ['static:castOnceEachTurn', `castAlternative:${effect.alternative}`];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
     case 'legendRuleDoesntApply':
@@ -1442,6 +1467,38 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // Issue 109 (CR 118.9, 601.2b): "Once during each of your turns, you may cast an enchantment spell by paying life equal to its mana value rather than paying its mana cost."
+  if (first.kind === 'castOnceEachTurn') {
+    if (
+      more.length > 0 ||
+      ability.statement.condition !== undefined ||
+      ability.statement.also !== undefined ||
+      ability.statement.functionsIn !== undefined
+    ) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures([
+      'ability:static',
+      'static:castOnceEachTurn',
+      `castAlternative:${first.alternative}`,
+    ]);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'castOnceEachTurn',
+            spells: first.types === undefined ? {} : { types: [...first.types] as never },
+            ...(first.from === undefined ? {} : { from: [...first.from] }),
+            alternative: first.alternative,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4} as you cast them."
 
   if (isSpellEvokeStatic(first)) return lowerSpellEvokeStatic(ability);
@@ -1449,9 +1506,15 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
+  // CR 702.94a, 702.138a, 118.9: "Each enchantment card in your hand has miracle. Its miracle cost is equal to its mana cost reduced by {4}.", the escape of a graveyard.
+  if (isManaCostKeywordGrantStatic(first)) return lowerManaCostKeywordGrantStatic(ability);
   // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types."
   if (statement.subject.alsoCardsYouOwnOffBattlefield === true) {
     return lowerGroupAndCardsOffBattlefield(ability, ctx);
+  }
+  // Miracle Worker deck (Secret Arcade, CR 613.1d): "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types."
+  if (statement.subject.alsoPermanentSpellsYouControl === true) {
+    return lowerPermanentsAndPermanentSpells(ability, ctx);
   }
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
@@ -1694,7 +1757,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
           (only.kind !== 'attackTax' && only.kind !== 'playLandsFromTopOfLibrary')
         )
           return failure(ability);
-        const lowered = lowerPlayRule(ability, only);
+        const lowered = lowerPlayRule(ability, only, ctx);
         if (!lowered.ok) return lowered;
         abilities.push(...lowered.value.map((a): Ability => ({ ...a, condition }) as Ability));
         continue;
@@ -1870,7 +1933,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isPlayRule(first)) {
     // Stage P24, D-125: a statement of one effect whose subject is the rule's own (a player, `~`, creatures).
     if (more.length > 0) return failure(ability);
-    return lowerPlayRule(ability, first);
+    return lowerPlayRule(ability, first, ctx);
   }
   return lowerPart(parts[0] as IrStaticPart, ability, undefined, ctx);
 }
@@ -2049,6 +2112,54 @@ function lowerGroupAndCardsOffBattlefield(
   };
 }
 
+/**
+ * "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types." (Secret Arcade, CR 613.1d, 205.1b, 110.4a): two static abilities in
+ * layer 4, the engine's `setTypes` for the permanents and `giveTypesToPermanentSpells` for the permanent spells its controller controls on the stack. Only the one effect "are [card
+ * types] in addition to their other types", with no condition, no subtype and no other subject: a spell takes no other effect of a group (a bonus would have nothing to work on there).
+ */
+function lowerPermanentsAndPermanentSpells(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const [only, ...more] = statement.effects;
+  if (
+    only?.kind !== 'addTypes' ||
+    more.length > 0 ||
+    statement.condition !== undefined ||
+    statement.also !== undefined ||
+    only.subtypes.length > 0 ||
+    only.types === undefined ||
+    only.types.length === 0
+  ) {
+    return failure(ability);
+  }
+  const { alsoPermanentSpellsYouControl: _also, ...plain } = statement.subject;
+  const group = subjectOf(plain, ctx);
+  if (!group.ok) return group;
+  if (group.value.kind !== 'filter' || group.value.other === true) return failure(ability);
+  const missing = missingFeatures([
+    'ability:static',
+    'staticSubject:filter',
+    'static:setTypes',
+    'static:giveTypesToPermanentSpells',
+  ]);
+  if (missing.length > 0) return failure(ability, missing);
+  const permanents = effectOf(only, group.value, ability, ctx);
+  if (!permanents.ok) return permanents;
+  return {
+    ok: true,
+    value: [
+      { kind: 'static', static: permanents.value },
+      {
+        kind: 'static',
+        static: { kind: 'giveTypesToPermanentSpells', types: only.types as CardType[] },
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 /** Features the static lowerings can name, for the dimension test. */
 export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
@@ -2070,8 +2181,10 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:loseTypes',
   'static:allCreatureTypes',
   'static:giveTypesToCardsOffBattlefield',
+  'static:giveTypesToPermanentSpells',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
+  'static:grantKeywordFromManaCost',
   'static:grantAlternativeCostToSpells',
   ...SLIVER_LORD_NEEDS,
   'static:castFromGraveyard',

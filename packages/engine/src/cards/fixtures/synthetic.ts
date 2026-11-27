@@ -31,6 +31,7 @@ import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
 import { SYNTHETIC_BRAIDS_LIST } from './synthetic-braids';
 import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CANT_SACRIFICE_LIST } from './synthetic-cant-sacrifice';
+import { SYNTHETIC_CAST_ONCE_LIST } from './synthetic-cast-once';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
@@ -148,6 +149,7 @@ import { SYNTHETIC_LOREHOLD_G2_LIST } from './synthetic-lorehold-g2';
 import { SYNTHETIC_LOREHOLD_G3_LIST } from './synthetic-lorehold-g3';
 import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
+import { SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST } from './synthetic-mana-cost-keyword-grant';
 import { SYNTHETIC_MANA_GROUP_F_LIST } from './synthetic-mana-group-f';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
 import { SYNTHETIC_MANA_NOT_GENERIC_LIST } from './synthetic-mana-not-generic';
@@ -516,6 +518,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_G3_LIST,
   ...SYNTHETIC_SQUIRREL_G1_LIST,
   ...SYNTHETIC_CANT_SACRIFICE_LIST,
+  ...SYNTHETIC_CAST_ONCE_LIST,
   ...SYNTHETIC_COUNTERS_PLUS_LIST,
   ...SYNTHETIC_MANA_GROUP_F_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
@@ -577,6 +580,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_BOOK_EXALTED_LIST,
   ...SYNTHETIC_LATER_LIST,
   ...SYNTHETIC_MIRACLE_LIST,
+  ...SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST,
   ...SYNTHETIC_DELAYED_RETURN_LIST,
   ...SYNTHETIC_DIES_RETURN_LIST,
   ...SYNTHETIC_SOULBOND_LIST,

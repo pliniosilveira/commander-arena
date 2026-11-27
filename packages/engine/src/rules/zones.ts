@@ -52,10 +52,12 @@ import type {
   LastKnownInfo,
 } from '../state/types';
 import { amountOf, historyCount } from './amounts';
+import { attachEntered, auraTargetSpec } from './attach';
 import { protectorChoices, protectorOption } from './battle-protector';
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
+import { copyAuraHosts } from './copy-aura';
 import { entryCounters } from './counter-bonus';
 import { applyCreatureGains } from './creature-gains';
 import { quietFlow } from './damage-order';
@@ -151,6 +153,8 @@ export interface MoveRequest {
   readonly entersCopy?: ObjectId | null;
   /** The answer to the second question of `entersAsCopy.exileTwoFromGraveyards` (The Mimeoplasm): the other card exiled, whose power is the number of counters. Absent means "not asked yet". */
   readonly entersCopyOther?: ObjectId;
+  /** The permanent that enters as a copy of an Aura (Mirrormade, CR 303.4f) chose to enchant, once asked. Absent means "not asked yet". */
+  readonly entersAuraHost?: ObjectId;
   /**
    * The controller's answer to "its controller chooses a player to be its protector" as a battle enters (CR 310.9a), once asked. Absent means "not asked yet". Ignored for a permanent
    * that is not a battle, and for a battle with one legal protector, which asks nothing.
@@ -589,10 +593,80 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // or choice of the card applies. What it is as it enters is the face-down status (`downEntry`), which the readers below see on the object they ask about.
   const downEntry = to === 'battlefield' ? faceDownEntry(state, request.entersFaceDown) : {};
   const entersDown = to === 'battlefield' && request.entersFaceDown !== undefined;
-  const entering =
+  const ownEntering =
     to === 'battlefield' && printedCard(old) !== null && !entersDown
       ? enteringFace(state, old, faceIndex)
       : null;
+  // CR 707.9, 614.12 (D-151): "As this enters, you may have it become a copy of any creature on the battlefield". Nothing has moved yet. It is asked first: what the permanent
+  // is as it enters decides what else it asks (CR 614.12a, 707.9: "as this enters" and "enters with" abilities of what it copies work).
+  const copyRule = ownEntering === null ? null : entersCopyOf(ownEntering.abilities);
+  if (copyRule !== null && request.entersCopy === undefined) {
+    const legal = copyCandidates(before, enterController, copyRule, old.id);
+    if (legal.length > 0) {
+      return {
+        kind: 'needsDecision',
+        decision: {
+          kind: 'choosePermanent',
+          seat: enterController,
+          source: old.id,
+          subject: old.id,
+          purpose: 'entersCopy',
+          min: copyRule.optional === true ? 0 : 1,
+          max: 1,
+          legal,
+        },
+      };
+    }
+  }
+  // The permanent it copies (still where it was), and what it is as it enters: the copiable values of it with the abilities the exception adds (CR 707.9b).
+  const copiedNow =
+    copyRule === null || request.entersCopy == null ? undefined : state.objects[request.entersCopy];
+  const copiedEntry =
+    copyRule !== null &&
+    copiedNow?.zone === (copiesFromGraveyard(copyRule) ? 'graveyard' : 'battlefield')
+      ? copiableValues(state, copiedNow)
+      : null;
+  const copyAbilities: readonly Ability[] | null =
+    copyRule === null || copiedEntry === null
+      ? null
+      : [
+          ...copiedEntry.abilities,
+          ...(copyRule.gains ?? []).map((keyword) => ({ kind: 'keyword' as const, keyword })),
+          ...(copyRule.addStatics ?? []),
+        ];
+  const entering = copyAbilities === null ? ownEntering : { abilities: copyAbilities };
+  // CR 303.4f, 303.4g (Mirrormade): a permanent that enters as a copy of an Aura chooses what it enchants as it enters; with nothing to enchant it does not enter (a spell is put
+  // into its owner's graveyard). An Aura card is not asked here: its spell had a target, or an effect gave the host (`aura-entry.ts`).
+  const copyHosts =
+    copyRule !== null && copiedEntry !== null && request.entersCopy != null && ownEntering !== null
+      ? auraTargetSpec(
+          definitionOf(state, printedCard(old) ?? ('' as never)).faces[faceIndex] ?? null,
+        ) === null
+        ? copyAuraHosts(state, old.id, copyRule, request.entersCopy, enterController)
+        : null
+      : null;
+  if (copyHosts !== null) {
+    if (copyHosts.length === 0) {
+      if (old.zone !== 'stack') return { kind: 'done', state, events: [], newObject: null };
+      return moveObject(state, { object: old.id, to: 'graveyard', toSeat: old.owner });
+    }
+    if (request.entersAuraHost === undefined && copyHosts.length > 1) {
+      return {
+        kind: 'needsDecision',
+        decision: {
+          kind: 'choosePermanent',
+          seat: enterController,
+          source: old.id,
+          subject: old.id,
+          purpose: 'auraHost',
+          min: 1,
+          max: 1,
+          legal: copyHosts,
+        },
+      };
+    }
+  }
+  const auraHost = copyHosts === null ? undefined : (request.entersAuraHost ?? copyHosts[0]);
   const payment = entering === null ? null : entersPayment(entering.abilities);
   const enterCtx = { controller: enterController, source: old.id };
   // CR 614.1c, 614.12, 616.1 (D-179): "Lands you control enter untapped": the permanent enters untapped whatever else would have it enter tapped
@@ -718,27 +792,6 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
             }),
       },
     };
-  }
-
-  // CR 707.9, 614.12 (D-151): "As this enters, you may have it become a copy of any creature on the battlefield". Nothing has moved yet.
-  const copyRule = entering === null ? null : entersCopyOf(entering.abilities);
-  if (copyRule !== null && request.entersCopy === undefined) {
-    const legal = copyCandidates(before, enterController, copyRule, old.id);
-    if (legal.length > 0) {
-      return {
-        kind: 'needsDecision',
-        decision: {
-          kind: 'choosePermanent',
-          seat: enterController,
-          source: old.id,
-          subject: old.id,
-          purpose: 'entersCopy',
-          min: copyRule.optional === true ? 0 : 1,
-          max: 1,
-          legal,
-        },
-      };
-    }
   }
 
   // CR 614.12, 707.9b (The Mimeoplasm): "you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards": after the card to copy, the other one,
@@ -905,7 +958,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     if (face?.types.includes('battle') && face.defense !== null) {
       counters = { ...counters, defense: face.defense };
     }
-    const abilities = face?.abilities ?? [];
+    // CR 707.9, 614.12a: a permanent that enters as a copy has the abilities of what it copies as it enters: its "enters tapped" and "enters with counters" apply.
+    const abilities = copyAbilities ?? face?.abilities ?? [];
     // CR 614.12: its conditions look at the battlefield without it, which is what `next` is.
     if (entersTapped(nextBefore, abilities, enterCtx)) tapped = true;
     // CR 107.3m: "enters with X counters" reads the X of the spell it resolved from, which only a
@@ -948,7 +1002,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
     // CR 714.3a: a Saga enters with a lore counter.
     counters = entersAsSaga(
-      face?.subtypes ?? [],
+      copiedEntry?.characteristics.subtypes ?? face?.subtypes ?? [],
       counters,
       abilities,
       request.entersChosen ?? null,
@@ -1249,6 +1303,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const became = becomeCopyAsItEnters(next, newId, copyRule, copiedObject.id, controller);
     next = became.state;
     events.push(...became.events);
+    // CR 303.4f (Mirrormade): it enters attached to the permanent its controller chose, which the Aura copy it became enchants.
+    if (auraHost !== undefined) {
+      const attached = attachEntered(next, newId, auraHost);
+      next = attached.state;
+      events.push(...attached.events);
+    }
     copyEvents.push(...became.counterEvents);
     // CR 614.12, 707.9b, 122.6 (The Mimeoplasm): both cards are exiled as it enters, and it enters with as many counters as the power of the other one.
     if (copyRule.exileTwoFromGraveyards !== undefined && pairOther !== undefined) {

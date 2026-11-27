@@ -116,6 +116,7 @@ import {
   mayCastFromGraveyard,
   mayCastPlotted,
   mayPlayFromExile,
+  onceCastUse,
   playPermissionBottoms,
   targetSpecsOf,
   targetsPossible,
@@ -215,6 +216,8 @@ export function beginCast(
           riders.anyManaType === true,
           riders.payInstead,
           riders.fromHand === true,
+          // CR 709.3: the half of a split card cast for a miracle a permanent gave it.
+          alternative === 'miracle' ? face : 0,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -267,6 +270,7 @@ export function beginCast(
     !resolving && alternative === 'free' && obj.zone === 'exile' && obj.onAdventure !== true
       ? freeCastSlotToUse(state, seat, obj, face)
       : null;
+  const once = resolving ? null : onceCastUse(state, seat, obj, face, alternative);
   const moved = moveObject(state, { object: objectId, to: 'stack', face });
   if (moved.kind !== 'done' || moved.newObject === null) return fail('The card could not move');
   const stackId = moved.newObject;
@@ -317,6 +321,8 @@ export function beginCast(
         : {}),
       // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
       ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
+      // CR 118.9, 601.2b (`castOnceEachTurn`): the permanent whose once-a-turn permission gives the alternative cost.
+      ...(once === null ? {} : { castOnce: once }),
       // CR 118.9, 107.14: the energy paid rather than the mana cost (`grantEnergyAlternative`).
       ...(alternative === 'energyGrant'
         ? (() => {
@@ -329,7 +335,14 @@ export function beginCast(
         : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
-      ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
+      ...(alternative === 'escape' ? escapeGrantData(state, obj, face) : {}),
+      // CR 702.94a: the miracle cost a permanent gave the card (`grantKeywordFromManaCost`), noted on the card as it was revealed, kept for the spell on the stack.
+      ...(alternative === 'miracle' &&
+      obj.miracleGrant !== undefined &&
+      obj.card !== null &&
+      namedAlternativeCostOf(definitionOf(state, obj.card).faces[face] ?? null, 'miracle') === null
+        ? { miracleGrant: obj.miracleGrant }
+        : {}),
       // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (`grantAlternativeCostToSpells`), kept so the permanent still has it when the source has left.
       ...(alternative === 'evoke'
         ? evokeGrantData(state, seat, castAs(obj, seat, face), zone)
@@ -1949,12 +1962,14 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       turnLog: {
         ...next.turnLog,
         // CR 601.2b (Tlincalli Hunter): "once each turn": the permanent whose alternative cost this spell was cast for has been used.
-        ...(obj.stack.energyGrantOnce === undefined
+        // CR 601.2b, 601.2i (`castOnceEachTurn`): and the permanent whose "once during each of your turns, you may cast ..." this spell was cast with.
+        ...(obj.stack.energyGrantOnce === undefined && obj.stack.castOnce === undefined
           ? {}
           : {
               oncePerTurnGrants: [
                 ...(next.turnLog.oncePerTurnGrants ?? []),
-                obj.stack.energyGrantOnce,
+                ...(obj.stack.energyGrantOnce === undefined ? [] : [obj.stack.energyGrantOnce]),
+                ...(obj.stack.castOnce === undefined ? [] : [obj.stack.castOnce]),
               ],
             }),
         castSpells: [

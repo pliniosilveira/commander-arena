@@ -74,6 +74,12 @@ function onlyCounterTest(f: ObjectFilter | undefined): boolean {
   return Object.keys(f).every((k) => k === 'hasCounter' || k === 'raw');
 }
 
+/** Whether a filter tests who owns the permanents and nothing else (`notOwnedByYou`, `ownedByYou`, with the `raw` words the grammar keeps). */
+function onlyOwnershipTest(f: ObjectFilter | undefined): boolean {
+  if (f === undefined || (f.notOwnedByYou !== true && f.ownedByYou !== true)) return false;
+  return Object.keys(f).every((k) => k === 'notOwnedByYou' || k === 'ownedByYou' || k === 'raw');
+}
+
 function plainOnly(
   c: Condition,
   path: string,
@@ -86,6 +92,9 @@ function plainOnly(
   // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads the mana costs of the permanents they control (layers 1 and 2 only), which no layer 4 to 7 effect changes.
   if (c?.kind === 'amountIs' && typeof c.amount !== 'number' && c.amount?.kind === 'devotion')
     return;
+  // CR 108.3, 613.8 (Arvinox, the Mind Flail): "you control three or more permanents you don't own": a count of the permanents the controller controls that they do not own. Who owns an
+  // object is no characteristic and no layer changes it, so layer 4 may read it; the filter names nothing else.
+  if (c?.kind === 'controlsAtLeast' && onlyOwnershipTest(c.filter)) return;
   if (!PLAIN_CONDITIONS.includes(c?.kind)) {
     issue(
       out,

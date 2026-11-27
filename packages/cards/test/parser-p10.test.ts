@@ -194,27 +194,45 @@ describe('look at the top N cards, then put them back in any order (CR 401.2)', 
     });
   });
 
+  test("another player's library: the engine reorder of that player's top cards, then the optional shuffle (Portent, CR 401.2, 701.20)", () => {
+    const from = { kind: 'target', id: 't1' };
+    expect(
+      spellEffect(
+        'Look at the top three cards of target player’s library, then put them back in any order.',
+        'sorcery',
+      ),
+    ).toEqual({ kind: 'lookAndReorder', count: 3, from });
+    expect(
+      spellEffect(
+        'Look at the top three cards of target player’s library, then put them back in any order. You may have that player shuffle.',
+        'sorcery',
+      ),
+    ).toEqual({
+      kind: 'sequence',
+      effects: [
+        { kind: 'lookAndReorder', count: 3, from },
+        { kind: 'may', effect: { kind: 'shuffle', player: from } },
+      ],
+    });
+  });
+
   test.each([
     [
       'Look at the top card of your library, then put it back.',
       'card of your library, then put it back.',
     ],
-    ['Look at the top three cards of your library.', 'cards of your library.'],
+    ['Look at the top three cards of your library.', 'your library.'],
     [
       'Look at the top three cards of your library, then put them back.',
-      'cards of your library, then put them back.',
+      'your library, then put them back.',
     ],
     [
       'Look at the top three cards of your library, then put one of them into your hand.',
-      'cards of your library, then put one of them into your hand.',
+      'your library, then put one of them into your hand.',
     ],
     [
       'Look at the top X cards of your library, then put them back in any order.',
       'then put them back in any order.',
-    ],
-    [
-      'Look at the top three cards of target player’s library, then put them back in any order.',
-      'cards of target player’s library, then put them back in any order.',
     ],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised', stoppedAt });

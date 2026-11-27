@@ -94,7 +94,11 @@ export function chooseArrangement(view: GameView, d: ArrangeCardsDecision): Acti
   }
   if (d.purpose === 'reorder' || d.piles.length < 2) {
     // "Put them back in any order": every card goes back, the wanted ones first.
-    return { kind: 'arrangeCards', top: inOrderWanted(cards, board), other: [] };
+    const wanted = inOrderWanted(cards, board);
+    // CR 401.2 ("the top three cards of target player's library"): another player's library gets the cards the other way round, the ones the agent would want least first.
+    const top =
+      d.libraryOf !== undefined && d.libraryOf !== view.viewer ? wanted.reverse() : wanted;
+    return { kind: 'arrangeCards', top, other: [] };
   }
   const keep = keepers(cards, board);
   const kept = cards.filter((c) => keep.has(c.id));

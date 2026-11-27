@@ -7,6 +7,7 @@ import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
+import { counterRemovalLocked } from './counter-lock';
 
 /** The counter that stops a permanent from untapping (CR 122.1d). */
 export const STUN_COUNTER = 'stun';
@@ -24,6 +25,8 @@ export function untapPermanent(state: GameState, id: ObjectId): Untapped {
   const obj = state.objects[id];
   if (obj === undefined || obj.zone !== 'battlefield' || !obj.tapped) return { state, events: [] };
   if ((obj.counters[STUN_COUNTER] ?? 0) > 0) {
+    // CR 122.1d (Fear of Sleep Paralysis): the counter can't be removed, so the replacement effect leaves the permanent tapped with its counter.
+    if (counterRemovalLocked(state, obj, STUN_COUNTER)) return { state, events: [] };
     const { [STUN_COUNTER]: stun = 0, ...others } = getObject(state, id).counters;
     return {
       state: patchObject(state, id, {

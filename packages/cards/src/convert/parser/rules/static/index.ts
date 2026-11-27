@@ -21,6 +21,7 @@ import { ATTACHED_CONDITION_STATIC_RULES } from './attached-conditions';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
+import { STATIC_CAST_ONCE_EACH_TURN } from './cast-once';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
@@ -48,6 +49,7 @@ import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { LIMIT_BREAK_G4_STATIC_RULES } from './limit-break-g4';
 import { LINKED_EXILE_PLAY_STATIC_RULES } from './linked-exile-play';
+import { MANA_COST_KEYWORD_GRANT_STATIC_RULES } from './mana-cost-keyword-grant';
 import { MELD_STATIC_RULES } from './meld';
 import { MONARCH_CONTROL_STATIC_RULES } from './monarch-control';
 import { OMNATH_STATIC_RULES } from './omnath';
@@ -65,6 +67,7 @@ import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
 import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
+import { STUN_LOCK_STATIC_RULES } from './stun-lock';
 import { TREASURE_SPELL_GRANT_STATIC_RULES } from './treasure-spell-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 import { WORLD_RULES_STATIC_RULES } from './world-rules';
@@ -129,6 +132,8 @@ export const STATIC_RULES = [
   // Issue 110 (Bello, Bard of the Brambles): a statement of its own, whose subject `static.each` reads too.
   ...ANIMATE_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,
+  // Aminatou, Veil Piercer; The Master of Keys: "Each enchantment card in your hand has miracle. ...", "... in your graveyard has escape. ...".
+  ...MANA_COST_KEYWORD_GRANT_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   // Multiclass Baldric: "Equipped creature has lifelink if you control a Cleric, deathtouch if ...", "As long as you have a full party, prevent all damage that would be dealt to equipped creature."
   ...ATTACHED_CONDITION_STATIC_RULES,
@@ -174,11 +179,14 @@ export const STATIC_RULES = [
   ...MELD_STATIC_RULES,
   // Stage P43 (D-193): all damage that would be dealt to you and other permanents you control dealt to ~ instead, damage that stays through cleanup steps.
   ...ADAMANTOISE_STATIC_RULES,
+  ...STUN_LOCK_STATIC_RULES,
   // Stage P67 (D-220): "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time."
   ...EDHREC_STATIC_RULES,
   // Aetherdrift energy deck (issue 105): "You may pay eight {E} rather than pay the mana cost for permanent spells you cast."
   STATIC_PAY_ENERGY_ALT_COST,
   STATIC_PAY_ZERO_ALT_COST_FROM_EXILE,
+  // Miracle Worker deck (issue 109): "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost."
+  STATIC_CAST_ONCE_EACH_TURN,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."

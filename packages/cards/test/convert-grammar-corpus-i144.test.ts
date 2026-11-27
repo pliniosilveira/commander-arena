@@ -118,11 +118,8 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'sorcery',
     text: '~ deals X damage to target creature. You gain life equal to the amount of excess damage dealt to that creature this way.',
-    expect: no(
-      'equal to the amount of excess damage dealt to that creature this way.',
-      'effect.player.life',
-    ),
-    note: 'only the number of tokens reads the count',
+    expect: OK,
+    note: 'the excess damage of the damage instruction before it is also read as an amount of life (CR 120.10)',
   },
   {
     kind: 'enchantment',
