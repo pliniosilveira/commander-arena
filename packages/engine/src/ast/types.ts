@@ -9737,6 +9737,31 @@ export type StaticEffect =
       readonly types: readonly CardType[];
     }
   /**
+   * "Each non-Equipment artifact and non-Aura enchantment you control with mana value 4 or greater is a 4/4 Elemental creature in addition to its other types and has indestructible, haste,
+   * and "Whenever this creature deals combat damage to a player, draw a card."" (Bello, Bard of the Brambles; CR 613.1d, 613.1f, 613.4b, 205.1b): one effect that applies in three layers.
+   * Each permanent the subject names has `types` and `subtypes` in addition to everything it has (layer 4), has the `keywords` and `abilities` (layer 6) and has base power and toughness
+   * `power`/`toughness` (layer 7b), each with the timestamp of the permanent that has this ability (CR 613.7a). What the subject matches is read as a static `setTypes` reads it. CR 613.6: the
+   * effect starts to apply in layer 4, so it goes on applying in the later layers even when its permanent loses all abilities in layer 6, which the separate static abilities
+   * `setTypes`, `setPt` and `grantKeyword` do not do; an effect that takes the abilities of the affected permanent away later (layer 6, timestamp order) still removes what this one gave.
+   * A condition is one a static `setTypes` may have (it reads no characteristic: "during your turn").
+   */
+  | {
+      readonly kind: 'animate';
+      readonly subject: Extract<StaticSubject, { readonly kind: 'filter' }>;
+      /** The card types added, never empty ("creature"). */
+      readonly types: readonly CardType[];
+      readonly subtypes?: readonly Subtype[];
+      readonly power: number;
+      readonly toughness: number;
+      /** Keywords without parameters (`GRANTABLE_KEYWORDS`), each given in layer 6. */
+      readonly keywords?: readonly Keyword[];
+      /** Activated, triggered and mana abilities given in layer 6, each read as the affected permanent's own. */
+      readonly abilities?: readonly (
+        | ManaAbility
+        | Extract<Ability, { readonly kind: 'activated' | 'triggered' }>
+      )[];
+    }
+  /**
    * "Other creatures you control have base power and toughness 5/3" (D-139, CR 613.4b): the subject's power and toughness are set to
    * these numbers in layer 7b, in timestamp order with the other effects that set them (the permanent's own timestamp); counters
    * and +N/+N effects still apply on top (layer 7c). No condition. A subject with no power and toughness (a noncreature) is set too

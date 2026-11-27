@@ -2339,6 +2339,19 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'handCycling'; readonly cardTypes: readonly string[]; readonly cost: IrCost }
   /**
+   * "is a 4/4 Elemental creature in addition to its other types and has indestructible, haste, and "Whenever ~ deals combat damage to a player, draw a card."" (Bello, Bard of
+   * the Brambles; CR 613.1d, 613.1f, 613.4b, 613.6): the group of the statement has the card types and creature types as well as its own, the base power and toughness, and
+   * what `grants` gives (keywords and quoted abilities), as one effect.
+   */
+  | {
+      readonly kind: 'animate';
+      readonly power: number;
+      readonly toughness: number;
+      readonly cardTypes: readonly string[];
+      readonly subtypes: readonly string[];
+      readonly grants: readonly IrStaticEffect[];
+    }
+  /**
    * `are Equipment in addition to their other types and have "Equipped creature gets +2/+0," equip Pirate {1}, and equip {3}` (CR 613.1d, 613.1f, 702.6a, 702.6c): the group of
    * the statement is Equipment as well, has the quoted "+N/+N" for the creature it equips and each equip ability (`subtype`: the creature type an "equip [type]" may target).
    */

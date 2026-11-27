@@ -1652,6 +1652,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-creature-you-control-but-dont-own': permanent(
     (e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`,
   ),
+  // Issue 110 (Brightcap Badger, Bello): "Each Fungus and Saproling you control has ...", the noun in the singular of "each".
+  'noun.each-pair': permanent((e) => `${e[0]?.toUpperCase()}${e.slice(1)} gets +1/+1.`),
+  'static.each-is-creature': asIs,
   // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
   // Squirreled Away deck, group 4 (Garruk, Cursed Huntsman).

@@ -38,6 +38,8 @@ const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
   'setPt',
   // D-229: "As long as there are fewer than eight cards in your graveyard, ~ isn't a creature": layer 4, a plain condition.
   'loseTypes',
+  // Bello, Bard of the Brambles: "During your turn, each ... is a 4/4 Elemental creature ...": layers 4, 6 and 7b of one effect, a plain condition.
+  'animate',
   // The Reality Chip: "As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library": read where the card on top is played or cast (`rules/library-play.ts`, `rules/legality.ts`).
   'playLandsFromTopOfLibrary',
   'castFromTopOfLibrary',
@@ -443,6 +445,11 @@ export function checkStaticCondition(
   }
   checkStaticTerm(condition, `${path}.condition`, out);
   walk(condition, `${path}.condition`, out);
-  if (s.kind === 'setTypes' || s.kind === 'setColors' || s.kind === 'loseTypes')
+  if (
+    s.kind === 'setTypes' ||
+    s.kind === 'setColors' ||
+    s.kind === 'loseTypes' ||
+    s.kind === 'animate'
+  )
     plainOnly(condition, `${path}.condition`, out);
 }
