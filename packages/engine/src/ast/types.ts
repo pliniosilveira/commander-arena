@@ -993,6 +993,12 @@ export interface ObjectFilter {
    */
   readonly putWithSource?: true;
   /**
+   * "If it wasn't cast" (Rapid Augmenter, CR 601.2a, 603.4, 400.7): the object is a permanent that did not come from a spell that was cast (it was put onto the battlefield by an
+   * effect, or came from a copy of a spell, CR 707.10): it remembers no zone it was cast from (`GameObject.castFrom`). Read from the permanent itself, so it works in a trigger's
+   * intervening "if" about another permanent that entered (`subjectMatches`); the filter's zone is the battlefield.
+   */
+  readonly notCast?: true;
+  /**
    * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
    */
@@ -8794,8 +8800,11 @@ export type Replacement =
         | Extract<Amount, { readonly kind: 'diedThisTurn' }>
         /** "... where X is the total toughness of other creatures you control" (Towering Titan, CR 614.12, 208.1): the greatest or the total of a stat over a group, read as the permanent enters, without it. */
         | Extract<Amount, { readonly kind: 'aggregate' }>
-        /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
-        | { readonly kind: 'sum'; readonly of: readonly CountAmount[] }
+        /**
+         * "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. A part may be a whole number of 1 or
+         * more ("... equal to one plus the number of other creatures you control", Boss's Chauffeur).
+         */
+        | { readonly kind: 'sum'; readonly of: readonly (CountAmount | number)[] }
         /**
          * "... where X is twice the number of counters removed this way" (Sin, Unending Cataclysm, CR 614.12, 122.1): the counters the controller took off permanents as it entered
          * (`asEntersRemoveCounters` on the same face), multiplied by `times` (2 or more; 1 when absent). 0 for a permanent that removed none.

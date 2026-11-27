@@ -71,6 +71,8 @@ export function countersTail(
           map(sequence(literal('equal to '), HISTORY_VALUE), ([, value]) => value),
           // Centaur Vinecrasher (CR 614.12): "equal to the number of land cards in all graveyards": a count of cards, made as it enters, for its controller.
           family<IrAmount>('amount', { only: ['amount.number-of'] }),
+          // Boss's Chauffeur (CR 614.12): "equal to one plus the number of other creatures you control": a whole number more than a count of permanents, made as it enters.
+          family<IrAmount>('amount', { only: ['amount.equal-to'] }),
         ),
         literal('.'),
       )(ctx, pos);

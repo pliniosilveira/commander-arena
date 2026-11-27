@@ -78,6 +78,7 @@ import { MELD_CONDITION_RULES } from './meld';
 import { MIND_FLAYARRRS_G8_CONDITION_RULES } from './mind-flayarrrs-g8';
 import { NIV_CONDITION_RULES } from './niv';
 import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
+import { NOT_CAST_CONDITION_RULES } from './not-cast';
 import { PARTY_CONDITION_RULES } from './party';
 import { PLAYED_LAND_CONDITION_RULES } from './played-land';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
@@ -685,6 +686,8 @@ export const CONDITION_RULES = [
   ...ENTERED_FROM_GRAVEYARD_CONDITION_RULES,
   // Kodama of the East Tree: "it wasn't put onto the battlefield with this ability".
   ...PUT_WITH_THIS_ABILITY_CONDITION_RULES,
+  // Rapid Augmenter: "it wasn't cast".
+  ...NOT_CAST_CONDITION_RULES,
   // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
   ...UNBOUND_I_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".

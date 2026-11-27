@@ -1233,6 +1233,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever another permanent you control enters, if ${e}, you may put a permanent card with equal or lesser mana value from your hand onto the battlefield.`,
   ),
+  // Rapid Augmenter: the intervening "if" of a trigger about another creature that enters.
+  'condition.not-cast': permanent(
+    (e) => `Whenever another creature you control enters, if ${e}, you gain 1 life.`,
+  ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   // Miracle Worker deck (issue 109, Secret Arcade).

@@ -405,8 +405,14 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
           issue(out, `${path}.count.of`, 'a sum of counts needs at least two counts');
         } else {
           parts.forEach((part, i) => {
-            if (kindOf(part) !== 'countOf') {
-              issue(out, `${path}.count.of[${i}]`, 'an enters-with sum is made of countOf amounts');
+            if (isCount(part) && part >= 1) {
+              // A whole number of 1 or more ("one plus the number of ...").
+            } else if (kindOf(part) !== 'countOf') {
+              issue(
+                out,
+                `${path}.count.of[${i}]`,
+                'an enters-with sum is made of countOf amounts and whole numbers of 1 or more',
+              );
             } else {
               checkStateAmount(
                 part as Amount,

@@ -3559,6 +3559,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
         kind === 'notPutWithThisAbility' ||
+        kind === 'notCast' ||
         kind === 'discardedCardHasKeyword' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||

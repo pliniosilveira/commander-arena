@@ -111,6 +111,11 @@ export function lowerAmount(
     case 'number':
       return { ok: true, value: amount.value, rule };
     case 'x': {
+      // CR 107.3f, 603.12 (Rose Room Treasurer): in the reflexive ability of "you may pay {X}", X is the number paid, which the event of the ability carries.
+      if (ctx.payXReflexive) {
+        const paid = needs('triggerDamage');
+        return paid ?? { ok: true, value: { kind: 'triggerDamage' }, rule };
+      }
       const defined = ctx.xIs;
       if (defined !== null) {
         // CR 107.3c: X is what the text defines it as, wherever the sentence reads it.

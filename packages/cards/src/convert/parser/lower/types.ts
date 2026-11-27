@@ -338,6 +338,8 @@ export interface LowerContext {
   excessDamageTrigger: boolean;
   /** True while the reflexive ability of a payment made any number of times is lowered (issue 121, CR 603.12): the number of times paid is the number its event carries. */
   payReflexive: boolean;
+  /** True while the reflexive ability of "you may pay {X}. When you do, ..." is lowered (Rose Room Treasurer, CR 107.3f, 603.12): X is the number paid, which its event carries (`triggerDamage`). */
+  payXReflexive: boolean;
   /** True while the "If you do" sentence of "you may pay one or more {E}" is lowered (issue 105, CR 107.14, 608.2c): "that many" is the number of energy counters paid, the X of the payment. */
   payEnergyX: boolean;
   /** True in the body of a triggered ability (CR 603.3d): the number of targets of a slot ("up to X target ...") may be read as it triggers. */
@@ -558,6 +560,7 @@ export function newContext(
     scryTrigger: false,
     excessDamageTrigger: false,
     payReflexive: false,
+    payXReflexive: false,
     payEnergyX: false,
     triggeredBody: false,
     discardBatchTrigger: false,

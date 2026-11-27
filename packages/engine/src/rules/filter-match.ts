@@ -605,6 +605,13 @@ export function matchesFilterWith(
   if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
     return false;
   }
+  // CR 601.2a, 603.4 (Rapid Augmenter): "if it wasn't cast": the permanent remembers no cast spell it came from (read from last-known information once it has left).
+  if (
+    filter.notCast === true &&
+    (obj.castFrom !== undefined || obj.stack?.castFrom !== undefined)
+  ) {
+    return false;
+  }
   // CR 702.134a (D-120): "with power less than this creature's power".
   if (filter.powerLessThanSource === true) {
     const power = ctx.sourcePower;

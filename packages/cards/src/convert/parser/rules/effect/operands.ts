@@ -19,10 +19,11 @@ import { family, node, spanned } from '../registry';
 export const LIST_SEPARATOR = choice(
   literal(', and '),
   literal(', '),
-  // " and it can't be blocked this turn" (stage P49, D-206): "it" followed by a verb is the subject of another clause, not one more object of the list.
+  // " and it can't be blocked this turn" (stage P49, D-206): "it" followed by a verb is the subject of another clause, not one more object of the list. The same for "~"
+  // (Rapid Augmenter: "put a +1/+1 counter on ~ and ~ can't be blocked this turn"), which only the verbs of a restriction make a clause of its own.
   map(
     pattern(
-      / and (?!it (?:can['’]t|gains?|gets?|has|have|attacks?|must|becomes)(?![\p{L}\p{N}]))/iu,
+      / and (?!it (?:can['’]t|gains?|gets?|has|have|attacks?|must|becomes)(?![\p{L}\p{N}]))(?!~ (?:can['’]t|attacks?|must)(?![\p{L}\p{N}]))/iu,
     ),
     () => ' and ',
   ),

@@ -242,6 +242,7 @@ import { EFFECT_PAY } from './pay';
 import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
+import { PAY_X_REFLEXIVE_EFFECT_RULES } from './pay-x-reflexive';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import { PLANESWALKER_PARTY_EFFECT_RULES } from './planeswalker-party';
@@ -1839,6 +1840,8 @@ export const EFFECT_RULES = [
   ...TYPE_SHARERS_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
+  // Rose Room Treasurer: "pay {X}", the offer whose "When you do, ..." reads X.
+  ...PAY_X_REFLEXIVE_EFFECT_RULES,
   // D-270: "return the exiled cards to their owners' hands" (Angel of Serenity).
   ...CROSS_ZONE_EFFECT_RULES,
   // Stage P69 (D-271): rolling a die, "roll a four-sided die".

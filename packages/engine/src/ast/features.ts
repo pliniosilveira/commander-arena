@@ -1329,6 +1329,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
     'putWithSource',
     'putWithThis',
+    // Rapid Augmenter: "if it wasn't cast" (`ObjectFilter.notCast`).
+    'notCast',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     // Zack Fair: "an Equipment that was attached to ~" (`AttachedTo` `sacrificedCost`, last-known information, CR 113.7a).
@@ -2655,6 +2657,8 @@ export const SELECTOR_KINDS = [
   'powerAtMostMoved',
   /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
   'putWithSource',
+  /** "If it wasn't cast" (CR 601.2a, 603.4, Rapid Augmenter): the engine's `ObjectFilter.notCast`. */
+  'notCast',
   /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
   'putWithThis',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
