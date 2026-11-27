@@ -412,8 +412,11 @@ export class HeuristicAgent implements ExplainingAgent {
         const choice = chooseHeuristicAttack(view, d, {
           ...combatOf(think, inner, this.simAgents),
           weights: this.weights,
-          passiveWeight: this.opponent.passiveWeight,
-          passiveWeightFor: (seat) => this.opponent.passiveWeightFor(seat),
+          // Inside a play-out the defender blocks as the play-out does, sensibly (`defaultPlan`): the opponent's
+          // search counts on that, not on what an agent has seen of a real opponent's blocks.
+          passiveWeight: inner === undefined ? this.opponent.passiveWeight : 0,
+          passiveWeightFor: (seat) =>
+            inner === undefined ? this.opponent.passiveWeightFor(seat) : 0,
         });
         this.look = choice.look ?? null;
         note(choice.reason);

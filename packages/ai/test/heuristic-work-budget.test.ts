@@ -66,7 +66,7 @@ const combat = (): ScenarioGame =>
     .battlefield(BEARS, SPIDER, V3, V5)
     .library('Island', { count: 10 })
     .seat(1)
-    .battlefield(BEARS, RATS, V2, V5)
+    .battlefield(BEARS, RATS, V2)
     .library('Island', { count: 10 })
     .at('precombatMain', { active: 0 })
     .build();
