@@ -22,6 +22,8 @@ export const NUMBERED_KEYWORDS = [
   'dredge',
   'bushido',
   'hideaway',
+  // CR 702.63a: "Vanishing 3". "Vanishing" with no number (CR 702.63b) is not read: the number must follow the word.
+  'vanishing',
   'devour',
   // Issue 101 (CR 702.181a): "Mobilize 1".
   'mobilize',

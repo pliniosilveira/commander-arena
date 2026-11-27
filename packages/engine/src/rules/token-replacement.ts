@@ -124,7 +124,7 @@ function tokenEffects(state: GameState, seat: SeatId): readonly TokenEffect[] {
 
 /** The token a `thatMany` or `plus` effect makes; a `double` effect makes none of its own (it makes more of the tokens it names). */
 const madeBy = (effect: TokenEffect): TokenDefinition | null => {
-  if (effect.replacement.mode === 'double') return null;
+  if (effect.replacement.mode === 'double' || effect.replacement.mode === 'eachOf') return null;
   const token = effect.replacement.token;
   return token.kind === 'preset' ? TOKEN_PRESETS[token.preset] : token.definition;
 };
@@ -170,8 +170,29 @@ function applyEffect(
   if (effect.replacement.mode === 'double') {
     return batch.map((part) => (hit.includes(part) ? { ...part, count: part.count * 2 } : part));
   }
+  // CR 614.1a, 614.5 (Academy Manufactor): "instead create one of each": each matching part is replaced by as many of every named token as it had of its own.
+  if (effect.replacement.mode === 'eachOf') {
+    const kinds = effect.replacement.tokens;
+    return batch.flatMap((part) =>
+      hit.includes(part)
+        ? kinds.map((kind) => ({
+            definition: TOKEN_PRESETS[kind],
+            count: part.count,
+            original: false,
+          }))
+        : [part],
+    );
+  }
   const made = madeBy(effect);
   if (made === null) return batch;
+  // CR 614.1a (Chatterfang): the matching tokens stay and as many more of the token are made as they are. What the instruction said about the tokens (tapped) applies to the
+  // added ones too (the Scryfall ruling of 2021-06-18 of Chatterfang; not their abilities, which are the definition's), so each added part keeps `original` of its part.
+  if (effect.replacement.mode === 'plusThatMany') {
+    return [
+      ...batch,
+      ...hit.map((part) => ({ definition: made, count: part.count, original: part.original })),
+    ];
+  }
   if (effect.replacement.mode === 'thatMany') {
     const total = hit.reduce((n, part) => n + part.count, 0);
     return [
@@ -308,8 +329,14 @@ export function describeBatch(batch: readonly TokenBatch[]): readonly string[] {
 
 const effectText = (effect: TokenEffect): string => {
   const made = madeBy(effect);
+  if (effect.replacement.mode === 'eachOf') {
+    return `Create one of each of ${effect.replacement.tokens.join(', ')} instead`;
+  }
   if (made === null) return 'Create twice that many of those tokens instead';
   const name = made.name;
+  if (effect.replacement.mode === 'plusThatMany') {
+    return `Create those tokens plus that many ${name} tokens instead`;
+  }
   return effect.replacement.mode === 'thatMany'
     ? `Create that many ${name} tokens instead`
     : `Create those tokens plus an additional ${name} token instead`;

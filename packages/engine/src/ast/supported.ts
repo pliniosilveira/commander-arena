@@ -150,7 +150,11 @@ function walkEffect(
       return;
     case 'mayCast': {
       // D-135: the permission is for a card in the graveyard (`runMayCast` skips any other).
-      const filter = selectedFilter(effect.objects, targets);
+      // Mission Briefing (CR 608.2d, 601.2): "choose an instant or sorcery card in your graveyard. You may cast it this turn": a card chosen as the effect resolves, not targeted.
+      const filter =
+        effect.objects.kind === 'choose'
+          ? effect.objects.filter
+          : selectedFilter(effect.objects, targets);
       // Lorehold group 2 (CR 607.2a): `from: 'exile'` is for a card the permanent exiled with its linked ability, which only `exiledWithSource` names.
       if (effect.from === 'exile') {
         if (filter?.zone !== 'exile' || filter.exiledWithSource !== true) {
@@ -186,7 +190,7 @@ function walkEffect(
         effect.object.kind === 'target'
           ? selectedFilter({ kind: 'target', id: effect.object.id }, targets)
           : null;
-      if (filter?.zone !== 'stack' || filter.singleTarget !== true) {
+      if (filter?.zone !== 'stack' || (effect.to === undefined && filter.singleTarget !== true)) {
         out.push({
           path: `${path}.object`,
           message:
@@ -301,12 +305,16 @@ function walkEffect(
       return;
     case 'unlessPays':
       // CR 118.12a: paid as Ward's cost is (rules/pay-unless.ts), and, D-209, with energy; what happens when it is not is any effect.
-      activationCostIssues(effect.cost, `${path}.cost`, out, [
-        'mana',
-        'payLife',
-        'discard',
-        'energy',
-      ]);
+      // CR 107.3 (Champions of Minas Tirith): with `xIsHandSize` the {X} of the mana cost is a number of cards, worked out as the player is asked.
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard', 'energy', 'sacrifice'],
+        effect.xIsHandSize === true,
+      );
+      // CR 701.21a, 118.12a (Gitrog Monster): "unless you sacrifice a land" is paid as Ward—Sacrifice is.
+      unlessSacrificeIssues(effect.cost, `${path}.cost`, out);
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'becomeCopy':
@@ -326,16 +334,19 @@ function walkEffect(
       }
       if (effect.of.kind === 'target') {
         const zone = selectedFilter(effect.of, targets)?.zone;
-        if (zone !== undefined && zone !== 'battlefield') {
+        // A card of a graveyard is copied as it is there (CR 707.2, D-232: the engine copies the copiable values of a card in any zone): "becomes a copy of target creature card in your graveyard".
+        if (zone !== undefined && zone !== 'battlefield' && zone !== 'graveyard') {
           out.push({
             path: `${path}.of`,
-            message: 'only a permanent on the battlefield can be copied by becoming a copy',
+            message:
+              'only a permanent on the battlefield or a card in a graveyard can be copied by becoming a copy',
           });
         }
       }
       return;
     case 'modifyPt':
     case 'setPt':
+    case 'switchPt':
     case 'loseAllAbilities':
     case 'setTypes':
     case 'setColors':
@@ -350,6 +361,8 @@ function walkEffect(
           effect.kind === 'grantKeyword' ||
           // CR 613.1f, 611.2a: "Target creature becomes a Treasure artifact ... and loses all other card types and abilities" (Vraska, Betrayal's Sting): no end, a layer 6 loss.
           effect.kind === 'loseAllAbilities' ||
+          // Vronos, Masked Inquisitor (CR 509.1b, 611.2a): "gains ... 'This creature can't be blocked.'" with no end.
+          (effect.kind === 'restrict' && effect.restriction === 'cantBeBlocked') ||
           // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
           (effect.kind === 'setColors' && effect.additive === true))
       ) {
@@ -570,7 +583,11 @@ function activationCostIssues(
         'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
     });
   }
-  const removingAmong = costs.filter((c) => c.kind === 'removeCounters' && c.among !== undefined);
+  const removingAmong = costs.filter(
+    (c) =>
+      c.kind === 'removeCounters' &&
+      (c.among !== undefined || c.counter === undefined || c.countX === true || c.fromOne === true),
+  );
   if (
     removingAmong.length > 1 ||
     (removingAmong.length === 1 &&
@@ -600,7 +617,7 @@ function activationCostIssues(
     // `breakDown` (rules/activate-costs.ts) pays one discard cost, of N cards.
     out.push({ path, message: 'more than one discard cost is not implemented by the engine yet' });
   }
-  if (costs.filter((c) => c.kind === 'returnToHand').length > 1) {
+  if (costs.filter((c) => c.kind === 'returnToHand' || c.kind === 'exilePermanent').length > 1) {
     // `breakDown` pays one return cost (D-139), of N permanents.
     out.push({
       path,
@@ -642,6 +659,35 @@ function activationCostIssues(
   }
 }
 
+/**
+ * CR 702.21a, 701.21a: "Ward—Sacrifice a legendary artifact or legendary creature." is paid as the ward ability resolves (`rules/pay-unless.ts`): the payer chooses `count` permanents they
+ * control that match, nothing else is paid with it. Not run: the source itself (the payer does not control the ward permanent), X, any number, several different permanents.
+ */
+function unlessSacrificeIssues(costs: readonly Cost[], path: string, out: AstIssue[]): void {
+  for (const [i, c] of costs.entries()) {
+    if (c.kind !== 'sacrifice') continue;
+    // Enchanter's Bane (CR 701.21a): "unless that player sacrifices it", the permanent a target named; `validateCard` allows it only in an `unlessPays`.
+    if (
+      ('kind' in c.what && c.what.kind !== 'target') ||
+      c.countX !== undefined ||
+      c.anyNumber !== undefined ||
+      c.alongside !== undefined
+    ) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'a sacrifice of Ward is a number of permanents the payer controls that match a filter: not the permanent itself, X, any number or several different kinds',
+      });
+    } else if (costs.length > 1) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'a sacrifice cost of Ward is the only cost of the ability: it is not combined with another',
+      });
+    }
+  }
+}
+
 /** Whether the filter, or one of its `anyOf` members, compares power or toughness (D-111). */
 function filterComparesPt(f: ObjectFilter): boolean {
   return (
@@ -663,8 +709,10 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'becomesTapped':
     case 'becomesUntapped':
     case 'becomesMonstrous':
+    case 'turnedFaceUp':
     case 'blocks':
     case 'becomesBlocked':
+    case 'becomesUnblocked':
     case 'becomesBlockedBy':
     case 'dealsCombatDamage':
     case 'dealsDamage':
@@ -744,6 +792,13 @@ function walkAbility(
             message:
               'a mana ability sacrifices a permanent of the battlefield: no zone in the filter',
           });
+        } else if (c.kind === 'sacrifice' && c.alongside !== undefined) {
+          // CR 701.21a: the payment planner of a mana ability sacrifices one permanent; a cost of several different permanents is the cost of an ordinary activated ability.
+          out.push({
+            path: `${path}.cost[${i}]`,
+            message:
+              'a mana ability sacrifices one permanent: a sacrifice of several different permanents is not implemented by the engine yet',
+          });
         } else if (c.kind === 'payLife' && typeof c.amount !== 'number') {
           // D-135: the life of a mana ability is a number (the payment planner reads it before anything resolves).
           out.push({
@@ -813,7 +868,7 @@ function walkAbility(
         conditionIssues(a.static.unless, `${path}.static.unless`, out);
       }
       return;
-    case 'triggered':
+    case 'triggered': {
       if (!SUPPORTED_FEATURES.triggerKinds.includes(a.trigger.kind)) {
         out.push({
           path: `${path}.trigger`,
@@ -858,11 +913,16 @@ function walkAbility(
       }
       // CR 605.1b, 106.1b, 605.3b: the triggered mana ability of "adds an additional one mana of any color": the color is named as the mana ability that triggered it is activated
       // (`Action.extraColors`), so it is the one `addMana` of a choice the engine runs (the shape is checked in `validate.ts`).
+      // Barbflare Gremlin (CR 605.4a): the mana of the triggered mana ability may be followed by damage to the player who tapped the permanent (the shape is checked in `validate.ts`).
+      const triggeredMana =
+        a.effect.kind === 'sequence' && a.effect.effects[0]?.kind === 'addMana'
+          ? a.effect.effects[0]
+          : a.effect;
       if (
         a.trigger.kind === 'tappedForMana' &&
-        a.effect.kind === 'addMana' &&
-        ((a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
-          a.effect.mana.kind === 'producedType')
+        triggeredMana.kind === 'addMana' &&
+        ((triggeredMana.mana.kind === 'anyColor' && (triggeredMana.mana.count ?? 1) === 1) ||
+          triggeredMana.mana.kind === 'producedType')
       ) {
         return;
       }
@@ -875,6 +935,7 @@ function walkAbility(
         triggerSubjectFilter(a.trigger),
       );
       return;
+    }
     case 'activated':
       activationCostIssues(a.cost, `${path}.cost`, out, undefined, true, true);
       if (a.costReducedIf !== undefined) {
@@ -908,6 +969,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'equip' || a.keyword.kind === 'reconfigure') {
         // CR 702.6a, 702.151a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        if (a.keyword.kind === 'equip' && a.keyword.orCost !== undefined) {
+          activationCostIssues(a.keyword.orCost, `${path}.keyword.orCost`, out, ['removeCounters']);
+        }
         if (a.keyword.kind === 'equip' && a.keyword.costReducedIf !== undefined) {
           conditionIssues(
             a.keyword.costReducedIf.condition,
@@ -923,19 +987,29 @@ function walkAbility(
           'payLife',
           'discard',
           'blight',
+          'sacrifice',
         ]);
+        unlessSacrificeIssues(a.keyword.cost, `${path}.keyword.cost`, out);
       } else if (a.keyword.kind === 'kicker' || a.keyword.kind === 'multikicker') {
-        // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        // CR 702.33a, 702.33c: an additional cost; mana and life are paid by the cast (rules/cast.ts). "Kicker {X}. X can't be 0.": the X is announced as the spell is kicked (CR 107.3a).
+        activationCostIssues(
+          a.keyword.cost,
+          `${path}.keyword.cost`,
+          out,
+          // CR 702.33a, 118.8, 701.21a: a plain kicker may sacrifice one permanent ("Kicker—Sacrifice a creature."), chosen as the cost is paid.
+          a.keyword.kind === 'kicker' ? ['mana', 'payLife', 'sacrifice'] : ['mana', 'payLife'],
+          a.keyword.kind === 'kicker' && a.keyword.xNotZero === true,
+        );
       } else if (a.keyword.kind === 'typecycling') {
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana, life and the sacrifice of N permanents ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures"; rules/cast-cost.ts, rules/cast.ts).
+        // CR 702.34a: an alternative cost; mana, life, the sacrifice of N permanents and the exile of X cards of the graveyard ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures", "Flashback—{3}{U}{R}, Exile X cards from your graveyard"; rules/cast-cost.ts, rules/cast.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
           'mana',
           'payLife',
           'sacrifice',
+          'exileFromGraveyard',
         ]);
       } else if (a.keyword.kind === 'ninjutsu') {
         // CR 702.49a (unverified): paid like any activation cost; only mana is run (rules/derive-keywords.ts adds the return of an unblocked attacker).
@@ -951,11 +1025,17 @@ function walkAbility(
           'payLife',
           'discard',
         ]);
-      } else if (a.keyword.kind === 'escalate') {
-        // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-145).
+      } else if (a.keyword.kind === 'escalate' || a.keyword.kind === 'replicate') {
+        // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana, no X (D-145), or tapped permanents (Collective Effort: `casting.extra.tap`, rules/cast-additional.ts). CR 702.56a: the same for the replicate cost (D-129; Psionic Ritual taps permanents).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
+          'mana',
+          'tapPermanents',
+        ]);
+      } else if (a.keyword.kind === 'offspring') {
+        // CR 702.175a: the offspring cost, an additional cost paid as the spell is cast; mana only, no X.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
-      } else if (a.keyword.kind === 'replicate' || a.keyword.kind === 'buyback') {
-        // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129). CR 702.27a: the same for the buyback cost (Galadriel group 3).
+      } else if (a.keyword.kind === 'buyback') {
+        // CR 702.27a: the buyback cost, an additional cost paid as the spell is cast; mana only, no X (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'suspend') {
         // CR 702.62a: paid as the special action is taken (rules/special-actions.ts); mana only, no X (D-128).
@@ -1006,6 +1086,7 @@ function walkAbility(
       }
       return;
     case 'level':
+    case 'solved':
     case 'stationLevel':
       // CR 716.2a (D-235), 721.2a: the abilities of a class level bar or a station symbol are held to the same rules as any other.
       for (const [i, inner] of a.abilities.entries()) {
@@ -1063,7 +1144,9 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
   for (const [i, c] of (face.additionalCosts ?? []).entries()) {
     if (
       (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
-      c.kind === 'exileFromGraveyard'
+      c.kind === 'putLinkedExileInGraveyard' ||
+      c.kind === 'exilePermanent' ||
+      c.kind === 'putOpponentExileInGraveyard'
     ) {
       out.push({
         path: `${base}.additionalCosts[${i}]`,
@@ -1082,6 +1165,9 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
       if (
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
         c.kind === 'exileFromGraveyard' ||
+        c.kind === 'exilePermanent' ||
+        c.kind === 'putLinkedExileInGraveyard' ||
+        c.kind === 'putOpponentExileInGraveyard' ||
         c.kind === 'exileFromHand'
       ) {
         out.push({
@@ -1176,6 +1262,16 @@ export function unsupportedFeatureIssues(def: CardDefinition): AstIssue[] {
       out.push({
         path: `${base}.abilities`,
         message: 'more than one buyback ability is not implemented by the engine yet',
+      });
+    }
+    // CR 702.175b: each instance of offspring is paid and triggers separately; the engine asks one question, so one instance is run.
+    if (
+      face.abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'offspring').length >
+      1
+    ) {
+      out.push({
+        path: `${base}.abilities`,
+        message: 'more than one offspring ability is not implemented by the engine yet',
       });
     }
     // CR 702.56b (D-129): each instance of replicate is paid and triggers separately; the engine asks one count, so

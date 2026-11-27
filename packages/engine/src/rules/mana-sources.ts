@@ -4,6 +4,7 @@
  * planner's request for a cost, and the sources a `payMana` decision lists. The planner itself is
  * `mana/payment.ts`.
  */
+import { COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import {
   type PaymentPlan,
@@ -33,7 +34,12 @@ import {
   tapFilterOf,
   tierOfAbility,
 } from './mana-abilities';
-import { isCombinationProduction, productionOutcomes, spendRestrictionOf } from './mana-outcomes';
+import {
+  isCombinationProduction,
+  productionOutcomes,
+  spendRestrictionOf,
+  unlistedCombinationSize,
+} from './mana-outcomes';
 import { additionalManaOptions } from './mana-triggers';
 import { lifeTotalIsLocked } from './player-lock';
 import { activatablePlayerMana, PLAYER_MANA_ABILITY, playerManaSources } from './player-mana';
@@ -79,6 +85,15 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
           ),
         );
       if (produces.length === 0) continue;
+      // Issue 632: "X mana in any combination of colors" with too many combinations to list: `produces` holds a few of them, and the planner builds the ones that
+      // differ for the cost. Not when a triggered mana ability adds mana to what it makes (the additional mana depends on the combination): the few listed are all it tries.
+      const unlisted = unlistedCombinationSize(state, obj, ability);
+      const additional =
+        unlisted === null ? [] : additionalManaOptions(state, obj, ability, COLORS);
+      const anyCombination =
+        unlisted !== null && additional.length === 1 && additional[0]?.length === 0
+          ? { anyCombination: unlisted }
+          : {};
       const symbols = manaCostSymbols(ability);
       const lifeLoss = lifeLossOfActivating(ability);
       const energyCost = energyCostOf(ability);
@@ -86,10 +101,11 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
         object: id,
         abilityIndex,
         produces,
+        ...anyCombination,
         tier: tierOfAbility(state, obj, ability),
         snow: d.supertypes.includes('snow'),
-        // D-183: the mana it makes carries the card types of the permanent.
-        types: d.types,
+        // D-183: the mana it makes carries the card types of the permanent, and its subtypes (Cataclysmic Prospecting: "mana from a Desert").
+        types: [...d.types, ...d.subtypes],
         // D-149: "Spend this mana only to cast an Angel spell".
         restriction: spendRestrictionOf(ability, obj),
         ...(symbols.length > 0 ? { cost: parseManaCost(symbols) } : {}),

@@ -15,7 +15,7 @@ import type { CardFace } from '../cards/definition';
 
 function keywordCost(
   face: CardFace | null,
-  kind: 'kicker' | 'multikicker' | 'flashback' | 'replicate' | 'escalate' | 'buyback',
+  kind: 'kicker' | 'multikicker' | 'flashback' | 'replicate' | 'escalate' | 'buyback' | 'offspring',
 ): readonly Cost[] | null {
   for (const a of face?.abilities ?? []) {
     if (a.kind !== 'keyword') continue;
@@ -30,9 +30,21 @@ export function kickerCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'kicker');
 }
 
+/** "Kicker {X}. X can't be 0." (CR 702.33a, 107.3a): whether the face's kicker cost has an {X} that must be announced as at least 1. */
+export function kickerXNotZero(face: CardFace | null): boolean {
+  return (face?.abilities ?? []).some(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'kicker' && a.keyword.xNotZero === true,
+  );
+}
+
 /** The buyback cost of the face, or null when it has none (CR 702.27a): an optional additional cost, mana only. */
 export function buybackCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'buyback');
+}
+
+/** The offspring cost of the face, or null when it has none (CR 702.175a): an optional additional cost, mana only. */
+export function offspringCostOf(face: CardFace | null): readonly Cost[] | null {
+  return keywordCost(face, 'offspring');
 }
 
 /** The multikicker cost of the face, or null when it has none (CR 702.33c: a kicker cost paid any number of times). */
@@ -156,6 +168,12 @@ export function alternativeOf<K extends AlternativeCost['kind']>(
 export function evokeExileOf(face: CardFace | null): ObjectFilter | undefined {
   const alt = face?.alternativeCosts?.find((a) => a.kind === 'evoke');
   return alt !== undefined && 'exileFromHand' in alt ? alt.exileFromHand : undefined;
+}
+
+/** CR 702.37b (Megamorph): whether the face's morph cost is a megamorph cost, one that puts a +1/+1 counter on the permanent as it is turned face up. */
+export function megamorphCostOf(face: CardFace | null): boolean {
+  const morph = face?.alternativeCosts?.find((a) => a.kind === 'morph');
+  return morph !== undefined && 'megamorph' in morph && morph.megamorph === true;
 }
 
 /** The cost of the named alternative cost (overload, ...) the face lists, or null (D-121). */

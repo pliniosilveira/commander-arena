@@ -162,7 +162,11 @@ export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
   family: 'effect',
   leading: ['put'],
   cites: ['CR 607.2a (Linked Abilities)', 'CR 406.3 (Exile)', 'CR 400.3 (General)'],
-  examples: ["put a card exiled with ~ into its owner's graveyard"],
+  examples: [
+    "put a card exiled with ~ into its owner's graveyard",
+    // Foreboding Steamboat (CR 607.2a): "it" is the permanent the ability belongs to, when the trigger is about it alone (the lowering checks).
+    "put a card exiled with it into its owner's graveyard",
+  ],
   rejects: [
     "put all cards exiled with ~ into their owners' graveyards",
     "put a card exiled with ~ into its owner's hand",
@@ -174,8 +178,14 @@ export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
   ],
   parse: single(
     'effect.put-exiled-with',
-    literal("put a card exiled with ~ into its owner's graveyard"),
-    () => ({ verb: 'putExiledWith', args: {} }),
+    spanned(
+      pattern(/put a card exiled with (~|it) into its owner['’]s graveyard(?![\p{L}\p{N}])/iu),
+    ),
+    ({ span, value: m }) => ({
+      verb: 'putExiledWith',
+      args:
+        m[1]?.toLowerCase() === 'it' ? { viaIt: flag('effect.put-exiled-with', true, span) } : {},
+    }),
   ),
 });
 
@@ -198,6 +208,7 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'choose target creature',
     'choose target permanent',
     'choose target opponent',
+    'choose up to one target nonland permanent',
   ],
   rejects: [
     'choose',
@@ -206,19 +217,30 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'choose two target creatures',
     'choose one',
     'choose target creature and draw a card',
-    'choose up to one target creature',
+    'choose up to two target creatures',
+    'choose up to one target creatures',
   ],
   parse: single(
     'effect.choose-target',
     sequence(
       literal('choose '),
       operands(
-        ['noun.target-commander', 'noun.target-permanent', 'noun.player'],
+        [
+          'noun.target-commander',
+          'noun.target-creature-attacking-you-plain',
+          'noun.target-permanent',
+          'noun.player',
+        ],
         'effect.choose-target',
         {
           // One target, not "two target creatures" or "up to one target creature": the sentences after say "it".
+          // Star Athlete: "choose up to one target nonland permanent" is one target or none (the sentences after it read "it" and "its controller" of a target that may be absent).
           accept: (noun) =>
-            !noun.plural && !noun.upTo && noun.count === undefined && noun.anyNumber === undefined,
+            !noun.plural &&
+            noun.anyNumber === undefined &&
+            (noun.upTo
+              ? noun.count?.kind === 'number' && noun.count.value === 1
+              : noun.count === undefined),
           locate: (noun) => noun.span.start,
         },
       ),

@@ -14,6 +14,7 @@ import {
   ENCORE_REMINDER,
   NINJUTSU_REMINDER,
   RIOT_REMINDER,
+  SUNBURST_REMINDER,
 } from '../../game/keywords-text';
 
 const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> = {
@@ -74,7 +75,10 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // CR 702.25a (Flanking).
   flanking: ['Flk', 'Flanking'],
   extort: ['Ext', 'Extort'],
+  // Exploit (CR 702.110a).
+  exploit: ['Exp', 'Exploit (When this creature enters, you may sacrifice a creature.)'],
   affinity: ['Aff', 'Affinity'],
+  undaunted: ['Und', 'Undaunted'],
   convoke: ['Cvk', 'Convoke'],
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],
@@ -101,8 +105,11 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   replicate: ['Rep', 'Replicate'],
   // Rebound (CR 702.88a): on an instant or a sorcery.
   rebound: ['Rbd', 'Rebound'],
+  cipher: ['Cph', 'Cipher'],
   // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
   buyback: ['Bb', 'Buyback'],
+  // Offspring (CR 702.175a): the cost rides in the chip (`PARAMETERIZED`).
+  offspring: ['Off', 'Offspring'],
   // Gift a card (D-135).
   gift: ['Gft', 'Gift a card'],
   // The Artifacts slice (D-139): the reminder text rides in the tooltip (CR 702.92a).
@@ -112,6 +119,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // The Dinosaurs slice (D-145): the cost or number rides in the chip (`PARAMETERIZED`), the reminder in the tooltip.
   escalate: ['Esc', 'Escalate'],
   hideaway: ['Hid', 'Hideaway'],
+  // Vanishing (CR 702.63a): the number rides in the chip (`PARAMETERIZED`).
+  vanishing: ['Van', 'Vanishing'],
   // The Dragons slice (D-151): the reminder text (CR 702.155a, 702.105a, 702.116a) rides in the tooltip.
   readAhead: ['RA', `Read ahead (${READ_AHEAD_REMINDER})`],
   dethrone: ['Dth', `Dethrone (${DETHRONE_REMINDER})`],
@@ -132,6 +141,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   ninjutsu: ['Nin', `Ninjutsu (${NINJUTSU_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
+  // CR 702.44a: Sunburst.
+  sunburst: ['Sun', `Sunburst (${SUNBURST_REMINDER})`],
 };
 
 /**
@@ -154,6 +165,8 @@ const PARAMETERIZED: Readonly<
   // "Fabricate 2": one chip per instance (CR 702.123b).
   fabricate: (text) => numbered(text, 'Fabricate', 'Fab'),
   backup: (text) => numbered(text, 'Backup', 'Bkp'),
+  // "Vanishing 3": one chip per instance (CR 702.63c: each works separately).
+  vanishing: (text) => numbered(text, 'Vanishing', 'Van'),
   toxic: (text) => numbered(text, 'Toxic', 'Tox'),
   // "Bushido 1": one chip per instance (CR 702.45b: each triggers).
   bushido: (text) => numbered(text, 'Bushido', 'Bus'),
@@ -181,6 +194,11 @@ const PARAMETERIZED: Readonly<
   buyback: (text) =>
     [...text.matchAll(/buyback\s*((?:\{[^}]+\})+)/gi)].map(
       (m) => ['Bb', withCost('Buyback', m[1] ?? '')] as const,
+    ),
+  // "Offspring {1}": one chip per instance (CR 702.175a).
+  offspring: (text) =>
+    [...text.matchAll(/offspring\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Off', withCost('Offspring', m[1] ?? '')] as const,
     ),
   // "Escalate {G}": the cost of each mode beyond the first (CR 702.120a), one chip per instance.
   escalate: (text) =>
@@ -269,6 +287,7 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
     'NoAtk',
     "Can't attack a player it has already attacked this turn",
   ],
+  cantBeBlockedExceptByThreeOrMore: ['Unbl3', "Can't be blocked except by three or more creatures"],
   cantBeBlockedByMoreThanOne: ['Blk≤1', "Can't be blocked by more than one creature"],
   attacksEachCombat: ['Atk!', 'Attacks each combat'],
   mustBeBlocked: ['Blk!', 'Must be blocked if able'],

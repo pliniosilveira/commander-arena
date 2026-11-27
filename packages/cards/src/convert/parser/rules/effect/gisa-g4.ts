@@ -115,8 +115,8 @@ export const EFFECT_EXILE_AT_END_STEP = defineRule<Clauses>({
 
 /**
  * `effect.exile-instead-when-leaving`: "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6: a replacement effect that lasts as long as
- * the object stays on the battlefield, about the permanent the instruction before it put there). The engine's `exileIfLeaves` of the `moved` objects. Not read: another condition
- * ("would die"), "this turn", another object.
+ * the object stays on the battlefield, about the permanent the instruction before it put there). The engine's `exileIfLeaves` of the `moved` objects. The permanent is "it" or, as
+ * From the Catacombs says it, "that creature". Not read: another condition ("would die"), "this turn", another object.
  */
 export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   id: 'effect.exile-instead-when-leaving',
@@ -130,8 +130,12 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   examples: [
     'if it would leave the battlefield, exile it instead of putting it anywhere else',
     'If it would leave the battlefield, exile it instead of putting it anywhere else',
+    // From the Catacombs (CR 614.1a): the creature the sentence before put onto the battlefield.
+    'if that creature would leave the battlefield, exile it instead of putting it anywhere else',
   ],
   rejects: [
+    'if that permanent would leave the battlefield, exile it instead of putting it anywhere else',
+    'if those creatures would leave the battlefield, exile them instead of putting them anywhere else',
     'if it would leave the battlefield, exile it instead',
     'if it would die, exile it instead of putting it anywhere else',
     'if it would leave the battlefield, exile it instead of putting it into a graveyard',
@@ -142,11 +146,74 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.exile-instead-when-leaving';
+    const rider =
+      / would leave the battlefield, exile it instead of putting it anywhere else(?![\p{L}\p{N}])/iu;
+    const r = sequence(literal('if '), IT(), pattern(rider))(ctx, pos);
+    if (r.ok) {
+      if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+      const span = { start: pos, end: r.pos };
+      return {
+        ok: true,
+        value: [makeClause(id, 'exileIfLeaves', { objects: r.value[1] }, span)],
+        pos: r.pos,
+      };
+    }
+    // "that creature" is read as "it" is: the permanent the instruction before it put onto the battlefield, which the binding pass and the lowering check.
+    const that = sequence(literal('if that creature'), pattern(rider))(ctx, pos);
+    if (!that.ok) return that;
+    if (!endsSentence()(ctx, that.pos)) return fail(ctx, pos);
+    const span = { start: pos, end: that.pos };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'that creature' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos + 3, end: pos + 3 + 'that creature'.length },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [makeClause(id, 'exileIfLeaves', { objects }, span)],
+      pos: that.pos,
+    };
+  },
+});
+
+/**
+ * `effect.it-gains-exile-instead-when-leaving`: `it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else."` (Spirit-Sister's Call, CR 614.1a, 614.6, 400.7:
+ * the granted ability is a replacement effect of the permanent the instruction before it put onto the battlefield; it belongs to that object and holds when the permanent that granted it
+ * has left). The same as `effect.exile-instead-when-leaving`: the engine's `exileIfLeaves` of the `moved` objects. Not read: another subject, another replacement, another ability,
+ * a duration, anything after the quotation.
+ */
+export const EFFECT_IT_GAINS_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
+  id: 'effect.it-gains-exile-instead-when-leaving',
+  family: 'effect',
+  leading: ['it'],
+  cites: [
+    'CR 614.1a (Replacement Effects)',
+    'CR 614.6 (Replacement Effects)',
+    'CR 400.7 (General)',
+  ],
+  examples: [
+    'it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else."',
+    'It gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else"',
+  ],
+  rejects: [
+    'it gains "If ~ would die, exile it instead of putting it anywhere else."',
+    'it gains "If ~ would leave the battlefield, exile it instead."',
+    'it gains haste',
+    'it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else." until end of turn',
+    'they gain "If ~ would leave the battlefield, exile it instead of putting it anywhere else."',
+    'it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else. Draw a card."',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.it-gains-exile-instead-when-leaving';
     const r = sequence(
-      literal('if '),
       IT(),
       pattern(
-        / would leave the battlefield, exile it instead of putting it anywhere else(?![\p{L}\p{N}])/iu,
+        /[ ]gains "if ~ would leave the battlefield, exile it instead of putting it anywhere else\.?"/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -154,7 +221,7 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
     const span = { start: pos, end: r.pos };
     return {
       ok: true,
-      value: [makeClause(id, 'exileIfLeaves', { objects: r.value[1] }, span)],
+      value: [makeClause(id, 'exileIfLeaves', { objects: r.value[0] }, span)],
       pos: r.pos,
     };
   },
@@ -350,6 +417,52 @@ export const EFFECT_RETURN_TO_COMMAND_AT_END_STEP = defineRule<Clauses>({
 });
 
 /**
+ * `effect.return-to-hand-at-end-step`: "Return it to your hand at the beginning of the next end step." (Nahiri, the Harbinger; CR 603.7, 603.7c, 400.7: a delayed triggered ability about the
+ * permanent the instruction before it put onto the battlefield; once that object has changed zones it is a new object and the ability does nothing). The engine's `delayedTrigger` at the end
+ * step of each turn, whose effect moves the `moved` objects to their owner's hand. Not read: "your next end step", another object than "it", another zone, another step, "its owner's hand".
+ */
+export const EFFECT_RETURN_TO_HAND_AT_END_STEP = defineRule<Clauses>({
+  id: 'effect.return-to-hand-at-end-step',
+  family: 'effect',
+  leading: ['return'],
+  cites: [
+    'CR 603.7 (Delayed Triggered Abilities)',
+    'CR 603.7c (Delayed Triggered Abilities)',
+    'CR 400.7 (General)',
+  ],
+  examples: [
+    'return it to your hand at the beginning of the next end step',
+    'Return it to your hand at the beginning of the next end step',
+  ],
+  rejects: [
+    'return it to your hand at the beginning of your next end step',
+    'return it to your hand at the beginning of the next end step and draw a card',
+    'return it to your hand',
+    'return it to your hand at the beginning of the next end',
+    'return them to your hand at the beginning of the next end step',
+    "return it to its owner's hand at the beginning of the next end step",
+    'return target creature to your hand at the beginning of the next end step',
+    'return ~ to your hand at the beginning of the next end step',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.return-to-hand-at-end-step';
+    const r = sequence(
+      literal('return '),
+      IT(),
+      pattern(/ to your hand at the beginning of the next end step(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'returnToHandAtEndStep', { objects: r.value[1] }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.put-commander-from-command-zone`: "You may put a commander you own from the command zone onto the battlefield." (issue 103, Hellkite Courser; CR 903.3, 400.7, 110.2a:
  * the card enters under the control of the player who puts it; CR 608.2d: the player chooses it as the instruction runs). A commander its owner designated, among the cards in the
  * command zone of that player; with "you may" the player may choose none. Not read: another zone, "target", a number, "under its owner's control", tapped, "a commander" of any owner.
@@ -420,9 +533,11 @@ export const EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE = defineRule<Clauses>({
 export const GISA_G4_EFFECT_RULES = [
   quietly(EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE),
   quietly(EFFECT_RETURN_TO_COMMAND_AT_END_STEP),
+  quietly(EFFECT_RETURN_TO_HAND_AT_END_STEP),
   quietly(EFFECT_GAIN_KEYWORD_FOR_GOOD),
   quietly(EFFECT_EXILE_AT_END_STEP),
   quietly(EFFECT_EXILE_INSTEAD_WHEN_LEAVING),
+  quietly(EFFECT_IT_GAINS_EXILE_INSTEAD_WHEN_LEAVING),
   quietly(EFFECT_PUT_EXILED_WITH_BATTLEFIELD),
   quietly(EFFECT_PUT_TARGET_EXILED_WITH_BATTLEFIELD),
 ];

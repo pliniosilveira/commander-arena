@@ -4,7 +4,7 @@
  * actions the given seat may take now.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { CardType } from '../characteristics';
+import type { CardType, PartyType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
 import type { ChosenTarget } from './chosen';
@@ -53,6 +53,12 @@ export type Action =
       readonly sacrifice?: ObjectId;
       /** The permanent a cost "Tap an untapped creature you control" taps (D-625, CR 601.2b): named when the player has more than one to tap. */
       readonly tapped?: ObjectId;
+      /**
+       * The permanents a cost "Tap X untapped tokens you control" taps (CR 118.3, 602.2b, 605.3b): X of them, distinct, untapped and of the kind the cost names, chosen by the player as
+       * the ability is activated. `combination` names X mana, one color of the five for each (X may be 0: both empty). Not listed in full among the priority options (see
+       * `PriorityOption`): any play that is valid when it is made is accepted.
+       */
+      readonly tappedMany?: readonly ObjectId[];
     }
   /**
    * Suspend a card from the hand (CR 702.62a, 116.2f, D-128): pay its suspend cost and exile it with time counters.
@@ -121,6 +127,8 @@ export type Action =
         readonly sacrifice?: ObjectId;
         /** For a source whose cost taps another permanent ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-625): the one tapped; the engine chooses when left out. */
         readonly tapped?: ObjectId;
+        /** For a source whose cost taps X untapped permanents ("{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors."): the ones tapped; `combination` has one color for each. */
+        readonly tappedMany?: readonly ObjectId[];
       }[];
     }
   | { readonly kind: 'cancel' }
@@ -163,6 +171,14 @@ export type Action =
    * mana. Which mana each pays is worked out by the engine (colors first).
    */
   | { readonly kind: 'choosePayOptions'; readonly objects: readonly ObjectId[] }
+  /**
+   * Answer a chooseParty decision (CR 700.8d): the party, one entry for each type filled (up to one each of Cleric, Rogue, Warrior and Wizard), each a different creature the
+   * decision lists for that type. An empty list chooses no one.
+   */
+  | {
+      readonly kind: 'chooseParty';
+      readonly party: readonly { readonly type: PartyType; readonly object: ObjectId }[];
+    }
   /** Answer declareAttackers: an empty list attacks with nothing. */
   | {
       readonly kind: 'declareAttackers';

@@ -37,6 +37,12 @@ import {
   riotGivesHaste,
   riotInstances,
 } from './enters-keywords';
+import {
+  entersRemoveCountersOf,
+  removeAllCountersAsEntering,
+  removeCountersCandidates,
+  removeCountersDecision,
+} from './enters-remove-counters';
 import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { lifeTotalIsLocked } from './player-lock';
 import { matchesFilter } from './select';
@@ -62,7 +68,20 @@ export function tokenAsks(state: GameState, seat: SeatId, definition: TokenDefin
     entersReveal(definition.abilities) !== null ||
     riotInstances(state, definition.abilities, hypotheticalToken(seat, definition)) > 0 ||
     (devourOf(definition.abilities) > 0 &&
-      devourCandidates(state, seat, devourQualityOf(definition.abilities)).length > 0)
+      devourCandidates(state, seat, devourQualityOf(definition.abilities)).length > 0) ||
+    removesCounters(state, seat, definition)
+  );
+}
+
+/** Sin, Unending Cataclysm (CR 614.12): the token's definition removes counters as it enters, and there is a permanent to remove them from (or it removes them from all). */
+function removesCounters(state: GameState, seat: SeatId, definition: TokenDefinition): boolean {
+  const rule = entersRemoveCountersOf(definition.abilities);
+  return (
+    rule !== null &&
+    // "Remove all counters from all permanents" (Thief of Blood) asks nothing, but goes the same way: the counters come off as the token is made.
+    (rule.all ||
+      removeCountersCandidates(state, seat, rule.filter, hypotheticalToken(seat, definition).id)
+        .length > 0)
   );
 }
 
@@ -104,7 +123,10 @@ function tokenCopyCandidates(
   source: ObjectId | null,
 ): readonly ObjectId[] {
   const rule = entersCopyOf(definition.abilities);
-  return rule === null ? [] : copyCandidates(state, seat, rule, source);
+  // The Mimeoplasm's two cards exiled from graveyards are asked of a card as it enters, not of a token (`docs/ROADMAP.md`): a token that is a copy of it enters as itself.
+  return rule === null || rule.exileTwoFromGraveyards !== undefined
+    ? []
+    : copyCandidates(state, seat, rule, source);
 }
 
 /** The instructions that create `count` tokens for `seat`, when the definition asks a question. */
@@ -198,6 +220,7 @@ export function runEnterToken(
         entersOptions(definition.abilities),
         entersColorExcept(definition.abilities),
         lifeTotalIsLocked(state, seat) ? 0 : getSeat(state, seat).life,
+        { state, seat },
       ),
       // Nothing exists yet: the question is about the token that the resolving spell or ability makes.
       source: res.object,
@@ -332,6 +355,21 @@ export function runEnterToken(
     if (legal.length > 0) return asked(devourDecision(seat, res.object, legal, quality));
     devoured = [];
   }
+  // Sin, Unending Cataclysm (CR 614.12, 122.1): "As this enters, remove all counters from any number of ...", the last question, asked only when a permanent has a counter to lose.
+  let removed = instruction.removed ?? null;
+  const removeRule = entersRemoveCountersOf(definition.abilities);
+  if (removeRule !== null && removed === null) {
+    const legal = removeCountersCandidates(
+      state,
+      seat,
+      removeRule.filter,
+      hypotheticalToken(seat, definition).id,
+    );
+    // Thief of Blood (CR 614.12): "remove all counters from all permanents" asks nothing.
+    if (removeRule.all) removed = legal;
+    else if (legal.length > 0) return asked(removeCountersDecision(seat, res.object, legal));
+    else removed = [];
+  }
   // CR 119.4, 614.12 (pay any amount of life): the life the token's controller chose to pay is lost as the token enters.
   if (what === 'lifePaid' && (chosen?.lifePaid ?? 0) > 0) {
     const had = getSeat(afterPay, seat).life;
@@ -340,8 +378,10 @@ export function runEnterToken(
     payEvents.push({ kind: 'lifeChanged', seat, from: had, to: had - paid });
   }
   const sacrificed = sacrificeForDevour(afterPay, devoured ?? [], seat);
+  const stripped = removeAllCountersAsEntering(sacrificed.state, removed ?? []);
+  payEvents.push(...stripped.events);
   const made = makeTokens(
-    sacrificed.state,
+    stripped.state,
     seat,
     definition,
     1,
@@ -350,6 +390,7 @@ export function runEnterToken(
     {
       counters: keywordEntryCounters(definition.abilities, riotAnswers, sacrificed.count),
       haste: riotGivesHaste(riotAnswers),
+      removed: stripped.count,
     },
   );
   // D-139: a token that asked is one more of what `moved` names after a `createToken` effect.

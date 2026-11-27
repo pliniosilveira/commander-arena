@@ -87,7 +87,10 @@ export function entersColorExcept(abilities: readonly Ability[]): string | undef
 /** The names "As this enters, choose Khans or Dragons" offers (D-151), or none when the abilities ask no such question. */
 export function entersOptions(abilities: readonly Ability[]): readonly string[] {
   for (const r of replacementsOf(abilities)) {
-    if (r.kind === 'asEntersChoose' && r.what === 'option') return r.options ?? [];
+    if (r.kind === 'asEntersChoose' && (r.what === 'option' || r.what === 'cardType')) {
+      // Cloud Key (CR 205.2a): "choose artifact, creature, enchantment, instant, or sorcery": a card type choice among the types listed; none listed offers every card type.
+      return r.options ?? [];
+    }
   }
   // CR 702.155b (D-151): "choose a number between one and this Saga's final chapter number".
   if (hasReadAhead(abilities)) {
@@ -118,12 +121,20 @@ export function entersWithCounters(
   escaped = false,
   /** Reads a `countOf` as the permanent enters (D-131): "for each Zombie card in your graveyard". */
   counted: (
-    count: CountAmount | Extract<Amount, { kind: 'diedThisTurn' | 'aggregate' }>,
+    count: CountAmount | Extract<Amount, { kind: 'diedThisTurn' | 'aggregate' | 'manaSpent' }>,
   ) => number = () => 0,
   /** The times the spell the permanent came from was kicked (D-254, CR 702.33c): "for each time it was kicked". 0 for a permanent that was not cast. */
   kicks = 0,
+  /** The counters the permanent removed from other permanents as it entered (Sin, Unending Cataclysm, `asEntersRemoveCounters`): what `countersRemovedAsEntered` reads. 0 for one that removed none. */
+  removed = 0,
 ): Record<string, number> {
   let counters: Record<string, number> = { ...base };
+  // CR 702.63a (Vanishing): "This permanent enters with N time counters on it"; each instance works separately (CR 702.63c).
+  for (const a of abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'vanishing' && a.keyword.count !== undefined) {
+      counters = { ...counters, time: (counters.time ?? 0) + a.keyword.count };
+    }
+  }
   for (const r of replacementsOf(abilities)) {
     if (r.kind === 'entersWithCounters') {
       if (r.ifEscaped === true && !escaped) continue;
@@ -132,13 +143,16 @@ export function entersWithCounters(
           ? r.count
           : r.count.kind === 'countOf' ||
               r.count.kind === 'diedThisTurn' ||
+              r.count.kind === 'manaSpent' ||
               r.count.kind === 'aggregate'
             ? counted(r.count)
             : r.count.kind === 'sum'
               ? r.count.of.reduce((n, part) => n + counted(part), 0)
               : r.count.kind === 'timesKicked'
                 ? kicks
-                : x * (r.count.times ?? 1);
+                : r.count.kind === 'countersRemovedAsEntered'
+                  ? removed * (r.count.times ?? 1)
+                  : x * (r.count.times ?? 1);
       if (count > 0) counters = { ...counters, [r.counter]: (counters[r.counter] ?? 0) + count };
     }
   }

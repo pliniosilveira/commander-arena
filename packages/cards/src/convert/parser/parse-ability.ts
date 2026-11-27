@@ -57,6 +57,7 @@ export type ParseOutcome =
 const SPELL_STATICS = [
   'static.self',
   'static.self-cost-reduction',
+  'static.self-cost-reduction-this-way',
   // D-641 (Prismari group 1): "Strive — ~ costs {2}{R} more to cast for each target beyond the first."
   'static.cost-per-extra-target',
   // D-492: "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." is tried first (it starts like the next).
@@ -67,6 +68,8 @@ const SPELL_STATICS = [
   'static.sacrifice-alt-cost',
   // Snuff Out (CR 118.9, 118.4): "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost."
   'static.pay-life-alt-cost',
+  // Baleful Mastery (CR 118.9): "You may pay {1}{B} rather than pay this spell's mana cost."
+  'static.pay-mana-alt-cost',
 ] as const;
 
 const FAMILIES: ReadonlySet<string> = new Set([
@@ -152,6 +155,46 @@ function readBody(
   return readSentences(sk.text, sk.sentences, rules, before, fallback, sentence);
 }
 
+/**
+ * "Create a Food token, then you may exile three cards from your graveyard." (Squirreled Away deck, group 4, CR 608.2d): the instructions before a ", then you may" and the offer
+ * after it are two sentences, as "Create a Food token. Then you may exile ..." is, so the lowering that reads an offer and what it buys ("If you do, ...") reads this one the same way. The
+ * sentence parser makes only the last clause optional for this join (`THEN_YOU_MAY`); a sentence with a test, a "where", a delay or another shape of its own is left as read.
+ */
+function splitOffer(sentence: IrSentence): IrSentence[] {
+  const clauses = sentence.clauses;
+  const offer = clauses[clauses.length - 1];
+  const before = clauses.slice(0, -1);
+  const lastBefore = before[before.length - 1];
+  if (
+    offer === undefined ||
+    lastBefore === undefined ||
+    !offer.optional ||
+    before.some((c) => c.optional) ||
+    lastBefore.connector !== 'then' ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.afterExile === true ||
+    sentence.afterDiscard !== undefined
+  ) {
+    return [sentence];
+  }
+  const { connector: _then, ...head } = lastBefore;
+  void _then;
+  return [
+    {
+      ...sentence,
+      clauses: [...before.slice(0, -1), head],
+      span: { start: sentence.span.start, end: lastBefore.span.end },
+    },
+    { ...sentence, clauses: [offer], span: { start: offer.span.start, end: sentence.span.end } },
+  ];
+}
+
 function readSentences(
   text: string,
   spans: readonly Span[],
@@ -181,7 +224,7 @@ function readSentences(
       seen.push(...halves[0].recognised, ...halves[1].recognised);
       continue;
     }
-    sentences.push(run.value);
+    sentences.push(...splitOffer(run.value));
     seen.push(...run.recognised);
   }
   const first = sentences[0];
@@ -219,7 +262,7 @@ const MODE_COST_LEAD = /^\p{Lu}[\p{L}'’ -]* — ((?:\{[^{}]+\})+) — (?=\S)/u
  * taken off only when the bullet did not read as written, as the flavor word of a line is (D-204), so a bullet that reads today never changes and a wrong strip can only
  * turn an unread mode into a read one.
  */
-const MODE_NAME_LEAD = /^\p{Lu}[\p{L}'’ -]* — (?=\S)/u;
+const MODE_NAME_LEAD = /^\p{Lu}[\p{L}'’ !?-]* — (?=\S)/u;
 
 /** Spree (CR 702.172a): "{2}{R} — ", the cost of a mode with no name before it; group 1 is the cost, in braces. */
 const SPREE_COST_LEAD = /^((?:\{[^{}]+\})+) — (?=\S)/u;

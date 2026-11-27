@@ -6,24 +6,24 @@
  *
  * Three channels, as in the commander format (CR 704.5a, 704.5c, 704.6c):
  *  - life: lethal when the damage reaches the life total; in danger when the life left is at most
- *    `DANGER_LIFE`;
- *  - poison: lethal at ten counters; in danger from `DANGER_POISON`;
- *  - commander damage: lethal when one commander has dealt 21 in all; in danger from `DANGER_COMMANDER`
+ *    `danger.life`;
+ *  - poison: lethal at ten counters; in danger from `danger.poison`;
+ *  - commander damage: lethal when one commander has dealt 21 in all; in danger from `danger.commander`
  *    (70% of the way, the evaluator's own mark).
- * The thresholds are first values, tuned by the M7c measurements (D-163).
+ * The danger thresholds are fields of `AgentWeights` (`weights.ts`), first tuned by the M7c measurements
+ * (D-163); lethal is the rules' and takes no weights.
+ *
+ * `threatBonus` is what an opposing commander is worth on top of its body when the agent weighs a trade
+ * with it (issue 624): it comes back from the command zone (CR 903.9a), so it is worth `threat.commander`
+ * more, and `threat.lethal` more when its next hit brings the agent to 21 commander damage (CR 903.10a,
+ * `commanderLethalNext`, which removal targeting reads too).
  */
 import type { GameView, ObjectView, SeatId } from '@commander-arena/engine';
 import { couldBlock } from './casual-evasion';
 import { lifeDamageOf, poisonDamageOf } from './casual-poison';
 import { hasKeyword, isCreature, powerOf, toughnessOf } from './casual-view';
 import { COMMANDER_LETHAL, commanderClock, POISON_LETHAL } from './evaluate';
-
-/** The defender is "in danger" when this much life or less would be left. */
-export const DANGER_LIFE = 6;
-/** ... or this many poison counters (of ten) would be on it. */
-export const DANGER_POISON = 7;
-/** ... or one commander would have dealt this much (of 21). */
-export const DANGER_COMMANDER = 15;
+import type { AgentWeights, DangerWeights } from './weights';
 
 /** What gets past the blockers to the defender. */
 export interface Breakthrough {
@@ -104,22 +104,34 @@ export function breakthrough(
   return { life, poison, commander };
 }
 
-/** Lethal and danger for `defender` when `b` gets through (see the module comment). */
-export function verdict(view: GameView, defender: SeatId, b: Breakthrough): Verdict {
+/** Whether `b` getting through is lethal for `defender` (CR 704.5a, 704.5c, 704.6c). */
+function isLethal(view: GameView, defender: SeatId, b: Breakthrough): boolean {
   const s = seatOf(view, defender);
-  const life = s?.life ?? 0;
+  const clock = commanderClock(view.commanderDamage, defender);
+  return (
+    b.life >= (s?.life ?? 0) ||
+    (b.poison > 0 && (s?.poison ?? 0) + b.poison >= POISON_LETHAL) ||
+    (b.commander > 0 && clock + b.commander >= COMMANDER_LETHAL)
+  );
+}
+
+/** Lethal and danger for `defender` when `b` gets through (see the module comment). */
+export function verdict(
+  view: GameView,
+  defender: SeatId,
+  b: Breakthrough,
+  w: DangerWeights,
+): Verdict {
+  const s = seatOf(view, defender);
   const poison = s?.poison ?? 0;
   const clock = commanderClock(view.commanderDamage, defender);
-  const lifeAfter = life - b.life;
-  const lethal =
-    b.life >= life ||
-    (b.poison > 0 && poison + b.poison >= POISON_LETHAL) ||
-    (b.commander > 0 && clock + b.commander >= COMMANDER_LETHAL);
+  const lifeAfter = (s?.life ?? 0) - b.life;
+  const lethal = isLethal(view, defender, b);
   const danger =
     lethal ||
-    (b.life > 0 && lifeAfter <= DANGER_LIFE) ||
-    (b.poison > 0 && poison + b.poison >= DANGER_POISON) ||
-    (b.commander > 0 && clock + b.commander >= DANGER_COMMANDER);
+    (b.life > 0 && lifeAfter <= w.life) ||
+    (b.poison > 0 && poison + b.poison >= w.poison) ||
+    (b.commander > 0 && clock + b.commander >= w.commander);
   return { lethal, danger, lifeAfter };
 }
 
@@ -137,6 +149,34 @@ export function attackIsLethal(
   attackers: readonly ObjectView[],
 ): boolean {
   if (attackers.length === 0) return false;
-  return verdict(view, defender, breakthrough(view, attackers, untappedCreatures(view, defender)))
-    .lethal;
+  return isLethal(view, defender, breakthrough(view, attackers, untappedCreatures(view, defender)));
+}
+
+/** The combat damage the worst commander of `owner` has dealt to `victim` (CR 903.10a counts each apart). */
+function commanderDamageFrom(view: GameView, owner: SeatId, victim: SeatId): number {
+  let worst = 0;
+  for (const [key, amount] of Object.entries(view.commanderDamage)) {
+    if (key.startsWith(`${victim}:`) && view.commanderDamageSources[key] === owner) {
+      worst = Math.max(worst, amount);
+    }
+  }
+  return worst;
+}
+
+/**
+ * Whether `o` is an opposing commander whose next hit brings the agent (`view.viewer`) to 21 commander
+ * damage (CR 903.10a). The view does not say which of an owner's commanders dealt which damage, so the
+ * worst clock of the owner's commanders is read: exact with one commander, pessimistic with partners.
+ */
+export function commanderLethalNext(view: GameView, o: ObjectView): boolean {
+  if (!isCreature(o) || !o.isCommander || o.controller === view.viewer) return false;
+  const hit = hitDamage(o);
+  return hit > 0 && commanderDamageFrom(view, o.owner, view.viewer) + hit >= COMMANDER_LETHAL;
+}
+
+/** What an opposing commander is worth to the agent on top of its body (see the module comment); 0 otherwise. */
+export function threatBonus(view: GameView, o: ObjectView, weights: AgentWeights): number {
+  if (!isCreature(o) || !o.isCommander || o.controller === view.viewer) return 0;
+  const w = weights.threat;
+  return w.commander + (commanderLethalNext(view, o) ? w.lethal : 0);
 }

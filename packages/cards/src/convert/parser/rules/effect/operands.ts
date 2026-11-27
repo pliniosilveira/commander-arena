@@ -69,6 +69,8 @@ export const PERMANENT_OPERANDS = [
   'noun.all-with-power-at-least-chosen-number',
   // D-426 (Danitha group 3): "all creatures that aren't enchanted".
   'noun.all-enchanted',
+  // Planeswalker Party deck (issue 132): "all nonland permanents that aren't legendary".
+  'noun.all-not-legendary',
   'noun.each-permanent',
   // D-268: "each artifact and creature your opponents control".
   'noun.each-type-union',
@@ -99,16 +101,26 @@ export const DAMAGE_RECIPIENTS = [
   // Stage P37 (D-180): "target player or planeswalker" and "each creature that player controls".
   'noun.player-or-planeswalker',
   'noun.each-permanent-of-player',
+  // Rowan Kenrith: "each tapped creature target player controls", the player a target of the ability.
+  'noun.each-permanent-of-target-player',
   // Stage P34 (D-152): "each other opponent".
   'noun.each-other-opponent',
   // Snort (CR 701.9a): "each opponent who discarded their hand this way", before `noun.player` would stop at "each opponent".
   'noun.each-player-discarded-their-hand',
   // Limit Break deck, group 1 (Barret Wallace, CR 508.5): "it deals damage equal to the number of equipped creatures you control to defending player".
   'noun.defending-player',
+  // Stuffy Doll (CR 614.12a): "it deals that much damage to the chosen player".
+  'noun.entered-chosen-player',
   // "~ deals 3 damage to that player" (stage P29, D-133): the player the event of the trigger is about.
   'noun.that-player',
   // "~ deals 2 damage to that permanent's controller" (stage P35, D-176, CR 109.4, 608.2h): the controller of an object the text named.
   'noun.its-controller',
+  // Exit from Exile deck (Bonecrusher Giant): "that spell's controller", the controller of the spell that targeted.
+  'noun.that-spells-controller',
+  // Breaking of the Fellowship (CR 115.3): "another target creature that player controls", a second target of the controller of the first.
+  'noun.another-target-of-same-controller',
+  // Fear of Burning Alive (CR 115.1, 109.4, 603.2): "~ deals that amount of damage to target creature that player controls", the player of the event of the trigger.
+  'noun.target-permanent-of-that-player',
   ...PERMANENT_OPERANDS,
   // "~ deals 1 damage to the player or planeswalker it's attacking" (stage P31, D-140): what the creature attacks.
   'noun.attacked-by-it',

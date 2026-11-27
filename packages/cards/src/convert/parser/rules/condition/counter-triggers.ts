@@ -88,7 +88,7 @@ export const CONDITION_CONTROL_THAT_CREATURE = defineRule<IrCondition>({
 /**
  * `condition.its-stat-was`: "its toughness was less than 1", "its power was 2 or less", "its toughness was 4 or greater" (CR 603.10a, 113.7a, 208.1: the power or toughness the
  * permanent the trigger is about has, or had as it left the battlefield). The number is a whole number written in digits. "Less than N" is at most N - 1 and "greater than N" at
- * least N + 1. Not read: a word for the number, a stat besides power and toughness, "more than" (Oracle text says "greater than"), "is" for a permanent that has left, another
+ * least N + 1. "Is" and "was" are read alike (the engine reads the stat as it is, or as it last was). Not read: a word for the number, a stat besides power and toughness, "more than" (Oracle text says "greater than"), another
  * object than "its", a missing number.
  */
 export const CONDITION_ITS_STAT_WAS = defineRule<IrCondition>({
@@ -106,6 +106,9 @@ export const CONDITION_ITS_STAT_WAS = defineRule<IrCondition>({
     'its toughness was 4 or greater',
     'its power was greater than 3',
     'its toughness was less than 0',
+    // CR 603.4 (Angelic Sell-Sword): the intervening "if" of an attack trigger reads the power the attacker has as the ability triggers and resolves.
+    'its power is 6 or greater',
+    'its toughness is less than 1',
   ],
   rejects: [
     'its toughness was',
@@ -118,13 +121,13 @@ export const CONDITION_ITS_STAT_WAS = defineRule<IrCondition>({
     'that creature’s toughness was less than 1',
     'his toughness was less than 1',
     'its toughness was less than 1 and',
-    'its toughness is less than 1',
+    'its toughness is',
     'its toughness was less than -1',
   ],
   parse: (ctx, pos) => {
     const r = pattern(
       new RegExp(
-        `its (power|toughness) was (?:(less than|greater than) (\\d+)|(\\d+) or (less|greater))${END}`,
+        `its (power|toughness) (?:was|is) (?:(less than|greater than) (\\d+)|(\\d+) or (less|greater))${END}`,
         'iu',
       ),
     )(ctx, pos);
@@ -206,8 +209,48 @@ export const CONDITION_YOU_PUT_COUNTER_THIS_TURN = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.that-creature-had-to-attack`: "that creature had to attack this combat" (Firkraag, Cunning Instigator; CR 508.1d, 701.15b: the creature the trigger is about was required to
+ * attack, by a goad or "attacks each combat if able", as the attackers of this combat were declared and was able to). The engine's `subjectHadToAttack`, the intervening "if" of a
+ * trigger about a creature. Not read: another noun ("it", "that permanent", "a creature"), another tense or span ("has to", "had to attack last combat", "this turn"), words after it.
+ */
+export const CONDITION_THAT_CREATURE_HAD_TO_ATTACK = defineRule<IrCondition>({
+  id: 'condition.that-creature-had-to-attack',
+  family: 'condition',
+  leading: ['that'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 701.15b (Goad)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
+  examples: ['that creature had to attack this combat'],
+  rejects: [
+    'that creature had to attack',
+    'that creature had to attack this turn',
+    'that creature had to attack last combat',
+    'that creature has to attack this combat',
+    'that permanent had to attack this combat',
+    'it had to attack this combat',
+    'a creature had to attack this combat',
+    'that creatures had to attack this combat',
+    'that creature had to attack this combat and',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(new RegExp(`that creature had to attack this combat${END}`, 'iu'))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: condition('condition.that-creature-had-to-attack', pos, r.pos, {
+        kind: 'subjectHadToAttack',
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const COUNTER_TRIGGER_CONDITION_RULES = [
   CONDITION_CONTROL_THAT_CREATURE,
   CONDITION_ITS_STAT_WAS,
+  CONDITION_THAT_CREATURE_HAD_TO_ATTACK,
   CONDITION_YOU_PUT_COUNTER_THIS_TURN,
 ];

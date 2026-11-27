@@ -11,9 +11,10 @@
  *  - it has ward (CR 702.21) with a cost the agent cannot pay with the mana left after the spell.
  * Exile and bounce ignore the "will come back" and indestructible filters (they do not destroy).
  *
- * The survivors are ranked by what removing them is worth, `creatureValue` for a creature (a planeswalker
- * by its loyalty, other permanents are not aimed at). The OPPOSING COMMANDER goes first among near-equals:
- * when its value is at least `NEAR_EQUAL` of the best one it is taken. Ties are broken by object id with a
+ * The survivors are ranked by what removing them is worth: for a creature `creatureValue`, plus
+ * `threat.lethal` for an opposing commander whose next hit is lethal commander damage (CR 903.10a), a
+ * planeswalker by its loyalty; other permanents are not aimed at. The OPPOSING COMMANDER goes first among near-equals:
+ * when its value is at least `removal.nearEqual` (`weights.ts`) of the best one it is taken. Ties are broken by object id with a
  * plain code-unit compare (the lint bans locale compare, and the choice must be the same in every sample).
  * A damage spell that can aim at a player goes at the player when its damage is lethal to them, or when no
  * creature qualifies and it is not wasted (never when the spell is also bounce or destroy: those need an
@@ -23,8 +24,10 @@ import type { ChosenTarget, GameView, ObjectView, SeatId } from '@commander-aren
 import { isHelpfulSpell } from './casual-helpful';
 import { findObject, hasKeyword, isCreature, toughnessOf } from './casual-view';
 import { creatureValue } from './evaluate';
+import { commanderLethalNext } from './heuristic-danger';
 import { duel } from './heuristic-duel';
 import { ownUnits } from './heuristic-mana';
+import type { AgentWeights } from './weights';
 
 export type RemovalKind = 'destroy' | 'exile' | 'damage' | 'bounce' | 'shrink';
 
@@ -53,15 +56,21 @@ export function isRemovalSpell(o: ObjectView): boolean {
 /** The damage a damage spell deals (0 when its text does not say). */
 export const damageOf = (text: string): number => Number(DAMAGE.exec(text)?.[1] ?? 0);
 
-/** The value of removing a permanent: a creature by its evaluator value, a planeswalker by loyalty. */
-export function threatValue(o: ObjectView): number {
-  if (isCreature(o)) return creatureValue(o);
-  if (o.types.includes('planeswalker')) return 6 + 0.6 * (o.counters.loyalty ?? 0);
+/**
+ * The value of removing a permanent: a creature by its evaluator value, plus `threat.lethal` for an
+ * opposing commander whose next hit is lethal commander damage (`commanderLethalNext`); a planeswalker
+ * by loyalty.
+ */
+export function threatValue(view: GameView, o: ObjectView, weights: AgentWeights): number {
+  const w = weights.removal;
+  if (isCreature(o)) {
+    const lethal = commanderLethalNext(view, o) ? weights.threat.lethal : 0;
+    return creatureValue(o, weights) + lethal;
+  }
+  if (o.types.includes('planeswalker'))
+    return w.walkerBase + w.walkerLoyalty * (o.counters.loyalty ?? 0);
   return 0;
 }
-
-/** The value of the best commander is taken before a lone better creature when at least this near. */
-const NEAR_EQUAL = 0.8;
 
 const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -89,11 +98,12 @@ export interface RemovalContext {
   /** Mana the agent can still spend after the spell, for ward. */
   readonly spare: number;
   readonly spellId: string | undefined;
+  readonly weights: AgentWeights;
 }
 
 /** Whether a removal spell of this context is worth casting at `o`: see the module comment. */
 export function isWorthTarget(view: GameView, o: ObjectView, ctx: RemovalContext): boolean {
-  if (o.controller === view.viewer || threatValue(o) <= 0) return false;
+  if (o.controller === view.viewer || threatValue(view, o, ctx.weights) <= 0) return false;
   if (isCreature(o) && o.damage >= toughnessOf(o) && toughnessOf(o) > 0) return false;
   if (dyingOnStack(view, o, ctx.spellId)) return false;
   const ward = wardCost(o);
@@ -109,7 +119,11 @@ export function isWorthTarget(view: GameView, o: ObjectView, ctx: RemovalContext
 }
 
 /** The spell's context: its kind, damage and the mana the agent keeps after paying for it. */
-export function removalContext(view: GameView, spell: ObjectView): RemovalContext | null {
+export function removalContext(
+  view: GameView,
+  spell: ObjectView,
+  weights: AgentWeights,
+): RemovalContext | null {
   const kind = removalKindOf(spell.oracleText);
   if (kind === null) return null;
   const cost = spell.castCost === undefined ? 0 : spell.castCost.length;
@@ -118,6 +132,7 @@ export function removalContext(view: GameView, spell: ObjectView): RemovalContex
     damage: damageOf(spell.oracleText),
     spare: Math.max(ownUnits(view).length - cost, 0),
     spellId: spell.id,
+    weights,
   };
 }
 
@@ -134,11 +149,12 @@ export function rankTargets(
 ): Ranked[] {
   const worth = candidates
     .filter((o) => isWorthTarget(view, o, ctx))
-    .map((object) => ({ object, value: threatValue(object) }))
+    .map((object) => ({ object, value: threatValue(view, object, ctx.weights) }))
     .sort((a, b) => b.value - a.value || byId(a.object.id, b.object.id));
   const top = worth[0];
   if (top === undefined) return worth;
-  const commander = worth.find((r) => r.object.isCommander && r.value >= NEAR_EQUAL * top.value);
+  const near = ctx.weights.removal.nearEqual;
+  const commander = worth.find((r) => r.object.isCommander && r.value >= near * top.value);
   return commander === undefined ? worth : [commander, ...worth.filter((r) => r !== commander)];
 }
 
@@ -151,8 +167,12 @@ function attackersAgainst(view: GameView, seat: SeatId): ObjectView[] {
 }
 
 /** The best target worth a removal spell now, or null: used to decide whether to cast it at all. */
-export function bestRemovalTarget(view: GameView, spell: ObjectView): Ranked | null {
-  const ctx = removalContext(view, spell);
+export function bestRemovalTarget(
+  view: GameView,
+  spell: ObjectView,
+  weights: AgentWeights,
+): Ranked | null {
+  const ctx = removalContext(view, spell, weights);
   if (ctx === null) return null;
   const pool = view.battlefield.filter((o) => o.controller !== view.viewer);
   const defending = view.combat !== null && view.activeSeat !== view.viewer;
@@ -166,20 +186,28 @@ export interface TargetPick {
   readonly reason: 'target-commander' | 'target-best';
 }
 
+/** The answers to a targets decision for a removal spell: today's pick first, then the other targets worth it, best first. */
+export interface RemovalOptions {
+  readonly picks: readonly TargetPick[];
+  /** The value of each pick (`threatValue` plus the lethal-commander bonus; 0 for burn at a player). */
+  readonly values: readonly number[];
+}
+
 /**
- * The answer to a targets decision for a removal spell, or null to leave it to the casual handler (a
- * spell this does not read, several slots, or nothing worth aiming at).
+ * The answers to a targets decision for a removal spell, today's pick first (see `chooseRemovalTargets`), or
+ * null to leave it to the casual handler (a spell this does not read, several slots, or nothing worth aiming at).
  */
-export function chooseRemovalTargets(
+export function removalOptions(
   view: GameView,
   source: ObjectView,
   specs: readonly { specId: string; min: number; max: number; legal: readonly ChosenTarget[] }[],
-): TargetPick | null {
+  weights: AgentWeights,
+): RemovalOptions | null {
   const [spec] = specs;
   if (specs.length !== 1 || spec === undefined || spec.max !== 1 || !isRemovalSpell(source)) {
     return null;
   }
-  const ctx = removalContext(view, source);
+  const ctx = removalContext(view, source, weights);
   if (ctx === null) return null;
   const legalObjects = spec.legal.flatMap((t) => {
     const o = t.kind === 'object' ? findObject(view, t.id) : undefined;
@@ -191,26 +219,45 @@ export function chooseRemovalTargets(
   const opponent =
     player?.kind === 'player' ? view.seats.find((s) => s.id === player.seat) : undefined;
   if (player !== undefined && opponent !== undefined && ctx.kind === 'damage') {
-    if (ctx.damage >= opponent.life) return { targets: [player], reason: 'target-best' };
+    if (ctx.damage >= opponent.life) {
+      return { picks: [{ targets: [player], reason: 'target-best' }], values: [0] };
+    }
   }
   const defending = view.combat !== null && view.activeSeat !== view.viewer;
   const attackers = defending ? attackersAgainst(view, view.viewer) : [];
   const preferred = pool.filter((o) => attackers.some((a) => a.id === o.id));
-  const ranked = rankTargets(view, preferred.length > 0 ? preferred : pool, ctx);
-  const best = ranked[0] ?? rankTargets(view, pool, ctx)[0];
-  if (best !== undefined) {
-    const hit = legalObjects.find((x) => x.o.id === best.object.id);
-    if (hit !== undefined) {
-      return {
-        targets: [hit.t],
-        reason: best.object.isCommander ? 'target-commander' : 'target-best',
-      };
-    }
+  const first = rankTargets(view, preferred.length > 0 ? preferred : pool, ctx);
+  const ranked = first.length > 0 ? first : rankTargets(view, pool, ctx);
+  const picks: TargetPick[] = [];
+  const values: number[] = [];
+  for (const r of ranked) {
+    const hit = legalObjects.find((x) => x.o.id === r.object.id);
+    if (hit === undefined) continue;
+    picks.push({
+      targets: [hit.t],
+      reason: r.object.isCommander ? 'target-commander' : 'target-best',
+    });
+    values.push(r.value);
   }
+  if (picks.length > 0) return { picks, values };
   // Nothing worth a creature spell: burn with a player target goes face rather than at a bad creature.
-  if (player !== undefined && ctx.kind === 'damage')
-    return { targets: [player], reason: 'target-best' };
+  if (player !== undefined && ctx.kind === 'damage') {
+    return { picks: [{ targets: [player], reason: 'target-best' }], values: [0] };
+  }
   return null;
+}
+
+/**
+ * The answer to a targets decision for a removal spell, or null to leave it to the casual handler (a
+ * spell this does not read, several slots, or nothing worth aiming at).
+ */
+export function chooseRemovalTargets(
+  view: GameView,
+  source: ObjectView,
+  specs: readonly { specId: string; min: number; max: number; legal: readonly ChosenTarget[] }[],
+  weights: AgentWeights,
+): TargetPick | null {
+  return removalOptions(view, source, specs, weights)?.picks[0] ?? null;
 }
 
 /**
@@ -221,6 +268,7 @@ export function chooseRemovalTargets(
 export function creatureToHelp(
   view: GameView,
   legal: readonly ChosenTarget[],
+  weights: AgentWeights,
 ): ChosenTarget | null {
   const mine = legal.flatMap((t) => {
     const o = t.kind === 'object' ? findObject(view, t.id) : undefined;
@@ -247,7 +295,8 @@ export function creatureToHelp(
   const fighting = mine.filter((x) => fights.has(x.o.id));
   const pool = needy.length > 0 ? needy : fighting.length > 0 ? fighting : mine;
   return (
-    [...pool].sort((a, b) => creatureValue(b.o) - creatureValue(a.o) || byId(a.o.id, b.o.id))[0]
-      ?.t ?? null
+    [...pool].sort(
+      (a, b) => creatureValue(b.o, weights) - creatureValue(a.o, weights) || byId(a.o.id, b.o.id),
+    )[0]?.t ?? null
   );
 }

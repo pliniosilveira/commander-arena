@@ -54,11 +54,17 @@ function revealedEvent(
 }
 
 /** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-396), "You may put a card that matches into your hand". */
-function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown' | 'top'): string {
+function mayTakeWords(
+  ins: LookTake,
+  to: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top' | 'manifest',
+): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
   // `min`: a card that must be taken (Cavalier of Thorns: "Put a land card from among them onto the battlefield"), not a "you may".
   const must = (ins.min ?? 0) > 0;
   const them = ins.max === 1 ? 'it' : 'them';
+  // Durnan (CR 701.13): "You may exile a creature card from among them".
+  if (to === 'exile')
+    return must ? `Exile ${cards} from among them` : `You may exile ${cards} from among them`;
   const where =
     to === 'hand'
       ? 'into your hand'
@@ -74,21 +80,38 @@ function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown
 export function runLookTake(state: GameState, res: ResolutionContext, ins: LookTake): StepOutcome {
   if (ins.stage === 'rest') return putRest(state, ins);
   const { seat } = ins;
-  const looked = topCards(state, seat, ins.count);
+  // Gonti: the library looked at may be another player's; `seat` is the one who looks and chooses.
+  const looked = topCards(state, ins.libraryOf ?? seat, ins.count);
   if (looked.length === 0) return done(state);
   // CR 701.20a (D-396): the cards are shown when the effect starts, before anyone chooses. The event comes out as an instruction of its own, because a
   // question (`needs`) carries no events; the same instruction then runs again, marked `revealed`, and asks.
   if (ins.revealAll === true && ins.revealed !== true) {
     return done(state, [revealedEvent(state, seat, looked)], [{ ...ins, revealed: true }]);
   }
+  // Harper Recruiter (CR 608.2d): one card for each kind, asked in turn; the cards chosen so far are not offered again. An answer moves on to the next kind.
+  const kindFilter = ins.kinds === undefined ? undefined : ins.kinds[ins.kindAt ?? 0];
+  const picked = ins.picked ?? [];
+  if (ins.kinds !== undefined && ins.chosen !== null) {
+    const all = [...picked, ...ins.chosen];
+    const at = (ins.kindAt ?? 0) + 1;
+    if (at < ins.kinds.length) {
+      return done(state, [], [{ ...ins, kindAt: at, picked: all, chosen: null }]);
+    }
+    const { kinds: _kinds, kindAt: _at, picked: _picked, ...plain } = ins;
+    void _kinds;
+    void _at;
+    void _picked;
+    return runLookTake(state, res, { ...plain, chosen: all });
+  }
   const legal = looked.filter((id) => {
     const card = state.objects[id];
     return (
       card !== undefined &&
+      !picked.includes(id) &&
       matchesFilter(
         state,
         card,
-        { ...ins.filter, zone: 'library' },
+        { ...(kindFilter ?? ins.filter), zone: 'library' },
         // CR 608.2d, 205.3m (D-566): "Choose a creature type. ... cards of the chosen type": the type chosen as this effect resolves.
         {
           controller: seat,
@@ -109,7 +132,8 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   if (to === 'castFree') {
     return done(
       state,
-      [{ kind: 'topCardsLooked', seat, count: looked.length }],
+      // CR 701.20a: with `revealAll` (Sunbird's Invocation) the cards were shown to everyone, so nothing is said of a look.
+      ins.revealAll === true ? [] : [{ kind: 'topCardsLooked', seat, count: looked.length }],
       [
         ...(legal.length === 0
           ? []
@@ -127,9 +151,18 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     );
   }
   // D-324: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
-  const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
+  // Gonti (CR 406.3, 608.2d): "look at the top card of that player's library, then exile it face down": the one card is the whole answer, so nobody is asked; the permission to play it
+  // lets the controller look at it (`mayPlay.lookAt`).
+  const forced =
+    (ins.hidden === true || ins.unlinked === true) &&
+    (ins.min ?? 0) >= legal.length &&
+    legal.length > 0;
   // `take.all`: "put all land cards from among them": every card that matches goes, with no question.
   const chosenNow = ins.all === true ? legal : (ins.chosen ?? (forced ? legal : null));
+  // A kind with no card to take asks nothing: the next kind is asked, or the cards chosen are taken.
+  if (ins.kinds !== undefined && legal.length === 0) {
+    return runLookTake(state, res, { ...ins, chosen: [] });
+  }
   if (chosenNow === null && legal.length > 0) {
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
@@ -141,7 +174,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
       looked,
       // CR 702.75a (D-145): Hideaway exiles one of the cards looked at; every other take is a "you may".
       min: Math.min(ins.min ?? 0, legal.length),
-      max: Math.min(ins.max, legal.length),
+      max: Math.min(ins.kinds === undefined ? ins.max : 1, legal.length),
       // CR 202.3 (D-230): "with total mana value 4 or less": the answer is checked against the mana value of each card.
       ...(ins.totalManaValue === undefined
         ? {}
@@ -160,16 +193,22 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
             },
           }),
       reveal: to !== 'exileFaceDown' && ins.hidden !== true,
-      prompt: `${ins.revealAll === true ? 'Reveal' : 'Look at'} the top ${looked.length} card${looked.length === 1 ? '' : 's'} of your library. ${
-        to === 'exileFaceDown'
-          ? 'Exile one of them face down'
-          : ins.totalManaValue !== undefined
-            ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
-            : ins.hidden === true && to === 'top'
-              ? 'Put one of them on top of your library'
-              : ins.hidden === true && to === 'hand'
-                ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
-                : mayTakeWords(ins, to)
+      prompt: `${ins.revealAll === true ? 'Reveal' : 'Look at'} the top ${looked.length} card${looked.length === 1 ? '' : 's'} of ${ins.libraryOf === undefined ? 'your' : 'that player’s'} library. ${
+        ins.max === 0
+          ? 'Nothing may be taken; the cards stay on top'
+          : to === 'exileFaceDown'
+            ? ins.max === 1
+              ? 'Exile one of them face down'
+              : `Exile ${ins.max} of them face down`
+            : to === 'manifest'
+              ? 'Manifest one of them'
+              : ins.totalManaValue !== undefined
+                ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
+                : ins.hidden === true && to === 'top'
+                  ? 'Put one of them on top of your library'
+                  : ins.hidden === true && to === 'hand'
+                    ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
+                    : mayTakeWords(ins, to)
       }; the rest ${
         ins.rest === 'graveyard'
           ? 'go into your graveyard'
@@ -218,12 +257,31 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
           ? // CR 303.4f (D-230): an Aura among the cards chooses what it enchants as it enters (`rules/aura-entry.ts`).
             withAuraEntries(
               state,
-              moveInstructions(chosen, 'battlefield', 'top', ins.tapped === true, 'you'),
+              moveInstructions(
+                chosen,
+                'battlefield',
+                'top',
+                ins.tapped === true,
+                'you',
+                ins.withCounters,
+              ),
             )
-          : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
-            moveInstructions(chosen, 'exile').map((i) =>
-              i.kind === 'move' ? { ...i, linkTo: res.source, faceDown: true as const } : i,
-            )),
+          : to === 'manifest'
+            ? // CR 701.62a, 701.40a: the card is put onto the battlefield face down as a manifested 2/2 creature under the control of the player who manifests dread.
+              moveInstructions(chosen, 'battlefield', 'top', false, 'you').map((i) =>
+                i.kind === 'move' ? { ...i, entersFaceDown: 'manifest' as const } : i,
+              )
+            : to === 'exile'
+              ? // CR 406.3 (Durnan): exiled face up; no permanent remembers it, `moved` names it afterwards.
+                moveInstructions(chosen, 'exile')
+              : // CR 702.75a: exiled face down, remembered by the permanent whose ability it is and visible to its controller.
+                moveInstructions(chosen, 'exile').map((i) =>
+                  i.kind === 'move'
+                    ? ins.unlinked === true
+                      ? { ...i, faceDown: true as const }
+                      : { ...i, linkTo: res.source, faceDown: true as const }
+                    : i,
+                )),
     { ...ins, stage: 'rest', chosen, left },
   ]);
 }
@@ -234,7 +292,16 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
   if (left.length === 0) return done(state);
   // D-151: "look at the top card": what was not taken stays where it is.
   if (ins.rest === 'top') return done(state);
-  if (ins.rest === 'graveyard') return done(state, [], moveInstructions(left, 'graveyard'));
+  if (ins.rest === 'graveyard') {
+    // CR 701.62a: manifest dread puts the cards not manifested into the graveyard; "that creature" after it is the manifested one, so these are not what `moved` names.
+    return done(
+      state,
+      [],
+      moveInstructions(left, 'graveyard').map((i) =>
+        ins.to === 'manifest' && i.kind === 'move' ? { ...i, notMoved: true as const } : i,
+      ),
+    );
+  }
   // CR 401.4: cards put on top at the same time are arranged by their owner.
   if (ins.rest === 'topChosen') {
     return done(
@@ -268,7 +335,7 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
       ],
     );
   }
-  return bottomInRandomOrder(state, ins.seat, left);
+  return bottomInRandomOrder(state, ins.libraryOf ?? ins.seat, left);
 }
 
 /**

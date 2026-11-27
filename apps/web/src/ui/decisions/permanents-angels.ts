@@ -17,7 +17,14 @@ import { legalNoun } from './permanents';
 import { AMASS_BADGE, amassPrompt, isAmass } from './permanents-amass';
 import { BLIGHT_BADGE, blightPrompt, isBlight } from './permanents-blight';
 import { conniveOrderPrompt, isConniveOrder } from './permanents-connive';
-import { entersCopyPrompt, isEntersCopy } from './permanents-dragons';
+import {
+  cipherPrompt,
+  entersCopyOtherPrompt,
+  entersCopyPrompt,
+  isCipher,
+  isEntersCopy,
+  isEntersCopyOther,
+} from './permanents-dragons';
 import {
   isMoveCounters,
   MOVE_COUNTERS_BADGE,
@@ -209,6 +216,10 @@ export function angelsPermanentPrompt(
   // D-151 (CR 707.9): "As this artifact enters, you may have it become a copy of any creature".
   if (isEntersCopy(decision))
     return entersCopyPrompt(decision, index, legalNoun(decision.legal, index));
+  // Cipher (CR 702.99): the creature the card of the spell is encoded on.
+  if (isCipher(decision)) return cipherPrompt(decision, index);
+  // The Mimeoplasm (CR 707.9b): the other creature card exiled from the graveyards.
+  if (isEntersCopyOther(decision)) return entersCopyOtherPrompt(decision, index);
   // D-196 (CR 701.54a): "Each time the Ring tempts you, choose a creature you control".
   if (isRingBearer(decision)) return ringBearerPrompt(decision, index);
   // D-370 (CR 701.47a): "Choose an Army creature you control".

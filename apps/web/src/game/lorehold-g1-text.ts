@@ -38,7 +38,7 @@ export function searchText(effect: SearchEffect): string {
         ? effect.zones.join(' and/or ')
         : `${effect.zones.slice(0, -1).join(', ')}, and/or ${effect.zones[effect.zones.length - 1]}`;
   if (card === null) return 'Search your library';
-  const put = `put it ${WHERE[place.zone]}${place.tapped === true ? ' tapped' : ''}`;
+  const put = `${place.zone === 'exile' ? 'exile it' : `put it ${WHERE[place.zone]}`}${place.tapped === true ? ' tapped' : ''}`;
   const found = effect.reveal ? `, reveal it and ${put}` : ` and ${put}`;
   return `${effect.optional === true ? 'You may search' : 'Search'} your ${zones} for ${card}${found}${effect.shuffle ? ', then shuffle' : ''}`;
 }

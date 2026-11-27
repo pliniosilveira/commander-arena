@@ -86,8 +86,8 @@ describe('"you may [do something]" and "if you do"', () => {
   });
 
   test('"you may" of another effect is refused: "if you do" could not tell whether it was done', () => {
-    expect(spell({ kind: 'may', effect: { kind: 'gainLife', player: YOU, amount: 1 } })).toEqual([
-      expect.stringContaining('could not tell whether gainLife was done'),
+    expect(spell({ kind: 'may', effect: { kind: 'scry', player: YOU, count: 1 } })).toEqual([
+      expect.stringContaining('could not tell whether scry was done'),
     ]);
   });
 
@@ -96,7 +96,7 @@ describe('"you may [do something]" and "if you do"', () => {
     expect(spell(bare)).toEqual([expect.stringContaining('needs a "may" effect before it')]);
     // D-139: after an effect whose doing the engine can tell ("exile it. If you do, ..."), "if you do" can be read without a "may".
     expect(spell(seq(draw, bare))).toEqual([]);
-    expect(spell(seq({ kind: 'gainLife', player: YOU, amount: 1 }, bare))).toEqual([
+    expect(spell(seq({ kind: 'scry', player: YOU, count: 1 }, bare))).toEqual([
       expect.stringContaining('needs a "may" effect'),
     ]);
     expect(spell(mayDiscardThen(draw))).toEqual([]);
@@ -464,12 +464,24 @@ describe('library positions and sacrifice choices', () => {
   test('they belong to a sacrifice, not to a move', () => {
     const moved: Effect = {
       kind: 'moveToZone',
-      objects: { kind: 'choose', filter: { controller: 'you' }, anyNumber: true },
+      objects: {
+        kind: 'choose',
+        filter: { controller: 'you', zone: 'graveyard' },
+        anyNumber: true,
+        optional: true,
+      },
       to: 'hand',
     };
     expect(structural(sorcery(moved))).toEqual([
       expect.stringContaining('anyNumber and greatest belong to a sacrifice choice'),
     ]);
+    // The one other place: permanents exiled until the source leaves (Glorious Protector); a plain move of permanents is still refused.
+    const plain: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'choose', filter: { controller: 'you' }, anyNumber: true },
+      to: 'hand',
+    };
+    expect(structural(sorcery(plain))).not.toEqual([]);
   });
 });
 

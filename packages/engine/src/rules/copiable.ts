@@ -132,7 +132,32 @@ export function copiableValues(state: GameState, obj: GameObject): CopiableValue
   // unlocked by its own (they are not copiable values, CR 709.5c).
   const inPlay = obj.zone === 'battlefield' || obj.zone === 'phased';
   const doored = inPlay ? applyDoors(values, obj.unlockedDoors ?? []) : values;
-  return atStation(atLevel(doored, obj.level ?? 1), obj.counters.charge ?? 0);
+  return atSolved(
+    atStation(atLevel(doored, obj.level ?? 1), obj.counters.charge ?? 0),
+    inPlay && obj.solved === true,
+  );
+}
+
+const solvedLists = new WeakMap<readonly Ability[], readonly Ability[]>();
+
+/**
+ * CR 702.169, 719.3b, 719.3c (Case): the "Solved" abilities of a Case are there as long as the permanent has the solved designation, and not before; the abilities that no
+ * "Solved" label gates (the "To solve" trigger included) are there always. The designation is the permanent's own (it is not a copiable value, CR 719.3b), so a copy has the
+ * abilities its own designation gives it. The list is made once for each list of abilities and designation, and only for a card that has such an ability.
+ */
+function atSolved(values: CopiableValues, solved: boolean): CopiableValues {
+  const { abilities } = values;
+  if (!abilities.some((a) => a.kind === 'solved')) return values;
+  if (!solved) {
+    const unsolved = abilities.filter((a) => a.kind !== 'solved');
+    return { ...values, abilities: unsolved };
+  }
+  let list = solvedLists.get(abilities);
+  if (list === undefined) {
+    list = abilities.flatMap((a) => (a.kind === 'solved' ? a.abilities : [a]));
+    solvedLists.set(abilities, list);
+  }
+  return { ...values, abilities: list };
 }
 
 const levelled = new WeakMap<readonly Ability[], Map<number, readonly Ability[]>>();

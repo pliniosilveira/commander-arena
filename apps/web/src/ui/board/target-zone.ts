@@ -41,6 +41,7 @@ export function questionTitle(pending: ChooseCardsDecision): string {
 const PICKER_PURPOSES: ReadonlySet<ChooseCardsDecision['purpose']> = new Set([
   'search',
   'lookTake',
+  'lookSplit',
   'move',
   'exile',
   'additionalExile',
@@ -49,7 +50,7 @@ const PICKER_PURPOSES: ReadonlySet<ChooseCardsDecision['purpose']> = new Set([
 /**
  * The Zone Picker a question opens by itself: the graveyard of #23, the cards of a library search (the library is hidden,
  * so the picker lists the matching cards the engine shows the searcher), the cards looked at or
- * revealed from the top of the library, or the cards a question chooses in a graveyard or in exile
+ * revealed from the top of the library (a take or a split into piles), or the cards a question chooses in a graveyard or in exile
  * ("return a creature card from your graveyard", "exile a card from your graveyard"). Cards of the
  * hand are already on the board, so a hand question opens nothing.
  */
@@ -62,7 +63,10 @@ export function questionZoneToOpen(view: GameView): QuestionZone | null {
   // "Look at the top six cards ... you may take one": the cards that can be taken, and the others beside them.
   if (pending.zone === 'library') {
     if (pending.purpose === 'search') return { zone: { kind: 'cards' }, name: 'library' };
-    return pending.purpose === 'lookTake' ? { zone: { kind: 'cards' }, name: 'cards' } : null;
+    // D-216: "Put one of them into your hand, one on the bottom, and exile one" lists the cards looked at one pile at a time.
+    return pending.purpose === 'lookTake' || pending.purpose === 'lookSplit'
+      ? { zone: { kind: 'cards' }, name: 'cards' }
+      : null;
   }
   if (pending.zone === 'graveyard') return { zone: { kind: 'cards' }, name: 'graveyard' };
   if (pending.zone === 'exile') return { zone: { kind: 'cards' }, name: 'exile' };

@@ -39,6 +39,8 @@ export function manaAction(
     ...(o.extraColors === undefined ? {} : { extraColors: o.extraColors }),
     ...(o.sacrifice === undefined ? {} : { sacrifice: o.sacrifice }),
     ...(o.tapped === undefined ? {} : { tapped: o.tapped }),
+    // CR 107.3 (Hazel of the Rootbloom): the permanents a cost "Tap X untapped tokens you control" taps.
+    ...(o.tappedMany === undefined ? {} : { tappedMany: o.tappedMany }),
   };
 }
 

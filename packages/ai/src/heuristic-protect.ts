@@ -5,11 +5,13 @@
  *
  * WHEN: in response to an opponent's spell or ability on the stack that names a permanent of the agent's
  * as a target. Each protection play is cast on the sample, and the stack resolves; the best is cast when it
- * beats passing by `TRICK_MARGIN` (the removal fizzles on the sample, so the permanent is still there).
+ * beats passing by `protection.margin` (the removal fizzles on the sample, so the permanent is still there).
  *
  * WHO: `protectedTarget` picks the permanent to protect: one that an opponent's object on the stack names,
  * the commander first, then the most valuable; with no threat, the most valuable permanent that is not a
  * land. A land is the choice only when it is all that is legal.
+ *
+ * The numbers named `protection.*` are fields of `AgentWeights` (`weights.ts`).
  */
 import type {
   Action,
@@ -25,13 +27,7 @@ import { creatureValue } from './evaluate';
 import type { Think } from './heuristic-budget';
 import { type Answer, scoreCast } from './heuristic-delta';
 import { canPayAll, costSymbols, type Unit, unitsOf } from './heuristic-mana';
-
-/** A protection play must beat passing by this much (the same margin as a combat trick). */
-const PROTECT_MARGIN = 0.5;
-/** A commander is worth this much more than a creature of its value (as in `heuristic-main.ts`). */
-const COMMANDER_BONUS = 4;
-/** What a permanent that is not a creature is worth next to a creature. */
-const PERMANENT_VALUE = 3;
+import type { AgentWeights } from './weights';
 
 const PROTECTS = /hexproof|indestructible|shroud|protection from|regenerat|phase out/i;
 
@@ -41,10 +37,10 @@ export const isProtectionSpell = (o: ObjectView): boolean =>
 
 const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-const worthOf = (o: ObjectView): number =>
+const worthOf = (o: ObjectView, weights: AgentWeights): number =>
   (isCreature(o)
-    ? creatureValue({ ...o, power: o.power ?? 0, toughness: o.toughness ?? 0 })
-    : PERMANENT_VALUE) + (o.isCommander ? COMMANDER_BONUS : 0);
+    ? creatureValue({ ...o, power: o.power ?? 0, toughness: o.toughness ?? 0 }, weights)
+    : weights.protection.permanentValue) + (o.isCommander ? weights.protection.commanderBonus : 0);
 
 /** The permanents of the agent's that an opponent's object on the stack names as a target. */
 export function threatened(view: GameView): ObjectView[] {
@@ -60,6 +56,7 @@ export function threatened(view: GameView): ObjectView[] {
 export function protectedTarget(
   view: GameView,
   legal: readonly ChosenTarget[],
+  weights: AgentWeights,
 ): ChosenTarget | null {
   const mine = legal.flatMap((t) => {
     const o = t.kind === 'object' ? findObject(view, t.id) : undefined;
@@ -67,7 +64,7 @@ export function protectedTarget(
   });
   const threats = new Set(threatened(view).map((o) => o.id));
   const rank = (x: { o: ObjectView }): number =>
-    (threats.has(x.o.id) ? 1000 : 0) + (isLand(x.o) ? -100 : 0) + worthOf(x.o);
+    (threats.has(x.o.id) ? 1000 : 0) + (isLand(x.o) ? -100 : 0) + worthOf(x.o, weights);
   const best = [...mine].sort((a, b) => rank(b) - rank(a) || byId(a.o.id, b.o.id))[0];
   return best?.t ?? null;
 }
@@ -90,15 +87,16 @@ export function protectionPlay(
   if (candidates.length === 0) return null;
   const sample = think.sample();
   if (sample === undefined || sample.pending?.kind !== 'priority') return null;
-  const base = scoreCast(sample, view.viewer, null, answer, think.budget);
+  const search = think.budget.search();
+  const base = scoreCast(sample, view.viewer, null, answer, think);
   if (base === null) return null;
   let best: { play: Play; score: number } | undefined;
   for (const [i, play] of candidates.entries()) {
-    if (think.budget.expired(i + 1)) break;
-    const score = scoreCast(sample, view.viewer, castAction(play), answer, think.budget);
+    if (search.expired(i + 1) !== null) break;
+    const score = scoreCast(sample, view.viewer, castAction(play), answer, think);
     if (
       score !== null &&
-      score > base + PROTECT_MARGIN &&
+      score > base + think.weights.protection.margin &&
       (best === undefined || score > best.score)
     ) {
       best = { play, score };
@@ -107,21 +105,20 @@ export function protectionPlay(
   return best?.play ?? null;
 }
 
-/** A creature is worth holding mana for when it is worth this much (a commander always is). */
-const SAVE_VALUE = 6;
 /** The text of a mana source that the estimate of `unitsOf` does not read (a restriction, a cost, damage). */
 const RESTRICTED = /spend this mana only|damage|\blife\b|sacrifice|unless/i;
 /** The most mana sources the payment that holds mana open searches among (2^n subsets). */
 const MAX_SOURCES = 10;
 
-/** Whether the agent has a permanent worth holding protection mana for: its commander, or a creature worth `SAVE_VALUE`. */
-export const hasPermanentWorthSaving = (view: GameView): boolean =>
+/** Whether the agent has a permanent worth holding protection mana for: its commander, or a creature worth `protection.saveValue`. */
+export const hasPermanentWorthSaving = (view: GameView, weights: AgentWeights): boolean =>
   view.battlefield.some(
     (o) =>
       o.controller === view.viewer &&
       (o.isCommander === true ||
         (isCreature(o) &&
-          creatureValue({ ...o, power: o.power ?? 0, toughness: o.toughness ?? 0 }) >= SAVE_VALUE)),
+          creatureValue({ ...o, power: o.power ?? 0, toughness: o.toughness ?? 0 }, weights) >=
+            weights.protection.saveValue)),
   );
 
 /**
@@ -132,8 +129,9 @@ export const hasPermanentWorthSaving = (view: GameView): boolean =>
 export function protectionReserve(
   view: GameView,
   plays: readonly Play[],
+  weights: AgentWeights,
 ): readonly string[] | null {
-  if (!hasPermanentWorthSaving(view)) return null;
+  if (!hasPermanentWorthSaving(view, weights)) return null;
   const cheapest = plays
     .filter((p) => isProtectionSpell(p.obj) && p.free !== true && p.alt === undefined)
     .sort((a, b) => spendOf(a) - spendOf(b) || byId(a.obj.id, b.obj.id))[0];

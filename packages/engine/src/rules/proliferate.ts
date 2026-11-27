@@ -47,7 +47,8 @@ export function runProliferate(
 ): StepOutcome {
   if (instruction.chosen === null) {
     const { permanents, players } = proliferateCandidates(state);
-    if (permanents.length === 0 && players.length === 0) return done(state);
+    // `moved` is what this proliferate gave counters to (CR 701.34a): nothing here.
+    if (permanents.length === 0 && players.length === 0) return { ...done(state), lastMoved: [] };
     return {
       state,
       events: [],
@@ -67,6 +68,8 @@ export function runProliferate(
   let next = state;
   const events: GameEvent[] = [];
   const given: ObjectId[] = [];
+  // CR 608.2c (Ripples of Potential): "permanents that had a counter put on them this way": those that got at least one counter now (`moved` after the proliferate).
+  const counted: ObjectId[] = [];
   const blockers = counterBlockers(state);
   const bonuses = counterBonuses(state);
   for (const id of instruction.chosen) {
@@ -81,6 +84,7 @@ export function runProliferate(
       const put = bonusCounters(next, bonuses, obj, counter, 1);
       counters[counter] = n + put;
       events.push({ kind: 'counterAdded', object: id, counter, count: put, by: res.controller });
+      if (put > 0 && !counted.includes(id)) counted.push(id);
     }
     next = patchObject(next, id, { counters });
     given.push(id);
@@ -113,5 +117,5 @@ export function runProliferate(
     objects: given,
     players: poisoned,
   });
-  return done(next, events);
+  return { ...done(next, events), lastMoved: counted };
 }

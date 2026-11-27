@@ -38,6 +38,8 @@ export interface FilterParts {
   readonly token: boolean | undefined;
   /** "non-Zombie": none of these subtypes (CR 205.3d); stage P29. */
   readonly notSubtypes: readonly string[];
+  /** "outlaw" (true) and "non-outlaw" (false) before a type (CR 700.12): at least one of the Assassin, Mercenary, Pirate, Rogue and Warlock creature types, or none. */
+  readonly outlaw: boolean | undefined;
   /** "colorless" (CR 105.2c); stage P29. */
   readonly colorless: boolean;
   /** "with flying" and "without flying": the keyword words, lowercase (CR 702); stage P29. */
@@ -57,10 +59,14 @@ export interface FilterParts {
   readonly modified: boolean;
   /** "goaded" (CR 701.15b): a creature some player's goad effect still holds. */
   readonly goaded: boolean;
+  /** "face-down" and "face-up" (CR 708.2): the status the permanent has now. */
+  readonly facing: 'down' | 'up' | undefined;
   /** "equipped" (CR 301.5): a permanent with an Equipment attached to it. */
   readonly equipped: boolean;
   /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
   readonly commander: boolean;
+  /** "noncommander" before a type (CR 903.3): not a card a player designated as a commander. Only `permanentPhrase` reads it. */
+  readonly notCommander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
   readonly colorCount: IrComparison | undefined;
 }
@@ -75,6 +81,7 @@ export const NO_PARTS: FilterParts = {
   controller: undefined,
   token: undefined,
   notSubtypes: [],
+  outlaw: undefined,
   colorless: false,
   keywords: [],
   notKeywords: [],
@@ -85,16 +92,21 @@ export const NO_PARTS: FilterParts = {
   historic: false,
   modified: false,
   goaded: false,
+  facing: undefined,
   equipped: false,
   commander: false,
+  notCommander: false,
   colorCount: undefined,
 };
 
 export type Modifier = (parts: FilterParts) => FilterParts;
 
-function word(text: string, modifier: Modifier): Parser<Modifier> {
-  // Modifiers are followed by a space; the word boundary keeps "tapped" out of "untapped".
-  return map(pattern(new RegExp(`${text} `, 'i')), () => modifier);
+function word(text: string, modifier: Modifier, notBefore = ''): Parser<Modifier> {
+  // Modifiers are followed by a space; the word boundary keeps "tapped" out of "untapped". `notBefore`: a word that, following, means this is the noun and no modifier ("an outlaw you control").
+  return map(
+    pattern(new RegExp(`${text} ${notBefore === '' ? '' : `(?!${notBefore})`}`, 'i')),
+    () => modifier,
+  );
 }
 
 const NON_TYPES = ['land', 'creature', 'artifact', 'enchantment', 'planeswalker'] as const;
@@ -143,6 +155,9 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('modified', (p) => ({ ...p, modified: true })),
   // CR 701.15b (Goad): "goaded creature".
   word('goaded', (p) => ({ ...p, goaded: true })),
+  // CR 708.2 (Manifest): "face-down permanent", "face-up nontoken creature".
+  word('face-down', (p) => ({ ...p, facing: 'down' })),
+  word('face-up', (p) => ({ ...p, facing: 'up' })),
   // Limit Break deck, group 1 (CR 301.5): "equipped creature", a creature with an Equipment attached to it.
   word('equipped', (p) => ({ ...p, equipped: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
@@ -150,6 +165,9 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('blocking', (p) => ({ ...p, blocking: true })),
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
   word('multicolored', (p) => ({ ...p, colorCount: { cmp: 'atLeast', value: 2 } })),
+  // CR 700.12 (outlaw): "outlaw creature", "non-outlaw creature"; outlaw is no creature type, so it is not a `NON_SUBTYPE`.
+  word('outlaw', (p) => ({ ...p, outlaw: true }), 'you control|an opponent controls|dies|enters'),
+  word('non-outlaw', (p) => ({ ...p, outlaw: false })),
   NON_SUBTYPE,
   word('untapped', (p) => ({ ...p, tapped: false })),
   word('tapped', (p) => ({ ...p, tapped: true })),
@@ -159,6 +177,12 @@ export const MODIFIER: Parser<Modifier> = choice(
 
 /** "commander creature" (D-443, CR 903.3): a modifier of the permanent phrases only, not of the spell and card phrases that share `MODIFIER` (a commander spell is another reading). */
 const COMMANDER_MODIFIER: Parser<Modifier> = word('commander', (p) => ({ ...p, commander: true }));
+
+/** "noncommander creature" (CR 903.3): a modifier of the permanent phrases only, like `commander`. */
+const NONCOMMANDER_MODIFIER: Parser<Modifier> = word('noncommander', (p) => ({
+  ...p,
+  notCommander: true,
+}));
 
 export const PERMANENT_TYPES = 'artifact|battle|creature|enchantment|land|planeswalker';
 /** The permanent types in the order of "permanent card" (stage P33): a card of any of them is a permanent card (CR 110.1). */
@@ -240,6 +264,7 @@ export function toFilter(
     ...(p.controller !== undefined ? { controller: p.controller } : {}),
     ...(p.token !== undefined ? { token: p.token } : {}),
     ...(p.notSubtypes.length > 0 ? { notSubtypes: p.notSubtypes } : {}),
+    ...(p.outlaw !== undefined ? { outlaw: p.outlaw } : {}),
     ...(p.colorless ? { colorless: true as const } : {}),
     ...(p.keywords.length > 0 ? { keywords: p.keywords } : {}),
     ...(p.notKeywords.length > 0 ? { notKeywords: p.notKeywords } : {}),
@@ -250,8 +275,10 @@ export function toFilter(
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
     ...(p.goaded ? { goaded: true as const } : {}),
+    ...(p.facing !== undefined ? { facing: p.facing } : {}),
     ...(p.equipped ? { equipped: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),
+    ...(p.notCommander ? { notCommander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
   };
@@ -417,6 +444,12 @@ const MANA_VALUE_X: Parser<boolean> = map(
   () => true,
 );
 
+/** " with power less than ~'s" (Mirko, CR 208.1): the power of the object the ability belongs to; a card outside the battlefield has its printed power. */
+const POWER_LESS_THAN_SOURCE: Parser<boolean> = map(
+  pattern(new RegExp(` with power less than ~['’]s${BOUNDARY}`, 'u')),
+  () => true,
+);
+
 /** " with total power 10 or less" (Reunion of the House, CR 208.1): the cards chosen together have power adding up to at most the number. */
 const TOTAL_POWER_OR_LESS: Parser<number> = map(
   pattern(new RegExp(` with total power (\\d{1,3}) or less${BOUNDARY}`, 'u')),
@@ -453,12 +486,25 @@ function powerAboveBase(plural: boolean): Parser<boolean> {
 }
 
 /**
- * " with base power 0" (CR 208.4b, 208.1: the power the object has before counters and the effects that only modify it), the engine's `basePowerIs`. Only a
- * whole number is read ("with base power 2", "with base power 0"); "base power or toughness", a comparison and "X" are not.
+ * " with base power 0" (CR 208.4b, 208.1: the power the object has before counters and the effects that only modify it), the engine's `basePowerIs`, and " with base power or
+ * toughness 1" (Sword of the Squeak), its `basePowerOrToughnessIs`. Only a whole number is read ("with base power 2", "with base power 0"); a comparison and "X" are not.
  */
-const basePowerSuffix: Parser<number> = map(
-  pattern(new RegExp(` with base power (\\d+)${BOUNDARY}`, 'iu')),
-  (m) => Number(m[1]),
+/** What a "with base power ..." suffix says: the power alone, or the power or the toughness. */
+type BasePt = { basePowerIs: number } | { basePowerOrToughnessIs: number };
+
+const basePowerSuffix: Parser<BasePt> = map(
+  pattern(new RegExp(` with base power (or toughness )?(\\d+)${BOUNDARY}`, 'iu')),
+  (m): BasePt =>
+    m[1] === undefined ? { basePowerIs: Number(m[2]) } : { basePowerOrToughnessIs: Number(m[2]) },
+);
+
+/**
+ * " with power less than ~'s power" (Auron, Venerated Guardian, CR 208.1): the object's power is less than the power of the permanent with the ability, as it is now (the engine's
+ * `powerLessThanSource`). Not read: "or equal to", another object's power ("target creature's power"), a number.
+ */
+const powerLessThanSelf: Parser<boolean> = map(
+  pattern(new RegExp(` with power less than (?:this creature|~)['’]s power${BOUNDARY}`, 'iu')),
+  () => true,
 );
 
 /**
@@ -540,10 +586,16 @@ export function permanentPhrase(
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
-  const nouns: Parser<{ subtypes: string[]; types: string[] }> =
+  // CR 700.12, 700.12a ("outlaws you control", "an outlaw you control"): the noun alone, the permanents that have at least one of the five outlaw creature types.
+  const bareOutlaws: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> = map(
+    pattern(new RegExp(`[Oo]utlaw${plural ? 's' : ''}${BOUNDARY}`, 'u')),
+    () => ({ subtypes: [] as string[], types: [] as string[], outlaw: true as const }),
+  );
+  const nouns: Parser<{ subtypes: string[]; types: string[]; outlaw?: true }> =
     subtypes === false
       ? map(permanentNoun(plural), (types) => ({ subtypes: [] as string[], types }))
       : choice(
+          bareOutlaws,
           subtyped(plural, subtypes),
           map(permanentNoun(plural), (types) => ({ subtypes: [] as string[], types })),
         );
@@ -561,7 +613,8 @@ export function permanentPhrase(
     damaged: boolean;
     counter: true | string | undefined;
     aboveBase: boolean;
-    basePower: number | undefined;
+    basePower: BasePt | undefined;
+    lessThanSelf: boolean;
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
@@ -601,7 +654,10 @@ export function permanentPhrase(
     // "creatures you control with base power 0" (Quandrix Unlimited deck, group G).
     const basePower = optional(quiet(basePowerSuffix), undefined)(ctx, aboveBase.pos);
     if (!basePower.ok) return basePower;
-    let end = basePower.pos;
+    // "creature defending player controls with power less than ~'s power" (Auron, Venerated Guardian).
+    const lessThanSelf = optional(quiet(powerLessThanSelf), false)(ctx, basePower.pos);
+    if (!lessThanSelf.ok) return lessThanSelf;
+    let end = lessThanSelf.pos;
     // "creature of the chosen type you control", "creature with power 4 or greater you control".
     if (
       controller === undefined &&
@@ -610,7 +666,8 @@ export function permanentPhrase(
         keyword.value !== undefined ||
         counter.value !== undefined ||
         aboveBase.value ||
-        basePower.value !== undefined)
+        basePower.value !== undefined ||
+        lessThanSelf.value)
     ) {
       const late = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, end);
       if (!late.ok) return late;
@@ -630,6 +687,7 @@ export function permanentPhrase(
         counter: counter.value,
         aboveBase: aboveBase.value,
         basePower: basePower.value,
+        lessThanSelf: lessThanSelf.value,
       },
       pos: end,
     };
@@ -642,17 +700,26 @@ export function permanentPhrase(
           false,
         )
       : map(literal(''), () => false);
+    // Squirreled Away deck, group 1 (Nadier's Nightblade, CR 111.1): "a token you control", the word "token" alone naming the noun (no card type).
+    type NounParts = { subtypes: string[]; types: string[]; outlaw?: true };
+    const nounAndToken: Parser<[NounParts, boolean]> = tokens
+      ? choice(
+          map(
+            pattern(new RegExp(`token${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
+            (): [NounParts, boolean] => [{ subtypes: [], types: [] }, true],
+          ),
+          map(sequence(nouns, tokenWord), ([n, t]) => [n, t]),
+        )
+      : map(sequence(nouns, tokenWord), ([n, t]) => [n, t]);
     const r = sequence(
-      many(choice(MODIFIER, COMMANDER_MODIFIER)),
-      nouns,
-      tokenWord,
+      many(choice(MODIFIER, COMMANDER_MODIFIER, NONCOMMANDER_MODIFIER)),
+      nounAndToken,
       tail,
     )(ctx, pos);
     if (!r.ok) return r;
     const [
       modifiers,
-      noun,
-      isToken,
+      [noun, isToken],
       {
         controller,
         chosen,
@@ -664,12 +731,14 @@ export function permanentPhrase(
         counter,
         aboveBase,
         basePower,
+        lessThanSelf,
       },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
       ...NO_PARTS,
       types: noun.types,
       controller,
+      ...(noun.outlaw === true ? { outlaw: true } : {}),
       ...(isToken ? { token: true } : {}),
       ...(keyword === undefined
         ? {}
@@ -690,7 +759,8 @@ export function permanentPhrase(
           ...(damaged ? { controllerDamagedBySource: true as const } : {}),
           ...(counter === undefined ? {} : { hasCounter: counter }),
           ...(aboveBase ? { powerAboveBase: true as const } : {}),
-          ...(basePower === undefined ? {} : { basePowerIs: basePower }),
+          ...(basePower === undefined ? {} : basePower),
+          ...(lessThanSelf ? { powerLessThanSource: true as const } : {}),
         },
         compared,
       ),
@@ -700,48 +770,67 @@ export function permanentPhrase(
   // "noncreature artifact or noncreature enchantment" (stage P15): a choice whose every member has
   // modifiers of its own. A modifier on the first member alone ("tapped creature or planeswalker") is
   // ambiguous and stays unread, so each member must carry at least one.
-  const member: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(
-      satisfy(many(MODIFIER), (modifiers) => modifiers.length > 0),
-      typeWords(PERMANENT_TYPES, false),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    const [modifiers, types] = r.value;
-    const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), { ...NO_PARTS, types });
-    const { zone, ...filter } = toFilter('battlefield', parts, ctx.text.slice(pos, r.pos));
-    void zone;
-    return { ok: true, value: filter, pos: r.pos };
-  };
-  const modifiedChoice: Parser<IrFilter> = (ctx, pos) => {
-    const first = member(ctx, pos);
-    if (!first.ok) return first;
-    const more = many(
-      map(sequence(pattern(/(, or | or |, )/i), member), ([separator, filter]) => ({
-        separator: separator[0].toLowerCase(),
-        filter,
-      })),
-    )(ctx, first.pos);
-    if (!more.ok) return more;
-    const items = more.value;
-    const last = items[items.length - 1];
-    if (last === undefined) return fail(ctx, pos);
-    const shaped =
-      items.slice(0, -1).every((i) => i.separator === ', ') &&
-      (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
-    if (!shaped) return fail(ctx, pos);
-    const controller = optional(CONTROL_SUFFIX, undefined)(ctx, more.pos);
-    if (!controller.ok) return controller;
-    const base = toFilter(
-      'battlefield',
-      { ...NO_PARTS, controller: controller.value },
-      ctx.text.slice(pos, controller.pos),
-    );
-    return {
-      ok: true,
-      value: { ...base, anyOf: [first.value, ...items.map((i) => i.filter)] },
-      pos: controller.pos,
+  // `plain` (Summon: Yojimbo, "artifact, enchantment, or tapped creature an opponent controls"): the member may have no modifier, so a list of plain types ends in one member that has them.
+  const memberOf =
+    (plain: boolean): Parser<IrFilter & { readonly hadModifiers?: boolean }> =>
+    (ctx, pos) => {
+      const r = sequence(
+        satisfy(many(MODIFIER), (modifiers) => plain || modifiers.length > 0),
+        typeWords(PERMANENT_TYPES, false),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [modifiers, types] = r.value;
+      const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), { ...NO_PARTS, types });
+      const { zone, ...filter } = toFilter('battlefield', parts, ctx.text.slice(pos, r.pos));
+      void zone;
+      return { ok: true, value: { ...filter, hadModifiers: modifiers.length > 0 }, pos: r.pos };
     };
-  };
+  // `plain` false: every member has a modifier (the choice of stage P15). `plain` true (Summon: Yojimbo): a list of plain types may end in one member that has them.
+  const modifiedChoiceOf =
+    (plain: boolean): Parser<IrFilter> =>
+    (ctx, pos) => {
+      const first = memberOf(plain)(ctx, pos);
+      if (!first.ok) return first;
+      const more = many(
+        map(sequence(pattern(/(, or | or |, )/i), memberOf(plain)), ([separator, filter]) => ({
+          separator: separator[0].toLowerCase(),
+          filter,
+        })),
+      )(ctx, first.pos);
+      if (!more.ok) return more;
+      const items = more.value;
+      const last = items[items.length - 1];
+      if (last === undefined) return fail(ctx, pos);
+      // A modifier belongs to the one member it stands before: every member has one, or only the last does ("artifact, enchantment, or tapped creature"; "tapped creature or planeswalker" stays unread).
+      const members = [first.value, ...items.map((i) => i.filter)];
+      // Planeswalker Party deck (Nahiri, the Harbinger): "enchantment, tapped artifact, or tapped creature": plain members may come before the first member that has a modifier, and every
+      // member after it has one ("tapped creature or planeswalker" stays unread).
+      const firstModified = members.findIndex((m) => m.hadModifiers === true);
+      if (
+        firstModified < 0 ||
+        !members.slice(firstModified).every((m) => m.hadModifiers === true)
+      ) {
+        return fail(ctx, pos);
+      }
+      const shaped =
+        items.slice(0, -1).every((i) => i.separator === ', ') &&
+        (items.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
+      if (!shaped) return fail(ctx, pos);
+      const controller = optional(CONTROL_SUFFIX, undefined)(ctx, more.pos);
+      if (!controller.ok) return controller;
+      const base = toFilter(
+        'battlefield',
+        { ...NO_PARTS, controller: controller.value },
+        ctx.text.slice(pos, controller.pos),
+      );
+      return {
+        ok: true,
+        value: { ...base, anyOf: members.map(({ hadModifiers: _had, ...member }) => member) },
+        pos: controller.pos,
+      };
+    };
+  const modifiedChoice = modifiedChoiceOf(false);
+  const mixedChoice = modifiedChoiceOf(true);
   // "Angel or Cleric you control" (stage P28): a choice of creature types (or other subtypes) for one object, each
   // word a listed subtype in the singular (CR 205.3).
   const subtypeChoice: Parser<IrFilter> = (ctx, pos) => {
@@ -764,6 +853,20 @@ export function permanentPhrase(
     const base = toFilter('battlefield', { ...NO_PARTS, controller }, ctx.text.slice(pos, r.pos));
     const anyOf = words.map((w): IrFilter => ({ subtypes: [w], raw: w }));
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
+  };
+  // "target attacking Cleric, Rogue, Warrior, or Wizard" (Seasoned Dungeoneer, CR 508.1k, 205.3m): "attacking" says of the whole choice what it says of one creature type, so the filter
+  // is an attacking creature that is one of the types (the engine's outer `attacking` with the `anyOf` of the types). Only "attacking" is read before a list of creature types.
+  const attackingSubtypeChoice: Parser<IrFilter> = (ctx, pos) => {
+    if (subtypes === false) return fail(ctx, pos);
+    const lead = pattern(/attacking (?=[A-Z])/u)(ctx, pos);
+    if (!lead.ok) return lead;
+    const rest = subtypeChoice(ctx, lead.pos);
+    if (!rest.ok) return rest;
+    return {
+      ok: true,
+      value: { ...rest.value, attacking: true as const, raw: ctx.text.slice(pos, rest.pos) },
+      pos: rest.pos,
+    };
   };
   // "creature or Vehicle" (D-447, CR 205.2a, 205.3g): one card type and one subtype joined by " or ", in either order; a permanent with the type or with the subtype matches.
   const typeOrSubtype: Parser<IrFilter> = (ctx, pos) => {
@@ -814,11 +917,46 @@ export function permanentPhrase(
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
+  // Planeswalker Party deck (Mobilized District; CR 205.4, 205.2a): "legendary creature and planeswalker" is the legendary permanents that are creatures and/or planeswalkers (the ruling:
+  // a legendary planeswalker that is also a creature counts once), the supertype of both words.
+  const legendaryCreatureAndPlaneswalker: Parser<IrFilter> = (ctx, pos) => {
+    const r = sequence(
+      literal('legendary creature and planeswalker'),
+      optional(CONTROL_SUFFIX, undefined),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const base = toFilter(
+      'battlefield',
+      { ...NO_PARTS, controller: r.value[1] },
+      ctx.text.slice(pos, r.pos),
+    );
+    return {
+      ok: true,
+      value: {
+        ...base,
+        supertypes: ['legendary'],
+        anyOf: [
+          { types: ['creature'], raw: 'creature' },
+          { types: ['planeswalker'], raw: 'planeswalker' },
+        ],
+      },
+      pos: r.pos,
+    };
+  };
   // A choice of types is read for one object ("target artifact or enchantment"); plurals ("all
   // artifacts and enchantments") join with "and" and are not read.
   const phrase: Parser<IrFilter> = plural
     ? choice(quiet(pluralAndOr), single)
-    : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
+    : choice(
+        quiet(legendaryCreatureAndPlaneswalker),
+        choose,
+        quiet(modifiedChoice),
+        quiet(mixedChoice),
+        quiet(typeOrSubtype),
+        quiet(subtypeChoice),
+        quiet(attackingSubtypeChoice),
+        single,
+      );
   // "target artifact or enchantment with mana value X or less" (D2 group, Kinetic Ooze, CR 202.3): the mana value is at most the X a "where X is ..." defines, or the X of the spell
   // the permanent came from; the lowering says which, and refuses a text with neither.
   return (ctx, pos) => {
@@ -898,7 +1036,8 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           !parts.attacking &&
           !parts.modified &&
           !parts.equipped &&
-          !parts.goaded,
+          !parts.goaded &&
+          parts.facing === undefined,
       ),
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
@@ -945,7 +1084,9 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.attacking ||
           parts.modified ||
           parts.equipped ||
-          parts.goaded
+          parts.goaded ||
+          parts.facing !== undefined ||
+          parts.outlaw !== undefined
         )
           return fail(c, at);
         const types = optional(typeWords(CARD_TYPES, false), [] as string[])(c, modifiers.pos);
@@ -1032,10 +1173,58 @@ export function spellTypesAndPhrase(): Parser<IrFilter> {
 }
 
 /**
+ * "instant, sorcery, Demon, and Spirit spells" (Séance Board, CR 106.6, 205.2a, 205.3m): a list of three or more card types and creature types joined by commas and a last ", and ", at
+ * least one of each kind, a spell of any one of them. Card types are lowercase and creature types capitalized (CR 205.3). The filter is the spells whose `anyOf` holds one member for each word.
+ * Not read: two words ("instant and sorcery spells" is `spellTypesAndPhrase`), one kind alone, a repeated word, "or", a missing "and" before the last word.
+ */
+export function mixedSpellListPhrase(): Parser<IrFilter> {
+  const item = choice(
+    map(pattern(new RegExp(`(?:${CARD_TYPES})${BOUNDARY}`, 'u')), (m) => ({
+      word: m[0],
+      subtype: false,
+    })),
+    map(pattern(new RegExp(`(?:${SUBTYPE_WORD})${BOUNDARY}`, 'u')), (m) => ({
+      word: m[0],
+      subtype: true,
+    })),
+  );
+  return (ctx, pos) => {
+    const first = item(ctx, pos);
+    if (!first.ok) return first;
+    const more = many(
+      map(sequence(choice(literal(', and '), literal(', ')), item), ([sep, it]) => ({
+        sep,
+        ...it,
+      })),
+    )(ctx, first.pos);
+    if (!more.ok) return more;
+    const items = [{ sep: '', ...first.value }, ...more.value];
+    const end = pattern(new RegExp(` spells${BOUNDARY}`, 'iu'))(ctx, more.pos);
+    if (!end.ok) return end;
+    const words = items.map((i) => i.word);
+    const last = items[items.length - 1];
+    const shaped =
+      items.length >= 3 &&
+      last?.sep === ', and ' &&
+      items.slice(1, -1).every((i) => i.sep === ', ') &&
+      new Set(words).size === words.length &&
+      items.some((i) => i.subtype) &&
+      items.some((i) => !i.subtype);
+    if (!shaped) return fail(ctx, pos);
+    const base = toFilter('stack', NO_PARTS, ctx.text.slice(pos, end.pos));
+    const anyOf = items.map(
+      (i): IrFilter =>
+        i.subtype ? { subtypes: [i.word], raw: i.word } : { types: [i.word], raw: i.word },
+    );
+    return { ok: true, value: { ...base, stackKind: 'spell', anyOf }, pos: end.pos };
+  };
+}
+
+/**
  * " that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4): a card in a graveyard that went there from the battlefield
  * during this turn (a creature that died, an artifact that was destroyed).
  */
-const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice(
+const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary' | 'library'> = choice(
   map(
     pattern(new RegExp(` that was put there from the battlefield this turn${BOUNDARY}`, 'iu')),
     () => 'battlefield' as const,
@@ -1046,6 +1235,11 @@ const PUT_THERE_THIS_TURN: Parser<'battlefield' | 'discardedOrLibrary'> = choice
       new RegExp(` that was discarded or put there from a library this turn${BOUNDARY}`, 'iu'),
     ),
     () => 'discardedOrLibrary' as const,
+  ),
+  // Captain N'ghathrod (CR 404.1, 701.17): "that was put there from their library this turn", read only of an opponent's graveyard.
+  map(
+    pattern(new RegExp(` that was put there from their library this turn${BOUNDARY}`, 'iu')),
+    () => 'library' as const,
   ),
 );
 
@@ -1074,8 +1268,12 @@ interface CardWords {
   readonly subtypes: readonly string[];
   /** "non-Dragon creature card" (CR 205.3d): creature types the card does not have. */
   readonly notSubtypes?: readonly string[];
+  /** "outlaw creature card" (true), "non-outlaw creature card" (false) (CR 700.12): at least one of the five outlaw creature types, or none. */
+  readonly outlaw?: boolean;
   /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
   readonly notSupertypes?: readonly string[];
+  /** "basic land card" (CR 205.4, 205.4a): supertypes the card has; only "basic" with the land type is read. */
+  readonly supertypes?: readonly string[];
   /** "nonland card" (issue 102, CR 205.2a): card types the card does not have. */
   readonly notTypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
@@ -1095,7 +1293,15 @@ interface CardWords {
 export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
-  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' | 'fromTheirs' | 'fromPlayers' = 'from',
+  preposition:
+    | 'from'
+    | 'in'
+    | 'inAny'
+    | 'inOpponents'
+    | 'fromThatPlayer'
+    | 'fromTheirs'
+    | 'fromPlayers'
+    | 'sharedZone' = 'from',
   // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
   // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
   amountLimit?: Parser<IrAmount>,
@@ -1105,40 +1311,49 @@ export function graveyardPhrase(
   allowTotalPower = false,
   // "all instant and sorcery cards": only the "all" form reads a list joined by "and" as a choice of kinds; "target creature and planeswalker cards" stays unread.
   andList = false,
+  // Mirko, Obsessive Theorist (CR 208.1, 603.4): "target creature card with power less than ~'s from your graveyard", read only where the caller asks for it.
+  allowPowerLessThanSource = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | 'defendingPlayer' | undefined> =
-    preposition === 'fromTheirs'
-      ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
-        // graveyard, so no owner. The caller reads it only after "each player".
-        map(literal(' from their graveyard'), () => undefined)
-      : preposition === 'fromPlayers'
-        ? // Crypt Incursion, "all creature cards from target player's graveyard": the owner is the player the words after "from " name, which the caller reads (`noun.all-graveyard-cards`).
-          map(
-            pattern(/ from (?=(?:target|each) (?:player|opponent)['’]s graveyard)/i),
-            () => undefined,
-          )
-        : preposition === 'fromThatPlayer'
-          ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
-            map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
-          : preposition === 'inAny'
-            ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
-              map(literal(' in a graveyard'), () => undefined)
-            : preposition === 'in'
-              ? map(literal(' in your graveyard'), () => 'you' as const)
-              : choice(
-                  map(literal(' from your graveyard'), () => 'you' as const),
-                  map(literal(' from a graveyard'), () => undefined),
-                  map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-                  // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
-                  map(
-                    pattern(/ from defending player['’]s graveyard/i),
-                    () => 'defendingPlayer' as const,
-                  ),
-                  // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-                  ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-                  // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
-                  ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
-                );
+    preposition === 'sharedZone'
+      ? // Thwart the Grave: "Return target creature card and up to one target Cleric creature card from your graveyard": the first card has no zone words of its own, the last
+        // one's "from ..." says where both lie. The caller gives the first the owner of the last.
+        map(literal(''), () => undefined)
+      : preposition === 'fromTheirs'
+        ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
+          // graveyard, so no owner. The caller reads it only after "each player".
+          map(literal(' from their graveyard'), () => undefined)
+        : preposition === 'fromPlayers'
+          ? // Crypt Incursion, "all creature cards from target player's graveyard": the owner is the player the words after "from " name, which the caller reads (`noun.all-graveyard-cards`).
+            map(
+              pattern(/ from (?=(?:target|each) (?:player|opponent)['’]s graveyard)/i),
+              () => undefined,
+            )
+          : preposition === 'fromThatPlayer'
+            ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
+              map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
+            : preposition === 'inAny'
+              ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
+                map(literal(' in a graveyard'), () => undefined)
+              : preposition === 'inOpponents'
+                ? // Captain N'ghathrod: "target artifact or creature card in an opponent's graveyard": the graveyard of any opponent.
+                  map(pattern(/ in an opponent['’]s graveyard/i), () => 'opponent' as const)
+                : preposition === 'in'
+                  ? map(literal(' in your graveyard'), () => 'you' as const)
+                  : choice(
+                      map(literal(' from your graveyard'), () => 'you' as const),
+                      map(literal(' from a graveyard'), () => undefined),
+                      map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                      // Blue Mage's Cane (CR 508.5, 404.1): "from defending player's graveyard", in the ability of a creature that attacks: the cards the player it attacks owns.
+                      map(
+                        pattern(/ from defending player['’]s graveyard/i),
+                        () => 'defendingPlayer' as const,
+                      ),
+                      // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+                      ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+                      // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
+                      ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
+                    );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(
       choice(
@@ -1172,7 +1387,20 @@ export function graveyardPhrase(
       ),
       // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
       optional(allowNonland ? map(literal('nonland '), () => ['land']) : fail, [] as string[]),
+      // "target basic land card from your graveyard" (Groundskeeper, CR 205.4, 205.4a): the supertype basic, said only with the land type.
+      optional(
+        map(literal('basic '), () => ['basic']),
+        [] as string[],
+      ),
       nonSubtypes,
+      // CR 700.12: "outlaw creature card from your graveyard" (Back in Town, Charred Graverobber); outlaw is no creature type.
+      optional(
+        choice(
+          map(literal('outlaw '), () => true),
+          map(literal('non-outlaw '), () => false),
+        ),
+        undefined,
+      ),
       many(
         map(
           sequence(
@@ -1187,10 +1415,12 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSupertypes, notTypes, notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notTypes, basic, notSubtypes, outlaw, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
+      ...(basic.length > 0 ? { supertypes: basic } : {}),
+      ...(outlaw === undefined ? {} : { outlaw }),
       ...(notTypes.length > 0 ? { notTypes } : {}),
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
       ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
@@ -1221,7 +1451,9 @@ export function graveyardPhrase(
       !parts.historic &&
       !parts.modified &&
       !parts.goaded &&
+      parts.facing === undefined &&
       !parts.equipped &&
+      parts.outlaw === undefined &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
     if (!plain || left.length === 0) return fail(ctx, pos);
@@ -1270,6 +1502,34 @@ export function graveyardPhrase(
       pos: r.pos,
     };
   };
+  // "Plant, Treefolk, or land card" (Kirri, Talented Sprout, CR 205.2a, 205.3m): one card that is any of the listed creature types or card types, the list sharing the one word
+  // "card". Both kinds must be present (a list of types alone is `choiceOfTypes`, of creature types alone `subtypeChoiceWords`, which needs the word "creature").
+  const mixedChoiceWords: Parser<CardWords> = (ctx, pos) => {
+    const r = sequence(
+      satisfy(typeChoice(`${SUBTYPE_WORD}|${CARD_TYPES}`, true), (list) => {
+        const isType = (w: string) => w === w.toLowerCase();
+        return (
+          list.some(isType) &&
+          list.some((w) => !isType(w)) &&
+          list.every((w) => isType(w) || (readCreatureType(w)?.plural ?? false) !== true)
+        );
+      }),
+      literal(' '),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [list] = r.value;
+    const isType = (w: string) => w === w.toLowerCase();
+    return {
+      ok: true,
+      value: {
+        types: [],
+        anyOf: list.filter(isType),
+        subtypes: [],
+        extra: list.filter((w) => !isType(w)).map((w): IrFilter => ({ subtypes: [w], raw: w })),
+      },
+      pos: r.pos,
+    };
+  };
   // "Aura or Equipment card" (issue 89, Forum Filibuster, CR 205.3g, 205.3h): a card that is an Aura or is an Equipment, one card only (the subtypes of an enchantment and of an
   // Limit Break deck, group 1 (Unfinished Business): "up to two target Aura and/or Equipment cards", the same cards said with "and/or", also in the plural.
   // artifact; no type word is said).
@@ -1315,6 +1575,7 @@ export function graveyardPhrase(
         permanentCards,
         withNonAura,
         choiceOfTypes,
+        quiet(mixedChoiceWords),
         quiet(subtypeChoiceWords),
         auraOrEquipment,
         quiet(permanentSubtypeChoice),
@@ -1327,8 +1588,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes, outlaw }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
+    // An outlaw kind inside a union is another reading, not built here.
+    if (outlaw !== undefined) return fail(ctx, pos);
     // A negated supertype inside a union is another reading, not built here.
     if (notSupertypes !== undefined || notTypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
@@ -1392,6 +1655,8 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X), false),
       // Reunion of the House (CR 208.1): "creature cards with total power 10 or less from your graveyard".
       optional(allowTotalPower ? quiet(TOTAL_POWER_OR_LESS) : fail, undefined),
+      // Mirko (CR 208.1): "creature card with power less than ~'s from your graveyard": less than the power of the permanent with the ability (the engine's `powerLessThanSource`).
+      optional(allowPowerLessThanSource ? quiet(POWER_LESS_THAN_SOURCE) : fail, false),
       optional(
         quiet(
           amountLimit === undefined
@@ -1418,6 +1683,8 @@ export function graveyardPhrase(
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), null),
+      // Lazav, the Multifarious (CR 107.3a, 202.3): "target creature card in your graveyard with mana value X", the mana value said after the graveyard of an "in" phrase.
+      optional(preposition === 'in' ? quiet(MANA_VALUE_X) : fail, false),
     )(ctx, pos);
     if (!r.ok) return r;
     const [
@@ -1425,9 +1692,11 @@ export function graveyardPhrase(
         types,
         anyOf,
         subtypes,
+        supertypes,
         notSubtypes,
         notSupertypes,
         notTypes,
+        outlaw,
         extra,
         subtypeAnyOf,
         historic,
@@ -1438,16 +1707,27 @@ export function graveyardPhrase(
       atMostX,
       equalsX,
       totalPower,
+      lessThanSource,
       limitAmount,
       byOpponent,
       controller,
       putThere,
+      equalsXAfter,
     ] = r.value;
     // The words about a discard or a library are read only of "a card in a graveyard" (any graveyard), the phrase of Ghost of Ramirez DePietro.
     if (putThere === 'discardedOrLibrary' && preposition !== 'inAny') return fail(ctx, pos);
+    if (putThere === 'library' && preposition !== 'inOpponents') return fail(ctx, pos);
+    // "basic" is read only of a land card ("basic land card"): CR 205.4a, basic is a supertype that only lands have.
+    if (supertypes !== undefined && !types.includes('land')) return fail(ctx, pos);
     const filter = toFilter(
       'graveyard',
-      { ...NO_PARTS, types, controller, ...(notTypes === undefined ? {} : { notTypes }) },
+      {
+        ...NO_PARTS,
+        types,
+        controller,
+        ...(supertypes === undefined ? {} : { supertypes: [...supertypes] }),
+        ...(notTypes === undefined ? {} : { notTypes }),
+      },
       ctx.text.slice(pos, r.pos),
     );
     return {
@@ -1457,6 +1737,7 @@ export function graveyardPhrase(
           ...filter,
           ...(subtypes.length > 0 ? { subtypes } : {}),
           ...(notSubtypes !== undefined ? { notSubtypes } : {}),
+          ...(outlaw !== undefined ? { outlaw } : {}),
           ...(notSupertypes !== undefined ? { notSupertypes } : {}),
           ...(anyOf.length > 0
             ? {
@@ -1471,10 +1752,12 @@ export function graveyardPhrase(
           ...(putThere === 'discardedOrLibrary'
             ? { discardedOrFromLibraryThisTurn: true as const }
             : {}),
+          ...(putThere === 'library' ? { putFromLibraryThisTurn: true as const } : {}),
           ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
-          ...(equalsX ? { manaValueX: true as const } : {}),
+          ...(equalsX || equalsXAfter ? { manaValueX: true as const } : {}),
           ...(totalPower === undefined ? {} : { totalPowerAtMost: totalPower }),
+          ...(lessThanSource ? { powerLessThanSource: true as const } : {}),
           ...(limitAmount === undefined
             ? {}
             : {

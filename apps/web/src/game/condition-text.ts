@@ -47,9 +47,15 @@ function designationWords(
   if (player.kind === 'all') return null;
   // The city's blessing (CR 702.131c, D-264) is had, not "been": "you have the city's blessing".
   const blessing = designation === 'citysBlessing';
+  // The initiative (CR 726.1) is had too: "you have the initiative".
+  const had = blessing
+    ? "the city's blessing"
+    : designation === 'initiative'
+      ? 'the initiative'
+      : null;
   if (player.kind === 'you') {
-    return blessing
-      ? `you ${negate ? "don't have" : 'have'} the city's blessing`
+    return had !== null
+      ? `you ${negate ? "don't have" : 'have'} ${had}`
       : `you're ${negate ? 'not ' : ''}the ${designation}`;
   }
   // "if an opponent is the monarch": a condition about the opponents asks whether any of them is.
@@ -59,8 +65,8 @@ function designationWords(
       : player.kind === 'eachPlayer'
         ? 'a player'
         : playerSubject(player).text;
-  return blessing
-    ? `${who} ${negate ? "doesn't have" : 'has'} the city's blessing`
+  return had !== null
+    ? `${who} ${negate ? "doesn't have" : 'has'} ${had}`
     : `${who} ${negate ? 'is not' : 'is'} the ${designation}`;
 }
 
@@ -308,6 +314,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return negate
         ? "you didn't sacrifice a permanent to cast it"
         : 'you sacrificed one or more permanents to cast it';
+    case 'offspringPaid':
+      // CR 702.175a: "if its offspring cost was paid".
+      return negate ? "its offspring cost wasn't paid" : 'its offspring cost was paid';
     case 'giftPromised':
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';
@@ -489,6 +498,14 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;
+    case 'voteMost':
+      // CR 701.38a: "if time gets more votes".
+      return negate
+        ? `${condition.option} does not get more votes`
+        : `${condition.option} gets more votes`;
+    case 'voteTied':
+      // CR 701.38a: "if the vote is tied".
+      return negate ? 'the vote is not tied' : 'the vote is tied';
     case 'clashWon':
       // CR 701.30d: "if you win" the clash.
       return negate ? 'you did not win the clash' : 'you win the clash';
@@ -522,6 +539,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'manaSpentAtLeast':
       // D-206 (CR 601.2h): "if at least four mana was spent to cast it".
       return `${negate ? 'fewer than' : 'at least'} ${condition.count} mana was spent to cast it`;
+    case 'manaSpentLessThanManaValue':
+      // CR 601.2h, 202.3 (Ancient Cellarspawn): "if the amount of mana spent to cast it was less than its mana value".
+      return `the amount of mana spent to cast it was ${negate ? 'not ' : ''}less than its mana value`;
     case 'castFromZone':
       // D-206 (CR 601.2a): "if this spell was cast from a graveyard".
       return `this spell was ${negate ? 'not ' : ''}cast from ${condition.zone === 'graveyard' ? 'a graveyard' : `its ${condition.zone}`}`;

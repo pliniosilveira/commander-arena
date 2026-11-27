@@ -28,10 +28,10 @@ import type { GameState } from '../state/types';
 import { beholdCandidates } from './behold';
 import { blightCandidates } from './blight-candidates';
 import { blightChosenEvent, putBlightCounters } from './blight-effect';
-import { discardableFor, exilable } from './cast-cost';
+import { discardableFor, exilable, exilableFor } from './cast-cost';
 import { derive } from './derive';
 import { discardCostDecision, discardObjects } from './discard-cost';
-import { exileCostDecision, exileObjects } from './exile-cost';
+import { exileCostDecision, exileKindPrompt, exileObjects } from './exile-cost';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
 import { setPending } from './set-pending';
@@ -331,7 +331,19 @@ function discardChosen(
   if (!casting) return fail('No cast in progress');
   const moved = discardObjects(state, casting.seat, chosen);
   if (moved === null) return fail('Those cards cannot be discarded');
-  return payExile(moved.state, [...events, ...moved.events], finish);
+  // CR 601.2b, 701.9a, 608.2h (Grab the Prize): the spell remembers the cards its additional cost discarded (as they are now, in the graveyard or in exile), which "if the discarded card
+  // wasn't a land card" reads.
+  const landed = moved.events.flatMap((e) =>
+    e.kind === 'discarded' && e.to !== null ? [e.to] : [],
+  );
+  const stack = moved.state.objects[casting.object]?.stack;
+  const next =
+    stack == null || landed.length === 0
+      ? moved.state
+      : patchObject(moved.state, casting.object, {
+          stack: { ...stack, discardedAsCost: [...(stack.discardedAsCost ?? []), ...landed] },
+        });
+  return payExile(next, [...events, ...moved.events], finish);
 }
 
 /** CR 702.138a: exile the other cards an escape cost asks for, then the spell is cast. */
@@ -339,7 +351,7 @@ function payExile(state: GameState, events: GameEvent[], finish: Finish): Result
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const count = casting.extra?.exile ?? 0;
-  if (count === 0) return payAdditionalExile(state, events, finish);
+  if (count === 0) return payGraveyardCost(state, events, finish);
   const graveyard = exilable(state, casting.seat, casting.object);
   if (graveyard.length < count) return fail('You do not have enough other cards to exile');
   // Exactly as many cards as asked: there is nothing to choose.
@@ -361,7 +373,52 @@ function exileChosen(
   if (!casting) return fail('No cast in progress');
   const moved = exileObjects(state, chosen);
   if (moved === null) return fail('Those cards cannot be exiled');
-  return payAdditionalExile(moved.state, [...events, ...moved.events], finish);
+  // The cards of an additional cost that names a kind of card are asked for after the escape exile (`payGraveyardCost`), and then the spell goes on.
+  const next = moved.state;
+  const nextCasting = next.casting;
+  if (nextCasting?.extra?.exileGraveyardAsked === true) {
+    const { exileGraveyardAsked: _asked, ...extra } = nextCasting.extra;
+    return payAdditionalExile(
+      { ...next, casting: { ...nextCasting, extra } },
+      [...events, ...moved.events],
+      finish,
+    );
+  }
+  return payGraveyardCost(next, [...events, ...moved.events], finish);
+}
+
+/**
+ * CR 118.8, 601.2b, 601.2h: "As an additional cost to cast this spell, exile three creature cards from your graveyard." The caster chooses that many cards of the kind from their graveyard
+ * (all of them when it holds exactly that many); the spell on the stack is not one of them. `cancel` rewinds the cast (CR 733).
+ */
+function payGraveyardCost(state: GameState, events: GameEvent[], finish: Finish): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const cost = casting.extra?.exileGraveyard;
+  if (cost === undefined || casting.extra === undefined) {
+    return payAdditionalExile(state, events, finish);
+  }
+  const cards = exilableFor(state, casting.seat, casting.object, cost.filter);
+  if (cards.length < cost.count) return fail('You do not have enough cards to exile');
+  const { exileGraveyard: _cost, ...rest } = casting.extra;
+  if (cards.length === cost.count) {
+    const paid = { ...state, casting: { ...casting, extra: rest } };
+    return exileChosen(paid, events, cards, finish);
+  }
+  return pause(
+    {
+      ...state,
+      casting: { ...casting, stage: 'exile', extra: { ...rest, exileGraveyardAsked: true } },
+    },
+    events,
+    exileCostDecision(
+      casting.seat,
+      casting.object,
+      cards,
+      cost.count,
+      exileKindPrompt(cost.count, cost.filter),
+    ),
+  );
 }
 
 /** Exiles the optional cards selected before X, then records their new exile objects on the spell. */

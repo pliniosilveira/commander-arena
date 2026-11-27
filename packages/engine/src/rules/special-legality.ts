@@ -18,8 +18,10 @@ import type { ObjectId, SeatId } from '../ids';
 import { getObject, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
-import { castAs } from './cast-cost';
+import { castAs, reduceGeneric } from './cast-cost';
+import { controllerOf } from './control';
 import { derive } from './derive';
+import { plotReductionSources } from './derive-statics';
 import { faceOf, hasSorceryTiming, timingAllows } from './legality';
 import { planFor } from './mana-engine';
 import { splitSecondOnStack } from './split-second';
@@ -111,7 +113,14 @@ export function isForetold(obj: GameObject): boolean {
 /** The mana of the plot action of this card (CR 702.170a), or null when it has no plot. */
 export function plotSymbols(state: GameState, obj: GameObject): readonly string[] | null {
   const plot = plotOf(faceOf(state, obj));
-  return plot === null ? null : manaSymbolsOf(plot.cost).filter((s) => s !== '0');
+  if (plot === null) return null;
+  const symbols = manaSymbolsOf(plot.cost).filter((s) => s !== '0');
+  // CR 702.170a, 118.7 (Doc Aurlock, Grizzled Genius): "Plotting cards from your hand costs {2} less": generic mana only, for the cards of the permanent's controller.
+  let less = 0;
+  for (const source of plotReductionSources(state)) {
+    if (controllerOf(state, source.object) === obj.owner) less += source.amount;
+  }
+  return less === 0 ? symbols : reduceGeneric(symbols, less);
 }
 
 /** CR 702.170a-b: whether `seat` may plot `obj` now: any time they have priority during their main phase with the stack empty, and they can pay the plot cost. */

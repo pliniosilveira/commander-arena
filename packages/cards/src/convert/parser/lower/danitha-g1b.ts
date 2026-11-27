@@ -36,7 +36,8 @@ const PUT_IT_INTO_HAND: Lowering<IrClause, Effects> = {
     // Death Toll deck group B (CR 400.3, 608.2c): "Choose a card at random in your graveyard. ... Otherwise, put it into your hand": the card picked is `moved`, one of your own graveyard.
     const what = operand(clause, 'objects');
     if (what?.kind === 'noun' && what.det === 'anaphor' && what.ref === 'moved') {
-      if (!ctx.randomYardCard) return failure(clause);
+      // Twilight Prophet: the card revealed from the top of your own library goes to your hand (CR 400.3: its owner's, which is yours).
+      if (!ctx.randomYardCard && !ctx.revealedTopCard) return failure(clause);
       return {
         ok: true,
         value: [{ kind: 'moveToZone', objects: { kind: 'moved' }, to: 'hand' }],

@@ -67,7 +67,7 @@ describe('Ward (CR 702.21a): "Ward {2}" and "Ward—Pay 3 life."', () => {
   });
 
   test('a cost the engine does not pay for ward is still the keyword; validateCard refuses it', () => {
-    const parsed = readAll('Ward—Sacrifice a permanent.', 'creature');
+    const parsed = readAll('Ward—Sacrifice this creature.', 'creature');
     expect(parsed.abilities[0]).toMatchObject({
       kind: 'keyword',
       keyword: { kind: 'ward', cost: [{ kind: 'sacrifice' }] },
@@ -77,7 +77,7 @@ describe('Ward (CR 702.21a): "Ward {2}" and "Ward—Pay 3 life."', () => {
         name: 'SYNTHETIC Costly Ward',
         manaCost: '{1}{G}',
         typeLine: 'Creature — Bear',
-        oracleText: 'Ward—Sacrifice a permanent.',
+        oracleText: 'Ward—Sacrifice this creature.',
         power: '2',
         toughness: '2',
         colors: ['G'],
@@ -86,7 +86,7 @@ describe('Ward (CR 702.21a): "Ward {2}" and "Ward—Pay 3 life."', () => {
     expect(card.support.unparsed).toEqual([]);
     expect(card.support.status).toBe('unsupported');
     expect(card.support.reasons.join('\n')).toContain(
-      'cost "sacrifice" is not implemented by the engine yet',
+      'a sacrifice of Ward is a number of permanents the payer controls',
     );
   });
 

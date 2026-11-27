@@ -28,6 +28,8 @@ export function spellSpendTarget(
     hasX: derived.manaCost !== null && xSymbolCount(derived.manaCost) > 0,
     // CR 105.2a: the colors of the spell, which a "monocolored spells" restriction reads.
     colors: derived.colors,
+    // CR 108.3, 106.6: whether the spell's owner is not the player who casts it (its controller on the stack), which a "spells you don't own" restriction reads.
+    notOwnedByCaster: spell.owner !== spell.controller,
     // CR 601.2a, 106.6: the zone the spell is cast from, which a "from your graveyard" restriction reads.
     ...(castFrom === undefined ? {} : { castFrom }),
     ...(anyType ? { anyType: true as const } : {}),

@@ -34,9 +34,22 @@ export function startOpponentChoosesCard(
       matchesFilter(state, card, { ...effect.filter, zone: 'exile' }, ctx)
     );
   });
-  const opponent = opponentOf(state, res);
+  // Tectonic Giant (CR 608.2d): the controller chooses one of the cards, and it is the card `moved` names afterwards.
+  const opponent = effect.byController === true ? res.controller : opponentOf(state, res);
   if (cards.length === 0 || opponent === undefined) return done(state);
-  return done(state, [], [{ kind: 'opponentChoosesCard', seat: opponent, cards, chosen: null }]);
+  return done(
+    state,
+    [],
+    [
+      {
+        kind: 'opponentChoosesCard',
+        seat: opponent,
+        cards,
+        chosen: null,
+        ...(effect.keepChosen === true ? { keepChosen: true as const } : {}),
+      },
+    ],
+  );
 }
 
 export function runOpponentChoosesCard(
@@ -60,7 +73,7 @@ export function runOpponentChoosesCard(
         kind: 'chooseCards',
         seat: ins.seat,
         source: res.object,
-        purpose: 'opponentChoice',
+        purpose: ins.keepChosen === true ? 'lookTake' : 'opponentChoice',
         zone: 'exile',
         legal: cards,
         min: 1,
@@ -79,5 +92,8 @@ export function runOpponentChoosesCard(
       automatic: ins.chosen === null,
     },
   ];
-  return { ...done(state, events), lastMoved: rest.filter((id) => !picked.includes(id)) };
+  return {
+    ...done(state, events),
+    lastMoved: ins.keepChosen === true ? [...picked] : rest.filter((id) => !picked.includes(id)),
+  };
 }

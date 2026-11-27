@@ -19,7 +19,9 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
-import { counterBlocked } from './counter-prevention';
+import { counterBonuses } from './counter-bonus';
+import { counterBlocked, counterBlockers } from './counter-prevention';
+import { putCountersOn } from './counter-put';
 import { type Asked, type OrderFlow, quietFlow, settleDamage } from './damage-order';
 import { derive } from './derive';
 import { allDamageHasWither, damageCantBePrevented } from './global-statics';
@@ -239,6 +241,21 @@ export function dealDamageAsking(
   // CR 615.5: the additional effect of a prevention effect happens as the damage is prevented ("for each 1 damage prevented this way, create a token").
   let made: { state: GameState; events: GameEvent[] } = { state: shielded.state, events: [] };
   for (const rider of shielded.riders) {
+    if ('counter' in rider) {
+      // CR 615.5, 122.6 (Gatta and Luzzu): "put that many +1/+1 counters on it", on the permanent the damage would have been dealt to.
+      const put = putCountersOn(
+        made.state,
+        made.state,
+        rider.object,
+        rider.counter,
+        rider.count,
+        rider.controller,
+        counterBlockers(made.state),
+        counterBonuses(made.state),
+      );
+      made = { state: put.state, events: [...made.events, ...put.events] };
+      continue;
+    }
     const tokens = createTokens(made.state, rider.controller, rider.definition, rider.count);
     made = { state: tokens.state, events: [...made.events, ...tokens.events] };
   }
@@ -247,10 +264,16 @@ export function dealDamageAsking(
   }
   const info = sourceInfo(made.state, source);
   let state = made.state;
+  // CR 120.10: the excess of this damage is read now, before it is marked on the permanent (`made.state` has none of it yet).
+  const recipient = to.kind === 'object' ? made.state.objects[to.id] : undefined;
+  const excess =
+    recipient === undefined
+      ? 0
+      : excessDamageTo(made.state, recipient, amount, info?.deathtouch === true);
   const events: GameEvent[] = [
     ...shielded.events,
     ...made.events,
-    { kind: 'damageDealt', source, to, amount, combat },
+    { kind: 'damageDealt', source, to, amount, combat, ...(excess > 0 ? { excess } : {}) },
   ];
 
   if (to.kind === 'player') {
@@ -373,6 +396,27 @@ export function dealDamageAsking(
         }
       }
       state = patchObject(state, to.id, { damage, damagedByDeathtouch, counters });
+      // CR 120.3: this permanent has been dealt damage this turn ("a creature that was dealt damage this turn").
+      if (!(state.turnLog.damagedObjects ?? []).includes(to.id)) {
+        state = {
+          ...state,
+          turnLog: {
+            ...state.turnLog,
+            damagedObjects: [...(state.turnLog.damagedObjects ?? []), to.id],
+          },
+        };
+      }
+      if (info !== null) {
+        // CR 120.3, 608.2h: how much of it sources of each player dealt, by the controller the source has as it deals the damage.
+        const log = state.turnLog.damageToObjects ?? {};
+        const by = [...(log[to.id] ?? [])];
+        for (let i = by.length; i < state.seats.length; i += 1) by[i] = 0;
+        by[info.controller] = (by[info.controller] ?? 0) + amount;
+        state = {
+          ...state,
+          turnLog: { ...state.turnLog, damageToObjects: { ...log, [to.id]: by } },
+        };
+      }
     }
   }
 

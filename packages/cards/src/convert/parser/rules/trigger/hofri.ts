@@ -163,10 +163,12 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     "you cast your first spell during each opponent's turn",
     // "Your first spell each turn" is the caster's first spell of the turn (the engine's nth of 1).
     'you cast your first spell each turn',
-  ],
-  rejects: [
+    // Mind's Dilation (Grand Larceny deck, group B): the same count for another caster, each one's own first spell.
     'an opponent casts their first spell each turn',
     'a player casts their first spell each turn',
+  ],
+  rejects: [
+    "an opponent casts their first spell during each opponent's turn",
     'an opponent casts their second spell',
     'an opponent casts their second creature spell each turn',
     'an opponent casts your second spell each turn',
@@ -213,8 +215,8 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     }
     const n = ORDINALS[(ordinal[1] ?? '').toLowerCase()];
     if (n === undefined) return fail(ctx, pos);
-    if (n === 1 && actor.det !== 'you') return fail(ctx, pos);
-    if (n !== 1 && duringTurn !== undefined) return fail(ctx, pos);
+    // "During each opponent's turn" is read for the controller's own first spell only (the engine's `duringTurn: 'opponent'` goes with `by: 'you'` and `nth: 1`).
+    if (duringTurn !== undefined && !(n === 1 && actor.det === 'you')) return fail(ctx, pos);
     const subject = makeNoun(id, spell.span, 'a', filter);
     return {
       ok: true,
@@ -237,7 +239,7 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
 /**
  * `trigger.enters-one-or-more-creatures`: "one or more creatures you control with mana value 3 or less enter" (CR 603.2c, 603.6a: creatures that enter together are
  * one event for the ability; "other" leaves out the permanent with the ability, Twilight Diviner). The engine's `entersBatch`, as `trigger.enters-one-or-more` has it for tokens. Not read: a number, "enters", a controller other than
- * "you", more than one group of types, a group that is not creatures or artifacts.
+ * "you", more than one group of types, a group that is not creatures, artifacts or one creature type.
  */
 export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
   id: 'trigger.enters-one-or-more-creatures',
@@ -256,6 +258,9 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     // Food and Fellowship deck, group B (Merry): a group of artifacts is one event for the ability just as a group of creatures is.
     'one or more artifacts you control enter',
     'one or more nontoken artifacts you control enter',
+    // Elvish Warmaster (CR 205.3m): a creature type.
+    'one or more other Elves you control enter',
+    'one or more Elves you control enter',
   ],
   rejects: [
     'one or more other creatures you control enters',
@@ -268,6 +273,10 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     'one or more lands you control enter',
     'one or more artifact creatures you control and lands enter',
     'one or more artifacts your opponents control enter',
+    'one or more Elves enter',
+    'one or more Elves your opponents control enter',
+    'one or more Elves you control enters',
+    'one or more Elves and Goblins you control enter',
     'two or more creatures you control enter',
     'one or more creatures you control with mana value 3 or less enter and',
   ],
@@ -282,10 +291,16 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     if (!r.ok) return r;
     const [, other, phrase] = r.value;
     const filter: IrFilter = phrase.value;
+    // Elvish Warmaster (CR 205.3m): "one or more other Elves you control enter", one creature type with no card type of its own.
+    const creatureType =
+      (filter.types === undefined || filter.types.length === 0) &&
+      filter.subtypes?.length === 1 &&
+      filter.notTypes === undefined;
     const creatures =
       filter.anyOf === undefined &&
-      filter.types?.length === 1 &&
-      (filter.types[0] === 'creature' || filter.types[0] === 'artifact');
+      (creatureType ||
+        (filter.types?.length === 1 &&
+          (filter.types[0] === 'creature' || filter.types[0] === 'artifact')));
     if (!creatures || filter.controller !== 'you') return fail(ctx, pos);
     const subject: IrNoun = {
       ...makeNoun(id, phrase.span, 'a', filter),

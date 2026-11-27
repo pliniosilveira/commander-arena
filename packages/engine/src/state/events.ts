@@ -4,10 +4,12 @@
  * (SPEC 17.1 A1); events describe what actually happened.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Zone } from '../ast/types';
+import type { DungeonId, UndercityRoom, Zone } from '../ast/types';
+import type { PartyType } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
+import type { VoteCast } from './decisions';
 import type { StepId } from './types';
 
 export type GameEvent =
@@ -68,6 +70,8 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly from: SeatId;
       readonly object: ObjectId;
+      /** CR 701.58a (Cloak): the card was cloaked, a manifest with ward {2}. */
+      readonly cloaked?: true;
     }
   /**
    * CR 116.2b, 701.40b, 708.8 (D-310): `seat` turned the face-down permanent `object` face up, a special action that does not use the stack. `card` is the card it
@@ -80,6 +84,17 @@ export type GameEvent =
       readonly object: ObjectId;
       readonly card: CardId;
       readonly cost: readonly string[];
+    }
+  /**
+   * CR 702.110b (Exploit; the rules text was not available to check the number): the creature `creature` with exploit exploited a creature: its controller `seat` sacrificed `sacrificed`
+   * as its exploit ability resolved (the creature may have sacrificed itself). Emitted just before the sacrifice moves the permanent, so a creature that sacrificed itself is still on the
+   * battlefield for the "When this creature exploits a creature" ability it has (CR 603.10a).
+   */
+  | {
+      readonly kind: 'exploited';
+      readonly seat: SeatId;
+      readonly creature: ObjectId;
+      readonly sacrificed: ObjectId;
     }
   /**
    * CR 709.5h (Room): `seat` unlocked the half `door` (0 the left half, 1 the right half) of the permanent `object`: it was given the unlocked designation, as it entered the
@@ -132,6 +147,18 @@ export type GameEvent =
       readonly result: number;
     }
   /**
+   * CR 701.38a (Vote): every player has voted in a vote of the spell or ability `source` (controlled by `controller`): `cast` is who voted for what, in the order they voted (an option is a word of
+   * the card, `seat:<n>` for a player or `object:<id>` for a permanent). With `secret` the votes were hidden until now (the log says nothing about a vote before this event). The trigger
+   * `votingFinished` reads it and keeps the record.
+   */
+  | {
+      readonly kind: 'votesRevealed';
+      readonly source: ObjectId;
+      readonly controller: SeatId;
+      readonly cast: readonly VoteCast[];
+      readonly secret: boolean;
+    }
+  /**
    * CR 705.2: `seat` flipped a coin after calling `call`; `result` is the side that came up, drawn from the seeded generator of the game, and `won` is whether the call matched it
    * (the player wins the flip). A random event: the host does not let the player undo past it, as for a die.
    */
@@ -142,6 +169,11 @@ export type GameEvent =
       readonly result: 'heads' | 'tails';
       readonly won: boolean;
     }
+  /**
+   * CR 701.30d (Clash): `seat` won a clash: the card they revealed had a greater mana value than every other card revealed. "Whenever you win a clash" (`winsClash`) reads it. One event for
+   * the winner; a clash nobody wins (equal values, or no card revealed) has none.
+   */
+  | { readonly kind: 'clashWon'; readonly seat: SeatId }
   /**
    * CR 701.17a (Mill, D-131): `seat` put the top cards of their library into their graveyard, as the new objects they
    * became there (CR 400.7), in the order they were milled (the top card first). One event for each player and each
@@ -177,6 +209,8 @@ export type GameEvent =
       readonly replicas?: number;
       /** Present (true) when the buyback cost was paid (CR 702.27a). */
       readonly boughtBack?: true;
+      /** Present (true) when the offspring cost was paid (CR 702.175a). */
+      readonly offspring?: true;
       /** The opponent the gift was promised to (CR 702.174a, D-135); present when the caster promised one. */
       readonly gift?: SeatId;
       /**
@@ -193,6 +227,11 @@ export type GameEvent =
       readonly x?: number;
       /** Present (true) when it was cast as the effect of its suspend ability (CR 702.62a, D-128). */
       readonly suspended?: true;
+      /**
+       * CR 700.14 (Expend): the mana the caster had spent to cast spells this turn before paying for this one, and after. Present when mana was spent on this spell; "Whenever you
+       * expend N" triggers when N is above `before` and at most `after`.
+       */
+      readonly expend?: { readonly before: number; readonly after: number };
     }
   /**
    * A copy of a spell was put onto the stack (CR 707.10, D-129): by Storm, or by an effect that copies a spell. `copy`
@@ -334,6 +373,11 @@ export type GameEvent =
       readonly amount: number;
       /** True for combat damage (CR 510); commander damage counts only combat damage. */
       readonly combat: boolean;
+      /**
+       * Excess damage (CR 120.10): how much of `amount`, dealt to a permanent, was more than lethal damage (or more than a planeswalker's loyalty) as it was before this damage.
+       * Present only when it is more than 0, so an event of damage that was not excess is the shape it always had.
+       */
+      readonly excess?: number;
     }
   /**
    * Damage that would have been dealt was prevented by a shield (CR 615.1, 615.6): `amount` is the
@@ -417,11 +461,18 @@ export type GameEvent =
     }
   /** CR 701.37a (D-445): the permanent became monstrous (the monstrosity action; the `counterAdded` event of its counters comes first). */
   | { readonly kind: 'becameMonstrous'; readonly object: ObjectId }
+  /** CR 719.3a, 719.3b: a Case became solved (the designation was set). */
+  | { readonly kind: 'becameSolved'; readonly object: ObjectId }
   | {
       readonly kind: 'counterRemoved';
       readonly object: ObjectId;
       readonly counter: string;
       readonly count: number;
+      /**
+       * The player who removed the counters, when the event says (Watcher of Hours: "Whenever you remove a time counter from this card while it's exiled", CR 122.1, 702.62a): set by
+       * the removal of a time counter by Suspend's upkeep ability, which its owner controls. Absent for any other removal, which a trigger that reads who removed it does not count.
+       */
+      readonly by?: SeatId;
     }
   | { readonly kind: 'died'; readonly object: ObjectId; readonly card: CardId | null }
   /**
@@ -449,6 +500,11 @@ export type GameEvent =
       readonly abilityIndex: number;
       readonly stackObject: ObjectId;
       readonly chapter?: number;
+      /**
+       * The ability triggered because its source, `entered`, entered the battlefield ("When this creature enters", CR 603.6a): what an `entersCausesTrigger` trigger reads
+       * (Aboleth Spawn, CR 603.2). Absent for any other cause.
+       */
+      readonly entered?: ObjectId;
     }
   /**
    * CR 603.3d: a triggered ability was removed as it was to be put on the stack, because a choice it
@@ -488,6 +544,7 @@ export type GameEvent =
         | 'effect'
         | 'tap'
         | 'bounce'
+        | 'exileCost'
         | 'fight'
         | 'blight'
         | 'untapCost'
@@ -495,6 +552,17 @@ export type GameEvent =
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;
+    }
+  /**
+   * CR 700.8d (Stick Together): `seat` chose a party from among the creatures they control: `party` lists the creature that fills each type, empty when they chose none. `automatic`
+   * is true when the player controls no creature of a party type, so there was nothing to choose. The creatures left out are sacrificed once the last player has chosen.
+   */
+  | {
+      readonly kind: 'partyChosen';
+      readonly seat: SeatId;
+      readonly source: ObjectId;
+      readonly party: readonly { readonly type: PartyType; readonly object: ObjectId }[];
+      readonly automatic: boolean;
     }
   /**
    * CR 701.34a (Proliferate, D-149): `seat` proliferated: each permanent in `objects` and each player in `players` was given one more counter of
@@ -647,6 +715,8 @@ export type GameEvent =
         | 'cardType'
         | 'planeswalkerType'
         | 'lifePaid'
+        | 'player'
+        | 'cardName'
         | 'option'
         | 'attackTarget'
         | 'assignOpponent'
@@ -659,6 +729,7 @@ export type GameEvent =
         | 'playerChoice'
         | 'chooseOpponent'
         | 'protector'
+        | 'dungeonRoom'
         | 'number';
       readonly option: string;
     }
@@ -756,6 +827,24 @@ export type GameEvent =
       readonly from: SeatId | null;
       readonly to: SeatId | null;
     }
+  /**
+   * `seat` took the initiative (CR 726.1, 726.3, 726.5): `from` is the player who had it (null if none; `seat` itself when they already had it, which still triggers the
+   * venture of CR 726.2).
+   */
+  | { readonly kind: 'initiativeTaken'; readonly seat: SeatId; readonly from: SeatId | null }
+  /**
+   * `seat` moved their venture marker into `room` of `dungeon` (CR 701.49a, 701.49b, 309.4a, 309.5a): `from` is the room it left, null when the dungeon was just put into the
+   * command zone. The room ability triggers from this (CR 309.4c).
+   */
+  | {
+      readonly kind: 'ventured';
+      readonly seat: SeatId;
+      readonly dungeon: DungeonId;
+      readonly room: UndercityRoom;
+      readonly from: UndercityRoom | null;
+    }
+  /** `seat` completed `dungeon` (CR 309.7, 701.49c, 704.5t): the dungeon card was removed from the game. */
+  | { readonly kind: 'dungeonCompleted'; readonly seat: SeatId; readonly dungeon: DungeonId }
   /** The game became day or night (CR 731.1, 502.2, 702.145d, 702.145g): `from` is what it was (null while it was neither), `to` what it is now. */
   | {
       readonly kind: 'dayNightChanged';

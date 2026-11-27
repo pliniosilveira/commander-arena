@@ -13,6 +13,7 @@ import {
   isCrew,
   isDefendingSacrifice,
   isEffectChoice,
+  isExileCost,
   isFight,
   isLegendRule,
   isSpellCost,
@@ -68,6 +69,8 @@ export function PermanentPanel({
   const spellTap = isSpellTap(decision, index);
   // D-139: the return cost of an ability, and an effect's "tap any number of untapped Myr you control".
   const bounce = isBounceCost(decision);
+  // Primordial Mist (CR 118.3): the exile cost of an ability.
+  const exile = isExileCost(decision);
   const tapEffect = tapEffectOf(decision, index) !== null;
   const labels = (legend ? legendLabels : permanentLabels)(decision.legal, index);
   const hoverProps = useHoverProps();
@@ -124,15 +127,17 @@ export function PermanentPanel({
                                   ? `Tap to pay for ${vehicle}`
                                   : bounce
                                     ? `Return to pay for ${vehicle}`
-                                    : tapEffect
-                                      ? `Tap for ${vehicle}`
-                                      : effect
-                                        ? `Choose for ${vehicle}`
-                                        : isSpellCost(decision, index)
-                                          ? `Sacrifice to cast ${vehicle}`
-                                          : isDefendingSacrifice(decision, index)
-                                            ? `Defending player sacrifices for ${vehicle}`
-                                            : `Sacrifice ${decision.forCost === true ? 'to pay for' : 'for'} ${vehicle}`;
+                                    : exile
+                                      ? `Exile to pay for ${vehicle}`
+                                      : tapEffect
+                                        ? `Tap for ${vehicle}`
+                                        : effect
+                                          ? `Choose for ${vehicle}`
+                                          : isSpellCost(decision, index)
+                                            ? `Sacrifice to cast ${vehicle}`
+                                            : isDefendingSacrifice(decision, index)
+                                              ? `Defending player sacrifices for ${vehicle}`
+                                              : `Sacrifice ${decision.forCost === true ? 'to pay for' : 'for'} ${vehicle}`;
   const cause = sacrificeCause(decision, index, view.viewer);
   return (
     <section
@@ -172,9 +177,11 @@ export function PermanentPanel({
                                       ? 'Permanents to tap'
                                       : bounce
                                         ? 'Permanents to return'
-                                        : effect
-                                          ? 'Permanents to choose'
-                                          : 'Permanents to sacrifice'
+                                        : exile
+                                          ? 'Permanents to exile'
+                                          : effect
+                                            ? 'Permanents to choose'
+                                            : 'Permanents to sacrifice'
       }
     >
       <h3 className="dec-panel-title">{title}</h3>

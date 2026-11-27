@@ -47,7 +47,7 @@ test('the menu starts a game from two prepared precons, with their cards and the
 });
 
 test('a game draws the printings of its decks, the player’s own on a card both name', async () => {
-  // Both lists name their basic land in another printing: the one the player's deck names is drawn, whatever the preparing order.
+  // Both lists name their basic land in another printing: each seat is drawn in its own deck's, whoever is the player.
   const named = async (id: string, printing: string) => {
     const snapshot = await playableSnapshot(id);
     return {
@@ -61,10 +61,12 @@ test('a game draws the printings of its decks, the player’s own on a card both
   ]);
   setGamePrintings([]);
   await startFromForm(async () => {}, form('synthetic-a', 'synthetic-b'), precons);
-  expect(printingOf('Forest')).toEqual({ set: 'aaa', collector: '1' });
-  // The same decks the other way round: now the other list is the player's.
+  expect(printingOf('Forest', 0)).toEqual({ set: 'aaa', collector: '1' });
+  expect(printingOf('Forest', 1)).toEqual({ set: 'bbb', collector: '2' });
+  // The same decks the other way round: the seats swap their printings.
   await startFromForm(async () => {}, form('synthetic-b', 'synthetic-a'), precons);
-  expect(printingOf('Forest')).toEqual({ set: 'bbb', collector: '2' });
+  expect(printingOf('Forest', 0)).toEqual({ set: 'bbb', collector: '2' });
+  expect(printingOf('Forest', 1)).toEqual({ set: 'aaa', collector: '1' });
 });
 
 test('an empty seed is picked when the game starts; a bad seed starts nothing', async () => {
@@ -133,7 +135,16 @@ test('autostart accepts hidden test ids by id, the one deliberate exception', as
   });
   expect(result).toEqual({
     ok: true,
-    options: { seed: 1, humanDeck: 'white-knights', aiDeck: 'swamp-forest' },
+    options: {
+      seed: 1,
+      humanDeck: 'white-knights',
+      aiDeck: 'swamp-forest',
+      // Issue 627: a hidden test deck is replayed from its id alone.
+      replayDecks: [
+        { name: 'white-knights', hidden: 'white-knights' },
+        { name: 'swamp-forest', hidden: 'swamp-forest' },
+      ],
+    },
   });
 });
 
@@ -149,6 +160,12 @@ test('autostart also accepts real precon ids, prepared and checked; a real id wi
   if (!mixed.ok) return;
   expect(mixed.options.humanCards?.cards).toHaveLength(100);
   expect(mixed.options.aiCards).toBeUndefined();
+  // Issue 627: a shipped precon is replayed from its snapshot id and list, with no card data of its own.
+  const [human, ai] = mixed.options.replayDecks ?? [];
+  expect(human?.precon).toBe('white-knights');
+  expect(human?.decklist).not.toBe('');
+  expect(human?.cards).toBeUndefined();
+  expect(ai).toEqual({ name: 'swamp-forest', hidden: 'swamp-forest' });
 });
 
 test('autostart refuses an unknown id and a real precon that is not startable', async () => {

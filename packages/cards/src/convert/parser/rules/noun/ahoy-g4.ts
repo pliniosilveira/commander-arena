@@ -126,7 +126,59 @@ export const NOUN_EACH_CREATURE_NOT_OWNED = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.creatures-you-control-but-dont-own`: "creatures you control but don't own" (Laughing Jasper Flint, issue 685): the same group in the plural, with no "each" (CR 108.3, 110.2). The
+ * engine's `notOwnedByYou` under the card type and the controller. Not read: another controller, "other", "do not own", another card type, "each", the singular.
+ */
+export const NOUN_CREATURES_NOT_OWNED = defineRule<IrNoun>({
+  id: 'noun.creatures-you-control-but-dont-own',
+  family: 'noun',
+  leading: ['creatures'],
+  cites: ['CR 108.3 (Owner)', 'CR 611.3a (Continuous Effects)'],
+  examples: ["creatures you control but don't own", 'Creatures you control but don’t own'],
+  rejects: [
+    'creatures you control',
+    "creatures but don't own",
+    "creatures an opponent controls but don't own",
+    "other creatures you control but don't own",
+    "creatures you control but you don't own",
+    'creatures you control but do not own',
+    "artifacts you control but don't own",
+    "creature you control but don't own",
+    "each creatures you control but don't own",
+  ],
+  parse: node<{ filter: IrFilter }, IrNoun>(
+    'noun.creatures-you-control-but-dont-own',
+    (ctx, pos) => {
+      const r = pattern(/creatures you control but don['’]t own(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+      if (!r.ok) return r;
+      return {
+        ok: true,
+        value: {
+          filter: {
+            zone: 'battlefield',
+            types: ['creature'],
+            controller: 'you',
+            notOwnedByYou: true,
+            raw: r.value[0] ?? '',
+          },
+        },
+        pos: r.pos,
+      };
+    },
+    ({ filter }) => ({
+      kind: 'noun',
+      det: 'each',
+      filter,
+      upTo: false,
+      plural: true,
+      other: false,
+    }),
+  ),
+});
+
 export const AHOY_G4_NOUN_RULES = [
+  NOUN_CREATURES_NOT_OWNED,
   NOUN_EACH_CREATURE_THAT_IS_SUBTYPES,
   NOUN_EACH_CREATURE_NOT_OWNED,
 ];

@@ -71,9 +71,9 @@ const ADDITIONAL: readonly Line[] = [
   },
   {
     kind: 'sorcery',
-    text: 'As an additional cost to cast ~, discard a creature card.\nDraw two cards.',
-    expect: no('creature card.', 'cost.discard'),
-    note: 'SYNTHETIC; the engine discards N cards of the hand, with no quality',
+    text: 'As an additional cost to cast ~, discard a Goblin card.\nDraw two cards.',
+    expect: no('Goblin card.', 'cost.discard'),
+    note: 'SYNTHETIC; the engine discards cards of a card type or supertype, not of a subtype',
   },
   {
     kind: 'sorcery',

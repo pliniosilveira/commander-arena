@@ -14,6 +14,7 @@
  */
 
 import type { ManaAbility } from '../ast/types';
+import { COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { addToPool, type PaymentPlan, parseManaCost, planPayment } from '../mana';
 import type { ManaColor, ManaObject, ManaRestriction, ManaRider } from '../mana/types';
@@ -36,15 +37,18 @@ import {
   sacrificeFilterOf,
   showCost,
   tapFilterOf,
+  tapXFilterOf,
 } from './mana-abilities';
 import {
+  acceptedCombination,
+  canonicalCombination,
   isCombinationProduction,
   productionOutcomes,
   sameCombination,
   spendRestrictionOf,
   spentRiderOf,
 } from './mana-outcomes';
-import { additionalManaOptions } from './mana-triggers';
+import { additionalManaOptions, triggeredManaDamage } from './mana-triggers';
 import {
   activatePlayerMana,
   isPlayerManaAbility,
@@ -144,6 +148,8 @@ function pickOutcome(
   outcomes: readonly (readonly ManaColor[])[],
   color: ManaColor | null,
   combination: readonly ManaColor[] | null,
+  /** The combination named, when the ability lists only a few of its many (`acceptedCombination`, issue 632). */
+  named: readonly ManaColor[] | null = null,
 ): { chosen: ManaColor[] } | { error: string } {
   if (outcomes.length === 0) return refuse(`${name} makes no mana`);
   if (isCombinationProduction(ability.production)) {
@@ -155,6 +161,7 @@ function pickOutcome(
       if (outcomes.length === 1 && only !== undefined) return { chosen: [...only] };
       return refuse(`${name} makes one of ${listCombinations(outcomes)}: say which`);
     }
+    if (named !== null) return { chosen: [...named] };
     const found = outcomes.find((o) => sameCombination(o, combination));
     return found === undefined
       ? refuse(
@@ -181,6 +188,29 @@ function pickOutcome(
 }
 
 /**
+ * Whether a mana activation names a combination of an ability that lists only a few of its many (`acceptedCombination`, issue 632): it is not among the priority
+ * options, which hold the few, but `activateManaAbility` takes it, and refuses it for any other reason (the cost, the timing) as it does a listed one.
+ */
+export function namesUnlistedCombination(
+  state: GameState,
+  source: ObjectId,
+  abilityIndex: number,
+  combination: readonly ManaColor[] | undefined,
+): boolean {
+  const obj = state.objects[source];
+  if (obj === undefined) return false;
+  const found = manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === abilityIndex);
+  if (found === undefined) return false;
+  // CR 107.3, 605.3b (Hazel of the Rootbloom): "Tap X untapped tokens you control: Add X mana in any combination of colors" has a play for every X, set of permanents and
+  // combination: the options hold a few, and any activation of it is taken to `activateManaAbility`, which checks it against the game as it is now.
+  if (tapXFilterOf(found.ability) !== null) return true;
+  return (
+    combination !== undefined &&
+    acceptedCombination(state, obj, found.ability, combination) !== null
+  );
+}
+
+/**
  * Activates one mana ability by hand (CR 605.3b): pays its costs, adds the mana to the pool, then
  * runs the ability's extra effects ("~ deals 1 damage to you") in the same resolution. A mana cost
  * comes out of the pool, so the player taps the sources that pay for it first (CR 605.3a). A
@@ -201,6 +231,8 @@ export function activateManaAbility(
   tapped?: ObjectId,
   /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b, 605.3b): required when the land has such an ability on it. */
   extraColors: readonly ManaColor[] | null = null,
+  /** The permanents a cost "Tap X untapped tokens you control" taps (Hazel of the Rootbloom): X of them, named by the player; the combination names X colors. */
+  tappedMany?: readonly ObjectId[],
 ): ActivationResult {
   // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player belongs to no permanent.
   if (isPlayerManaAbility(abilityIndex)) return activatePlayerMana(state, seat, source);
@@ -234,13 +266,42 @@ export function activateManaAbility(
       return refuse(`Choose which permanent to tap for ${name}`);
     }
   }
-  const picked = pickOutcome(
-    name,
-    found.ability,
-    productionOutcomes(state, obj, found.ability),
-    color,
-    combination,
-  );
+  // CR 107.3, 601.2b, 605.3b (Hazel of the Rootbloom): "Tap X untapped tokens you control: Add X mana in any combination of colors": the player chooses X as the ability is
+  // activated by naming the permanents they tap, and the color of each mana the ability adds; both are checked against the game as it is now.
+  const tapX = tapXFilterOf(found.ability) !== null;
+  if (!tapX && tappedMany !== undefined && tappedMany.length > 0) {
+    return refuse(`${name} taps no number of permanents`);
+  }
+  let xChosen: ManaColor[] | null = null;
+  if (tapX) {
+    const many = tappedMany ?? [];
+    const legal = manaTapCandidates(state, seat, source, found.ability);
+    if (color !== null) return refuse(`${name} makes a combination of mana, not one color`);
+    if (tapped !== undefined) return refuse(`${name} taps the permanents of a list, not one`);
+    if (new Set(many).size !== many.length) return refuse(`${name} cannot tap a permanent twice`);
+    if (!many.every((id) => legal.includes(id))) {
+      return refuse(`${name} cannot tap those permanents`);
+    }
+    const colors: readonly ManaColor[] = COLORS;
+    const named = combination ?? [];
+    if (named.length !== many.length || !named.every((c) => colors.includes(c))) {
+      return refuse(
+        `${name} adds as much mana as the permanents you tap (${many.length}), each of one of the five colors`,
+      );
+    }
+    xChosen = canonicalCombination(named);
+  }
+  const picked =
+    xChosen !== null
+      ? { chosen: xChosen }
+      : pickOutcome(
+          name,
+          found.ability,
+          productionOutcomes(state, obj, found.ability),
+          color,
+          combination,
+          combination === null ? null : acceptedCombination(state, obj, found.ability, combination),
+        );
   if ('error' in picked) return picked;
   const chosen = picked.chosen;
   const snow = derive(state, obj).supertypes.includes('snow');
@@ -259,7 +320,16 @@ export function activateManaAbility(
       manaPool: getSeat(working, seat).manaPool.filter((_, i) => !spent.has(i)),
     });
   }
-  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice, tapped);
+  const paid = payManaAbilityCosts(
+    working,
+    seat,
+    source,
+    found.ability,
+    sacrifice,
+    tapped,
+    undefined,
+    tappedMany,
+  );
   // CR 605.4a (D-139): the triggered mana abilities of "whenever you tap a permanent for {C}" resolve at once, into the same pool.
   const alternatives = additionalManaOptions(working, obj, found.ability, chosen);
   const only = alternatives[0];
@@ -293,7 +363,8 @@ export function activateManaAbility(
           made,
           spendRestrictionOf(found.ability, obj),
           spentRiderOf(found.ability, source),
-          derive(state, obj).types,
+          // D-183: the card types and (Cataclysmic Prospecting, "mana from a Desert") the subtypes of the source, as they were when the mana was made.
+          [...derive(state, obj).types, ...derive(state, obj).subtypes],
         ),
       ),
     },
@@ -305,6 +376,30 @@ export function activateManaAbility(
     const extra = runImmediateEffects(next, seat, source, also);
     next = extra.state;
     events.push(...extra.events);
+  }
+  // CR 605.1b, 605.4a (Barbflare Gremlin): "Then that land deals 1 damage to that player": the triggered mana ability's damage, dealt by the land to the player who tapped it, with the mana.
+  const hurt = runManaTriggerDamage(next, seat, obj, found.ability, chosen);
+  next = hurt.state;
+  events.push(...hurt.events);
+  return { state: next, events };
+}
+
+/** The damage of the triggered mana abilities that trigger as `tapped` is tapped for `produced` (`triggeredManaDamage`): the land deals it to `seat`, who tapped it. */
+function runManaTriggerDamage(
+  state: GameState,
+  seat: SeatId,
+  tapped: GameObject,
+  ability: ManaAbility,
+  produced: readonly ManaColor[],
+): { state: GameState; events: GameEvent[] } {
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const amount of triggeredManaDamage(state, tapped, ability, produced)) {
+    const out = runImmediateEffects(next, seat, tapped.id, [
+      { kind: 'dealDamage', amount, to: { kind: 'you' } },
+    ]);
+    next = out.state;
+    events.push(...out.events);
   }
   return { state: next, events };
 }
@@ -374,6 +469,14 @@ export function applyPaymentPlan(
       const extra = runImmediateEffects(next, seat, tap.object, ability.also ?? []);
       next = extra.state;
       events.push(...extra.events);
+    }
+    // CR 605.1b, 605.4a (Barbflare Gremlin): the damage of a triggered mana ability, dealt by the land to the player who tapped it.
+    const tappedObject = next.objects[tap.object];
+    if (tappedObject !== undefined) {
+      const produced = productionOutcomes(next, tappedObject, ability)[tap.outcome] ?? [];
+      const hurt = runManaTriggerDamage(next, seat, tappedObject, ability, produced);
+      next = hurt.state;
+      events.push(...hurt.events);
     }
   }
   if (lifeToPay > 0) {

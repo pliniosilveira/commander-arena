@@ -2,9 +2,9 @@
  * Effect rule of the triggered mana ability "Whenever you tap a land for mana, add one mana of any type that land produced." (Mirari's Wake, Vorinclex, Voice of Hunger;
  * CR 106.12a, 605.1b, 605.4a): `effect.add-mana-of-produced-type`.
  */
-import { choice, literal, pattern, sequence } from '../../combinators';
-import type { IrManaSpec } from '../../ir/types';
-import { defineRule, spanned } from '../registry';
+import { choice, literal, pattern, satisfy, sequence } from '../../combinators';
+import type { IrAmount, IrManaSpec } from '../../ir/types';
+import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
 const ID = 'effect.add-mana-of-produced-type';
@@ -73,4 +73,53 @@ export const EFFECT_ADD_MANA_OF_PRODUCED_TYPE = defineRule<Clauses>({
   ),
 });
 
-export const PRODUCED_TYPE_MANA_EFFECT_RULES = [EFFECT_ADD_MANA_OF_PRODUCED_TYPE];
+const TAPPER_ID = 'effect.tapper-adds-produced-type-then-land-damages';
+
+/**
+ * `effect.tapper-adds-produced-type-then-land-damages`: "that player adds one mana of any type that land produced. Then that land deals 1 damage to that player." (Barbflare Gremlin; CR 106.12a,
+ * 605.1b, 605.4a, 120.3): the two sentences of a triggered mana ability about the player who tapped a land, kept together by `splitSentences`. The player gets one more mana of a type the land
+ * produced and the land deals the damage to them, as the mana ability resolves. The lowering reads it only as the effect of "Whenever a player taps a land for mana" (`lower/triggers.ts`). Not
+ * read: "you add", another count of mana, damage with no number or an X, damage by another source, "to you", a second sentence of another shape.
+ */
+export const EFFECT_TAPPER_ADDS_PRODUCED_TYPE_THEN_LAND_DAMAGES = defineRule<Clauses>({
+  id: TAPPER_ID,
+  family: 'effect',
+  leading: ['that'],
+  cites: [
+    'CR 106.12a (Mana)',
+    'CR 605.1b (Mana Abilities)',
+    'CR 605.4a (Mana Abilities)',
+    'CR 120.3 (Damage)',
+  ],
+  examples: [
+    'that player adds one mana of any type that land produced. Then that land deals 1 damage to that player',
+    'that player adds one mana of any type that land produced. Then that land deals 2 damage to that player',
+  ],
+  rejects: [
+    'that player adds one mana of any type that land produced',
+    'that player adds one mana of any type that land produced. Then that land deals damage to that player',
+    'that player adds one mana of any type that land produced. Then that land deals 0 damage to that player',
+    'that player adds two mana of any type that land produced. Then that land deals 1 damage to that player',
+    'you add one mana of any type that land produced. Then that land deals 1 damage to that player',
+    'that player adds one mana of any type that land produced. Then that land deals 1 damage to you',
+    'that player adds one mana of any type that land produced. Then ~ deals 1 damage to that player',
+    'that player adds one mana of any type that land produced. Then that land deals 1 damage to that player and draw a card',
+  ],
+  parse: single(
+    TAPPER_ID,
+    sequence(
+      pattern(/that player adds one mana of any type that land produced\. then that land deals /iu),
+      satisfy(
+        family<IrAmount>('amount', { only: ['amount.number'] }),
+        (amount) => amount.kind === 'number' && amount.value >= 1,
+      ),
+      pattern(/ damage to that player(?![\p{L}\p{N}'’])/iu),
+    ),
+    ([, amount]) => ({ verb: 'tapperAddsProducedTypeThenDamage', args: { amount } }),
+  ),
+});
+
+export const PRODUCED_TYPE_MANA_EFFECT_RULES = [
+  EFFECT_ADD_MANA_OF_PRODUCED_TYPE,
+  EFFECT_TAPPER_ADDS_PRODUCED_TYPE_THEN_LAND_DAMAGES,
+];

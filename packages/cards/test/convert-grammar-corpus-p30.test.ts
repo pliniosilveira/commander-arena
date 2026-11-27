@@ -158,11 +158,11 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: 'When ~ enters, you may gain 2 life. If you do, draw a card.',
-    expect: no('you may gain 2 life. If you do, draw a card.', 'effect.life', {
+    text: 'When ~ enters, you may scry 2. If you do, draw a card.',
+    expect: no('you may scry 2. If you do, draw a card.', 'effect.scry', {
       reason: 'notRunnable',
     }),
-    note: 'the engine cannot tell whether a gain of life was done: `may` wraps six kinds of effect',
+    note: 'the engine cannot tell whether a scry was done: `may` wraps only the kinds of effect whose doing the engine can tell',
   },
   {
     kind: 'creature',

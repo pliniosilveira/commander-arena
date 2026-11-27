@@ -497,7 +497,74 @@ export const CONDITION_THAT_SPELLS_STAT = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.discarded-card-matches`: "the discarded card was a creature card", "the discarded card was a land card" (Moria Scavenger, CR 602.2b, 701.9a, 608.2h: the card that
+ * the cost of the activated ability discarded, as it last was). What it is is a filter with no zone, controller or owner. The engine's `discardedAsCostMatches`, in the body of an
+ * activated ability whose cost discards a card.
+ */
+export const CONDITION_DISCARDED_CARD_MATCHES = defineRule<IrCondition>({
+  id: 'condition.discarded-card-matches',
+  family: 'condition',
+  leading: ['the'],
+  cites: [
+    'CR 602.2b (Activating Activated Abilities)',
+    'CR 701.9a (Discard)',
+    'CR 608.2h (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'the discarded card was a creature card',
+    'the discarded card was a land card',
+    'the discarded card was a nonland card',
+    'the discarded card was an Elf card',
+    'the discarded card was a legendary creature card',
+    // Grab the Prize: the negation.
+    "the discarded card wasn't a land card",
+    'the discarded card wasn’t a creature card',
+  ],
+  rejects: [
+    'the discarded card was a card',
+    'the discarded card was not a creature card',
+    "the discarded card wasn't creature card",
+    "the discarded card wasn't a card",
+    "the discarded cards weren't creature cards",
+    'the discarded card was creature card',
+    'the discarded cards were creature cards',
+    'the discarded card',
+    'the discarded card is a creature card',
+    'the card was a creature card',
+    'the discarded card was a creature card and',
+  ],
+  parse: (ctx, pos) => {
+    // Grab the Prize (CR 601.2b, 701.9a): "the discarded card wasn't a land card" is the negation of "the discarded card was a land card".
+    const lead = pattern(/the discarded card (was|wasn['’]t) (?:a|an) /iu)(ctx, pos);
+    if (!lead.ok) return lead;
+    const negated = /^wasn/iu.test(lead.value[1] ?? '');
+    const what = WHAT_IT_IS(ctx, lead.pos);
+    if (!what.ok) return what;
+    const span = { start: pos, end: what.pos };
+    const matches: IrCondition = {
+      kind: 'condition',
+      test: { kind: 'discardedAsCostMatches', filter: what.value },
+      span,
+      rule: 'condition.discarded-card-matches',
+    };
+    return {
+      ok: true,
+      value: negated
+        ? {
+            kind: 'condition',
+            test: { kind: 'not', term: matches },
+            span,
+            rule: 'condition.discarded-card-matches',
+          }
+        : matches,
+      pos: what.pos,
+    };
+  },
+});
+
 export const RECURSION_CONDITION_RULES = [
+  CONDITION_DISCARDED_CARD_MATCHES,
   CONDITION_EXILED_THIS_WAY,
   CONDITION_IT_MATCHES,
   CONDITION_ITS_MANA_VALUE,

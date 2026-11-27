@@ -21,10 +21,13 @@ import type { Effect, ObjectFilter, PreventScope } from '../ast/types';
 import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
-import { allocateTimestamp } from '../state/ops';
+import { allocateTimestamp, objectsInZone } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
+import { controllerOf } from './control';
 import { endOf } from './control-effects';
 import { derive } from './derive';
+import { emblemsOf } from './emblem';
+import { mayHaveStatic } from './printed-statics';
 import {
   isPlayerSelector,
   matchesFilter,
@@ -33,6 +36,7 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+import { staticConditionHolds } from './static-conditions';
 import { done, type StepOutcome } from './step-outcome';
 
 type PreventNode = Extract<Effect, { kind: 'preventDamage' }>;
@@ -73,6 +77,10 @@ export function runPreventDamage(
     ...(node.byFilter === undefined
       ? {}
       : { sourceFilter: { filter: node.byFilter, controller: ctx.controller } }),
+    // CR 615.5 (Gatta and Luzzu): "prevent that damage and put that many +1/+1 counters on it": the controller of the effect puts them.
+    ...(node.countersPrevented === undefined
+      ? {}
+      : { countersPrevented: { counter: node.countersPrevented, controller: ctx.controller } }),
     // CR 615.5 (Inkshield): "For each 1 damage prevented this way, create a token": the controller of the effect makes it.
     ...(node.perPrevented === undefined
       ? {}
@@ -167,6 +175,13 @@ export interface StaticPrevention {
   readonly object: ObjectId;
   readonly index: number;
   readonly scope: PreventScope;
+  /** Set for a `preventDamageAround` of another permanent: what it covers (the recipient is not the permanent that has it). */
+  readonly around?:
+    | 'dealtByThis'
+    | 'dealtToYouAndYourOtherPermanents'
+    | 'dealtToYouAndYourPlaneswalkers';
+  /** "Prevent all but N of that damage": the damage this prevention leaves (Ajani Steadfast's emblem). */
+  readonly keep?: number;
   /** The counter this prevention removes from the permanent for each damage event it prevents (issue 159). */
   readonly removeCounter?: string;
 }
@@ -179,16 +194,20 @@ export function staticPreventions(
   state: GameState,
   to: DamageRecipient,
   combat: boolean,
+  source?: ObjectId,
 ): readonly StaticPrevention[] {
-  if (to.kind !== 'object') return [];
+  const around = aroundPreventions(state, to, combat, source);
+  if (to.kind !== 'object') return around;
   const obj = state.objects[to.id];
-  if (obj === undefined || obj.zone !== 'battlefield') return [];
-  const found: StaticPrevention[] = [];
+  if (obj === undefined || obj.zone !== 'battlefield') return around;
+  const found: StaticPrevention[] = [...around];
   derive(state, obj).abilities.forEach((a, index) => {
     if (
       a.kind === 'static' &&
       a.static.kind === 'preventDamageToThis' &&
-      (a.static.scope === 'all' || (a.static.scope === 'combat') === combat)
+      a.static.subject.kind === 'this' &&
+      (a.static.scope === 'all' || (a.static.scope === 'combat') === combat) &&
+      (a.condition === undefined || staticConditionHolds(state, a.condition, obj))
     ) {
       found.push({
         object: obj.id,
@@ -198,6 +217,24 @@ export function staticPreventions(
       });
     }
   });
+  // CR 615.1, 303.4, 301.5 (Multiclass Baldric): "prevent all damage that would be dealt to equipped creature" is a prevention effect of the Equipment (or Aura) attached
+  // to the permanent, read from the attaching permanent's abilities and its condition ("as long as you have a full party", for the Equipment's controller). The effect is
+  // the attaching permanent's, not an ability of the creature, so the creature losing its abilities does not end it.
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const attacher = state.objects[id];
+    if (attacher === undefined || attacher.attachedTo !== obj.id) continue;
+    derive(state, attacher).abilities.forEach((a, index) => {
+      if (
+        a.kind === 'static' &&
+        a.static.kind === 'preventDamageToThis' &&
+        a.static.subject.kind === 'attached' &&
+        (a.static.scope === 'all' || (a.static.scope === 'combat') === combat) &&
+        (a.condition === undefined || staticConditionHolds(state, a.condition, attacher))
+      ) {
+        found.push({ object: attacher.id, index, scope: a.static.scope });
+      }
+    });
+  }
   // CR 122.1c (Shield counters): one or more shield counters make one prevention effect, "If damage would be dealt to this permanent, prevent that damage and
   // remove a shield counter from it". It is a prevention effect of the permanent, not an ability (so losing all abilities does not turn it off), and it is listed
   // last so the default order spends the counter only when nothing else prevents the damage.
@@ -207,6 +244,57 @@ export function staticPreventions(
       index: SHIELD_COUNTER_INDEX,
       scope: 'all',
       removeCounter: 'shield',
+    });
+  }
+  return found;
+}
+
+/**
+ * The `preventDamageAround` statics of the permanents on the battlefield that cover this event (CR 615.1; Planeswalker Party deck): a permanent that prevents the damage
+ * `dealtByThis` when it is the source, or `dealtToYouAndYourOtherPermanents` when the recipient is its controller or another permanent that controller controls. Read from the
+ * abilities each permanent has now (CR 613.1f), with the controller it has now (CR 108.4, 613.1b).
+ */
+function aroundPreventions(
+  state: GameState,
+  to: DamageRecipient,
+  combat: boolean,
+  source: ObjectId | undefined,
+): readonly StaticPrevention[] {
+  const found: StaticPrevention[] = [];
+  // CR 114.4: the abilities of an emblem work from the command zone, so its prevention is read with those of the permanents.
+  for (const id of [...state.battlefield, ...emblemsOf(state)]) {
+    const obj = state.objects[id];
+    if (obj === undefined || !mayHaveStatic(state, obj, 'preventDamageAround')) continue;
+    const controller = controllerOf(state, obj);
+    derive(state, obj).abilities.forEach((a, index) => {
+      if (
+        a.kind !== 'static' ||
+        a.static.kind !== 'preventDamageAround' ||
+        !(a.static.scope === 'all' || (a.static.scope === 'combat') === combat)
+      ) {
+        return;
+      }
+      const recipient = to.kind === 'object' ? state.objects[to.id] : undefined;
+      const covers =
+        a.static.events === 'dealtByThis'
+          ? source === obj.id
+          : to.kind === 'player'
+            ? to.seat === controller
+            : recipient !== undefined &&
+              recipient.zone === 'battlefield' &&
+              controllerOf(state, recipient) === controller &&
+              (a.static.events === 'dealtToYouAndYourOtherPermanents'
+                ? recipient.id !== obj.id
+                : derive(state, recipient).types.includes('planeswalker'));
+      if (covers) {
+        found.push({
+          object: obj.id,
+          index,
+          scope: a.static.scope,
+          around: a.static.events,
+          ...(a.static.keep === undefined ? {} : { keep: a.static.keep }),
+        });
+      }
     });
   }
   return found;

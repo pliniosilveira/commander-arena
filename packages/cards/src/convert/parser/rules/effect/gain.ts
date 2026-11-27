@@ -285,8 +285,12 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
     'creatures your opponents control gain defender until end of turn',
     // Issue 347: a creature type and a land type.
     'Treefolk and Forests you control gain indestructible until end of turn',
+    // Assault on Osgiliath (CR 205.3m): two creature types said in the plural.
+    'Goblins and Orcs you control gain double strike and haste until end of turn',
   ],
   rejects: [
+    'Goblins and Orcs you control gain flying',
+    'Goblins or Orcs you control gain flying until end of turn',
     'creatures you control gains flying until end of turn',
     'creatures you control gain flying',
     'creatures you control gain flying until your next turn',
@@ -303,6 +307,8 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
       'noun.all-permanents',
       'noun.creature-land-pair',
       'noun.token-permanents',
+      // CR 205.3m: "Goblins and Orcs you control gain double strike and haste until end of turn" (Assault on Osgiliath).
+      'noun.subtype-pair',
     ],
     true,
   ),
@@ -387,7 +393,11 @@ function counted(pt: Parser<IrPtChange>): Parser<[IrPtChange, IrAmount | null]> 
   );
 }
 
-function leadParser(rule: string, subjects: readonly string[], plural: boolean): Parser<Clauses> {
+export function leadParser(
+  rule: string,
+  subjects: readonly string[],
+  plural: boolean,
+): Parser<Clauses> {
   const keywords = (verb: RegExp) =>
     spanned(map(sequence(pattern(verb), KEYWORD_WORDS), ([, words]): readonly string[] => words));
   const gets = plural ? / get / : / gets /;
@@ -493,7 +503,8 @@ const LEAD_GRANTED_ABILITY: Parser<Clauses> = (ctx, pos) => {
     if (!gain.ok) return gain;
     cursor = gain.pos;
   }
-  const quoted = readQuotedAbility(ctx, cursor, { mana: false });
+  // "... gains \"Whenever ~ deals combat damage to a player, draw a card\" and it can't be blocked this turn" (Blitzball Stadium): a quote that is followed by more words has no period inside.
+  const quoted = readQuotedAbility(ctx, cursor, { mana: false, unpunctuated: true });
   if (!quoted.ok) return quoted;
   if (quoted.value.ability.kind !== 'triggered') return fail(ctx, cursor);
 
@@ -531,6 +542,66 @@ export const EFFECT_LEAD_GRANTED_ABILITY = defineRule<Clauses>({
     'Until end of turn, creatures you control gain "When ~ dies, draw a card."',
   ],
   parse: LEAD_GRANTED_ABILITY,
+});
+
+/**
+ * `effect.lead-grant-ability-all`: "Until end of turn, Angels you control gain \"{T}: Destroy target creature with power less than this creature's power.\"" (Firja's Retribution, CR 611.2a, 611.2c,
+ * 613.1f): a group of permanents is given an activated or a triggered ability for the turn; which permanents it means is fixed as the effect resolves, so one that comes under your control later
+ * does not get it. Not read: a target subject (`effect.lead-granted-ability`), a mana ability, another duration, a pump with it, a keyword.
+ */
+export const EFFECT_LEAD_GRANT_ABILITY_ALL = defineRule<Clauses>({
+  id: 'effect.lead-grant-ability-all',
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'Until end of turn, Angels you control gain "{T}: Destroy target creature with power less than this creature\'s power."',
+    'Until end of turn, creatures you control gain "When ~ dies, draw a card."',
+  ],
+  rejects: [
+    'Until end of turn, Angels you control gains "{T}: Destroy target creature."',
+    'Until your next turn, Angels you control gain "{T}: Destroy target creature."',
+    'Until end of turn, target Angel gain "{T}: Destroy target creature."',
+    'Until end of turn, Angels you control gain "{T}: Add {G}."',
+    'Until end of turn, Angels you control gain flying',
+    'Until end of turn, other Angels you control gain "{T}: Destroy target creature."',
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.lead-grant-ability-all';
+    const duration = family<IrDuration>('duration')(ctx, pos);
+    if (!duration.ok) return duration;
+    if (duration.value.scope !== 'untilEndOfTurn') return fail(ctx, pos);
+    const comma = literal(', ')(ctx, duration.pos);
+    if (!comma.ok) return comma;
+    const subject = family<IrNoun>('noun', { only: ['noun.plain-permanents'] })(ctx, comma.pos);
+    if (!subject.ok) return subject;
+    const gain = literal(' gain ')(ctx, subject.pos);
+    if (!gain.ok) return gain;
+    const quoted = readQuotedAbility(ctx, gain.pos, { mana: false });
+    if (!quoted.ok) return quoted;
+    if (quoted.value.ability.kind !== 'triggered' && quoted.value.ability.kind !== 'activated') {
+      return fail(ctx, gain.pos);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(
+            rule,
+            'grantAbility',
+            { objects: subject.value, ability: quoted.value },
+            quoted.value.span,
+          ),
+          duration: duration.value,
+        },
+      ],
+      pos: quoted.pos,
+    };
+  },
 });
 
 /**
@@ -616,6 +687,7 @@ export const GAIN_RULES = [
   EFFECT_GAIN_KEYWORD_EACH,
   EFFECT_GAIN_KEYWORD_THOSE,
   EFFECT_LEAD_GRANTED_ABILITY,
+  EFFECT_LEAD_GRANT_ABILITY_ALL,
   EFFECT_LEAD_GAIN,
   EFFECT_LEAD_GAIN_ALL,
 ];

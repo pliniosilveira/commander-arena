@@ -43,6 +43,10 @@ function statSource(
 > {
   const ref = objectRefOf(of, ctx, { triggerSubject: true, sacrificed: true });
   if (!ref.ok) return ref;
+  // Lothlórien Blade (CR 603.2, 113.7a): in "Whenever equipped creature attacks, ...", "its power" is that of the creature whose attack it was, the trigger's subject.
+  if (ref.value.kind === 'attached' && ctx.attachedTrigger) {
+    return { ok: true, value: { kind: 'triggerSubject' }, rule };
+  }
   if (ref.value.kind === 'target') {
     const id = ref.value.id;
     const spec = ctx.targets.find((t) => t.id === id);
@@ -123,6 +127,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 701.37c (Death Kiss): in the becomes monstrous trigger of the permanent itself X is the X of the monstrosity that made it monstrous.
+      if (ctx.monstrousX) {
+        const blockedMonstrous = needs('monstrousX');
+        return blockedMonstrous ?? { ok: true, value: { kind: 'monstrousX' }, rule };
+      }
       // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
       if (ctx.castTriggerX) {
         const blockedCast = needs('triggerSpellX');
@@ -163,6 +172,7 @@ export function lowerAmount(
           kind: 'countersOn',
           of: of.value,
           ...(amount.counter === undefined ? {} : { counter: amount.counter }),
+          ...(amount.kinds === true ? { kinds: true as const } : {}),
         },
         rule,
       };
@@ -223,6 +233,16 @@ export function lowerAmount(
       if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'dieResult' }, rule };
     }
+    case 'amassedArmyPower': {
+      // Surrounded by Orcs (CR 701.47a, 701.47b, 208.1): "the amassed Army" is the Army creature the amass before it in the same text chose, which the engine's `amass` leaves as what the
+      // resolution moved (`moved`), even when no counter was put on it. Refused after any other instruction, as the Army is only named by the amass just before.
+      if (ctx.lastEffectKind !== 'amass') return { ok: false, needs: [], at: amount.span, rule };
+      const blocked = needs('powerOf');
+      if (blocked !== null) return blocked;
+      const moved = missingFeatures(['selector:moved']);
+      if (moved.length > 0) return { ok: false, needs: moved, at: amount.span, rule };
+      return { ok: true, value: { kind: 'powerOf', of: { kind: 'moved' } }, rule };
+    }
     case 'lifePaidAsEntered': {
       // "where X is the life paid as ~ entered" (Phyrexian Processor, CR 119.4, 614.12): the amount the permanent paid as it entered; `validateCard` checks the card pays life as it enters.
       const blocked = needs('lifePaidAsEntered');
@@ -235,9 +255,22 @@ export function lowerAmount(
       // "The number of cards looked at while scrying this way" is the number of a scry event (CR 701.22), so it means nothing in the body of any other ability.
       if (amount.scry === true && !ctx.scryTrigger)
         return { ok: false, needs: [], at: amount.span, rule };
+      // "That excess damage" is the amount of a "dealt excess damage" trigger (CR 120.10), so it means nothing in the body of any other ability.
+      if (amount.excess === true && !ctx.excessDamageTrigger)
+        return { ok: false, needs: [], at: amount.span, rule };
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
       if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {
+        const moved = needs('movedCount');
+        if (moved !== null) return moved;
+        return { ok: true, value: { kind: 'movedCount' }, rule };
+      }
+      // CR 608.2c (Vengeful Regrowth): "Return up to three target land cards ... to the battlefield. Create that many ... tokens": after cards were moved, "that many" is how many.
+      if (
+        amount.thatMany === true &&
+        ctx.lastEffectKind === 'moveToZone' &&
+        ctx.owner === 'spell'
+      ) {
         const moved = needs('movedCount');
         if (moved !== null) return moved;
         return { ok: true, value: { kind: 'movedCount' }, rule };
@@ -350,6 +383,7 @@ export function lowerAmount(
     }
     case 'lifeGainedOrLostThisTurn':
     case 'controllerLifeLostThisTurn':
+    case 'opponentsLifeLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -379,6 +413,9 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'countersOnGroup':
+      // The counters of a kind on a group are read by a characteristic-defining ability only (`lowerDefinedPt`); an instruction that counts them is not read (honest: unsupported).
+      return { ok: false, needs: [], at: amount.span, rule };
     case 'attackersGreatestPower': {
       // CR 508.1, 603.2: the creatures the attack declaration of an `attackBatch` trigger held, read as the ability resolves; `validateCard` refuses it in any other ability.
       const blocked = needs('attackersGreatestPower');
@@ -390,6 +427,12 @@ export function lowerAmount(
       const blocked = needs('cardsDrawnThisTurn');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
+    }
+    case 'partySize': {
+      // CR 700.8 (Archpriest of Iona, Malakir Blood-Priest): the party of the controller, counted as the instruction runs.
+      const blocked = needs('partySize');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'partySize' }, rule };
     }
     case 'experienceCounters': {
       // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller has now, read as the instruction runs; `validateCard` refuses it in a static ability.
@@ -450,15 +493,43 @@ export function lowerAmount(
         // Observed Stasis (CR 109.4, 608.2c): "for each tapped creature its controller controls": the controller of the permanent an Aura is attached to, which the engine's `controlledBy` reads
         // as the count is made.
         const itsController = controller.noun.det === 'controllerOf';
+        // Guiltfeeder (CR 108.3, 404.1): "for each card in their graveyard": the cards of the one player the instruction is about (`ctx.theirPlayer`), counted as it runs.
+        if (controller.noun.rule === 'noun.their-zone') {
+          const outside =
+            amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
+          if (
+            !outside ||
+            ctx.theirPlayer === null ||
+            controller.orPlaneswalkerController === true
+          ) {
+            return { ok: false, needs: [], at: amount.span, rule };
+          }
+          const { controller: _their, ...rest } = amount.of.filter;
+          const plain = countFilter({ ...amount.of, filter: rest });
+          if (!plain.ok) return plain;
+          return {
+            ok: true,
+            value: { kind: 'countOf', filter: { ...plain.value, owner: ctx.theirPlayer } },
+            rule,
+          };
+        }
+        // Cavern-Hoard Dragon (CR 109.4, 608.2c): "for each artifact that player controls" after "deals combat damage to a player": the player the trigger is about, read as the count is made.
+        const triggerPlayer = controller.noun.det === 'triggerActor';
         if (
           controller.orPlaneswalkerController === true ||
-          (controller.noun.det !== 'target' && !itsController)
+          (controller.noun.det !== 'target' &&
+            controller.noun.det !== 'anaphor' &&
+            !itsController &&
+            !triggerPlayer)
         ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const named = playerSelectorOf(controller.noun, ctx);
         if (!named.ok) return named;
-        if (named.value.kind !== (itsController ? 'controllerOf' : 'target')) {
+        if (
+          named.value.kind !==
+          (itsController ? 'controllerOf' : triggerPlayer ? 'triggerPlayer' : 'target')
+        ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
         const { controller: _named, ...rest } = amount.of.filter;
@@ -502,6 +573,17 @@ export function lowerAmount(
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'cardTypesAmong', filter: filter.value }, rule };
     }
+    case 'creatureTypesAmong': {
+      // "For each creature type among creatures you control" (Valiant Changeling, CR 205.3m): the engine's `creatureTypesAmong`, of permanents on the battlefield.
+      const blocked = needs('creatureTypesAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'creatureTypesAmong', filter: filter.value }, rule };
+    }
     case 'differentNamesAmong': {
       // "The number of differently named tokens you control" (issue 101, CR 201.2): the engine's `differentNamesAmong`, of permanents on the battlefield.
       const blocked = needs('differentNamesAmong');
@@ -516,6 +598,17 @@ export function lowerAmount(
         value: { kind: 'differentNamesAmong', filter: filter.value },
         rule,
       };
+    }
+    case 'differentPowersAmong': {
+      // "You control three or more creatures with different powers" (Augur of Autumn, CR 208.1): the engine's `differentPowersAmong`, of permanents on the battlefield.
+      const blocked = needs('differentPowersAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'differentPowersAmong', filter: filter.value }, rule };
     }
     case 'differentManaValuesAmong': {
       // "For each different mana value among instant and sorcery cards in your graveyard" (issue 121, CR 202.3): the engine's `differentManaValuesAmong`, of a zone outside the battlefield.
@@ -611,7 +704,15 @@ export function lowerAmount(
       // CR 903.3, 202.3 (stage P32, D-147): the greatest mana value among the controller's commanders, in any zone, as printed.
       const blocked = needs('commanderManaValue');
       if (blocked !== null) return blocked;
-      return { ok: true, value: { kind: 'commanderManaValue' }, rule };
+      // Visions of Glory (CR 903.3, 108.3): "a commander you own on the battlefield or in the command zone": only the commanders in those zones.
+      return {
+        ok: true,
+        value: {
+          kind: 'commanderManaValue',
+          ...(amount.zones === undefined ? {} : { zones: amount.zones }),
+        },
+        rule,
+      };
     }
     case 'commanderCasts': {
       // CR 903.8 (stage P68, D-229): the times the controller's commanders were cast from the command zone.
@@ -631,6 +732,29 @@ export function lowerAmount(
       const player = playerSelectorOf(amount.of, ctx);
       if (!player.ok) return player;
       return { ok: true, value: { kind: 'lifeTotalOf', player: player.value }, rule };
+    }
+    case 'greatestCountOfAnOpponent': {
+      const blocked = needs('greatestCountOfAnOpponent');
+      if (blocked !== null) return blocked;
+      // Only permanents: a card outside the battlefield has an owner, not a controller.
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'greatestCountOfAnOpponent', filter: filter.value }, rule };
+    }
+    case 'damageDealtToThisTurn': {
+      const blocked = needs('damageDealtToThisTurn');
+      if (blocked !== null) return blocked;
+      const player = playerSelectorOf(amount.of, ctx);
+      if (!player.ok) return player;
+      return { ok: true, value: { kind: 'damageDealtToThisTurn', player: player.value }, rule };
+    }
+    case 'damageToThisThisTurn': {
+      const blocked = needs('damageToThisThisTurn');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'damageToThisThisTurn', by: 'you' }, rule };
     }
     case 'commanderColors': {
       const blocked = needs('commanderColors');
@@ -749,6 +873,23 @@ export function lowerAmount(
             of: [
               { kind: 'powerOf', of: ctx.comparedPowerOf },
               { kind: 'powerOf', of: { kind: 'this' } },
+            ],
+          },
+          rule,
+        };
+      }
+      // CR 601.2h, 202.3, 608.2c (Ancient Cellarspawn): "if the amount of mana spent to cast it was less than its mana value, ... equal to the difference": the gap between the mana value of the spell
+      // that caused the trigger and the mana spent on it, both read as the ability resolves (the condition says the mana spent is the smaller, so the gap is never negative).
+      if (!ctx.choseAPlayer && ctx.comparedSpellMana) {
+        const gap = needs('difference') ?? needs('manaValueOf') ?? needs('manaSpent');
+        if (gap !== null) return gap;
+        return {
+          ok: true,
+          value: {
+            kind: 'difference',
+            of: [
+              { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+              { kind: 'manaSpent', of: { kind: 'triggerSubject' } },
             ],
           },
           rule,
@@ -912,6 +1053,7 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
     f.controllerDamagedBySource === true ||
     f.modified === true ||
     f.goaded === true ||
+    f.enteredThisTurn === true ||
     // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
     (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
     typeof f.controller === 'object' ||
@@ -1022,6 +1164,8 @@ export function lowerStaticAmount(
   rule: string,
 ): LowerResult<StaticPtAmount> {
   if (amount.kind === 'commanderManaValue') {
+    // A static power or toughness reads every commander, not those in a zone (the engine refuses it).
+    if (amount.zones !== undefined) return { ok: false, needs: [], at: amount.span, rule };
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderManaValue' }, rule } : lowered;
   }
@@ -1087,13 +1231,84 @@ export function lowerDefinedPt(
     }
     return { ok: true, value: { kind: 'lifeTotalOf', player: { kind: 'you' } }, rule };
   }
+  // CR 700.8, 604.3 (Archpriest of Iona): "equal to the number of creatures in your party", the engine's `partySize`.
+  if (count.kind === 'partySize') {
+    const lowered = lowerAmount(count, ctx, rule);
+    if (!lowered.ok) return lowered;
+    return { ok: true, value: { kind: 'partySize' }, rule };
+  }
+  // CR 122.1, 604.3 (Toph, the Blind Bandit): "the number of +1/+1 counters on lands you control", the engine's `countersAmong` of the battlefield permanents the group names.
+  if (count.kind === 'countersOnGroup') {
+    const missing = missingFeatures(['amount:countersAmong']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: count.span, rule };
+    if (staticCannotRead(count.of.filter, false)) {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    if (count.of.filter.zone !== undefined && count.of.filter.zone !== 'battlefield') {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    const filter = countFilter(count.of);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: { kind: 'countersAmong', filter: filter.value, counter: count.counter },
+      rule,
+    };
+  }
+  // CR 205.2a, 604.3 (Nighthawk Scavenger): "the number of card types among cards in your opponents' graveyards", alone or after a whole number ("1 plus", the printed `1+*`).
+  if (count.kind === 'cardTypesAmong') return cardTypesInDefinedPt(count, ctx, rule);
+  if (
+    count.kind === 'sum' &&
+    count.of.some((p) => p.kind === 'number' || p.kind === 'cardTypesAmong')
+  ) {
+    const missing = missingFeatures(['amount:sum']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: count.span, rule };
+    const parts: (Extract<Amount, { kind: 'countOf' | 'cardTypesAmong' }> | number)[] = [];
+    for (const part of count.of) {
+      if (part.kind === 'number') {
+        if (!Number.isSafeInteger(part.value) || part.value < 1) {
+          return { ok: false, needs: [], at: part.span, rule };
+        }
+        parts.push(part.value);
+        continue;
+      }
+      const lowered =
+        part.kind === 'cardTypesAmong'
+          ? cardTypesInDefinedPt(part, ctx, rule)
+          : countInStatic(part, ctx, rule);
+      if (!lowered.ok) return lowered;
+      parts.push(lowered.value);
+    }
+    if (parts.length < 2) return { ok: false, needs: [], at: count.span, rule };
+    return { ok: true, value: { kind: 'sum', of: parts }, rule };
+  }
   return count.kind === 'sum' ? sumInStatic(count, ctx, rule) : countInStatic(count, ctx, rule);
+}
+
+/** The card types among the cards of a zone, as a characteristic-defining ability reads them: no power, toughness or combat in the filter (CR 613.8). */
+function cardTypesInDefinedPt(
+  amount: Extract<IrAmount, { kind: 'cardTypesAmong' }>,
+  ctx: LowerContext,
+  rule: string,
+): LowerResult<Extract<Amount, { kind: 'cardTypesAmong' }>> {
+  if (staticCannotRead(amount.of.filter)) return { ok: false, needs: [], at: amount.span, rule };
+  const lowered = lowerAmount(amount, ctx, rule);
+  if (!lowered.ok) return lowered;
+  if (
+    lowered.value === null ||
+    typeof lowered.value !== 'object' ||
+    lowered.value.kind !== 'cardTypesAmong'
+  ) {
+    return { ok: false, needs: [], at: amount.span, rule };
+  }
+  return { ok: true, value: lowered.value, rule };
 }
 
 /** The feature refs of the amounts this module can produce, for the dimension test. */
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:monstrousX',
   'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
   'amount:lifePaidAsEntered',
@@ -1108,11 +1323,13 @@ export const AMOUNT_NEEDS = [
   'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
   'amount:controllerLifeLostThisTurn',
+  'amount:opponentsLifeLostThisTurn',
   'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
   'amount:experienceCounters',
+  'amount:partySize',
   'amount:spellsCastThisTurn',
   'amount:greatestManaValueCast',
   'amount:cardsToGraveyardThisTurn',
@@ -1127,11 +1344,16 @@ export const AMOUNT_NEEDS = [
   'amount:commanderManaValue',
   'amount:commanderCasts',
   'amount:lifeTotalOf',
+  'amount:damageDealtToThisTurn',
+  'amount:damageToThisThisTurn',
+  'amount:greatestCountOfAnOpponent',
   'amount:colorsAmong',
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
+  'amount:creatureTypesAmong',
   'amount:differentManaValuesAmong',
   'amount:differentNamesAmong',
+  'amount:differentPowersAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',

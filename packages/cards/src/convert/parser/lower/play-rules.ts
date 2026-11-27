@@ -7,11 +7,12 @@
  * also names `cost:mana` (the engine pays it with the planner of every other payment, so a hybrid or Phyrexian
  * symbol is lowered too).
  */
-import type { Ability } from '@commander-arena/engine';
+import type { Ability, Amount } from '@commander-arena/engine';
 import type { IrStaticEffect } from '../ir/types';
+import { lowerAmount } from './amounts';
 import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
-import type { LowerResult } from './types';
+import type { LowerContext, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
 
@@ -66,7 +67,9 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
     case 'playLandsFromTopOfLibrary':
       return effect.alsoLook === true
         ? ['static:lookAtTopOfLibrary', 'static:playLandsFromTopOfLibrary']
-        : ['static:playLandsFromTopOfLibrary'];
+        : effect.alsoCast === true
+          ? ['static:playLandsFromTopOfLibrary', 'static:castFromTopOfLibrary']
+          : ['static:playLandsFromTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
     case 'graveyardPlayEachType':
@@ -90,7 +93,11 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
 }
 
 /** The ability, or the failure naming what the engine lacks. A statement of one effect, no condition. */
-export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<readonly Ability[]> {
+export function lowerPlayRule(
+  at: At,
+  effect: PlayRuleEffect,
+  ctx?: LowerContext,
+): LowerResult<readonly Ability[]> {
   const needs: FeatureRef[] = ['ability:static', ...playRuleNeeds(effect)];
   const missing = missingFeatures(needs);
   if (missing.length > 0) return { ok: false, needs: missing, at: at.span, rule: at.rule };
@@ -137,7 +144,10 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
         value:
           effect.alsoLook === true
             ? [{ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } }, play]
-            : [play],
+            : effect.alsoCast === true
+              ? // "You may play lands and cast spells from the top of your library." (One with the Multiverse, CR 305.1, 601.3): both permissions, every spell.
+                [play, { kind: 'static', static: { kind: 'castFromTopOfLibrary', spells: {} } }]
+              : [play],
         rule: at.rule,
       };
     }
@@ -184,10 +194,19 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
     case 'attackTax': {
       const cost = lowerCost(effect.cost, { hybrid: true });
       if (!cost.ok) return cost;
+      // CR 508.1h, 118.12a (Sphere of Safety): "{X} for each of those creatures, where X is the number of enchantments you control".
+      let times: Amount | undefined;
+      if (effect.times !== undefined) {
+        if (ctx === undefined) return { ok: false, needs: [], at: at.span, rule: at.rule };
+        const lowered = lowerAmount(effect.times, ctx, at.rule);
+        if (!lowered.ok) return lowered;
+        times = lowered.value;
+      }
       return ok({
         kind: 'static',
         static: {
           kind: 'attackTax',
+          ...(times === undefined ? {} : { times }),
           cost: [cost.value],
           ...(effect.planeswalkers === true ? { planeswalkers: true as const } : {}),
           ...(effect.planeswalkersOnly === true ? { planeswalkersOnly: true as const } : {}),

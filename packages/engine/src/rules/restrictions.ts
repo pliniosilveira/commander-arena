@@ -70,7 +70,21 @@ export function canBeCountered(state: GameState, id: ObjectId): boolean {
   const obj = state.objects[id];
   if (obj === undefined || obj.zone !== 'stack') return false;
   return (
-    !hasRestriction(state, obj, 'cantBeCountered') && !spellsCantBeCounteredByPermanent(state, obj)
+    !hasRestriction(state, obj, 'cantBeCountered') &&
+    !spellsCantBeCounteredByPermanent(state, obj) &&
+    !spellsCantBeCounteredThisTurn(state, obj)
+  );
+}
+
+/** CR 101.2, 611.2a: "Creature spells you cast this turn can't be countered": an effect that resolved this turn names the spell (`TurnState.uncounterableSpells`). */
+function spellsCantBeCounteredThisTurn(state: GameState, spell: GameObject): boolean {
+  return (state.turn.uncounterableSpells ?? []).some((e) =>
+    matchesFilter(
+      state,
+      spell,
+      { ...e.spells, zone: 'stack' },
+      { controller: e.seat, source: null },
+    ),
   );
 }
 

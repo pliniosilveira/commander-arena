@@ -91,3 +91,17 @@ test('graveyard: the zone viewer lists the cards of the graveyard that was opene
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('.board-zone-card')).toHaveCount(4);
 });
+
+test('card name: a text box that has the focus, with the names the game shows', async ({
+  page,
+}) => {
+  await show(page, 'card-name');
+  const dialog = page.getByRole('dialog', { name: 'Choose a card name' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Card name')).toBeVisible();
+});
+
+test('party: a dialog with a row of creatures for each party type', async ({ page }) => {
+  await show(page, 'party');
+  await expect(page.getByRole('dialog', { name: 'Choose a party' })).toBeVisible();
+});

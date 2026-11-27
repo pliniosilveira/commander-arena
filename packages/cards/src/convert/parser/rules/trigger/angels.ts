@@ -108,6 +108,7 @@ export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
     'an opponent loses life',
     'a player loses life',
     'an opponent loses life for the first time each turn',
+    'an opponent loses life for the first time during each of their turns',
   ],
   rejects: [
     'one or more opponents lose life for the first time each turn',
@@ -125,6 +126,9 @@ export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
     'a creature loses life',
     'you lose life or gain life',
     'you lose life for the first time each turn or',
+    'you lose life for the first time during each of their turns',
+    'an opponent loses life for the first time during each of your turns',
+    'an opponent loses life during each of their turns',
   ],
   parse: (ctx, pos) => {
     const id = 'trigger.life-lost';
@@ -153,9 +157,16 @@ export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
       ),
     )(ctx, pos);
     if (!who.ok) return who;
-    const first = optional(literal(' for the first time each turn'), null)(ctx, who.pos);
-    if (!first.ok) return first;
     const kind = who.value.value;
+    // CR 603.2: "for the first time during each of their turns" (Valgavoth): the first loss of the player in a turn of their own.
+    const theirTurn =
+      kind === 'you'
+        ? { ok: false as const }
+        : literal(' for the first time during each of their turns')(ctx, who.pos);
+    const first = theirTurn.ok
+      ? { ok: true as const, value: 'x', pos: theirTurn.pos }
+      : optional(literal(' for the first time each turn'), null)(ctx, who.pos);
+    if (!first.ok) return first;
     const actor: IrNoun =
       kind === 'you'
         ? makeNoun(id, who.value.span, 'you', { raw: 'you' })
@@ -169,6 +180,7 @@ export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
         event: 'lifeLost',
         actor,
         ...(first.value === null ? {} : { firstEachTurn: true as const }),
+        ...(theirTurn.ok ? { duringTheirTurn: true as const } : {}),
         args: {},
         span: { start: pos, end: first.pos },
         rule: id,

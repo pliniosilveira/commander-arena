@@ -209,6 +209,15 @@ export function areTypes(plural: boolean): Parser<Effects> {
         ),
         ([, land]): Effects => [{ kind: 'addTypes', subtypes: [land[1] ?? ''], types: ['land'] }],
       ),
+      // Miracle Worker deck (Secret Arcade, CR 205.1b, 613.1d): "are enchantments in addition to their other types": a card type added in layer 4.
+      map(
+        sequence(
+          literal('are '),
+          pattern(/(artifact|enchantment)s/u),
+          pattern(/ in addition to their other types(?![\p{L}\p{N}])/iu),
+        ),
+        ([, type]): Effects => [{ kind: 'addTypes', subtypes: [], types: [type[1] ?? ''] }],
+      ),
     );
   }
   return map(
@@ -276,11 +285,32 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
         );
   // CR 613.1f (Colossus Hammer): "gets +10/+10 and loses flying", "has haste and loses flying": the keywords the subject no longer has.
   const loses = plural ? 'lose ' : 'loses ';
-  const loseWhat = map(
-    sequence(pattern(new RegExp(`${loses}`, 'i')), KEYWORD_WORDS),
-    ([, words]): Effects =>
-      words.map((keyword): IrStaticEffect => ({ kind: 'loseKeyword', keyword })),
+  const loseWords = sequence(
+    pattern(new RegExp(`${loses}`, 'i')),
+    KEYWORD_WORDS,
+    // CR 613.1f, 613.7 (Archetype of Imagination): "lose flying and can't have or gain flying": the same keyword, kept off whatever gives it later.
+    optional(sequence(pattern(/ and can['’]t have or gain /iu), KEYWORD_WORDS), null),
   );
+  const loseWhat: Parser<Effects> = (ctx, pos) => {
+    const r = loseWords(ctx, pos);
+    if (!r.ok) return r;
+    const [, words, never] = r.value;
+    // The prohibition names the keyword that is lost and no other: anything else is not read.
+    const same =
+      never !== null && words.length === 1 && never[1].length === 1 && never[1][0] === words[0];
+    if (never !== null && !same) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: words.map(
+        (keyword): IrStaticEffect => ({
+          kind: 'loseKeyword',
+          keyword,
+          ...(same ? { cantHave: true as const } : {}),
+        }),
+      ),
+      pos: r.pos,
+    };
+  };
   const andLoses =
     mode === 'self' || mode === 'selfGrant'
       ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
@@ -469,7 +499,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature has flying, first strike and vigilance.',
     "Enchanted creature can't attack or block alone.",
     "Enchanted creature can't attack you or planeswalkers.",
-    "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack your opponents.",
     'Enchanted creature loses flying and flying.',
     'Enchanted creature loses.',
     "Enchanted creature can attack as though it didn't have defender.",
@@ -502,6 +532,9 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control get +1/+1.',
     'Other creatures you control get +1/+1.',
     'Creatures you control have vigilance.',
+    // Archetype of Imagination (CR 613.1f, 613.7): lose a keyword and can't have or gain it.
+    "Creatures your opponents control lose flying and can't have or gain flying.",
+    'Creatures you control lose flying.',
     'Other creatures you control get +1/+1 and have flying.',
     'Other Elves you control get +1/+1.',
     'Other Wolves and Werewolves you control have trample.',
@@ -512,13 +545,22 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'All creatures have haste.',
     'All Slivers have flying.',
     'Lands you control have "{T}: Add {G}."',
+    // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): the cards you own outside the battlefield too.
+    "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types.",
+    // Miracle Worker deck (Secret Arcade, CR 613.1d, 205.1b): the permanent spells you control too.
+    'Nonland permanents you control and permanent spells you control are enchantments in addition to their other types.',
     'Other creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.',
     "Juggernauts you control can't be blocked by Walls.",
     // Issue 133 (Shifting Sliver, CR 509.1b): the blockers are the creatures that are not of the type.
     "Slivers can't be blocked except by Slivers.",
+    // Silhana Ledgewalker (CR 509.1b, 702.9b): the blockers are the creatures that do not have flying.
+    "Slivers can't be blocked except by creatures with flying.",
     'Creatures you control are Zombies in addition to their other creature types.',
+    "Creatures you control but don't own are Mercenaries in addition to their other types.",
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
+    // CR 702.101b (Extort): a keyword whose instances each trigger, given to a group.
+    'Other creatures you control have extort.',
     'Other commanders you control get +2/+2 and have lifelink.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
@@ -534,7 +576,6 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Creatures you control can attack as though they didn't have flying.",
     'Creatures you control assigns combat damage equal to their toughness rather than their power.',
     'Creatures you control assign combat damage equal to their power rather than their toughness.',
-    "Slivers can't be blocked except by creatures with flying.",
     "Slivers can't be blocked except by Slivers you control.",
     'Zombie tokens you control have flash.',
     'Zombie token you control has haste.',
@@ -545,6 +586,10 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control have flash.',
     'All creature have haste.',
     'Creatures you control have flying and flying.',
+    "Creatures your opponents control lose flying and can't have or gain trample.",
+    "Creatures your opponents control lose flying and can't have or gain flying and trample.",
+    "Creatures your opponents control lose flying and can't have flying.",
+    "Creatures your opponents control lose flying and can't have or gain flying",
     'Creature tokens you control have flash.',
     'Other creature you control gets +1/+1.',
     'Elf you control gets +1/+1.',
@@ -558,10 +603,16 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Nontoken creatures you control are Desert lands in addition to their other types.',
     'Nontoken creatures you control are Forest land in addition to their other types.',
     'Creatures you control that are Zombies or tokens get +1/+1.',
+    "Lands you control and land cards you own that aren't on the battlefield are Deserts.",
+    'Nonland permanents you control and permanent spells you control are enchantments.',
   ],
   parse: statement(
     'static.permanents',
     [
+      // Desert Bloom deck, group G5 (Dune Chanter): before `noun.plain-permanents`, which would stop after "lands you control".
+      'noun.permanents-and-cards-off-battlefield',
+      // Miracle Worker deck (Secret Arcade): before `noun.plain-permanents`, which would stop after "nonland permanents you control".
+      'noun.nonland-permanents-and-permanent-spells',
       'noun.plain-permanents',
       // Issue 345 (Tavern Brawler): "Commander creatures you own have ...".
       'noun.commander-creatures-you-own',
@@ -583,6 +634,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.subtype-token-permanents',
       // Dancer's Chakrams (CR 903.3): "Other commanders you control get +2/+2 and have lifelink." (the ability that card gives, read as its own).
       'noun.other-commanders-you-control',
+      // Laughing Jasper Flint (issue 685): "Creatures you control but don't own are Mercenaries in addition to their other types."
+      'noun.creatures-you-control-but-dont-own',
     ],
     'plural',
   ),
@@ -613,6 +666,9 @@ export const STATIC_EACH = defineRule<IrStatic>({
     // CR 510.1a, 609.4 (Felothar the Steadfast, Assault Formation): what each creature assigns.
     'Each creature you control assigns combat damage equal to its toughness rather than its power.',
     "Each creature you control can attack as though it didn't have defender.",
+    // Issue 110 (Brightcap Badger, CR 613.1f, 605.1a): two kinds of permanent under one "each".
+    'Each Fungus and Saproling you control has "{T}: Add {G}."',
+    'Each Fungus and Saproling you control gets +1/+1.',
   ],
   rejects: [
     'Each creature you control assign combat damage equal to its toughness rather than its power.',
@@ -624,11 +680,14 @@ export const STATIC_EACH = defineRule<IrStatic>({
     "Each creature you control can't be blocked by more than one creature until end of turn.",
     'Each creature gets +1/+1 until end of turn.',
     "Each creatures you control can't be blocked by more than one creature.",
+    'Each Fungus and Saproling you control have "{T}: Add {G}."',
   ],
   parse: statement(
     'static.each',
     // D-647: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
     [
+      // Issue 110 (Brightcap Badger): "Each Fungus and Saproling you control has "{T}: Add {G}."", read before `noun.each-permanent` by the order of the noun rules.
+      'noun.each-pair',
       'noun.each-permanent',
       'noun.each-creature-enchanted-by-you',
       // Ahoy Mateys deck, group 4: "Each other creature you control that's a Skeleton or Pirate gets +1/+1." and "Each creature you control but don't own gets +2/+2".

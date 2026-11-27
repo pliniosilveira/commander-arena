@@ -100,13 +100,19 @@ function ZoneCard({ object, count = 1 }: { object: ObjectView; count?: number })
 }
 
 /** A card looked at that cannot be taken: its face only, not clickable. */
-function OtherCard({ card }: { card: LookedCard }) {
+function OtherCard({ card, mark }: { card: LookedCard; mark: string }) {
   const hover = useHoverPreview(card.id);
   return (
     <div className="board-zone-card board-zone-other" data-looked-other={card.id} {...hover}>
       <div className="board-zone-other-face">
         {/* The picture of the card (issue 488); the text below stays as the fallback when it cannot load. */}
-        <Art name={card.name} isToken={false} version="normal" className="board-zone-other-image" />
+        <Art
+          name={card.name}
+          isToken={false}
+          owner={card.owner}
+          version="normal"
+          className="board-zone-other-image"
+        />
         <p className="board-zone-other-head">
           <b>{card.name}</b>
           <ManaCost cost={card.manaCost} />
@@ -114,7 +120,7 @@ function OtherCard({ card }: { card: LookedCard }) {
         <p className="board-dim">{typeLine(card)}</p>
         {card.oracleText === '' ? null : <p className="board-zone-other-text">{card.oracleText}</p>}
       </div>
-      <span className="board-zone-marks">Cannot be taken</span>
+      <span className="board-zone-marks">{mark}</span>
     </div>
   );
 }
@@ -124,6 +130,8 @@ export interface ZoneViewerProps {
   readonly objects: readonly ObjectView[];
   /** Cards looked at that cannot be taken (a "look at the top cards" question), after the others. */
   readonly others?: readonly LookedCard[];
+  /** What the cards of `others` are marked with. */
+  readonly othersMark?: string;
   readonly onClose: () => void;
 }
 
@@ -169,7 +177,13 @@ function QuestionSide() {
   );
 }
 
-export function ZoneViewer({ title, objects, others = [], onClose }: ZoneViewerProps) {
+export function ZoneViewer({
+  title,
+  objects,
+  others = [],
+  othersMark = 'Cannot be taken',
+  onClose,
+}: ZoneViewerProps) {
   const close = useRef<HTMLButtonElement>(null);
   const decision = useZoneDecision();
   const groups =
@@ -228,7 +242,7 @@ export function ZoneViewer({ title, objects, others = [], onClose }: ZoneViewerP
                   <ZoneCard key={g.object.id} object={g.object} count={g.count} />
                 ))}
                 {others.map((c) => (
-                  <OtherCard key={c.id} card={c} />
+                  <OtherCard key={c.id} card={c} mark={othersMark} />
                 ))}
               </>
             )}

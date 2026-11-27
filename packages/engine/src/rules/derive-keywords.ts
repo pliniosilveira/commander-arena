@@ -667,6 +667,15 @@ function affinityAbility(filter: ObjectFilter): Ability {
 }
 
 /**
+ * CR 702.125a: "Undaunted" means "This spell costs {1} less to cast for each opponent you have": a static ability that functions on the stack (CR 113.6d), a cost reduction of
+ * the spell itself by the opponents of its caster still in the game (CR 702.125b, 102.2), counted as the cost is determined (CR 601.2f). Each instance applies (CR 702.125c).
+ */
+const UNDAUNTED_ABILITY: Ability = {
+  kind: 'static',
+  static: { kind: 'costReduction', spells: { kind: 'this' }, amount: { kind: 'opponentCount' } },
+};
+
+/**
  * CR 702.84a: "Unearth [cost]" means "[Cost]: Return this card from your graveyard to the battlefield. It gains
  * haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of
  * putting it anywhere else. Activate only as a sorcery." It functions only from the graveyard; the `unearth`
@@ -801,6 +810,23 @@ function giftAbility(gift: Extract<Keyword, { kind: 'gift' }>['gift']): Ability 
   };
 }
 
+/**
+ * CR 702.175a (Offspring), the trigger half: "When this permanent enters, if its offspring cost was paid, create a token that's a copy of it, except it's 1/1." The condition is
+ * checked as it triggers and as it resolves (CR 603.4) and the permanent remembers the payment (`GameObject.offspringPaid`). The token copies the copiable values of the
+ * permanent (CR 707.2), from its last-known information when it has left (CR 608.2h); "1/1" is part of the copiable values of the token (CR 707.9b). The cost half is asked as
+ * the spell is cast (`rules/cast-offspring.ts`).
+ */
+const OFFSPRING_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+  interveningIf: { kind: 'offspringPaid' },
+  effect: {
+    kind: 'createToken',
+    token: { kind: 'copyOf', object: { kind: 'this' }, setPt: { power: 1, toughness: 1 } },
+    count: 1,
+  },
+};
+
 /** CR 702.92a: the token of Living weapon, "a 0/0 black Phyrexian Germ creature token". */
 const GERM_TOKEN: TokenDefinition = {
   name: 'Phyrexian Germ',
@@ -852,6 +878,28 @@ function hideawayAbility(count: number): Ability {
   };
 }
 
+/**
+ * CR 702.63a, 702.63b (Vanishing): "At the beginning of your upkeep, if this permanent has a time counter on it, remove a time counter from it." The counters it enters with are put by
+ * `rules/enters.ts`. The condition is checked as the ability triggers and again as it resolves (CR 603.4).
+ */
+const VANISHING_UPKEEP_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'upkeep', whose: 'you' },
+  interveningIf: {
+    kind: 'amountIs',
+    amount: { kind: 'countersOn', of: { kind: 'this' }, counter: 'time' },
+    compare: { cmp: 'atLeast', value: 1 },
+  },
+  effect: { kind: 'removeCounters', objects: { kind: 'this' }, counter: 'time', count: 1 },
+};
+
+/** CR 702.63a: "When the last time counter is removed from this permanent, sacrifice it." It triggers on any removal of the last one, not only the upkeep's. */
+const VANISHING_SACRIFICE_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'lastCounterRemoved', what: { kind: 'this' }, counter: 'time' },
+  effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+};
+
 const HERO_TOKEN: TokenDefinition = {
   name: 'Hero',
   manaCost: null,
@@ -883,6 +931,26 @@ const JOB_SELECT_ABILITY: Ability = {
   },
 };
 
+/**
+ * CR 702.110a (Exploit; the rules text was not available to check the number): "When this creature enters, you may sacrifice a creature." The creature may sacrifice itself; what is
+ * sacrificed is exploited by this creature (CR 702.110b), which its "When this creature exploits a creature" abilities read.
+ */
+const EXPLOIT_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+  effect: {
+    kind: 'may',
+    effect: {
+      kind: 'sacrifice',
+      objects: {
+        kind: 'choose',
+        filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+      },
+      exploit: true,
+    },
+  },
+};
+
 export function expansionOf(ability: Ability): Ability[] {
   if (ability.kind !== 'keyword') return [];
   switch (ability.keyword.kind) {
@@ -902,6 +970,10 @@ export function expansionOf(ability: Ability): Ability[] {
           ability.keyword.restriction,
           ability.keyword.costReducedIf,
         ),
+        // CR 702.6a, 702.6d (Gavel of the Righteous): "Equip—Pay {3} or remove a counter from ~": the other way to pay is another equip ability, the player picks by activating it.
+        ...(ability.keyword.orCost === undefined
+          ? []
+          : [equipAbility(ability.keyword.orCost, ability.keyword.restriction)]),
       ];
     case 'reconfigure':
       return reconfigureAbilities(ability.keyword.cost);
@@ -974,18 +1046,26 @@ export function expansionOf(ability: Ability): Ability[] {
       return [embalmAbility(ability.keyword.cost)];
     case 'affinity':
       return [affinityAbility(ability.keyword.filter)];
+    case 'undaunted':
+      return [UNDAUNTED_ABILITY];
     case 'echo':
       return [echoAbility(ability.keyword.cost)];
     case 'cumulativeUpkeep':
       return [cumulativeUpkeepAbility(ability.keyword.cost)];
     case 'gift':
       return [giftAbility(ability.keyword.gift)];
+    case 'offspring':
+      return [OFFSPRING_ABILITY];
     case 'livingWeapon':
       return [LIVING_WEAPON_ABILITY];
     case 'jobSelect':
       return [JOB_SELECT_ABILITY];
+    case 'exploit':
+      return [EXPLOIT_ABILITY];
     case 'hideaway':
       return [hideawayAbility(ability.keyword.count)];
+    case 'vanishing':
+      return [VANISHING_UPKEEP_ABILITY, VANISHING_SACRIFICE_ABILITY];
     case 'dethrone':
       return [DETHRONE_ABILITY];
     case 'melee':

@@ -8,13 +8,15 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { zoneList } from '../state/ops';
-import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { objectsInZone, seatsInOrder, zoneList } from '../state/ops';
+import type { ChosenTarget, GameState, Instruction, ResolutionContext } from '../state/types';
+import { amountOf } from './amounts';
 import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
-import { matchesFilter } from './select';
+import { greatestAmong } from './sacrifice-choice';
+import { matchesFilter, type SelectContext } from './select';
 import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -31,8 +33,24 @@ export function isCardZoneChoice(filter: ObjectFilter): boolean {
   );
 }
 
+/**
+ * "A permanent card with equal or lesser mana value" in the ability of a trigger about a permanent (Kodama of the East Tree, CR 202.3, 603.2c): the limit is the mana value of the
+ * permanent that entered, worked out as the effect starts, because the cards are asked about after this effect has ended. Any other filter is returned as it is.
+ */
+export function fixedLimit(
+  state: GameState,
+  filter: ObjectFilter,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): ObjectFilter {
+  const limit = filter.manaValueAtMost;
+  if (typeof limit !== 'object' || limit.kind !== 'manaValueOf') return filter;
+  if (limit.of.kind !== 'triggerSubject') return filter;
+  return { ...filter, manaValueAtMost: Math.max(0, amountOf(state, limit, ctx, targets)) };
+}
+
 /** The cards `seat` owns in the zone the filter names that match it (`source` is what "another" excludes). */
-function cardCandidates(
+export function cardCandidates(
   state: GameState,
   seat: SeatId,
   source: ObjectId | null,
@@ -84,6 +102,28 @@ function cardCandidates(
       return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
   );
+}
+
+/**
+ * "Return a nonland permanent you own to your hand" (CR 108.3, 608.2d): the choice is among the permanents the chooser owns, whoever controls them, when the filter says
+ * `ownedByYou` and names no controller.
+ */
+export function ownedChoice(filter: ObjectFilter): boolean {
+  return filter.ownedByYou === true && filter.controller === undefined && !isCardZoneChoice(filter);
+}
+
+/** The permanents on the battlefield `seat` owns that the filter matches (CR 108.3: the owner, not the controller; `ownedByYou` reads the owner against `seat`). */
+function ownedCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId | null,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const scoped: ObjectFilter = { ...filter, zone: 'battlefield' };
+  return objectsInZone(state, 'battlefield').filter((id) => {
+    const obj = state.objects[id];
+    return obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source });
+  });
 }
 
 const WHERE: Readonly<Record<ChooseMoveInstruction['to'], string>> = {
@@ -185,12 +225,23 @@ export function runChooseMove(
           [
             {
               kind: 'effect' as const,
-              effect: {
-                kind: 'mayPlay' as const,
-                objects: { kind: 'moved' as const },
-                lasts: 'endOfTurn' as const,
-                ...(instruction.permit.free === true ? { free: true as const } : {}),
-              },
+              effect:
+                instruction.permit.cast !== undefined
+                  ? {
+                      // CR 601.2, 611.2a (Mission Briefing): the card stays in the graveyard, and may be cast from there this turn.
+                      kind: 'mayCast' as const,
+                      objects: { kind: 'moved' as const },
+                      duration: 'untilEndOfTurn' as const,
+                      ...(instruction.permit.cast.exileInstead === true
+                        ? { exileInstead: true as const }
+                        : {}),
+                    }
+                  : {
+                      kind: 'mayPlay' as const,
+                      objects: { kind: 'moved' as const },
+                      lasts: 'endOfTurn' as const,
+                      ...(instruction.permit.free === true ? { free: true as const } : {}),
+                    },
             },
           ],
         ),
@@ -211,12 +262,27 @@ export function runChooseMove(
         instruction.withCounters,
       ).map((i) => {
         if (i.kind !== 'move') return i;
+        // CR 400.7: "put onto the battlefield with this ability": the permanent remembers the source.
+        if (instruction.putWith !== undefined) return { ...i, putWith: instruction.putWith };
         // CR 607.2a: "exiled with this Saga": the permanent remembers the card.
-        if (instruction.linkTo !== undefined) return { ...i, linkTo: instruction.linkTo };
+        if (instruction.linkTo !== undefined || instruction.untilLeaves !== undefined) {
+          return {
+            ...i,
+            ...(instruction.linkTo === undefined ? {} : { linkTo: instruction.linkTo }),
+            // CR 610.3 (Foreboding Steamboat): "until this Vehicle leaves the battlefield".
+            ...(instruction.untilLeaves === undefined
+              ? {}
+              : { untilLeaves: instruction.untilLeaves }),
+          };
+        }
         // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
         const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
         return {
           ...i,
+          // CR 701.40a (Scroll of Fate): "Manifest a card from your hand": the card enters face down.
+          ...(instruction.entersFaceDown === undefined
+            ? {}
+            : { entersFaceDown: instruction.entersFaceDown }),
           ...(instruction.countsNonland === true ? { countsNonland: true as const } : {}),
           ...(returns ? { countsReturned: true as const } : {}),
         };
@@ -250,8 +316,12 @@ export function runChooseMove(
           );
         })
       : fromCards && instruction.anyOwner === true
-        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
-          (instruction.among ?? []).filter((id) => {
+        ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter. Without `among`
+          // (Extract from Darkness, CR 404.1: "a creature card from a graveyard") every card of every graveyard.
+          (
+            instruction.among ??
+            seatsInOrder(state, chooser).flatMap((seat) => zoneList(state, 'graveyard', seat))
+          ).filter((id) => {
             const obj = state.objects[id];
             const { controller: _owner, ...described } = instruction.filter;
             return (
@@ -283,8 +353,21 @@ export function runChooseMove(
               // D-411: only the cards the effect before it moved.
               (id) => instruction.among === undefined || instruction.among.includes(id),
             )
-          : controlledCandidates(state, chooser, res.source, instruction.filter);
-  const legal = legalAll.filter((id) => !chosenBefore.includes(id));
+          : ownedChoice(instruction.filter)
+            ? ownedCandidates(state, chooser, res.source, instruction.filter)
+            : controlledCandidates(state, chooser, res.source, instruction.filter);
+  // "A creature with the greatest mana value among creatures they control" (`moveToZone.player`, CR 608.2d): only the candidates tied for the extreme value of the stat can be chosen.
+  const extreme =
+    instruction.greatest !== undefined
+      ? ({ stat: instruction.greatest, which: 'greatest' } as const)
+      : instruction.least !== undefined
+        ? ({ stat: instruction.least, which: 'least' } as const)
+        : undefined;
+  const legal = (
+    extreme === undefined || fromCards || legalAll.length === 0
+      ? legalAll
+      : greatestAmong(state, legalAll, extreme.stat, extreme.which)
+  ).filter((id) => !chosenBefore.includes(id));
   // CR 402.3 (hands): "look at defending player's hand ... you may put a creature card from it": the whole hand is looked at, so with cards in it the controller is
   // shown it even when none can be chosen; an empty hand shows nothing.
   const looked =
@@ -313,7 +396,7 @@ export function runChooseMove(
   const anyNumber = instruction.anyNumber === true;
   if (!anyNumber && !optional && legal.length <= instruction.count) return run(legal, true);
   const max = anyNumber ? legal.length : Math.min(instruction.count, legal.length);
-  const min = optional ? 0 : max;
+  const min = optional || anyNumber ? 0 : max;
   if (fromCards) {
     const zone =
       instruction.filter.zone === 'graveyard'
@@ -323,6 +406,11 @@ export function runChooseMove(
           : instruction.filter.zone === 'command'
             ? 'command'
             : 'hand';
+    // CR 400.3 (Foreboding Steamboat): a card exiled by another player goes to its owner's graveyard, not the chooser's.
+    const where =
+      zone === 'exile' && instruction.to === 'graveyard'
+        ? "into its owner's graveyard"
+        : WHERE[instruction.to];
     return {
       state,
       events: [],
@@ -344,44 +432,51 @@ export function runChooseMove(
           ? {}
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
         prompt:
-          instruction.permit !== undefined
-            ? 'Choose an exiled card to play this turn'
-            : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
-              decider !== chooser
-              ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
-                  instruction.to
-                ].replace('your', 'their')}`
-              : legal.length === 0
-                ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
-                  `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
-                : `Choose ${
-                    instruction.minCardTypes !== undefined
-                      ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-                      : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-                  } ${
-                    instruction.among !== undefined && zone === 'exile'
-                      ? 'from among the cards exiled this way'
-                      : instruction.among !== undefined
-                        ? 'from among the cards put into your graveyard'
-                        : zone === 'exile'
-                          ? 'exiled with this permanent'
-                          : instruction.graveyardOf !== undefined
-                            ? instruction.graveyardOf === chooser
-                              ? 'from your graveyard'
-                              : "from an opponent's graveyard"
-                            : instruction.alsoGraveyard === true
-                              ? 'from your hand or graveyard'
-                              : zone === 'command'
-                                ? 'from your command zone'
-                                : instruction.handOf !== undefined
-                                  ? 'from their hand'
-                                  : `from your ${zone}`
-                  } to put ${WHERE[instruction.to]}`.replace(
-                    'from among the cards put into your graveyard',
-                    instruction.anyOwner === true
-                      ? 'from among the cards put into a graveyard'
-                      : 'from among the cards put into your graveyard',
-                  ),
+          instruction.entersFaceDown === 'manifest'
+            ? // CR 701.40a (Scroll of Fate): the card is put onto the battlefield face down, not revealed.
+              'Choose a card from your hand to manifest'
+            : instruction.permit !== undefined
+              ? instruction.permit.cast !== undefined
+                ? 'Choose a card from your graveyard to cast this turn'
+                : 'Choose an exiled card to play this turn'
+              : // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
+                decider !== chooser
+                ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
+                    instruction.to
+                  ].replace('your', 'their')}`
+                : legal.length === 0
+                  ? // CR 402.3: nothing in the hand can be chosen; the controller looks at it and goes on.
+                    `Look at their hand: no card in it can be put ${WHERE[instruction.to]}`
+                  : `Choose ${
+                      instruction.minCardTypes !== undefined
+                        ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                        : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+                    } ${
+                      instruction.among !== undefined && zone === 'exile'
+                        ? 'from among the cards exiled this way'
+                        : instruction.among !== undefined
+                          ? 'from among the cards put into your graveyard'
+                          : instruction.anyOwner === true
+                            ? 'from a graveyard'
+                            : zone === 'exile'
+                              ? 'exiled with this permanent'
+                              : instruction.graveyardOf !== undefined
+                                ? instruction.graveyardOf === chooser
+                                  ? 'from your graveyard'
+                                  : "from an opponent's graveyard"
+                                : instruction.alsoGraveyard === true
+                                  ? 'from your hand or graveyard'
+                                  : zone === 'command'
+                                    ? 'from your command zone'
+                                    : instruction.handOf !== undefined
+                                      ? 'from their hand'
+                                      : `from your ${zone}`
+                    } to put ${where}`.replace(
+                      'from among the cards put into your graveyard',
+                      instruction.anyOwner === true
+                        ? 'from among the cards put into a graveyard'
+                        : 'from among the cards put into your graveyard',
+                    ),
       },
     };
   }

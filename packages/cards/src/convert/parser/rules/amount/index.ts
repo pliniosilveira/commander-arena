@@ -5,6 +5,7 @@ import { defineRule, spanned } from '../registry';
 import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { CHOSEN_PLAYER_LEAD_AMOUNT_RULES } from './chosen-player-lead';
 import { COUNT_AMOUNT_RULES } from './count';
+import { CREATURE_CARDS_AMONG_AMOUNT_RULES } from './creature-cards-among';
 import { DAMAGED_PLAYERS_AMOUNT_RULES } from './damaged-players';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
@@ -12,19 +13,28 @@ import { ENERGY_PAID_AMOUNT_RULES } from './energy-paid';
 import { EXPERIENCE_AMOUNT_RULES } from './experience';
 import { F144_AMOUNT_RULES } from './f144';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
+import { FLINT_AMOUNT_RULES } from './flint';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
 import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
-import { AMOUNT_FOR_EACH_DIED, AMOUNT_FOR_EACH_OTHER_SPELL_CAST } from './history';
+import {
+  AMOUNT_FOR_EACH_DIED,
+  AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
+  AMOUNT_FOR_EACH_SCRIED,
+} from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
+import { HOSTS_MISC_AMOUNT_RULES } from './hosts-misc';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
-import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { AMOUNT_FOR_EACH_COLOR_SPENT, AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { OPPONENTS_WHO_CONTROL_AMOUNT_RULES } from './opponents-who-control';
+import { PARTY_AMOUNT_RULES } from './party';
 import { PLAYERS_WHO_AMOUNT_RULES } from './players-who';
 import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { SPELLS_CAST_EACH_AMOUNT_RULES } from './spells-cast-each';
+import { THAT_NUMBER_AMOUNT_RULES } from './that-number';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
 /** The number words of Oracle text: one to twenty (stage P28: "thirteen tapped Zombie tokens"). */
@@ -121,10 +131,12 @@ export const AMOUNT_THAT_MUCH = defineRule<IrAmount>({
   family: 'amount',
   leading: ['that'],
   cites: ['CR 120.3 (Damage)', 'CR 603.2 (Handling Triggered Abilities)'],
-  examples: ['that much', 'That much'],
-  rejects: ['that many', 'that', 'that muchly', 'this much', 'much'],
+  examples: ['that much', 'That much', 'that amount'],
+  rejects: ['that many', 'that', 'that muchly', 'this much', 'much', 'that amounts'],
   parse: amountNode(
-    map(pattern(/that much(?![\p{L}\p{N}])/iu), () => ({ kind: 'triggerDamage' as const })),
+    map(pattern(/that (?:much|amount)(?![\p{L}\p{N}])/iu), () => ({
+      kind: 'triggerDamage' as const,
+    })),
   ),
 });
 
@@ -151,7 +163,8 @@ export const AMOUNT_THAT_MANY = defineRule<IrAmount>({
   ),
 });
 
-const POWER_OF = /equal to (its|that (?:creature|permanent)['’]s|~['’]s) power(?![\p{L}\p{N}])/iu;
+const POWER_OF =
+  /equal to (its|that (?:creature|permanent|card)['’]s|~['’]s) power(?![\p{L}\p{N}])/iu;
 const TARGET_CREATURE_POWER =
   /equal to the power of (target creature you control)(?![\p{L}\p{N}])/iu;
 
@@ -172,6 +185,8 @@ export const AMOUNT_POWER_OF = defineRule<IrAmount>({
     "equal to that creature's power",
     'equal to that permanent’s power',
     "equal to ~'s power",
+    // Mirkwood Elk (CR 208.1): the card an earlier instruction of the ability returned.
+    "equal to that card's power",
   ],
   rejects: [
     'equal to its toughness',
@@ -460,8 +475,8 @@ export const AMOUNT_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
 
 /**
  * `amount.excess-damage-dealt-this-way`: "equal to the amount of excess damage dealt to that creature this way" (CR 120.10 Excess Damage, 608.2c; Goblin Negotiation): what the
- * `dealDamage` before it dealt to the creature beyond lethal damage. Only "that creature" or "that permanent", the object the damage was dealt to, and only after a damage
- * instruction; "excess damage dealt this turn" and the other recipients are not read.
+ * `dealDamage` before it dealt to the creature beyond lethal damage. Only "that creature", "that permanent" or no object at all ("dealt this way"), and only after a damage
+ * instruction; "equal to the excess damage dealt this way" (Cramped Vents) is the same amount. "Excess damage dealt this turn" and the other recipients are not read.
  */
 export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
   id: 'amount.excess-damage-dealt-this-way',
@@ -471,6 +486,10 @@ export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
   examples: [
     'equal to the amount of excess damage dealt to that creature this way',
     'equal to the amount of excess damage dealt to that permanent this way',
+    // Windswift Slice: the one creature the damage before it was dealt to.
+    'equal to the amount of excess damage dealt this way',
+    // Cramped Vents: the same amount, said without "the amount of".
+    'equal to the excess damage dealt this way',
   ],
   rejects: [
     'equal to the amount of excess damage dealt to that creature',
@@ -483,7 +502,7 @@ export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
   parse: (ctx, pos) => {
     const r = spanned(
       pattern(
-        /equal to the amount of excess damage dealt to that (?:creature|permanent) this way(?![\p{L}\p{N}])/iu,
+        /equal to (?:the amount of excess damage dealt (?:to that (?:creature|permanent) )?|the excess damage dealt )this way(?![\p{L}\p{N}])/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -498,8 +517,12 @@ export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
 export const AMOUNT_RULES = [
   AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY,
   AMOUNT_FOR_EACH_DIED,
+  // Celeborn the Wise (CR 701.22): "for each card looked at while scrying this way".
+  AMOUNT_FOR_EACH_SCRIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
   ...KORVOLD_AMOUNT_RULES,
+  // Flint deck (issue 685): "for each 1 life your opponents have lost this turn".
+  ...FLINT_AMOUNT_RULES,
   // CR 205.2a: "for each card type among cards in your graveyard".
   ...CARD_TYPES_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".
@@ -507,10 +530,12 @@ export const AMOUNT_RULES = [
   // Issue 144 (Glimpse the Impossible): "for each card put into your graveyard this way".
   ...F144_AMOUNT_RULES,
   ...DISCARDED_TYPES_AMOUNT_RULES,
+  ...CREATURE_CARDS_AMONG_AMOUNT_RULES,
   // Aetherdrift energy deck (issue 105): "where X is the amount of {E} paid this way".
   ...ENERGY_PAID_AMOUNT_RULES,
   // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
   ...QUANDRIX_G_AMOUNT_RULES,
+  ...HOSTS_MISC_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".
   ...HASHATON_G2_AMOUNT_RULES,
   // CR 402.1: "equal to the number of cards in that player's hand", the amount of damage to each opponent.
@@ -522,16 +547,21 @@ export const AMOUNT_RULES = [
   ...DAMAGED_PLAYERS_AMOUNT_RULES,
   // Scions & Spellcraft deck, group A: "for each player who lost life this turn", "the number of your opponents who were dealt combat damage by ~ this turn".
   ...PLAYERS_WHO_AMOUNT_RULES,
+  ...OPPONENTS_WHO_CONTROL_AMOUNT_RULES,
   ...CHOSEN_PLAYER_LEAD_AMOUNT_RULES,
   // Lock and Load (issue 121): "for each other instant and sorcery spell you've cast this turn".
   AMOUNT_FOR_EACH_OTHER_SPELL_CAST,
   // Meren of Clan Nel Toth: "the number of experience counters you have".
   ...EXPERIENCE_AMOUNT_RULES,
+  // Party (CR 700.8): "for each creature in your party".
+  ...PARTY_AMOUNT_RULES,
   AMOUNT_NUMBER,
   AMOUNT_X,
   AMOUNT_ARTICLE,
   AMOUNT_THAT_MUCH,
   AMOUNT_THAT_MANY,
+  // Yuna, Grand Summoner: "that number" of the counters a permanent had.
+  ...THAT_NUMBER_AMOUNT_RULES,
   // Before the older "equal to ..." rules: it reads the values they stop short of (a sum, "half ..., rounded down"),
   // and leaves the plain count and the plain power to them.
   ...VALUE_AMOUNT_RULES,
@@ -550,6 +580,7 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_STILL_EXILED,
   AMOUNT_FOR_EACH_AURA_ATTACHED,
   AMOUNT_FOR_EACH_MANA_SPENT,
+  AMOUNT_FOR_EACH_COLOR_SPENT,
   // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
   ...LOREHOLD_G2_AMOUNT_RULES,
   // Quandrix Unlimited deck, group D2: "half X, rounded down".

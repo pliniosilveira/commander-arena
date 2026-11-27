@@ -106,6 +106,83 @@ export const REPLACEMENT_ENTERS_AS_COPY_EXCEPT = defineRule<IrAbility>({
 });
 
 /**
+ * `replacement.enters-as-copy-extra-counters`: "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it's a
+ * creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary." (Spark Double; CR 614.12, 707.2, 707.9b, 205.4a, 122.6): it enters as a
+ * copy of one permanent of the kinds the controller controls, with a counter more for each of the two kinds the copy is, and without the supertype legendary. The engine's `entersAsCopy`
+ * with `extraCounters` and `notLegendary`. Not read: another kind of permanent or controller, another counter, a missing part of the exception, no end.
+ */
+export const REPLACEMENT_ENTERS_AS_COPY_EXTRA_COUNTERS = defineRule<IrAbility>({
+  id: 'replacement.enters-as-copy-extra-counters',
+  family: 'replacement',
+  leading: ['you'],
+  cites: [
+    'CR 614.12 (Replacement Effects)',
+    'CR 707.2 (Copying Objects)',
+    'CR 707.9b (Copying Objects)',
+    'CR 205.4a (Supertypes)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: [
+    "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary.",
+    'You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it’s a creature, it enters with an additional loyalty counter on it if it’s a planeswalker, and it isn’t legendary.',
+  ],
+  rejects: [
+    "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary",
+    "You may have ~ enter as a copy of a creature or planeswalker, except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary.",
+    "You may have ~ enter as a copy of a creature you control, except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary.",
+    "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it's a creature, and it isn't legendary.",
+    "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional charge counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary.",
+    "You may have ~ enter as a copy of a creature or planeswalker you control, except it enters with an additional +1/+1 counter on it if it's a creature, it enters with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary. Draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.enters-as-copy-extra-counters';
+    const head = pattern(/you may have ~ enter as a copy of an? /iu)(ctx, pos);
+    if (!head.ok) return head;
+    const kind = spanned(map(permanentPhrase(false, false), withoutZone))(ctx, head.pos);
+    if (!kind.ok) return kind;
+    const types = kind.value.value.anyOf?.flatMap((m) => m.types ?? []) ?? [];
+    if (
+      kind.value.value.controller === undefined ||
+      types.length !== 2 ||
+      !types.includes('creature') ||
+      !types.includes('planeswalker')
+    ) {
+      return fail(ctx, pos);
+    }
+    const tail = pattern(
+      /, except it enters with an additional \+1\/\+1 counter on it if it['’]s a creature, it enters with an additional loyalty counter on it if it['’]s a planeswalker, and it isn['’]t legendary\./iu,
+    )(ctx, kind.pos);
+    if (!tail.ok) return tail;
+    const span = { start: pos, end: tail.pos };
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: kind.value.value,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: kind.value.span,
+      rule: id,
+    };
+    const flag = (value: boolean) => ({ kind: 'flag' as const, value, span, rule: id });
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersAsCopy',
+      args: {
+        what,
+        duration: flag(false),
+        extraCounters: flag(true),
+        notLegendary: flag(true),
+      },
+      optional: true,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: tail.pos };
+  },
+});
+
+/**
  * `replacement.enters-as-copy-graveyard`: "You may have ~ enter as a copy of any creature card in your graveyard that was put there from the battlefield this turn, except her name is ~
  * and she's a legendary Trill in addition to her other types." (Federation Fleet deck, CR 614.12, 707.2, 707.9a, 707.9b, 700.4, 205.4a: it enters as a copy of a card of the
  * controller's graveyard, keeps its own name, and is also legendary and of the creature type.) The engine's `entersAsCopy` with `fromGraveyard`, `keepName` and `addSupertypes`. The copy
@@ -196,7 +273,86 @@ export const REPLACEMENT_ENTERS_AS_COPY_GRAVEYARD = defineRule<IrAbility>({
   },
 });
 
+/**
+ * `replacement.enters-as-copy-except-types`: "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types."
+ * (Phyrexian Metamorph; CR 614.12, 707.2, 707.9b, 205.1b: the permanent enters as a copy of any permanent of the kinds, whoever controls it, and the card type the exception names is
+ * part of its copiable values, so it is also an artifact.) The copy lasts for good (no duration is said). The engine's `entersAsCopy` with `addTypes`. Not read: the copied
+ * permanents of one player, a card type besides artifact and enchantment, "except it's a Dragon" (a creature type is `replacement.enters-as-copy-except`), a keyword or a name besides.
+ */
+export const REPLACEMENT_ENTERS_AS_COPY_EXCEPT_TYPES = defineRule<IrAbility>({
+  id: 'replacement.enters-as-copy-except-types',
+  family: 'replacement',
+  leading: ['you'],
+  cites: [
+    'CR 614.12 (Replacement Effects)',
+    'CR 707.2 (Copying Objects)',
+    'CR 707.9b (Copying Objects)',
+    'CR 205.1b (Type Line)',
+  ],
+  examples: [
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact on the battlefield, except it's an enchantment in addition to its other types.",
+  ],
+  rejects: [
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types",
+    "You may have ~ enter as a copy of any artifact or creature you control on the battlefield, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of an artifact or creature on the battlefield, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's a land in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types and it has haste.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield until end of turn, except it's an artifact in addition to its other types.",
+    "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types. Draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.enters-as-copy-except-types';
+    const head = literal('you may have ~ enter as a copy of any ')(ctx, pos);
+    if (!head.ok) return head;
+    const kind = spanned(map(permanentPhrase(false, 'all'), withoutZone))(ctx, head.pos);
+    if (!kind.ok) return kind;
+    // The permanents it may copy are any on the battlefield: a controller or a quality of its own is another statement.
+    if (kind.value.value.controller !== undefined) return fail(ctx, pos);
+    const where = sequence(
+      literal(' on the battlefield'),
+      pattern(/, except it['’]s an? /iu),
+      spanned(pattern(/(artifact|enchantment)(?![\p{L}\p{N}])/u)),
+      literal(' in addition to its other types.'),
+    )(ctx, kind.pos);
+    if (!where.ok) return where;
+    const span = { start: pos, end: where.pos };
+    const [, , added] = where.value;
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: kind.value.value,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: kind.value.span,
+      rule: id,
+    };
+    const addTypes: IrTypeList = {
+      kind: 'typeList',
+      subtypes: [],
+      cardTypes: [added.value[1] ?? ''],
+      additive: true,
+      span: added.span,
+      rule: id,
+    };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersAsCopy',
+      args: { what, duration: { kind: 'flag', value: false, span, rule: id }, addTypes },
+      optional: true,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: where.pos };
+  },
+});
+
 export const COPY_EXCEPT_REPLACEMENT_RULES = [
   REPLACEMENT_ENTERS_AS_COPY_EXCEPT,
+  REPLACEMENT_ENTERS_AS_COPY_EXTRA_COUNTERS,
   REPLACEMENT_ENTERS_AS_COPY_GRAVEYARD,
+  REPLACEMENT_ENTERS_AS_COPY_EXCEPT_TYPES,
 ].map(quietly);

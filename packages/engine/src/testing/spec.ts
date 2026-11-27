@@ -3,6 +3,7 @@
  * before any state is built (D-012): spells on the battlefield, battlefield-only options in other
  * zones, bad counts and mana, commander options on non-commanders.
  */
+import type { UndercityRoom } from '../ast/types';
 import type { CardDefinition } from '../cards/definition';
 import { isPermanentType } from '../characteristics';
 import type { SeatId } from '../ids';
@@ -37,6 +38,8 @@ export interface SeatSpec {
   citysBlessing: boolean;
   /** The seat's speed at the start (CR 702.179b); null: it has none. */
   speed: number | null;
+  /** The room of Undercity the seat's venture marker is on at the start (CR 309.4); null: the seat is in no dungeon. */
+  dungeon: UndercityRoom | null;
   /** Combat damage this seat has taken from a commander, by card name (CR 903.10a). */
   commanderDamage: { name: string; amount: number }[];
 }
@@ -64,6 +67,7 @@ export function emptySeatSpec(): SeatSpec {
     companion: null,
     citysBlessing: false,
     speed: null,
+    dungeon: null,
     commanderDamage: [],
   };
 }
@@ -198,7 +202,16 @@ export function validatePlacement(p: Placement, def: CardDefinition, seatCount =
     }
     if (o.chosen !== undefined) {
       const kind = entersChoice(face.abilities);
-      const { creatureType, color, option, cardType, planeswalkerType, lifePaid } = o.chosen;
+      const {
+        creatureType,
+        color,
+        option,
+        cardType,
+        planeswalkerType,
+        lifePaid,
+        player,
+        cardName,
+      } = o.chosen;
       if (kind === null) {
         throw new ScenarioError(`${where}: ${p.name} does not choose anything as it enters`);
       }
@@ -215,17 +228,31 @@ export function validatePlacement(p: Placement, def: CardDefinition, seatCount =
                   ? lifePaid === undefined
                     ? undefined
                     : String(lifePaid)
-                  : color;
-      const others = [creatureType, color, option, cardType, planeswalkerType, lifePaid].filter(
-        (x) => x !== undefined,
-      ).length;
+                  : kind === 'player'
+                    ? player === undefined
+                      ? undefined
+                      : `seat:${player}`
+                    : kind === 'cardName'
+                      ? cardName
+                      : color;
+      const others = [
+        creatureType,
+        color,
+        option,
+        cardType,
+        planeswalkerType,
+        lifePaid,
+        player,
+        cardName,
+      ].filter((x) => x !== undefined).length;
       if (given === undefined || others !== 1) {
         throw new ScenarioError(
           `${where}: ${p.name} chooses a ${kind}, so chosen must give just that`,
         );
       }
       // A `lifePaid` answer is any whole number of life; the scenario places a permanent that already paid it.
-      const named = kind === 'lifePaid' ? [given] : entersOptions(face.abilities);
+      const named =
+        kind === 'lifePaid' || kind === 'player' ? [given] : entersOptions(face.abilities);
       if (chosenFromOption(kind, given, named) === null) {
         throw new ScenarioError(`${where}: ${given} is not a ${kind}`);
       }

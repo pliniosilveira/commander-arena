@@ -13,7 +13,7 @@
 import type { CastAlternativeKind } from '../ast/features';
 import type { Cost } from '../ast/types';
 import type { CardFace } from '../cards/definition';
-import { flashbackCostOf, manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
+import { flashbackCostOf, kickerCostOf, manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
 
 /** How much each point of X costs: generic mana (one per {X} symbol) and life ("pay X life"). */
 export interface XCost {
@@ -25,6 +25,10 @@ export interface XCost {
   readonly discard?: number;
   /** Permanents sacrificed for each point of X ("Sacrifice X creatures", CR 118.3, D-488); absent for none. */
   readonly sacrifice?: number;
+  /** Counters removed for each point of X ("Remove X counters from an artifact or creature you control", CR 118.3, 122.1); absent for none. */
+  readonly removeCounters?: number;
+  /** Cards of the graveyard exiled for each point of X ("Flashback—{3}{U}{R}, Exile X cards from your graveyard", CR 702.34a, 107.3a); absent for none. */
+  readonly exile?: number;
 }
 
 export const NO_X: XCost = { mana: 0, life: 0 };
@@ -51,6 +55,22 @@ export function withX(symbols: readonly string[], x: number): string[] {
   return x === 0 ? rest : [String(count * x), ...rest];
 }
 
+const NUMERIC = /^[0-9]+$/;
+
+/**
+ * CR 118.7a, 601.2f: reduces the generic mana of a cost by `by`, never below zero, leaving the
+ * colored mana alone. A cost with no generic mana is not changed. A cost reduced to nothing is {0}:
+ * an empty list.
+ */
+export function reduceGeneric(symbols: readonly string[], by: number): string[] {
+  const numeric = symbols.filter((s) => NUMERIC.test(s));
+  if (by <= 0 || numeric.length === 0) return [...symbols];
+  const generic = numeric.reduce((n, s) => n + Number(s), 0);
+  const left = Math.max(0, generic - by);
+  const rest = symbols.filter((s) => !NUMERIC.test(s));
+  return left > 0 ? [String(left), ...rest] : rest;
+}
+
 /** What one point of X costs in an activated ability's cost (CR 602.2b). */
 export function abilityXCost(costs: readonly Cost[]): XCost {
   let mana = 0;
@@ -58,12 +78,14 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
   let loyalty = 0;
   let sacrifice = 0;
   let discard = 0;
+  let removeCounters = 0;
   for (const c of costs) {
     if (c.kind === 'mana') mana += xSymbolCount(c.symbols);
     else if (c.kind === 'payXLife') life += 1;
     else if (c.kind === 'loyalty' && c.change === 'x') loyalty += 1;
     else if (c.kind === 'sacrifice' && c.countX === true) sacrifice += 1;
     else if (c.kind === 'discard' && c.countX === true) discard += 1;
+    else if (c.kind === 'removeCounters' && c.countX === true) removeCounters += 1;
   }
   return {
     mana,
@@ -71,6 +93,7 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
     ...(loyalty === 0 ? {} : { loyalty }),
     ...(sacrifice === 0 ? {} : { sacrifice }),
     ...(discard === 0 ? {} : { discard }),
+    ...(removeCounters === 0 ? {} : { removeCounters }),
   };
 }
 
@@ -84,6 +107,23 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
 export function spellXCost(
   face: CardFace | null,
   alternative: CastAlternativeKind | undefined,
+  /** "Kicker {X}" (CR 702.33a, 107.3a): the spell was kicked, so the {X} of its kicker cost is announced too, whatever way it is cast. */
+  kicked = false,
+  /**
+   * The escape cost something gave the card, when the spell is cast for it (`rules/escape-grant.ts`, CR 702.138a): a cost equal to the mana cost has the {X} of it, which is
+   * announced (CR 107.3a).
+   */
+  grantedEscape: readonly Cost[] | null = null,
+): XCost {
+  const base = spellXCostOfMana(face, alternative, grantedEscape);
+  const kickerX = kicked ? xSymbolCount(manaSymbolsOf(kickerCostOf(face) ?? [])) : 0;
+  return kickerX === 0 ? base : { ...base, mana: base.mana + kickerX };
+}
+
+function spellXCostOfMana(
+  face: CardFace | null,
+  alternative: CastAlternativeKind | undefined,
+  grantedEscape: readonly Cost[] | null,
 ): XCost {
   if (face === null) return NO_X;
   const life = (face.additionalCosts ?? []).filter((c) => c.kind === 'payXLife').length;
@@ -94,11 +134,21 @@ export function spellXCost(
   ).length;
   const extra = { ...(discard > 0 ? { discard } : {}), ...(sacrifice > 0 ? { sacrifice } : {}) };
   if (alternative === 'miracle') {
+    const printedMiracle = namedAlternativeCostOf(face, 'miracle');
     return {
-      mana: xSymbolCount(manaSymbolsOf(namedAlternativeCostOf(face, 'miracle') ?? [])),
+      // A miracle a permanent gave the card (`grantKeywordFromManaCost`) costs the mana cost reduced: the {X} of the mana cost is the one announced.
+      mana:
+        printedMiracle === null
+          ? xSymbolCount(face.manaCost ?? [])
+          : xSymbolCount(manaSymbolsOf(printedMiracle)),
       life,
       ...extra,
     };
+  }
+  // CR 702.138a, 107.3a: an escape cost equal to the mana cost (a permanent gave the card escape) has the {X} of it.
+  if (alternative === 'escape' && grantedEscape !== null) {
+    const granted = xSymbolCount(manaSymbolsOf(grantedEscape));
+    if (granted > 0) return { mana: granted, life, ...extra };
   }
   // CR 702.180a, 107.3a: the {X} of a harmonize cost is the X announced, as for a miracle cost.
   if (alternative === 'harmonize') {
@@ -109,6 +159,13 @@ export function spellXCost(
     };
   }
   const printed = xSymbolCount(face.manaCost ?? []);
+  // CR 702.34a, 107.3a: "Flashback—{3}{U}{R}, Exile X cards from your graveyard": the cost has an X of its own, the X announced as the spell is cast (the {X} of the mana cost is not paid).
+  if (
+    alternative === 'flashback' &&
+    (flashbackCostOf(face) ?? []).some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
+  ) {
+    return { mana: 0, life, ...extra, exile: 1 };
+  }
   // CR 702.34a, 107.3a: a flashback cost equal to the mana cost (a card given flashback, not one that prints it) has the {X} of the mana cost, which is announced as for any cast.
   const flashbackOfManaCost = alternative === 'flashback' && flashbackCostOf(face) === null;
   if (flashbackOfManaCost) return { mana: printed, life, ...extra };
@@ -128,7 +185,14 @@ export function spellXCost(
 /** Whether announcing X means anything: the cost has an {X} or a "pay X life". */
 export function hasX(cost: XCost): boolean {
   return (
-    cost.mana + cost.life + (cost.loyalty ?? 0) + (cost.discard ?? 0) + (cost.sacrifice ?? 0) > 0
+    cost.mana +
+      cost.life +
+      (cost.loyalty ?? 0) +
+      (cost.discard ?? 0) +
+      (cost.sacrifice ?? 0) +
+      (cost.removeCounters ?? 0) +
+      (cost.exile ?? 0) >
+    0
   );
 }
 

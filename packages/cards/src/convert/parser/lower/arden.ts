@@ -24,6 +24,27 @@ export const ROLL: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * `eachPlayerRollsBarHighest`: "each player rolls a d20. If one or more opponents had the highest result, ~ can't attack those players or planeswalkers they control this combat" (CR 706.2,
+ * 508.1a): the engine's node of the creature of the ability. It sets no result the later sentences could read, so it is not a roll for `ctx.dieSides`.
+ */
+export const EACH_PLAYER_ROLLS_BAR_HIGHEST: Lowering<IrClause, Effects> = {
+  head: 'eachPlayerRollsBarHighest',
+  id: 'lower.each-player-rolls-bar-highest',
+  needs: ['effect:eachPlayerRollsBarHighest'],
+  lower: (clause) => {
+    const sides = clause.args.sides;
+    if (sides?.kind !== 'number') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        { kind: 'eachPlayerRollsBarHighest', sides: sides.value, creature: { kind: 'this' } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * `clash`: "clash with an opponent" (CR 701.30b), the engine's `clash`. One clash in a text: "if you win" would otherwise name one of two (as for the roll).
  */
 export const CLASH: Lowering<IrClause, Effects> = {
@@ -60,11 +81,17 @@ export const FLIP_COIN: Lowering<IrClause, Effects> = {
   }),
 };
 
-export const ARDEN_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [ROLL, CLASH, FLIP_COIN];
+export const ARDEN_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  ROLL,
+  EACH_PLAYER_ROLLS_BAR_HIGHEST,
+  CLASH,
+  FLIP_COIN,
+];
 
 /** The features the lowerings of this file and its conditions name, for the dimension test. */
 export const ARDEN_NEEDS = [
   'effect:rollDie',
+  'effect:eachPlayerRollsBarHighest',
   'effect:clash',
   'effect:coinFlip',
   'effect:chooseOne',

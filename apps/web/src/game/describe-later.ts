@@ -5,6 +5,7 @@
  */
 import type { GameEvent, GameState, ObjectId, SeatId } from '@commander-arena/engine';
 import { manaText } from './later-text';
+import { seatNameOf } from './seat-name';
 
 export interface LaterLine {
   readonly text: string;
@@ -13,7 +14,8 @@ export interface LaterLine {
   readonly rule: string;
 }
 
-const who = (seat: SeatId, viewer: SeatId): string => (seat === viewer ? 'You' : 'Opponent');
+const who = (seat: SeatId, viewer: SeatId, seatCount = 2): string =>
+  seatNameOf(seat, viewer, seatCount);
 
 function nameOf(state: GameState, id: ObjectId): string {
   const obj = state.objects[id];
@@ -42,7 +44,7 @@ export function castNowAnswerLine(
         ? asked.sourceName
         : nameOf(before, asked.subject);
   const you = event.seat === viewer;
-  const subject = who(event.seat, viewer);
+  const subject = who(event.seat, viewer, before.seats?.length ?? 2);
   const objects = asked.subject === undefined ? [] : [asked.subject];
   if (asked.purpose === 'suspend') {
     return {

@@ -47,6 +47,16 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'spending only mana of the chosen color is a restriction on the cost of an activated ability, not of a mana ability',
       );
     }
+    if (
+      c?.kind === 'removeCounters' &&
+      (c.counter === undefined || c.countX !== undefined || c.fromOne !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.cost[${i}]`,
+        'a mana ability takes a named kind of counter off its own permanent: no X, no choice of kind, no single permanent',
+      );
+    }
     if (c?.kind === 'removeCounters' && c.among !== undefined) {
       issue(
         out,
@@ -77,6 +87,40 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
+  // CR 107.3, 605.3b (Hazel of the Rootbloom): the X of "Add X mana in any combination of colors" is the number of permanents the one "Tap X untapped ..." cost taps, so each
+  // needs the other; that cost does not come with a choice of another kind (a sacrifice, a single permanent to tap, a counter) or a production that replaces its own.
+  const tapsX = (Array.isArray(a.cost) ? a.cost : []).filter((c) => c?.kind === 'tapPermanentsX');
+  if (tapsX.length > 1) {
+    issue(out, `${path}.cost`, 'a mana ability taps X permanents in one cost only');
+  }
+  if (tapsX.length === 1 && a.production?.kind !== 'anyCombinationTapped') {
+    issue(
+      out,
+      `${path}.production`,
+      'a cost that taps X permanents is paired with the production of X mana in any combination of colors',
+    );
+  }
+  if (a.production?.kind === 'anyCombinationTapped' && tapsX.length !== 1) {
+    issue(
+      out,
+      `${path}.cost`,
+      'the production of X mana in any combination of colors needs the cost that taps X permanents',
+    );
+  }
+  if (
+    tapsX.length > 0 &&
+    ((a.cost ?? []).some(
+      (c) => c?.kind === 'sacrifice' || c?.kind === 'tapPermanents' || c?.kind === 'removeCounters',
+    ) ||
+      a.instead !== undefined ||
+      a.putCounter !== undefined)
+  ) {
+    issue(
+      out,
+      `${path}.cost`,
+      'a mana ability that taps X permanents has no other choice to make: no sacrifice, other tap cost, counters or replacing production',
+    );
+  }
   if (a.production?.kind === 'producedType') {
     issue(
       out,
@@ -132,9 +176,18 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     } else {
       checkStateAmount(amount, `${path}.production.amount`, out, 'the mana a mana ability makes');
     }
+    // CR 113.7a, 605.3b (Glittering Stockpile): giving up this permanent leaves the counters on it as they were, so an amount that counts only those may be combined with it.
+    const ownCounters =
+      typeof amount === 'object' &&
+      amount !== null &&
+      amount.kind === 'countersOn' &&
+      kindOf(amount.of) === 'this';
     if (
       (a.cost ?? []).some(
-        (c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters' || c?.kind === 'putCounters',
+        (c) =>
+          (c?.kind === 'sacrifice' && !(ownCounters && kindOf(c.what) === 'this')) ||
+          c?.kind === 'removeCounters' ||
+          c?.kind === 'putCounters',
       )
     ) {
       issue(
@@ -178,6 +231,16 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   }
   if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
     issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
+  }
+  // CR 605.3b, 122.6 (Empowered Autogenerator, Glittering Stockpile): the counters the ability puts on its own permanent before its mana is added, so that an amount counts after them; a
+  // production that counts nothing is not told apart from putting them after the mana.
+  if (a.putCounter !== undefined) {
+    if (typeof a.putCounter.counter !== 'string' || a.putCounter.counter === '') {
+      issue(out, `${path}.putCounter.counter`, 'the kind of counter is a name');
+    }
+    if (!Number.isSafeInteger(a.putCounter.count) || a.putCounter.count < 1) {
+      issue(out, `${path}.putCounter.count`, 'count must be a positive integer');
+    }
   }
   if (a.production?.kind === 'anyColorAmong') {
     // CR 106.1b: the cards whose colors are looked at; the filter reads a zone and what the objects are, nothing of the combat, a target or X.
@@ -246,6 +309,29 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
+      if (only.typesOrSubtypes !== undefined) {
+        if (only.typesOrSubtypes !== true) {
+          issue(
+            out,
+            `${path}.spendOnly.typesOrSubtypes`,
+            'typesOrSubtypes must be true when present',
+          );
+        }
+        if (
+          only.types === undefined ||
+          only.subtypes === undefined ||
+          only.notTypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.qualities !== undefined ||
+          only.alsoAbilities !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.spendOnly.typesOrSubtypes`,
+            'typesOrSubtypes needs both types and subtypes and goes with nothing else',
+          );
+        }
+      }
       if (only.xCost !== undefined && only.xCost !== true) {
         issue(out, `${path}.spendOnly.xCost`, 'xCost must be true when present');
       }
@@ -355,10 +441,52 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly fromGraveyard names nothing else');
       }
+      // CR 106.6, 108.3 (Thieving Varmint): "spells you don't own" stands alone.
+      if (only.notOwned !== undefined && only.notOwned !== true) {
+        issue(out, `${path}.spendOnly.notOwned`, 'notOwned must be true when present');
+      }
+      if (
+        only.notOwned === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined ||
+          only.notGeneric !== undefined ||
+          only.fromGraveyard !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly notOwned names nothing else');
+      }
+      // CR 106.6, 701.40b (Overgrown Zealot): "to turn permanents face up" stands alone.
+      if (only.turnFaceUp !== undefined && only.turnFaceUp !== true) {
+        issue(out, `${path}.spendOnly.turnFaceUp`, 'turnFaceUp must be true when present');
+      }
+      if (
+        only.turnFaceUp === true &&
+        (only.types !== undefined ||
+          only.notTypes !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined ||
+          only.abilitiesOnly !== undefined ||
+          only.monocoloredChosen !== undefined ||
+          only.notGeneric !== undefined ||
+          only.fromGraveyard !== undefined ||
+          only.notOwned !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly turnFaceUp names nothing else');
+      }
       if (
         only.types === undefined &&
         only.subtypes === undefined &&
+        only.turnFaceUp !== true &&
         only.fromGraveyard !== true &&
+        only.notOwned !== true &&
         only.chosenType !== true &&
         only.qualities === undefined &&
         only.xCost !== true &&
@@ -498,15 +626,33 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           'producedType is only the effect of a triggered mana ability',
         );
       }
-      if (
-        a.instead.production?.kind === 'couldProduce' ||
-        a.instead.production?.kind === 'anyColorAmong'
-      ) {
+      if (a.instead.production?.kind === 'anyColorAmong') {
         issue(
           out,
           `${path}.instead.production`,
           'the replacing production does not look at other permanents',
         );
+      }
+      // Incubation Druid (CR 106.7): a "could produce" production may replace another "could produce" production (three mana of the type instead of one), never a fixed or other one.
+      if (a.instead.production?.kind === 'couldProduce' && a.production?.kind !== 'couldProduce') {
+        issue(
+          out,
+          `${path}.instead.production`,
+          'the replacing production does not look at other permanents unless the ability does too',
+        );
+      }
+      // The replacing production names lands of its own, on the battlefield.
+      if (a.instead.production?.kind === 'couldProduce') {
+        const lands = a.instead.production.lands;
+        if (lands === undefined || lands === null) {
+          issue(
+            out,
+            `${path}.instead.production.lands`,
+            'couldProduce needs a filter for the permanents',
+          );
+        } else {
+          checkBattlefieldFilter(lands, `${path}.instead.production.lands`, out);
+        }
       }
     }
   }

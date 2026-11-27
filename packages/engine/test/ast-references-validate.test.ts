@@ -87,6 +87,7 @@ describe('amounts that read an object', () => {
       'lifeGainedThisTurn',
       // CR 119.3 (Betor): the controller's own life lost this turn.
       'controllerLifeLostThisTurn',
+      'opponentsLifeLostThisTurn',
       'lifeGainedOrLostThisTurn',
       // Limit Break deck: an amount worked out as the spell is cast (Lifestream's Blessing).
       'asCast',
@@ -103,15 +104,20 @@ describe('amounts that read an object', () => {
       'commanderManaValue',
       'commanderCasts',
       'lifeTotalOf',
+      'damageDealtToThisTurn',
+      'greatestCountOfAnOpponent',
       'playerCount',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
       // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
       'greatestPowerAmong',
+      'countersAmong',
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'differentManaValuesAmong',
       'differentNamesAmong',
+      'differentPowersAmong',
+      'creatureTypesAmong',
       'timesAttacked',
       // Issue 81 (Omnath): "for each unspent mana you have".
       'unspentMana',
@@ -126,6 +132,8 @@ describe('amounts that read an object', () => {
       // CR 608.2c (Jaws of Defeat): the positive gap between two amounts.
       'difference',
       'opponentCount',
+      // CR 120.3 (Grothama, All-Devouring): the damage dealt to this permanent this turn by a player's sources.
+      'damageToThisThisTurn',
       // Limit Break deck (Melee): the opponents attacked this combat.
       'opponentsAttackedThisCombat',
       'movedCount',
@@ -147,10 +155,13 @@ describe('amounts that read an object', () => {
       'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
+      'votesReceived',
+      'votesForObject',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
       // CR 122.1: the experience counters a player has.
       'experienceCounters',
+      'partySize',
       // D-638 (CR 601.2i): the instants and sorceries cast this turn.
       'spellsCastThisTurn',
       // D-646 (CR 202.3, 601.2i): the greatest mana value among the spells cast this turn.
@@ -163,6 +174,8 @@ describe('amounts that read an object', () => {
       'tappedAsCostPower',
       // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
       'enteredX',
+      // CR 701.37c (Death Kiss): the X of the monstrosity a becomes monstrous trigger reads.
+      'monstrousX',
       'lifePaidAsEntered',
       // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a).
       'aurasAttachedToTriggerSubject',

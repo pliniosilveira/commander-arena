@@ -97,9 +97,10 @@ interface Tail {
 
 /**
  * The part after the noun: an optional reveal, the put, an optional shuffle. `yours` is false when
- * another player searches: they put the card onto the battlefield and nothing is revealed.
+ * another player searches: they put the card onto the battlefield and nothing is revealed. `newSentence` (Oreskos Explorer, CR 107.3c): the reveal may open a sentence of its own after
+ * the definition of X ("..., where X is the number of players who control more lands than you. Reveal those cards, put them into your hand, then shuffle.").
  */
-function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
+function tailFor(cards: IrNoun, yours = true, newSentence = false): Parser<Tail> {
   const plural = cards.plural;
   const max = cards.count?.kind === 'number' ? cards.count.value : 1;
   const zone = (place: Place, span: Span, count: number): IrZoneSpec => ({
@@ -126,7 +127,17 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
     // Another player's search reveals nothing: ", reveal" is not read, so the put fails on it.
     const reveal = yours
       ? map(
-          spanned(sequence(literal(', reveal '), referTo(plural))),
+          spanned(
+            sequence(
+              newSentence
+                ? choice(
+                    map(pattern(/\. reveal /i), (m) => m[0]),
+                    literal(', reveal '),
+                  )
+                : literal(', reveal '),
+              referTo(plural),
+            ),
+          ),
           ({ span }): IrFlag => flag(true, span),
         )(ctx, pos)
       : fail(ctx, pos);
@@ -162,7 +173,13 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
         pos: onTop.pos,
       };
     }
-    const placed = spanned(sequence(literal(', put '), put))(ctx, afterReveal);
+    // Tower Winder: "..., reveal it, and put it into your hand": the put after a reveal may be joined with "and".
+    const placed = spanned(
+      sequence(
+        reveal.ok ? choice(literal(', and put '), literal(', put ')) : literal(', put '),
+        put,
+      ),
+    )(ctx, afterReveal);
     if (!placed.ok) {
       // Lorehold group 1 (CR 701.23): "search your library for a Plains card and put it onto the battlefield tapped": one card put at once, with no reveal and no shuffle in the same
       // sentence (a shuffle after it is a sentence of its own: "If you search your library this way, shuffle.").
@@ -237,6 +254,9 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for any number of nonland permanent cards with total mana value 4 or less, put them onto the battlefield tapped, then shuffle',
     // Issue 160 (D-626): "up to X", with X defined right after the noun.
     'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle',
+    // Oreskos Explorer (CR 107.3c, 701.23): the reveal is a sentence of its own after the definition of X.
+    'search your library for up to X Plains cards, where X is the number of players who control more lands than you. Reveal those cards, put them into your hand, then shuffle',
+    'search your library for up to X Plains cards, where X is the number of tapped creatures you control, reveal them, put them into your hand, then shuffle',
     'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
     // Issue 104 (Gate to the Afterlife, CR 701.23a): several zones of the searcher, and a card of a given name.
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
@@ -244,6 +264,10 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your graveyard, hand, and/or library for a creature card and put it into your hand',
     // Finale of Devastation (CR 107.3a, 202.3): the mana value is at most the X of the spell.
     'search your library and/or graveyard for a creature card with mana value X or less and put it onto the battlefield',
+    // Tower Winder (CR 701.23a, 701.20a): several zones, the card revealed; the shuffle is another sentence.
+    'search your library and/or graveyard for a card named Command Tower, reveal it, and put it into your hand',
+    'search your library and/or graveyard for a creature card, reveal it, put it into your hand',
+    'search your library for a creature card, reveal it, and put it into your hand',
   ],
   rejects: [
     'search your library for a basic land card, put them onto the battlefield tapped, then shuffle',
@@ -268,16 +292,16 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for any number of creature cards with total mana value 6 or less, put it onto the battlefield, then shuffle',
     'search your library for any number of creature cards with total mana value 6 or less, put one onto the battlefield and the other into your hand, then shuffle',
     'search your graveyard, hand, and/or library for any number of creature cards with total mana value 6 or less and put them onto the battlefield',
-    // Issue 104: with several zones the shuffle is another sentence ("If you search your library this way, shuffle."), and nothing is revealed.
+    // Issue 104: with several zones the shuffle is another sentence ("If you search your library this way, shuffle.").
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, put it onto the battlefield, then shuffle",
-    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield",
+    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield, then shuffle",
+    'search your library for a creature card, reveal it, and, put it into your hand',
     "search your graveyard, hand, and library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     "search your graveyard and/or hand and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     "search your hand, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     "search your graveyard, hand, and/or library for up to two cards named God-Pharaoh's Gift and put them onto the battlefield",
     "search their graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
     'search your library and/or graveyard for creature cards with mana value X or less and put them onto the battlefield',
-    'search your library and/or graveyard for a creature card with mana value X or less, reveal it, and put it onto the battlefield',
   ],
   parse: single(
     RULE,
@@ -305,13 +329,10 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
         amount = defined.value[1];
         after = defined.pos;
       }
-      const tail = tailFor(cards)(ctx, after);
+      const tail = tailFor(cards, true, amount !== null)(ctx, after);
       if (!tail.ok) return tail;
-      // Issue 104: with several zones the card is put at once, one card, with nothing revealed and no shuffle in the sentence.
-      if (
-        zones !== null &&
-        (tail.value.reveal.value || tail.value.shuffle.value || cards.plural || amount !== null)
-      ) {
+      // Issue 104: with several zones the card is put at once, one card, with no shuffle in the sentence. Tower Winder (CR 701.20a): it may be revealed.
+      if (zones !== null && (tail.value.shuffle.value || cards.plural || amount !== null)) {
         return fail(ctx, pos);
       }
       return { ok: true, value: { cards, amount, zones, ...tail.value }, pos: tail.pos };

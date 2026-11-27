@@ -10,7 +10,7 @@
  */
 import type { Condition, PlayerSelector } from '../ast/types';
 import type { SeatId } from '../ids';
-import { opponentsOf, seatsInOrder } from '../state/ops';
+import { getSeat, opponentsOf, seatsInOrder } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import {
   cardsInGraveyardHolds,
@@ -23,9 +23,11 @@ import {
   spellsCastThisTurnHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
-import { cardTypesAmongForSource, countForSource } from './derive-count';
+import { countersOfKind } from './counters-of-kind';
+import { cardTypesAmongForSource, countForSource, partySizeForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders, hasMaxSpeed } from './designations';
+import { devotionOf } from './devotion';
 import { matchesFilterWith } from './filter-match';
 import { partnerOf } from './pairing';
 
@@ -89,7 +91,7 @@ export function staticConditionHolds(
     case 'chosenOption': // D-151: what the permanent chose as it entered, which no layer changes
       return source.chosen?.option === condition.option;
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
-      return enteredThisTurnHolds(state, controllerOf(state, source), condition);
+      return enteredThisTurnHolds(state, controllerOf(state, source), condition, source.id);
     case 'thisEnteredThisTurn': // D-423 (CR 400.7): the turn log, which no layer changes
       return state.turnLog.entered.some((e) => e.object === source.id);
     case 'amountIs': {
@@ -97,10 +99,8 @@ export function staticConditionHolds(
       if (typeof condition.amount === 'number') return false;
       if (condition.amount.kind === 'countersOn') {
         // CR 122.1, CR 613.8: the counters on the source itself, which no layer changes.
-        const have =
-          condition.amount.counter === undefined
-            ? 0
-            : (source.counters[condition.amount.counter] ?? 0);
+        // Gavel of the Righteous: with no kind named, the counters of every kind added together.
+        const have = countersOfKind(source.counters, condition.amount.counter);
         const c = condition.compare;
         return c.cmp === 'atLeast'
           ? have >= c.value
@@ -114,13 +114,24 @@ export function staticConditionHolds(
           ? cardTypesAmongForSource(state, condition.amount.filter, source)
           : condition.amount.kind === 'countOf'
             ? countForSource(state, condition.amount.filter, source)
-            : null;
+            : condition.amount.kind === 'partySize' // CR 700.8: the party of the source's controller, through layers 1, 4 and 5
+              ? partySizeForSource(state, source)
+              : condition.amount.kind === 'devotion' // CR 700.5 (Mogis, God of Slaughter): the mana symbols of the costs of the permanents the controller controls, layers 1 and 2 only
+                ? devotionOf(state, controllerOf(state, source), condition.amount.colors)
+                : null;
       if (n === null) return false;
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
     }
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controllerOf(state, source), condition);
+    case 'aPlayerLostLifeThisTurn': {
+      // CR 119.3, 102.2 (Rakdos, Lord of Riots): the seats' life lost this turn, which no layer changes; `opponent` leaves out the controller.
+      const you = controllerOf(state, source);
+      return condition.opponent === true
+        ? state.seats.some((s) => s.id !== you && s.lifeLostThisTurn >= condition.atLeast)
+        : state.seats.some((s) => !s.hasLost && s.lifeLostThisTurn >= condition.atLeast);
+    }
     case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the turn log, which no layer changes
       return spellsCastThisTurnHolds(state, controllerOf(state, source), condition);
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
@@ -159,6 +170,10 @@ export function staticConditionHolds(
       const holders = designationHolders(state, condition.designation);
       return playersOf(state, condition.player, source).some((seat) => holders.includes(seat));
     }
+    case 'completedDungeon': // CR 309.7: a count of the player's own, which no layer changes
+      return playersOf(state, condition.player, source).some(
+        (seat) => (getSeat(state, seat).dungeonsCompleted ?? 0) > 0,
+      );
     case 'maxSpeed': // CR 702.179e (speed is 4): the speed of a player, which no layer changes
       return playersOf(state, condition.player, source).some((seat) => hasMaxSpeed(state, seat));
     case 'and':

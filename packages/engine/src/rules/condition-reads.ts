@@ -5,10 +5,11 @@
  * cannot disagree. It imports no `derive`.
  */
 import type { Condition } from '../ast/types';
-import type { SeatId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
-import type { GameState } from '../state/types';
+import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
+import { devotionOf } from './devotion';
 import { commanderCardOf } from './melded';
 
 type LifeCondition = Extract<Condition, { kind: 'lifeTotal' }>;
@@ -134,6 +135,28 @@ export function controlsCommander(
 }
 
 /**
+ * CR 108.3, 110.2, 613.8 (Arvinox, the Mind Flail): `seat` controls at least `count` permanents that it does not own ("permanents you don't own"), or that it owns (`ownedByYou`). Who
+ * controls a permanent is read with `controllerOf` (a layer 2 result, which layer 4 may read), who owns it from the object (a player who started the game with the card in their deck, or
+ * who created the token); no characteristic is read, so `validateCard` allows no other test in this filter.
+ */
+export function controlsOwnershipCountHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'controlsAtLeast' }>,
+): boolean {
+  const { filter } = condition;
+  let count = 0;
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = getObject(state, id);
+    if (controllerOf(state, obj) !== seat) continue;
+    if (filter.notOwnedByYou === true && obj.owner === seat) continue;
+    if (filter.ownedByYou === true && obj.owner !== seat) continue;
+    count += 1;
+  }
+  return count >= condition.count;
+}
+
+/**
  * D-151 (Celebration): at least `count` permanents entered the battlefield under `seat`'s control this turn that match the condition's card
  * types and kind (token or card). Read from the turn log, so a permanent that has left still counts as it entered.
  */
@@ -141,10 +164,15 @@ export function enteredThisTurnHolds(
   state: GameState,
   seat: SeatId,
   condition: EnteredCondition,
+  source: ObjectId | null = null,
 ): boolean {
+  // CR 400.7 (Éowyn, Shieldmaiden): "another" leaves out the permanent with the ability; with no such permanent to leave out, the condition cannot be told and fails.
+  if (condition.other === true && source === null) return false;
   let n = 0;
   for (const e of state.turnLog.entered) {
     if (e.controller !== seat) continue;
+    // "Another Elf entered ...": the permanent the condition belongs to does not count (a permanent that left and came back is a new object, CR 400.7).
+    if (condition.other === true && e.object === source) continue;
     if (condition.types?.some((t) => !e.types.includes(t))) continue;
     if (condition.notTypes?.some((t) => e.types.includes(t))) continue;
     if (condition.subtypes?.some((t) => !e.subtypes.includes(t))) continue;
@@ -152,6 +180,23 @@ export function enteredThisTurnHolds(
     n += 1;
   }
   return n >= condition.count;
+}
+
+/**
+ * CR 701.21a (Evendo Brushrazer): `seat` has sacrificed a permanent this turn whose card types include all of the condition's `types` and that is a token or not as `token` says. Read from
+ * the turn log (`TurnLog.sacrificed`), so a permanent that has left since still counts as it was sacrificed.
+ */
+export function sacrificedThisTurnHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'sacrificedThisTurn' }>,
+): boolean {
+  return (state.turnLog.sacrificed ?? []).some(
+    (e) =>
+      e.controller === seat &&
+      (condition.types === undefined || condition.types.every((t) => e.types.includes(t))) &&
+      (condition.token === undefined || e.token === condition.token),
+  );
 }
 
 /**
@@ -203,12 +248,42 @@ export function lifeGainedThisTurnHolds(
  * 5 can read them without the layers they are part of (CR 613.8): a life total, a commander, what entered or what damage was dealt this turn,
  * and combinations. `validateCard` allows no other (`ast/validate-static-condition.ts`); any other kind never holds here.
  */
+/** Whether `n` meets the comparison (`atLeast`, `atMost` or `equal`). */
+function numberMeets(
+  n: number,
+  compare: { readonly cmp: 'atLeast' | 'atMost' | 'equal'; readonly value: number },
+): boolean {
+  return compare.cmp === 'atLeast'
+    ? n >= compare.value
+    : compare.cmp === 'atMost'
+      ? n <= compare.value
+      : n === compare.value;
+}
+
 export function plainConditionHolds(
   state: GameState,
   condition: Condition,
   controller: SeatId,
+  source?: GameObject,
 ): boolean {
   switch (condition.kind) {
+    case 'thisMatches': {
+      // CR 122.1, 613.8 (Arixmethes, Slumbering Isle): the permanent has a counter of the kind (any kind when none is named), which no layer changes. `validateCard` allows no other
+      // test of the permanent here.
+      if (source === undefined) return false;
+      const counter = condition.filter.hasCounter;
+      return counter === undefined
+        ? false
+        : counter === true
+          ? Object.values(source.counters).some((n) => n > 0)
+          : (source.counters[counter] ?? 0) > 0;
+    }
+    case 'controlsAtLeast':
+      // Only a filter that tests ownership and nothing else reaches here (`validateCard`); any other never holds.
+      return (
+        (condition.filter.notOwnedByYou === true || condition.filter.ownedByYou === true) &&
+        controlsOwnershipCountHolds(state, controller, condition)
+      );
     case 'lifeTotal':
       return lifeTotalHolds(state, controller, condition);
     case 'controlCommander':
@@ -225,6 +300,9 @@ export function plainConditionHolds(
       return cardsInLibraryHolds(state, controller, condition.compare);
     case 'aPlayerCardsInHand':
       return aPlayerCardsInHandHolds(state, condition.compare);
+    case 'yourTurn':
+      // CR 611.3a, 613.8 (Gourmand's Talent): "During your turn": the active player is the controller of the permanent, which no layer changes.
+      return state.turn.activeSeat === controller;
     case 'ownTurnNumber': {
       if (state.turn.activeSeat !== controller) return false;
       const turns = getSeat(state, controller).turnsTaken;
@@ -235,12 +313,17 @@ export function plainConditionHolds(
           ? turns <= value
           : turns === value;
     }
+    case 'amountIs':
+      // CR 700.5, 613.8 (Mogis, God of Slaughter): only the devotion of the controller is read here (`validateCard` allows no other amount in a layer 4 or 5 static ability).
+      if (typeof condition.amount === 'number' || condition.amount.kind !== 'devotion')
+        return false;
+      return numberMeets(devotionOf(state, controller, condition.amount.colors), condition.compare);
     case 'and':
-      return condition.terms.every((t) => plainConditionHolds(state, t, controller));
+      return condition.terms.every((t) => plainConditionHolds(state, t, controller, source));
     case 'or':
-      return condition.terms.some((t) => plainConditionHolds(state, t, controller));
+      return condition.terms.some((t) => plainConditionHolds(state, t, controller, source));
     case 'not':
-      return !plainConditionHolds(state, condition.term, controller);
+      return !plainConditionHolds(state, condition.term, controller, source);
     default:
       return false;
   }

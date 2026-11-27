@@ -13,8 +13,17 @@
  *    `defaultPlan` says (good blocks, value trades, chump blocks only in danger), and the position is
  *    scored with `evaluate` from the agent's seat minus a CRACK-BACK penalty: the opponent's creatures
  *    all untap and attack, the agent's untapped ones block, and what gets through costs the life it
- *    takes, 40% of a loss when it is lethal.
- * 3. The best score wins; an attack must beat staying home by `ATTACK_MARGIN`. Ties go to fewer attackers.
+ *    takes, 40% of a loss when it is lethal (`heuristic-crack-back.ts`). Against a deck that has a
+ *    creature with haste (or haste given by its permanents) or with flash it can pay for, the attack is
+ *    also counted with that creature cast from the hand, in the share of the chance that it holds one
+ *    (the opponent profile, `heuristic-profile.ts`, issue 653 step 2b).
+ * 3. The best score wins; an attack must beat staying home by `attacks.margin`. Ties go to fewer attackers.
+ * 4. With two players, "no attack" and the best two other attacks are played on to the start of the agent's next
+ *    turn and chosen again by that position (`heuristic-attack-look.ts`, issue 653 step 5); the crack-back above
+ *    is then replaced where the play-out shows it, and is the answer when the work budget cannot pay for it.
+ *
+ * Every tunable number is a field of `AgentWeights` (`weights.ts`, groups `attacks` and `danger`), read from
+ * `AttackContext.weights`.
  *
  * Targets: every attacker goes at one opposing player, chosen by `rankOpponents` (`attack-targets.ts`:
  * the one the attackers can kill, else the weakest); one candidate sends the safe attackers at an opposing planeswalker, which is
@@ -27,51 +36,42 @@
  * Without a sample the safe attackers go, less the creatures needed at home against the crack-back
  * (`guardHome`).
  */
-import {
-  type Action,
-  type AttackTarget,
-  type DeclareAttackersDecision,
-  type GameState,
-  type GameView,
-  getView,
-  type ObjectId,
-  type ObjectView,
-  type SeatId,
+import type {
+  Action,
+  AttackTarget,
+  DeclareAttackersDecision,
+  GameState,
+  GameView,
+  ObjectId,
+  ObjectView,
+  SeatId,
 } from '@commander-arena/engine';
 import { rankOpponents, targetFor } from './attack-targets';
 import { isUnblockable } from './casual-evasion';
 import { type PlannedAttack, payForAttacks } from './casual-play-rules';
-import { findObject, hasKeyword, powerOf } from './casual-view';
-import { creatureValue, evaluate, LOSS, lifeValue } from './evaluate';
+import { findObject, powerOf } from './casual-view';
+import { creatureValue, evaluate } from './evaluate';
 import { survivesAttack } from './greedy-combat';
+import { lookAtAttacks, type Played, type Scored } from './heuristic-attack-look';
 import { dangerOnlyPlan, defaultPlan } from './heuristic-blockplan';
 import type { BlockContext } from './heuristic-blocks';
-import {
-  attackIsLethal,
-  breakthrough,
-  futureAttackers,
-  untappedCreatures,
-  verdict,
-} from './heuristic-danger';
-import { applyOrNull, playOut } from './heuristic-sim';
-import { withinBlockBudget } from './legal';
+import { Look, type LookRecord, twoPlayers, untappedFor } from './heuristic-combat-look';
+import { crackBackPenalty, guardHome } from './heuristic-crack-back';
+import { attackIsLethal } from './heuristic-danger';
+import { applyOrNull, playOut, within } from './heuristic-sim';
+import { hiddenAttackersOf, opponentsOf } from './heuristic-threats';
+import { withinAttackBudget, withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
+import { type AgentWeights, DEFAULT_WEIGHTS } from './weights';
 
 export interface AttackChoice {
   readonly action: Action;
   readonly reason: Reason;
+  /** What the look-ahead did, when it ran (`heuristic-attack-look.ts`). */
+  readonly look?: LookRecord;
 }
 
-/** An attack must beat staying home by this much to be made. */
-const ATTACK_MARGIN = 0.05;
-/** The share of a crack-back loss that counts (the opponent will not always find it, and the agent blocks). */
-const CRACK_WEIGHT = 0.5;
-const CRACK_LETHAL = 0.4 * LOSS;
-/** Points per life the opponent loses, at full urgency (the library clock). */
-const DESPERATION = 1;
-/** Library size at which the agent, if it decks first, is at full urgency to win before it does. */
-export const URGENT_LIBRARY = 14;
-/** How many creatures are tried alone. */
+/** How many creatures are tried alone (a bound of the search, not a weight). */
 const SINGLES = 3;
 
 interface Candidate {
@@ -82,108 +82,33 @@ interface Candidate {
   readonly target: AttackTarget;
 }
 
+/** One candidate attack: the creatures going and where each goes. */
+interface Option {
+  readonly cs: Candidate[];
+  readonly at: Map<ObjectId, AttackTarget>;
+}
+
 const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
-/**
- * What the opponent's next attack could cost the agent in this position (a score penalty, 0 or more):
- * all the opponent's creatures attack, the agent's untapped creatures block (`breakthrough`). Used on the
- * view after a simulated combat, where the agent's attackers are tapped. With several opponents each one's
- * loss is weighted by `attackShare`, how likely it is to turn on the agent rather than on the others.
- */
-export function crackBackPenalty(view: GameView, me: SeatId): number {
-  const seat = view.seats.find((s) => s.id === me);
-  if (seat === undefined) return 0;
-  let penalty = 0;
-  for (const other of view.seats) {
-    if (other.id === me || other.hasLost) continue;
-    const b = breakthrough(view, futureAttackers(view, other.id), untappedCreatures(view, me));
-    const v = verdict(view, me, b);
-    // A lethal crack-back is still lethal when the opponent also has others to choose from.
-    if (v.lethal) return CRACK_LETHAL;
-    penalty +=
-      attackShare(view, other.id, me) *
-      (CRACK_WEIGHT * (lifeValue(seat.life) - lifeValue(seat.life - b.life)) + (v.danger ? 3 : 0));
-  }
-  return penalty;
-}
-
-/**
- * How likely `attacker` is to attack `me` rather than another seat, from 0 to 1: its targets (every living
- * seat but itself) weighted by 1 / life, so the one with the least life draws the most attacks. With one
- * possible target (two seats) it is 1.
- */
-export function attackShare(view: GameView, attacker: SeatId, me: SeatId): number {
-  const targets = view.seats.filter((s) => s.id !== attacker && !s.hasLost);
-  const weight = (life: number): number => 1 / Math.max(life, 1);
-  const total = targets.reduce((sum, s) => sum + weight(s.life), 0);
-  const mine = targets.find((s) => s.id === me);
-  return mine === undefined || total === 0 ? 1 : weight(mine.life) / total;
-}
-
-/**
- * The view with the agent's own creatures untapped: its attackers untap before it matters, and being
- * tapped now is the crack-back's business (`crackBackPenalty`), so the evaluator must not count it twice.
- */
-function untappedFor(view: GameView, me: SeatId): GameView {
-  return {
-    ...view,
-    battlefield: view.battlefield.map((o) =>
-      o.controller === me && o.tapped && o.types.includes('creature') ? { ...o, tapped: false } : o,
-    ),
-  };
-}
 
 /**
  * The library clock (D-163): a game that nobody can win on the board is lost by the player who has to draw
  * from an empty library first. From the agent's attack decision (its own turn) the opponent draws next, so
  * the opponent fails first when it has no more cards than the agent; otherwise the agent decks first and
  * must win before it does. Urgency is 0 when it is not behind, and rises from 0 to 1 as its library falls
- * from `URGENT_LIBRARY` to nothing; the attack choice then trusts the crack-back less and values the
+ * from `attacks.urgentLibrary` to nothing; the attack choice then trusts the crack-back less and values the
  * opponent's life lost more (`scoreOf`).
  */
-export function urgency(view: GameView): number {
+export function urgency(view: GameView, weights: AgentWeights = DEFAULT_WEIGHTS): number {
   const me = view.seats.find((s) => s.id === view.viewer);
   const rivals = view.seats.filter((s) => s.id !== view.viewer && !s.hasLost);
   if (me === undefined || rivals.length === 0) return 0;
   const behind = rivals.some((s) => me.libraryCount < s.libraryCount);
-  return behind ? Math.min(Math.max(1 - me.libraryCount / URGENT_LIBRARY, 0), 1) : 0;
+  const full = weights.attacks.urgentLibrary;
+  return behind ? Math.min(Math.max(1 - me.libraryCount / full, 0), 1) : 0;
 }
 
 function planned(c: Candidate, target: AttackTarget = c.target): PlannedAttack {
   return { attacker: c.attacker, object: c.object, target, targets: c.targets };
-}
-
-/**
- * The view-only attack: the safe attackers, fewer of them while the crack-back would leave the agent in
- * danger. The creature given up is the one that is worth most (the best blocker stays home); a creature
- * that must attack is never given up.
- */
-function guardHome(
-  view: GameView,
-  me: SeatId,
-  safe: Candidate[],
-  required: ReadonlySet<ObjectId>,
-): Candidate[] {
-  let going = [...safe];
-  const opps = view.seats.filter((s) => s.id !== me && !s.hasLost).map((s) => s.id);
-  while (opps.length > 0 && going.length > 0) {
-    const out = new Set(going.map((c) => c.attacker));
-    const home = untappedCreatures(view, me).filter(
-      (o) => !out.has(o.id) || hasKeyword(o, 'vigilance'),
-    );
-    const inDanger = opps.some(
-      (opp) => verdict(view, me, breakthrough(view, futureAttackers(view, opp), home)).danger,
-    );
-    if (!inDanger) break;
-    const best = going
-      .filter((c) => !required.has(c.attacker))
-      .sort(
-        (x, y) => creatureValue(y.object) - creatureValue(x.object) || byId(x.attacker, y.attacker),
-      )[0];
-    if (best === undefined) break;
-    going = going.filter((c) => c !== best);
-  }
-  return going;
 }
 
 export interface AttackContext extends BlockContext {
@@ -209,6 +134,7 @@ export function chooseHeuristicAttack(
   ctx: AttackContext,
 ): AttackChoice {
   const me = view.viewer;
+  const w = ctx.weights;
   // Issue 479: the opponent the attackers can kill, else the weakest, is the one attacked; the lethal
   // check and the play-outs below are about that opponent.
   const ranked = rankOpponents(
@@ -229,7 +155,10 @@ export function chooseHeuristicAttack(
   const required = new Set(d.mustAttack);
   const declare = (set: readonly PlannedAttack[]): Action => ({
     kind: 'declareAttackers',
-    attacks: set.map((p) => ({ attacker: p.attacker, target: p.target })),
+    attacks: withinAttackBudget(
+      d,
+      set.map((p) => ({ attacker: p.attacker, target: p.target })),
+    ),
   });
   const mustGo = candidates.filter((c) => required.has(c.attacker));
   const armed = candidates.filter((c) => powerOf(c.object) > 0);
@@ -256,7 +185,7 @@ export function chooseHeuristicAttack(
   // 2. Candidate attacks.
   const safe = armed.filter((c) => survivesAttack(view, c.object));
   const union = (cs: readonly Candidate[]): Candidate[] => [...new Set([...cs, ...mustGo])];
-  const sets = new Map<string, { cs: Candidate[]; at: Map<ObjectId, AttackTarget> }>();
+  const sets = new Map<string, Option>();
   const addSet = (cs: readonly Candidate[], walker?: AttackTarget): void => {
     const at = new Map<ObjectId, AttackTarget>();
     for (const c of union(cs)) {
@@ -280,7 +209,8 @@ export function chooseHeuristicAttack(
   addSet(armed);
   addSet(armed.filter((c) => isUnblockable(view, c.object)));
   const bestFirst = [...armed].sort(
-    (x, y) => creatureValue(y.object) - creatureValue(x.object) || byId(x.attacker, y.attacker),
+    (x, y) =>
+      creatureValue(y.object, w) - creatureValue(x.object, w) || byId(x.attacker, y.attacker),
   );
   for (const c of bestFirst.slice(0, SINGLES)) addSet([c]);
   const walker = armed
@@ -290,13 +220,13 @@ export function chooseHeuristicAttack(
     );
   if (walker !== undefined) addSet(safe, walker);
   const options = [...sets.values()];
-  const toAction = (o: (typeof options)[number]): Action =>
+  const toAction = (o: Option): Action =>
     declare(o.cs.map((c) => planned(c, o.at.get(c.attacker))));
 
   // Without a sample: the safe attackers, less the guard of the home.
   const sample = ctx.sample;
   const fallback = (): AttackChoice => {
-    const going = guardHome(view, me, union(safe), required);
+    const going = guardHome(view, me, union(safe), required, w);
     const set = payForAttacks(
       d,
       union(going).map((c) => planned(c)),
@@ -315,52 +245,51 @@ export function chooseHeuristicAttack(
   if (sample === undefined || sample.pending?.kind !== 'declareAttackers' || opp === undefined) {
     return fallback();
   }
+  const engine = ctx.budget.engine;
+  // The creatures the opponents may cast and attack with at once, from what their decks can do (issue 653, 2b).
+  const hidden = hiddenAttackersOf(view, sample, opponentsOf(view, sample, engine.view));
 
   // 3. Play each candidate out on the sample and score it. The opponent is assumed to block sensibly
   // (`defaultPlan`) with probability 1 - `passive` and to block only in danger (`dangerOnlyPlan`) with
   // probability `passive`, which the agent learns from what it has seen (`heuristic-model.ts`); a
   // candidate's numbers are the average of the two plays.
   const policyOf = (plan: typeof defaultPlan) => ({
-    abort: ctx.budget.over,
+    ...within(ctx.budget),
     blocks: (v: GameView, bd: Parameters<typeof defaultPlan>[1]): Action => ({
       kind: 'declareBlockers',
-      blocks: withinBlockBudget(bd, plan(v, bd).blocks),
+      blocks: withinBlockBudget(bd, plan(v, bd, w).blocks),
     }),
   });
   const sensible = policyOf(defaultPlan);
   const passive = policyOf(dangerOnlyPlan);
-  const scored: {
-    o: (typeof options)[number];
-    raw: number;
-    crack: number;
-    /** The life the opponent loses in this candidate. */
-    dealt: number;
-    score: number;
-  }[] = [];
+  const scored: Scored<Option>[] = [];
   const oppLife = view.seats.find((x) => x.id === opp)?.life ?? 0;
-  const hurry = urgency(view);
+  const hurry = urgency(view, w);
   const scoreOf = (c: { raw: number; crack: number; dealt: number }, u: number): number =>
-    c.raw - (1 - u) * c.crack + u * DESPERATION * c.dealt;
+    c.raw - (1 - u) * c.crack + u * w.attacks.desperation * c.dealt;
   /** The numbers of one candidate played out against one assumed opponent, or null. */
-  const playCandidate = (o: (typeof options)[number], policy: typeof sensible) => {
+  const playCandidate = (o: Option, policy: typeof sensible): Played | null => {
     let end: GameState | null = sample;
     if (o.cs.length > 0) {
-      const declared = applyOrNull(sample, me, toAction(o));
+      const declared = applyOrNull(sample, me, toAction(o), engine);
       end = declared === null ? null : playOut(declared, me, policy);
     }
     if (end === null) return null;
-    const v = getView(end, me);
+    const v = engine.view(end, me);
     return {
-      raw: evaluate(untappedFor(v, me), me).score,
-      crack: crackBackPenalty(v, me),
+      raw: evaluate(untappedFor(v, me), me, w).score,
+      crack: crackBackPenalty(v, me, w, hidden),
       dealt: Math.max(oppLife - (v.seats.find((x) => x.id === opp)?.life ?? oppLife), 0),
+      end,
+      view: v,
     };
   };
   const weight = ctx.passiveWeightFor?.(opp) ?? ctx.passiveWeight;
-  // The stay-home candidate and the safe one are always scored; the others while time is left.
+  // The stay-home candidate and the safe one are always scored; the others while the budget lasts.
   const order = [...options].sort((x, y) => x.cs.length - y.cs.length);
+  const search = ctx.budget.search();
   for (const [i, o] of order.entries()) {
-    if (i >= 2 && ctx.budget.expired(i)) break;
+    if (i >= 2 && search.expired(i) !== null) break;
     const careful = weight < 1 || o.cs.length === 0 ? playCandidate(o, sensible) : null;
     const loose = weight > 0 && o.cs.length > 0 ? playCandidate(o, passive) : careful;
     if (careful === null && weight < 1) continue;
@@ -373,37 +302,78 @@ export function chooseHeuristicAttack(
       crack: mix(a.crack, b.crack),
       dealt: mix(a.dealt, b.dealt),
     };
-    scored.push({ o, ...c, score: scoreOf(c, hurry) });
+    scored.push({ o, ...c, combatRaw: c.raw, score: scoreOf(c, hurry), risk: 0, parts: [a, b] });
   }
-  // Nothing scored, or a play-out ran out of time before two were: the rules-based attack answers.
-  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over())) return fallback();
-  const home = scored.find((s) => s.o.cs.length === 0);
-  const rank = (a: (typeof scored)[number], b: (typeof scored)[number], u: number): number =>
-    scoreOf(b, u) - scoreOf(a, u) || a.o.cs.length - b.o.cs.length;
-  // What the agent would do with no hurry, to tell the library clock's choices apart.
-  const calmPick = [...scored].sort((x, y) => rank(x, y, 0))[0];
-  scored.sort((x, y) => rank(x, y, hurry));
-  let pick = scored[0];
-  if (pick === undefined) return fallback();
-  if (home !== undefined && pick !== home && pick.score < home.score + ATTACK_MARGIN) pick = home;
-  const bestRaw = [...scored].sort((x, y) => y.raw - x.raw || x.o.cs.length - y.o.cs.length)[0];
-  const chosen = pick;
-  const going = chosen.o.cs;
-  const reason: Reason =
-    hurry > 0 && calmPick !== undefined && calmPick !== chosen
-      ? 'deck-race'
-      : going.length === 0
-        ? candidates.length === 0
-          ? 'no-attackers'
-          : bestRaw !== undefined && bestRaw.o.cs.length > 0 && bestRaw !== chosen
+  // Nothing scored, or a play-out was dropped before two were: the rules-based attack answers.
+  if (scored.length === 0 || (scored.length < 2 && ctx.budget.over() !== null)) return fallback();
+  const rank = (a: Scored<Option>, b: Scored<Option>, u: number): number =>
+    scoreOf(b, u) - b.risk - (scoreOf(a, u) - a.risk) || a.o.cs.length - b.o.cs.length;
+  /** The best of `pool` (the stay-home candidate unless another beats it by the margin) and why. */
+  const choose = (pool: readonly Scored<Option>[]) => {
+    const home = pool.find((s) => s.o.cs.length === 0);
+    // What the agent would do with no hurry, to tell the library clock's choices apart.
+    const calmPick = [...pool].sort((x, y) => rank(x, y, 0))[0];
+    const sorted = [...pool].sort((x, y) => rank(x, y, hurry));
+    let pick = sorted[0];
+    if (pick === undefined) return undefined;
+    if (home !== undefined && pick !== home && pick.score < home.score + w.attacks.margin)
+      pick = home;
+    const bestRaw = [...sorted].sort(
+      (x, y) => y.combatRaw - x.combatRaw || x.o.cs.length - y.o.cs.length,
+    )[0];
+    const chosen = pick;
+    const going = chosen.o.cs;
+    const reason: Reason =
+      hurry > 0 && calmPick !== undefined && calmPick !== chosen
+        ? 'deck-race'
+        : going.length === 0
+          ? candidates.length === 0
+            ? 'no-attackers'
+            : bestRaw !== undefined && bestRaw.o.cs.length > 0 && bestRaw !== chosen
+              ? 'crack-back'
+              : 'hold-back'
+          : bestRaw !== undefined && bestRaw.o.cs.length > going.length && bestRaw !== chosen
             ? 'crack-back'
-            : 'hold-back'
-        : bestRaw !== undefined && bestRaw.o.cs.length > going.length && bestRaw !== chosen
-          ? 'crack-back'
-          : going.every((c) => required.has(c.attacker))
-            ? 'must-attack'
-            : going.every((c) => safe.includes(c) || required.has(c.attacker))
-              ? 'safe-attack'
-              : 'sim-attack';
-  return { action: toAction(chosen.o), reason };
+            : going.every((c) => required.has(c.attacker))
+              ? 'must-attack'
+              : going.every((c) => safe.includes(c) || required.has(c.attacker))
+                ? 'safe-attack'
+                : 'sim-attack';
+    return { chosen, reason, sorted };
+  };
+  const first = choose(scored);
+  if (first === undefined) return fallback();
+  // 4. The look-ahead (two players): "no attack" and the best other candidates, played to the agent's next
+  // turn, replace the crack-back formula where the play-out sees it (`heuristic-attack-look.ts`).
+  const agents = ctx.agents;
+  if (agents !== undefined && twoPlayers(view)) {
+    const look = new Look(me, agents, ctx.budget, w);
+    const looked = lookAtAttacks(
+      {
+        look,
+        budget: ctx.budget,
+        weights: w,
+        me,
+        opp,
+        oppLife,
+        weight,
+        hidden,
+        start: (s, p) =>
+          s.o.cs.length === 0 ? applyOrNull(sample, me, toAction(s.o), engine) : p.end,
+        isHome: (o) => o.cs.length === 0,
+        scoreOf: (c) => scoreOf(c, hurry),
+      },
+      first.sorted,
+      first.chosen,
+    );
+    const second = looked === null ? undefined : choose(looked);
+    if (second !== undefined) {
+      return {
+        action: toAction(second.chosen.o),
+        reason: second.reason,
+        look: { playOuts: look.playOuts, changed: second.chosen.o !== first.chosen.o },
+      };
+    }
+  }
+  return { action: toAction(first.chosen.o), reason: first.reason };
 }

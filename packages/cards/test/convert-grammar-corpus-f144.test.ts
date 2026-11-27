@@ -94,7 +94,7 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
     text: 'You may cast Goblin Warrior spells from the top of your library.',
-    expect: no('You may cast Goblin Warrior spells from the top of your library.', 'none'),
+    expect: no('Warrior spells from the top of your library.', 'static.conditional-suffix'),
     note: 'SYNTHETIC: one creature type or one card type, as the permission says it',
   },
 ];

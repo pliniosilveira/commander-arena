@@ -47,15 +47,19 @@ const PLAIN: readonly Keyword['kind'][] = [
   'improvise',
   'delve',
   'cascade',
+  'undaunted',
   'compleated',
   'demonstrate',
   'retrace',
   'jumpStart',
+  'undaunted',
   'aftermath',
   'storm',
   'gravestorm',
   'rebound',
+  'cipher',
   'livingWeapon',
+  'exploit',
   'jobSelect',
 ];
 
@@ -167,13 +171,23 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       checkKickerCost(k.cost, `${path}.cost`, out);
       return true;
     case 'replicate':
-      // CR 702.56a (D-129): the replicate cost is paid any number of times as the spell is cast: mana, no X.
+      // CR 702.56a (D-129): the replicate cost is paid any number of times as the spell is cast: mana (no X), or on its own the tapping of untapped permanents ("Replicate—Tap an untapped
+      // Horror you control", Psionic Ritual), which `tapPermanents` pays once for each time.
       checkCosts(k.cost, `${path}.cost`, out);
       if (Array.isArray(k.cost)) {
         if (k.cost.length === 0) issue(out, `${path}.cost`, 'replicate needs a cost to pay');
+        const taps = k.cost.some((c) => c?.kind === 'tapPermanents');
+        if (taps && k.cost.length > 1) {
+          issue(out, `${path}.cost`, 'a replicate cost that taps permanents has no other cost');
+        }
         k.cost.forEach((c, i) => {
+          if (c?.kind === 'tapPermanents') return;
           if (c?.kind !== 'mana') {
-            issue(out, `${path}.cost[${i}]`, 'a replicate cost may be mana only in this engine');
+            issue(
+              out,
+              `${path}.cost[${i}]`,
+              'a replicate cost may be mana only (or, on its own, the tapping of untapped permanents) in this engine',
+            );
           } else if (c.symbols?.includes('X')) {
             issue(out, `${path}.cost[${i}]`, 'X in a replicate cost is not supported');
           }
@@ -194,14 +208,41 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         });
       }
       return true;
+    case 'offspring':
+      // CR 702.175a: an additional cost paid as the spell is cast: mana, no X.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost)) {
+        if (k.cost.length === 0) issue(out, `${path}.cost`, 'offspring needs a cost to pay');
+        k.cost.forEach((c, i) => {
+          if (c?.kind !== 'mana') {
+            issue(out, `${path}.cost[${i}]`, 'an offspring cost may be mana only in this engine');
+          } else if (c.symbols?.includes('X')) {
+            issue(out, `${path}.cost[${i}]`, 'X in an offspring cost is not supported');
+          }
+        });
+      }
+      return true;
     case 'escalate':
       // CR 702.120a (D-145): an additional cost for each mode chosen beyond the first: mana, no X.
       checkCosts(k.cost, `${path}.cost`, out);
       if (Array.isArray(k.cost)) {
         if (k.cost.length === 0) issue(out, `${path}.cost`, 'escalate needs a cost to pay');
         k.cost.forEach((c, i) => {
-          if (c?.kind !== 'mana') {
-            issue(out, `${path}.cost[${i}]`, 'an escalate cost may be mana only in this engine');
+          if (c?.kind === 'tapPermanents') {
+            // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps `count` permanents for each mode beyond the first; the only cost of the keyword.
+            if (k.cost.length !== 1) {
+              issue(
+                out,
+                `${path}.cost[${i}]`,
+                'a tap cost is the only cost of an escalate keyword',
+              );
+            }
+          } else if (c?.kind !== 'mana') {
+            issue(
+              out,
+              `${path}.cost[${i}]`,
+              'an escalate cost may be mana or tapped permanents in this engine',
+            );
           } else if (c.symbols?.includes('X')) {
             issue(out, `${path}.cost[${i}]`, 'X in an escalate cost is not supported');
           }
@@ -221,6 +262,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       // CR 702.75a (D-145): N is the number of cards looked at, a positive whole number.
       if (!Number.isSafeInteger(k.count) || k.count < 1) {
         issue(out, `${path}.count`, 'hideaway looks at a positive number of cards');
+      }
+      return true;
+    case 'vanishing':
+      // CR 702.63a, 702.63b: N is the number of time counters the permanent enters with, a positive whole number; left out for "Vanishing" with no number.
+      if (k.count !== undefined && (!Number.isSafeInteger(k.count) || k.count < 1)) {
+        issue(out, `${path}.count`, 'vanishing enters with a positive number of time counters');
       }
       return true;
     case 'encore':
@@ -274,6 +321,9 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       return true;
     case 'riot':
       // CR 702.136a (D-185): no parameter.
+      return true;
+    case 'sunburst':
+      // CR 702.44a: no parameter.
       return true;
     case 'unearth':
       // CR 702.84a (D-124): the unearth cost is paid like an activation cost from the graveyard: mana, no X.

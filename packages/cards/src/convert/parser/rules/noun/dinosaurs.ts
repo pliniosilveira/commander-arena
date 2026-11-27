@@ -2,7 +2,7 @@
  * Noun rules of stage P32 (D-145, D-147): "target commander" (CR 903.3: a card a player designated as a commander, wherever it is) and
  * "any number of target creatures" (CR 115.1, 601.2d: a number of targets from none to as many as the spell can divide among).
  */
-import { map, pattern, sequence } from '../../combinators';
+import { map, optional, pattern, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, node } from '../registry';
 import { BOUNDARY, permanentPhrase } from './phrases';
@@ -79,6 +79,7 @@ export const NOUN_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
   cites: ['CR 115.1 (Targets)', 'CR 601.2d (Casting Spells)'],
   examples: [
     'any number of target creatures',
+    'any number of target creatures that entered this turn',
     'any number of target nonland permanents',
     'any number of target creatures you don’t control',
     // Stage P74 (D-234): "any number of other target creatures you control".
@@ -93,14 +94,21 @@ export const NOUN_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
     'any target',
     'any number of target',
     'any number of targets',
+    'any number of target creatures that entered',
   ],
   parse: (ctx, pos) => {
-    const r = sequence(pattern(/any number of (other )?target /iu), permanentPhrase(true, 'all'))(
-      ctx,
-      pos,
-    );
+    const r = sequence(
+      pattern(/any number of (other )?target /iu),
+      permanentPhrase(true, 'all'),
+      // Exit from Exile deck (Sweet-Gum Recluse, CR 400.7): "that entered this turn", the permanents that entered the battlefield during this turn.
+      optional(
+        map(pattern(/ that entered this turn(?![\p{L}\p{N}])/iu), () => true),
+        false,
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
-    const [lead, filter] = r.value;
+    const [lead, plain, entered] = r.value;
+    const filter = entered ? { ...plain, enteredThisTurn: true as const } : plain;
     const noun: IrNoun = {
       kind: 'noun',
       det: 'target',
@@ -116,4 +124,45 @@ export const NOUN_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
   },
 });
 
-export const DINOSAUR_NOUN_RULES = [NOUN_TARGET_COMMANDER, NOUN_ANY_NUMBER_TARGETS];
+/**
+ * `noun.each-of-any-number-targets`: "each of any number of target creatures that entered this turn" (Sweet-Gum Recluse; CR 115.1, 601.2d, 608.2c): the same targets as
+ * `noun.any-number-targets`, said with "each of" before them, as an instruction that gives something to every one of the targets says it.
+ */
+export const NOUN_EACH_OF_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
+  id: 'noun.each-of-any-number-targets',
+  family: 'noun',
+  leading: ['each'],
+  cites: ['CR 115.1 (Targets)', 'CR 601.2d (Casting Spells)'],
+  examples: [
+    'each of any number of target creatures',
+    'each of any number of target creatures that entered this turn',
+  ],
+  rejects: [
+    'any number of target creatures',
+    'each of target creatures',
+    'each of any number of creatures',
+    'each of any number of target',
+    'each of up to two target creatures',
+  ],
+  parse: (ctx, pos) => {
+    const lead = pattern(/each of /iu)(ctx, pos);
+    if (!lead.ok) return lead;
+    const r = NOUN_ANY_NUMBER_TARGETS.parse(ctx, lead.pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        ...r.value,
+        span: { start: pos, end: r.pos },
+        rule: 'noun.each-of-any-number-targets',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const DINOSAUR_NOUN_RULES = [
+  NOUN_TARGET_COMMANDER,
+  NOUN_ANY_NUMBER_TARGETS,
+  NOUN_EACH_OF_ANY_NUMBER_TARGETS,
+];

@@ -46,6 +46,7 @@ import {
   mayCastBlitzFromGraveyard,
   modeCostsOf,
   namedAlternativeCostOf,
+  offspringCostOf,
   replicateCostOf,
 } from './alt-costs';
 import { beholdCandidates } from './behold';
@@ -63,6 +64,7 @@ import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
 import { libraryCastSacrificeOf } from './library-cast-cost';
+import { grantedMiracleCost } from './mana-cost-keyword-grant';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { nextSpellReduction } from './next-spell';
@@ -72,8 +74,9 @@ import { playPermissionLess } from './play-permission-cost';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
+import { playerSpellDiscount } from './spell-discount';
 import { spellSpendTarget } from './spend-target';
-import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
+import { hasX, largestPayableX, reduceGeneric, spellXCost, withX, type XCost } from './x-value';
 
 /** How a spell is cast instead of from the hand or the command zone: see `PriorityOption`. */
 export type CastAlternative = CastAlternativeKind;
@@ -110,6 +113,8 @@ export interface SpellCost {
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
   readonly exile: number;
+  /** CR 118.8, 601.2b ("As an additional cost to cast this spell, exile three creature cards from your graveyard"): the cards of the caster's graveyard the cost exiles, of the kind the filter names; absent for none. */
+  readonly exileGraveyard?: GraveyardExile;
   /** Optional number of cards selected from hand for an additional exile cost, if present. */
   readonly exileFromHand: ObjectFilter | null;
   /** CR 702.74a, 118.9 ("Evoke—Exile a red card from your hand"): the exile of `exileFromHand` is part of the alternative cost, so one such card must be exiled and one must be in the hand. */
@@ -124,6 +129,12 @@ export interface SpellCost {
   readonly anyColor?: true;
   /** CR 601.2a, 106.6: the zone the spell is cast from, read by mana that can be spent only on a spell cast from a graveyard (issue 102). */
   readonly castFrom?: CastFrom;
+}
+
+/** "Exile three creature cards from your graveyard" as an additional cost: how many cards the filter matches are exiled. */
+export interface GraveyardExile {
+  readonly filter: ObjectFilter;
+  readonly count: number;
 }
 
 /** "Tap four untapped creatures you control with flying" (D-149): how many permanents matching the filter are tapped. */
@@ -142,6 +153,7 @@ export function isNamedAlternative(
     alternative === 'dash' ||
     alternative === 'bestow' ||
     alternative === 'spectacle' ||
+    alternative === 'freerunning' ||
     alternative === 'escape' ||
     alternative === 'harmonize' ||
     alternative === 'madness' ||
@@ -152,6 +164,7 @@ export function isNamedAlternative(
     alternative === 'sacrificeFromGraveyard' ||
     alternative === 'sacrificePermanents' ||
     alternative === 'payLife' ||
+    alternative === 'payMana' ||
     alternative === 'impending' ||
     alternative === 'blitz'
   );
@@ -192,27 +205,7 @@ export function castAs(
   return alternative === 'morph' ? { ...spell, ...faceDownSpellFields('morph', 1) } : spell;
 }
 
-const NUMERIC = /^[0-9]+$/;
-
-/** The generic mana of a cost: the sum of its numeric symbols ({2}{R} has 2). */
-function genericOf(symbols: readonly string[]): number {
-  let n = 0;
-  for (const s of symbols) if (NUMERIC.test(s)) n += Number(s);
-  return n;
-}
-
-/**
- * CR 118.7a, 601.2f: reduces the generic mana of a cost by `by`, never below zero, leaving the
- * colored mana alone. A cost with no generic mana is not changed. A cost reduced to nothing is {0}:
- * an empty list.
- */
-export function reduceGeneric(symbols: readonly string[], by: number): string[] {
-  const numeric = symbols.filter((s) => NUMERIC.test(s));
-  if (by <= 0 || numeric.length === 0) return [...symbols];
-  const left = Math.max(0, genericOf(symbols) - by);
-  const rest = symbols.filter((s) => !NUMERIC.test(s));
-  return left > 0 ? [String(left), ...rest] : rest;
-}
+export { reduceGeneric };
 
 /**
  * How much the spell's cost is reduced (CR 601.2f): its own `this` reductions and those of the
@@ -228,6 +221,7 @@ function reductionFor(
   excluded: ObjectId | undefined,
   optimistic = false,
   castFrom?: CastFrom,
+  alternative?: CastAlternative,
 ): number {
   let total = 0;
   const base = excluded === undefined ? {} : { excluded };
@@ -237,6 +231,8 @@ function reductionFor(
     if (a.kind !== 'static' || a.static.kind !== 'costReduction' || !('kind' in a.static.spells)) {
       continue;
     }
+    // CR 702.34a, 601.2f (Visions of Glory): "This spell costs {X} less to cast this way" reduces only the cast for the flashback cost.
+    if (a.static.forAlternative !== undefined && a.static.forAlternative !== alternative) continue;
     // CR 601.2f (D-181): "This spell costs {3} less to cast if you control a creature with power 4 or greater" is read when the cost is determined.
     if (
       a.condition !== undefined &&
@@ -267,6 +263,8 @@ function reductionFor(
   }
   // Issue 121: "The next instant or sorcery spell you cast this turn costs {X} less to cast" (`nextSpellModifier`).
   total += nextSpellReduction(state, seat, spell);
+  // Will Kenrith (CR 601.2f): "Until your next turn, ... spells that player casts cost {2} less to cast" (`playerSpellsCostLess`).
+  total += playerSpellDiscount(state, seat, spell);
   // Urianger Augurelt (CR 601.2f): "Spells you cast this way cost {2} less to cast": the permission a card in exile is cast with, or what the spell on the stack took from it.
   total +=
     spell.stack?.lessGeneric ??
@@ -290,6 +288,8 @@ export interface CostRequest {
   readonly replicas?: number;
   /** Whether the buyback cost is paid (CR 702.27a): left out, what the spell on the stack says (`StackData.boughtBack`); false for a card that is not on the stack yet. */
   readonly bought?: boolean;
+  /** Whether the offspring cost is paid (CR 702.175a): left out, what the spell on the stack says (`StackData.offspringPaid`); false for a card that is not on the stack yet. */
+  readonly offspring?: boolean;
   /** The card's own object while it is still in its zone (see `reductionFor`). */
   readonly excluded?: ObjectId;
   /** The X announced for the spell (CR 107.3a, 601.2b): 0 when it has none or none was announced yet. */
@@ -313,7 +313,7 @@ export interface CostRequest {
    * Which way the caster pays the face's additional cost choice (`CardFace.additionalCostChoice`, D-181): left out, the one the spell on the stack
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
-  readonly costOption?: 0 | 1;
+  readonly costOption?: number;
   /**
    * The creature a harmonize cost taps (CR 702.180a), or null for none: left out, what the spell on the stack says (`StackData.harmonizeTap`) and, while nothing is
    * chosen yet, the most any creature could take off when `optimistic`.
@@ -350,9 +350,11 @@ export function replicateCostFor(
   return null;
 }
 
-/** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
-function costOptionsOf(face: CardFace | null): readonly (0 | 1 | undefined)[] {
-  return face?.additionalCostChoice === undefined ? [undefined] : [0, 1];
+/** The ways the caster could pay the additional cost choice of the face: all of them, or `undefined` once for a face with no choice (D-181). */
+function costOptionsOf(face: CardFace | null): readonly (number | undefined)[] {
+  return face?.additionalCostChoice === undefined
+    ? [undefined]
+    : face.additionalCostChoice.map((_, way) => way);
 }
 
 /**
@@ -396,17 +398,33 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     alternative === 'flashback' ? (flashbackCostOf(face) ?? manaCostAsFlashbackCost(face)) : null;
   // D-121: a named alternative cost (overload, ...) is paid instead of the mana cost.
   // CR 702.138a: an escape cost the card has, or the one an effect gave it (`rules/escape-grant.ts`).
+  const escapeCost = alternative === 'escape' ? escapeOf(state, spell, face) : null;
+  // CR 702.94a: the miracle a permanent gave the card (`grantKeywordFromManaCost`): noted on the card as it was revealed, and kept on the spell.
+  const miracleGrant =
+    alternative === 'miracle' && namedAlternativeCostOf(face, 'miracle') === null
+      ? (spell.stack?.miracleGrant ?? spell.miracleGrant ?? null)
+      : null;
   const named =
     alternative === 'escape'
-      ? (escapeOf(state, spell, face)?.cost ?? null)
-      : isNamedAlternative(alternative)
-        ? (namedAlternativeCostOf(face, alternative) ??
-          // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (rules/alt-cost-grant.ts).
-          (alternative === 'evoke'
-            ? (grantedEvokeOf(state, seat, spell, zone)?.cost ?? null)
-            : null))
-        : null;
-  const perX = spellXCost(face, alternative);
+      ? (escapeCost?.cost ?? null)
+      : miracleGrant !== null
+        ? // The mana cost as printed: its {X} is announced before the generic mana is reduced (below).
+          grantedMiracleCost(face, 0, reduceGeneric)
+        : isNamedAlternative(alternative)
+          ? (namedAlternativeCostOf(face, alternative) ??
+            // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (rules/alt-cost-grant.ts).
+            (alternative === 'evoke'
+              ? (grantedEvokeOf(state, seat, spell, zone)?.cost ?? null)
+              : null))
+          : null;
+  // CR 702.33a, 107.3a ("Kicker {X}"): a kicked spell announces the X of its kicker cost too.
+  const perX = spellXCost(
+    face,
+    xAlternativeOf(spell, alternative),
+    (request.kicks ?? (request.kicked ? 1 : 0)) > 0,
+    // A printed escape cost has no X to announce; one something gave the card may be the mana cost.
+    alternativeOf(face, 'escape') === null ? (escapeCost?.cost ?? null) : null,
+  );
   const x = hasX(perX) ? (request.x ?? 0) : 0;
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
@@ -429,7 +447,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ['3']
           : named !== null
             ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
-              withX(manaSymbolsOf(named), x)
+              // CR 118.7a, 107.3a: a miracle cost "equal to its mana cost reduced by {4}" takes the generic mana off the cost with its X announced.
+              miracleGrant !== null
+              ? reduceGeneric(withX(manaSymbolsOf(named), x), miracleGrant.reduce)
+              : withX(manaSymbolsOf(named), x)
             : fromGraveyard !== null
               ? manaSymbolsOf(fromGraveyard)
               : withX(face?.manaCost ?? [], x);
@@ -448,7 +469,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const kicks = request.kicks ?? (request.kicked ? 1 : 0);
   const kicker = kicks > 0 ? kickerLikeCostOf(face) : null;
   // CR 702.33c: a multikicker cost is paid once for each time the spell is kicked.
-  if (kicker !== null) for (let i = 0; i < kicks; i += 1) symbols.push(...manaSymbolsOf(kicker));
+  // CR 107.3a: the {X} of a kicker cost is the X announced (`withX`).
+  if (kicker !== null) {
+    for (let i = 0; i < kicks; i += 1) symbols.push(...withX(manaSymbolsOf(kicker), x));
+  }
   // CR 702.56a: a replicate cost is an additional cost, paid once for each time the caster chose (mana only).
   const replicate = (request.replicas ?? 0) > 0 ? replicateCostFor(state, spell, face) : null;
   if (replicate !== null) {
@@ -457,10 +481,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 702.27a: the buyback cost is an additional cost, paid once when the caster chose to (mana only).
   const buyback = (request.bought ?? spell.stack?.boughtBack === true) ? buybackCostOf(face) : null;
   if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
+  // CR 702.175a: the offspring cost is an additional cost, paid once when the caster chose to (mana only).
+  const offspring =
+    (request.offspring ?? spell.stack?.offspringPaid === true) ? offspringCostOf(face) : null;
+  if (offspring !== null) symbols.push(...manaSymbolsOf(offspring));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);
+  const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
   if (escalate !== null) {
-    const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
   // CR 601.2f (D-641): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
@@ -483,19 +511,37 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const option = request.costOption ?? spell.stack?.costOption;
   // CR 601.2b, 118.8: "You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs."
   const librarySacrifice = zone === 'library' ? libraryCastSacrificeOf(state, seat, spell) : null;
+  // CR 601.2b, 118.8 (Exploration Broodship): "cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs": once cast, the spell remembers the
+  // permission it was cast with; before that the card is read as it is in the graveyard.
+  const graveyardSacrifice =
+    zone !== 'graveyard' || alternative !== undefined
+      ? null
+      : (spell.stack?.graveyardPlay?.sacrifice ??
+        (() => {
+          const card = state.objects[request.spell.id];
+          return card === undefined
+            ? null
+            : (graveyardPlayPermission(state, seat, card, false)?.sacrifice ?? null);
+        })());
   const additional: readonly Cost[] = [
     ...(face?.additionalCosts ?? []),
     ...(option === undefined ? [] : (face?.additionalCostChoice?.[option] ?? [])),
     ...(librarySacrifice === null ? [] : [{ kind: 'sacrifice' as const, what: librarySacrifice }]),
+    ...(graveyardSacrifice === null
+      ? []
+      : [{ kind: 'sacrifice' as const, what: graveyardSacrifice }]),
   ];
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;
   let sacrificeAny: ObjectFilter | null = null;
   let sacrificeCount = 1;
   let discard = 0;
+  // CR 118.8, 701.9: "discard a land card" as an additional cost: the cards that may be discarded are those the filter matches.
+  let additionalDiscardFilter: ObjectFilter | undefined;
   let behold: ObjectFilter | null = null;
   let exileFromHand: ObjectFilter | null = null;
   let blight = 0;
+  let exileGraveyard: GraveyardExile | undefined;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
@@ -504,9 +550,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         sacrificeCount = c.countX === true ? x : 1;
         if (sacrificeCount > 0) sacrifice = c.what;
       }
-    } else if (c.kind === 'discard') discard += c.count;
-    else if (c.kind === 'behold') behold = c.filter;
+    } else if (c.kind === 'discard') {
+      discard += c.count;
+      if (c.filter !== undefined) additionalDiscardFilter = c.filter;
+    } else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
+    else if (c.kind === 'exileFromGraveyard') {
+      exileGraveyard = { filter: c.filter, count: c.count };
+    }
     // CR 118.8, 701.68a: "you may blight 1" is no requirement for casting the spell: it is asked as the cost is paid.
     else if (c.kind === 'blight') blight = c.count;
   }
@@ -523,6 +574,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
+  // CR 118.9, 601.2b (The Infamous Cruelclaw: "You may cast that card by discarding a card rather than paying its mana cost"): the cards of the hand a free cast's alternative cost discards.
+  for (const c of payInstead ?? []) if (c.kind === 'discard') discard += c.count;
   // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
   if (alternative === 'retrace' || alternative === 'jumpStart') discard += 1;
   // CR 702.152a, 118.9 ("Blitz—{2}{R}{R}, Discard a card."): the cards of the hand a blitz cost discards are part of the alternative cost.
@@ -537,6 +590,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       request.excluded,
       request.optimistic === true,
       request.zone,
+      alternative,
     ) +
       // CR 702.180a (Harmonize): the tapped creature's power in generic mana off the total cost.
       (alternative === 'harmonize'
@@ -561,11 +615,25 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ? 0
             : (graveyardPlayPermission(state, seat, card, false)?.exileOthers ?? 0);
         })());
+  // CR 702.34a, 107.3a, 601.2b: "Flashback—..., Exile X cards from your graveyard" exiles the X announced, besides what an escape cost or a permission asks.
   const exile =
-    alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile;
+    (alternative === 'escape' ? (escapeCost?.exile ?? 0) : permissionExile) + (perX.exile ?? 0) * x;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
-  const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
+  // CR 702.120a, 118.3 (Collective Effort): "Escalate—Tap an untapped creature you control." taps that many permanents once for each mode chosen beyond the first.
+  const escalateTap = escalate?.find((c) => c.kind === 'tapPermanents');
+  const escalatedModes = escalateTap === undefined ? 0 : Math.max(0, modes - 1);
+  // CR 702.56a (Psionic Ritual, "Replicate—Tap an untapped Horror you control"): a replicate cost that taps permanents is paid once for each time the caster chose, so that many are tapped;
+  // `validateCard` refuses a face that also has a `tapPermanents` alternative cost.
+  const replicaTap = replicate?.find((c) => c.kind === 'tapPermanents');
+  const tap =
+    tapAlt !== null
+      ? { filter: tapAlt.filter, count: tapAlt.count }
+      : escalateTap?.kind === 'tapPermanents' && escalatedModes > 0
+        ? { filter: escalateTap.filter, count: escalateTap.count * escalatedModes }
+        : replicaTap?.kind === 'tapPermanents'
+          ? { filter: replicaTap.filter, count: replicaTap.count * (request.replicas ?? 0) }
+          : null;
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
     alternative === 'sacrificeFromGraveyard'
@@ -588,6 +656,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (flashbackSacrifice?.kind === 'sacrifice' && !('kind' in flashbackSacrifice.what)) {
     sacrifice = flashbackSacrifice.what;
     sacrificeCount = flashbackSacrifice.count ?? 1;
+  }
+  // CR 702.33a, 118.8, 601.2h, 701.21a: "Kicker—Sacrifice a creature." is an additional cost paid when the spell is kicked: the permanent is chosen after the mana is paid, as an
+  // additional cost's sacrifice is (`validateCard` refuses a card with another sacrifice in the same cast).
+  const kickerSacrifice = kicker?.find((c) => c.kind === 'sacrifice') ?? null;
+  if (kickerSacrifice?.kind === 'sacrifice' && !('kind' in kickerSacrifice.what)) {
+    sacrifice = kickerSacrifice.what;
+    sacrificeCount = 1;
   }
   // Hostage Taker (CR 609.4b): the card still in exile is read as the permission that lets it be cast says.
   const anyType =
@@ -612,9 +687,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
-    ...(alternative === 'retrace' ? { discardFilter: RETRACE_DISCARD } : {}),
+    ...(alternative === 'retrace'
+      ? { discardFilter: RETRACE_DISCARD }
+      : additionalDiscardFilter === undefined
+        ? {}
+        : { discardFilter: additionalDiscardFilter }),
     behold,
     exile,
+    ...(exileGraveyard === undefined ? {} : { exileGraveyard }),
     exileFromHand,
     ...(evokeExile === undefined ? {} : { exileFromHandRequired: true as const }),
     ...(blight === 0 ? {} : { blight }),
@@ -625,13 +705,35 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   };
 }
 
+/**
+ * CR 107.3b: a spell cast with the once-a-turn permission of a permanent (`castOnceEachTurn`, `StackData.castOnce`) pays neither its mana cost nor an alternative cost that includes
+ * X, so its X is 0 and none is announced: for X it is read as a spell cast without paying its mana cost. (The life of the effect `nextSpellPayLife` counts the X announced.)
+ */
+function xAlternativeOf(
+  spell: GameObject,
+  alternative: CastAlternative | undefined,
+): CastAlternative | undefined {
+  return alternative === 'lifeForMana' && spell.stack?.castOnce !== undefined
+    ? 'free'
+    : alternative;
+}
+
 /** What one point of X costs for this spell cast as `alternative` (see `spellXCost`). */
 export function spellXCostOf(
   state: GameState,
   spell: GameObject,
   alternative: CastAlternative | undefined,
 ): XCost {
-  return spellXCost(faceOfSpell(state, spell), alternative);
+  // CR 702.33a: the {X} of the kicker cost counts once the spell is kicked (`StackData.kicked`).
+  const face = faceOfSpell(state, spell);
+  return spellXCost(
+    face,
+    xAlternativeOf(spell, alternative),
+    spell.stack?.kicked === true,
+    alternative === 'escape' && alternativeOf(face, 'escape') === null
+      ? (escapeOf(state, spell, face)?.cost ?? null)
+      : null,
+  );
 }
 
 /**
@@ -653,6 +755,30 @@ export function largestSpellX(state: GameState, request: CostRequest): number {
  */
 export function exilable(state: GameState, seat: SeatId, spell: ObjectId): ObjectId[] {
   return getSeat(state, seat).graveyard.filter((id) => id !== spell);
+}
+
+/**
+ * The cards in `seat`'s graveyard that an additional cost "exile three creature cards from your graveyard" can exile for `spell` (CR 118.8: the cards the filter matches, never the
+ * spell being cast, which is on the stack when the cost is paid).
+ */
+export function exilableFor(
+  state: GameState,
+  seat: SeatId,
+  spell: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  return exilable(state, seat, spell).filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(
+        state,
+        card,
+        { ...filter, zone: 'graveyard' },
+        { controller: seat, source: spell },
+      )
+    );
+  });
 }
 
 /** The cards in `seat`'s hand that can be discarded for the cost of `spell` (never the spell). */
@@ -794,6 +920,13 @@ export function canPaySpellCost(
   if (cost.energy > (getSeat(state, seat).energy ?? 0)) return false;
   if (cost.discard > discardableFor(state, seat, spell.id, cost.discardFilter).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
+  if (
+    cost.exileGraveyard !== undefined &&
+    cost.exileGraveyard.count >
+      exilableFor(state, seat, spell.id, cost.exileGraveyard.filter).length
+  ) {
+    return false;
+  }
   // An optional exile cost can always be paid by choosing zero cards; the one of an evoke cost needs a card in the hand (CR 702.74a, never the spell itself).
   if (
     cost.exileFromHandRequired === true &&

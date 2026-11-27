@@ -1,5 +1,8 @@
 /**
- * Priority decisions of the HeuristicAgent (M7c, PRIOR_ART 7.2 heuristics 5, 6 and 8, D-163).
+ * Priority decisions of the HeuristicAgent (M7c, PRIOR_ART 7.2 heuristics 5, 6 and 8, D-163): today's
+ * choice. With a sample the agent's main phase goes through the turn planner (`heuristic-plan.ts`), for which
+ * this choice is the first step of TODAY'S LINE, the line every other line must beat; the sets below live in
+ * `heuristic-sets.ts`, shared with the planner's lines.
  *
  * MAIN PHASE (its own turn, a main phase, empty stack):
  *  1. A land (`heuristic-lands.ts`): the one that lets the best spell be cast, or that adds a colour; it is
@@ -10,9 +13,9 @@
  *     it is cast now (the others at the next priority decision, which makes the plan again). Order: cost
  *     reducers and land-drop grants first; removal before creatures when its target is worth at least as
  *     much as the best creature of the set; Storm last. The commander is a play like any other (valued
- *     as a creature plus 4) with one rule for the commander tax (CR 903.8): with a tax of 4 or more (two
- *     casts or more) it is cast only when the best set without it uses less than half of the mana and the
- *     agent is not clearly losing (`evaluate` at least `LOSING`). Each play of the set is then cast on the
+ *     as a creature plus `main.commanderBonus`) with one rule for the commander tax (CR 903.8): with a tax of
+ *     `main.highTax` or more (two casts or more) it is cast only when the best set without it uses less than
+ *     `main.spareShare` of the mana and the agent is not clearly losing (`evaluate` at least `main.losing`). Each play of the set is then cast on the
  *     sample (`heuristic-delta.ts`) and dropped when the board it leaves scores clearly worse than
  *     passing, so a board wipe that costs the agent more than the opponent is held.
  *  3. Everything else that an instant-speed card could do waits for a window (below); the mana it needs
@@ -22,26 +25,20 @@
  *
  * WINDOWS (any other priority decision) for instant-speed plays (the end-step set is vetted on the sample like a main-phase set):
  *  - after blockers are declared (declare-blockers step, empty stack): each instant-speed candidate is
- *    cast on the sample and the combat is played out; it is cast when it beats passing by `TRICK_MARGIN`
+ *    cast on the sample and the combat is played out; it is cast when it beats passing by `main.trickMargin`
  *    (reason `trick`, or `removal-attacker` for a removal spell). A pump that changes nothing is held;
  *  - the opponent's end step (empty stack): the set of instant-speed plays that uses the most mana
  *    (card draw, flash creatures, removal with a target), reason `end-step`;
  *  - in response to an opponent's spell (their object on top of the stack): a counterspell for a spell of
- *    mana value 2 or more, reason `counter`.
+ *    mana value `main.counterMinValue` or more, reason `counter`; with a sample it is held (pass, reason `hold`)
+ *    when playing the turn on without it scores better by `main.counterLookMargin` (`heuristic-response-look.ts`).
+ *
+ * The numbers named `main.*` are fields of `AgentWeights` (`weights.ts`), read from `Think.weights`.
  */
-import type {
-  Action,
-  GameView,
-  ObjectId,
-  ObjectView,
-  PriorityDecision,
-} from '@commander-arena/engine';
+import type { Action, GameView, ObjectId, PriorityDecision } from '@commander-arena/engine';
 import { flashesForCommander, isAura } from './casual-attachments';
-import { hasStorm } from './casual-copies';
-import { discountsHand } from './casual-costs';
 import { turnUpCandidates } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
-import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import {
   choosePriorityAction,
@@ -50,15 +47,25 @@ import {
   spellPlays,
   spendOf,
   withFace,
-  withType,
 } from './casual-priority';
-import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
-import { creatureValue, evaluate } from './evaluate';
+import { manaValueOf } from './casual-view';
 import type { Think } from './heuristic-budget';
+import type { LookRecord } from './heuristic-combat-look';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
-import { canPayAll, costSymbols, ownUnits } from './heuristic-mana';
+import { ownUnits } from './heuristic-mana';
+import type { SimAgents } from './heuristic-plan-sim';
 import { protectionPlay, protectionReserve } from './heuristic-protect';
+import { lookAtCounter } from './heuristic-response-look';
+import {
+  bestSet,
+  castAction,
+  isCounter,
+  isInstantSpeed,
+  mainPlays,
+  order,
+  withCommanderRule,
+} from './heuristic-sets';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
 
@@ -67,113 +74,8 @@ export interface PriorityChoice {
   readonly reason: Reason;
   /** The mana symbols the payment of this cast keeps open for a protection spell (`heuristic-protect.ts`). */
   readonly reserve?: readonly string[];
-}
-
-/** A trick or a window removal must beat passing by this much (score points; a card in hand is worth 1.2). */
-const TRICK_MARGIN = 0.5;
-/** The commander at a high tax is not cast when the board score is below this. */
-const LOSING = -8;
-/** A commander is valued as a creature plus this much. */
-const COMMANDER_BONUS = 4;
-/** The most plays a set is chosen among (2^n subsets). */
-const MAX_PLAYS = 9;
-
-const TARGETS_SPELL = /target (activated or triggered ability|(\w+ )?spell)/i;
-
-const isInstantSpeed = (o: ObjectView): boolean =>
-  o.types.includes('instant') || hasKeyword(o, 'flash');
-const isCounter = (o: ObjectView): boolean =>
-  isInstantSpeed(o) && TARGETS_SPELL.test(withoutReminder(o.oracleText));
-
-const castAction = (p: Play): Action => ({
-  kind: 'castSpell',
-  object: p.obj.id,
-  ...(p.free === true ? { alternative: 'free' as const } : {}),
-  ...(p.alt === undefined ? {} : { alternative: p.alt }),
-  ...(p.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
-  ...withFace(p.face),
-  ...withType(p),
-});
-
-const sym = (p: Play): readonly string[] => (p.free === true ? [] : costSymbols(p.obj, spendOf(p)));
-
-/** What a play is worth, for choosing between sets that spend the same mana. */
-function worthOf(view: GameView, p: Play): number {
-  const o = p.obj;
-  if (o.types.includes('creature')) {
-    return (
-      creatureValue({ ...o, power: o.power ?? 0, toughness: o.toughness ?? 0 }) +
-      (o.isCommander ? COMMANDER_BONUS : 0)
-    );
-  }
-  if (isRemovalSpell(o)) return 0.8 * (bestRemovalTarget(view, o)?.value ?? 0);
-  return 1 + 0.8 * manaValueOf(o);
-}
-
-/** The set of `plays` that uses the most mana and is payable with `units`, most valuable among equals. */
-function bestSet(
-  view: GameView,
-  plays: readonly Play[],
-  units: ReturnType<typeof ownUnits>,
-  /** Mana symbols that must stay payable besides the set (a protection spell held open). */
-  hold: readonly string[] | null = null,
-): Play[] {
-  const pool = [...plays]
-    .sort((a, b) => worthOf(view, b) - worthOf(view, a) || (a.obj.id < b.obj.id ? -1 : 1))
-    .slice(0, MAX_PLAYS);
-  let best: { set: Play[]; spend: number; value: number } = { set: [], spend: 0, value: 0 };
-  for (let mask = 1; mask < 1 << pool.length; mask += 1) {
-    const set = pool.filter((_, i) => (mask & (1 << i)) !== 0);
-    const spend = set.reduce((sum, p) => sum + spendOf(p), 0);
-    const value = set.reduce((sum, p) => sum + worthOf(view, p), 0);
-    if (spend < best.spend || (spend === best.spend && value <= best.value)) continue;
-    if (canPayAll(hold === null ? set.map(sym) : [...set.map(sym), hold], units)) {
-      best = { set, spend, value };
-    }
-  }
-  return best.set;
-}
-
-/** The commander's tax: what it costs now beyond its printed cost (CR 903.8). */
-const taxOf = (p: Play): number => (p.obj.isCommander ? spendOf(p) - manaValueOf(p.obj) : 0);
-
-/** Drops a commander at a high tax unless the rule in the module comment lets it be cast. */
-function withCommanderRule(
-  view: GameView,
-  plays: Play[],
-  units: ReturnType<typeof ownUnits>,
-): Play[] {
-  const taxed = plays.filter((p) => taxOf(p) >= 4);
-  if (taxed.length === 0) return plays;
-  const others = plays.filter((p) => !taxed.includes(p));
-  const spare = bestSet(view, others, units).reduce((sum, p) => sum + spendOf(p), 0);
-  const losing = evaluate(view, view.viewer).score < LOSING;
-  return spare * 2 < units.length && !losing ? plays : others;
-}
-
-/** Order the plays of the set: reducers, removal at a big target, the rest, removal at a small one, Storm. */
-function order(view: GameView, set: readonly Play[]): Play[] {
-  const bestCreature = Math.max(
-    0,
-    ...set.filter((p) => p.obj.types.includes('creature')).map((p) => worthOf(view, p)),
-  );
-  const rank = (p: Play): number => {
-    if (discountsHand(view, p.obj) || grantsLandDrops(view, p.obj)) return 0;
-    if (hasStorm(p.obj)) return 4;
-    if (isRemovalSpell(p.obj)) return worthOf(view, p) / 0.8 >= bestCreature ? 1 : 3;
-    return 2;
-  };
-  return [...set].sort(
-    (a, b) =>
-      rank(a) - rank(b) || worthOf(view, b) - worthOf(view, a) || (a.obj.id < b.obj.id ? -1 : 1),
-  );
-}
-
-/** The plays that are made at sorcery timing: permanents, sorceries, and removal with a target worth it. */
-function mainPlays(view: GameView, plays: readonly Play[]): Play[] {
-  return plays.filter((p) =>
-    isInstantSpeed(p.obj) ? isRemovalSpell(p.obj) && bestRemovalTarget(view, p.obj) !== null : true,
-  );
+  /** What the look-ahead of the choice did (`heuristic-response-look.ts`), when it ran. */
+  readonly look?: LookRecord;
 }
 
 /** The casual rules for what is left: the options without the lands and the hand casts. */
@@ -210,7 +112,8 @@ function mainPhase(
   activations: Set<string>,
   answer: Answer,
 ): PriorityChoice {
-  const land = planLand(view, d);
+  const weights = think.weights;
+  const land = planLand(view, d, weights);
   if (land !== null && !land.hold) {
     return {
       action: { kind: 'playLand', object: land.play.obj.id, ...withFace(land.play.face) },
@@ -219,13 +122,13 @@ function mainPhase(
   }
   const units = ownUnits(view);
   const castable = spellPlays(view, d, activations);
-  const plays = withCommanderRule(view, mainPlays(view, castable), units);
-  let set = bestSet(view, plays, units);
+  const plays = withCommanderRule(view, mainPlays(view, castable, weights), units, weights);
+  let set = bestSet(view, plays, units, weights);
   // Mana for a protection spell stays open when that costs no mana the set would spend (the hold is kept only then).
   let hold: readonly string[] | null = null;
-  const reserve = protectionReserve(view, castable);
+  const reserve = protectionReserve(view, castable, weights);
   if (reserve !== null) {
-    const held = bestSet(view, plays, units, reserve);
+    const held = bestSet(view, plays, units, weights, reserve);
     const spent = (xs: readonly Play[]): number => xs.reduce((sum, p) => sum + spendOf(p), 0);
     if (held.length > 0 && spent(held) >= spent(set)) {
       set = held;
@@ -241,7 +144,7 @@ function mainPhase(
   }
   // Each play is cast on the sample first: one that leaves the board clearly worse than passing (a wipe
   // that costs the agent more than the opponent) is dropped, the next one of the set is tried.
-  const first = vetPlays(view, order(view, set), think, answer, castAction)[0];
+  const first = vetPlays(view, order(view, set, weights), think, answer, castAction)[0];
   if (first !== undefined) {
     if (isPreventionSpell(first.obj)) activations.add(preventionKey(view));
     const reason: Reason = first.obj.isCommander
@@ -282,21 +185,16 @@ function faceUpWindow(
   const me = view.viewer;
   const sample = think.sample();
   if (sample === undefined || sample.pending?.kind !== 'priority') return null;
-  const base = scoreCast(sample, me, null, answer, think.budget);
+  const search = think.budget.search();
+  const base = scoreCast(sample, me, null, answer, think);
   if (base === null) return null;
   let best: { object: ObjectId; score: number } | undefined;
   for (const [i, c] of candidates.entries()) {
-    if (think.budget.expired(i + 1)) break;
-    const score = scoreCast(
-      sample,
-      me,
-      { kind: 'turnFaceUp', object: c.object.id },
-      answer,
-      think.budget,
-    );
+    if (search.expired(i + 1) !== null) break;
+    const score = scoreCast(sample, me, { kind: 'turnFaceUp', object: c.object.id }, answer, think);
     if (
       score !== null &&
-      score > base + TRICK_MARGIN &&
+      score > base + think.weights.main.trickMargin &&
       (best === undefined || score > best.score)
     ) {
       best = { object: c.object.id, score };
@@ -314,8 +212,10 @@ function windowPlay(
   think: Think,
   activations: Set<string>,
   answer: Answer,
+  agents: SimAgents | undefined,
 ): PriorityChoice | null {
   const me = view.viewer;
+  const weights = think.weights;
   const plays = spellPlays(view, d, activations);
   if (plays.length === 0) return null;
   const top = view.stack[view.stack.length - 1];
@@ -333,8 +233,15 @@ function windowPlay(
     const counter = plays
       .filter((p) => isCounter(p.obj))
       .sort((a, b) => spendOf(a) - spendOf(b))[0];
-    if (counter !== undefined && manaValueOf(top) >= 2) {
-      return { action: castAction(counter), reason: 'counter' };
+    if (counter !== undefined && manaValueOf(top) >= weights.main.counterMinValue) {
+      // With a sample: the counterspell is held when playing the turn on without it scores better (a bigger spell may follow).
+      const action = castAction(counter);
+      const looked = lookAtCounter(view, action, think, agents, answer);
+      const look =
+        looked === null ? {} : { look: { playOuts: looked.playOuts, changed: looked.index === 1 } };
+      return looked?.index === 1
+        ? { action: { kind: 'pass' }, reason: 'hold', ...look }
+        : { action, reason: 'counter', ...look };
     }
     return null;
   }
@@ -347,22 +254,23 @@ function windowPlay(
           isInstantSpeed(p.obj) &&
           !isCounter(p.obj) &&
           (isHelpfulSpell(p.obj) ||
-            (isRemovalSpell(p.obj) && bestRemovalTarget(view, p.obj) !== null)),
+            (isRemovalSpell(p.obj) && bestRemovalTarget(view, p.obj, weights) !== null)),
       )
       .sort((a, b) => spendOf(b) - spendOf(a) || (a.obj.id < b.obj.id ? -1 : 1))
       .slice(0, 3);
     if (candidates.length === 0) return null;
     const sample = think.sample();
     if (sample === undefined || sample.pending?.kind !== 'priority') return null;
-    const base = scoreCast(sample, me, null, answer, think.budget);
+    const search = think.budget.search();
+    const base = scoreCast(sample, me, null, answer, think);
     if (base === null) return null;
     let best: { play: Play; score: number } | undefined;
     for (const [i, play] of candidates.entries()) {
-      if (think.budget.expired(i + 1)) break;
-      const score = scoreCast(sample, me, castAction(play), answer, think.budget);
+      if (search.expired(i + 1) !== null) break;
+      const score = scoreCast(sample, me, castAction(play), answer, think);
       if (
         score !== null &&
-        score > base + TRICK_MARGIN &&
+        score > base + weights.main.trickMargin &&
         (best === undefined || score > best.score)
       ) {
         best = { play, score };
@@ -377,10 +285,12 @@ function windowPlay(
   // The opponent's end step: draw, flash creatures and removal with the mana left.
   if (view.step === 'end' && view.activeSeat !== me) {
     const fit = plays.filter((p) => !isCounter(p.obj) && !isHelpfulSpell(p.obj));
-    const ok = fit.filter((p) => !isRemovalSpell(p.obj) || bestRemovalTarget(view, p.obj) !== null);
-    const set = bestSet(view, ok, ownUnits(view));
+    const ok = fit.filter(
+      (p) => !isRemovalSpell(p.obj) || bestRemovalTarget(view, p.obj, weights) !== null,
+    );
+    const set = bestSet(view, ok, ownUnits(view), weights);
     // Each play is cast on the sample first, as in the main phase: one that leaves the board clearly worse is dropped.
-    const first = vetPlays(view, order(view, set), think, answer, castAction)[0];
+    const first = vetPlays(view, order(view, set, weights), think, answer, castAction)[0];
     if (first !== undefined) return { action: castAction(first), reason: 'end-step' };
   }
   return null;
@@ -393,6 +303,8 @@ export function choosePriorityHeuristic(
   think: Think,
   activations: Set<string>,
   answer: Answer,
+  /** The inner agents of the look-ahead; without them (a play-out, a test) nothing is looked ahead. */
+  agents?: SimAgents,
 ): PriorityChoice {
   const me = view.viewer;
   const mainWindow =
@@ -402,7 +314,7 @@ export function choosePriorityHeuristic(
   if (mainWindow) return mainPhase(view, d, think, activations, answer);
   const faceUp = faceUpWindow(view, d, think, answer);
   if (faceUp !== null) return faceUp;
-  const play = windowPlay(view, d, think, activations, answer);
+  const play = windowPlay(view, d, think, activations, answer, agents);
   if (play !== null) return play;
   const rest = casualRemainder(view, d, think, activations);
   return { action: rest, reason: rest.kind === 'pass' ? 'no-play' : 'delegated' };

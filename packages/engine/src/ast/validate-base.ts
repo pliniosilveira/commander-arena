@@ -43,6 +43,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'dealtDamage':
     case 'noncombatDamageDealt':
     case 'dealtDamageToPlayer':
+    case 'damageToPlayerPrevented':
     case 'dealsDamage':
     case 'lifeGained':
     case 'lifeLost':
@@ -52,6 +53,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     // D-648: the attacking player ("that attacking player").
     case 'playerAttacksOpponent':
     case 'tapsForMana':
+    // CR 106.12, 605.1b (Barbflare Gremlin): the player who tapped the permanent for mana ("that player").
+    case 'tappedForMana':
     case 'discarded':
     case 'crimeCommitted':
     case 'tokenCreated':
@@ -60,9 +63,11 @@ export function triggerHasPlayer(t: Trigger): boolean {
     // D-513: the player who scried.
     case 'scries':
     case 'surveils':
+    case 'milled':
     // CR 706.1a (Galadriel group 3): the player who rolled the die.
     case 'rollsHighest':
     case 'winsCoinFlip':
+    case 'winsClash':
       return true;
     // The active player of the step (CR 102.1, 603.2b): "that player" in "at the beginning of each opponent's end step".
     case 'step':

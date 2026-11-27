@@ -49,7 +49,7 @@ import {
   toughnessOf,
 } from './casual-view';
 import { COMMANDER_LETHAL, commanderClock } from './evaluate';
-import { withinBlockBudget } from './legal';
+import { withinAttackBudget, withinBlockBudget } from './legal';
 import type { Reason } from './reasons';
 
 export interface Choice {
@@ -228,7 +228,7 @@ export function chooseGreedyAttack(view: GameView, d: DeclareAttackersDecision):
           !candidates.some((x) => !required.has(x.c.attacker) && survivesAttack(view, x.object))
         ? 'must-attack'
         : 'safe-attack';
-  return { action: { kind: 'declareAttackers', attacks }, reason };
+  return { action: { kind: 'declareAttackers', attacks: withinAttackBudget(d, attacks) }, reason };
 }
 
 export function chooseGreedyBlocks(view: GameView, d: DeclareBlockersDecision): Choice {

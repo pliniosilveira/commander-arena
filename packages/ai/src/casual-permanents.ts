@@ -228,6 +228,15 @@ export function choosePermanentToReturn(view: GameView, d: ChoosePermanentDecisi
     const best = theirs[0];
     return { kind: 'choosePermanents', objects: best === undefined ? [] : [best.id] };
   }
+  // Mount Doom (CR 608.2d): "choose up to two creatures, then destroy the rest" offers everyone's creatures and every one not chosen is destroyed, so the agent keeps the best of its own.
+  const owned = d.legal.flatMap((id) => {
+    const o = findObject(view, id);
+    return o !== undefined && o.controller === view.viewer ? [o] : [];
+  });
+  if (d.min === 0 && d.max > 1 && owned.length > 0 && owned.length < d.legal.length) {
+    const best = [...owned].sort((a, b) => permanentValue(view, b) - permanentValue(view, a));
+    return { kind: 'choosePermanents', objects: best.slice(0, d.max).map((o) => o.id) };
+  }
   const ranked = d.legal
     .map((id, index) => {
       const o = findObject(view, id);
@@ -304,6 +313,9 @@ export function orderTriggersAsListed(d: OrderTriggersDecision): Action {
 
 /** "You may ... sacrifice / pay / discard / lose" costs something; everything else is free. */
 const COSTLY_OPTION = /you may[^.]*\b(sacrifice|pay|discard|lose|exile)\b/i;
+
+/** The offer of a shuffle that would undo the order the player has just chosen for the top of a library. */
+const AFTER_REORDER_SHUFFLE = /put them back in any order\. you may have that player shuffle\./i;
 
 /**
  * A shock land's "you may pay 2 life" (a decision with `cost`) is worth it while life is plentiful:
@@ -420,6 +432,9 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
   // agent when it is the one who would search, on its own spell or on an opponent's. A card found is
   // free, and so is the shuffle.
   if (d.purpose === 'search') return { kind: 'acceptOptional' };
+  // "If an opponent controls more lands than you, you may put that card onto the battlefield tapped. If you don't, put it into your hand" (CR 608.2d; `search.mayPut`): a permanent on
+  // the battlefield is worth more than a card in the hand, and the card costs nothing.
+  if (d.purpose === 'searchPut') return { kind: 'acceptOptional' };
   if (d.purpose === 'counterUnlessPays') return payToKeepSpell(d, view);
   if (d.purpose === 'ward' || d.purpose === 'unlessPays') {
     // D-111: "[do something] unless that player pays [cost]" (a draw trigger of an opponent's permanent,
@@ -429,6 +444,17 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     // the cost can be paid. The agent keeps its spell: it pays, unless a life part of the cost would
     // leave it in danger (PAY_LIFE_ABOVE, as for a shock land).
     const life = d.cost?.some((c) => c.kind === 'payLife') === true;
+    // CR 701.21a (Ward—Sacrifice a legendary creature): a permanent is a bigger price than a few mana, so only a spell worth five mana or more is kept at that price (the
+    // permanent it gives up is the one it values least, `choosePermanentToSacrifice`). An effect that only denies a gain ("unlessPays") is not paid for with a permanent.
+    if (d.cost?.some((c) => c.kind === 'sacrifice') === true) {
+      const subject = d.subject === undefined ? undefined : findObject(view, d.subject);
+      return d.purpose === 'ward' &&
+        subject !== undefined &&
+        subject.manaCost !== null &&
+        manaValueOf(subject) >= 5
+        ? { kind: 'acceptOptional' }
+        : { kind: 'declineOptional' };
+    }
     return life && ownLife(view) <= PAY_LIFE_ABOVE
       ? { kind: 'declineOptional' }
       : { kind: 'acceptOptional' };
@@ -438,6 +464,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     // there; a kicked spell is a better spell, so the agent pays it. A life part of the cost is
     // weighed like a shock land's (PAY_LIFE_ABOVE): not when it would leave the agent in danger.
     const life = d.cost?.some((c) => c.kind === 'payLife') === true;
+    // A kicker that sacrifices a permanent (CR 701.21a, "Kicker—Sacrifice a creature.") costs the agent a permanent of its own: not paid.
+    if (d.cost?.some((c) => c.kind === 'sacrifice') === true) return { kind: 'declineOptional' };
     return life && ownLife(view) <= PAY_LIFE_ABOVE
       ? { kind: 'declineOptional' }
       : { kind: 'acceptOptional' };
@@ -447,7 +475,14 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     // agent pays it (a mana cost only: `validateCard` has no other).
     return { kind: 'acceptOptional' };
   }
+  if (d.purpose === 'offspring') {
+    // Offspring (CR 702.175a): the engine asks only when the whole cost with the offspring cost can be paid, so the mana is there; a second body, a 1/1 with every ability of
+    // the creature, is worth the mana, so the agent pays it (a mana cost only: `validateCard` has no other).
+    return { kind: 'acceptOptional' };
+  }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
+  // CR 103.6: "begin the game with this card on the battlefield?" (a Leyline): a free permanent, so the agent always takes it.
+  if (d.purpose === 'openingHand') return { kind: 'acceptOptional' };
   // D-272: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
   if (d.purpose === 'pairReturn') return answerPairReturn(view, d);
   if (d.cost !== undefined) {
@@ -463,6 +498,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
   // D-284: read the ability on the stack, not the text of the creature it belongs to (a granted ability is not in that text).
   const delayed = answerDelayedMay(view, d);
   if (delayed !== null) return delayed;
+  // "... then put them back in any order. You may have that player shuffle." (CR 701.24): the agent has just put the cards in the order it wants, so it keeps that order.
+  if (AFTER_REORDER_SHUFFLE.test(d.sourceOracleText)) return { kind: 'declineOptional' };
   return COSTLY_OPTION.test(d.sourceOracleText)
     ? { kind: 'declineOptional' }
     : { kind: 'acceptOptional' };

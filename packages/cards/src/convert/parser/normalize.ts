@@ -138,7 +138,7 @@ export function stripFlavorWord(line: string): string {
 }
 
 const SELF_NOUNS =
-  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class';
+  'creature|artifact|enchantment|land|permanent|spell|planeswalker|battle|vehicle|spacecraft|equipment|aura|saga|class|case|room';
 const SELF_NOUN_RE = new RegExp(`\\bthis (?:${SELF_NOUNS})\\b`, 'gi');
 
 /**
@@ -161,8 +161,21 @@ export function namesItselfInQuotes(text: string, options: NormalizeOptions): bo
   const names = selfNames(options).map(
     (name) => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'u'),
   );
-  return [...stripReminderText(text).matchAll(QUOTED_SPAN)].some((quoted) =>
-    names.some((re) => re.test(quoted[0])),
+  return [...stripReminderText(text).matchAll(QUOTED_SPAN)].some(
+    (quoted) => !SELF_NOUN_TEST.test(quoted[0]) && names.some((re) => re.test(quoted[0])),
+  );
+}
+
+/** A quotation that says "this creature" (or another "this <type>") has a holder that word names: the card's name in it is the permanent that grants the ability (`¤`, `noun.granter`). */
+const SELF_NOUN_TEST = new RegExp(`\\bthis (?:${SELF_NOUNS})\\b`, 'i');
+
+/** The card's names inside a quotation that also says "this creature" are written `¤`: there `~` stays the holder of the quoted ability, which "this creature" names. */
+function granterInQuotes(text: string, options: NormalizeOptions): string {
+  const names = selfNames(options).map(
+    (name) => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'gu'),
+  );
+  return text.replace(QUOTED_SPAN, (quoted) =>
+    SELF_NOUN_TEST.test(quoted) ? names.reduce((q, re) => q.replace(re, '¤'), quoted) : quoted,
   );
 }
 
@@ -232,6 +245,10 @@ export function selfNames(options: NormalizeOptions): string[] {
  * writes with a capital letter ("target Goblin", "a Treasure"). Creature types come from the engine's table (CR 205.3m).
  */
 const NOT_A_GIVEN_NAME = new Set<string>([
+  // An article is no given name: "The Master of Keys" is not called "The" (a text that says "The escape cost" is not about the card).
+  'The',
+  'A',
+  'An',
   ...CREATURE_TYPES,
   'Mountain',
   'Island',
@@ -327,10 +344,31 @@ export function withHalfRounding(line: string): string {
   );
 }
 
+/** The words before a planeswalker type that say it is a kind of permanent: "each Garruk you control", "another Jace". */
+const PLANESWALKER_TYPE_LEAD = /\b(?:each|another|other|an?|target|all|those) $/iu;
+
 export function normalizeOracleText(text: string, options: NormalizeOptions): string {
-  let out = stripReminderText(text);
+  let out = granterInQuotes(stripReminderText(text), options);
   for (const name of selfNames(options)) {
+    // CR 205.3j (Garruk, Cursed Huntsman: "put a loyalty counter on each Garruk you control"): a planeswalker type is also the short name of the card, but after a word that makes it a
+    // kind of permanent ("each", "another", "a", ...) it is the type, which the noun rules read, and not the card itself.
+    const type = PLANESWALKER_TYPES.includes(name);
     const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'gu');
+    out = out.replace(re, (match, offset: number) =>
+      type && PLANESWALKER_TYPE_LEAD.test(out.slice(Math.max(0, offset - 12), offset))
+        ? match
+        : '~',
+    );
+  }
+  // A planeswalker "<Name> of <Title>" may be called by its first word ("Narset deals damage ..."), except as the type of a permanent ("a Narset planeswalker").
+  const walker = options.legendary
+    ? /^(\p{Lu}[\p{L}'’-]{2,}) of (?:the )?\p{Lu}/u.exec(options.name)?.[1]
+    : undefined;
+  if (walker !== undefined && PLANESWALKER_TYPES.includes(walker)) {
+    const re = new RegExp(
+      `(?<![\\p{L}\\p{N}])${escapeRegExp(walker)}(?![\\p{L}\\p{N}'’])(?! planeswalker)`,
+      'gu',
+    );
     out = out.replace(re, '~');
   }
   out = out.replace(SELF_NOUN_RE, '~');
@@ -365,22 +403,49 @@ const OPTION_CHOICE = /^[Aa]s ~ enters, choose \p{Lu}[^.—•\n]*? or \p{Lu}[^.
 const LINKED_LEAVES = /(?<=\.) (?=When ~ leaves the battlefield, )/gu;
 
 function splitLinkedLeaves(normalized: string): string {
-  return normalized.replace(LINKED_LEAVES, (_match, offset: number) =>
-    (normalized.slice(0, offset).match(/["”“]/gu)?.length ?? 0) % 2 === 0 ? '\n' : ' ',
-  );
+  return normalized
+    .replace(LINKED_LEAVES, (_match, offset: number) =>
+      (normalized.slice(0, offset).match(/["”“]/gu)?.length ?? 0) % 2 === 0 ? '\n' : ' ',
+    )
+    .replace(FLASHBACK_THEN_LESS, '$1\n');
 }
+
+/**
+ * "Flashback {8}{W}{W}. ~ costs {X} less to cast this way, where X is ..." (Visions of Glory, CR 702.34a, 601.2f): the Oracle text prints the keyword and the reduction of its cost in the same
+ * paragraph, but they are two abilities, the keyword (which has no period) and the spell's own static ability, so the second starts a line of its own.
+ */
+const FLASHBACK_THEN_LESS =
+  /^(Flashback (?:\{[^}\n]+\})+)\. (?=~ costs \{[^}\n]+\} less to cast this way, )/gmu;
 
 /**
  * Splits normalized text into abilities, one per line. A bullet line ("• ...") belongs to the
  * line above it, so "Choose one —" stays together with its modes; the bullets of a choice among
  * named options are lines of their own (`segment` reads the name).
  */
+/** A row of a die results table (CR 706.3a): "1—9 | text", "20 | text". */
+const RESULTS_ROW = /^(\d+)(?:[—–-](\d+))? \| (.+)$/u;
+
 export function splitAbilities(normalized: string): string[] {
   const abilities: string[] = [];
   let optionBullets = false;
+  let inTable = false;
   for (const line of splitLinkedLeaves(normalized).split('\n')) {
     if (line === '') continue;
     const last = abilities.length - 1;
+    // CR 706.3a (Journey to the Lost City): a row of a results table, "1—9 | You may ...", is a sentence of the ability above it: "If the result is 1 to 9, you may ...". A line of nothing but "Roll a d20." keeps its rows as they are (Hylda's table, `sentence.ts`).
+    const row = RESULTS_ROW.exec(line);
+    if (
+      row !== null &&
+      last >= 0 &&
+      (inTable || /^(?!roll an? d\d+\.?$).+\broll(?:s)? an? d\d+\.?$/iu.test(abilities[last] ?? ''))
+    ) {
+      inTable = true;
+      const effect = `${(row[3] ?? '').charAt(0).toLowerCase()}${(row[3] ?? '').slice(1)}`;
+      const range = row[2] === undefined ? row[1] : `${row[1]} to ${row[2]}`;
+      abilities[last] = `${abilities[last]} If the result is ${range}, ${effect}`;
+      continue;
+    }
+    inTable = false;
     if (line.startsWith('•') && last >= 0 && !optionBullets) {
       abilities[last] = `${abilities[last]}\n${line}`;
     } else {

@@ -143,7 +143,7 @@ describe('Zombie Master: "Other Zombie creatures have swampwalk." (CR 702.14a, 6
 
   test.each([
     'Other Zombie creatures have snow landwalk.',
-    'Other Zombie creatures have desertwalk.',
+    'Other Zombie creatures have gatewalk.',
     'Other Zombie creatures have landwalk.',
     'Other Zombie creatures have swampwalk until end of turn.',
     'Other Zombie creatures has swampwalk.',

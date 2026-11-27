@@ -23,6 +23,7 @@ export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
   'payXLife',
   'discardX',
   'exileFromHand',
+  'exileFromGraveyard',
   'blight',
   'mana',
 ];
@@ -44,6 +45,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   let xDiscard = 0;
   let beholds = 0;
   let blights = 0;
+  let graveyardExiles = 0;
   costs.forEach((cost, i) => {
     const p = `${path}[${i}]`;
     checkCost(cost, p, out);
@@ -97,17 +99,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
         break;
       case 'discard':
         discards += 1;
-        // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
-        if (
-          cost.filter !== undefined ||
-          cost.named !== undefined ||
-          cost.hand !== undefined ||
-          cost.countX !== undefined
-        ) {
+        // D-207: a name picks out cards for the cost of an activated ability. A filter ("discard a land card", CR 701.9, 118.8) is read by a spell's cost too (`discardFilter`).
+        if (cost.named !== undefined || cost.hand !== undefined || cost.countX !== undefined) {
           issue(
             out,
             p,
-            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
+            'an additional cost discards any cards: no name and not the whole hand (D-207, D-626)',
           );
         }
         break;
@@ -125,6 +122,20 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
       case 'exileFromHand':
         if (cost.filter.zone !== 'hand') {
           issue(out, `${p}.filter.zone`, 'an additional exile cost selects cards from hand');
+        }
+        break;
+      case 'exileFromGraveyard':
+        graveyardExiles += 1;
+        // CR 118.8, 601.2b (Skaab Ruinator): "exile three creature cards from your graveyard" is a fixed number of cards chosen as the cost is paid; X is a cost of an ability.
+        if (cost.countX !== undefined) {
+          issue(out, `${p}.countX`, 'an additional cost exiles a fixed number of graveyard cards');
+        }
+        if (cost.filter?.zone !== undefined || cost.filter?.controller !== undefined) {
+          issue(
+            out,
+            `${p}.filter`,
+            "the cards exiled are in the caster's graveyard: no zone, no controller",
+          );
         }
         break;
       case 'blight':
@@ -156,6 +167,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   if (xLife > 1) issue(out, path, 'more than one "pay X life" cost is not supported');
   if (beholds > 1) issue(out, path, 'more than one behold cost is not supported');
   if (blights > 1) issue(out, path, 'more than one blight cost is not supported');
+  if (graveyardExiles > 1) issue(out, path, 'more than one graveyard exile cost is not supported');
   // D-386: "discard X cards" is the one discard cost of the spell (the discard of N cards pays into the same cards).
   if (xDiscard > 1 || (xDiscard === 1 && discards > 0)) {
     issue(out, path, 'discard X cards is the only discard cost of a spell (D-386)');
@@ -163,18 +175,18 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
 }
 
 /**
- * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two ways to pay, each a non-empty
+ * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two or three ways to pay, each a non-empty
  * list of the costs `additionalCosts` takes, and with the face's own `additionalCosts` at most one sacrifice and one discard. No "pay X life" and no {X}
- * (X is announced before the targets and the choice comes first), and the two ways are not the same.
+ * (X is announced before the targets and the choice comes first), and no two ways are the same.
  */
 export function checkAdditionalCostChoice(
-  choice: readonly [readonly Cost[], readonly Cost[]],
+  choice: readonly (readonly Cost[])[],
   fixed: readonly Cost[],
   path: string,
   out: Out,
 ): void {
-  if (!Array.isArray(choice) || choice.length !== 2) {
-    issue(out, path, 'additionalCostChoice has exactly two ways to pay');
+  if (!Array.isArray(choice) || choice.length < 2 || choice.length > 3) {
+    issue(out, path, 'additionalCostChoice has two or three ways to pay');
     return;
   }
   choice.forEach((way, i) => {
@@ -194,8 +206,9 @@ export function checkAdditionalCostChoice(
       issue(out, p, 'a choice of additional costs has no "you may sacrifice any number" (D-491)');
     }
   });
-  if (JSON.stringify(choice[0]) === JSON.stringify(choice[1])) {
-    issue(out, path, 'the two ways to pay are the same');
+  const seen = new Set(choice.map((way) => JSON.stringify(way)));
+  if (seen.size !== choice.length) {
+    issue(out, path, 'two ways to pay are the same');
   }
 }
 
@@ -207,6 +220,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'escape',
   'harmonize',
   'impending',
@@ -218,6 +232,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'sacrificeFromGraveyard',
   'sacrificePermanents',
   'payLife',
+  'payMana',
   'blitz',
 ];
 
@@ -371,6 +386,17 @@ export function checkCostReduction(
   path: string,
   out: Out,
 ): void {
+  // CR 702.34a, 601.2f (Visions of Glory): "costs {X} less to cast this way" is the spell's own reduction, for its flashback cost.
+  if (
+    s.forAlternative !== undefined &&
+    (s.forAlternative !== 'flashback' || kindOf(s.spells) !== 'this')
+  ) {
+    issue(
+      out,
+      `${path}.forAlternative`,
+      "forAlternative is flashback, and only on the spell's own reduction",
+    );
+  }
   // CR 113.6 (issue 81, Eminence): "in the command zone" is for a reduction of other spells, not the spell's own `this` ability.
   if (s.inCommandZone !== undefined && (s.inCommandZone !== true || kindOf(s.spells) === 'this')) {
     issue(out, `${path}.inCommandZone`, 'inCommandZone is true, and only on a reduction by filter');
@@ -644,5 +670,9 @@ export function checkAttackTax(
   }
   if (s.perCounter !== undefined && s.perCounter !== true) {
     issue(out, `${path}.perCounter`, 'perCounter is true or absent');
+  }
+  if (s.times !== undefined) {
+    if (s.perCounter === true) issue(out, `${path}.times`, 'times excludes perCounter');
+    checkStateAmount(s.times, `${path}.times`, out, 'an attack tax');
   }
 }

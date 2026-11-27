@@ -56,6 +56,13 @@ export function kickerPrompt(cost: readonly Cost[]): string {
   return `Pay the kicker cost: ${parts.join(' and ')}?`;
 }
 
+/** The offspring question (CR 702.175a, 601.2b): "Pay the offspring cost {1}?", asked as the spell is cast. */
+export function offspringPrompt(cost: readonly Cost[]): string {
+  const parts = cost.map(kickerCostPart);
+  const paid = parts.length === 0 ? '' : ` ${parts.join('')}`;
+  return `Pay the offspring cost${paid}? You'll create a 1/1 token copy when it enters.`;
+}
+
 /** The buyback question (CR 702.27a, 601.2b): "Pay the buyback cost {2}?", asked as the spell is cast. */
 export function buybackPrompt(cost: readonly Cost[]): string {
   const parts = cost.map(kickerCostPart);
@@ -497,6 +504,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'offspring') {
+    // Offspring (CR 702.175a, 601.2b): asked as the spell is cast, only when the whole cost with it can be paid. Declining casts the spell without it; Cancel rewinds the
+    // cast (CR 733).
+    return {
+      prompt: offspringPrompt(d.cost ?? []),
+      yes: 'Pay',
+      no: "Don't pay",
+      cancellable: true,
+    };
+  }
   if (d.purpose === 'gift') {
     // Gift (CR 702.174a, D-135): "Promise Opponent a gift?" asked as the spell is cast. Declining casts it with no gift
     // (the next opponent is offered first, if there are several); Cancel rewinds the cast (CR 733).
@@ -510,6 +527,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       yes: 'Gift',
       no: 'No gift',
       cancellable: true,
+    };
+  }
+  if (d.purpose === 'searchPut') {
+    // CR 608.2d, 701.23 (`search.mayPut`): the card found and revealed may be put onto the battlefield; otherwise it goes into the hand.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? 'the card';
+    return {
+      prompt: `${d.sourceName}: put ${card} onto the battlefield? If you don't, it goes into your hand.`,
+      yes: 'Put it onto the battlefield',
+      no: 'Put it into my hand',
+      cancellable: false,
     };
   }
   if (d.purpose === 'clash') {
@@ -566,11 +593,30 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: false,
     };
   }
+  if (d.purpose === 'openingHand') {
+    // CR 103.6: asked after the mulligans, before the first turn; nothing is rewound by declining.
+    return {
+      prompt: `${d.sourceName}: begin the game with it on the battlefield?`,
+      yes: 'Begin on the battlefield',
+      no: 'Keep in hand',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'costChoice') {
     // "Sacrifice an artifact or creature or pay {4}" (CR 118.8, 601.2b, D-181): asked as the spell is cast, each button is one way to pay;
     // Cancel rewinds the cast (CR 733).
     const first = additionalWayText(d.cost ?? []);
     const second = additionalWayText(d.otherCost ?? []);
+    if (d.moreCost !== undefined) {
+      // Three ways: the first button takes the first way, the second goes on to the choice between the other two (declining asks again).
+      const third = additionalWayText(d.moreCost);
+      return {
+        prompt: `${d.sourceName}: ${first}, ${second}, or ${third}, as an additional cost?`,
+        yes: first.replace(/^./, (c) => c.toUpperCase()),
+        no: `Another way: ${second} or ${third}`,
+        cancellable: true,
+      };
+    }
     return {
       prompt: `${d.sourceName}: ${first}, or ${second}, as an additional cost?`,
       yes: first.replace(/^./, (c) => c.toUpperCase()),

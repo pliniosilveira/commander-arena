@@ -22,8 +22,14 @@ import {
   retraceObjects,
   sacrificeFromGraveyardObjects,
 } from './legality';
-import { activationChoices, manaSacrificeCandidates, manaTapCandidates } from './mana-abilities';
+import {
+  activationChoices,
+  manaSacrificeCandidates,
+  manaTapCandidates,
+  tapXFilterOf,
+} from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
+import { representativeCombinations } from './mana-outcomes';
 import { activatablePlayerMana, PLAYER_MANA_ABILITY } from './player-mana';
 import { setPending } from './set-pending';
 import { settle } from './settle';
@@ -43,10 +49,12 @@ const ALTERNATIVES = [
   'dash',
   'bestow',
   'spectacle',
+  'freerunning',
   'morph',
   'tapPermanents',
   'sacrificePermanents',
   'payLife',
+  'payMana',
   'impending',
   // CR 702.152a: Blitz, from the hand (and from the graveyard, below).
   'blitz',
@@ -81,8 +89,8 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
     options.push({ kind: 'castSpell', object, alternative: 'retrace' });
   }
   // CR 702.138a (Escape, D-124): a card in the graveyard is cast for its escape cost, one option for each.
-  for (const object of escapeObjects(state, seat)) {
-    options.push({ kind: 'castSpell', object, alternative: 'escape' });
+  for (const spell of escapeObjects(state, seat)) {
+    options.push({ kind: 'castSpell', ...spell, alternative: 'escape' });
   }
   // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
   for (const object of sacrificeFromGraveyardObjects(state, seat)) {
@@ -126,6 +134,22 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
       const gives = manaSacrificeCandidates(state, seat, id, ability);
       // D-625: the same for a cost "Tap an untapped creature you control": one option for each permanent the player may tap when there are several.
       const taps = manaTapCandidates(state, seat, id, ability);
+      // CR 107.3, 605.3b (Hazel of the Rootbloom): "Tap X untapped tokens you control: Add X mana in any combination of colors" has a play for every X, set of permanents and
+      // combination, far too many to list: the options hold the plays that tap all of them, with the representative combinations, and `activateManaAbility` takes any other.
+      if (tapXFilterOf(ability) !== null) {
+        if (taps.length === 0) continue;
+        for (const combination of representativeCombinations(taps.length)) {
+          options.push({
+            kind: 'activateAbility',
+            source: id,
+            abilityIndex,
+            color: null,
+            combination,
+            tappedMany: [...taps],
+          });
+        }
+        continue;
+      }
       for (const choice of activationChoices(state, obj, ability)) {
         if (gives.length >= 2) {
           for (const sacrifice of gives) {

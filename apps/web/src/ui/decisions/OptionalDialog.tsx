@@ -20,6 +20,7 @@ const DIALOG_LABELS: Readonly<
   optional: 'Optional ability',
   kicker: 'Kicker',
   buyback: 'Buyback',
+  offspring: 'Offspring',
   ward: 'Ward',
   counterUnlessPays: 'Counterspell',
   unlessPays: 'Unless you pay',
@@ -38,6 +39,8 @@ const DIALOG_LABELS: Readonly<
   exileMore: 'Exile another card',
   exert: 'Exert',
   clash: 'Clash',
+  openingHand: 'Opening hand',
+  searchPut: 'Search',
 };
 
 /**

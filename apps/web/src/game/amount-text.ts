@@ -58,6 +58,8 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'chosen':
       return "the chosen creature's";
     case 'moved':
+    case 'putCountersOn':
+    case 'putIntoGraveyardThisWay':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -82,8 +84,16 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       // Animate Dead: the creature this permanent put onto the battlefield.
       return "that creature's";
     case 'eachObject':
-      // Canopy Gargantuan: the creature the counters are being put on right now.
+    case 'votedObjects':
+    case 'mostVotedObjects':
+      // Canopy Gargantuan: the creature the counters are being put on right now. Trap the Trespassers: a creature with votes.
       return "that creature's";
+    case 'ringBearer':
+      // CR 701.54e (Galadriel, Elven-Queen): the creature that is the controller's Ring-bearer.
+      return "your Ring-bearer's";
+    case 'granter':
+      // CR 113.6 (Grothama, All-Devouring): the permanent that gave the ability.
+      return "that permanent's";
   }
 }
 
@@ -100,6 +110,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'chosen':
       return 'the chosen creature';
     case 'moved':
+    case 'putCountersOn':
+    case 'putIntoGraveyardThisWay':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -118,7 +130,13 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'the exiled card';
     case 'putWithThis':
     case 'eachObject':
+    case 'votedObjects':
+    case 'mostVotedObjects':
       return 'that creature';
+    case 'ringBearer':
+      return 'your Ring-bearer';
+    case 'granter':
+      return 'the permanent that gave this ability';
   }
 }
 
@@ -177,15 +195,23 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledCreatures':
       // Issue 81 (Mass Polymorph): the creatures an earlier exile exiled, tokens included.
       return 'the number of creatures exiled this way';
+    case 'exiledCreatureCards':
+      return 'the number of creature cards exiled this way';
     case 'discardedTypeCount':
       // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way".
       return 'the number of card types among cards discarded this way';
+    case 'chosenStillOnBattlefield':
+      // Disorienting Choice (CR 608.2c): "up to that many land cards", the chosen permanents still on the battlefield.
+      return 'the number of chosen permanents still on the battlefield';
     case 'returned':
       // Revival Experiment (CR 608.2c): "for each card returned this way".
       return 'the number of cards returned to the battlefield this way';
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'landCardsToGraveyard':
+      // Eumidian Wastewaker (CR 608.2c): the land cards the discards and sacrifices before it put there.
+      return 'the number of land cards put into a graveyard this way';
     case 'discardedValue':
       // Summon: Kujata (CR 608.2c): "damage equal to that card's mana value" after a discard.
       return 'the total mana value of the cards discarded this way';
@@ -214,6 +240,8 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the total mana value of the cards milled this way';
     case 'milledCreature':
       return 'the number of creature cards milled this way';
+    case 'milledLand':
+      return 'the number of land cards milled this way';
     case 'discardedCreature':
       return 'the number of creature cards discarded this way';
     case 'discardedNoncreature':
@@ -358,6 +386,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       const things = thingsPhrase(amount.filter, true);
       return things === null ? UNKNOWN_AMOUNT : `the number of colors among ${things}`;
     }
+    case 'differentPowersAmong':
+      // CR 208.1 (Augur of Autumn).
+      return 'the number of different powers among permanents';
     case 'differentNamesAmong':
       // Issue 101 (CR 201.2).
       return 'the number of differently named permanents';
@@ -398,6 +429,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'extreme':
       // CR 608.2c: "the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater".
       return `${amount.of.map((part) => amountPhrase(part, ctx)).join(' or ')}, whichever is ${amount.pick === 'greater' ? 'greater' : 'less'}`;
+    case 'damageToThisThisTurn':
+      // CR 120.3 (Grothama, All-Devouring): the damage dealt to this permanent this turn by sources the player controlled.
+      return 'the amount of damage dealt to this permanent this turn by sources you controlled';
     case 'opponentCount':
       // CR 102.2: Rot Hulk's "where X is the number of opponents you have".
       return 'the number of opponents you have';
@@ -423,6 +457,12 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'votesFor':
       // D-194 (CR 701.38a): "twice the number of profit votes".
       return `the number of ${amount.option} votes`;
+    case 'votesReceived':
+      // CR 701.38a (Círdan the Shipwright): "for each vote they received".
+      return 'the number of votes they received';
+    case 'votesForObject':
+      // CR 701.38a (Trap the Trespassers): "put that many stun counters on it".
+      return 'the number of votes for it';
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";

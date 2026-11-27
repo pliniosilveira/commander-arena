@@ -20,8 +20,9 @@
 import type { ObjectId } from '../ids';
 import type { ArrangeCardsDecision, ChooseCardsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getSeat, patchSeat } from '../state/ops';
+import { getSeat, patchSeat, seatsInOrder } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { surveilExtraLook } from './statics';
 import { done, type StepOutcome } from './step-outcome';
 import { moveObject } from './zones';
 
@@ -67,20 +68,38 @@ export function runArrange(
   instruction: ArrangeInstruction,
 ): StepOutcome {
   const { seat, purpose } = instruction;
-  const library = getSeat(state, seat).library;
+  // CR 401.2 ("the top three cards of target player's library"): the library looked at may be another player's; `seat` looks and arranges.
+  const owner = instruction.libraryOf ?? seat;
+  const library = getSeat(state, owner).library;
   // CR 401.4 (D-324): the cards to put on the bottom are named by the effect (they are not always the top of the library any more).
   const looked =
     purpose === 'bottom'
       ? (instruction.cards ?? []).filter((id) => library.includes(id))
-      : library.slice(0, Math.min(instruction.count, library.length));
+      : library.slice(
+          0,
+          // CR 701.25a (Enhanced Surveillance): a surveil looks at the cards its controller's statics add to its number.
+          Math.min(
+            instruction.count + (purpose === 'surveil' ? surveilExtraLook(state, seat) : 0),
+            library.length,
+          ),
+        );
   const rest = library.filter((id) => !looked.includes(id));
   const answer = instruction.arranged;
 
   if (answer === null) {
     // CR 701.22d, 701.25d: the event happens even though there was nothing to look at.
-    if (looked.length === 0) return done(state, noCards(purpose, seat));
+    if (looked.length === 0) {
+      // CR 701.25d: a surveil of an empty library is still a surveil, which "for the first time each turn" and "When you do" count.
+      if (purpose === 'surveil') {
+        return { ...done(recordSurveil(state, seat), noCards(purpose, seat)), performed: 1 };
+      }
+      return done(state, noCards(purpose, seat));
+    }
     // "Put them back in any order" with one card can only put it back where it is: no question.
-    if (purpose === 'reorder' && looked.length === 1) return done(state);
+    // The card of a library the effect names ("target player's library") is still looked at: what follows ("You may have that player shuffle") is decided knowing it.
+    if (purpose === 'reorder' && looked.length === 1 && instruction.libraryOf === undefined) {
+      return done(state);
+    }
     // CR 401.4: one card has no order to choose, and no card nothing to do.
     if (purpose === 'bottom' && looked.length <= 1)
       return done(...putOnBottom(state, seat, rest, looked));
@@ -91,6 +110,7 @@ export function runArrange(
       purpose,
       cards: looked,
       piles: PILES[purpose],
+      ...(owner === seat ? {} : { libraryOf: owner }),
     };
     return { state, events: [], front: [], needs: decision };
   }
@@ -106,14 +126,15 @@ export function runArrange(
     return done(next, [{ kind: 'scried', seat, top: top.length, bottom: other.length }]);
   }
   if (purpose === 'reorder') {
-    return done(patchSeat(state, seat, { library: [...top, ...rest] }));
+    return done(patchSeat(state, owner, { library: [...top, ...rest] }));
   }
   // CR 701.25a: keep the ones for the top in order, then move the others to the graveyard. They stay
   // in the library list until their own move takes them out, so the state is consistent throughout.
-  let next = patchSeat(state, seat, { library: [...top, ...other, ...rest] });
+  let next = recordSurveil(patchSeat(state, seat, { library: [...top, ...other, ...rest] }), seat);
   const events: GameEvent[] = [
     { kind: 'surveiled', seat, top: top.length, toGraveyard: other.length },
   ];
+  const surveiledIn: ObjectId[] = [];
   for (const id of other) {
     const moved = moveObject(next, { object: id, to: 'graveyard' });
     // A move into a graveyard never asks (CR 903.9b is about the hand and the library).
@@ -121,8 +142,66 @@ export function runArrange(
       throw new Error('Surveiling a card into the graveyard asked a decision');
     next = moved.state;
     events.push(...moved.events);
+    // CR 701.25a, 400.7: the card as it is in the graveyard (a new object), unless a replacement effect sent it elsewhere.
+    for (const e of moved.events) {
+      if (
+        e.kind === 'zoneChanged' &&
+        e.from === id &&
+        e.toZone === 'graveyard' &&
+        e.card !== null
+      ) {
+        surveiledIn.push(e.to);
+      }
+    }
   }
-  return done(next, events);
+  if (surveiledIn.length > 0) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        surveiledCards: [
+          ...(next.turnLog.surveiledCards ?? []),
+          ...surveiledIn.map((card) => ({ card, by: seat })),
+        ],
+      },
+    };
+  }
+  // CR 608.2c, 603.12: the surveil was done, which "When you do" after it reads (`performed`).
+  return { ...done(next, events), performed: 1 };
+}
+
+/**
+ * CR 401.4, 101.4 ("Put all creatures on the bottom of their owners' libraries", `moveToZone.ownersArrange`): the moves are done; each owner of two or more of the cards they put
+ * into a library arranges theirs on the bottom, in turn order starting with the active player. The cards are already at the bottom of each library (below every other card), so
+ * the arrangement only orders them, and no player is told the order (CR 401.4). A token that ceased to exist and a commander put into the command zone (CR 903.9b) are not in a library.
+ */
+export function runArrangeMoved(state: GameState, res: ResolutionContext): StepOutcome {
+  const moved = res.lastMoved ?? [];
+  const queue: Instruction[] = [];
+  for (const seat of seatsInOrder(state, state.turn.activeSeat)) {
+    const library = getSeat(state, seat).library;
+    // CR 111.7: a token put into a library is no card and ceases to exist when state-based actions are next checked, so it has no place to be given.
+    const cards = moved.filter((id) => library.includes(id) && state.objects[id]?.token === null);
+    if (cards.length >= 2) {
+      queue.push({
+        kind: 'arrange',
+        purpose: 'bottom',
+        seat,
+        count: cards.length,
+        cards,
+        arranged: null,
+      });
+    }
+  }
+  return done(state, [], queue);
+}
+
+/** CR 701.25 (Surveil): the turn log counts the surveil of `seat` ("for the first time each turn", Whispering Snitch). */
+function recordSurveil(state: GameState, seat: ArrangeInstruction['seat']): GameState {
+  return {
+    ...state,
+    turnLog: { ...state.turnLog, surveils: [...(state.turnLog.surveils ?? []), seat] },
+  };
 }
 
 /**

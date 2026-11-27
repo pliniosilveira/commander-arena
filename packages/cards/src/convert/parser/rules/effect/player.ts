@@ -26,6 +26,7 @@ import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, connectorOf, listWithJoins, makeClause, VERB_LIST_JOIN } from './operands';
 import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled';
+import { playerSearchAction } from './player-search';
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
@@ -290,6 +291,8 @@ export const lifeAction: Action = (subject, you, rule) => {
                         ...EQUAL_AMOUNTS,
                         'amount.life-lost-this-way',
                         'amount.damage-dealt-this-way',
+                        // Cramped Vents (CR 120.10): "You gain life equal to the excess damage dealt this way."
+                        'amount.excess-damage-dealt-this-way',
                       ]
                     : // D-365: "loses life equal to the life that player lost this turn" (a loss only; the lowering reads it for another player than "you").
                       [
@@ -424,12 +427,13 @@ const shuffleAction: Action = (subject, you, rule) =>
   );
 
 /**
- * "manifests the top card of their library", "manifest the top card of your library" (CR 701.40a, D-314): the player puts the top card of their own library onto the
- * battlefield face down as a 2/2 creature. The words are the whole phrase: another library ("of target opponent's library"), several cards and "manifest dread" are other
- * instructions that the engine does not run through this effect, so they do not read.
+ * "manifests the top card of their library", "manifest the top card of your library", "you manifest the top card of that player's library" (CR 701.40a, D-314): the player puts
+ * the top card of a library onto the battlefield face down as a 2/2 creature, under their control (CR 110.2a): their own, or, said of "you", the one of the player an earlier part
+ * of the text named ("that player": the player of the trigger). Several cards, "target opponent's library" and "manifest dread" are other instructions that the engine does not
+ * run through this effect, so they do not read.
  */
-const manifestAction: Action = (subject, you, rule) =>
-  map(
+const manifestAction: Action = (subject, you, rule) => {
+  const own = map(
     spanned(
       sequence(
         verbWord('manifest', you),
@@ -442,9 +446,45 @@ const manifestAction: Action = (subject, you, rule) =>
     ),
     ({ span }) => actionClause(rule, 'manifest', { player: subject }, span),
   );
+  if (!(you && subject.det === 'you')) return own;
+  // Thieving Amalgam, Orochi Soul-Reaver: "you manifest the top card of that player's library".
+  return choice(
+    own,
+    map(
+      spanned(
+        sequence(
+          verbWord('manifest', you),
+          literal('the top card of '),
+          spanned(pattern(/that player/iu)),
+          pattern(/['’]s library(?![\p{L}\p{N}])/iu),
+        ),
+      ),
+      ({ value, span }) =>
+        actionClause(
+          rule,
+          'manifest',
+          {
+            // The library's player is read before "you": "that player" is never the subject of the sentence.
+            from: {
+              kind: 'noun',
+              det: 'anaphor',
+              filter: { raw: 'that player' },
+              upTo: false,
+              plural: false,
+              other: false,
+              span: value[2].span,
+              rule,
+            },
+            player: subject,
+          },
+          span,
+        ),
+    ),
+  );
+};
 
 /** "mills two cards", "mill X cards", "mills cards equal to ..." (CR 701.17: the top cards of the library go to the graveyard). */
-const millAction: Action = (subject, you, rule) =>
+export const millAction: Action = (subject, you, rule) =>
   map(spanned(cardsAmount(verbWord('mill', you))), ({ value: amount, span }) =>
     actionClause(rule, 'mill', { player: subject, amount }, span),
   );
@@ -506,14 +546,29 @@ const investigateAction: Action = (subject, you, rule) =>
 
 /**
  * "become the monarch" (CR 725.1: "Some cards allow a player to become the monarch"; CR 725.3: there is only one
- * monarch at a time). Said of "you" only (stage P25, D-127): the engine's effect names one player and the corpus's
- * real line is "When ~ enters, you become the monarch."; "target player becomes the monarch" is not read.
+ * monarch at a time). Said of one player: "you" (stage P25, D-127: "When ~ enters, you become the monarch.") or "target
+ * player" / "target opponent" ("Target player becomes the monarch."): the engine's effect names one player. Several
+ * players ("each opponent becomes the monarch") are not read, as the monarch is only one of them.
  */
 const monarchAction: Action = (subject, you, rule) =>
-  !you
+  !(subject.det === 'you' || (subject.det === 'target' && subject.anyNumber !== true))
     ? (ctx, pos) => fail(ctx, pos)
-    : map(spanned(pattern(/become the monarch(?![\p{L}\p{N}])/iu)), ({ span }) =>
-        actionClause(rule, 'becomeMonarch', { player: subject }, span),
+    : map(
+        spanned(sequence(verbWord('become', you), pattern(/the monarch(?![\p{L}\p{N}])/iu))),
+        ({ span }) => actionClause(rule, 'becomeMonarch', { player: subject }, span),
+      );
+
+/**
+ * "take the initiative" (CR 726.1: "There is no initiative in a game until an effect instructs a player to take the initiative"; CR 726.3: only one player has it at a time).
+ * Said of one player: "you" ("When ~ enters, you take the initiative.") or "target player" / "target opponent" ("Target player takes the initiative."): the engine's
+ * `takeInitiative` names one player. Several players are not read, as the initiative is held by one of them.
+ */
+const initiativeAction: Action = (subject, you, rule) =>
+  !(subject.det === 'you' || (subject.det === 'target' && subject.anyNumber !== true))
+    ? (ctx, pos) => fail(ctx, pos)
+    : map(
+        spanned(sequence(verbWord('take', you), pattern(/the initiative(?![\p{L}\p{N}])/iu))),
+        ({ span }) => actionClause(rule, 'takeInitiative', { player: subject }, span),
       );
 
 /**
@@ -533,11 +588,14 @@ const extraTurnAction: Action = (subject, you, rule) =>
 /**
  * "gains control of ~" said of "that player" (CR 613.1b, 611.2a, 110.2: a control-changing effect with no duration lasts until the game ends or another effect changes it; the player
  * who gains control is the one the subject names): the player the event of a trigger is about, taking the permanent with the ability ("that player draws three cards and gains
- * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
+ * control of ~"), or the one player a target names ("target opponent gains control of ~", Humble Defector). The engine's `gainControl` of `this` for that player. Not read: any other subject,
+ * another object ("gains control of target creature"), a duration.
  */
 const gainControlOfSelfAction: Action = (subject, you, rule) =>
   you ||
-  (subject.det === 'playerToRight'
+  (subject.det === 'playerToRight' ||
+  // Riders of Rohan deck, group B (Humble Defector): "Target opponent gains control of ~." (CR 115.1, 613.1b): one chosen player takes the permanent with the ability.
+  (subject.det === 'target' && subject.anyNumber !== true && !subject.upTo)
     ? false
     : subject.det !== 'anaphor' || subject.filter.raw.toLowerCase() !== 'that player')
     ? (ctx, pos) => fail(ctx, pos)
@@ -610,6 +668,8 @@ export const PLAYER_SUBJECTS = [
   'noun.each-other-player',
   // Fractured Identity: "each player other than its controller creates a token that's a copy of it".
   'noun.each-player-other-than-its-controller',
+  // Bounty Board: "each of its controller's opponents draws a card and gains 2 life".
+  'noun.each-of-its-controllers-opponents',
   'noun.defending-player',
   'noun.player-to-your-right',
   'noun.player',
@@ -617,6 +677,8 @@ export const PLAYER_SUBJECTS = [
   // Oft-Nabbed Goat: "its owner draws that many cards".
   'noun.its-owner',
   'noun.each-exiled-controller',
+  // Terastodon: "for each permanent put into a graveyard this way, its controller creates a 3/3 green Elephant creature token".
+  'noun.each-graveyarded-controller',
   'noun.that-player',
   // D-648: "that attacking player draws a card" (the player of a trigger about a player attacking one of your opponents).
   'noun.that-attacking-player',
@@ -651,11 +713,18 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'CR 111.2 (Tokens)',
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
+    'CR 726.1 (The Initiative)',
+    'CR 726.3 (The Initiative)',
     'CR 101.4 (Handling Simultaneous Decisions)',
     'CR 104.3e (Ending the Game)',
   ],
   examples: [
     'you become the monarch',
+    'target player becomes the monarch',
+    'target opponent becomes the monarch',
+    'you take the initiative',
+    'target player takes the initiative',
+    'target opponent takes the initiative',
     'target player takes an extra turn after this one',
     'you take an extra turn after this one',
     'you draw a card',
@@ -665,6 +734,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'target player shuffles their library',
     'its controller manifests the top card of their library',
     'you manifest the top card of your library',
+    "you manifest the top card of that player's library",
     'target player manifests the top card of their library',
     'each player manifests the top card of their library',
     'you draw two cards, then lose 2 life',
@@ -704,14 +774,22 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain 2 life for each time it was kicked',
     'you gain life equal to that creature’s toughness',
     'you gain life equal to the life lost this way',
+    // Cramped Vents (CR 120.10): the damage beyond lethal damage the instruction before it dealt.
+    'you gain life equal to the excess damage dealt this way',
     'each opponent loses X life',
     'you draw X cards and lose X life',
     // CR 613.1b: the player of the trigger takes the permanent with the ability.
     'that player draws three cards and gains control of ~',
     'the player to your right gains control of ~',
     'The player to your right gains control of ~',
+    // Riders of Rohan deck, group B (Humble Defector, CR 115.1, 613.1b): a chosen player takes the permanent with the ability.
+    'target opponent gains control of ~',
+    'target player gains control of ~',
     'you and target opponent each draw two cards',
     'you and target player each discard a card',
+    // Sylvan Offering (CR 111.2, 101.4): you and the chosen opponent each create the tokens, you first (the active player's turn order).
+    'you and that player each create a 3/3 green Treefolk creature token',
+    'you and target opponent each create two 1/1 green Elf Warrior creature tokens',
     'each player sacrifices a creature of their choice',
     'any number of target players each lose 2 life and sacrifice a creature of their choice',
     'each player sacrifices a creature',
@@ -771,6 +849,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain 2 life, draw two cards, then discard two cards',
     'target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life',
     'target opponent discards a card, loses 3 life',
+    // Riders of Rohan deck, group B (Field of Ruin, CR 701.23a, 701.24): each player searches their own library, puts the card onto the battlefield, then shuffles.
+    'each player searches their library for a basic land card, puts it onto the battlefield, then shuffles',
+    'each opponent searches their library for a basic land card, puts it onto the battlefield tapped, then shuffles',
+    'target player searches their library for a Forest card, puts that card onto the battlefield, then shuffles',
   ],
   rejects: [
     // D-372: after a bare comma the next words are a verb of the same subject, which agrees with it.
@@ -825,7 +907,6 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each player sacrifices a creature an opponent controls of their choice',
     'you and target opponent each mill two cards and become the monarch',
     'you and target opponent each investigate',
-    'you and target opponent each create a Treasure token',
     'you and each opponent each draw a card',
     'you and target creature each draw a card',
     'each other player draw a card',
@@ -856,10 +937,19 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its owner',
     'you become the monarch and',
     'you becomes the monarch',
+    'you take the initiative and',
+    'you takes the initiative',
+    'you take initiative',
+    'you take the initiatives',
+    'target player take the initiative',
+    'any number of target players take the initiative',
+    'each opponent takes the initiative',
+    'its controller takes the initiative',
     'you become monarch',
     'you become the monarchy',
     'you become the monarch of the realm',
-    'target player becomes the monarch',
+    'target player become the monarch',
+    'any number of target players become the monarch',
     'target player take an extra turn after this one',
     'target player takes two extra turns after this one',
     'you takes an extra turn after this one',
@@ -867,12 +957,24 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its controller becomes the monarch',
     'its controller become the monarch',
     'that player gains control of ~ until end of turn',
+    'target opponent gains control of ~ until end of turn',
+    'target opponent gains control of target creature',
+    'each opponent gains control of ~',
+    'target opponents gain control of ~',
     'that player gains control of target creature',
     'that player gain control of ~',
     'you gain control of ~',
     'the player to your right gains control of target creature',
     'the player to your right gains control of ~ until end of turn',
     'the player to your right draw a card',
+    'each player search their library for a basic land card, puts it onto the battlefield, then shuffles',
+    'each player searches their library for a basic land card, puts it into their hand, then shuffles',
+    'each player searches their library for a basic land card, puts it onto the battlefield',
+    'each player searches their library for basic land cards, puts them onto the battlefield, then shuffles',
+    'each player searches your library for a basic land card, puts it onto the battlefield, then shuffles',
+    'each player may search their library for a basic land card, put it onto the battlefield, then shuffle',
+    'each player searches their library for a basic land card, reveals it, puts it onto the battlefield, then shuffles',
+    'you and target opponent each search their library for a basic land card, puts it onto the battlefield, then shuffles',
   ],
   parse: chain(
     sequence(family<IrNoun>('noun', { only: PLAYER_SUBJECTS }), literal(' ')),
@@ -900,11 +1002,14 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.put-exiled', putExiledCardsAction),
         alone('effect.player.investigate', investigateAction),
         alone('effect.player.shuffle', shuffleAction),
-        alone('effect.player.create-token', createAction),
+        part('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
+        alone('effect.player.initiative', initiativeAction),
         alone('effect.player.extra-turn', extraTurnAction),
         alone('effect.player.lose-game', loseGameAction),
         alone('effect.player.gain-control-of-self', gainControlOfSelfAction),
+        // Riders of Rohan deck, group B (Field of Ruin): the players the subject names search their own libraries.
+        alone('effect.player.search', playerSearchAction),
       );
       return map(
         listWithJoins(actions, VERB_LIST_JOIN),
@@ -1155,10 +1260,15 @@ export const EFFECT_MANIFEST = defineRule<Clauses>({
   family: 'effect',
   leading: ['manifest'],
   cites: ['CR 701.40a (Manifest)', 'CR 701.40b (Manifest)'],
-  examples: ['manifest the top card of your library', 'Manifest the top card of your library'],
+  examples: [
+    'manifest the top card of your library',
+    'Manifest the top card of your library',
+    "manifest the top card of that player's library",
+  ],
   rejects: [
     'manifests the top card of your library',
     'manifest the top card',
+    "manifest the top card of that player's libraryy",
     'manifest the top card of their library',
     "manifest the top card of target opponent's library",
     'manifest the top two cards of your library',
@@ -1169,16 +1279,48 @@ export const EFFECT_MANIFEST = defineRule<Clauses>({
     'cloak the top card of your library',
   ],
   parse: (ctx, pos) =>
-    map(
-      spanned(pattern(/[Mm]anifest the top card of your library(?![\p{L}\p{N}])/u)),
-      ({ span }): Clauses => [
-        makeClause(
-          'effect.manifest',
-          'manifest',
-          { player: impliedYou('effect.manifest', pos) },
-          span,
+    choice(
+      map(
+        spanned(pattern(/[Mm]anifest the top card of your library(?![\p{L}\p{N}])/u)),
+        ({ span }): Clauses => [
+          makeClause(
+            'effect.manifest',
+            'manifest',
+            { player: impliedYou('effect.manifest', pos) },
+            span,
+          ),
+        ],
+      ),
+      // Orochi Soul-Reaver: "manifest the top card of that player's library" (the player of the trigger).
+      map(
+        spanned(
+          sequence(
+            pattern(/[Mm]anifest the top card of /u),
+            spanned(pattern(/that player/iu)),
+            pattern(/['’]s library(?![\p{L}\p{N}])/iu),
+          ),
         ),
-      ],
+        ({ value, span }): Clauses => [
+          makeClause(
+            'effect.manifest',
+            'manifest',
+            {
+              player: impliedYou('effect.manifest', pos),
+              from: {
+                kind: 'noun',
+                det: 'anaphor',
+                filter: { raw: 'that player' },
+                upTo: false,
+                plural: false,
+                other: false,
+                span: value[1].span,
+                rule: 'effect.manifest',
+              },
+            },
+            span,
+          ),
+        ],
+      ),
     )(ctx, pos),
 });
 

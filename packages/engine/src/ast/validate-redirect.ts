@@ -21,6 +21,13 @@ function checkDamageBonus(
     issue(out, `${path}.sources`, 'sources is a filter of the sources of the damage');
     return;
   }
+  if (r.kind === 'damageBonus') {
+    for (const flag of ['noncombatOnly', 'opponentPlayersOnly'] as const) {
+      if (r[flag] !== undefined && r[flag] !== true) {
+        issue(out, `${path}.${flag}`, `${flag} must be true when present`);
+      }
+    }
+  }
   checkFilter(r.sources, `${path}.sources`, out);
   if (r.sources.controller !== 'you') {
     issue(
@@ -33,7 +40,9 @@ function checkDamageBonus(
     filterSome(
       r.sources,
       (f) =>
-        f.zone !== undefined ||
+        // CR 109.2: "a creature you control" doubles the damage of permanents only (`damageDouble` with `zone: 'battlefield'` at the top of the filter).
+        (f.zone !== undefined &&
+          !(r.kind === 'damageDouble' && f === r.sources && f.zone === 'battlefield')) ||
         f.owner !== undefined ||
         f.stackKind !== undefined ||
         f.manaValueX !== undefined ||
@@ -41,13 +50,15 @@ function checkDamageBonus(
         f.controllerDealtCombatDamageByAtLeast !== undefined ||
         f.putFromBattlefieldThisTurn !== undefined ||
         f.discardedOrFromLibraryThisTurn !== undefined ||
-        f.enteredThisTurn !== undefined,
+        f.putFromLibraryThisTurn !== undefined ||
+        f.enteredThisTurn !== undefined ||
+        f.dealtDamageThisTurn !== undefined,
     )
   ) {
     issue(
       out,
       `${path}.sources`,
-      'the sources are read as the damage would be dealt: no zone, owner, stackKind, X or "this turn" reading',
+      'the sources are read as the damage would be dealt: no zone (but the battlefield, for a doubling), owner, stackKind, X or "this turn" reading',
     );
   }
 }
@@ -88,7 +99,9 @@ export function checkRedirectReplacement(r: Replacement, path: string, out: AstI
         f.controllerDealtCombatDamageByAtLeast !== undefined ||
         f.putFromBattlefieldThisTurn !== undefined ||
         f.discardedOrFromLibraryThisTurn !== undefined ||
-        f.enteredThisTurn !== undefined,
+        f.putFromLibraryThisTurn !== undefined ||
+        f.enteredThisTurn !== undefined ||
+        f.dealtDamageThisTurn !== undefined,
     )
   ) {
     issue(

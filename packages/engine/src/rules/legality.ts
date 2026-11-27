@@ -27,7 +27,9 @@ import {
   canPayRequest,
   castAs,
   isNamedAlternative,
+  spellXCostOf,
 } from './cast-cost';
+import { onceCastGrant } from './cast-once';
 import { castInOwnMainPhase } from './cast-phase';
 import {
   castForbiddenByOpponentsPermanent,
@@ -37,7 +39,7 @@ import {
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
-import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { flashPermissionSources, libraryCastSources, onceCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
@@ -46,7 +48,9 @@ import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace, isOmenFace } from './layouts';
 import { libraryLandPermission } from './library-play';
-import { isCommanderCardId } from './melded';
+import { linkedExilePlayPermitted } from './linked-exile-play';
+import { staticEscapeOf } from './mana-cost-keyword-grant';
+import { isCommanderCardId, isCommanderObject } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { mayPayLifeForMana } from './next-spell-life';
 import { hasGrantedFlashCasting } from './player-flash';
@@ -54,8 +58,8 @@ import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
-import { flashSlotOf, slotCanBeFilled } from './target-choice';
-import { hasX, spellXCost } from './x-value';
+import { flashSlotOf, sameControllerFillable, slotCanBeFilled } from './target-choice';
+import { hasX } from './x-value';
 
 export type { CastAlternative, CastFrom };
 
@@ -108,6 +112,31 @@ export function castTiming(
 }
 
 /**
+ * CR 307.1, 601.3b, 603.7 (Necromancy): whether casting the spell with the face `face` now makes the permanent it becomes get the delayed sacrifice of the rider "If you cast it any
+ * time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step" (`castAsThoughFlash` with `spells: this` and
+ * `sacrificeIfCastAtInstantSpeed`): the face has the rider and `seat` could not cast a sorcery at this moment (it is not their main phase with an empty stack, CR 307.1). Read as the
+ * spell is cast, before it moves to the stack.
+ */
+export function castAtInstantSpeedRider(
+  state: GameState,
+  seat: SeatId,
+  face: CardFace | null,
+): boolean {
+  if (
+    !(face?.abilities ?? []).some(
+      (a) =>
+        a.kind === 'static' &&
+        a.static.kind === 'castAsThoughFlash' &&
+        'kind' in a.static.spells &&
+        a.static.sacrificeIfCastAtInstantSpeed === true,
+    )
+  ) {
+    return false;
+  }
+  return !hasSorceryTiming(state, seat);
+}
+
+/**
  * CR 601.3b, 601.3d, 113.6d (D-408): the spell's own permission to be cast as though it had flash (`castAsThoughFlash` with `spells: this`, on the face being
  * cast). With no condition, or one that holds as the spell is cast, it is plain permission. A `spellTargets` condition is read as CR 601.3b and 601.3d say: the
  * caster may begin to cast the spell as though it had flash when the targets they choose could meet it, so the permission is there and the targets are
@@ -146,6 +175,12 @@ function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): bool
   return flashPermissionSources(state).some(
     (source) =>
       (source.anyPlayer || controllerOf(state, source.object) === seat) &&
+      // Kianne, Corrupted Memory: the permission of a permanent applies "as long as" its condition holds, for the controller of the permanent.
+      (source.condition === undefined ||
+        evaluateCondition(state, source.condition, {
+          controller: controllerOf(state, source.object),
+          source: source.object.id,
+        })) &&
       matchesFilter(
         state,
         spell,
@@ -216,21 +251,32 @@ export function mayPlayFromExile(
    * default) for one that lets it be cast paying its cost. A card with both is cast either way.
    */
   free = false,
+  /**
+   * Nashi (CR 118.9): `true` asks for a permission whose spell is cast by paying life equal to its mana value (`mayPlay.lifeForMana`), the alternative cost `lifeForMana` and no other way;
+   * `false` (the default) for one that lets it be cast another way.
+   */
+  life = false,
 ): boolean {
   return (
     obj.zone === 'exile' &&
-    state.continuousEffects.some(
-      (e) =>
-        e.change.kind === 'playPermission' &&
-        e.change.seat === seat &&
-        e.objects.includes(obj.id) &&
-        // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
-        (asLand || (e.change.free === true) === free) &&
-        // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
-        !(asLand && e.change.castOnly === true) &&
-        // Issue 101 (Neriv, CR 903.3): "during any turn you attacked with a commander".
-        (e.change.whenAttackedWithCommander !== true || attackedWithCommanderThisTurn(state, seat)),
-    )
+    // CR 607.2a, 601.2a (Evendo Brushrazer): "you may play cards exiled with this creature", a permission of a static ability that pays the ordinary cost: no free or life alternative.
+    ((!free && !life && linkedExilePlayPermitted(state, seat, obj)) ||
+      state.continuousEffects.some(
+        (e) =>
+          e.change.kind === 'playPermission' &&
+          e.change.seat === seat &&
+          e.objects.includes(obj.id) &&
+          // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
+          (asLand || (e.change.free === true) === free) &&
+          (asLand || (e.change.lifeForMana === true) === life) &&
+          // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
+          !(asLand && e.change.castOnly === true) &&
+          // Vivien, Champion of the Wilds (CR 601.2): "you may cast it if it's a creature spell": the permission is for a creature card only.
+          (e.change.creatureSpellsOnly !== true || derive(state, obj).types.includes('creature')) &&
+          // Issue 101 (Neriv, CR 903.3): "during any turn you attacked with a commander".
+          (e.change.whenAttackedWithCommander !== true ||
+            attackedWithCommanderThisTurn(state, seat)),
+      ))
   );
 }
 
@@ -497,6 +543,8 @@ export function castZone(
       mayPlayFromExile(state, seat, obj) ||
       // Lorehold group 2 (CR 118.9): "You may cast that card this turn without paying its mana cost".
       mayPlayFromExile(state, seat, obj, false, true) ||
+      // Nashi (CR 118.9): "pay life equal to its mana value rather than paying its mana cost".
+      mayPlayFromExile(state, seat, obj, false, false, true) ||
       freeCastSlots(state, seat, obj, faceIndex).length > 0);
   // Issue 159: or a card of another player's graveyard that an effect named ("You may cast target creature card in a graveyard this turn").
   const fromTheirGraveyard = obj.zone === 'graveyard' && grantedFromAnyGraveyard(state, seat, obj);
@@ -539,9 +587,12 @@ export function castZone(
       : null;
   }
   if (alternative === 'escape') {
-    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    if (obj.zone !== 'graveyard' || obj.card === null) return null;
     // CR 702.138a: a printed escape cost, or the one an effect gave the card until end of turn (rules/escape-grant.ts).
-    return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    if (faceIndex === 0)
+      return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    // CR 709.3: the other half of a split card a permanent gives escape (`grantKeywordFromManaCost`): that half is cast for its own mana cost.
+    return staticEscapeOf(state, asFace(obj, faceIndex)) === null ? null : 'graveyard';
   }
   // CR 702.152a, 601.2a: "You may cast this card from your graveyard using its blitz ability": a blitz cast from a graveyard, when the card says so and its condition holds (it is cast
   // from the hand otherwise, below).
@@ -584,6 +635,13 @@ export function castZone(
     if (state.turn.number <= obj.foretoldTurn) return null;
     return alternativeOf(faceOf(state, obj), 'foretell') === null ? null : 'exile';
   }
+  // CR 118.9, 601.2a (Eye of Duskmantle): a spell cast from the graveyard by paying life equal to its mana value rather than its mana cost, which the permission of a permanent says.
+  if (alternative === 'lifeForMana' && obj.zone === 'graveyard') {
+    return faceIndex === 0 &&
+      graveyardPlayPermission(state, seat, obj, false, undefined, true) !== null
+      ? 'graveyard'
+      : null;
+  }
   // The other alternatives are never cast from a graveyard (D-121); an Adventure card is cast from exile.
   if (obj.zone === 'exile' && obj.onAdventure === true) return faceIndex === 0 ? 'exile' : null;
   // CR 113.6b (D-133): "You may cast this card from your graveyard [as long as ...]": the card's own static ability.
@@ -606,6 +664,10 @@ export function castZone(
   }
   // CR 601.3 (D-151): "You may cast creature spells with power 4 or greater from the top of your library".
   if (obj.zone === 'library') {
+    // CR 118.9, 601.2a (`castOnceEachTurn`): "you may cast a spell from ... the top of your library without paying its mana cost", any castable face of the card.
+    if (alternative === 'free' || alternative === 'lifeForMana') {
+      return onceCastUse(state, seat, obj, faceIndex, alternative) !== null ? 'library' : null;
+    }
     return alternative === undefined &&
       faceIndex === 0 &&
       libraryCastPermission(state, seat, obj) !== null
@@ -624,7 +686,15 @@ export function castZone(
         ? 'exile'
         : null;
     }
-    return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
+    // Nashi (CR 118.9): the alternative cost `lifeForMana` of a permission to cast the card by paying life equal to its mana value.
+    if (alternative === 'lifeForMana') {
+      return mayPlayFromExile(state, seat, obj, false, false, true) ? 'exile' : null;
+    }
+    // Tlincalli Hunter: the alternative cost a permanent gives for spells cast from exile is paid instead of the mana cost of a card the player may cast from exile.
+    return (alternative === undefined || alternative === 'energyGrant') &&
+      mayPlayFromExile(state, seat, obj)
+      ? 'exile'
+      : null;
   }
   if (obj.zone === 'hand') return 'hand';
   // A card in the command zone is one card, never a melded permanent (D-277).
@@ -714,8 +784,9 @@ export function targetsPossible(
     // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
     const restricted = only === null ? -1 : flashSlotOf(specs);
     if (only !== null && restricted < 0) return false;
-    return specs.every((spec, i) =>
-      slotCanBeFilled(state, spec, ctx, i === restricted ? only : null),
+    return (
+      specs.every((spec, i) => slotCanBeFilled(state, spec, ctx, i === restricted ? only : null)) &&
+      sameControllerFillable(state, specs, ctx)
     );
   });
 }
@@ -733,6 +804,20 @@ export function hasKickedTargets(face: CardFace | null): boolean {
  * turn (damage, a life-loss effect or life paid, all counted by `loseLifeBy`). The life lost by `seat` and by
  * players who left the game does not count (D-124).
  */
+/**
+ * CR 702.173a (Freerunning, Petty Larceny): whether `seat` dealt combat damage to a player this turn with an Assassin or a commander: a creature `seat` controlled as it dealt the damage
+ * (`TurnLog.combatDamaged`, kept as the damage is dealt, so every damage step counts and a creature that has left still does) that had the Assassin creature type or was one of its owner's
+ * commanders (read from the object as it last was when it has left the battlefield).
+ */
+export function dealtCombatDamageWithAssassinOrCommander(state: GameState, seat: SeatId): boolean {
+  return state.turnLog.combatDamaged.some((hit) => {
+    if (hit.controller !== seat) return false;
+    if (hit.subtypes.includes('Assassin')) return true;
+    const source = state.objects[hit.source] ?? state.lki[hit.source]?.object;
+    return source !== undefined && isCommanderObject(state, source);
+  });
+}
+
 export function opponentLostLifeThisTurn(state: GameState, seat: SeatId): boolean {
   return opponentsOf(state, seat).some((id) => getSeat(state, id).lifeLostThisTurn > 0);
 }
@@ -764,7 +849,9 @@ export function alternativeCostAllowed(
     // CR 702.74a, 118.9: an evoke cost a static ability gives a spell as it is cast from the hand (`grantAlternativeCostToSpells`, rules/alt-cost-grant.ts).
     if (kind === 'evoke')
       return grantedEvokeOf(state, seat, castAs(obj, seat, face), obj.zone) !== null;
-    return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+    return (
+      kind === 'escape' && grantedEscapeOf(state, face === 0 ? obj : asFace(obj, face)) !== null
+    );
   }
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
@@ -775,9 +862,44 @@ export function alternativeCostAllowed(
   }
   // CR 702.137a: "if an opponent lost life this turn", read as the spell is cast (601.2b), for the one casting it.
   if (kind === 'spectacle' && !opponentLostLifeThisTurn(state, seat)) return false;
+  // CR 702.173a (Freerunning): "if you dealt combat damage to a player this turn with an Assassin or commander", read as the spell is cast, for the one casting it.
+  if (kind === 'freerunning' && !dealtCombatDamageWithAssassinOrCommander(state, seat))
+    return false;
   return (
     alt.condition === undefined ||
     evaluateCondition(state, alt.condition, { controller: seat, source: obj.id })
+  );
+}
+
+/**
+ * CR 118.9a, 601.2b (`castOnceEachTurn`): the permanent whose once-a-turn permission a cast of the card `obj` as `face` for `alternative` would use, or null: no permanent gives that
+ * spell the alternative cost now, or the cast is allowed another way and uses no permission (the card's own "without paying its mana cost", an effect "rather than pay the mana cost of
+ * the next spell you cast this turn").
+ */
+export function onceCastUse(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  face: number,
+  alternative: CastAlternative | undefined,
+): ObjectId | null {
+  if (alternative !== 'free' && alternative !== 'lifeForMana') return null;
+  if (onceCastSources(state).length === 0) return null;
+  if (obj.zone !== 'hand' && obj.zone !== 'command' && obj.zone !== 'library') return null;
+  if (obj.prepareOf !== undefined) return null;
+  if (obj.zone !== 'library') {
+    if (alternative === 'lifeForMana' && mayPayLifeForMana(state, seat)) return null;
+    if (alternative === 'free' && alternativeCostAllowed(state, seat, obj, face, 'free')) {
+      return null;
+    }
+  }
+  return onceCastGrant(
+    state,
+    seat,
+    obj,
+    castAs(obj, seat, face, alternative),
+    alternative,
+    face === 0 && libraryCastPermission(state, seat, obj) !== null,
   );
 }
 
@@ -816,15 +938,28 @@ export function canCast(
     obj.onAdventure !== true &&
     obj.prepareOf === undefined &&
     (freeCastSlots(state, seat, obj, face).length > 0 || mayCastPlotted(state, seat, obj));
+  // CR 118.9 (`castOnceEachTurn`): or a permanent's "once during each of your turns, you may cast a spell ... without paying its mana cost" / "by paying life equal to its mana value".
+  const once = onceCastUse(state, seat, obj, face, alternative);
   if (
     (alternative === 'free' || isNamedAlternative(alternative)) &&
     !byPermission &&
+    once === null &&
     !alternativeCostAllowed(state, seat, obj, face, alternative)
   ) {
     return false;
   }
   // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
-  if (alternative === 'lifeForMana' && !mayPayLifeForMana(state, seat)) return false;
+  // CR 118.9 (Eye of Duskmantle): or a permanent's permission to cast a card of the graveyard for life (`castZone` has checked it).
+  if (
+    alternative === 'lifeForMana' &&
+    once === null &&
+    !mayPayLifeForMana(state, seat) &&
+    !(zone === 'graveyard' && obj.zone === 'graveyard') &&
+    // Nashi: a card in exile a permission lets the seat cast by paying life.
+    !(obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, false, false, true))
+  ) {
+    return false;
+  }
   // CR 118.9, 107.14 (issue 105, Nissa): only while a permanent of the caster gives it for this spell.
   if (
     alternative === 'energyGrant' &&
@@ -838,11 +973,12 @@ export function canCast(
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
   if (castForbiddenByOwnAbility(state, seat, spell)) return false;
   // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-282) "... with mana value 3 or less", read with the least X the spell can be cast with.
+  // CR 107.3b: a spell cast with a `castOnceEachTurn` permission has X 0, as one cast without paying its mana cost.
   const least = leastAllowedX(
     state,
     seat,
     spell,
-    hasX(spellXCost(faceOf(state, spell), alternative)),
+    hasX(spellXCostOf(state, spell, once === null ? alternative : 'free')),
   );
   if (least === null) return false;
   const timing = castTiming(state, seat, spell);
@@ -937,6 +1073,10 @@ export function canCastDuringResolution(
   anyManaType = false,
   /** CR 118.9 (Blue Mage's Cane): the mana paid rather than the mana cost of a `free` cast, which has to be payable. */
   payInstead?: readonly Cost[],
+  /** CR 608.2g, 402.3 (Silent-Blade Oni, Extract Brain): the card is in a hand, whoever's it is: an effect named it and the caster looked at it (`castFree.fromHand`). */
+  fromAnyHand = false,
+  /** CR 709.3: the half of a split card that is cast, for a miracle a permanent gave it (`grantKeywordFromManaCost`); the front face for every other cast. */
+  face = 0,
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
@@ -957,16 +1097,25 @@ export function canCastDuringResolution(
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   // CR 608.2g: a card of a library is cast from among the cards its owner looked at ("look at the top seven cards ... you may cast a spell from among them").
-  if ((obj.zone === 'hand' || obj.zone === 'library') && obj.owner !== seat) return false;
+  if ((obj.zone === 'hand' || obj.zone === 'library') && obj.owner !== seat) {
+    if (!(fromAnyHand && obj.zone === 'hand')) return false;
+  }
   // CR 702.94a (D-274): a card is cast for its miracle cost from the hand it was revealed in.
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (
     (alternative === 'madness' || alternative === 'miracle') &&
-    alternativeOf(faceOf(state, obj), alternative) === null
+    alternativeOf(faceOf(state, obj), alternative) === null &&
+    // CR 702.94a: or the miracle a permanent gave the card, which it was revealed for (`GameObject.miracleGrant`); a card with no mana cost has a cost that cannot be paid (CR 118.6).
+    !(
+      alternative === 'miracle' &&
+      obj.miracleGrant !== undefined &&
+      obj.card !== null &&
+      (definitionOf(state, obj.card).faces[face]?.manaCost?.length ?? 0) > 0
+    )
   ) {
     return false;
   }
-  const spell = castAs(obj, seat, 0);
+  const spell = castAs(obj, seat, face);
   if (derive(state, spell).types.includes('land')) return false;
   if (castForbiddenByOwnAbility(state, seat, spell)) return false; // CR 101.2 (D-149)
   if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-282: a free cast has X 0, CR 107.3b)
@@ -1108,6 +1257,14 @@ export function alternativeCastObjects(
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'command', seat),
     ...onAdventure,
+    // CR 118.9 (Eye of Duskmantle): the cards of the graveyard a permanent lets the seat cast for life.
+    ...(kind === 'lifeForMana'
+      ? zoneList(state, 'graveyard', seat).filter(
+          (id) =>
+            graveyardPlayPermission(state, seat, getObject(state, id), false, undefined, true) !==
+            null,
+        )
+      : []),
     ...freeFromExile,
     // CR 702.170d: the plotted cards of the seat in exile.
     ...(kind === 'free'
@@ -1122,6 +1279,24 @@ export function alternativeCastObjects(
     ...(kind === 'free'
       ? freeCastCards(state, seat).filter((id) => !freeFromExile.includes(id))
       : []),
+    // Nashi (CR 118.9): the cards in exile a permission lets the seat cast by paying life equal to their mana value.
+    ...(kind === 'lifeForMana'
+      ? state.exile.filter(
+          (id) =>
+            !onAdventure.includes(id) &&
+            mayPlayFromExile(state, seat, getObject(state, id), false, false, true),
+        )
+      : []),
+    // CR 118.9 (`castOnceEachTurn`): the top card of the library, which a permanent may let the seat cast for the alternative cost ("from your hand or the top of your library").
+    ...((kind === 'free' || kind === 'lifeForMana') && onceCastSources(state).length > 0
+      ? getSeat(state, seat).library.slice(0, 1)
+      : []),
+    // Tlincalli Hunter (CR 118.9): the cards in exile the seat may cast, for an alternative cost a permanent gives for spells cast from exile.
+    ...(kind === 'energyGrant'
+      ? state.exile.filter(
+          (id) => !onAdventure.includes(id) && mayPlayFromExile(state, seat, getObject(state, id)),
+        )
+      : []),
   ];
   return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, kind, face));
 }
@@ -1135,9 +1310,10 @@ export function foretellCastObjects(state: GameState, seat: SeatId): ObjectId[] 
 }
 
 /** The cards in the seat's graveyard it could cast now for their escape cost (CR 702.138a, D-124). */
-export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
-  return zoneList(state, 'graveyard', seat).filter((id) =>
-    canCast(state, seat, getObject(state, id), 'escape'),
+export function escapeObjects(state: GameState, seat: SeatId): FaceOption[] {
+  // One option for each half of a split card a permanent gives escape (CR 709.3); the front face for every other card.
+  return faceOptions(state, zoneList(state, 'graveyard', seat), (obj, face) =>
+    canCast(state, seat, obj, 'escape', face),
   );
 }
 

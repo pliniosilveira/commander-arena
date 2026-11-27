@@ -40,9 +40,21 @@ import {
   sacrificeGroups,
 } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
-import { answerRemoveCountersCost, payRemoveCounters } from './activate-remove-counters';
+import {
+  answerRemoveCountersCost,
+  answerRemoveCountersPick,
+  payRemoveCounters,
+} from './activate-remove-counters';
 import { answerUntapPermanentsCost, payUntap } from './activate-untap';
-import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
+import {
+  activationExileDecision,
+  activationLinkedExileDecision,
+  exileChosen,
+  exileCostCandidates,
+  linkedExileCandidates,
+  linkedExileToGraveyard,
+  opponentExileCandidates,
+} from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
 import { crimeEvents } from './crime';
@@ -454,6 +466,27 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
   if (costs.sacrifice === null || costs.sacrificeCount === 0) {
     return payBounce(state, events, payDiscard);
   }
+  // CR 701.21a, 118.3: "Sacrifice ~ and a legendary artifact": the source and a different permanent for each other part, sacrificed together.
+  if (costs.sacrifice === 'this' && costs.sacrificeAlongside.length > 0) {
+    const groups = sacrificeGroups(state, seat, activation.source, costs);
+    const sets = distinctAssignments(groups);
+    const [only] = sets;
+    if (only === undefined)
+      return fail('You do not control permanents to sacrifice for every part');
+    if (sets.length === 1)
+      return sacrificeChosen(state, events, [activation.source, ...only], true);
+    return pause({ ...state, casting: { ...casting, stage: 'sacrifice' } }, events, {
+      kind: 'choosePermanent',
+      seat,
+      source: casting.object,
+      purpose: 'sacrifice',
+      min: groups.length,
+      max: groups.length,
+      legal: [...new Set(groups.flat())],
+      forCost: true,
+      groups,
+    });
+  }
   if (costs.sacrifice === 'this') {
     const done = sacrificePermanent(state, activation.source, seat);
     if (done === null) return fail('The permanent you must sacrifice is gone');
@@ -635,7 +668,18 @@ function discardChosen(state: GameState, events: GameEvent[], chosen: readonly O
   if (!casting) return fail('No activation is in progress');
   const moved = discardObjects(state, casting.seat, chosen);
   if (moved === null) return fail('Those cards cannot be discarded');
-  return payExileCards(moved.state, [...events, ...moved.events]);
+  // CR 602.2b, 701.9a: the ability remembers the cards its cost discarded (as they are now, in the graveyard or in exile), which "if the discarded card was ..." reads.
+  const landed = moved.events.flatMap((e) =>
+    e.kind === 'discarded' && e.to !== null ? [e.to] : [],
+  );
+  const stack = moved.state.objects[casting.object]?.stack;
+  const next =
+    stack == null || landed.length === 0
+      ? moved.state
+      : patchObject(moved.state, casting.object, {
+          stack: { ...stack, discardedAsCost: [...(stack.discardedAsCost ?? []), ...landed] },
+        });
+  return payExileCards(next, [...events, ...moved.events]);
 }
 
 /**
@@ -648,7 +692,7 @@ function payExileCards(state: GameState, events: GameEvent[]): Result {
   const { casting, costs } = going;
   // Issue 102 (CR 107.3a): an X of 0 exiles nothing.
   if (costs.exileCards === null || costs.exileCards.count === 0) {
-    return finishActivation(state, events);
+    return payLinkedExile(state, events);
   }
   const source = state.objects[casting.object]?.stack?.source ?? casting.object;
   const legal = exileCostCandidates(state, casting.seat, source, costs.exileCards.filter);
@@ -679,11 +723,52 @@ function exileCardsChosen(
       : patchObject(moved.state, casting.object, {
           stack: { ...stack, exiledAsCost: moved.exiled },
         });
-  return finishActivation(next, [...events, ...moved.events]);
+  return payLinkedExile(next, [...events, ...moved.events]);
+}
+
+/**
+ * The cost "Put a creature card exiled with ~ into its owner's graveyard" (CR 607.2a, 118.3, 400.7): with one card that can be chosen the engine puts it, with more a `chooseCards`
+ * decision with `forCost` asks the activating player, and `cancel` rewinds the activation (CR 733).
+ */
+function payLinkedExile(state: GameState, events: GameEvent[]): Result {
+  const going = inProgress(state);
+  if (!going) return fail('No activation is in progress');
+  const { casting, costs } = going;
+  if (costs.linkedExile === null) return finishActivation(state, events);
+  const source = state.objects[casting.object]?.stack?.source ?? casting.object;
+  const legal = costs.linkedExileOpponents
+    ? opponentExileCandidates(state, casting.seat, source, costs.linkedExile)
+    : linkedExileCandidates(state, source, costs.linkedExile);
+  if (legal.length === 0) {
+    return fail(
+      costs.linkedExileOpponents
+        ? 'No card an opponent owns can be put into its owner’s graveyard from exile'
+        : 'No card exiled with this permanent can be put into a graveyard',
+    );
+  }
+  if (legal.length === 1) return linkedExileChosen(state, events, legal);
+  return pause(
+    { ...state, casting: { ...casting, stage: 'linkedExile' } },
+    events,
+    activationLinkedExileDecision(casting.seat, casting.object, legal, costs.linkedExileOpponents),
+  );
+}
+
+function linkedExileChosen(
+  state: GameState,
+  events: GameEvent[],
+  chosen: readonly ObjectId[],
+): Result {
+  const moved = linkedExileToGraveyard(state, chosen);
+  if (moved === null) return fail('That card cannot be put into a graveyard');
+  return finishActivation(moved.state, [...events, ...moved.events]);
 }
 
 /** The answer to the exile question of a cost; the caller checked it against the decision. */
 export function answerExileCost(state: GameState, chosen: readonly ObjectId[]): Result {
+  if (state.casting?.activation != null && state.casting.stage === 'linkedExile') {
+    return linkedExileChosen({ ...state, pending: null }, [], chosen);
+  }
   if (state.casting?.activation == null || state.casting.stage !== 'exile') {
     return fail('No cards are being chosen to exile for a cost');
   }
@@ -703,7 +788,11 @@ export function answerSacrificeCost(state: GameState, chosen: readonly ObjectId[
   if (state.casting?.activation == null || state.casting.stage !== 'sacrifice') {
     return fail('No sacrifice is being chosen for a cost');
   }
-  return sacrificeChosen({ ...state, pending: null }, [], chosen, false);
+  // "Sacrifice ~ and a legendary artifact": the answer names the other parts; the source goes with them.
+  const costs = breakDown(state.casting.activation.ability.cost, state.casting.activation.x);
+  const withSource =
+    costs?.sacrifice === 'this' ? [state.casting.activation.source, ...chosen] : chosen;
+  return sacrificeChosen({ ...state, pending: null }, [], withSource, false);
 }
 
 /** The answer to the question of an untap cost (CR 701.26b): the permanents are untapped, then the sacrifice comes next. */
@@ -719,6 +808,13 @@ export function answerBlight(state: GameState, chosen: readonly ObjectId[]): Res
 /** The answer to the question of a cost that removes counters from among permanents (CR 118.3, 122.1): one counter comes off, then the rest of the cost goes on. */
 export function answerRemoveCounters(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerRemoveCountersCost(state, chosen, (paid, events) =>
+    payBlight(paid, events, paySacrifice),
+  );
+}
+
+/** The answer to the question of a cost that removes counters of any kind (Gavel of the Righteous, Moxite Refinery): the counter the player picked comes off, then the rest of the cost goes on. */
+export function answerRemoveCountersKind(state: GameState, option: string): Result {
+  return answerRemoveCountersPick(state, option, (paid, events) =>
     payBlight(paid, events, paySacrifice),
   );
 }
@@ -791,7 +887,9 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
           object: activation.source,
           abilityIndex: activation.abilityIndex,
           // CR 606.3 (D-200): a loyalty ability of this permanent was activated this turn.
-          ...(isLoyaltyAbility(activation.ability.cost) ? { loyalty: true as const } : {}),
+          ...(isLoyaltyAbility(activation.ability.cost)
+            ? { loyalty: true as const, activator: casting.seat }
+            : {}),
           // Issue 159: "activated an ability of a card in a graveyard this turn": the card was in a graveyard as the ability was activated (`casting.fromZone`, read
           // before the cost moved it).
           ...(casting.fromZone === 'graveyard' ? { fromGraveyard: casting.seat } : {}),

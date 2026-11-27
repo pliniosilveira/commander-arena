@@ -38,7 +38,7 @@ import { dredgeCandidate, dredgeQuestion, performDredge } from './dredge';
 import { drawCard } from './effect-support';
 import { discardOne } from './madness';
 import { emptyManaPools } from './mana-engine';
-import { miracleOffer, miracleQuestion, revealMiracleEvents } from './miracle';
+import { miracleOffer, miracleQuestion, noteMiracleReveal, revealMiracleEvents } from './miracle';
 import { phaseInFor } from './phasing';
 import { grantPriority, type Outcome } from './priority';
 import { hasOptionalUntap, hasRestriction } from './restrictions';
@@ -326,8 +326,11 @@ export function beginStep(input: GameState, step: StepId): Outcome {
         events.push(...expired.events);
       }
       break;
-    case 'cleanup':
-      return join({ state, events }, runCleanup(state));
+    case 'cleanup': {
+      // CR 514.3a, 603.2b: what triggers "at the beginning of the next cleanup step" (a delayed ability, Necromancy) is noted as the step begins; it goes on the stack in `afterDiscard`.
+      const noted = collectTriggers(state, events);
+      return join({ state: noted, events }, runCleanup(noted));
+    }
     default:
       break;
   }
@@ -392,8 +395,9 @@ export function answerDredgeDraw(input: GameState, card: ObjectId, accept: boole
  * the step goes on: triggers, then priority.
  */
 export function answerMiracleDraw(input: GameState, card: ObjectId, reveal: boolean): Outcome {
-  const state: GameState = { ...input, pending: null };
-  const active = state.turn.activeSeat;
+  const cleared: GameState = { ...input, pending: null };
+  const active = cleared.turn.activeSeat;
+  const state = reveal ? noteMiracleReveal(cleared, card) : cleared;
   const events: GameEvent[] = reveal ? revealMiracleEvents(state, active, card) : [];
   return join({ state, events }, grantPriority(state, active, events));
 }

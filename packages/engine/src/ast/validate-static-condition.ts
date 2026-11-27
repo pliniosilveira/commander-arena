@@ -21,6 +21,8 @@ const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
   'loseKeyword',
   'grantAbility',
   'restriction',
+  // CR 615.1, 700.8c (Multiclass Baldric): "As long as you have a full party, prevent all damage that would be dealt to equipped creature": read where the damage is dealt (`rules/prevention.ts`).
+  'preventDamageToThis',
   // D-133: read where the attackers are declared, with `evaluateCondition` (`rules/attack-tax.ts`).
   'attackTax',
   // D-133: read as the spell is cast, with `evaluateCondition` (`rules/legality.ts`).
@@ -36,6 +38,8 @@ const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
   'setPt',
   // D-229: "As long as there are fewer than eight cards in your graveyard, ~ isn't a creature": layer 4, a plain condition.
   'loseTypes',
+  // Bello, Bard of the Brambles: "During your turn, each ... is a 4/4 Elemental creature ...": layers 4, 6 and 7b of one effect, a plain condition.
+  'animate',
   // The Reality Chip: "As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library": read where the card on top is played or cast (`rules/library-play.ts`, `rules/legality.ts`).
   'playLandsFromTopOfLibrary',
   'castFromTopOfLibrary',
@@ -61,12 +65,36 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'not',
 ];
 
+/** The conditions a permission to cast (`castAsThoughFlash`, `castFromTopOfLibrary`) reads as the spell is cast, with the power of permanents among them (CR 208.1). */
+const PERMISSION_CONDITIONS: readonly Condition['kind'][] = ['thisPowerParity'];
+
+/** Whether a filter on the permanent itself tests a counter and nothing else (`hasCounter`, with the `raw` words the grammar keeps). */
+function onlyCounterTest(f: ObjectFilter | undefined): boolean {
+  if (f === undefined || f.hasCounter === undefined) return false;
+  return Object.keys(f).every((k) => k === 'hasCounter' || k === 'raw');
+}
+
+/** Whether a filter tests who owns the permanents and nothing else (`notOwnedByYou`, `ownedByYou`, with the `raw` words the grammar keeps). */
+function onlyOwnershipTest(f: ObjectFilter | undefined): boolean {
+  if (f === undefined || (f.notOwnedByYou !== true && f.ownedByYou !== true)) return false;
+  return Object.keys(f).every((k) => k === 'notOwnedByYou' || k === 'ownedByYou' || k === 'raw');
+}
+
 function plainOnly(
   c: Condition,
   path: string,
   out: AstIssue[],
   owner = 'a static ability that changes types or colors',
 ): void {
+  // CR 613.8, 122.1 (Arixmethes, Slumbering Isle): "as long as ~ has a slumber counter on it, it's a land": a test of the counters on the permanent itself and nothing else (no type, no
+  // keyword, no power: those are what the layers change), which belong to no layer, so layer 4 may read it.
+  if (c?.kind === 'thisMatches' && onlyCounterTest(c.filter)) return;
+  // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads the mana costs of the permanents they control (layers 1 and 2 only), which no layer 4 to 7 effect changes.
+  if (c?.kind === 'amountIs' && typeof c.amount !== 'number' && c.amount?.kind === 'devotion')
+    return;
+  // CR 108.3, 613.8 (Arvinox, the Mind Flail): "you control three or more permanents you don't own": a count of the permanents the controller controls that they do not own. Who owns an
+  // object is no characteristic and no layer changes it, so layer 4 may read it; the filter names nothing else.
+  if (c?.kind === 'controlsAtLeast' && onlyOwnershipTest(c.filter)) return;
   if (!PLAIN_CONDITIONS.includes(c?.kind)) {
     issue(
       out,
@@ -99,6 +127,21 @@ function filterProblem(f: ObjectFilter): string | null {
     return 'a power or a toughness';
   }
   return null;
+}
+
+/**
+ * CR 119.3 (Rakdos, Lord of Riots; Theater of Horrors): the conditions of a permission or restriction that is read where the card is cast or played (`evaluateCondition`, not
+ * `derive`) may also read the life players lost this turn. Terms joined by and, or, not are walked; anything else is the ordinary static condition.
+ */
+function checkReadAtUse(c: Condition, path: string, out: AstIssue[]): void {
+  if (c?.kind === 'aPlayerLostLifeThisTurn') return;
+  if (c?.kind === 'and' || c?.kind === 'or') {
+    for (const [i, t] of (c.terms ?? []).entries()) checkReadAtUse(t, `${path}.terms[${i}]`, out);
+  } else if (c?.kind === 'not') {
+    checkReadAtUse(c.term, `${path}.term`, out);
+  } else {
+    checkCondition(c, path, out);
+  }
 }
 
 function walk(c: Condition, path: string, out: AstIssue[]): void {
@@ -143,12 +186,8 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       const amount = c.amount;
       // CR 613.8: the counters on this permanent belong to no layer, so `countersOn` of `this` may be read.
       if (typeof amount !== 'number' && amount?.kind === 'countersOn') {
-        if (amount.counter === undefined) {
-          issue(
-            out,
-            `${path}.amount.counter`,
-            "a static ability's condition names the kind of counter",
-          );
+        if (amount.counter !== undefined && typeof amount.counter !== 'string') {
+          issue(out, `${path}.amount.counter`, 'the kind of counter is a name');
         }
         if (amount.of?.kind !== 'this') {
           issue(
@@ -179,11 +218,15 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
         }
         return;
       }
+      // CR 700.8, 613.8 (full party): the creatures in the party, read through layers 1, 4 and 5 like a count of objects.
+      if (typeof amount !== 'number' && amount?.kind === 'partySize') return;
+      // CR 700.5, 613.8 (Mogis, God of Slaughter): the devotion of the controller reads mana costs (layers 1 and 2 only), which no type-changing or P/T effect changes.
+      if (typeof amount !== 'number' && amount?.kind === 'devotion') return;
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,
           `${path}.amount`,
-          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong)",
+          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong), or the devotion",
         );
         return;
       }
@@ -197,13 +240,23 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       }
       return;
     }
+    case 'enteredThisTurn': // D-151: the turn log, which no layer changes
+      // CR 400.7: "another Elf" leaves out the permanent the condition belongs to, which a static ability's layer 4 and 5 reading does not know.
+      if (c.other === true) {
+        issue(
+          out,
+          `${path}.other`,
+          "a static ability's condition does not read 'another' permanent that entered this turn",
+        );
+      }
+      return;
     case 'yourTurn': // D-206: the active player, which no layer changes
+    case 'sacrificedThisTurn': // CR 701.21a: the turn log, which no layer changes
     case 'thisEnteredThisTurn': // D-423: the turn log, which no layer changes
     case 'controlCommander':
     case 'lifeTotal':
     case 'opponentPoisonAtLeast':
     case 'ownTurnNumber': // D-149: the turns the controller has had, which no layer changes
-    case 'enteredThisTurn': // D-151: the turn log, which no layer changes
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'spellsCastThisTurn': // CR 601.2i (Lyse Hext): the spells cast this turn, from the turn log, which no layer changes
@@ -214,6 +267,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'chosenOption': // D-151: what the permanent chose as it entered
     case 'paired': // D-286: the pair, read from the object table and no characteristic (`rules/pairing.ts`)
       return;
+    case 'completedDungeon': // CR 309.7: the dungeons a player completed, which no layer changes
     case 'maxSpeed': // CR 702.179e: the speed of a player, which no layer changes
     case 'playerHasDesignation':
       if (
@@ -314,14 +368,26 @@ export function checkStaticCondition(
   // D-408, CR 601.3b, 601.3d: "You may cast this spell as though it had flash if it targets a commander": the spell's own permission, read as the spell is cast
   // (`rules/flash-targets.ts`), not by `derive`. A permanent's own `castAsThoughFlash` takes no condition.
   if (s?.kind === 'castAsThoughFlash') {
+    // Kianne, Corrupted Memory (CR 601.3b): "As long as ~'s power is even, you may cast noncreature spells as though they had flash": a permanent's permission read as the spell is cast
+    // (`rules/legality.ts`, with `evaluateCondition`), so it may read the power of the permanent, as `thisPowerParity` does, or the permanents its controller has.
     if (kindOf(s.spells) !== 'this') {
-      issue(
-        out,
-        `${path}.condition`,
-        'only the spell\'s own permission ("You may cast this spell as though it had flash if ...") takes a condition',
-      );
-      return;
+      // CR 513.1, 601.3b: "During each opponent's end step, you may cast spells as though they had flash": read where the permission is used.
+      if (kindOf(condition) === 'opponentsEndStep') return;
+      if (!PERMISSION_CONDITIONS.includes(condition?.kind)) {
+        issue(
+          out,
+          `${path}.condition`,
+          `a permanent's permission to cast as though it had flash takes only a condition on the power of the permanent or on the permanents its controller controls, or the condition opponentsEndStep, not ${kindOf(condition)}`,
+        );
+        return;
+      }
     }
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // Augur of Autumn (Coven): "As long as you control three or more creatures with different powers, you may cast creature spells from the top of your library": read as the spell is cast, with
+  // `evaluateCondition` (`rules/legality.ts`), so it may read the powers of the permanents.
+  if (s?.kind === 'castFromTopOfLibrary' && PERMISSION_CONDITIONS.includes(condition?.kind)) {
     checkCondition(condition, `${path}.condition`, out);
     return;
   }
@@ -334,6 +400,28 @@ export function checkStaticCondition(
     condition.amount?.kind === 'opponentsWithMore'
   ) {
     checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 601.3, 401.5, 604.1 (Augur of Autumn): "As long as you control three or more creatures with different powers, you may cast creature spells from the top of your
+  // library": the permission is read as the spell is cast (`rules/legality.ts`), with `evaluateCondition`, not by `derive`, so the condition may read the powers.
+  if (
+    s?.kind === 'castFromTopOfLibrary' &&
+    condition.kind === 'amountIs' &&
+    typeof condition.amount !== 'number' &&
+    condition.amount?.kind === 'differentPowersAmong'
+  ) {
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 607.2a, 601.2a (Evendo Brushrazer): "During your turn, as long as you've sacrificed a nontoken permanent this turn, you may play cards exiled with this creature": the permission is read as
+  // the card is played (`rules/legality.ts`), with `evaluateCondition`, not by `derive`.
+  if (s?.kind === 'playFromLinkedExile') {
+    checkReadAtUse(condition, `${path}.condition`, out);
+    return;
+  }
+  // CR 101.2, 601.2 (Rakdos, Lord of Riots): "You can't cast ~ unless an opponent lost life this turn", read as the spell is cast (`rules/cast-restrictions.ts`).
+  if (s?.kind === 'cantCastThis') {
+    checkReadAtUse(condition, `${path}.condition`, out);
     return;
   }
   // Issue 81 (Windcrag Siege, "Mardu — ..."; CR 607.2d): an additional trigger linked to an option the permanent chose as it entered, read by `rules/trigger-doubling.ts`. No other condition.
@@ -366,6 +454,11 @@ export function checkStaticCondition(
   }
   checkStaticTerm(condition, `${path}.condition`, out);
   walk(condition, `${path}.condition`, out);
-  if (s.kind === 'setTypes' || s.kind === 'setColors' || s.kind === 'loseTypes')
+  if (
+    s.kind === 'setTypes' ||
+    s.kind === 'setColors' ||
+    s.kind === 'loseTypes' ||
+    s.kind === 'animate'
+  )
     plainOnly(condition, `${path}.condition`, out);
 }

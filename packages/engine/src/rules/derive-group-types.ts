@@ -10,7 +10,7 @@
  * or `derive-count`: `derive-view` depends on this file. The scan is made once per game state, as `derive-statics.ts` does.
  */
 
-import type { Condition, ObjectFilter, StaticSubject } from '../ast/types';
+import type { Condition, ObjectFilter, StaticEffect, StaticSubject } from '../ast/types';
 import type { CardType, Color } from '../characteristics';
 import { isNonCreatureSubtype, type Subtype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
@@ -21,6 +21,8 @@ import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
+import { landLostRulesText } from './lost-abilities-core';
+import { manaValueOfCost } from './mana-value';
 import { subjectAffects } from './static-subject';
 
 interface NamedTypes {
@@ -48,6 +50,18 @@ interface AllCreatureTypes {
   readonly scope: 'youControl' | 'youOwn';
 }
 
+interface OffBattlefieldTypes {
+  readonly kind: 'offBattlefield';
+  readonly what: ObjectFilter;
+  readonly subtypes: readonly Subtype[];
+  readonly types: readonly CardType[];
+}
+
+interface PermanentSpellTypes {
+  readonly kind: 'permanentSpells';
+  readonly types: readonly CardType[];
+}
+
 interface ChosenCreatureType {
   readonly kind: 'chosenCreatureType';
   readonly alsoCardsAndSpells: boolean;
@@ -62,9 +76,52 @@ interface TypeSource {
     | LinkedTypes
     | LostTypes
     | AllCreatureTypes
+    | OffBattlefieldTypes
+    | PermanentSpellTypes
     | ChosenCreatureType;
   /** "As long as ..." (D-151, Celebration): a condition that reads no characteristic, read each time the effects are looked at (CR 611.3a). */
   readonly condition?: Condition;
+  /** The static `animate` this source is the layer 4 part of (CR 613.6): the permanents it applies to are remembered for its parts in layers 6 and 7b. */
+  readonly animate?: AnimateStatic;
+}
+
+/** "Each ... is a 4/4 Elemental creature in addition to its other types and has ...": one effect of layers 4, 6 and 7b. */
+export type AnimateStatic = Extract<StaticEffect, { readonly kind: 'animate' }>;
+
+/**
+ * CR 613.6: the permanents each static `animate` began to apply to in layer 4, for each state looked at, under the key of the permanent with the ability and the one affected. The
+ * parts of the effect in layers 6 and 7b (`derive-statics.ts`) apply to that same set and do not ask again what the subject matches. A state is never changed in place.
+ */
+const animated = new WeakMap<GameState, Map<string, Set<AnimateStatic>>>();
+
+function rememberAnimated(
+  state: GameState,
+  source: ObjectId,
+  target: ObjectId,
+  animate: AnimateStatic,
+): void {
+  let perState = animated.get(state);
+  if (perState === undefined) {
+    perState = new Map();
+    animated.set(state, perState);
+  }
+  const key = `${source}>${target}`;
+  const known = perState.get(key);
+  if (known === undefined) perState.set(key, new Set([animate]));
+  else known.add(animate);
+}
+
+/**
+ * Whether the static `animate` of `source` began to apply to `target` in layer 4 (CR 613.6). The answer is there once the type line of `target` has been worked out for this
+ * state (`typeViewOf`, which the caller asks first).
+ */
+export function animateAppliesTo(
+  state: GameState,
+  source: ObjectId,
+  target: ObjectId,
+  animate: AnimateStatic,
+): boolean {
+  return animated.get(state)?.get(`${source}>${target}`)?.has(animate) === true;
 }
 
 interface Index {
@@ -74,6 +131,13 @@ interface Index {
   readonly sources: readonly TypeSource[];
 }
 
+const PERMANENT_TYPES: readonly CardType[] = [
+  'artifact',
+  'creature',
+  'enchantment',
+  'planeswalker',
+  'battle',
+];
 const NONE: readonly ContinuousEffect[] = [];
 const cache = new WeakMap<object, Index>();
 
@@ -81,11 +145,27 @@ function scan(state: GameState): Index {
   const sources: TypeSource[] = [];
   for (const id of state.battlefield) {
     const object = state.objects[id];
-    if (object === undefined || hasLostAbilities(state, id)) continue;
+    if (object === undefined) continue;
+    const lost = hasLostAbilities(state, id);
     for (const a of copiableValues(state, object).abilities) {
       if (a.kind !== 'static') continue;
       const s = a.static;
       const condition = a.condition === undefined ? {} : { condition: a.condition };
+      if (s.kind === 'animate') {
+        // CR 613.6: the effect begins in layer 4, before any effect of layer 6 takes the ability away, so "loses all abilities" does not stop it. A land whose land
+        // types were set (CR 305.7) lost the ability in layer 4 itself and applies nothing.
+        if (landLostRulesText(state, id) || (a.functionsIn ?? 'battlefield') !== 'battlefield')
+          continue;
+        sources.push({
+          object,
+          subject: s.subject,
+          what: { kind: 'named', subtypes: s.subtypes ?? [], types: s.types, additive: true },
+          animate: s,
+          ...condition,
+        });
+        continue;
+      }
+      if (lost) continue;
       if (s.kind === 'allCreatureTypes') {
         sources.push({
           object,
@@ -99,6 +179,27 @@ function scan(state: GameState): Index {
           object,
           subject: { kind: 'filter', filter: s.what },
           what: { kind: 'chosenCreatureType', alsoCardsAndSpells: s.alsoCardsAndSpells === true },
+          ...condition,
+        });
+      } else if (s.kind === 'giveTypesToCardsOffBattlefield') {
+        // CR 613.1d, 205.1b: "land cards you own that aren't on the battlefield are Deserts in addition to their other types".
+        sources.push({
+          object,
+          subject: { kind: 'filter', filter: s.what },
+          what: {
+            kind: 'offBattlefield',
+            what: s.what,
+            subtypes: s.subtypes ?? [],
+            types: s.types ?? [],
+          },
+          ...condition,
+        });
+      } else if (s.kind === 'giveTypesToPermanentSpells') {
+        // CR 613.1d, 205.1b: "permanent spells you control are enchantments in addition to their other types".
+        sources.push({
+          object,
+          subject: { kind: 'filter', filter: { controller: 'you' } },
+          what: { kind: 'permanentSpells', types: s.types },
           ...condition,
         });
       } else if (s.kind === 'setTypes' && s.chosenType === undefined) {
@@ -287,6 +388,15 @@ export function groupTypeEffects(
 ): readonly ContinuousEffect[] {
   const { sources } = indexOf(state);
   if (sources.length === 0) return NONE;
+  // CR 202.3: a group of an `animate` may name a mana value ("with mana value 4 or greater"), which no layer 4 to 7 effect changes: read from the mana cost when asked.
+  const seen: FilterSubject = sources.some((s) => s.animate !== undefined)
+    ? {
+        ...view,
+        get manaValue() {
+          return manaValueOfCost(copiableValues(state, target).characteristics.manaCost, target);
+        },
+      }
+    : view;
   const out: ContinuousEffect[] = [];
   for (const [i, src] of sources.entries()) {
     if (src.what.kind === 'allCreatureTypes') {
@@ -299,6 +409,29 @@ export function groupTypeEffects(
             controllerOf(state, target) === you
           : target.zone !== 'battlefield' && target.card !== null && target.owner === you;
       if (!applies) continue;
+    } else if (src.what.kind === 'offBattlefield') {
+      // CR 613.1d: the cards its controller owns outside the battlefield (a spell on the stack is not a card there, CR 108.1) that the filter names as they are.
+      if (target.zone === 'battlefield' || target.zone === 'stack' || target.card === null)
+        continue;
+      if (target.owner !== controllerOf(state, src.object)) continue;
+      // The filter names what the cards are; whose they are was settled by the owner test above (`controller: 'you'` is "you own").
+      const { controller: _you, ...what } = src.what.what;
+      if (
+        !matchesFilterWith(
+          state,
+          target,
+          () => view,
+          { ...what, zone: target.zone },
+          { controller: target.owner, source: src.object.id },
+        )
+      ) {
+        continue;
+      }
+    } else if (src.what.kind === 'permanentSpells') {
+      // CR 110.4a, 205.1b: a permanent spell is an artifact, creature, enchantment, planeswalker or battle spell; its controller is the player who cast it.
+      if (target.zone !== 'stack' || target.stack?.kind !== 'spell') continue;
+      if (controllerOf(state, target) !== controllerOf(state, src.object)) continue;
+      if (!view.types.some((t) => PERMANENT_TYPES.includes(t))) continue;
     } else if (src.what.kind === 'chosenCreatureType') {
       // CR 607.2d: what the permanent chose as it entered; it chose none: nothing to give.
       if (src.object.chosen?.creatureType === undefined) continue;
@@ -317,21 +450,44 @@ export function groupTypeEffects(
       if (!onBattlefield && !elsewhere) continue;
     } else if (
       target.zone !== 'battlefield' ||
-      !subjectAffects(state, src.object, src.subject, target, view)
+      !subjectAffects(
+        state,
+        src.object,
+        src.subject,
+        target,
+        src.animate === undefined ? view : seen,
+      )
     )
       continue;
     if (
       src.condition !== undefined &&
-      !plainConditionHolds(state, src.condition, controllerOf(state, src.object))
+      !plainConditionHolds(state, src.condition, controllerOf(state, src.object), src.object)
     ) {
       continue;
     }
+    if (src.animate !== undefined) rememberAnimated(state, src.object.id, target.id, src.animate);
     const base = {
       id: `static:${src.object.id}:types:${i}`,
       timestamp: src.object.timestamp,
       objects: [target.id],
       until: 'permanent' as const,
     };
+    if (src.what.kind === 'offBattlefield') {
+      out.push({
+        ...base,
+        change: {
+          kind: 'setTypes',
+          additive: true,
+          ...(src.what.subtypes.length === 0 ? {} : { subtypes: src.what.subtypes }),
+          ...(src.what.types.length === 0 ? {} : { types: src.what.types }),
+        },
+      });
+      continue;
+    }
+    if (src.what.kind === 'permanentSpells') {
+      out.push({ ...base, change: { kind: 'setTypes', additive: true, types: src.what.types } });
+      continue;
+    }
     if (src.what.kind === 'named') {
       out.push({
         ...base,

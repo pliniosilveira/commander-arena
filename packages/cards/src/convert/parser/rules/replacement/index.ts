@@ -9,14 +9,20 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COPY_EXCEPT_QUOTED_REPLACEMENT_RULES } from './copy-except-quoted';
+import { COPY_PLAIN_REPLACEMENT_RULES } from './copy-plain';
+import { COUNTER_BLITZ_G_REPLACEMENT_RULES } from './counter-blitz-g';
+import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
+import { DRAW_REDIRECT_REPLACEMENT_RULES } from './draw-redirect';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
+import { EXILE_PAIR_COPY_REPLACEMENT_RULES } from './exile-pair-copy';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KEEP_ONE_LOYALTY_REPLACEMENT_RULES } from './keep-one-loyalty';
@@ -25,6 +31,8 @@ import { PAY_LIFE_REPLACEMENT_RULES } from './pay-life';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
 import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
+import { SQUIRREL_G1_REPLACEMENT_RULES } from './squirrel-g1';
+import { TOKEN_EACH_OF_REPLACEMENT_RULES } from './token-each-of';
 import { UNLESS_RULES } from './unless';
 
 /**
@@ -76,6 +84,34 @@ function optionNames(text: string): readonly string[] | null {
   return new Set(parts).size === parts.length ? parts : null;
 }
 
+const CARD_TYPE_WORDS = [
+  'artifact',
+  'creature',
+  'enchantment',
+  'instant',
+  'sorcery',
+  'land',
+  'planeswalker',
+  'battle',
+];
+
+/**
+ * The card types of "choose artifact, creature, enchantment, instant, or sorcery" (Cloud Key, CR 205.2a): "A or B", "A, B, or C", each a card type in lowercase, none twice. Null
+ * when the words are not such a list.
+ */
+function cardTypeNames(text: string): readonly string[] | null {
+  const parts = text.split(/, or | or |, /);
+  const separators = [...text.matchAll(/, or | or |, /g)].map((m) => m[0]);
+  const shaped =
+    separators.length === parts.length - 1 &&
+    separators.slice(0, -1).every((sep) => sep === ', ') &&
+    separators[separators.length - 1] === (parts.length === 2 ? ' or ' : ', or ');
+  if (!shaped || parts.length < 2 || !parts.every((part) => CARD_TYPE_WORDS.includes(part))) {
+    return null;
+  }
+  return new Set(parts).size === parts.length ? parts : null;
+}
+
 const EXCLUDED_COLORS: Readonly<Record<string, 'W' | 'U' | 'B' | 'R' | 'G'>> = {
   white: 'W',
   blue: 'U',
@@ -115,6 +151,15 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters the battlefield, choose a card type.',
     // Issue 184 (Thriving Isle): a color other than one.
     'As ~ enters, choose a color other than blue.',
+    // Sewer Nemesis and Phyrexian Revoker (CR 614.12a, 607.2d): a player, a nonland card name.
+    'As ~ enters, choose a player.',
+    'As ~ enters, choose a nonland card name.',
+    // Cloud Key (CR 205.2a): some of the card types.
+    'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery.',
+    'As ~ enters, choose creature or artifact.',
+    // Stuffy Doll (CR 614.12a, 607.2d): a player.
+    'As ~ enters, choose a player.',
+    'As ~ enters the battlefield, choose a player.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -130,8 +175,16 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose two colors.',
     'As ~ enters, choose a basic land type.',
     'As ~ enters, choose a card name.',
+    'As ~ enters, choose a land card name.',
     'As ~ enters, choose a number.',
+    'As ~ enters, choose a player',
+    'As ~ enters, choose two players.',
+    'As ~ enters, choose a nonland card name',
+    'As ~ enters, choose a nonland card.',
     'As ~ enters, choose an opponent.',
+    'As ~ enters, choose two players.',
+    'As ~ enters, you may choose a player.',
+    'As ~ enters, choose a player other than you.',
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
     'As ~ enters, choose a card type',
@@ -140,6 +193,13 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose two card types.',
     'As ~ enters, you may choose a card type.',
     'As ~ enters, choose a supertype.',
+    'As ~ enters, choose artifact, creature, enchantment, instant, or sorcery',
+    'As ~ enters, choose artifact, creature, enchantment, instant and sorcery.',
+    'As ~ enters, choose artifact, creature, enchantment, instant, sorcery.',
+    'As ~ enters, choose artifact, artifact, or creature.',
+    'As ~ enters, choose artifact, creature, or goblin.',
+    'As ~ enters, choose artifact.',
+    'As ~ enters, you may choose artifact or creature.',
     'As ~ enters, choose a creature type. ~ enters with a fellowship counter on it.',
     '~ enters, choose a color.',
     'As ~ attacks, choose a color.',
@@ -153,11 +213,15 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(ENTERS, literal('it enters the battlefield'), literal('it enters')),
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
-        pattern(/, choose a (creature type|color|card type|planeswalker type)\./i),
+        pattern(
+          /, choose a (creature type|color|card type|planeswalker type|player|nonland card name)\./i,
+        ),
         // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
         pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
         pattern(/, choose (\p{Lu}[^.,—•\n]*(?:(?:, or | or |, )\p{Lu}[^.,—•\n]*)+)\./u),
+        // CR 205.2a (Cloud Key): "choose artifact, creature, enchantment, instant, or sorcery": some of the card types, in lowercase.
+        pattern(/, choose ((?:[a-z]+)(?:(?:, or | or |, )[a-z]+)+)\./u),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -169,27 +233,37 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       kind === 'color' ||
       kind === 'creature type' ||
       kind === 'card type' ||
-      kind === 'planeswalker type';
-    const names = plain ? null : optionNames(tail[1] ?? '');
-    if (!plain && names === null) return fail(ctx, pos);
+      kind === 'planeswalker type' ||
+      kind === 'player' ||
+      kind === 'nonland card name';
+    // Cloud Key: a choice among card types listed in lowercase (the capitalized names of Khans or Dragons are the card's own).
+    const types = plain ? null : cardTypeNames(tail[1] ?? '');
+    const names = plain || types !== null ? null : optionNames(tail[1] ?? '');
+    if (!plain && types === null && names === null) return fail(ctx, pos);
     const excluded = EXCLUDED_COLORS[(tail[2] ?? '').toLowerCase()];
     const what: IrChoiceArg =
-      names === null
-        ? {
-            kind: 'choiceKind',
-            what:
-              kind === 'color'
-                ? 'color'
-                : kind === 'card type'
-                  ? 'cardType'
-                  : kind === 'planeswalker type'
-                    ? 'planeswalkerType'
-                    : 'creatureType',
-            ...(excluded === undefined ? {} : { except: excluded }),
-            span,
-            rule: id,
-          }
-        : { kind: 'choiceKind', what: 'option', options: names, span, rule: id };
+      types !== null
+        ? { kind: 'choiceKind', what: 'cardType', options: types, span, rule: id }
+        : names === null
+          ? {
+              kind: 'choiceKind',
+              what:
+                kind === 'color'
+                  ? 'color'
+                  : kind === 'card type'
+                    ? 'cardType'
+                    : kind === 'planeswalker type'
+                      ? 'planeswalkerType'
+                      : kind === 'player'
+                        ? 'player'
+                        : kind === 'nonland card name'
+                          ? 'cardName'
+                          : 'creatureType',
+              ...(excluded === undefined ? {} : { except: excluded }),
+              span,
+              rule: id,
+            }
+          : { kind: 'choiceKind', what: 'option', options: names, span, rule: id };
     const event: IrClause = {
       kind: 'clause',
       verb: 'entersChoose',
@@ -236,7 +310,9 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with a +1/+1 counter on it for each time it was kicked.',
     '~ enters with a charge counter on it for each time it was kicked.',
     // Issue 101 (Bone Devourer, CR 614.12): a count of what died this turn.
-    '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn.', // Centaur Vinecrasher (CR 614.12): a count of the cards in graveyards, counted as it enters.
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of creature cards in your graveyard.',
   ],
   rejects: [
     '~ enters with two +1/+1 counters on it for each creature you control.',
@@ -257,6 +333,9 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with two +1/+1 counters on it and draw a card.',
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died this turn and draw a card.',
     '~ enters with a number of +1/+1 counters on it equal to the number of creatures that died last turn.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards and draw a card.',
+    '~ enters with a number of +1/+1 counters on it equal to the number of land cards in all graveyards',
+    '~ enters with a number of +1/+1 counters on it equal to the number of',
   ],
   parse: (ctx, pos) => {
     const r = sequence(ENTERS, countersTail('replacement.enters-with-counters', true, true))(
@@ -341,6 +420,7 @@ export const REPLACEMENT_RULES = [
   ...DIE_REPLACEMENT_RULES,
   // Stage P33 (D-150): "If you would gain life, you gain that much life plus 1 instead."
   ...ANGEL_REPLACEMENT_RULES,
+  ...COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES,
   // Quandrix Unlimited deck, group A: "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
   ...COUNTERS_PLUS_REPLACEMENT_RULES,
   // Stage P34 (D-152): "As ~ enters, you may have it become a copy of any creature on the battlefield ...".
@@ -351,6 +431,11 @@ export const REPLACEMENT_RULES = [
   ...ENTERS_AS_COPY_COUNTERS_RULES,
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
+  ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
+  // Miracle Worker deck build (issue 109), Mirrormade: "You may have ~ enter as a copy of any artifact or enchantment on the battlefield."
+  ...COPY_PLAIN_REPLACEMENT_RULES,
+  // Grand Larceny deck (issue 119), The Mimeoplasm: "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards ...".
+  ...EXILE_PAIR_COPY_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
@@ -361,6 +446,11 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  // Squirreled Away deck, group 1: "..., those tokens plus that many ... are created instead" and "..., instead create one of each".
+  ...SQUIRREL_G1_REPLACEMENT_RULES,
+  // Most Wanted deck, group 2: "If you would create a Clue, Food, or Treasure token, instead create one of each."
+  ...TOKEN_EACH_OF_REPLACEMENT_RULES,
+  ...DRAW_REDIRECT_REPLACEMENT_RULES,
   // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,
   // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."
@@ -369,4 +459,6 @@ export const REPLACEMENT_RULES = [
   ...KEEP_ONE_LOYALTY_REPLACEMENT_RULES,
   // Phyrexian Processor: "As ~ enters, pay any amount of life."
   ...PAY_LIFE_REPLACEMENT_RULES,
+  // Counter Blitz deck, group G (Sin, Unending Cataclysm): "As ~ enters, remove all counters from any number of artifacts, creatures, and enchantments. ..."
+  ...COUNTER_BLITZ_G_REPLACEMENT_RULES,
 ];

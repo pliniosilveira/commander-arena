@@ -28,7 +28,11 @@ export function canExert(state: GameState, seat: SeatId, attacker: ObjectId): bo
     return false;
   }
   return derive(state, obj).abilities.some(
-    (a) => a.kind === 'static' && a.static.kind === 'exertOnAttack',
+    (a) =>
+      a.kind === 'static' &&
+      a.static.kind === 'exertOnAttack' &&
+      // Combat Celebrant: "If ~ hasn't been exerted this turn, you may exert it as it attacks".
+      (a.static.unlessExertedThisTurn !== true || !state.turnLog.exerted.includes(attacker)),
   );
 }
 
@@ -64,5 +68,9 @@ export function exertPermanent(state: GameState, id: ObjectId): GameState {
     until: 'nextUntapStep',
     change: { kind: 'restrict', restriction: 'doesntUntap' },
   };
-  return { ...stamped, continuousEffects: [...stamped.continuousEffects, effect] };
+  return {
+    ...stamped,
+    continuousEffects: [...stamped.continuousEffects, effect],
+    turnLog: { ...stamped.turnLog, exerted: [...stamped.turnLog.exerted, id] },
+  };
 }

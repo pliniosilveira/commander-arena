@@ -17,6 +17,7 @@ import {
 import type { IrAmount, IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
 import {
   BOUNDARY,
+  mixedSpellListPhrase,
   permanentPhrase,
   spellPhrase,
   spellTypesAndPhrase,
@@ -100,9 +101,11 @@ export const UNTIL_SOURCE_LEAVES = pattern(
 export function perOpponentNoun(
   ctx: ParseContext,
   from: number,
-  verb: 'exile' | 'destroy' | 'tap',
+  verb: 'exile' | 'destroy' | 'tap' | 'gain control of' | 'return' | 'choose',
   at: number,
   id: string,
+  // "for any number of opponents, destroy target ...": nobody has to be chosen and the count is not written, so the text has no "up to one" to point at.
+  anyNumberOfOpponents = false,
 ) {
   const phrase = spanned(
     satisfy(
@@ -114,13 +117,20 @@ export function perOpponentNoun(
   const that = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'))(ctx, phrase.pos);
   if (!that.ok) return that;
   const filter: IrFilter = { ...phrase.value.value, zone: 'battlefield', controller: 'opponent' };
-  const nounAt = from + `for each opponent, ${verb} `.length;
-  const oneAt = nounAt + 'up to '.length;
+  const nounAt =
+    from +
+    (anyNumberOfOpponents ? `for any number of opponents, ${verb} ` : `for each opponent, ${verb} `)
+      .length;
+  const oneAt = anyNumberOfOpponents ? nounAt : nounAt + 'up to '.length;
   const noun: IrNoun = {
     kind: 'noun',
     det: 'target',
     filter,
-    count: { kind: 'number', value: 1, span: { start: oneAt, end: oneAt + 'one'.length } },
+    count: {
+      kind: 'number',
+      value: 1,
+      span: { start: oneAt, end: oneAt + (anyNumberOfOpponents ? 0 : 'one'.length) },
+    },
     upTo: true,
     plural: false,
     other: false,
@@ -246,6 +256,50 @@ export const EFFECT_DESTROY_PER_OPPONENT = defineRule<Clauses>({
 });
 
 /**
+ * `effect.destroy-any-number-of-opponents`: "for any number of opponents, destroy target nonland permanent that player controls" (Windgrace's Judgment; CR 115.1, 601.2c: one target for
+ * each opponent the controller chooses, none for the rest; CR 701.8a: destroy). The same slot as "for each opponent, destroy up to one target ... that player controls" (the engine's
+ * `onePerOpponent`: at most one target controlled by each opponent still in the game, and none at all is allowed), read for the words that say the choice of opponents is the
+ * caster's. The permanent is whatever phrase of the permanent family names no controller ("that player controls" is the controller). Not read: another verb, a count, "each opponent",
+ * "any number of players", a stated controller.
+ */
+export const EFFECT_DESTROY_ANY_NUMBER_OF_OPPONENTS = defineRule<Clauses>({
+  id: 'effect.destroy-any-number-of-opponents',
+  family: 'effect',
+  leading: ['for'],
+  cites: ['CR 115.1 (Targets)', 'CR 601.2c (Casting Spells)', 'CR 701.8a (Destroy)'],
+  examples: [
+    'for any number of opponents, destroy target nonland permanent that player controls',
+    'for any number of opponents, destroy target creature that player controls',
+    'for any number of opponents, destroy target artifact or enchantment that player controls',
+  ],
+  rejects: [
+    'for any number of opponents, destroy up to one target creature that player controls',
+    'for any number of opponents, destroy target nonland permanent',
+    'for any number of opponents, destroy target nonland permanent you control',
+    'for any number of opponents, destroy target nonland permanent an opponent controls',
+    'for any number of players, destroy target nonland permanent that player controls',
+    'for any number of opponents, exile target nonland permanent that player controls',
+    'for any number of opponents, destroy two target creatures that player controls',
+    'for each opponent, destroy target nonland permanent that player controls',
+    'for any number of opponents, destroy target nonland permanent that player controls and draw a card',
+    'destroy target nonland permanent that player controls',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.destroy-any-number-of-opponents';
+    const head = literal('for any number of opponents, destroy target ')(ctx, pos);
+    if (!head.ok) return head;
+    const noun = perOpponentNoun(ctx, pos, 'destroy', head.pos, id, true);
+    if (!noun.ok) return noun;
+    const span = { start: pos, end: noun.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'destroy', { objects: noun.value }, span)],
+      pos: noun.pos,
+    };
+  },
+});
+
+/**
  * `effect.once-each-turn`: "This ability triggers only once each turn." (CR 603.2, 122.6: a limit on how often the triggered ability before it
  * triggers). It is not an instruction: the lowering of the triggered ability that holds it sets the engine's `oncePerTurn` and drops the
  * sentence; in any other place it is read and not run.
@@ -307,10 +361,17 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type',
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
+    // Séance Board: card types and creature types in one list.
+    'spend this mana only to cast instant, sorcery, Demon, and Spirit spells',
+    'spend this mana only to cast artifact, Angel, and Demon spells',
+    'spend this mana only to cast instant, sorcery, Demon, or Spirit spells',
     'spend this mana only to cast artifact and creature spells',
     // Flamebraider, Primal Beyond: the sources of the spells' creature type, in the plural or with an article.
     'spend this mana only to cast Elemental spells or activate abilities of Elemental sources',
     'spend this mana only to cast an Elemental spell or activate an ability of an Elemental',
+    // Discreet Retreat (CR 700.12, 106.6): the outlaws, the five creature types.
+    'spend this mana only to cast outlaw spells or activate abilities of outlaw sources',
+    'spend this mana only to cast an outlaw spell',
   ],
   rejects: [
     'spend this mana only to cast instant and sorcery spell',
@@ -319,6 +380,10 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast instant and sorcery and spells',
     'spend this mana only to cast instant, sorcery spells',
     'spend this mana only to cast instant and sorcery spells and draw a card',
+    'spend this mana only to cast Demon, Spirit, and Angel spells',
+    'spend this mana only to cast instant, sorcery, Demon and Spirit spells',
+    'spend this mana only to cast instant, instant, and Demon spells',
+    'spend this mana only to cast instant, sorcery, Demon, and Spirit spell',
     'spend this mana only to cast',
     'spend this mana only to cast an Angel',
     'spend this mana only to cast spells',
@@ -339,6 +404,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Elemental spells or activate abilities of Dragon sources',
     'spend this mana only to cast an Elemental spell or activate an ability of a Dragon',
     'spend this mana only to cast an Elemental spell or activate an ability of an Elemental you control',
+    'spend this mana only to cast outlaw spells or activate abilities of Dragon sources',
+    'spend this mana only to cast non-outlaw spells',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.spend-only';
@@ -347,15 +414,24 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     const article = pattern(/an? /iu)(ctx, head.pos);
     // D-329: "instant and sorcery spells": a list of card types joined by "and", read as the choice "instant or sorcery".
     const andList = article.ok ? null : spanned(spellTypesAndPhrase())(ctx, head.pos);
+    // Séance Board: "instant, sorcery, Demon, and Spirit spells", card types and creature types in one list.
+    const mixedList = article.ok ? null : spanned(mixedSpellListPhrase())(ctx, head.pos);
     const phrase =
       andList?.ok === true
         ? andList
-        : spanned(spellPhrase(!article.ok))(ctx, article.ok ? article.pos : head.pos);
+        : mixedList?.ok === true
+          ? mixedList
+          : spanned(spellPhrase(!article.ok))(ctx, article.ok ? article.pos : head.pos);
     if (!phrase.ok) return phrase;
     // A spell is named by its card types or its creature types: a color, a quality or a count says more than the engine's restriction.
     const filter: IrFilter = phrase.value.value;
     // "spells" with no type says nothing a restriction could use.
-    if (filter.types === undefined && filter.subtypes === undefined && filter.anyOf === undefined) {
+    if (
+      filter.types === undefined &&
+      filter.subtypes === undefined &&
+      filter.anyOf === undefined &&
+      filter.outlaw !== true
+    ) {
       return fail(ctx, pos);
     }
     // Stage P34 (D-152): "... or activate abilities of Dragons", the abilities of the permanents of the same kind as the spells (CR 106.6).
@@ -395,6 +471,13 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // "... or activate abilities of Elemental sources", "... an Elemental spell or activate an ability of an Elemental" (CR 106.6, Flamebraider, Primal Beyond): the
     // sources of the one creature type the spells are of, said as "<Type> sources" or, with an article, "an ability of a <Type>".
     const sourcesEnd = (() => {
+      // Discreet Retreat (CR 700.12, 106.6): "outlaw spells or activate abilities of outlaw sources", the sources that are outlaws.
+      if (filter.outlaw === true) {
+        const o = pattern(
+          /(?: or activate abilities of outlaw sources| or activate an ability of an outlaw source)(?![\p{L}\p{N}])/iu,
+        )(ctx, phrase.pos);
+        return o.ok ? o.pos : null;
+      }
       const only = filter.subtypes;
       if (filter.types !== undefined || only === undefined || only.length !== 1) return null;
       const m = pattern(
@@ -481,6 +564,7 @@ export const ANGEL_EFFECT_RULES = [
   EFFECT_PROLIFERATE_TIMES,
   EFFECT_EXILE_PER_OPPONENT,
   EFFECT_DESTROY_PER_OPPONENT,
+  EFFECT_DESTROY_ANY_NUMBER_OF_OPPONENTS,
   EFFECT_ONCE_EACH_TURN,
   EFFECT_SPEND_ONLY,
 ].map(quietly);

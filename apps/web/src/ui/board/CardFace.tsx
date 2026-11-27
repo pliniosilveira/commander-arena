@@ -265,7 +265,11 @@ export function FaceDownBadge({ object }: { object: ObjectView }) {
       title={faceDownBadgeTitle(object)}
       data-face-down-badge={object.faceDownBy}
     >
-      {object.faceDownBy === 'manifest' ? 'manifested' : 'face down'}
+      {object.faceDownBy === 'manifest'
+        ? 'manifested'
+        : object.faceDownBy === 'cloak'
+          ? 'cloaked'
+          : 'face down'}
     </span>
   );
 }
@@ -344,6 +348,8 @@ export function CardFace({
             name={art.name}
             back={art.back}
             isToken={object.isToken || object.emblem === true}
+            emblem={object.emblem === true}
+            owner={object.owner}
             {...(object.tokenDefinition === undefined
               ? {}
               : { tokenDefinition: object.tokenDefinition })}
@@ -356,6 +362,7 @@ export function CardFace({
           name={art.name}
           back={art.back}
           isToken={object.isToken}
+          owner={object.owner}
           {...(object.tokenDefinition === undefined
             ? {}
             : { tokenDefinition: object.tokenDefinition })}
@@ -382,6 +389,8 @@ export function CardFace({
             name={art.name}
             back={art.back}
             isToken={object.isToken || object.emblem === true}
+            emblem={object.emblem === true}
+            owner={object.owner}
             {...(object.tokenDefinition === undefined
               ? {}
               : { tokenDefinition: object.tokenDefinition })}

@@ -35,6 +35,9 @@ export function playerSubject(
     case 'eachPlayerControlling':
       // CR 102.1: the players with a battlefield permanent of a kind ("each player who controls a creature with power 4 or greater").
       return { text: 'each player who controls one', base: false };
+    case 'eachPlayerControllingMore':
+      // CR 102.1: the players who control more of a kind than you.
+      return { text: 'each player who controls more of them than you', base: false };
     case 'controllerOf':
       return { text: 'its controller', base: false };
     case 'ownerOf':
@@ -52,6 +55,9 @@ export function playerSubject(
     case 'playerToYourRight':
       // Hithlain Rope: the previous player in turn order.
       return { text: 'the player to your right', base: false };
+    case 'enteredChosenPlayer':
+      // CR 614.12a (Stuffy Doll): the player the permanent chose as it entered.
+      return { text: 'the chosen player', base: false };
     case 'chosenPlayer':
       // The Black Gate: the player "Choose a player with the most life or tied for most life" chose.
       return { text: 'that player', base: false };
@@ -87,6 +93,21 @@ export function playerSubject(
     case 'couldntSacrificeThisWay':
       // CR 701.21a: "each player who can't discards a card" after a sacrifice.
       return { text: "each player who can't", base: false };
+    case 'eachPlayerWhoChose':
+      // CR 101.4 (Seize the Spotlight).
+      return { text: `each player who chose ${player.option}`, base: false };
+    case 'eachPlayerWithoutVotes':
+      // CR 701.38a (Círdan the Shipwright).
+      return { text: 'each player who received no votes', base: false };
+    case 'eachOpponentWhoVoted':
+      // CR 701.38a (Erestor of the Council).
+      return {
+        text:
+          player.choice === 'same'
+            ? 'each opponent who voted for a choice you voted for'
+            : "each opponent who voted for a choice you didn't vote for",
+        base: false,
+      };
     case 'attackedPlayers':
       // D-269 (CR 508.6): "each player this creature attacked this turn loses the game".
       return { text: 'each player this creature attacked this turn', base: false };

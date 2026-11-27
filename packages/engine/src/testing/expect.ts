@@ -365,6 +365,25 @@ export function createExpectations(
         );
       }
     },
+    initiative(seat) {
+      const state = getState();
+      if ((state.initiative ?? null) !== seat) {
+        fail(
+          `Expected ${seat === null ? 'no initiative' : `seat ${seat} to have the initiative`} but ${state.initiative === undefined ? 'nobody has it' : `seat ${state.initiative} does`}`,
+          state,
+        );
+      }
+    },
+    dungeon(seat, room) {
+      const state = getState();
+      const actual = state.seats[seat]?.dungeon?.room ?? null;
+      if (actual !== room) {
+        fail(
+          `Expected seat ${seat} to be ${room === null ? 'in no dungeon' : `in ${room}`} but they are ${actual === null ? 'in none' : `in ${actual}`}`,
+          state,
+        );
+      }
+    },
     dayNight(designation) {
       const state = getState();
       if ((state.dayNight ?? null) !== designation) {

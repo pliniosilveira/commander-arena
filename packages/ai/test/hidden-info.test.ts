@@ -180,7 +180,13 @@ function auditView(state: GameState, viewer: SeatId, audit: Audit): void {
   // (CR 701.22a, 701.25a), in the decision and in `pendingCards`, and only that player.
   const arranging = choosing?.kind === 'arrangeCards' && choosing.seat === viewer ? choosing : null;
   const { pending: _pending, pendingCards: _pendingCards, ...outsideTheChoice } = view;
-  const exemptIds = new Set<ObjectId>(searching?.legal ?? arranging?.cards ?? []);
+  // A look-and-take ("reveal the top 7 cards, put a card that matches from among them onto the battlefield") also lists the cards looked at that do not match (`looked`):
+  // the decision's own player has looked at them (CR 701.20a, Reveal), and the other viewers are still audited without this exemption.
+  const exemptIds = new Set<ObjectId>(
+    searching !== null
+      ? [...searching.legal, ...(searching.looked ?? [])]
+      : (arranging?.cards ?? []),
+  );
   // The third exception (CR 401.5, D-125): a permanent that says "You may look at the top card of your library
   // any time" shows its controller the top card of their own library, in their own view and nowhere else.
   // The fourth (CR 401.5): "Play with the top card of your library revealed" shows the top card to every player.
@@ -260,13 +266,15 @@ function auditView(state: GameState, viewer: SeatId, audit: Audit): void {
     }
   }
 
-  // No library contents or order: the view has no library field at all, and no library object.
+  // No library contents or order: the view has no library field at all, and no library object. The
+  // check is for the key `"library":`: a zone named in a visible card's ability (a search of
+  // "library" and "graveyard", say) is not library contents.
   const withoutTop = (v: unknown) =>
     JSON.stringify(v, (key, value) => (key === 'libraryTop' ? undefined : value));
   expect(
     searching === null && arranging === null ? withoutTop(view) : withoutTop(outsideTheChoice),
     at,
-  ).not.toContain('"library"');
+  ).not.toContain('"library":');
   expect(text, at).not.toContain('"libraryOrder"');
 
   // One assertion for all secrets: thousands of per-id expectations would dominate the runtime.
@@ -640,11 +648,12 @@ describe('the sample handed to an agent (A31, D-161)', () => {
           if (realCards.length >= 8) {
             checked += 1;
             expect(sampleCards, at).not.toEqual(realCards);
-            // Neither zone alone is the real one in order (a zone of one or two cards can match by chance).
-            if (real.hand.length >= 4) {
+            // Neither zone alone is the real one in order. A zone of n cards matches by chance with probability 1/n!, so only zones of six or more (1 in 720 or less) are
+            // compared: a random shuffle of four cards repeats the real order one time in 24, which a seeded game of hundreds of decisions reaches by luck.
+            if (real.hand.length >= 6) {
               expect(cardIdsOf(sample, got.hand), at).not.toEqual(cardIdsOf(state, real.hand));
             }
-            if (real.library.length >= 4) {
+            if (real.library.length >= 6) {
               expect(cardIdsOf(sample, got.library), at).not.toEqual(
                 cardIdsOf(state, real.library),
               );

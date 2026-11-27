@@ -40,7 +40,7 @@ import {
   entersOptionText,
   unspentManaText,
 } from './dragons-text';
-import { drawInsteadWording, skipDrawWording } from './draw-skip-text';
+import { drawInsteadWording, drawRedirectWording, skipDrawWording } from './draw-skip-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
@@ -82,6 +82,10 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
   cantAttackPlayersAlreadyAttacked: {
     one: "can't attack a player it has already attacked this turn",
     many: "can't attack a player they have already attacked this turn",
+  },
+  cantBeBlockedExceptByThreeOrMore: {
+    one: "can't be blocked except by three or more creatures",
+    many: "can't be blocked except by three or more creatures",
   },
   cantBeBlockedByMoreThanOne: {
     one: "can't be blocked by more than one creature",
@@ -336,7 +340,12 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
     }
     case 'castAsThoughFlash': {
       // D-408 (CR 601.3b, 113.6d): the spell's own permission, "You may cast this spell as though it had flash" (its condition is worded by `conditionalWording`).
-      if ('kind' in effect.spells) return 'You may cast this spell as though it had flash';
+      // CR 307.1, 603.7, 514.3a (Necromancy): with its rider, which is part of the same ability.
+      if ('kind' in effect.spells) {
+        return effect.sacrificeIfCastAtInstantSpeed === true
+          ? "You may cast this spell as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step"
+          : 'You may cast this spell as though it had flash';
+      }
       // D-139 (CR 601.3b, 702.8a): "You may cast artifact spells as though they had flash".
       const spells = spellsPhrase(effect.spells);
       return spells === null ? null : `You may cast ${spells} as though they had flash`;
@@ -490,9 +499,16 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   if (replacement.kind === 'skipDraw') return skipDrawWording(replacement);
   // D-379 (CR 614.11, 504.1): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead".
   if (replacement.kind === 'drawInstead') return drawInsteadWording(replacement);
+  if (replacement.kind === 'drawRedirect') return drawRedirectWording();
   // D-378 (CR 614.1a, 614.5): "If one or more tokens would be created under your control, twice that many of those tokens are created instead".
   if (replacement.kind === 'tokensInstead' && replacement.mode === 'double') {
     return 'If one or more tokens would be created under your control, twice that many of those tokens are created instead';
+  }
+  // Most Wanted deck (CR 614.1a): "If you would create a Clue, Food, or Treasure token, instead create one of each".
+  if (replacement.kind === 'tokensInstead' && replacement.mode === 'eachOf') {
+    const [last, ...rest] = [...replacement.tokens].reverse();
+    const names = [...rest.reverse(), `or ${last}`].join(', ');
+    return `If you would create a ${names} token, instead create one of each`;
   }
   // D-417 (CR 702.89a): Umbra armor.
   if (replacement.kind === 'umbraArmor') return umbraArmorWording();

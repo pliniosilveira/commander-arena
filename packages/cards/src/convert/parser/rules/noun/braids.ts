@@ -98,7 +98,54 @@ export const NOUN_A_CREATURE_THAT_DEALT_DAMAGE_TO_YOU = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.a-permanent-sharing-type-with-chosen`: "a permanent that shares a card type with the chosen card" (Spirit-Sister's Call, CR 205.2a: a card type is a word of the type line;
+ * CR 608.2c: "the chosen card" is the card an earlier instruction of the text chose as a target; CR 701.21a: the player chooses among the permanents they control). The engine's
+ * `sharesCardTypeWith` of `target`: a permanent with ANY card type the chosen card has. The binding pass requires the target (`noun.the-chosen-cards`). Not read: another noun than
+ * "permanent", "of their choice", "it" or "that card" (another antecedent), a creature type, a controller, several permanents.
+ */
+export const NOUN_A_PERMANENT_SHARING_TYPE_WITH_CHOSEN = defineRule<IrNoun>({
+  id: 'noun.a-permanent-sharing-type-with-chosen',
+  family: 'noun',
+  leading: ['a'],
+  cites: [
+    'CR 205.2a (Card Types)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 701.21a (Sacrifice)',
+  ],
+  examples: [
+    'a permanent that shares a card type with the chosen card',
+    'A permanent that shares a card type with the chosen card',
+  ],
+  rejects: [
+    'a permanent',
+    'a permanent that shares a card type with it',
+    'a permanent that shares a card type with that card',
+    'a permanent that shares a creature type with the chosen card',
+    'a creature that shares a card type with the chosen card',
+    'a permanent that shares a card type with the chosen cards',
+    'two permanents that share a card type with the chosen card',
+    'a permanent of their choice that shares a card type with the chosen card',
+  ],
+  parse: node<string, IrNoun>(
+    'noun.a-permanent-sharing-type-with-chosen',
+    map(
+      pattern(/a permanent that shares a card type with the chosen card(?![\p{L}\p{N}])/iu),
+      (m) => m[0],
+    ),
+    (raw) => ({
+      kind: 'noun',
+      det: 'a',
+      filter: { raw, sharesCardTypeWithChosen: true } satisfies IrFilter,
+      upTo: false,
+      plural: false,
+      other: false,
+    }),
+  ),
+});
+
 export const BRAIDS_NOUN_RULES = [
   NOUN_A_PERMANENT_SHARING_TYPE,
+  NOUN_A_PERMANENT_SHARING_TYPE_WITH_CHOSEN,
   NOUN_A_CREATURE_THAT_DEALT_DAMAGE_TO_YOU,
 ];

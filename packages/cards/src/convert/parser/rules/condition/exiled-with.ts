@@ -18,7 +18,7 @@ export const CONDITION_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
   rejects: [
     'there is a card exiled with ~',
     'there are no cards exiled with ~',
-    'there are cards exiled with it',
+    'there are cards exiled with them',
     'there are cards exiled with target creature',
     'there are three or more cards exiled with ~',
     'there are cards in exile',
@@ -90,7 +90,86 @@ export const CONDITION_N_CARDS_EXILED_WITH_SELF = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.a-card-exiled-with-self`: "a card is exiled with it", "a card is exiled with ~" (Smirking Spelljacker; CR 603.4 intervening "if", 607.2a linked abilities): at least one card the
+ * permanent exiled with its linked ability is still in exile, as `condition.cards-exiled-with-self` says it. "It" is the permanent with the ability. Not read: "a card has been exiled with ~", "no
+ * card is exiled with it", "a creature card is exiled with it", "cards are exiled with it", another source, a trailing word.
+ */
+export const CONDITION_A_CARD_EXILED_WITH_SELF = defineRule<IrCondition>({
+  id: 'condition.a-card-exiled-with-self',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 607.2a (Linked Abilities)'],
+  examples: ['a card is exiled with it', 'a card is exiled with ~'],
+  rejects: [
+    'a card has been exiled with it',
+    'no card is exiled with it',
+    'a creature card is exiled with it',
+    'cards are exiled with it',
+    'a card is exiled with target creature',
+    'a card is exiled with it.',
+    'a card is exiled with it and',
+    'a card is exiled with it or',
+    'a card is exiled with them',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/a card is exiled with (?:it|~)(?![\p{L}\p{N}'’])(?!\s+(?:and|or)\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'cardsExiledWithSelf' },
+        span: r.value.span,
+        rule: 'condition.a-card-exiled-with-self',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.cards-exiled-with-it`: "there are cards exiled with it" (Evercoat Ursine; CR 603.4 intervening "if", 607.2a linked abilities): the same test as
+ * `condition.cards-exiled-with-self` with the permanent said by the pronoun. The lowering accepts it only where "it" is the subject of the trigger (`~`), so that "it" is the
+ * permanent the linked ability belongs to. Not read: "cards exiled with them", "a card exiled with it", "no cards exiled with it", another source, a trailing word.
+ */
+export const CONDITION_CARDS_EXILED_WITH_IT = defineRule<IrCondition>({
+  id: 'condition.cards-exiled-with-it',
+  family: 'condition',
+  leading: ['there'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 607.2a (Linked Abilities)'],
+  examples: ['there are cards exiled with it'],
+  rejects: [
+    'there are cards exiled with them',
+    'there is a card exiled with it',
+    'there are no cards exiled with it',
+    'there are cards exiled with it.',
+    'there are cards exiled with it and',
+    'there are creature cards exiled with it',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/there are cards exiled with it(?![\p{L}\p{N}'’])(?!\s+(?:and|or)\b)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'cardsExiledWithSelf', viaIt: true },
+        span: r.value.span,
+        rule: 'condition.cards-exiled-with-it',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const EXILED_WITH_CONDITION_RULES = [
+  CONDITION_A_CARD_EXILED_WITH_SELF,
+  CONDITION_CARDS_EXILED_WITH_IT,
   CONDITION_CARDS_EXILED_WITH_SELF,
   CONDITION_N_CARDS_EXILED_WITH_SELF,
 ].map(quietly);

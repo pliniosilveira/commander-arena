@@ -15,6 +15,7 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { counterRemovalLocked } from './counter-lock';
 import { counterBlocked } from './counter-prevention';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
@@ -40,10 +41,15 @@ export function counterPickOptions(state: GameState, ins: CounterPick): CounterP
   }
   for (const id of ins.objects) {
     const obj = state.objects[id];
-    if (obj === undefined || obj.zone !== 'battlefield') continue;
+    // CR 122.1: counters stay on a card in exile, so a removal may take them from there (Mari, the Killing Quill); a move is between permanents.
+    if (obj === undefined) continue;
+    if (obj.zone !== 'battlefield' && !(ins.mode === 'remove' && obj.zone === 'exile')) continue;
     if (ins.mode === 'move' && id === ins.to) continue;
     for (const [counter, count] of Object.entries(obj.counters)) {
       if (count <= 0) continue;
+      if (ins.counterKind !== undefined && counter !== ins.counterKind) continue;
+      // CR 122.1d (Fear of Sleep Paralysis): a counter that can't be removed can't be taken or moved.
+      if (counterRemovalLocked(state, obj, counter)) continue;
       if (ins.mode === 'move' && to != null && counterBlocked(state, to, counter)) continue;
       out.push({ object: id, counter, count });
     }
@@ -105,7 +111,7 @@ export function runCounterPick(
   if (ins.left !== null && ins.left <= 0) return finish();
   const picks = counterPickOptions(state, ins);
   if (picks.length === 0) return finish();
-  const mayStop = ins.mode === 'remove';
+  const mayStop = (ins.mode === 'remove' && ins.required !== true) || ins.anyNumber === true;
   if (ins.chosen === null) {
     // A move takes exactly one counter: with only one that can go, there is nothing to ask.
     const only = !mayStop && picks.length === 1 ? picks[0] : undefined;

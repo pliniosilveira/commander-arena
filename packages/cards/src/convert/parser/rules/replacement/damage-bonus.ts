@@ -121,10 +121,85 @@ export const REPLACEMENT_DAMAGE_BONUS = defineRule<IrAbility>({
 });
 
 /**
+ * `replacement.damage-bonus-noncombat`: "If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead." (Spiked Corridor; CR 614.1a,
+ * 120.2b, 120.3, 616.1): the engine's `damageBonus` of every source the controller controls, only for damage that is not combat damage and only for damage dealt to an opponent
+ * (not to a permanent an opponent controls). Not read: a source of a color or type ("a red source"), another player's or no player's source, combat damage, damage "to an opponent or
+ * a permanent an opponent controls" (`replacement.damage-bonus`), another amount form ("plus X", "twice that much", "minus"), and a missing period.
+ */
+export const REPLACEMENT_DAMAGE_BONUS_NONCOMBAT = defineRule<IrAbility>({
+  id: 'replacement.damage-bonus-noncombat',
+  family: 'replacement',
+  leading: ['if'],
+  cites: [
+    'CR 614.1a (Replacement Effects)',
+    'CR 120.2b (Damage)',
+    'CR 120.3 (Damage)',
+    'CR 616.1 (Interaction of Replacement and/or Prevention Effects)',
+  ],
+  examples: [
+    'If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead.',
+    'If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 1 instead.',
+  ],
+  rejects: [
+    'If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead',
+    'If a red source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead.',
+    'If a source would deal noncombat damage to an opponent, it deals that much damage plus 2 instead.',
+    'If a source an opponent controls would deal noncombat damage to you, it deals that much damage plus 2 instead.',
+    'If a source you control would deal combat damage to an opponent, it deals that much damage plus 2 instead.',
+    'If a source you control would deal damage to an opponent, it deals that much damage plus 2 instead.',
+    'If a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead.',
+    'If a source you control would deal noncombat damage to a creature, it deals that much damage plus 2 instead.',
+    'If a source you control would deal noncombat damage to an opponent, it deals that much damage plus X instead.',
+    'If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 0 instead.',
+    'If a source you control would deal noncombat damage to an opponent, it deals twice that much damage instead.',
+    'If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead. Draw a card.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.damage-bonus-noncombat';
+    const body = sequence(
+      literal('if a source you control would deal noncombat damage to an opponent, '),
+      literal('it deals that much damage plus '),
+      spanned(satisfy(quantity, (n) => n >= 1)),
+      pattern(/ instead(?![\p{L}\p{N}])/iu),
+      literal('.'),
+    )(ctx, pos);
+    if (!body.ok) return body;
+    const [, , amount] = body.value;
+    const span = { start: pos, end: body.pos };
+    const sources: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { raw: 'source', controller: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: id,
+    };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'damageBonus',
+      args: {
+        sources,
+        amount: { kind: 'number', value: amount.value, span: amount.span },
+        noncombatOnly: { kind: 'flag', value: true, span, rule: id },
+        opponentPlayersOnly: { kind: 'flag', value: true, span, rule: id },
+      },
+      optional: false,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: body.pos };
+  },
+});
+
+/**
  * `replacement.damage-double`: "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player
  * instead." (Angrath's Marauders; CR 614.1a, 120.3, 616.1), and the same for a source of a color or card type ("a red source you control"). The engine's
- * `damageDouble`. Not read: a source of another player or of no player ("a source"), other recipients ("to an opponent", "to a creature"), only combat damage,
- * another amount form ("plus 2", "triple"), and a missing period.
+ * `damageDouble`. "If a creature you control would deal damage to a permanent or player, it deals double that damage instead." (Gratuitous Violence) is the same
+ * effect for the creatures the controller controls: a permanent on the battlefield (CR 109.2: a card type alone means a permanent), so a spell is not one, and the
+ * `permanents` flag keeps that in the lowering. Not read: a source of another player or of no player ("a source", "a creature"), other recipients ("to an
+ * opponent", "to a creature"), only combat damage, another amount form ("plus 2", "triple"), and a missing period.
  */
 export const REPLACEMENT_DAMAGE_DOUBLE = defineRule<IrAbility>({
   id: 'replacement.damage-double',
@@ -134,12 +209,21 @@ export const REPLACEMENT_DAMAGE_DOUBLE = defineRule<IrAbility>({
     'CR 614.1a (Replacement Effects)',
     'CR 120.3 (Damage)',
     'CR 616.1 (Interaction of Replacement and/or Prevention Effects)',
+    'CR 109.2 (Objects)',
   ],
   examples: [
     'If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
     'If a red source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
+    'If a creature you control would deal damage to a permanent or player, it deals double that damage instead.',
   ],
   rejects: [
+    'If a creature you control would deal damage to a permanent or player, it deals double that damage instead',
+    'If a creature would deal damage to a permanent or player, it deals double that damage instead.',
+    'If a creature an opponent controls would deal damage to a permanent or player, it deals double that damage instead.',
+    'If a creature you control would deal combat damage to a permanent or player, it deals double that damage instead.',
+    'If a creature you control would deal damage to a player, it deals double that damage instead.',
+    'If a creature you control would deal damage to a permanent or player, it deals triple that damage instead.',
+    'If a creature you control would deal damage to a permanent or player, it deals double that damage instead. Draw a card.',
     'If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead',
     'If a source would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
     'If a source you control would deal damage to an opponent, it deals double that damage to that player instead.',
@@ -154,6 +238,26 @@ export const REPLACEMENT_DAMAGE_DOUBLE = defineRule<IrAbility>({
     if (!head.ok) return head;
     // "a source you control" (any color or type), or "a red source you control" / "an artifact source you control".
     const sourceStart = head.pos + 1;
+    const creature = literal(
+      ' creature you control would deal damage to a permanent or player, it deals double that damage instead.',
+    )(ctx, head.pos);
+    if (creature.ok) {
+      const span = { start: pos, end: creature.pos };
+      const noun = { start: sourceStart, end: sourceStart + 'creature you control'.length };
+      const filter: IrFilter = { raw: 'creature', types: ['creature'], controller: 'you' };
+      const event: IrClause = {
+        kind: 'clause',
+        verb: 'damageDouble',
+        args: {
+          sources: damageSources(filter, noun, id),
+          permanents: { kind: 'flag', value: true, span: noun, rule: id },
+        },
+        optional: false,
+        span,
+        rule: id,
+      };
+      return { ok: true, value: replacement(id, span, event), pos: creature.pos };
+    }
     const plain = literal(' source you control')(ctx, head.pos);
     let sources: IrNoun;
     let at: number;
@@ -208,5 +312,6 @@ function damageSources(
 
 export const DAMAGE_BONUS_REPLACEMENT_RULES = [
   REPLACEMENT_DAMAGE_BONUS,
+  REPLACEMENT_DAMAGE_BONUS_NONCOMBAT,
   REPLACEMENT_DAMAGE_DOUBLE,
 ].map(quietly);

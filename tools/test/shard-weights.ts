@@ -3,7 +3,7 @@
 //
 //   node tools/test/shard-weights.ts --out tools/test/shard-weights.json --source "<what the logs are>" <vitest.log> [<vitest.log> ...]
 //
-// The logs are the `vitest.log` of the `pr-test-results-*` artifacts of a green run of the CI workflow (one per shard; pass all four), or the job logs of the same run saved with
+// The logs are the `vitest.log` of the `pr-test-results-*` artifacts of a green run of the CI workflow (one per shard; pass them all), or the job logs of the same run saved with
 // `gh run view --log`. Several runs can be given: a file's weight is the mean of the runs, which smooths the noise of the runners (the same file took 133 s in one run and 202 s in
 // another). Vitest's default reporter prints a duration only for a file slower than its slow-test threshold (300 ms); a file without one is a light file and takes the default weight.
 // Only the files of at least `MIN_SECONDS` are written: the rest take the default, and the file stays short and stable. Run it again when the PR tier changes much (a heavy suite is

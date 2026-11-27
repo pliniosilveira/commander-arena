@@ -1223,7 +1223,7 @@ describe('effects: discard unless, look at the top, put from the hand, tap X, re
       'sorcery',
     ],
     ['Reselect which player or permanent target creature is attacking.', 'instant'],
-    ['When ~ enters, gain 2 life. If you do, draw a card.', 'creature'],
+    ['When ~ enters, scry 2. If you do, draw a card.', 'creature'],
   ] as const)('"%s" is not run', (text, type) => {
     expect(drop(text, type)).toMatchObject({
       reason: expect.stringMatching(/notRunnable|unrecognised|unboundReference/),

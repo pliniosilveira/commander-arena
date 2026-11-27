@@ -89,8 +89,14 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     "return a nonland card of an opponent's choice from your graveyard to your hand",
     // Issue 102 (Teval, the Balanced Scale): the same choice of a land card.
     'you may return a land card from your graveyard to the battlefield tapped',
+    // Charnel Serenade (CR 122.6): the card enters with a counter on it.
+    'return a creature card from your graveyard to the battlefield with a finality counter on it',
+    'you may return a creature card from your graveyard to the battlefield with a +1/+1 counter on it',
   ],
   rejects: [
+    'return a creature card from your graveyard to the battlefield with two finality counters on it',
+    'return a creature card from your graveyard to your hand with a finality counter on it',
+    'return a creature card from your graveyard to the battlefield with a finality counter',
     'you may return target creature card from your graveyard to your hand',
     'you may return two creature cards from your graveyard to your hand',
     'you may return a creature card from a graveyard to your hand',
@@ -122,6 +128,11 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
           spanned(
             choice(
               literal(' to your hand'),
+              // Charnel Serenade (CR 122.6): "to the battlefield with a finality counter on it", the counter it enters with.
+              map(
+                pattern(/ to the battlefield with an? (?:[+-]\d+\/[+-]\d+|[a-z]+) counter on it/iu),
+                (m) => m[0],
+              ),
               literal(' to the battlefield tapped'),
               literal(' to the battlefield'),
             ),
@@ -145,11 +156,15 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
       const placed = ctx.text.slice(hand.span.start, hand.span.end);
       const toBattlefield = placed !== ' to your hand';
       const tapped = placed === ' to the battlefield tapped';
+      const counterName = /^ to the battlefield with an? (\S+) counter on it$/iu.exec(placed)?.[1];
       const to: IrZoneSpec = {
         kind: 'zoneSpec',
         zone: toBattlefield ? 'battlefield' : 'hand',
         ...(toBattlefield ? {} : { whose: 'you' as const }),
         ...(tapped ? { tapped: true as const } : {}),
+        ...(counterName === undefined
+          ? {}
+          : { counters: { counter: counterName.toLowerCase(), count: 1 } }),
         span: hand.span,
         rule: 'effect.return-chosen-card',
       };

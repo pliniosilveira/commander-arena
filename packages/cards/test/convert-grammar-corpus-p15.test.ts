@@ -269,7 +269,7 @@ const TRIGGERS: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Whenever a player sacrifices a creature you control, draw a card.',
-    expect: no('you control, draw a card.', 'trigger.sacrifice'),
+    expect: no(', draw a card.', 'trigger.sacrifice'),
     note: 'SYNTHETIC; whoever sacrifices, the permanent is theirs',
   },
   {

@@ -22,6 +22,8 @@ export function chooseNewTarget(view: GameView, d: TargetsDecision): Action | nu
   const subject = d.subject === undefined ? undefined : findObject(view, d.subject);
   if (subject === undefined || !isHelpfulSpell(subject)) return null;
   const [slot] = d.specs;
+  // "Change a target of ... to ~" (CR 115.7b): the list is the targets that can be changed, not the new targets: the ordinary choice answers it.
+  if (slot?.specId === 'changeFrom') return null;
   const own = slot?.legal.find((t) => sideOf(view, t) === view.viewer);
   return own === undefined ? null : { kind: 'chooseTargets', targets: [own] };
 }

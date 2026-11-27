@@ -17,6 +17,7 @@ import {
   type SeatId,
 } from '@commander-arena/engine';
 import { type Agent, DEFAULT_BUDGET_MS, type DecideContext } from './agent';
+import type { PlayOutPool } from './heuristic-plan-types';
 import { firstAcceptedAction, firstSafeAction } from './legal';
 
 export interface LoggedAction {
@@ -50,6 +51,26 @@ export interface RunOptions {
    * the AI package may not read real time.
    */
   readonly now?: () => number;
+  /**
+   * Called after every applied action with the state before and after it (a measuring hook: the table
+   * report reads eliminations, attacks, blocks and removal from it). It must not change either state.
+   */
+  readonly onAction?: (step: ActionStep) => void;
+  /**
+   * A pool of workers handed to agents as `ctx.playOuts` (issue 653, step 2c). Left out by the arena and the
+   * benchmark, which stay on one thread; a test gives an in-process one to prove the games are the same.
+   */
+  readonly playOuts?: PlayOutPool;
+}
+
+/** One applied action, with the game before and after it. */
+export interface ActionStep {
+  /** Index of the action in the log. */
+  readonly index: number;
+  readonly seat: SeatId;
+  readonly action: Action;
+  readonly before: GameState;
+  readonly after: GameState;
 }
 
 export interface RunCounters {
@@ -135,6 +156,7 @@ export async function runGame(
       budgetMs,
       now,
       sample: (seed) => determinize(realState, seat, createRng(seed)),
+      ...(options.playOuts === undefined ? {} : { playOuts: options.playOuts }),
     };
     let action: Action;
     try {
@@ -162,6 +184,13 @@ export async function runGame(
       applied = fallback.value;
     }
     log.push({ seat, action });
+    options.onAction?.({
+      index: log.length - 1,
+      seat,
+      action,
+      before: state,
+      after: applied.state,
+    });
     state = applied.state;
   }
 

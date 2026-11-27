@@ -7,8 +7,10 @@ import type { ObjectFilter, TargetSpec } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { ChosenTarget } from '../state/chosen';
 import type { TargetChoiceSpec, TargetsDecision } from '../state/decisions';
+import { getObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { amountOf } from './amounts';
+import { controllerOf } from './control';
 import type { SlotMode } from './modes';
 import {
   legalTargets,
@@ -74,6 +76,38 @@ export function slotCanBeFilled(
 }
 
 /**
+ * CR 601.2c, 115.1 (Breaking of the Fellowship): whether the slots that must have one controller (`sameControllerAs`) can all be filled together: some target of the slot it names and
+ * some target of its own, not the same object when the slot says "another" (`differentFrom`), are controlled by one player. True when no slot says it.
+ */
+export function sameControllerFillable(
+  state: GameState,
+  specs: readonly TargetSpec[],
+  ctx: SelectContext,
+): boolean {
+  return specs.every((spec) => {
+    if (spec.sameControllerAs === undefined) return true;
+    const named = specs.find((s) => s.id === spec.sameControllerAs);
+    if (named === undefined) return false;
+    const controls = (t: ChosenTarget): number | undefined =>
+      t.kind === 'object' ? controllerOf(state, getObject(state, t.id)) : undefined;
+    const ours = legalTargets(state, spec, ctx);
+    return legalTargets(state, named, ctx).some((a) =>
+      ours.some(
+        (b) =>
+          controls(a) !== undefined &&
+          controls(a) === controls(b) &&
+          !(
+            spec.differentFrom === named.id &&
+            a.kind === 'object' &&
+            b.kind === 'object' &&
+            a.id === b.id
+          ),
+      ),
+    );
+  });
+}
+
+/**
  * D-386 (CR 601.2b, 601.2c): the most X a spell with an "X target ..." slot can announce: every such slot needs X legal targets, and the targets are chosen
  * after X is announced, from the state the spell is cast in (what the cost discards or pays is not there to be a target yet). Unlimited when it has none.
  */
@@ -132,6 +166,10 @@ export function targetChoiceSpecs(
   cap: number | null = null,
 ): TargetChoiceSpec[] {
   const restricted = only === null && payable === null ? -1 : flashSlotOf(specs);
+  // CR 115.1, 109.4: the slots that must have one controller (`sameControllerAs`) and the slots they name say who controls each legal target (its `group`).
+  const sameControllerSlots = new Set(
+    specs.flatMap((s) => (s.sameControllerAs === undefined ? [] : [s.id, s.sameControllerAs])),
+  );
   return specs.map((spec, index) => {
     const slotMode = modeOf?.get(spec.id);
     const bounds = targetBounds(spec);
@@ -150,12 +188,19 @@ export function targetChoiceSpecs(
       index === restricted ? only : null,
       ctx,
     );
-    const legal =
+    const payableLegal =
       index === restricted && payable !== null
         ? flashLegal.filter((t) =>
             t.kind === 'object' ? payable.objects.includes(t.id) : payable.players,
           )
         : flashLegal;
+    const legal = sameControllerSlots.has(spec.id)
+      ? payableLegal.map((t) =>
+          t.kind === 'object' && t.group === undefined
+            ? { ...t, group: controllerOf(state, getObject(state, t.id)) }
+            : t,
+        )
+      : payableLegal;
     // D-386: "X target creature cards": exactly X (the announcement offered no X larger than the legal targets, `maxTargetCountX`).
     if (spec.countX === true) {
       const n = Math.min(x, legal.length);
@@ -172,7 +217,11 @@ export function targetChoiceSpecs(
     }
     return {
       specId: spec.id,
-      min: Math.min(bounds.min, opponents),
+      // CR 115.1, 601.2c (Guff Rewrites History): "for each player, choose target ... that player controls": one target for each player who controls a legal one.
+      min:
+        spec.everyController === true
+          ? new Set(legal.map((l) => (l.kind === 'object' ? l.group : undefined))).size
+          : Math.min(bounds.min, opponents),
       // D-234: "any number of target ...": every legal target at most.
       max: Math.min(
         total === null ? bounds.max : Math.min(bounds.max, total),
@@ -188,6 +237,7 @@ export function targetChoiceSpecs(
         : {}),
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
+      ...(spec.sameControllerAs === undefined ? {} : { sameControllerAs: spec.sameControllerAs }),
       ...(spec.totalPowerAtMost === undefined ? {} : { totalPowerAtMost: spec.totalPowerAtMost }),
       ...(spec.ownedByTarget === undefined ? {} : { ownedBy: spec.ownedByTarget }),
       ...(slotMode?.differentFrom === undefined && spec.alsoDifferentFrom === undefined
@@ -236,6 +286,19 @@ export function targetAnswerError(
       const others = chosen.filter((t) => t.specId === spec.differentFrom);
       if (picks.some((t) => others.some((o) => sameTargetOf(o, t)))) {
         return 'Those targets must be different from the other target';
+      }
+    }
+    // CR 115.1, 109.4 (Breaking of the Fellowship): "another target creature that player controls": every target of the slot has the controller of the target of the slot named.
+    if (spec.sameControllerAs !== undefined && picks.length > 0) {
+      const named = pending.specs.find((s) => s.specId === spec.sameControllerAs);
+      const first = chosen.find((t) => t.specId === spec.sameControllerAs);
+      const groupOfPick = (s: Pick<TargetChoiceSpec, 'legal'> | undefined, t: ChosenTarget) => {
+        const found = s?.legal.find((l) => sameTarget(l, t));
+        return found?.kind === 'object' ? found.group : undefined;
+      };
+      const wanted = first === undefined ? undefined : groupOfPick(named, first);
+      if (wanted === undefined || picks.some((t) => groupOfPick(spec, t) !== wanted)) {
+        return 'Choose targets controlled by the same player';
       }
     }
     // CR 115.1: "target cards from their graveyard": each card is in the graveyard of the player chosen for the slot `ownedBy` names.

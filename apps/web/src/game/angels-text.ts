@@ -81,6 +81,8 @@ function perCounter(counter: string, count: Counted): string {
   if (count.kind === 'enteredThisTurn' || count.kind === 'diedThisTurn') {
     return `${counterWords(counter, 1)} on it for each of ${amountPhrase(count).replace(/^the number of /, 'the ')}`;
   }
+  // Arwen: "equal to ~'s toughness" has no group of permanents to count; the words cannot say it.
+  if (!('filter' in count)) return 'an additional counter on it';
   const things =
     thingsPhrase(asCreatures(count.filter), false)?.replace(' on the battlefield', '') ?? null;
   if (things === null) return 'an additional counter on it';
@@ -137,7 +139,11 @@ export function angelsStaticWording(effect: StaticEffect, noun: string): string 
       return "Your opponents can't cast spells during your turn";
     case 'preventDamageToThis': {
       const scope = PREVENT_SCOPE[effect.scope];
-      return scope === undefined ? null : `Prevent ${scope} that would be dealt to this ${noun}`;
+      if (scope === undefined) return null;
+      // CR 303.4, 301.5: an Aura or Equipment prevents the damage dealt to the permanent it is attached to.
+      return effect.subject.kind === 'attached'
+        ? `Prevent ${scope} that would be dealt to the permanent this is attached to`
+        : `Prevent ${scope} that would be dealt to this ${noun}`;
     }
     case 'blockTax':
       return blockTaxWording(effect);
@@ -260,6 +266,8 @@ export function manaRestrictionWording(
     text = `${text}. Spend this mana only on costs that contain {X}`;
   } else if (ability.spendOnly?.notGeneric === true) {
     text = `${text}. This mana can't be spent to pay generic mana costs`;
+  } else if (ability.spendOnly?.turnFaceUp === true) {
+    text = `${text}. Spend this mana only to turn permanents face up`;
   } else if (ability.spendOnly !== undefined) {
     const spells =
       ability.spendOnly.alsoAbilities === true
@@ -299,6 +307,9 @@ export function restrictionWords(restriction: PoolRestriction): string {
     case 'notGeneric':
       // CR 106.6 (Jegantha, the Wellspring): a colored symbol of a cost, never generic mana.
       return "Can't be spent to pay generic mana costs";
+    case 'turnFaceUp':
+      // CR 106.6, 701.40b (Overgrown Zealot): the cost of turning a face-down permanent face up.
+      return 'Spend only to turn permanents face up';
     case 'xCost':
       // CR 106.6, 107.3 (Elementalist's Palette): a spell or an ability whose cost contains {X}.
       return 'Spend only on costs that contain {X}';

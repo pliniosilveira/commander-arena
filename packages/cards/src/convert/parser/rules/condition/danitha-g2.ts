@@ -54,48 +54,6 @@ export const CONDITION_IF_YOU_DONT = defineRule<IrCondition>({
 });
 
 /**
- * `condition.if-you-cant`: "you can't", after the "if" the sentence parser reads (CR 608.2c: a later instruction depends on what an earlier one did, CR 608.2d). It is the other half of
- * "Put a land card from among the milled cards into your hand" with no "may": true whenever no card was put into the hand, because none matched or none was milled (the player must
- * take one when there is one). The lowering reads it only as the sentence right after such a mandatory choice; after a "you may" choice it is refused (declining is not being unable).
- * Not read: "you can", "you cannot", "you can't put it onto the battlefield", "you can't pay".
- */
-export const CONDITION_IF_YOU_CANT = defineRule<IrCondition>({
-  id: 'condition.if-you-cant',
-  family: 'condition',
-  leading: ['you'],
-  cites: [
-    'CR 608.2c (Resolving Spells and Abilities)',
-    'CR 608.2d (Resolving Spells and Abilities)',
-  ],
-  examples: ["you can't", 'you can’t', "You can't"],
-  rejects: [
-    'you can',
-    'you cannot',
-    "you can't put it onto the battlefield",
-    "you can't pay",
-    "they can't",
-    "you can'ts",
-    'you',
-  ],
-  parse: (ctx, pos) => {
-    const r = pattern(
-      /you can['’]t(?![\p{L}\p{N}'’])(?! (?:put|pay|cast|play|attack|block)(?![\p{L}\p{N}]))/iu,
-    )(ctx, pos);
-    if (!r.ok) return r;
-    return {
-      ok: true,
-      value: {
-        kind: 'condition',
-        test: { kind: 'youCant' },
-        span: { start: pos, end: r.pos },
-        rule: 'condition.if-you-cant',
-      },
-      pos: r.pos,
-    };
-  },
-});
-
-/**
  * `condition.control-or-returned`: "you control a Squirrel or returned a Squirrel card to your hand this way" (CR 608.2c, 400.7j, 205.3): you control a permanent that is that
  * (the reading of `condition.control-a`) or the card an earlier instruction of the text put into your hand is that. The kind is said twice and read twice, so the two halves may
  * differ. The engine's `or` of `controlsAtLeast` and `objectMatches` of the moved card in the hand. Not read: "and", other zones, a count, "you control a Squirrel or you returned".
@@ -163,4 +121,4 @@ export const CONDITION_CONTROL_OR_RETURNED = defineRule<IrCondition>({
 export const DANITHA_G2_CONDITION_RULES = [CONDITION_CONTROL_OR_RETURNED];
 
 /** Registered after `condition.you-dont-put-it-onto-battlefield`, whose phrase starts with the same words. */
-export const DANITHA_G2_LATE_CONDITION_RULES = [CONDITION_IF_YOU_DONT, CONDITION_IF_YOU_CANT];
+export const DANITHA_G2_LATE_CONDITION_RULES = [CONDITION_IF_YOU_DONT];

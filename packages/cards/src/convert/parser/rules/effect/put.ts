@@ -107,13 +107,34 @@ const PUT_LIBRARY: Parser<Put> = choice(
       to: zone(where.value[0], 'owner', where.span),
     }),
   ),
+  // A group of permanents ("all creatures") to the bottom of their owners' libraries: each owner arranges the cards that reach theirs (CR 401.4).
+  map(
+    sequence(
+      literal('put '),
+      satisfy(
+        operands(['noun.all-permanents'], RULE),
+        (objects) => objects.kind === 'noun' && objects.det === 'each',
+      ),
+      spanned(sequence(literal(' on the bottom of '), pattern(/their owners['’] libraries/i))),
+    ),
+    ([, objects, where]): Put => ({
+      objects,
+      to: { ...zone('bottom', 'owner', where.span), owners: true },
+    }),
+  ),
 );
 
 export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
   id: RULE,
   family: 'effect',
   leading: ['put'],
-  cites: ['CR 401.1 (Library)', 'CR 401.3 (Library)', 'CR 400.3 (General)', 'CR 404.1 (Graveyard)'],
+  cites: [
+    'CR 401.1 (Library)',
+    'CR 401.3 (Library)',
+    'CR 401.4 (Library)',
+    'CR 400.3 (General)',
+    'CR 404.1 (Graveyard)',
+  ],
   examples: [
     "put ~ on top of its owner's library",
     "put ~ on the bottom of its owner's library",
@@ -124,8 +145,15 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
     'put target artifact card from your graveyard on top of your library',
     "put target card from a graveyard on top of its owner's library",
     "put target creature card from an opponent's graveyard on the bottom of its owner's library",
+    "put all creatures on the bottom of their owners' libraries",
+    'put all artifacts on the bottom of their owners’ libraries',
   ],
   rejects: [
+    "put all creatures on top of their owners' libraries",
+    "put target creature on the bottom of their owners' libraries",
+    "put ~ on the bottom of their owners' libraries",
+    "put all creatures on the bottom of their owners' libraries in a random order",
+    "put all creatures on the bottom of their owners' library",
     'put ~ on top of your library',
     'put it on the bottom of your library',
     "put it on the bottom of its owner's library and draw a card",
@@ -146,20 +174,30 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
 
 const BATTLEFIELD_RULE = 'effect.put-battlefield';
 
-/** " onto the battlefield", then "tapped" and the control when the text says them, in that order. */
+/**
+ * " onto the battlefield", then "tapped", the control and "with a corpse counter on it" when the text says them, in that order. The counter is one counter of a kind the words name
+ * (CR 122.6, 614.1c: the permanent enters with it), as "put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it" reads it.
+ */
 const ONTO_THE_BATTLEFIELD: Parser<IrZoneSpec> = map(
   spanned(
     sequence(
       literal(' onto the battlefield'),
       optional(literal(' tapped'), null),
       optional(UNDER_CONTROL, null),
+      optional(
+        pattern(/ with an? ([+\-\p{L}/0-9]+(?: \p{L}+)?) counter on it(?![\p{L}\p{N}])/iu),
+        null,
+      ),
     ),
   ),
-  ({ value: [, tapped, whose], span }): IrZoneSpec => ({
+  ({ value: [, tapped, whose, counter], span }): IrZoneSpec => ({
     kind: 'zoneSpec',
     zone: 'battlefield',
     ...(tapped === null ? {} : { tapped: true }),
     ...(whose === null ? {} : { whose }),
+    ...(counter === null
+      ? {}
+      : { counters: { counter: (counter[1] ?? '').toLowerCase(), count: 1 } }),
     span,
     rule: BATTLEFIELD_RULE,
   }),
@@ -187,6 +225,9 @@ export const EFFECT_PUT_BATTLEFIELD = defineRule<Clauses>({
     'put one, two, or three target creature cards from graveyards onto the battlefield under your control',
     "put target creature card from a graveyard onto the battlefield under its owner's control",
     'put all creature cards from your graveyard onto the battlefield',
+    // From the Catacombs (CR 122.6): the card enters with a counter on it.
+    'put target creature card from a graveyard onto the battlefield under your control with a corpse counter on it',
+    'put target creature card from a graveyard onto the battlefield with a +1/+1 counter on it',
   ],
   rejects: [
     'put target creature card from a graveyard onto the battlefield under his control',
@@ -196,7 +237,9 @@ export const EFFECT_PUT_BATTLEFIELD = defineRule<Clauses>({
     'put target creature onto the battlefield',
     'put a creature card from your hand onto the battlefield',
     'put it onto the battlefield under your control',
-    'put target creature card from a graveyard onto the battlefield with a +1/+1 counter on it',
+    'put target creature card from a graveyard onto the battlefield with two +1/+1 counters on it',
+    'put target creature card from a graveyard onto the battlefield with a corpse counter on it and draw a card',
+    'put target creature card from a graveyard onto the battlefield with a corpse counter',
   ],
   parse: single(
     BATTLEFIELD_RULE,
@@ -254,8 +297,13 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     // Federation Fleet deck, group E (Unification): a card of an artifact-only subtype.
     'you may put a Spacecraft card from your hand or graveyard onto the battlefield',
     'you may put a Vehicle card from your hand onto the battlefield',
+    // Terrain Generator (CR 205.4): the supertype basic.
+    'you may put a basic land card from your hand onto the battlefield tapped',
+    // Kodama of the East Tree (CR 202.3): the mana value of the permanent the trigger is about.
+    'you may put a permanent card with equal or lesser mana value from your hand onto the battlefield',
   ],
   rejects: [
+    'you may put a basic card from your hand onto the battlefield',
     'you may put an artifact card from your hand onto the battlefield under your control',
     'you may put an artifact from your hand onto the battlefield',
     'you may put two artifact cards from your hand onto the battlefield',
@@ -281,6 +329,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a Dragon card from your hand onto the battlefield',
     'you may put a Spacecraft Dragon card from your hand onto the battlefield',
     'you may put a card from your hand onto the battlefield',
+    'you may put a permanent card with equal or lesser mana value from your library onto the battlefield',
+    'you may put a permanent card with equal or lesser mana values from your hand onto the battlefield',
+    'you may put a permanent card with equal or less mana value from your hand onto the battlefield',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -294,6 +345,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
             spanned(
               sequence(
                 pattern(/an? /i),
+                // CR 205.4 (Supertypes): "a basic land card" (Terrain Generator), the supertype basic.
+                optional(literal('basic '), null),
                 many(
                   map(
                     sequence(
@@ -317,14 +370,19 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
                 // CR 107.3a, 202.3: "with mana value X or less", the X of the spell (Mind into Matter); read as the effect resolves.
                 // Issue 103 (CR 202.3, 603.2c): "with mana value less than or equal to that damage", the damage the trigger event carries (`true`).
                 optional(
-                  choice<IrArg | true>(
+                  choice<IrArg | true | 'subject'>(
                     map(
                       sequence(
                         literal(' with mana value '),
                         family<IrArg>('amount', { only: ['amount.x'] }),
                         literal(' or less'),
                       ),
-                      ([, x]): IrArg | true => x,
+                      ([, x]): IrArg | true | 'subject' => x,
+                    ),
+                    // Kodama of the East Tree (CR 202.3, 603.2c): "with equal or lesser mana value", the mana value of the permanent the trigger is about.
+                    map(
+                      pattern(/ with equal or lesser mana value(?![\p{L}\p{N}])/iu),
+                      () => 'subject' as const,
                     ),
                     map(
                       pattern(
@@ -363,7 +421,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         value: [null, tapped.value] as const,
         span: { start: onto.span.start, end: tapped.span.end },
       };
-      const [, subtypes, typeWordsRead, , limit, , zone] = card.value;
+      const [, basic, subtypes, typeWordsRead, , limit, , zone] = card.value;
       // No type word: only the subtypes that belong to no creature ("a Spacecraft card"); otherwise the card words stop where they did before.
       if (
         typeWordsRead.length === 0 &&
@@ -373,7 +431,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
       }
       // "a permanent card" (CR 110.1, 400.1): a card of any permanent type, never an instant or a sorcery.
       const anyPermanent = typeWordsRead.includes(PERMANENT_MARK);
-      const atMostX = limit === true || limit === null ? null : limit;
+      const atMostX = limit === true || limit === 'subject' || limit === null ? null : limit;
       const types = anyPermanent ? [] : typeWordsRead;
       const objects: IrNoun = {
         kind: 'noun',
@@ -387,6 +445,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
             : {}),
           ...(types.length > 0 ? { types } : {}),
           ...(subtypes.length > 0 ? { subtypes } : {}),
+          ...(basic === null ? {} : { supertypes: ['basic'] }),
           ...(anyPermanent
             ? {
                 anyOf: PERMANENT_CARD_TYPES.map((t): IrFilter => ({ types: [t], raw: t })),
@@ -432,9 +491,19 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: FROM_HAND_RULE,
       };
-      return { ok: true, value: { objects, to, may: flag, both, votes, atMostX }, pos: r.pos };
+      const subjectLimit: IrFlag = {
+        kind: 'flag',
+        value: limit === 'subject',
+        span: card.span,
+        rule: FROM_HAND_RULE,
+      };
+      return {
+        ok: true,
+        value: { objects, to, may: flag, both, votes, atMostX, subjectLimit },
+        pos: r.pos,
+      };
     },
-    ({ objects, to, may, both, votes, atMostX }) => ({
+    ({ objects, to, may, both, votes, atMostX, subjectLimit }) => ({
       verb: 'putFromZone',
       args: {
         objects,
@@ -442,6 +511,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         may,
         ...(both.value ? { alsoGraveyard: both } : {}),
         ...(atMostX === null ? {} : { manaValueAtMost: atMostX }),
+        ...(subjectLimit.value ? { manaValueAtMostSubject: subjectLimit } : {}),
         ...(votes === null ? {} : { count: votes }),
       },
     }),

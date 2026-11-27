@@ -13,6 +13,8 @@ import { makeNoun } from './subjects';
  * `trigger.scry-or-surveil`: "you scry or surveil", "you surveil", "an opponent scries or surveils", "a player surveils" (CR 701.22, 701.25, 603.2c). "A or B" is one engine ability
  * for each event (`scries` and `surveils`), as every "or" of events is. Not read: the past tense, a number ("you surveil 2" belongs to an instruction), "one or more", a list of three
  * ("you scry, surveil, or"), the order "surveil or scry", the plural of a player ("opponents scry").
+ * Whispering Snitch (Revenant Recon deck): "you surveil for the first time each turn" is the surveil of the controller only when it is the first of the turn (CR 603.2); not read
+ * with "scry or", nor for another player, where "the first time each turn" would be ambiguous.
  */
 export const TRIGGER_SCRY_OR_SURVEIL = defineRule<IrTrigger>({
   id: 'trigger.scry-or-surveil',
@@ -25,6 +27,7 @@ export const TRIGGER_SCRY_OR_SURVEIL = defineRule<IrTrigger>({
     'an opponent scries or surveils',
     'a player surveils',
     'a player scries or surveils',
+    'you surveil for the first time each turn',
   ],
   rejects: [
     'you scry',
@@ -41,6 +44,12 @@ export const TRIGGER_SCRY_OR_SURVEIL = defineRule<IrTrigger>({
     'you surveil and',
     'you scry or surveil and',
     'you',
+    'you scry or surveil for the first time each turn',
+    'an opponent surveils for the first time each turn',
+    'a player surveils for the first time each turn',
+    'you surveil for the first time',
+    'you surveil for the first time this turn',
+    'you surveil for the second time each turn',
   ],
   parse: (ctx, pos) => {
     const id = 'trigger.scry-or-surveil';
@@ -56,20 +65,25 @@ export const TRIGGER_SCRY_OR_SURVEIL = defineRule<IrTrigger>({
     const surveilWord = (r.value[3] ?? '').toLowerCase();
     // The verb agrees with its subject: "you scry or surveil", "an opponent scries or surveils".
     const singular = who !== 'you';
+    // Whispering Snitch: " for the first time each turn" ends the phrase of the controller's plain surveil, and of no other.
+    const first = pattern(/ for the first time each turn(?![\p{L}\p{N}])/iu)(ctx, r.pos);
     if (
       (scryWord !== '' && scryWord !== (singular ? 'scries' : 'scry')) ||
       surveilWord !== (singular ? 'surveils' : 'surveil') ||
+      (first.ok && (who !== 'you' || scryWord !== '')) ||
       /^ (?:\d|and\b|or\b|,)/iu.test(ctx.text.slice(r.pos))
     ) {
       return fail(ctx, pos);
     }
+    const end = first.ok ? first.pos : r.pos;
     const det = who === 'you' ? 'you' : who === 'a player' ? 'eachPlayer' : 'eachOpponent';
     const actor = makeNoun(id, { start: pos, end: pos + who.length }, det, { raw: who });
-    const span = { start: pos, end: r.pos };
+    const span = { start: pos, end };
     const surveil: IrTrigger = {
       kind: 'trigger',
       event: 'surveils',
       actor,
+      ...(first.ok ? { firstEachTurn: true as const } : {}),
       args: {},
       span,
       rule: id,
@@ -88,7 +102,7 @@ export const TRIGGER_SCRY_OR_SURVEIL = defineRule<IrTrigger>({
               span,
               rule: id,
             },
-      pos: r.pos,
+      pos: end,
     };
   },
 });

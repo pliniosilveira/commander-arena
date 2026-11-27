@@ -35,7 +35,7 @@ export interface CardFace extends Characteristics {
    * without X), and together with `additionalCosts` at most one sacrifice and one discard. A way that cannot be paid is not offered; the question
    * is not asked when only one can. The caster is asked with a `confirmOptional` of purpose `costChoice`: accepting is the first option.
    */
-  readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  readonly additionalCostChoice?: readonly (readonly Cost[])[];
   /** Alternative costs the card's text gives it (CR 118.9): see `AlternativeCost`. At most one. */
   readonly alternativeCosts?: readonly AlternativeCost[];
   /** Resolution text for spells (instants, sorceries, and permanents with "when cast" text). */
@@ -51,6 +51,8 @@ export type CardLayout =
   | 'saga'
   // CR 716 (D-235): a Class enchantment, one face, its class level bars among its abilities.
   | 'class'
+  // CR 719 (Case): an enchantment with the subtype Case, one face; its "To solve" and "Solved" abilities use the solved designation.
+  | 'case'
   // CR 722 (D-214): faces[0] is the card, faces[1] its prepare spell, which is never cast from the card.
   | 'prepare'
   // CR 701.42, 712.4 (D-277): a meld card. faces[0] is the front face (the only face outside the battlefield, CR 712.4b, 712.8a, 712.8b), faces[1] the combined

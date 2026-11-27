@@ -63,7 +63,12 @@ function isOpponentSide(state: GameState, owner: SeatId, to: DamageRecipient): b
 /** The bonuses that apply to `event` as it is now, oldest permanent first (the file comment). */
 export function bonusesFor(
   state: GameState,
-  event: { readonly source: ObjectId; readonly to: DamageRecipient; readonly amount: number },
+  event: {
+    readonly source: ObjectId;
+    readonly to: DamageRecipient;
+    readonly amount: number;
+    readonly combat?: boolean;
+  },
   used: readonly string[],
 ): readonly DamageBonus[] {
   if (event.amount <= 0) return [];
@@ -78,6 +83,11 @@ export function bonusesFor(
       const bonus = { object: id, index };
       if (used.includes(bonusKey(bonus))) return;
       const effect: Bonus = a.replacement;
+      // CR 120.2b: "noncombat damage" leaves out combat damage; "to an opponent" leaves out the permanents an opponent controls.
+      if (effect.kind === 'damageBonus') {
+        if (effect.noncombatOnly === true && event.combat === true) return;
+        if (effect.opponentPlayersOnly === true && event.to.kind !== 'player') return;
+      }
       if (
         (effect.kind === 'damageDouble' || isOpponentSide(state, controller, event.to)) &&
         damageSourceMatches(state, event.source, effect.sources, controller)

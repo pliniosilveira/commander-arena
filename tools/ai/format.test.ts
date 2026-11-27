@@ -1,6 +1,21 @@
-import type { MatchResult, TableResult } from '@commander-arena/ai';
+import type {
+  MatchResult,
+  PlanWork,
+  SearchWork,
+  TableReport,
+  TableResult,
+} from '@commander-arena/ai';
 import { describe, expect, test } from 'vitest';
-import { formatMatch, formatRound, formatTable, formatTimes, percentile } from './format.ts';
+import {
+  formatMatch,
+  formatPlanning,
+  formatRound,
+  formatSearches,
+  formatTable,
+  formatTableReport,
+  formatTimes,
+  percentile,
+} from './format.ts';
 
 const result: MatchResult = {
   a: 'casual',
@@ -38,6 +53,108 @@ describe('formatMatch', () => {
 
   test('prints the command that reproduces the run', () => {
     expect(text).toContain('command: node tools/ai/arena.ts --seed 7');
+  });
+});
+
+describe('formatPlanning', () => {
+  const work = (o: Partial<PlanWork> = {}): PlanWork => ({
+    planned: true,
+    playOuts: 4,
+    deepPlayOuts: 0,
+    deepUnits: 0,
+    steps: 100,
+    views: 30,
+    applies: 110,
+    cut: null,
+    ms: 2,
+    ...o,
+  });
+
+  test('counts the plannings, the share each cut ended and the mean work of one planning', () => {
+    const failed = work({
+      planned: false,
+      cut: 'clock',
+      playOuts: 0,
+      steps: 0,
+      views: 2,
+      applies: 0,
+      ms: 4,
+    });
+    expect(formatPlanning('heuristic', [work(), failed, work({ cut: 'work' }), work()])).toBe(
+      'planning heuristic: 4 plannings, 3 with a plan; cut by the clock 25.0%, by a work bound 25.0%; ' +
+        'per planning: 23.0 views, 82.5 engine actions, 3.0 play-outs, 75.0 steps, 2.50 ms',
+    );
+  });
+
+  test('adds what the deepening cost when any planning looked a turn further', () => {
+    const deep = work({ deepPlayOuts: 6, deepUnits: 3000 });
+    expect(
+      formatPlanning('heuristic', [deep, work(), work({ deepPlayOuts: 10, deepUnits: 5000 })]),
+    ).toContain('deepened 66.7%: 8.0 deep play-outs, 4000.0 work units each');
+  });
+
+  test('counts the deepened plannings whose choice the deeper values changed', () => {
+    const record = { ...work({ deepPlayOuts: 4, deepUnits: 100 }), deepChanged: true };
+    expect(
+      formatPlanning('heuristic', [record, work({ deepPlayOuts: 4, deepUnits: 100 })]),
+    ).toContain('50.0% of them changed the choice');
+  });
+
+  test('says nothing for an agent that never planned', () => {
+    expect(formatPlanning('greedy', [])).toBeNull();
+  });
+});
+
+describe('formatSearches', () => {
+  const search = (o: Partial<SearchWork> = {}): SearchWork => ({
+    kind: 'priority',
+    calls: 100,
+    units: 1500,
+    cut: null,
+    ms: 10,
+    ...o,
+  });
+
+  test('counts the decisions that searched, the share each cut stopped and the mean work of one', () => {
+    const searches = [
+      search(),
+      search({ kind: 'declareAttackers', cut: 'clock', calls: 20, units: 300, ms: 30 }),
+      search({ cut: 'work' }),
+      search({ cut: 'work', calls: 180, units: 2700, ms: 0 }),
+    ];
+    expect(formatSearches('heuristic', searches)).toBe(
+      'searches heuristic: 4 decisions searched; cut by the clock 25.0%, by the work budget 50.0%; ' +
+        'per decision: 100.0 engine calls, 1500 work units, 12.50 ms',
+    );
+  });
+
+  test('says how often the combat look-ahead ran and changed the choice', () => {
+    const searches = [
+      search({ kind: 'declareAttackers', look: { playOuts: 4, changed: true } }),
+      search({ kind: 'declareBlockers', look: { playOuts: 2, changed: false } }),
+      search(),
+    ];
+    expect(formatSearches('heuristic', searches)).toContain(
+      'combat look-ahead 2 times (3.0 play-outs each), 50.0% of them changed the choice',
+    );
+    expect(formatSearches('heuristic', [search()])).not.toContain('combat look-ahead');
+  });
+
+  test('reports the response and removal target look-ahead apart from the combat one', () => {
+    const searches = [
+      search({ kind: 'priority', look: { playOuts: 2, changed: true } }),
+      search({ kind: 'targets', look: { playOuts: 3, changed: false } }),
+      search({ kind: 'declareBlockers', look: { playOuts: 2, changed: false } }),
+    ];
+    const text = formatSearches('heuristic', searches);
+    expect(text).toContain(
+      'response look-ahead 2 times (2.5 play-outs each), 50.0% of them changed the choice',
+    );
+    expect(text).toContain('combat look-ahead 1 times (2.0 play-outs each), 0.0%');
+  });
+
+  test('says nothing for an agent that never searched', () => {
+    expect(formatSearches('greedy', [])).toBeNull();
   });
 });
 
@@ -131,5 +248,116 @@ describe('percentile and formatRound', () => {
       5000,
     );
     expect(line).toContain('95th percentile 5.5 ms');
+  });
+});
+
+describe('formatTableReport', () => {
+  const report: TableReport = {
+    seats: 4,
+    games: 8,
+    bySeat: [
+      { games: 8, wins: 0, meanPlace: 3.5 },
+      { games: 8, wins: 2, meanPlace: 2.5 },
+      { games: 8, wins: 2, meanPlace: 2.25 },
+      { games: 8, wins: 4, meanPlace: 1.75 },
+    ],
+    byPosition: [
+      { games: 8, wins: 3, meanPlace: 2.25 },
+      { games: 8, wins: 1, meanPlace: 2.75 },
+      { games: 8, wins: 2, meanPlace: 2.5 },
+      { games: 8, wins: 2, meanPlace: 2.5 },
+    ],
+    agents: [
+      {
+        label: 'heuristic',
+        wins: 2,
+        survival: {
+          games: 8,
+          meanPlace: 2.5,
+          firstOut: 2,
+          eliminated: 6,
+          meanEliminationTurn: 31.8,
+          causes: { life: 5, commander: 1 },
+        },
+        attack: {
+          attacks: 31,
+          allIn: 26,
+          meanPower: 18.2,
+          allInThenOut: 1,
+          atLowest: 20,
+          notLowest: 5,
+          ties: 8,
+          tiesAtLowestSeat: 6,
+          exposedAllIn: 4,
+          exposedAllInOut: 1,
+        },
+        block: {
+          declarations: 12,
+          noBlocks: 5,
+          lethal: 4,
+          unblocked: 319,
+          avoidable: 118,
+          avoidableAtLeast5: 2,
+          avoidableAtLeast10: 2,
+        },
+        removal: {
+          casts: 6,
+          tokens: 0,
+          bands: [0, 1, 1, 4],
+          meanShareOfBest: 0.91,
+          atAttacker: 0,
+          atAttackerOfMine: 0,
+        },
+      },
+    ],
+  };
+  const text = formatTableReport(report);
+
+  test('reads survival, the race, blocks and removal of each agent, with their denominators', () => {
+    expect(text).toContain('table report: 8 games at 4 seats');
+    expect(text).toContain('by seat number: 0 0/8 (0.0%) place 3.50 | 1 2/8 (25.0%)');
+    expect(text).toContain('by turn order (0 took the first turn): 0 3/8 (37.5%) place 2.25');
+    expect(text).toContain('mean place 2.50 (1 best), wins 2, first out 2, eliminated 6/8');
+    expect(text).toContain('mean elimination turn 31.8, by life 5, commander 1');
+    expect(text).toContain('all-in 26 (83.9%)');
+    expect(text).toContain('at the lowest-life opponent 20 (80.0%), at another 5');
+    expect(text).toContain('ties for the lowest 8, of which at the lowest seat number 6 (75.0%)');
+    expect(text).toContain('no block 5 (41.7%)');
+    expect(text).toContain('avoidable 118 (37.0%)');
+    expect(text).toContain('by value <2 / 2-4 / 4-6 / 6+: 0 / 1 / 1 / 4');
+  });
+
+  test('an agent that never faced an attack or cast removal prints dashes, not NaN', () => {
+    const empty = formatTableReport({
+      ...report,
+      agents: [
+        {
+          ...(report.agents[0] as TableReport['agents'][number]),
+          attack: {
+            attacks: 0,
+            allIn: 0,
+            meanPower: 0,
+            allInThenOut: 0,
+            atLowest: 0,
+            notLowest: 0,
+            ties: 0,
+            tiesAtLowestSeat: 0,
+            exposedAllIn: 0,
+            exposedAllInOut: 0,
+          },
+          block: {
+            declarations: 0,
+            noBlocks: 0,
+            lethal: 0,
+            unblocked: 0,
+            avoidable: 0,
+            avoidableAtLeast5: 0,
+            avoidableAtLeast10: 0,
+          },
+        },
+      ],
+    });
+    expect(empty).not.toContain('NaN');
+    expect(empty).toContain('all-in 0 (-)');
   });
 });

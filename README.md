@@ -32,7 +32,7 @@ What exists today:
 - **The rules.** The stack, the turn structure and combat, triggered, activated and static abilities, replacement and prevention effects, tokens, copies, the common keywords, commander tax and commander damage, and split, Adventure, double-faced, meld and Saga cards.
 - **The opponent.** It plans its attacks and blocks by looking ahead, plans its mana and holds instants for a good moment.
 - **The table.** The board, your hand, a large card preview, the stack with arrows to what each spell targets, a game log, and a question on screen for every decision the rules ask of you. Cards and tokens show their real pictures, and every card is framed in its colours (a land in the colours of its mana).
-- **Thirty-six ready-made decks**, listed below, which you can also edit.
+- **Fifty-seven ready-made decks**, listed below, which you can also edit.
 
 What does not exist yet: games with more than two players, play against other people online, an opponent that plans several turns ahead, and animation beyond combat damage and deaths. `docs/ROADMAP.md` has the full list.
 
@@ -82,6 +82,27 @@ The ready-made decks work without any setup:
 | Living Energy | A Commander precon led by Saheeli, Radiant Creator. |
 | Federation Fleet | A Commander precon led by Jean-Luc Picard, Luminary. |
 | Revival Trance | A Commander precon led by Terra, Herald of Hope. |
+| Counter Blitz | A Commander precon led by Tidus, Yuna's Guardian. |
+| Counter Intelligence | A Commander precon led by Kilo, Apogee Mind. |
+| Riders of Rohan | A Commander precon led by Éowyn, Shieldmaiden. |
+| Hosts of Mordor | A Commander precon led by Sauron, Lord of the Rings. |
+| Elven Council | A Commander precon led by Galadriel, Elven-Queen. |
+| Party Time | A Commander precon led by Nalia de'Arnise. |
+| Mind Flayarrrs | A Commander precon led by Captain N'ghathrod. |
+| Draconic Dissent | A Commander precon led by Firkraag, Cunning Instigator. |
+| Desert Bloom | A Commander precon led by Yuma, Proud Protector. |
+| Planeswalker Party | A Commander precon led by Commodore Guff. |
+| Exit from Exile | A Commander precon led by Faldorn, Dread Wolf Herald. |
+| Grand Larceny | A Commander precon led by Gonti, Canny Acquisitor. |
+| Jump Scare! | A Commander precon led by Zimone, Mystery Unraveler. |
+| Most Wanted | A Commander precon led by Olivia, Opulent Outlaw. |
+| World Shaper | A Commander precon led by Szarel, Genesis Shepherd. |
+| Plunder the Graves | A Commander precon led by Meren of Clan Nel Toth. |
+| Squirreled Away | A Commander precon led by Hazel of the Rootbloom. |
+| Revenant Recon | A Commander precon led by Mirko, Obsessive Theorist. |
+| Endless Punishment | A Commander precon led by Valgavoth, Harrower of Souls. |
+| Animated Army | A Commander precon led by Bello, Bard of the Brambles. |
+| Miracle Worker | A Commander precon led by Aminatou, Veil Piercer. |
 
 ## Playing with your own deck
 
@@ -94,11 +115,13 @@ Your imported decks are saved in your browser and appear on the **My decks** pag
 ## Controls
 
 - **Click or drag** a card to play it.
-- **Hover** over a card to see it larger. Any action you take closes it.
+- **Hover** over a card to see it larger. Any action you take closes it. A double-faced card in your hand, graveyard or exile has a button in the preview, and the key **T**, that turn it to its other face.
 - **Space** passes or confirms. The button always says where it takes you.
 - **P** passes the rest of your turn. **Esc** cancels.
 - **Ctrl+Z** takes back a small action, such as tapping a land for mana.
 - **F** turns Full Control on or off. With it on, the game stops at every step so you can respond. With it off, the game also answers for you the two questions of "Partner with" when the partner is your commander and in plain sight: it cannot be in your library, so nobody searches.
+
+If the opponent makes a move you think is a mistake, press **That was a dumb move** in the log: it opens a GitHub issue with a replay of the game for you to submit, so the AI can learn from it.
 
 The game passes for you when there is nothing to decide, and it always stops to show you an opponent's spell before it happens. **Settings** has the theme, text size, animation speed, where the game stops, and Concede.
 

@@ -36,6 +36,10 @@ export function scaled(quantity: IrAmount, each: IrAmount): IrAmount | null {
 export const EQUAL_AMOUNTS = [
   'amount.equal-to',
   'amount.damage-dealt-by-trigger',
+  // Knollspine Dragon: "draw cards equal to the damage dealt to target opponent this turn".
+  'amount.damage-dealt-to-player-this-turn',
+  // Grothama, All-Devouring: "draw cards equal to the amount of damage dealt to ~ this turn by sources they controlled".
+  'amount.damage-dealt-to-this-by-their-sources',
   'amount.number-of',
   'amount.power-of',
   'amount.mana-value-of',

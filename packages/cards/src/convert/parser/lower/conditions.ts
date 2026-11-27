@@ -44,6 +44,12 @@ export function lowerCondition(
       if (count < 1) return failure(c, []);
       return ok({ kind: 'controlsAtLeast', filter: filter.value, count });
     }
+    case 'thisPowerParity': {
+      // CR 107.1 (Kianne, Corrupted Memory): the engine's `thisPowerParity`, the power of the permanent the ability belongs to.
+      const blocked = missingFeatures(['condition:thisPowerParity']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({ kind: 'thisPowerParity', parity: test.parity });
+    }
     case 'opponentsAtLeast': {
       const blocked = missingFeatures(['condition:opponentsAtLeast']);
       if (blocked.length > 0) return failure(c, blocked);
@@ -86,6 +92,13 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       if (ctx?.owner !== 'spell') return failure(c, []);
       return ok({ kind: 'foretold' });
+    }
+    case 'altCostPaid': {
+      // CR 118.9, 608.2c (Baleful Mastery): the engine reads the alternative cost from the spell; the lowering of a spell's sentence only (`validateCard` checks the face lists a `payMana` cost).
+      const blocked = missingFeatures(['condition:castForAlternative']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      return ok({ kind: 'castForAlternative', alternative: 'payMana' });
     }
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
@@ -244,6 +257,8 @@ export function lowerCondition(
       ]);
       if (blocked.length > 0) return failure(c, blocked);
       if (ctx?.interveningCondition !== true) return failure(c, []);
+      // "... if there are cards exiled with it" (Evercoat Ursine): "it" is the source only when the trigger is about `~` itself ("Whenever ~ ...", "When ~ ...").
+      if (test.viaIt === true && !/^(?:whenever|when) ~ /iu.test(ctx.text)) return failure(c, []);
       ctx.exiledWithCondition = true;
       return ok({
         kind: 'amountIs',
@@ -258,6 +273,15 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       if (ctx?.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisInYourGraveyard' });
+    }
+    case 'thisSuspended': {
+      // CR 702.62b, 603.4 (Nihilith): "if this card is suspended" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then makes it an ability that works
+      // from exile); anywhere else it is a test the engine does not run for that shape.
+      const blocked = missingFeatures(['condition:thisSuspended']);
+      if (blocked.length > 0) return failure(c, blocked);
+      // Greater Gargadon (CR 602.5b): or the "activate only if" of an activated ability, read with no context of a trigger (the lowering of the ability then makes it work from exile).
+      if (ctx !== undefined && ctx.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisSuspended' });
     }
     case 'thisOnBattlefield': {
       // CR 603.4, 400.7 (issue 89, Animate Dead): "if it's on the battlefield" is read only as the intervening "if" of a trigger about the source itself, where "it" is the source.
@@ -311,6 +335,13 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'subjectHadToAttack': {
+      // CR 508.1d, 701.15b (Firkraag): "that creature had to attack this combat" is the intervening "if" of a trigger about a creature, read from the creature the trigger is about.
+      const blocked = missingFeatures(['condition:subjectHadToAttack']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'subjectHadToAttack' });
+    }
     case 'subjectGreaterThanEach': {
       // CR 603.10a, 208.1, 608.2c (Selvala, Heart of the Wilds): "its power is greater than each other creature's power" is read as the instruction comes up (a conditional effect, not the
       // intervening "if"), of the permanent the trigger is about.
@@ -345,6 +376,23 @@ export function lowerCondition(
         return failure(c, []);
       }
       return ok({ kind: 'thisWayAtLeast', what: 'countersPut', count: test.atLeast });
+    }
+    case 'counterPutOnSelf': {
+      // CR 122.6, 603.4 (Wakka): a counter put on the permanent with the ability this turn by anyone, from the turn log.
+      const blocked = missingFeatures(['condition:counterPutOnThisThisTurn']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'counterPutOnThisThisTurn',
+        ...(test.counter === undefined ? {} : { counter: test.counter }),
+      });
+    }
+    case 'subjectPowerLessThanSelf': {
+      // CR 208.1, 608.2c (Shelinda): "put a +1/+1 counter on that creature if its power is less than ~'s power" is read as the instruction comes up (a conditional effect, not the
+      // intervening "if"), of the permanent the trigger is about.
+      const blocked = missingFeatures(['condition:subjectPowerLessThanThis']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition === true) return failure(c, []);
+      return ok({ kind: 'subjectPowerLessThanThis' });
     }
     case 'putCountersThisTurn': {
       // CR 122.6, 603.4 (Lasting Tarfire): read from the turn log, for the controller of the ability.
@@ -535,6 +583,14 @@ export function lowerCondition(
         designation: test.designation,
       });
     }
+    case 'completedDungeon': {
+      // CR 309.7, 701.49c (Sarevok's Tome): the player has completed a dungeon at some time.
+      const blocked = missingFeatures(['condition:completedDungeon']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const player = playerSelectorOf(test.who, ctx ?? newContext('ability', []));
+      if (!player.ok) return player;
+      return ok({ kind: 'completedDungeon', player: player.value });
+    }
     case 'objectMatches': {
       // CR 608.2c, 113.7a (stage P30, D-135): "if it's a Zombie card" asks what a target of this text is, as it is or as it last
       // was; after an instruction that put the card onto the battlefield it is "the object that was moved" (`ctx.movedOnto`).
@@ -555,6 +611,13 @@ export function lowerCondition(
         if (subject.length > 0) return failure(c, subject);
         const matched = lowerFilter({ ...test.who, det: 'a', filter: test.filter });
         if (!matched.ok) return matched;
+        // "When enchanted creature dies, if that creature was a Horror, ..." (Endless Evil, CR 603.4, 603.10a): the intervening "if" asks what the permanent the event is about is,
+        // as it last was: the engine's `subjectMatches`, read as the ability triggers and again as it resolves.
+        if (ctx?.interveningCondition === true) {
+          const intervening = missingFeatures(['condition:subjectMatches']);
+          if (intervening.length > 0) return failure(c, intervening);
+          return ok({ kind: 'subjectMatches', filter: matched.value });
+        }
         return ok({ kind: 'objectMatches', of: { kind: 'triggerSubject' }, filter: matched.value });
       }
       // "When ~ dies, if it was a creature, ..." (Enduring Tenacity, CR 603.4, 603.10a, 113.7a): the intervening "if" of an ability about the source itself, whose "it" is the
@@ -596,9 +659,26 @@ export function lowerCondition(
       if (filter.value.powerGreaterThanSource === true) at.comparedPowerOf = of;
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'discardedAsCostMatches': {
+      // CR 602.2b, 701.9a (Moria Scavenger): the card the cost of this activated ability discarded, as it last was.
+      const blocked = missingFeatures(['condition:discardedAsCostMatches']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const matched = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: test.filter,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      });
+      return matched.ok ? ok({ kind: 'discardedAsCostMatches', filter: matched.value }) : matched;
+    }
+    case 'manaValueAtLeastAmount':
     case 'manaValueAtMostAmount': {
       // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of the target an earlier instruction of the text named (or the object it moved), against an amount read as the instruction runs.
-      const blocked = missingFeatures(['condition:manaValueAtMostAmount']);
+      const blocked = missingFeatures([`condition:${test.kind}`]);
       if (blocked.length > 0) return failure(c, blocked);
       const at = ctx ?? newContext('ability', []);
       const id = test.who.ref ?? '';
@@ -611,7 +691,7 @@ export function lowerCondition(
         id === 'moved' || at.movedOnto === id
           ? ({ kind: 'moved' } as const)
           : ({ kind: 'target', id } as const);
-      return ok({ kind: 'manaValueAtMostAmount', of, amount: amount.value });
+      return ok({ kind: test.kind, of, amount: amount.value });
     }
     case 'milledThisWay': {
       // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
@@ -673,6 +753,21 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:giftPromised']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'giftPromised' });
     }
+    case 'notPutWithThisAbility': {
+      // CR 603.4, 400.7 (Kodama of the East Tree): the intervening "if" of a trigger about another permanent that enters: the permanent does not remember this source as the one whose
+      // ability put it onto the battlefield (the engine's `subjectMatches` with `putWithSource`, negated). The trigger's lowering marks the effect that puts the card there.
+      const blocked = missingFeatures([
+        'condition:subjectMatches',
+        'condition:not',
+        'selector:putWithSource',
+      ]);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({
+        kind: 'not',
+        term: { kind: 'subjectMatches', filter: { putWithSource: true } },
+      });
+    }
     case 'wasCast': {
       // CR 601.2a, 603.4: "if you cast it" is read only as the intervening "if" of a trigger about the source itself, where "it" is the permanent the spell became.
       const blocked = missingFeatures(['condition:wasCast']);
@@ -714,6 +809,13 @@ export function lowerCondition(
       return blocked.length > 0
         ? failure(c, blocked)
         : ok({ kind: 'attackedHasMoreLifeThanOtherOpponent' });
+    }
+    case 'loyaltyActivatedThisTurn': {
+      // CR 606.3 (The Chain Veil): a loyalty ability the controller activated this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:loyaltyAbilityActivatedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'loyaltyAbilityActivatedThisTurn' });
     }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
@@ -770,6 +872,14 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'manaSpentAtLeast', count: test.count });
     }
+    case 'manaSpentLessThanManaValue': {
+      // CR 601.2h, 202.3 (Ancient Cellarspawn): "it" is the spell that caused a cast trigger; in any other text no spell is named, so it is not lowered. "Equal to the difference" after it is the gap.
+      if (ctx?.castTrigger !== true) return failure(c, []);
+      const blocked = missingFeatures(['condition:manaSpentLessThanManaValue']);
+      if (blocked.length > 0) return failure(c, blocked);
+      ctx.comparedSpellMana = true;
+      return ok({ kind: 'manaSpentLessThanManaValue' });
+    }
     case 'movedTotalManaValue': {
       // CR 202.3, 608.2c (D-661): the cards an instruction before this one exiled (`moved`), added up; no other cards are named.
       if (ctx?.lastEffectKind !== 'exileTopAnyNumber' && ctx?.lastEffectKind !== 'exileTop') {
@@ -800,6 +910,17 @@ export function lowerCondition(
         filter: { manaValue: { cmp: 'atLeast', value: test.atLeast } },
       });
     }
+    case 'discardedCardHasKeyword':
+      // Anje Falkenrath: a part of the filter of a discard trigger (`lowerTriggered`), no condition of its own.
+      return failure(c, []);
+    case 'manaSpentFromSubtype': {
+      // CR 601.2h, 205.3i (Smaug, Wicked Worm): "it" is the spell that caused a cast trigger; in any other text no spell is named, so it is not lowered.
+      if (ctx?.castTrigger !== true) return failure(c, []);
+      const blocked = missingFeatures(['condition:manaSpentFromSubtype']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'manaSpentFromSubtype', subtype: test.subtype });
+    }
     case 'cardLeftYourGraveyard': {
       // CR 400.7 (stage P49, D-206): the turn log of cards that left a graveyard.
       const blocked = missingFeatures(['condition:cardLeftYourGraveyard']);
@@ -809,6 +930,11 @@ export function lowerCondition(
       // Ahoy Mateys deck, group 5: the turn log of permanent cards put into a graveyard.
       const blocked = missingFeatures(['condition:descendedThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'descendedThisTurn' });
+    }
+    case 'playedLandThisTurn': {
+      // CR 305.1, 305.2 (River of Tears): the land plays of the controller this turn.
+      const blocked = missingFeatures(['condition:playedLandThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'playedLandThisTurn' });
     }
     case 'spellTargets': {
       // CR 601.2c, 601.2f (stage P50, D-207): a target the spell chose, read as the cost is determined.
@@ -832,10 +958,26 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'castFromZone', zone: test.zone });
     }
+    case 'sacrificedThisTurn': {
+      // CR 701.21a (Evendo Brushrazer): the permanents the controller sacrificed this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:sacrificedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({
+            kind: 'sacrificedThisTurn',
+            ...(test.types === undefined ? {} : { types: test.types as CardType[] }),
+            ...(test.token === undefined ? {} : { token: test.token }),
+          });
+    }
     case 'yourTurn': {
       // CR 611.3a (stage P49, D-206): the active player is the controller, read each time the static ability is looked at.
       const blocked = missingFeatures(['condition:yourTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'yourTurn' });
+    }
+    case 'opponentsEndStep': {
+      // CR 513.1 (Final-Word Phantom): the end step of a turn of an opponent, read where the permission of a `castAsThoughFlash` is used.
+      const blocked = missingFeatures(['condition:opponentsEndStep']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'opponentsEndStep' });
     }
     case 'yourMainPhase': {
       // CR 505.1 (stage P41, D-188): the precombat or postcombat main phase of the controller's turn, as the event happens and as the ability resolves.
@@ -856,6 +998,18 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'voteMost': {
+      // CR 701.38a (issue 17): "if time gets more votes", read as the instruction comes up; `validateCard` refuses an option the vote before it does not offer.
+      const blocked = missingFeatures(['condition:voteMost']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'voteMost', option: test.option });
+    }
+    case 'voteTied': {
+      // CR 701.38a (issue 17): "if the vote is tied": more than one option got the most votes.
+      const blocked = missingFeatures(['condition:voteTied']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'voteTied' });
+    }
     case 'abilityResolvedTimes': {
       // CR 608.2c (Galadriel deck, group 1): read as the instruction comes up, in the effect of a triggered ability.
       const blocked = missingFeatures(['condition:abilityResolvedTimes']);
@@ -872,6 +1026,7 @@ export function lowerCondition(
     }
     case 'costContainsX':
     case 'notDeclaredAttacker':
+    case 'youAreDefendingPlayer':
     case 'damageDealtByType':
     case 'enteredFromGraveyard':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
@@ -910,6 +1065,7 @@ export function lowerCondition(
         ...(test.notTypes === undefined ? {} : { notTypes: [...test.notTypes] as CardType[] }),
         ...(test.subtypes === undefined ? {} : { subtypes: [...test.subtypes] }),
         ...(test.token === undefined ? {} : { token: test.token }),
+        ...(test.other === true ? { other: true as const } : {}),
       });
     }
     case 'hadCounters':
@@ -963,9 +1119,11 @@ export function lowerCondition(
     case 'notPutOntoBattlefield':
       // "If you don't put it onto the battlefield, put it into your hand" belongs to the pair of sentences of an offer to put a card onto the battlefield, which the lowering of the sentences reads (D-403).
       return failure(c, []);
-    case 'youCant':
     case 'youDont':
       // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
+      return failure(c, []);
+    case 'youCant':
+      // "If you can't, sacrifice ~" belongs to the pair of sentences of a sacrifice, which the lowering of the sentences reads.
       return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
@@ -978,6 +1136,7 @@ export function lowerCondition(
 /** The feature references the condition lowerings can name, for the dimension test. */
 export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlsAtLeast',
+  'condition:thisPowerParity',
   'condition:opponentsAtLeast',
   'condition:opponentPoisonAtLeast',
   'condition:kicked',
@@ -991,9 +1150,13 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:aPlayerCardsInHand',
   'condition:subjectControllerHasMore',
   'condition:subjectControlledByYou',
+  'condition:subjectMatches',
   'condition:subjectStat',
+  'condition:subjectHadToAttack',
   'condition:subjectGreaterThanEach',
   'condition:putCountersThisTurn',
+  'condition:counterPutOnThisThisTurn',
+  'condition:subjectPowerLessThanThis',
   'condition:triggerPlayerHasMore',
   'condition:triggerPlayerTurn',
   'condition:triggerPlayerIsOpponent',
@@ -1011,6 +1174,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:manaValueAtMostAmount',
+  'condition:manaValueAtLeastAmount',
   'condition:giftPromised',
   'condition:wasCast',
   'condition:opponentControlsAtLeast',
@@ -1026,10 +1190,12 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedAndLostThisTurn',
   'condition:aPlayerLostLifeThisTurn',
   'condition:spellsCastThisTurn',
+  'condition:sacrificedThisTurn',
   'condition:spellsCastLastTurn',
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
+  'condition:thisSuspended',
   'condition:thisOnBattlefield',
   'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',
@@ -1038,8 +1204,10 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:thisAttackedThisTurn',
   'condition:yourTurn',
   'condition:manaSpentAtLeast',
+  'condition:manaSpentLessThanManaValue',
   'condition:cardLeftYourGraveyard',
   'condition:descendedThisTurn',
+  'condition:playedLandThisTurn',
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',
@@ -1053,4 +1221,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   // Galadriel deck group 1: "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   'condition:abilityResolvedTimes',
   'condition:ringBearerChosen',
+  // Issue 17 (Elven Council): "if time gets more votes", "if the vote is tied".
+  'condition:voteMost',
+  'condition:voteTied',
 ];

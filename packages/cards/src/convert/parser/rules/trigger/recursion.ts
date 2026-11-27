@@ -3,7 +3,7 @@
  * (CR 603.6a) and "~ dies or is put into exile from the battlefield" (CR 700.4, 603.6c, 603.10a). Each says what the text says;
  * what the engine can run is the lowering's business.
  */
-import { choice, map, pattern, satisfy, sequence } from '../../combinators';
+import { choice, fail, map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrTrigger } from '../../ir/types';
 import { defineRule } from '../registry';
 import {
@@ -96,11 +96,16 @@ export const TRIGGER_LEAVES_TO = defineRule<IrTrigger>({
     'another creature you control dies or is put into exile from the battlefield',
     'a creature dies or is put into exile from the battlefield',
     'equipped creature dies or is put into exile from the battlefield',
+    // Athreos, Shroud-Veiled: a creature (never `~`) "dies or is put into exile" is the battlefield, as a creature is a permanent there.
+    'a creature with a coin counter on it dies or is put into exile',
+    'another creature you control dies or is put into exile',
   ],
   rejects: [
     '~ dies',
     '~ is put into exile',
     '~ dies or is put into exile',
+    'a creature is put into exile',
+    'equipped creature dies or is put into exile',
     '~ dies or is put into exile from the battlefield or attacks',
     '~ dies or is put into your graveyard from the battlefield',
     '~ die or is put into exile from the battlefield',
@@ -112,6 +117,10 @@ export const TRIGGER_LEAVES_TO = defineRule<IrTrigger>({
     const r = sequence(
       permanentOrAttachedSubject('trigger.leaves-to'),
       choice<readonly ('graveyard' | 'exile')[]>(
+        map(pattern(new RegExp(` dies or is put into exile${NOT_IN_WORD}(?! from)`, 'iu')), () => [
+          'graveyard',
+          'exile',
+        ]),
         map(
           pattern(
             new RegExp(` dies or is put into exile from the battlefield${NOT_IN_WORD}`, 'iu'),
@@ -126,6 +135,14 @@ export const TRIGGER_LEAVES_TO = defineRule<IrTrigger>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [subject, to] = r.value;
+    // The bare "dies or is put into exile" is for a creature in the open ("a creature", "another creature you control"), not `~` or the attached creature.
+    if (
+      r.value[1].length === 2 &&
+      /dies or is put into exile$/iu.test(ctx.text.slice(pos, r.pos)) &&
+      (subject.det === 'self' || subject.det === 'enchanted' || subject.det === 'equipped')
+    ) {
+      return fail(ctx, pos);
+    }
     return {
       ok: true,
       value: {

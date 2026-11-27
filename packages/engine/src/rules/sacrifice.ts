@@ -9,10 +9,12 @@
  */
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
+import type { ChosenTarget } from '../state/chosen';
 import type { GameEvent } from '../state/events';
 import { objectsInZone } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
+import { recordSacrificed } from './sacrifice-log';
 import { cantBeSacrificed } from './sacrifice-prevention';
 import { matchesFilter } from './select';
 import { moveObject } from './zones';
@@ -38,7 +40,7 @@ export function sacrificePermanent(
   // applies to hand and library), so the move is always complete.
   if (moved.kind !== 'done') return null;
   return {
-    state: moved.state,
+    state: recordSacrificed(state, moved.state, obj, seat),
     events: [...moved.events, { kind: 'sacrificed', permanent: id, controller: seat }],
   };
 }
@@ -55,6 +57,8 @@ export function controlledCandidates(
   filter: ObjectFilter,
   /** The permanents the resolution sacrificed before (`sharesCardTypeWith: 'sacrificed'`, Braids). */
   sacrificed?: readonly ObjectId[],
+  /** The targets of the ability that is resolving (`sharesCardTypeWith: 'target'`, Spirit-Sister's Call). */
+  targets?: readonly ChosenTarget[],
 ): ObjectId[] {
   const scoped: ObjectFilter = { ...filter, zone: 'battlefield', controller: 'you' };
   return objectsInZone(state, 'battlefield').filter((id) => {
@@ -65,6 +69,7 @@ export function controlledCandidates(
         controller: seat,
         source,
         ...(sacrificed === undefined ? {} : { sacrificed }),
+        ...(targets === undefined ? {} : { targets }),
       })
     );
   });
@@ -80,8 +85,9 @@ export function sacrificeCandidates(
   source: ObjectId | null,
   filter: ObjectFilter,
   sacrificed?: readonly ObjectId[],
+  targets?: readonly ChosenTarget[],
 ): ObjectId[] {
-  return controlledCandidates(state, seat, source, filter, sacrificed).filter(
+  return controlledCandidates(state, seat, source, filter, sacrificed, targets).filter(
     (id) => !cantBeSacrificed(state, id),
   );
 }

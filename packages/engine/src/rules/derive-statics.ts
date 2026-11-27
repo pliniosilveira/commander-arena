@@ -33,10 +33,18 @@ import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { characteristicPtOf, staticAmountOf } from './derive-count';
-import { linkedCardOf, linkedCardsOf, topCardOf } from './derive-group-types';
+import {
+  type AnimateStatic,
+  animateAppliesTo,
+  linkedCardOf,
+  linkedCardsOf,
+  topCardOf,
+} from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
+import { typeViewOf } from './derive-view';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
+import { boundToGranter } from './granter';
 import { intrinsicManaAbilities } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { isCommanderCardId } from './melded';
@@ -68,6 +76,11 @@ type Modifier = Extract<
   readonly condition?: Condition;
   /** `JSON.stringify(condition)`, made once when the index is built: the key the answers are kept under. */
   readonly conditionKey?: string;
+  /**
+   * The static `animate` this is the layer 6 or 7b part of (CR 613.6): it applies to the permanents that effect began to apply to in layer 4 (`animateAppliesTo`), whose subject
+   * and condition were read there, and it is not asked again.
+   */
+  readonly animate?: AnimateStatic;
 };
 
 interface ModifierSource {
@@ -170,6 +183,8 @@ export interface FlashPermissionSource {
   readonly spells: ObjectFilter;
   /** "Any player may cast ..." (CR 601.3b): the permission is every player's, not the controller's alone. */
   readonly anyPlayer: boolean;
+  /** "During each opponent's end step, you may cast ..." (`opponentsEndStep`) or "As long as ~'s power is even, you may cast noncreature spells as though they had flash" (Kianne): read where the permission is used (`rules/legality.ts`), for the controller of the permanent. */
+  readonly condition?: Condition;
 }
 
 /**
@@ -190,6 +205,12 @@ export interface LibraryCastSource {
 export interface HasteActivationSource {
   readonly object: GameObject;
   readonly creatures: ObjectFilter;
+}
+
+/** A static ability of a permanent that takes generic mana off the plot cost of the cards its controller plots (`plotCostReduction`, CR 702.170a). */
+export interface PlotReductionSource {
+  readonly object: GameObject;
+  readonly amount: number;
 }
 
 /** A static ability of a permanent that raises the number of times a turn the loyalty abilities of some planeswalkers may be activated (`loyaltyActivationLimit`, CR 606.3). */
@@ -216,8 +237,24 @@ export interface GraveyardPlaySource {
   readonly eachType?: true;
   /** Issue 102 (Kotis): the other cards of the graveyard a spell cast with this permission exiles as an additional cost. */
   readonly exileOthers?: number;
+  /** Exploration Broodship: the permanent a spell cast with this permission sacrifices as an additional cost (CR 601.2b, 118.8). */
+  readonly sacrifice?: ObjectFilter;
   /** Banon, the Returners' Leader: only a card put into the graveyard this turn from a zone other than the battlefield may be cast with this permission. */
   readonly putElsewhereThisTurn?: true;
+  /** `playSurveiledFromGraveyard` (Eye of Duskmantle): not limited to the controller's own turn, and only for a card a surveil of the controller put into the graveyard this turn. */
+  readonly surveiled?: true;
+  /** `playSurveiledFromGraveyard`: a spell cast with this permission is cast for the alternative cost `lifeForMana`, never for its mana cost (CR 118.9). */
+  readonly lifeForMana?: true;
+}
+
+/**
+ * A static ability of a permanent that lets its controller play the cards the permanent exiled with its linked ability (`playFromLinkedExile`, Evendo Brushrazer): read by
+ * `rules/linked-exile-play.ts`. A permanent that lost all its abilities has none (CR 613.1f).
+ */
+export interface LinkedExilePlaySource {
+  readonly object: GameObject;
+  /** "During your turn, as long as you've sacrificed a nontoken permanent this turn": read where the card is played, for the controller of the permanent. */
+  readonly condition?: Condition;
 }
 
 /**
@@ -240,7 +277,7 @@ interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
   readonly keyword:
-    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' }>
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
     | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;
@@ -250,6 +287,8 @@ interface SpellGrantSource {
 export interface EncoreGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
+  /** `grantUnearthToGraveyardCards` (CR 702.84a): the fixed cost of the Unearth it gives; left out for Encore. */
+  readonly unearth?: readonly Cost[];
 }
 
 /** A static ability of a permanent that stops the legend rule applying to the permanents `what` names (`legendRuleDoesntApply`, CR 704.5j). */
@@ -265,6 +304,14 @@ export interface FlashbackGrantSource {
   readonly condition?: Condition;
 }
 
+/** A static ability of a permanent that gives the cards of its controller's hand or graveyard a keyword whose cost is made from their mana cost (`grantKeywordFromManaCost`, CR 702.94a, 702.138a, 613.1f). */
+export interface ManaCostKeywordGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly grant: Extract<StaticEffect, { kind: 'grantKeywordFromManaCost' }>['grant'];
+  readonly condition?: Condition;
+}
+
 /**
  * A static ability of a permanent that gives an alternative cost to the spells its controller casts from the hand (`grantAlternativeCostToSpells`, CR 702.74a, 118.9, 613.1f): read
  * where casting is decided (`rules/alt-cost-grant.ts`), never by `derive`: an alternative cost is no characteristic of the spell. A permanent that lost all its abilities has none.
@@ -275,7 +322,24 @@ export interface AltCostGrantSource {
   readonly alt:
     | { readonly kind: 'evoke'; readonly cost: readonly Cost[] }
     // Issue 105: energy counters rather than the mana cost.
-    | { readonly kind: 'energy'; readonly count: number };
+    | {
+        readonly kind: 'energy';
+        readonly count: number;
+        readonly from?: 'hand' | 'exile';
+        readonly oncePerTurn?: true;
+      };
+  readonly condition?: Condition;
+}
+
+/**
+ * A static ability of a permanent that lets its controller, once during each of their turns, cast a spell for an alternative cost (`castOnceEachTurn`, CR 118.9, 601.2b): read where
+ * casting is decided (`rules/cast-once.ts`). A permanent that lost all its abilities has none (CR 613.1f).
+ */
+export interface OnceCastSource {
+  readonly object: GameObject;
+  readonly spells: ObjectFilter;
+  readonly from?: readonly ('hand' | 'libraryTop')[];
+  readonly alternative: 'lifeForMana' | 'free';
   readonly condition?: Condition;
 }
 
@@ -289,6 +353,10 @@ interface BoardIndex {
   readonly deferred: EntryLists;
   /** The "+N/+N" static abilities whose subject names a keyword, in battlefield order (applied after `deferred`, D-149). */
   readonly late: EntryLists;
+  /** The restrictions whose subject names a goaded creature (CR 701.15b), applied last: they read who is goaded once every goad has been applied. */
+  readonly afterGoad: EntryLists;
+  /** The goad of a group that compares power with its source (CR 701.15a): applied once the target's power is settled, before `afterGoad`. */
+  readonly powerGoad: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
   /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
@@ -303,10 +371,14 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
   readonly hasteActivations: readonly HasteActivationSource[];
+  /** Permanents with a `plotCostReduction` static ability, in battlefield order. */
+  readonly plotReductions: readonly PlotReductionSource[];
   /** Permanents with a `loyaltyActivationLimit` static ability, in battlefield order (CR 606.3). */
   readonly loyaltyLimits: readonly LoyaltyLimitSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
+  /** Permanents with a `playFromLinkedExile` static ability, in battlefield order. */
+  readonly linkedExilePlays: readonly LinkedExilePlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
   readonly handGrants: readonly HandGrantSource[];
   /** Permanents with a `grantKeywordToSpells` static ability, in battlefield order (issue 145). */
@@ -317,8 +389,12 @@ interface BoardIndex {
   readonly legendExemptions: readonly LegendExemptionSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
+  /** Permanents with a `grantKeywordFromManaCost` static ability, in battlefield order. */
+  readonly manaCostKeywordGrants: readonly ManaCostKeywordGrantSource[];
   /** Permanents with a `grantAlternativeCostToSpells` static ability, in battlefield order. */
   readonly altCostGrants: readonly AltCostGrantSource[];
+  /** The `castOnceEachTurn` static abilities, in battlefield order. */
+  readonly onceCasts: readonly OnceCastSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -377,6 +453,41 @@ function staticModifiers(
   return made;
 }
 
+const animateModifiersOf = new WeakMap<readonly Ability[], readonly Modifier[]>();
+const NO_MODIFIERS: readonly Modifier[] = [];
+
+/**
+ * The parts of the static `animate` abilities of an ability list that apply in layers 6 and 7b (CR 613.1f, 613.4b): a base power and toughness, and each keyword and ability
+ * given, as the modifiers the separate static abilities would be, each marked with the effect it is a part of. Made once for each list, as `staticModifiers` is.
+ */
+function animateModifiers(abilities: readonly Ability[]): readonly Modifier[] {
+  const known = animateModifiersOf.get(abilities);
+  if (known !== undefined) return known;
+  const made: Modifier[] = [];
+  for (const a of abilities) {
+    if (a.kind !== 'static' || a.static.kind !== 'animate') continue;
+    if ((a.functionsIn ?? 'battlefield') !== 'battlefield') continue;
+    const animate = a.static;
+    const { subject } = animate;
+    for (const keyword of animate.keywords ?? []) {
+      made.push({ kind: 'grantKeyword', subject, keyword, animate });
+    }
+    for (const ability of animate.abilities ?? []) {
+      made.push({ kind: 'grantAbility', subject, ability, animate });
+    }
+    made.push({
+      kind: 'setPt',
+      subject,
+      power: animate.power,
+      toughness: animate.toughness,
+      animate,
+    });
+  }
+  const out = made.length === 0 ? NO_MODIFIERS : made;
+  animateModifiersOf.set(abilities, out);
+  return out;
+}
+
 function costReductionsOf(
   object: GameObject,
   abilities: readonly Ability[],
@@ -427,7 +538,12 @@ function flashesOf(object: GameObject, abilities: readonly Ability[]): FlashPerm
       a.static.kind === 'castAsThoughFlash' &&
       !('kind' in a.static.spells)
     ) {
-      out.push({ object, spells: a.static.spells, anyPlayer: a.static.anyPlayer === true });
+      out.push({
+        object,
+        spells: a.static.spells,
+        anyPlayer: a.static.anyPlayer === true,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
     }
   }
   return out;
@@ -463,6 +579,7 @@ function graveyardPlaysOf(
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
         ...(a.static.exileOthers === undefined ? {} : { exileOthers: a.static.exileOthers }),
+        ...(a.static.sacrifice === undefined ? {} : { sacrifice: a.static.sacrifice }),
         ...(a.static.putElsewhereThisTurn === true ? { putElsewhereThisTurn: true as const } : {}),
       });
     }
@@ -474,6 +591,19 @@ function graveyardPlaysOf(
         entersTapped: false,
         gains: undefined,
         eachType: true,
+      });
+    }
+    // CR 701.25a, 118.9 (Eye of Duskmantle): any land, and any spell cast for life, among the cards the controller surveilled into the graveyard this turn; never used up.
+    if (a.kind === 'static' && a.static.kind === 'playSurveiledFromGraveyard') {
+      out.push({
+        object,
+        cast: {},
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        unlimited: true,
+        surveiled: true,
+        lifeForMana: true,
       });
     }
     // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.
@@ -519,6 +649,9 @@ function encoreGrantsOf(object: GameObject, abilities: readonly Ability[]): Enco
   for (const a of abilities) {
     if (a.kind === 'static' && a.static.kind === 'grantEncoreToGraveyardCards') {
       out.push({ object, what: a.static.what });
+    }
+    if (a.kind === 'static' && a.static.kind === 'grantUnearthToGraveyardCards') {
+      out.push({ object, what: a.static.what, unearth: a.static.cost });
     }
   }
   return out;
@@ -581,6 +714,29 @@ function flashbackGrantsOf(
   return out;
 }
 
+function manaCostKeywordGrantsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): ManaCostKeywordGrantSource[] {
+  const out: ManaCostKeywordGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantKeywordFromManaCost' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        grant: a.static.grant,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  return out;
+}
+
 function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): AltCostGrantSource[] {
   const out: AltCostGrantSource[] = [];
   for (const a of abilities) {
@@ -607,7 +763,12 @@ function altCostGrantsOf(object: GameObject, abilities: readonly Ability[]): Alt
       out.push({
         object,
         what: a.static.what,
-        alt: { kind: 'energy', count: a.static.energy },
+        alt: {
+          kind: 'energy',
+          count: a.static.energy,
+          ...(a.static.from === undefined ? {} : { from: a.static.from }),
+          ...(a.static.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
+        },
         ...(a.condition === undefined ? {} : { condition: a.condition }),
       });
     }
@@ -624,12 +785,16 @@ function buildIndex(state: GameState): BoardIndex {
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const hasteActivations: HasteActivationSource[] = [];
+  const plotReductions: PlotReductionSource[] = [];
   const loyaltyLimits: LoyaltyLimitSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
+  const linkedExilePlays: LinkedExilePlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
+  const manaCostKeywordGrants: ManaCostKeywordGrantSource[] = [];
   const altCostGrants: AltCostGrantSource[] = [];
+  const onceCasts: OnceCastSource[] = [];
   const legendExemptions: LegendExemptionSource[] = [];
   const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
@@ -637,8 +802,14 @@ function buildIndex(state: GameState): BoardIndex {
     const object = state.objects[id];
     if (object === undefined) continue;
     // CR 613.1f: a permanent that lost all abilities has no static ability left to apply.
-    const printed = hasLostAbilities(state, id) ? [] : printedAbilities(state, object);
-    const modifiers = staticModifiers(printed);
+    const own = printedAbilities(state, object);
+    const printed = hasLostAbilities(state, id) ? [] : own;
+    // CR 613.6: a static `animate` began to apply in layer 4, so its parts in layers 6 and 7b apply whether or not the permanent lost its abilities in layer 6.
+    const animating = animateModifiers(own);
+    const modifiers =
+      animating.length === 0
+        ? staticModifiers(printed)
+        : [...staticModifiers(printed), ...animating];
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
     if (printed.some(givesCostIncrease)) hasCostIncrease = true;
@@ -651,6 +822,9 @@ function buildIndex(state: GameState): BoardIndex {
       if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
         hasteActivations.push({ object, creatures: a.static.creatures });
       }
+      if (a.kind === 'static' && a.static.kind === 'plotCostReduction') {
+        plotReductions.push({ object, amount: a.static.amount });
+      }
       if (a.kind === 'static' && a.static.kind === 'loyaltyActivationLimit') {
         loyaltyLimits.push({
           object,
@@ -660,10 +834,35 @@ function buildIndex(state: GameState): BoardIndex {
       }
     }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
+    for (const a of printed) {
+      if (a.kind === 'static' && a.static.kind === 'playFromLinkedExile') {
+        linkedExilePlays.push({
+          object,
+          ...(a.condition === undefined ? {} : { condition: a.condition }),
+        });
+      }
+    }
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
+    manaCostKeywordGrants.push(...manaCostKeywordGrantsOf(object, printed));
     altCostGrants.push(...altCostGrantsOf(object, printed));
+    for (const a of printed) {
+      // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+      if (
+        a.kind === 'static' &&
+        a.static.kind === 'castOnceEachTurn' &&
+        (a.functionsIn ?? 'battlefield') === 'battlefield'
+      ) {
+        onceCasts.push({
+          object,
+          spells: a.static.spells,
+          alternative: a.static.alternative,
+          ...(a.static.from === undefined ? {} : { from: a.static.from }),
+          ...(a.condition === undefined ? {} : { condition: a.condition }),
+        });
+      }
+    }
     legendExemptions.push(...legendExemptionsOf(object, printed));
     encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
@@ -707,13 +906,24 @@ function buildIndex(state: GameState): BoardIndex {
   const immediate: ModifierEntry[] = [];
   const deferred: ModifierEntry[] = [];
   const late: ModifierEntry[] = [];
+  const afterGoad: ModifierEntry[] = [];
+  const powerGoad: ModifierEntry[] = [];
   let seq = 0;
   for (const source of sources) {
     for (const mod of source.modifiers) {
       const pt = dependsOnPt(mod);
       const keywords = dependsOnKeywords(mod);
       const isLate = keywords && mod.kind === 'modifyPt';
-      (isLate ? late : pt || keywords ? deferred : immediate).push({
+      (dependsOnSourcePower(mod)
+        ? powerGoad
+        : dependsOnGoaded(mod)
+          ? afterGoad
+          : isLate
+            ? late
+            : pt || keywords
+              ? deferred
+              : immediate
+      ).push({
         source,
         mod,
         pt,
@@ -731,6 +941,8 @@ function buildIndex(state: GameState): BoardIndex {
     immediate: listEntries(immediate),
     deferred: listEntries(deferred),
     late: listEntries(late),
+    afterGoad: listEntries(afterGoad),
+    powerGoad: listEntries(powerGoad),
     reductions,
     hasCostIncrease,
     hasStaticGrants,
@@ -738,12 +950,16 @@ function buildIndex(state: GameState): BoardIndex {
     flashes,
     libraryCasts,
     hasteActivations,
+    plotReductions,
     loyaltyLimits,
     graveyardPlays,
+    linkedExilePlays,
     handGrants,
     spellGrants,
     flashbackGrants,
+    manaCostKeywordGrants,
     altCostGrants,
+    onceCasts,
     legendExemptions,
     encoreGrants,
     attachments,
@@ -812,6 +1028,11 @@ export function loyaltyLimitSources(state: GameState): readonly LoyaltyLimitSour
   return indexOf(state).loyaltyLimits;
 }
 
+/** The permanents whose static ability takes generic mana off the plot cost of the cards their controller plots (CR 702.170a). */
+export function plotReductionSources(state: GameState): readonly PlotReductionSource[] {
+  return indexOf(state).plotReductions;
+}
+
 /** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
 export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
   return indexOf(state).hasteActivations;
@@ -819,6 +1040,11 @@ export function hasteActivationSources(state: GameState): readonly HasteActivati
 
 export function libraryCastSources(state: GameState): readonly LibraryCastSource[] {
   return indexOf(state).libraryCasts;
+}
+
+/** The permanents whose static ability lets their controller play the cards they exiled with their linked ability (Evendo Brushrazer). */
+export function linkedExilePlaySources(state: GameState): readonly LinkedExilePlaySource[] {
+  return indexOf(state).linkedExilePlays;
 }
 
 /** The permission "Once during each of your turns, you may play a land or cast a spell from your graveyard" of the permanents on the battlefield (D-232). */
@@ -841,9 +1067,21 @@ export function flashbackGrantSources(state: GameState): readonly FlashbackGrant
   return indexOf(state).flashbackGrants;
 }
 
+/** The static abilities of the permanents on the battlefield that give the cards of their controller's hand or graveyard a keyword whose cost is made from their mana cost (CR 702.94a, 702.138a). */
+export function manaCostKeywordGrantSources(
+  state: GameState,
+): readonly ManaCostKeywordGrantSource[] {
+  return indexOf(state).manaCostKeywordGrants;
+}
+
 /** The static abilities of the permanents on the battlefield that give an alternative cost to the spells their controller casts from the hand (CR 702.74a, 118.9). */
 export function altCostGrantSources(state: GameState): readonly AltCostGrantSource[] {
   return indexOf(state).altCostGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that let their controller cast one spell in each of their turns for an alternative cost (`castOnceEachTurn`, CR 118.9). */
+export function onceCastSources(state: GameState): readonly OnceCastSource[] {
+  return indexOf(state).onceCasts;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */
@@ -921,6 +1159,13 @@ export interface StaticBase extends FilterSubject {
    * keeps a count of keywords from reading itself.
    */
   readonly layer6Only?: boolean;
+  /**
+   * Set while the power of a source of a group goad is being read (`powerBeforeGoad`): the goad of a group that compares power with its source is not applied, which is
+   * what keeps two such sources from reading each other (goad changes no power).
+   */
+  readonly skipPowerGoad?: boolean;
+  /** The power of another object after layer 7, before the goad of a group that compares power with its source (CR 613.4); left out where no such goad is read. */
+  readonly powerBeforeGoadOf?: (other: GameObject) => number | null;
   readonly ptWith: (
     power: number,
     toughness: number,
@@ -938,6 +1183,21 @@ function dependsOnPt(mod: Modifier): boolean {
   return (
     mod.subject.kind === 'filter' &&
     filterReads(mod.subject.filter, (f) => f.power !== undefined || f.toughness !== undefined)
+  );
+}
+
+/** Whether a static ability's subject compares power with its source (CR 701.15a, Baeloth Barrityl): only a `goaded` static ability may (the validator). */
+function dependsOnSourcePower(mod: Modifier): boolean {
+  return (
+    mod.subject.kind === 'filter' &&
+    filterReads(mod.subject.filter, (f) => f.powerLessThanSource === true)
+  );
+}
+
+/** Whether a static ability's subject names a goaded creature (CR 701.15b): it applies after the abilities that goad (`afterGoad`). */
+function dependsOnGoaded(mod: Modifier): boolean {
+  return (
+    mod.subject.kind === 'filter' && filterReads(mod.subject.filter, (f) => f.goaded !== undefined)
   );
 }
 
@@ -1038,6 +1298,14 @@ function graveyardGrantsOn(state: GameState, target: GameObject, base: StaticBas
     ) {
       continue;
     }
+    // CR 702.84a: Unearth with the cost the permanent states.
+    if (source.unearth !== undefined) {
+      grants.push({
+        ability: { kind: 'keyword', keyword: { kind: 'unearth', cost: source.unearth } },
+        timestamp: source.object.timestamp,
+      });
+      continue;
+    }
     const value = base.manaValue ?? 0;
     grants.push({
       ability: {
@@ -1118,10 +1386,15 @@ export function staticEffectsOn(
   const sets: StaticSet[] = [];
   const blockLimits: BlockLimit[] = [];
   const apply = (source: ModifierSource, mod: Modifier, view: FilterSubject): boolean => {
-    if (!subjectAffects(state, source.object, mod.subject, target, view, source.context))
+    if (mod.animate !== undefined) {
+      // CR 613.6: the same set of objects as in layer 4, which the type line of the target settled (asked first, so the answer is there).
+      typeViewOf(state, target);
+      if (!animateAppliesTo(state, source.object.id, target.id, mod.animate)) return false;
+    } else if (!subjectAffects(state, source.object, mod.subject, target, view, source.context))
       return false;
     // D-133: "as long as ...": the permanent's condition, read as the effects are looked at (CR 611.3a, 613.8).
     if (
+      mod.animate === undefined &&
       mod.condition !== undefined &&
       !conditionHolds(state, mod.condition, mod.conditionKey ?? '', source.object)
     ) {
@@ -1161,6 +1434,7 @@ export function staticEffectsOn(
       grants.push({
         ability: null,
         loses: mod.keyword.kind,
+        ...(mod.cantHave === true ? { cantHave: true as const } : {}),
         timestamp: source.object.timestamp,
       });
     } else if (mod.kind === 'loseAllAbilities') {
@@ -1168,7 +1442,11 @@ export function staticEffectsOn(
       grants.push({ ability: null, timestamp: source.object.timestamp });
     } else if (mod.kind === 'grantAbility') {
       // D-099: a mana ability given to the subject, in layer 6 like a keyword.
-      grants.push({ ability: mod.ability, timestamp: source.object.timestamp });
+      // CR 113.6 (`granter`): the instance this permanent gets names the permanent that gives it.
+      grants.push({
+        ability: boundToGranter(mod.ability, source.object.id),
+        timestamp: source.object.timestamp,
+      });
     } else if (mod.kind === 'restriction') {
       // CR 613.11: a rules-modifying effect, read where the rule acts (no layer, no timestamp).
       if (!restrictions.includes(mod.restriction)) restrictions.push(mod.restriction);
@@ -1275,6 +1553,28 @@ export function staticEffectsOn(
         ...(pt ? base.ptWith(power, toughness, sets) : {}),
         keywords: keywordsNow,
       });
+    }
+  }
+  // CR 701.15a (Baeloth Barrityl): "creatures ... with power less than ~'s power are goaded": the target's power as layer 7 leaves it, against the power of the source read
+  // without any such goad (goad changes no power, so two sources cannot loop). Applied before the restrictions that read who is goaded.
+  if (base.layer6Only !== true && base.skipPowerGoad !== true) {
+    for (const { source, mod } of entriesFor(index.powerGoad, target.id)) {
+      const sourcePower = base.powerBeforeGoadOf?.(source.object) ?? null;
+      apply({ ...source, context: { ...source.context, sourcePower } }, mod, {
+        ...base,
+        ...base.ptWith(power, toughness, sets),
+      });
+    }
+  }
+  // CR 701.15b: "goaded creatures ... can't block" reads whether the target is goaded now: by a goad effect, or by a static ability that goads (applied above).
+  if (base.layer6Only !== true) {
+    const goaded =
+      goadedBy.length > 0 ||
+      state.continuousEffects.some(
+        (e) => e.change.kind === 'goaded' && e.objects.includes(target.id),
+      );
+    for (const { source, mod } of entriesFor(index.afterGoad, target.id)) {
+      apply(source, mod, { ...base, goaded });
     }
   }
   const host = target.attachedTo === null ? undefined : state.objects[target.attachedTo];

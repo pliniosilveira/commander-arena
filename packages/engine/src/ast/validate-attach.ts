@@ -47,6 +47,8 @@ export function checkStaticSubject(
   out: AstIssue[],
   keywords = false,
   allowPair = false,
+  allowGoaded = false,
+  allowSourcePower = false,
 ): void {
   switch (s?.kind) {
     case 'this':
@@ -78,9 +80,20 @@ export function checkStaticSubject(
       // Attacking is read from the current combat. Resolution-only source values remain unavailable here.
       if (
         filterSome(s.filter, (f) => {
-          // `modified` (issue 345, CR 700.9) is read from the counters and attachments, which no layer changes.
-          const { attacking: _attacking, modified: _modified, ...rest } = f;
-          return readsCombatOrSourceBesidesCommander(rest);
+          // `modified` (issue 345, CR 700.9) is read from the counters and attachments, which no layer changes. `goaded` (CR 701.15b) is read after the layers by a restriction
+          // (`derive-statics.ts` applies it once every goad of a static ability has been), never by an ability that changes characteristics.
+          const {
+            attacking: _attacking,
+            modified: _modified,
+            goaded,
+            powerLessThanSource,
+            ...rest
+          } = f;
+          // CR 701.15a (Baeloth Barrityl): only the group a static ability goads may compare power with its source: `derive` reads the source's power before the goad pass.
+          if (powerLessThanSource !== undefined && !allowSourcePower) return true;
+          return (
+            readsCombatOrSourceBesidesCommander(rest) || (goaded !== undefined && !allowGoaded)
+          );
         })
       ) {
         issue(
@@ -115,6 +128,13 @@ export function checkStaticSubject(
       }
       if (s.other !== undefined && typeof s.other !== 'boolean') {
         issue(out, `${path}.other`, 'other must be a boolean');
+      }
+      if (s.andThis !== undefined && (s.andThis !== true || !allowPair)) {
+        issue(
+          out,
+          `${path}.andThis`,
+          "'andThis' is true, and for a static ability that changes power and toughness or grants a keyword or an ability only",
+        );
       }
       break;
     default:
@@ -197,7 +217,8 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
       k.from !== 'chosenCardType' &&
       k.from !== 'chosenColor' &&
       k.from !== 'ringBearer' &&
-      k.from !== 'multicolored'
+      k.from !== 'multicolored' &&
+      k.from !== 'manaValue'
     ) {
       issue(
         out,

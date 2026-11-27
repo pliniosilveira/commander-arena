@@ -19,9 +19,11 @@ import { hasteActivationSources } from './derive-statics';
 import { exertPermanent } from './exert';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
+import { putOwnCounters } from './mana-put-counter';
 import { additionalManaOptions } from './mana-triggers';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
+import { activationLockedByName } from './name-locks';
 import { lifeTotalIsLocked } from './player-lock';
 import { hasRestriction } from './restrictions';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
@@ -156,6 +158,15 @@ export function tapFilterOf(ability: ManaAbility): ObjectFilter | null {
 }
 
 /**
+ * The kind of permanent the ability's cost taps any number of ("{T}, Pay 2 life, Tap X untapped tokens you control: Add X mana in any combination of colors.", CR 118.3, 107.3, 605.3b), or
+ * null when the cost has no such part. X is how many the player taps, which the activation names (`Action.tappedMany`).
+ */
+export function tapXFilterOf(ability: ManaAbility): ObjectFilter | null {
+  for (const c of ability.cost) if (c.kind === 'tapPermanentsX') return c.filter;
+  return null;
+}
+
+/**
  * The permanents the player may choose to tap for the cost of a mana ability that taps a kind of permanent (D-625, CR 118.3, 302.6: summoning sickness holds back only a
  * creature's own {T} ability, so a creature that came under control this turn may be tapped): the untapped ones the seat controls that match. The source is one of them
  * only when its own cost leaves it untapped (no {T}): the {T} is paid first, so the source is tapped by then. Empty for an ability that taps nothing else. `reserved` are
@@ -168,7 +179,7 @@ export function manaTapCandidates(
   ability: ManaAbility,
   reserved: ReadonlySet<ObjectId> = new Set(),
 ): readonly ObjectId[] {
-  const filter = tapFilterOf(ability);
+  const filter = tapFilterOf(ability) ?? tapXFilterOf(ability);
   if (filter === null) return [];
   const selfTaps = hasCost(ability, 'tap');
   return tapCandidates(state, seat, source, filter).filter(
@@ -227,7 +238,9 @@ export function counterCostsOf(
   ability: ManaAbility,
 ): readonly { readonly counter: string; readonly count: number }[] {
   return ability.cost.flatMap((c) =>
-    c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+    c.kind === 'removeCounters' && c.counter !== undefined
+      ? [{ counter: c.counter, count: c.count }]
+      : [],
   );
 }
 
@@ -339,6 +352,10 @@ export function physicalRefusal(
   if (hasRestriction(state, obj, 'cantActivateAbilities')) {
     return `${name}'s activated abilities cannot be activated`;
   }
+  // CR 602.5, 605.1a, 607.2d (Phyrexian Revoker): "Activated abilities of sources with the chosen name can't be activated" includes the mana abilities.
+  if (activationLockedByName(state, obj)) {
+    return `${name}'s activated abilities cannot be activated`;
+  }
   if (hasCost(ability, 'tap') && !canTapForMana(state, obj, seat)) {
     return `${name} is tapped or summoning sick`;
   }
@@ -406,6 +423,8 @@ export function payManaAbilityCosts(
   tapped?: ObjectId,
   /** Permanents the engine's choice leaves alone (the other sources of a payment plan, D-625). */
   reserved?: ReadonlySet<ObjectId>,
+  /** The permanents a cost "Tap X untapped tokens you control" taps, as the player named them (the caller has checked that they may be tapped). */
+  tappedMany?: readonly ObjectId[],
 ): { state: GameState; events: GameEvent[] } {
   let next = state;
   const events: GameEvent[] = [];
@@ -420,6 +439,13 @@ export function payManaAbilityCosts(
   if (tapFilterOf(ability) !== null) {
     const given = manaTapChoice(next, seat, id, ability, tapped, reserved);
     if (given !== null) {
+      next = patchObject(next, given, { tapped: true });
+      events.push({ kind: 'tapped', object: given, by: seat });
+    }
+  }
+  // CR 701.26a (Hazel of the Rootbloom): the X permanents tapped as a cost are tapped, not tapped for mana.
+  if (tapXFilterOf(ability) !== null) {
+    for (const given of tappedMany ?? []) {
       next = patchObject(next, given, { tapped: true });
       events.push({ kind: 'tapped', object: given, by: seat });
     }
@@ -474,6 +500,10 @@ export function payManaAbilityCosts(
       events.push(...sacrificed.events);
     }
   }
+  // CR 605.3b, 122.6 (Empowered Autogenerator): the ability's first instruction, the counters it puts on its own permanent, before the mana is added.
+  const put = putOwnCounters(next, id, ability, seat);
+  next = put.state;
+  events.push(...put.events);
   return { state: next, events };
 }
 

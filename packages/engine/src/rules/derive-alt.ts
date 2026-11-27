@@ -143,6 +143,17 @@ export const BLITZ_SACRIFICE_ABILITY: TriggeredAbility = {
 };
 
 /**
+ * CR 603.7, 514.3a (Necromancy): "the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step": the delayed triggered ability a resolving spell
+ * cast at a time a sorcery could not have been (`StackData.sacrificeAtCleanup`) creates, for the permanent it became. The permanent is sacrificed by whoever controls it then (CR 701.21a),
+ * which need not be the spell's controller; like Dash's return it is not an ability of the permanent (CR 603.7e).
+ */
+export const FLASH_SACRIFICE_ABILITY: TriggeredAbility = {
+  kind: 'triggered',
+  trigger: { kind: 'cleanupStep' },
+  effect: { kind: 'sacrifice', objects: { kind: 'this' }, byController: true },
+};
+
+/**
  * CR 702.84a: "Exile it at the beginning of the next end step": the delayed triggered ability a resolving unearth
  * ability creates, for the permanent it returned (D-124). Like Dash's return it is not an ability of the
  * permanent (CR 603.7e).

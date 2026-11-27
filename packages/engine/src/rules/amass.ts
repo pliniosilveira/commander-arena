@@ -106,7 +106,8 @@ export function runAmass(
   }
   const obj = picked === undefined ? undefined : next.objects[picked];
   // CR 701.47b: the player amassed even when nothing could be done (a replacement made no Army token, the chosen Army left).
-  if (picked === undefined || obj === undefined) return done(next, events);
+  // CR 603.12 (Grishnákh): "amass Orcs 2. When you do, ...": the Army the amass chose is what the reflexive ability that follows carries (`moved`); none when nothing was chosen.
+  if (picked === undefined || obj === undefined) return { ...done(next, events), lastMoved: [] };
   if (ins.amount > 0) {
     const put = counterCountOn(next, obj, '+1/+1', ins.amount);
     next = patchObject(next, picked, {
@@ -132,5 +133,5 @@ export function runAmass(
     };
     next = { ...stamped, continuousEffects: [...stamped.continuousEffects, becomes] };
   }
-  return done(next, events);
+  return { ...done(next, events), lastMoved: [picked] };
 }

@@ -137,6 +137,10 @@ describe('the other new kinds', () => {
     [{ kind: 'blocks', what: { kind: 'this' } }, 'Whenever Pyre Hound blocks'],
     [{ kind: 'becomesBlocked', what: { kind: 'this' } }, 'Whenever Pyre Hound becomes blocked'],
     [
+      { kind: 'becomesUnblocked', what: { kind: 'this' } },
+      "Whenever Pyre Hound attacks and isn't blocked",
+    ],
+    [
       {
         kind: 'becomesBlockedBy',
         what: { kind: 'this' },
@@ -154,6 +158,21 @@ describe('the other new kinds', () => {
       'Whenever an attacking creature attacks',
     ],
   ] as [Trigger, string][])('keyword batch 2 (D-120): %j', (trigger, words) => {
+    expect(say(trigger)).toBe(words);
+  });
+
+  test.each([
+    [{ kind: 'turnedFaceUp', what: { kind: 'this' } }, 'Whenever Pyre Hound is turned face up'],
+    [
+      { kind: 'turnedFaceUp', what: { controller: 'you' } },
+      'Whenever a permanent you control is turned face up',
+    ],
+    [{ kind: 'turnedFaceUp', what: {}, by: 'you' }, 'Whenever you turn a permanent face up'],
+    [
+      { kind: 'entersBattlefield', what: { ...CREATURE_YOU, facing: 'down' } },
+      'Whenever a face-down creature you control enters',
+    ],
+  ] as [Trigger, string][])('turning a permanent face up (CR 701.40b): %j', (trigger, words) => {
     expect(say(trigger)).toBe(words);
   });
 
@@ -183,8 +202,12 @@ describe('the other new kinds', () => {
       by: 'tapper',
     };
     expect(say(tapper)).toBe('Whenever enchanted land is tapped for mana');
-    // Any other permanent a player may tap has no words: null, never a guess.
-    expect(say({ ...tapper, what: { types: ['land'] } } as Trigger)).toBeNull();
+    // Any land a player taps, whoever controls it (CR 605.1b).
+    expect(say({ ...tapper, what: { types: ['land'] } } as Trigger)).toBe(
+      'Whenever a player taps a land for mana',
+    );
+    // A shape the words do not cover has no words: null, never a guess.
+    expect(say({ ...tapper, mana: 'G', what: { types: ['land'] } } as Trigger)).toBeNull();
   });
 
   test('a shape the words do not cover gives null, never a guess', () => {
@@ -201,6 +224,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   attacks: { kind: 'attacks', what: { kind: 'this' } },
   blocks: { kind: 'blocks', what: { kind: 'this' } },
   becomesBlocked: { kind: 'becomesBlocked', what: { kind: 'this' } },
+  becomesUnblocked: { kind: 'becomesUnblocked', what: { kind: 'this' } },
   becomesBlockedBy: {
     kind: 'becomesBlockedBy',
     what: { kind: 'this' },
@@ -214,17 +238,31 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   exiledFromLibraryOrGraveyard: { kind: 'exiledFromLibraryOrGraveyard', who: 'you' },
   putIntoGraveyard: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
   ringTempted: { kind: 'ringTempted' },
+  dungeonCompleted: { kind: 'dungeonCompleted' },
+  expend: { kind: 'expend', amount: 4 },
   doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
+  roomFullyUnlocked: { kind: 'roomFullyUnlocked', who: 'you' },
+  exploits: { kind: 'exploits' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
   playsCard: { kind: 'playsCard', minCardTypes: 2 },
   activatesAbility: { kind: 'activatesAbility', who: 'you' },
+  entersCausesTrigger: {
+    kind: 'entersCausesTrigger',
+    who: 'opponent',
+    what: { types: ['creature'] },
+  },
   scries: { kind: 'scries', who: 'you' },
   surveils: { kind: 'surveils', who: 'you' },
+  milled: { kind: 'milled', who: 'any', filter: { types: ['creature'] } },
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
   winsCoinFlip: { kind: 'winsCoinFlip', who: 'you' },
+  removesCounterWhileExiled: { kind: 'removesCounterWhileExiled', counter: 'time' },
+  winsClash: { kind: 'winsClash', who: 'you' },
+  votingFinished: { kind: 'votingFinished' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
+  cleanupStep: { kind: 'cleanupStep' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },
   drawn: { kind: 'drawn', who: 'you' },
   dealsCombatDamage: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
@@ -237,6 +275,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   becomesTapped: { kind: 'becomesTapped', what: { kind: 'this' } },
   becomesUntapped: { kind: 'becomesUntapped', what: { kind: 'this' } },
   becomesMonstrous: { kind: 'becomesMonstrous', what: { kind: 'this' } },
+  turnedFaceUp: { kind: 'turnedFaceUp', what: { kind: 'this' } },
   discarded: { kind: 'discarded', who: 'you' },
   diesBatch: { kind: 'diesBatch', what: { types: ['creature'], controller: 'you', other: true } },
   entersBatch: { kind: 'entersBatch', what: { token: true, controller: 'you' } },
@@ -256,8 +295,10 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   lifeGained: { kind: 'lifeGained', who: 'you', firstEachTurn: true },
   lifeLost: { kind: 'lifeLost', who: 'you', firstEachTurn: true },
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },
+  lastCounterRemoved: { kind: 'lastCounterRemoved', what: { kind: 'this' }, counter: 'time' },
   attackBatch: { kind: 'attackBatch', who: 'you', atLeast: 2 },
   playerAttacksOpponent: { kind: 'playerAttacksOpponent' },
+  damageToPlayerPrevented: { kind: 'damageToPlayerPrevented', who: 'you' },
   unblockedAttackBatch: { kind: 'unblockedAttackBatch', who: 'opponent' },
   tappedForMana: {
     kind: 'tappedForMana',
@@ -341,5 +382,31 @@ describe('spells with {X} in their mana cost (Quandrix Unlimited group E)', () =
         ctx,
       ),
     ).toBeNull();
+  });
+});
+
+describe('"Whenever you attack the player who has the initiative" (Loot Dispute, CR 726.1)', () => {
+  test('is said as it is, and the dungeon trigger too', () => {
+    expect(
+      triggerWording(
+        { kind: 'attackBatch', who: 'you', atLeast: 1, attackedInitiativeHolder: true },
+        ctx,
+      ),
+    ).toBe('Whenever you attack the player who has the initiative');
+    expect(triggerWording({ kind: 'dungeonCompleted' }, ctx)).toBe(
+      'Whenever you complete a dungeon',
+    );
+    expect(triggerWording({ kind: 'expend', amount: 6 }, ctx)).toBe('Whenever you expend 6');
+  });
+});
+
+describe('"Whenever a player attacks you" (Mirkwood Trapper, CR 508.1b)', () => {
+  test('is said as it is, not as an attack at anyone', () => {
+    expect(
+      triggerWording({ kind: 'attackBatch', who: 'any', atLeast: 1, attackedYou: true }, ctx),
+    ).toBe('Whenever a player attacks you');
+    expect(triggerWording({ kind: 'attackBatch', who: 'any', atLeast: 1 }, ctx)).toBe(
+      'Whenever one or more creatures attack',
+    );
   });
 });

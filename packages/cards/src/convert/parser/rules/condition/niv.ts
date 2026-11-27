@@ -65,4 +65,55 @@ export const CONDITION_MANA_SPENT_OR_MORE = defineRule<IrCondition>({
   },
 });
 
-export const NIV_CONDITION_RULES = [CONDITION_MANA_SPENT_OR_MORE];
+/**
+ * `condition.mana-spent-less-than-mana-value`: "the amount of mana spent to cast it was less than its mana value" (Ancient Cellarspawn, CR 601.2h, 202.3, 603.4): the mana paid for the cost of the
+ * spell that caused a cast trigger against that spell's mana value (an X counted as announced, CR 202.3e). The engine's `manaSpentLessThanManaValue`, read as the event happens and again as the
+ * ability resolves; the lowering reads it in a trigger about other spells being cast only. Not read: "that spell", "this spell", "fewer", "at most", "no more than", "more than",
+ * "equal to", the plural verb, another statistic ("its power"), "mana cost".
+ */
+export const CONDITION_MANA_SPENT_LESS_THAN_MANA_VALUE = defineRule<IrCondition>({
+  id: 'condition.mana-spent-less-than-mana-value',
+  family: 'condition',
+  leading: ['the'],
+  cites: [
+    'CR 601.2h (Casting Spells)',
+    'CR 202.3 (Mana Value)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
+  examples: ['the amount of mana spent to cast it was less than its mana value'],
+  rejects: [
+    'the amount of mana spent to cast it was less than its mana value.',
+    'the amount of mana spent to cast that spell was less than its mana value',
+    'the amount of mana spent to cast it was less than that spell’s mana value',
+    'the amount of mana spent to cast it was greater than its mana value',
+    'the amount of mana spent to cast it was less than or equal to its mana value',
+    'the amount of mana spent to cast it was less than its power',
+    'the amount of mana spent to cast it was less than its mana cost',
+    'the amount of mana spent to cast it were less than its mana value',
+    'the mana spent to cast it was less than its mana value',
+    'mana spent to cast it was less than its mana value',
+  ],
+  parse: (ctx, pos) => {
+    const m = spanned(
+      pattern(
+        /the amount of mana spent to cast it was less than its mana value(?![\p{L}\p{N}'’])/iu,
+      ),
+    )(ctx, pos);
+    if (!m.ok) return m;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'manaSpentLessThanManaValue' },
+        span: { start: pos, end: m.pos },
+        rule: 'condition.mana-spent-less-than-mana-value',
+      },
+      pos: m.pos,
+    };
+  },
+});
+
+export const NIV_CONDITION_RULES = [
+  CONDITION_MANA_SPENT_OR_MORE,
+  CONDITION_MANA_SPENT_LESS_THAN_MANA_VALUE,
+];

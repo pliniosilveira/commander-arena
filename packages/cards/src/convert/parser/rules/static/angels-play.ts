@@ -126,7 +126,7 @@ export const STATIC_BLOCK_TAX = defineRule<IrStatic>({
 export const STATIC_OTHERS_ENTER_WITH_COUNTERS = defineRule<IrStatic>({
   id: 'static.others-enter-with-counters',
   family: 'static',
-  leading: ['each', 'nontoken', 'token', 'creatures'],
+  leading: ['each', 'nontoken', 'token', 'creatures', 'colorless'],
   cites: [
     'CR 614.1c (Replacement Effects)',
     'CR 614.12 (Replacement Effects)',
@@ -144,6 +144,8 @@ export const STATIC_OTHERS_ENTER_WITH_COUNTERS = defineRule<IrStatic>({
     // Stage P34 (D-152): no "other", for a permanent that is not one of the kind itself.
     'Each Dragon you control enters with an additional +1/+1 counter on it.',
     'Each creature you control enters with two additional +1/+1 counters on it.',
+    // Curator Beastie shape: a colorless group (CR 105.2c).
+    'Colorless creatures you control enter with two additional +1/+1 counters on them.',
     // Stage P39 (D-184, CR 601.2h): the mana spent to cast the permanent that enters.
     'Each creature you control enters with an additional +1/+1 counter on it for each mana from an artifact source spent to cast it.',
     'Each creature you control enters with an additional +1/+1 counter on it for each mana spent to cast it.',
