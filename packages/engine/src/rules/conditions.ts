@@ -584,6 +584,19 @@ export function evaluateCondition(
         ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
       return manaSpentOf(spell) >= condition.count;
     }
+    case 'manaSpentLessThanManaValue': {
+      // CR 601.2h, 202.3, 603.4: the mana spent on the spell that caused the cast trigger against its mana value (its X counted while it is on the stack, last-known information once it has left).
+      const spell =
+        ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
+      if (spell === null) return false;
+      const value = amountOf(
+        state,
+        { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+        { controller: ctx.controller, source: ctx.source, triggerSubject: spell.id },
+        [],
+      );
+      return manaSpentOf(spell) < value;
+    }
     case 'manaSpentFromSubtype': {
       // CR 601.2h, 205.3i: the spell that caused the cast trigger, as it is on the stack or as it last was; a copy was not cast and has no mana spent on it (CR 707.10).
       const spell =

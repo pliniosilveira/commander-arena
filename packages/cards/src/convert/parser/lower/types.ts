@@ -461,6 +461,11 @@ export interface LowerContext {
    */
   comparedPowerOf: ObjectRef | null;
   /**
+   * Ancient Cellarspawn (CR 601.2h, 202.3): the intervening "if" "the amount of mana spent to cast it was less than its mana value" compared the mana spent on the spell of a cast trigger with its mana value,
+   * which "equal to the difference" after it is of. False before one.
+   */
+  comparedSpellMana: boolean;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -573,6 +578,7 @@ export function newContext(
     choseAPlayer: false,
     comparedStat: null,
     comparedPowerOf: null,
+    comparedSpellMana: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

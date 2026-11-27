@@ -1673,6 +1673,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'descendedThisTurn',
     'playedLandThisTurn',
     'manaSpentAtLeast',
+    'manaSpentLessThanManaValue',
     'manaSpentFromSubtype',
     'castFromZone',
     // CR 603.4: "When this creature enters, if you cast it".
@@ -1916,6 +1917,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'giveChosenCreatureType',
     // "Land cards you own that aren't on the battlefield are Deserts in addition to their other types." (CR 613.1d, 205.1b).
     'giveTypesToCardsOffBattlefield',
+    // "Permanent spells you control are enchantments in addition to their other types." (CR 613.1d, 205.1b).
+    'giveTypesToPermanentSpells',
     'grantEncoreToGraveyardCards',
     // "Each creature card in your graveyard that's a Cleric ... has unearth {1}{B}" (CR 702.84a).
     'grantUnearthToGraveyardCards',
@@ -3035,6 +3038,8 @@ export const CONDITION_KINDS = [
   'playedLandThisTurn',
   /** "If at least four mana was spent to cast it" (D-206): the engine's `manaSpentAtLeast`. */
   'manaSpentAtLeast',
+  /** "If the amount of mana spent to cast it was less than its mana value" (Ancient Cellarspawn, CR 601.2h, 603.4): the engine's `manaSpentLessThanManaValue`. */
+  'manaSpentLessThanManaValue',
   /** "If mana from a Treasure was spent to cast it" (Smaug, Wicked Worm, CR 601.2h): the engine's `manaSpentFromSubtype`. */
   'manaSpentFromSubtype',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
@@ -3318,6 +3323,8 @@ export const STATIC_KINDS = [
   'giveChosenCreatureType',
   /** "Land cards you own that aren't on the battlefield are Deserts in addition to their other types" (CR 613.1d, 205.1b, Dune Chanter): the engine's `giveTypesToCardsOffBattlefield`. */
   'giveTypesToCardsOffBattlefield',
+  /** "Nonland permanents you control and permanent spells you control are enchantments in addition to their other types" (CR 613.1d, 205.1b, Secret Arcade): the engine's `giveTypesToPermanentSpells`. */
+  'giveTypesToPermanentSpells',
   /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
   'grantEncoreToGraveyardCards',
   /** "Each creature card in your graveyard that's a Cleric has unearth {1}{B}" (CR 702.84a): the engine's `grantUnearthToGraveyardCards`. */

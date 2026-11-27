@@ -54,6 +54,16 @@ const ON_A_PERMANENT: ReadonlySet<string> = new Set([
   'loseAllAbilities',
   'restrict',
 ]);
+/**
+ * "that spell's mana value" of a cast trigger names the spell on the stack, not an object the effect acts on (CR 202.3, 601.2i): the amount `manaValueOf` of the engine's `triggerSubject`
+ * (Dusty Parlor: "put a number of +1/+1 counters equal to that spell's mana value on up to one target creature"). Only that amount is left out of the check of "it" in the body.
+ */
+function withoutManaValueAmounts(clause: IrClause): IrClause {
+  const args = Object.fromEntries(
+    Object.entries(clause.args).filter(([, a]) => !(isIrAmount(a) && a.kind === 'manaValueOf')),
+  );
+  return { ...clause, args };
+}
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
 
 function failure(node: At, needs: readonly FeatureRef[] = []): LowerFailure {
@@ -2059,7 +2069,9 @@ function lowerTriggeredAbility(
   if (
     triggers.some((t) => t.kind === 'castSpell') &&
     clauses.some(
-      (c) => ON_A_PERMANENT.has(c.verb) && nounsOfClause(c).some((n) => n.det === 'triggerSubject'),
+      (c) =>
+        ON_A_PERMANENT.has(c.verb) &&
+        nounsOfClause(withoutManaValueAmounts(c)).some((n) => n.det === 'triggerSubject'),
     )
   ) {
     return failure(ability);

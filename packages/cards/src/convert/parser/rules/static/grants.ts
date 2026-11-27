@@ -209,6 +209,15 @@ export function areTypes(plural: boolean): Parser<Effects> {
         ),
         ([, land]): Effects => [{ kind: 'addTypes', subtypes: [land[1] ?? ''], types: ['land'] }],
       ),
+      // Miracle Worker deck (Secret Arcade, CR 205.1b, 613.1d): "are enchantments in addition to their other types": a card type added in layer 4.
+      map(
+        sequence(
+          literal('are '),
+          pattern(/(artifact|enchantment)s/u),
+          pattern(/ in addition to their other types(?![\p{L}\p{N}])/iu),
+        ),
+        ([, type]): Effects => [{ kind: 'addTypes', subtypes: [], types: [type[1] ?? ''] }],
+      ),
     );
   }
   return map(
@@ -514,6 +523,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Lands you control have "{T}: Add {G}."',
     // Desert Bloom deck, group G5 (Dune Chanter, CR 613.1d): the cards you own outside the battlefield too.
     "Lands you control and land cards you own that aren't on the battlefield are Deserts in addition to their other types.",
+    // Miracle Worker deck (Secret Arcade, CR 613.1d, 205.1b): the permanent spells you control too.
+    'Nonland permanents you control and permanent spells you control are enchantments in addition to their other types.',
     'Other creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.',
     "Juggernauts you control can't be blocked by Walls.",
     // Issue 133 (Shifting Sliver, CR 509.1b): the blockers are the creatures that are not of the type.
@@ -565,12 +576,15 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Nontoken creatures you control are Forest land in addition to their other types.',
     'Creatures you control that are Zombies or tokens get +1/+1.',
     "Lands you control and land cards you own that aren't on the battlefield are Deserts.",
+    'Nonland permanents you control and permanent spells you control are enchantments.',
   ],
   parse: statement(
     'static.permanents',
     [
       // Desert Bloom deck, group G5 (Dune Chanter): before `noun.plain-permanents`, which would stop after "lands you control".
       'noun.permanents-and-cards-off-battlefield',
+      // Miracle Worker deck (Secret Arcade): before `noun.plain-permanents`, which would stop after "nonland permanents you control".
+      'noun.nonland-permanents-and-permanent-spells',
       'noun.plain-permanents',
       // Issue 345 (Tavern Brawler): "Commander creatures you own have ...".
       'noun.commander-creatures-you-own',

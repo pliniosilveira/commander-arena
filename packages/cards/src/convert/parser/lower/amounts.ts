@@ -873,6 +873,23 @@ export function lowerAmount(
           rule,
         };
       }
+      // CR 601.2h, 202.3, 608.2c (Ancient Cellarspawn): "if the amount of mana spent to cast it was less than its mana value, ... equal to the difference": the gap between the mana value of the spell
+      // that caused the trigger and the mana spent on it, both read as the ability resolves (the condition says the mana spent is the smaller, so the gap is never negative).
+      if (!ctx.choseAPlayer && ctx.comparedSpellMana) {
+        const gap = needs('difference') ?? needs('manaValueOf') ?? needs('manaSpent');
+        if (gap !== null) return gap;
+        return {
+          ok: true,
+          value: {
+            kind: 'difference',
+            of: [
+              { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+              { kind: 'manaSpent', of: { kind: 'triggerSubject' } },
+            ],
+          },
+          rule,
+        };
+      }
       // CR 608.2c (Slithermuse): only after a sentence that chose a player; "the difference" is of the stat the condition before it compared.
       const blocked = needs('chosenPlayerLead');
       if (blocked !== null) return blocked;
