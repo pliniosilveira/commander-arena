@@ -243,6 +243,7 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
                 'condition.you-dont-put-it-onto-battlefield',
                 // D-411 (Danitha deck group 2): "If you don't, put a +1/+1 counter on this creature." after "You may put a land card from among them into your hand."
                 'condition.if-you-dont',
+                'condition.if-you-cant',
                 ...LEAD_CONDITIONS,
               ]
             : ['condition.kicked', ...LEAD_CONDITIONS],
@@ -628,7 +629,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
                 (c, p) => {
                   const ahead = pattern(
                     // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
-                    /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|put an? [+-]\d+\/[+-]\d+ counter on a creature\.|exile up to one other target ))/iu,
+                    /(?=you may (?:sacrifice |discard |mill |shuffle\.|put it onto the battlefield|put an? [+-]\d+\/[+-]\d+ counter on a creature\.|exile up to one other target ))/iu,
                   )(c, p);
                   return ahead.ok ? literal('you may ')(c, p) : ahead;
                 },

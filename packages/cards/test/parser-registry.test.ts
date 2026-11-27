@@ -1191,6 +1191,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
   ),
+  // Issue 712 (Meren 2): the rider of a mandatory choice among the cards a mill moved.
+  'condition.if-you-cant': permanent(
+    (e) =>
+      `When ~ enters, mill three cards. Put a land card from among the milled cards into your hand. If ${e}, create a Treasure token.`,
+  ),
   'condition.control-or-returned': spell(
     (e) =>
       `Mill four cards. You may put a permanent card from among them into your hand. If ${e}, create a Food token.`,

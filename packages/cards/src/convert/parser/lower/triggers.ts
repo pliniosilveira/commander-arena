@@ -751,7 +751,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (missing.length > 0) return failure(t, missing);
       const kind = t.subject?.filter;
       const filter =
-        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+        t.subject === undefined ||
+        (kind?.types === undefined && kind?.notTypes === undefined && kind?.anyOf === undefined)
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;

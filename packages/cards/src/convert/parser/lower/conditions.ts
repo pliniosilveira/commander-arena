@@ -963,6 +963,7 @@ export function lowerCondition(
     case 'notPutOntoBattlefield':
       // "If you don't put it onto the battlefield, put it into your hand" belongs to the pair of sentences of an offer to put a card onto the battlefield, which the lowering of the sentences reads (D-403).
       return failure(c, []);
+    case 'youCant':
     case 'youDont':
       // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
       return failure(c, []);
