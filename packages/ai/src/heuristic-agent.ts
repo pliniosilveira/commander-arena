@@ -47,6 +47,7 @@ import { chooseHeuristicAttack } from './heuristic-attacks';
 import { chooseHeuristicBlocks } from './heuristic-blocks';
 import {
   type Budget,
+  innerBudget,
   NO_BUDGET,
   type SearchWork,
   startBudget,
@@ -66,7 +67,7 @@ import {
 } from './heuristic-plan';
 import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
 import { choosePlanOn } from './heuristic-plan-pool';
-import { type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
+import { type Inner, type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
 import type { Line, PlayOutPool } from './heuristic-plan-types';
 import type { PlanWork } from './heuristic-plan-work';
 import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
@@ -91,7 +92,10 @@ export interface HeuristicAgentOptions {
   readonly weights?: AgentWeights;
 }
 
-/** Inner HeuristicAgents for a planner's play-outs: the same rules and weights, no sample, so no planning. */
+/**
+ * Inner HeuristicAgents for a planner's play-outs: the same rules and weights, no sample, so no planning. An
+ * opponent's attacks and blocks are its searches on the play-out's state (`Inner`, issue 653).
+ */
 export function simAgentsOf(weights: AgentWeights): SimAgents {
   return {
     start: () => {
@@ -102,11 +106,25 @@ export function simAgentsOf(weights: AgentWeights): SimAgents {
           agent = new HeuristicAgent({ seed: 7919 + seat, weights });
           agents.set(seat, agent);
         }
-        const inner = agent;
-        return (view) => inner.decisionHandlers(view);
+        const sim = agent;
+        return (view, inner) => sim.decisionHandlers(view, undefined, undefined, inner);
       };
     },
   };
+}
+
+/**
+ * The sample and budget of a combat search: the decision's (`think`), or, inside a play-out, the play-out's
+ * state with a small budget of its own whose calls are counted in the play-out's (`innerBudget`). A search
+ * inside a play-out gets no inner agents, so it has no look-ahead and starts no play-out itself.
+ */
+function combatOf(
+  think: Think,
+  inner: Inner | undefined,
+  agents: SimAgents,
+): { sample: GameState | undefined; budget: Budget; agents?: SimAgents } {
+  if (inner === undefined) return { sample: think.sample(), budget: think.budget, agents };
+  return { sample: inner.state, budget: innerBudget(inner.engine) };
 }
 
 /** What a priority decision asks of whoever drives it when it plans: the planning of `lines` in `when`. */
@@ -320,11 +338,15 @@ export class HeuristicAgent implements ExplainingAgent {
     };
   }
 
-  /** The handler per decision kind: the casual ones, with the decisions this agent plays itself replaced. */
+  /**
+   * The handler per decision kind: the casual ones, with the decisions this agent plays itself replaced. `inner`
+   * is given to an inner agent at an opponent's decision in a play-out (`simAgentsOf`).
+   */
   decisionHandlers(
     view: GameView,
     note: (reason: Reason) => void = () => undefined,
     ctx?: DecideContext,
+    inner?: Inner,
   ): DecisionHandlers<Action> {
     const think = this.think(ctx);
     const casual = createCasualHandlers(view, think.draw, this.activations);
@@ -388,12 +410,10 @@ export class HeuristicAgent implements ExplainingAgent {
       // attack search on the sample (`heuristic-attacks.ts`) is the stronger rule and costs little.
       declareAttackers: (d) => {
         const choice = chooseHeuristicAttack(view, d, {
-          sample: think.sample(),
-          budget: think.budget,
+          ...combatOf(think, inner, this.simAgents),
           weights: this.weights,
           passiveWeight: this.opponent.passiveWeight,
           passiveWeightFor: (seat) => this.opponent.passiveWeightFor(seat),
-          agents: this.simAgents,
         });
         this.look = choice.look ?? null;
         note(choice.reason);
@@ -401,10 +421,8 @@ export class HeuristicAgent implements ExplainingAgent {
       },
       declareBlockers: (d) => {
         const choice = chooseHeuristicBlocks(view, d, {
-          sample: think.sample(),
-          budget: think.budget,
+          ...combatOf(think, inner, this.simAgents),
           weights: this.weights,
-          agents: this.simAgents,
         });
         this.look = choice.look ?? null;
         note(choice.reason);

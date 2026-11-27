@@ -93,6 +93,31 @@ export class PlanCounter {
 
   /** The view of `state` for `seat`: the one kept before, or a new one, counted (and kept, up to `KEEP`). */
   view(state: GameState, seat: SeatId): GameView {
+    return this.keptView(state, seat);
+  }
+
+  /**
+   * `applyAction`: the result kept before for this state, seat and action, or a new one, counted (and kept, up
+   * to `KEEP`).
+   */
+  apply(state: GameState, seat: SeatId, action: Action): ApplyResult {
+    return this.keptApply(state, seat, action);
+  }
+
+  /**
+   * The engine of a search that an inner agent runs during one step of a play-out, from the step's `state` (an
+   * opponent's attack or block search, `heuristic-plan-sim.ts`): the same memo and the same counts as the
+   * play-out's own calls. A worker's counter writes these calls down apart (`heuristic-plan-runner.ts`).
+   */
+  inner(_state: GameState): Engine {
+    return {
+      view: (s, seat) => this.keptView(s, seat),
+      apply: (s, seat, action) => this.keptApply(s, seat, action),
+    };
+  }
+
+  /** `view`, for this class and its subclasses. */
+  protected keptView(state: GameState, seat: SeatId): GameView {
     const kept = this.viewed.get(state)?.get(seat);
     if (kept !== undefined) return kept;
     this.views += 1;
@@ -105,11 +130,8 @@ export class PlanCounter {
     return view;
   }
 
-  /**
-   * `applyAction`: the result kept before for this state, seat and action, or a new one, counted (and kept, up
-   * to `KEEP`).
-   */
-  apply(state: GameState, seat: SeatId, action: Action): ApplyResult {
+  /** `apply`, for this class and its subclasses. */
+  protected keptApply(state: GameState, seat: SeatId, action: Action): ApplyResult {
     const key = keyOf(seat, action);
     const kept = this.applied.get(state)?.get(key);
     if (kept !== undefined) return kept;

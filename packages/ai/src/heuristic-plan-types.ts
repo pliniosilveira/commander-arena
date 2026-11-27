@@ -42,7 +42,28 @@ export interface TraceMove {
   readonly key: string | null;
   /** Whether the engine accepted the action. */
   readonly ok: boolean;
+  /**
+   * The engine calls of the combat search an opponent ran during this step (`SideCall`), in order: they come
+   * after the step's view and before its action. Absent when it ran none.
+   */
+  readonly side?: readonly SideCall[];
 }
+
+/**
+ * One engine call of a search inside a step of a play-out (`TraceMove.side`). The states it reads are numbered
+ * within the step: 0 is the step's state, and each accepted `apply` and each `fresh` gives the next number to
+ * the state it brings (a `fresh` state is one the search built itself, reached by no action from the step's).
+ */
+export type SideCall =
+  | { readonly op: 'fresh' }
+  | { readonly op: 'view'; readonly at: number; readonly seat: SeatId; readonly cost: number }
+  | {
+      readonly op: 'apply';
+      readonly at: number;
+      readonly key: string;
+      readonly cost: number;
+      readonly ok: boolean;
+    };
 
 /**
  * How a play-out ended: `end` (it reached the start of the agent's next turn, or the game's end), `dropped`

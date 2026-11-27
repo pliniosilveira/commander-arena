@@ -4,9 +4,13 @@
  * agent's turn and the next turn of every opponent, until the agent's next turn starts.
  *
  * Who decides on the copy:
- * - the opponents: the HeuristicAgent's own rules (`SimAgents.of(seat)`), with the look-ahead off: the
- *   inner agents get no sample and no budget, so they neither sample nor plan (the planner is the
- *   look-ahead). They cast from the hand the scenario dealt them, counter, attack and block;
+ * - the opponents: the HeuristicAgent's own rules (`SimAgents.start`), with the look-ahead off: the inner
+ *   agents get no sample and no budget of a decision, so they neither sample nor plan (the planner is the
+ *   look-ahead). They cast from the hand the scenario dealt them and counter. They attack and block as the
+ *   real agent does (issue 653: the opponents in play-outs are the stronger model), with the attack and block
+ *   searches on the play-out's own state (`Inner`), never the real game's: each on a small budget of its own
+ *   (`innerBudget`), its engine calls paid from the decision's through the play-out's counter, and with no
+ *   look-ahead of its own, so a search inside a play-out plays the combat out and never starts a play-out;
  * - the agent, in the windows the line names (`Window`): the line's actions in order, each taken when the
  *   engine lists it and skipped otherwise; then `rest`: pass, or today's rules (the same inner agent);
  *   a land first in a main phase, as today (`planLand`). Removal the line holds is cast in an opponent's
@@ -34,7 +38,7 @@ import {
   type SeatId,
 } from '@commander-arena/engine';
 import { withFace } from './casual-priority';
-import type { Budget } from './heuristic-budget';
+import type { Budget, Engine } from './heuristic-budget';
 import { planLand } from './heuristic-lands';
 import { boardPrint } from './heuristic-plan-print';
 import type { Line, PlanStep, Window } from './heuristic-plan-types';
@@ -44,9 +48,25 @@ import type { AgentWeights } from './weights';
 
 export const MAIN_WINDOWS: readonly Window[] = ['main1', 'main2'];
 
-/** Inner HeuristicAgents (no sample, no planning): `start` gives a fresh one per seat for one play-out. */
+/**
+ * What a play-out gives an opponent's inner agent at one of its decisions: the play-out's state, which its
+ * combat searches play on as their sample (built from the agent's sample, never the real game), and the
+ * engine they make their calls through (`PlanCounter.inner`: counted in the decision's work).
+ */
+export interface Inner {
+  readonly state: GameState;
+  readonly engine: Engine;
+}
+
+/**
+ * Inner HeuristicAgents (no sample, no planning): `start` gives a fresh one per seat for one play-out. With
+ * `inner`, the agent's attack and block searches run on it (the opponents' decisions); without it, they answer
+ * from the view (the agent's own seat).
+ */
 export interface SimAgents {
-  readonly start: () => (seat: SeatId) => (view: GameView) => DecisionHandlers<Action>;
+  readonly start: () => (
+    seat: SeatId,
+  ) => (view: GameView, inner?: Inner) => DecisionHandlers<Action>;
 }
 
 export interface PlayContext {
@@ -189,7 +209,11 @@ export function playLine(
       continue;
     }
     const view = ctx.work.view(current, seat);
-    const handlers = handlersOf(seat)(view);
+    // An opponent's combat searches play on this state, their calls counted with the play-out's.
+    const handlers =
+      seat === me
+        ? handlersOf(seat)(view)
+        : handlersOf(seat)(view, { state: current, engine: ctx.work.inner(current) });
     let action: Action;
     try {
       if (seat !== me) {

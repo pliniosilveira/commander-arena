@@ -11,9 +11,9 @@
 
 import type { Action, ApplyResult, GameState, GameView, SeatId } from '@commander-arena/engine';
 import { evaluate } from './evaluate';
-import { type Cut, callCost, DIRECT, NO_BUDGET } from './heuristic-budget';
+import { type Cut, callCost, DIRECT, type Engine, NO_BUDGET } from './heuristic-budget';
 import { playLine, type SimAgents } from './heuristic-plan-sim';
-import type { PlanJobSpec, PlayOutTrace, TraceMove } from './heuristic-plan-types';
+import type { PlanJobSpec, PlayOutTrace, SideCall, TraceMove } from './heuristic-plan-types';
 import { keyOf, PlanCounter } from './heuristic-plan-work';
 import type { AgentWeights } from './weights';
 
@@ -24,6 +24,7 @@ interface OpenMove {
   view: boolean;
   key: string | null;
   ok: boolean;
+  side?: SideCall[];
 }
 
 /** `playLine`'s counter, which also writes down each step: the moves of the trace. */
@@ -62,6 +63,50 @@ class Recorder extends PlanCounter {
       move.ok = result.ok;
     }
     return result;
+  }
+
+  /**
+   * The engine of an opponent's search during this step: each call is written down in the step's `side`, with
+   * the states it reads numbered as `SideCall` says, whether the memo kept them or not.
+   */
+  override inner(state: GameState): Engine {
+    const ids = new Map<GameState, number>([[state, 0]]);
+    let next = 1;
+    const side = (): SideCall[] => {
+      const move = this.moves[this.moves.length - 1] as OpenMove;
+      move.side ??= [];
+      return move.side;
+    };
+    const idOf = (s: GameState): number => {
+      const known = ids.get(s);
+      if (known !== undefined) return known;
+      side().push({ op: 'fresh' });
+      ids.set(s, next);
+      next += 1;
+      return next - 1;
+    };
+    return {
+      view: (s, seat) => {
+        side().push({ op: 'view', at: idOf(s), seat, cost: callCost(s) });
+        return this.keptView(s, seat);
+      },
+      apply: (s, seat, action) => {
+        const at = idOf(s);
+        const result = this.keptApply(s, seat, action);
+        side().push({
+          op: 'apply',
+          at,
+          key: keyOf(seat, action),
+          cost: callCost(s),
+          ok: result.ok,
+        });
+        if (result.ok) {
+          ids.set(result.state, next);
+          next += 1;
+        }
+        return result;
+      },
+    };
   }
 
   override stop(why: Cut): void {
