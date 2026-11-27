@@ -8,7 +8,7 @@
 import type { ObjectFilter } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { seatsInOrder, zoneList } from '../state/ops';
+import { objectsInZone, seatsInOrder, zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
 import { derive } from './derive';
@@ -85,6 +85,28 @@ export function cardCandidates(
       return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
   );
+}
+
+/**
+ * "Return a nonland permanent you own to your hand" (CR 108.3, 608.2d): the choice is among the permanents the chooser owns, whoever controls them, when the filter says
+ * `ownedByYou` and names no controller.
+ */
+export function ownedChoice(filter: ObjectFilter): boolean {
+  return filter.ownedByYou === true && filter.controller === undefined && !isCardZoneChoice(filter);
+}
+
+/** The permanents on the battlefield `seat` owns that the filter matches (CR 108.3: the owner, not the controller; `ownedByYou` reads the owner against `seat`). */
+function ownedCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId | null,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const scoped: ObjectFilter = { ...filter, zone: 'battlefield' };
+  return objectsInZone(state, 'battlefield').filter((id) => {
+    const obj = state.objects[id];
+    return obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source });
+  });
 }
 
 const WHERE: Readonly<Record<ChooseMoveInstruction['to'], string>> = {
@@ -312,7 +334,9 @@ export function runChooseMove(
               // D-411: only the cards the effect before it moved.
               (id) => instruction.among === undefined || instruction.among.includes(id),
             )
-          : controlledCandidates(state, chooser, res.source, instruction.filter);
+          : ownedChoice(instruction.filter)
+            ? ownedCandidates(state, chooser, res.source, instruction.filter)
+            : controlledCandidates(state, chooser, res.source, instruction.filter);
   // "A creature with the greatest mana value among creatures they control" (`moveToZone.player`, CR 608.2d): only the candidates tied for the extreme value of the stat can be chosen.
   const extreme =
     instruction.greatest !== undefined

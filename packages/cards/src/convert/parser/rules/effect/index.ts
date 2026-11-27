@@ -835,6 +835,46 @@ const RETURN_CHOSEN = map(
   }),
 );
 
+/**
+ * "return a nonland permanent you own to your hand" (Phenomenon Investigators; CR 108.3, 400.3, 608.2d): the controller chooses, as the instruction resolves, among the permanents they
+ * own, whoever controls them (a permanent of theirs under another player's control too), and it goes to their hand, which is its owner's. One object, not "another", no controller
+ * said: "you own" is the whole of who. Quiet: a line without the words stops where it always did.
+ */
+const RETURN_CHOSEN_OWNED: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  (ctx, pos) => {
+    const r = sequence(
+      literal('return '),
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.a-permanent'] }),
+        (noun) =>
+          noun.filter.controller === undefined &&
+          noun.filter.player === undefined &&
+          !noun.plural &&
+          !noun.other &&
+          noun.count === undefined,
+      ),
+      spanned(pattern(/ you own(?![\p{L}\p{N}'’])/iu)),
+      spanned(pattern(/ to your hand(?![\p{L}\p{N}])/iu)),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, noun, own, to] = r.value;
+    const objects: IrNoun = {
+      ...noun,
+      filter: {
+        ...noun.filter,
+        ownedByYou: true,
+        raw: ctx.text.slice(noun.span.start, own.span.end),
+      },
+      span: { start: noun.span.start, end: own.span.end },
+    };
+    return {
+      ok: true,
+      value: { objects, to: zone('effect.return', to.span, 'hand', { whose: 'owner' }) },
+      pos: r.pos,
+    };
+  },
+);
+
 /** "return target spell or creature to its owner's hand" (issue 81, Fatehold Charm): the slot of a spell on the stack or a creature on the battlefield. */
 const RETURN_SPELL_OR_CREATURE_TO_HAND = map(
   sequence(
@@ -1172,6 +1212,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
     "return a Forest you control to its owner's hand",
+    // Phenomenon Investigators (CR 108.3): a permanent you own, whoever controls it, to your hand.
+    'return a nonland permanent you own to your hand',
+    'return a creature you own to your hand',
     // Stage P33 (D-150): the card an earlier instruction chose, and the card of the source.
     'return that card to the battlefield',
     'return that nonland permanent card to the battlefield',
@@ -1203,6 +1246,11 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return another creature you control to its owner's hand",
     "return two lands you control to their owners' hands",
     'return a land you control to your hand',
+    'return a land you control you own to your hand',
+    'return another creature you own to your hand',
+    'return two lands you own to your hand',
+    "return a land you own to an opponent's hand",
+    'return a land you owned to your hand',
     'return a land you control to the battlefield',
     "return ~ to its owner's hand tapped",
     'return ~ to the battlefield',
@@ -1245,6 +1293,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
+      RETURN_CHOSEN_OWNED,
       RETURN_SAME_NAME,
       RETURN_PAIR_FROM_YOUR_GRAVEYARD,
       RETURN_FROM_GRAVEYARD,

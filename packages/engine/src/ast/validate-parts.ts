@@ -5384,7 +5384,13 @@ function checkChooseMove(
       );
     }
   }
-  if (sel.filter?.controller !== 'you') {
+  // CR 108.3 (Phenomenon Investigators): "a nonland permanent you own": among the permanents the controller owns, whoever controls them; no controller is then said.
+  const owned =
+    sel.filter?.ownedByYou === true &&
+    sel.filter.controller === undefined &&
+    (sel.filter.zone === undefined || sel.filter.zone === 'battlefield') &&
+    sel.players === undefined;
+  if (sel.filter?.controller !== 'you' && !owned) {
     issue(
       out,
       `${path}.filter.controller`,

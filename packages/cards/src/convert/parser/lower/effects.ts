@@ -590,8 +590,11 @@ function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerR
   const filter = lowerFilter(what);
   if (!filter.ok) return filter;
   if (toBattlefield && filter.value.zone !== 'graveyard') return failure(clause);
-  if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard')
+  // Phenomenon Investigators (CR 108.3, 400.3): "a nonland permanent you own": chosen among the permanents the controller owns, whoever controls them.
+  const owned = filter.value.ownedByYou === true && filter.value.controller === undefined;
+  if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard' && !owned) {
     return failure(clause);
+  }
   const count = what.count?.kind === 'number' ? what.count.value : undefined;
   if (what.upTo === true && (count === undefined || filter.value.zone !== 'graveyard')) {
     return failure(clause);
@@ -2660,8 +2663,22 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       attacking: { at: ctx.attackBatchPlayer.selector, controllerChooses: true },
     };
   }
+  // CR 508.4, 508.6 (Soaring Lightbringer): "that's tapped and attacking that player": only in a trigger with one occurrence for each player attacked, which names that player; the
+  // words say whom the token attacks, so its controller chooses nothing.
+  if (token.tappedAttackingThatPlayer === true) {
+    if (ctx.eachAttackedPlayer === null) return { ok: false, needs: [], ...at };
+    const missing = missingFeatures([
+      ...ctx.eachAttackedPlayer.needs,
+      'token:attacking',
+      'token:tapped',
+    ]);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    entersAttacking = { attacking: { at: ctx.eachAttackedPlayer.selector } };
+  }
   const entersTapped = {
-    ...(token.tapped === true || token.tappedAndAttacking === true
+    ...(token.tapped === true ||
+    token.tappedAndAttacking === true ||
+    token.tappedAttackingThatPlayer === true
       ? { tapped: true as const }
       : {}),
     ...entersAttacking,

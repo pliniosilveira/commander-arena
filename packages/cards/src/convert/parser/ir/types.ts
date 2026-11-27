@@ -1550,6 +1550,11 @@ export interface IrToken extends IrNode {
    * an attacker. Only in the effect of "whenever one or more ... you control attack".
    */
   readonly tappedAndAttacking?: true;
+  /**
+   * "... token that's tapped and attacking that player" (CR 508.4, 508.6): the token enters tapped and attacking the one player the trigger is about ("Whenever you attack a
+   * player"), never declared as an attacker. Written by `effect.create-token`, in place of `tappedAndAttacking`.
+   */
+  readonly tappedAttackingThatPlayer?: true;
   /** "Smaug, a legendary 6/6 red Dragon creature token" (stage P45, D-197, CR 205.4): the token has the supertype legendary. */
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
@@ -1605,6 +1610,11 @@ export interface IrToken extends IrNode {
   readonly copySetTypes?: readonly string[];
   /** "..., except the token is 1/1" (Endless Evil, CR 707.9b): with `copyOf`, the copy has this power and toughness and keeps its colors, types and abilities (the engine's `copyOf.setPt`). */
   readonly copySetPt?: { readonly power: number; readonly toughness: number };
+  /**
+   * "..., except it's 1/1 and it's a Nightmare in addition to its other types" (Nightmare Shepherd, CR 707.9b): with `copyOf`, the creature types the copy has besides the ones it
+   * copies, as written (the engine's `copyOf.addSubtypes`); the power and toughness of the same words are `copySetPt`.
+   */
+  readonly copyAddsSubtypes?: readonly string[];
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   /** "create a tapped and attacking X/X ... creature token" (CR 508.4): the tokens enter tapped and attacking, never declared as attackers; with `tapped`. */

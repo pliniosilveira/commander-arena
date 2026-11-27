@@ -36,7 +36,7 @@ import {
   TOKEN_COPY_EXCEPT,
   TOKEN_COPY_EXCEPT_ADDITIVE,
 } from './copy-except';
-import { TOKEN_COPY_EXCEPT_PT } from './copy-except-pt';
+import { TOKEN_COPY_EXCEPT_PT, TOKEN_COPY_EXCEPT_PT_SUBTYPE } from './copy-except-pt';
 import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
@@ -358,6 +358,8 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
             'creature',
           ]),
           map(literal(' artifact creature'), () => ['artifact', 'creature']),
+          // CR 205.2a, 111.4 (Phenomenon Investigators, Soaring Lightbringer): "a 2/2 black Horror enchantment creature token".
+          map(literal(' enchantment creature'), () => ['enchantment', 'creature']),
           // CR 205.3i, 305.6 (Verdant Kraken): "a 3/3 green Forest Tentacle land creature token".
           map(literal(' land creature'), () => ['land', 'creature']),
           map(literal(' creature'), () => ['creature']),
@@ -457,6 +459,8 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 3/3 colorless Vehicle artifact token with flying and crew 2',
     'an X/X colorless Vehicle artifact token named Nalaar Aetherjet with flying and crew 2',
     'a 3/3 colorless Golem enchantment artifact creature token',
+    'a 2/2 black Horror enchantment creature token',
+    'two 1/1 white Glimmer enchantment creature tokens with flying',
     // CR 205.3i, 305.6 (Verdant Kraken): a land creature token whose subtypes include a basic land type.
     'a 3/3 green Forest Tentacle land creature token',
     'three 1/1 white and blue Spirit creature tokens',
@@ -506,6 +510,9 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'two 1/1 white Soldier creature tokens that are tapped and attacking',
   ],
   rejects: [
+    'a 2/2 black Horror enchantment token',
+    'a 2/2 black Horror creature enchantment token',
+    'a 2/2 black Horror artifact enchantment creature token',
     "a 1/1 red Goblin creature token that's tapped and attacking and",
     "a 1/1 red Goblin creature token that's tapped",
     "a 1/1 red Goblin creature token that's attacking",
@@ -1017,6 +1024,8 @@ export const TOKEN_RULES = [
   // Espers to Magicite: "..., except it's an artifact and it loses all other card types".
   TOKEN_COPY_EXCEPT_SET_TYPES,
   TOKEN_COPY_EXCEPT_PT,
+  // Nightmare Shepherd: "..., except it's 1/1 and it's a Nightmare in addition to its other types", before the plain copies.
+  TOKEN_COPY_EXCEPT_PT_SUBTYPE,
   // Saw in Half: "two tokens that are copies of that creature, except their power is half ...", before the plain copy.
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
