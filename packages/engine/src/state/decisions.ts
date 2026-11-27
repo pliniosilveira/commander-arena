@@ -688,12 +688,12 @@ export interface ChooseCardsDecision extends DecisionBase {
   /**
    * For `'lookSplit'` (D-216, "Put one of them into your hand, put one of them on the bottom of your library, and exile one of them"): every card looked
    * at is in `looked` (only `seat` sees them), `legal` are those still to place and exactly `min` = `max` of them are chosen for this pile, `to` says which:
-   * the hand or the bottom of the library. Absent for every other question.
+   * the hand or the bottom of the library, or (`lookAndSplit.top`, "one on top of your library") the top, where the card chosen stays. Absent for every other question.
    *
    * For `'separate'` (D-303, CR 700.3, "An opponent separates those cards into two piles"): `seat` is the player who separates, `legal` the revealed cards, still in a library
    * (`zone`), and the cards chosen (`min` 0, `max` all of them) are pile 1; the cards not chosen are pile 2 (CR 700.3a, 700.3d: either may be empty). All are public (`reveal`).
    */
-  readonly to?: 'hand' | 'bottom';
+  readonly to?: 'hand' | 'bottom' | 'top';
   /**
    * True when the discard is a cost being paid: of a spell being cast (an additional cost, CR 601.2h)
    * or of an ability being activated (CR 602.2b), with `source` the spell or ability on the stack and
@@ -725,6 +725,8 @@ export interface ArrangeCardsDecision extends DecisionBase {
   readonly purpose: 'scry' | 'surveil' | 'reorder' | 'bottom';
   readonly cards: readonly ObjectId[];
   readonly piles: readonly ('top' | 'bottom' | 'graveyard')[];
+  /** For `'reorder'` of another player's library (CR 401.2, "the top three cards of target player's library"): the player whose library the cards are in. Absent when it is `seat`'s own. */
+  readonly libraryOf?: SeatId;
 }
 
 /** One distinct waiting triggered ability in an orderTriggers decision. */

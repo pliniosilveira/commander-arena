@@ -4438,6 +4438,13 @@ export type Effect =
        * the seeded generator makes, nobody choosing and nobody seeing it. Only with `to` `library` and `position` `bottom`.
        */
       readonly random?: true;
+      /**
+       * "Put all creatures on the bottom of their owners' libraries" (CR 401.4, 108.3, 400.3): each owner of two or more of the cards that reach the bottom of their library arranges
+       * them there in an order they choose and do not reveal (an `arrangeCards` decision of purpose `bottom`, the owners asked in turn order, CR 101.4). A token ceases to exist
+       * (CR 111.7) and a commander its owner puts into the command zone (CR 903.9b) is not among them. Only with `to` `library`, `position` `bottom`, a selector that is no
+       * `choose`, and without `random`.
+       */
+      readonly ownersArrange?: true;
       readonly tapped?: boolean;
       /**
        * For battlefield: "under its owner's control" (`owner`) or "under your control" (`you`, the
@@ -5888,14 +5895,20 @@ export type Effect =
    * "Look at the top N cards of your library, then put them back in any order": the controller
    * looks at the top `count` cards and puts all of them back on top in the order they choose. It is
    * not the keyword action scry, so no scry event occurs and nothing triggers.
+   * `from` ("Look at the top three cards of target player's library, then put them back in any order", CR 401.2, 115.1): whose library it is, a selector that names exactly one
+   * player (the controller may be that player); left out, the controller's own. The controller of the effect looks and chooses the order; only they see the cards, which stay
+   * in that player's library. A library with fewer cards has those looked at, and one with none nothing (no card is drawn, so nobody loses).
    */
-  | { readonly kind: 'lookAndReorder'; readonly count: Amount }
+  | { readonly kind: 'lookAndReorder'; readonly count: Amount; readonly from?: PlayerSelector }
   /**
    * "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of
    * them." (Expressive Iteration, D-216, CR 401.2, 608.2c): the controller looks at the top `count` cards and sorts them, in this order: `hand` of
    * them into their hand, `bottom` of them on the bottom of their library, `exile` of them into exile; they choose the first two piles, the rest is
    * exiled. `count` is `hand + bottom + exile`. With fewer cards in the library the first instructions are done and the last are not. What was
    * exiled is `moved` for the effect after it ("You may play the exiled card this turn": `mayPlay`). Not the keyword action scry.
+   * `top` ("Put one of those cards into your hand, one on top of your library, and one on the bottom of your library", CR 401.2, 608.2c): the piles are, in this order, `hand`
+   * into the hand, `top` (1) left on top of the library and `bottom` (1) on the bottom; the player chooses the first two, the card left goes to the bottom, and `exile` is 0.
+   * `count` is `hand + top + bottom`. With fewer cards the first instructions are done and the last are not (one card: the hand; two: the hand, then the top).
    */
   | {
       readonly kind: 'lookAndSplit';
@@ -5903,6 +5916,7 @@ export type Effect =
       readonly hand: number;
       readonly bottom: number;
       readonly exile: number;
+      readonly top?: number;
     }
   /**
    * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (Fact or Fiction,

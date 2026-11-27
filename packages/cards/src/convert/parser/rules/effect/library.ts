@@ -126,6 +126,71 @@ export const EFFECT_LOOK_REORDER = defineRule<Clauses>({
   ),
 });
 
+/** "target player", "target opponent": the one player whose library is looked at (a target, never "each"). */
+const TARGET_PLAYER: Parser<IrNoun> = satisfy(
+  family<IrNoun>('noun', { only: ['noun.player'] }),
+  (n) => n.det === 'target' && n.anyNumber !== true && n.count === undefined,
+);
+
+/**
+ * `effect.look-reorder-player`: "Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle." (Portent, CR 401.2,
+ * 115.1, 701.24): the controller looks at the cards of the target player's library (their own when they target themselves) and puts them back in the order they choose, then may
+ * have that player shuffle. Two sentences that `splitSentences` keeps together: the offer names the player of the first sentence. The offer may be left out. Not read: your own
+ * library (`effect.look-reorder`), "each opponent", one card, X, "a random order", "you may shuffle" (the controller's own library) after another player's.
+ */
+export const EFFECT_LOOK_REORDER_PLAYER = defineRule<Clauses>({
+  id: 'effect.look-reorder-player',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 115.1 (Targets)', 'CR 701.24 (Shuffle)'],
+  examples: [
+    "look at the top three cards of target player's library, then put them back in any order. you may have that player shuffle",
+    'look at the top two cards of target opponent’s library, then put them back in any order. You may have that player shuffle',
+    "look at the top three cards of target player's library, then put them back in any order",
+  ],
+  rejects: [
+    'look at the top three cards of your library, then put them back in any order',
+    "look at the top three cards of each opponent's library, then put them back in any order",
+    "look at the top card of target player's library, then put it back",
+    "look at the top X cards of target player's library, then put them back in any order",
+    "look at the top three cards of target player's library, then put them back in a random order",
+    "look at the top three cards of target player's library, then put them back in any order. you may shuffle",
+    "look at the top three cards of target player's library, then put them back in any order. that player shuffles",
+    "look at the top three cards of target player's library, then put them back in any order and draw a card",
+    "look at the top three cards of target player's graveyard, then put them back in any order",
+  ],
+  parse: single(
+    'effect.look-reorder-player',
+    sequence(
+      literal('look at the top '),
+      AT_LEAST(2),
+      literal(' cards of '),
+      TARGET_PLAYER,
+      pattern(
+        /['’]s library, then put them back in any order(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu,
+      ),
+      optional(spanned(literal('. you may have that player shuffle')), null),
+    ),
+    ([, count, , from, , shuffle]) => ({
+      verb: 'lookAndReorderPlayer',
+      args: {
+        count,
+        from,
+        ...(shuffle === null
+          ? {}
+          : {
+              mayShuffle: {
+                kind: 'flag' as const,
+                value: true,
+                span: shuffle.span,
+                rule: 'effect.look-reorder-player',
+              },
+            }),
+      },
+    }),
+  ),
+});
+
 /**
  * `effect.put-hand-top`: "put two cards from your hand on top of your library in any order",
  * "put a card from your hand on top of your library" (CR 401.4: several cards put on top at once are
@@ -746,6 +811,46 @@ export const EFFECT_LOOK_SPLIT = defineRule<Clauses>({
 });
 
 /**
+ * `effect.look-split-top`: "look at the top three cards of your library. Put one of those cards into your hand, one on top of your library, and one on the bottom of your
+ * library" (Telling Time, CR 401.2, 608.2c): each of the three cards goes to one place, the player choosing. Two sentences that `splitSentences` keeps together. With fewer
+ * cards the instructions are followed in the order given (the hand, then the top). Not read: another number of cards (the three places take one card each), another library,
+ * another place or order of the places.
+ */
+export const EFFECT_LOOK_SPLIT_TOP = defineRule<Clauses>({
+  id: 'effect.look-split-top',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'look at the top three cards of your library. put one of those cards into your hand, one on top of your library, and one on the bottom of your library',
+    'look at the top 3 cards of your library. Put one of those cards into your hand, one on top of your library, and one on the bottom of your library',
+  ],
+  rejects: [
+    'look at the top four cards of your library. put one of those cards into your hand, one on top of your library, and one on the bottom of your library',
+    'look at the top three cards of your library. put one of those cards into your hand, one on top of your library',
+    'look at the top three cards of your library. put one of those cards into your hand, one on the bottom of your library, and one on top of your library',
+    'look at the top three cards of your library. put two of those cards into your hand, one on top of your library, and one on the bottom of your library',
+    'look at the top three cards of your library. put one of those cards into your hand, one on top of your library, and one into your graveyard',
+    'look at the top three cards of target player’s library. put one of those cards into your hand, one on top of your library, and one on the bottom of your library',
+    'look at the top three cards of your library. put one of those cards into your hand, one on top of your library, and one on the bottom of your library in any order',
+  ],
+  parse: single(
+    'effect.look-split-top',
+    satisfy(
+      sequence(
+        literal('look at the top '),
+        AT_LEAST(2),
+        pattern(
+          / cards of your library\. put one of those cards into your hand, one on top of your library, and one on the bottom of your library(?![\p{L}\p{N}])(?! in\b)/iu,
+        ),
+      ),
+      ([, count]) => numberOf(count) === 3,
+    ),
+    ([, count]) => ({ verb: 'lookAndSplitTop', args: { count } }),
+  ),
+});
+
+/**
  * `effect.look-take-bottom`: "look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order" (Stock Up,
  * D-324, CR 401.2, 401.4): two sentences that `splitSentences` keeps together. The cards put into the hand are not revealed (no "reveal" is said, CR 701.20a), the player who looks
  * chooses which, and chooses the order of the rest on the bottom (CR 401.4: the owner arranges cards put into a library at the same time). Not read: a number of cards
@@ -866,6 +971,7 @@ export const LIBRARY_RULES = [
   EFFECT_SCRY,
   EFFECT_SURVEIL,
   EFFECT_LOOK_REORDER,
+  EFFECT_LOOK_REORDER_PLAYER,
   EFFECT_LOOK_TAKE,
   EFFECT_LOOK_PUT_ATTACH,
   EFFECT_LOOK_PUT_ONTO,
@@ -873,6 +979,7 @@ export const LIBRARY_RULES = [
   EFFECT_LOOK_TAKE_ONE_TOP,
   EFFECT_LOOK_TAKE_ONE_BOTTOM,
   EFFECT_LOOK_SPLIT,
+  EFFECT_LOOK_SPLIT_TOP,
   EFFECT_PUT_HAND_TOP,
   EFFECT_PUT_HAND_BOTTOM,
 ];

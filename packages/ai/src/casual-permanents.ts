@@ -314,6 +314,9 @@ export function orderTriggersAsListed(d: OrderTriggersDecision): Action {
 /** "You may ... sacrifice / pay / discard / lose" costs something; everything else is free. */
 const COSTLY_OPTION = /you may[^.]*\b(sacrifice|pay|discard|lose|exile)\b/i;
 
+/** The offer of a shuffle that would undo the order the player has just chosen for the top of a library. */
+const AFTER_REORDER_SHUFFLE = /put them back in any order\. you may have that player shuffle\./i;
+
 /**
  * A shock land's "you may pay 2 life" (a decision with `cost`) is worth it while life is plentiful:
  * the land enters untapped and the mana is there this turn, but a low life total is worth more than
@@ -490,6 +493,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
   // D-284: read the ability on the stack, not the text of the creature it belongs to (a granted ability is not in that text).
   const delayed = answerDelayedMay(view, d);
   if (delayed !== null) return delayed;
+  // "... then put them back in any order. You may have that player shuffle." (CR 701.24): the agent has just put the cards in the order it wants, so it keeps that order.
+  if (AFTER_REORDER_SHUFFLE.test(d.sourceOracleText)) return { kind: 'declineOptional' };
   return COSTLY_OPTION.test(d.sourceOracleText)
     ? { kind: 'declineOptional' }
     : { kind: 'acceptOptional' };

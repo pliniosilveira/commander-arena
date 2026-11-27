@@ -38,7 +38,7 @@ import type {
 } from '../state/types';
 import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
-import { runArrange, runPutOnTop } from './arrange';
+import { runArrange, runArrangeMoved, runPutOnTop } from './arrange';
 import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject, unattach } from './attach';
 import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
@@ -425,6 +425,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'discard') return runDiscard(state, res, instruction);
   if (instruction.kind === 'arrange') return runArrange(state, res, instruction);
+  if (instruction.kind === 'arrangeMoved') return runArrangeMoved(state, res);
   if (instruction.kind === 'drawUpTo') return runDrawUpTo(state, res, instruction);
   if (instruction.kind === 'chooseNumber') return runChooseNumber(state, res, instruction);
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
@@ -1819,6 +1820,10 @@ function runEffect(
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
       // D-283 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
       const together = recordTogether(shuffledState, moves);
+      // CR 401.4 ("on the bottom of their owners' libraries"): once the cards are there, each owner of two or more of them arranges theirs (rules/arrange.ts).
+      if (effect.ownersArrange === true && effect.to === 'library') {
+        return moving(together.state, [...together.instructions, { kind: 'arrangeMoved' }]);
+      }
       return moving(together.state, together.instructions);
     }
 
@@ -4328,6 +4333,8 @@ function runEffect(
             hand: effect.hand,
             bottom: effect.bottom,
             exile: effect.exile,
+            // "One on top of your library" (CR 608.2c): the pile left on top, chosen after the hand.
+            ...(effect.top === undefined ? {} : { top: effect.top }),
             chosen: null,
           },
         ],
@@ -4605,10 +4612,23 @@ function runEffect(
     case 'lookAndReorder': {
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // CR 401.2, 115.1 ("the top three cards of target player's library"): the library of the one player the selector names; with none (the target is gone) nothing is looked at.
+      const [libraryOf] =
+        effect.from === undefined ? [] : resolvePlayers(state, effect.from, ctx, targets);
+      if (effect.from !== undefined && libraryOf === undefined) return done(state);
       return done(
         state,
         [],
-        [{ kind: 'arrange', purpose: 'reorder', seat: res.controller, count, arranged: null }],
+        [
+          {
+            kind: 'arrange',
+            purpose: 'reorder',
+            seat: res.controller,
+            count,
+            ...(libraryOf === undefined ? {} : { libraryOf }),
+            arranged: null,
+          },
+        ],
       );
     }
 

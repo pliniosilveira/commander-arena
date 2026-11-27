@@ -8397,6 +8397,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       ) {
         issue(out, `${path}.random`, "random is true, with to 'library' and position 'bottom'");
       }
+      // CR 401.4: "on the bottom of their owners' libraries": each owner arranges the cards that reach the bottom of their library.
+      if (
+        e.ownersArrange !== undefined &&
+        (e.ownersArrange !== true ||
+          e.to !== 'library' ||
+          e.position !== 'bottom' ||
+          e.random !== undefined ||
+          e.objects.kind === 'choose')
+      ) {
+        issue(
+          out,
+          `${path}.ownersArrange`,
+          "ownersArrange is true, with to 'library', position 'bottom', no random and no choose selector",
+        );
+      }
       // CR 610.3 (Foreboding Steamboat): "exile them until ~ leaves the battlefield": the permanent chosen by each player, exiled by an ability of a permanent.
       if (e.until !== undefined) {
         if (e.until !== 'sourceLeaves') {
@@ -10872,6 +10887,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'lookAndReorder':
+      checkAmount(e.count, `${path}.count`, scope, out);
+      // CR 401.2, 115.1: "the top three cards of target player's library": the one player whose library it is.
+      if (e.from !== undefined) checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      break;
     case 'putFromHandOnTop':
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
@@ -10919,11 +10938,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (!isCount(e[pile]))
           issue(out, `${path}.${pile}`, `${pile} must be a non-negative integer`);
       }
-      if (typeof e.count === 'number' && e.count !== e.hand + e.bottom + e.exile) {
+      // "One on top of your library, and one on the bottom of your library" (CR 401.2, 608.2c): one card stays on top and at most one goes to the bottom, so no order is
+      // asked (CR 401.4 is about two or more cards); nothing is exiled.
+      if (e.top !== undefined && (e.top !== 1 || e.bottom > 1 || e.exile !== 0)) {
+        issue(out, `${path}.top`, 'top is 1, with bottom 0 or 1 and exile 0');
+      }
+      if (typeof e.count === 'number' && e.count !== e.hand + e.bottom + e.exile + (e.top ?? 0)) {
         issue(
           out,
           `${path}.count`,
-          'the cards looked at are all placed: count is hand + bottom + exile',
+          'the cards looked at are all placed: count is hand + top + bottom + exile',
         );
       }
       break;

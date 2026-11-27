@@ -107,13 +107,34 @@ const PUT_LIBRARY: Parser<Put> = choice(
       to: zone(where.value[0], 'owner', where.span),
     }),
   ),
+  // A group of permanents ("all creatures") to the bottom of their owners' libraries: each owner arranges the cards that reach theirs (CR 401.4).
+  map(
+    sequence(
+      literal('put '),
+      satisfy(
+        operands(['noun.all-permanents'], RULE),
+        (objects) => objects.kind === 'noun' && objects.det === 'each',
+      ),
+      spanned(sequence(literal(' on the bottom of '), pattern(/their owners['’] libraries/i))),
+    ),
+    ([, objects, where]): Put => ({
+      objects,
+      to: { ...zone('bottom', 'owner', where.span), owners: true },
+    }),
+  ),
 );
 
 export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
   id: RULE,
   family: 'effect',
   leading: ['put'],
-  cites: ['CR 401.1 (Library)', 'CR 401.3 (Library)', 'CR 400.3 (General)', 'CR 404.1 (Graveyard)'],
+  cites: [
+    'CR 401.1 (Library)',
+    'CR 401.3 (Library)',
+    'CR 401.4 (Library)',
+    'CR 400.3 (General)',
+    'CR 404.1 (Graveyard)',
+  ],
   examples: [
     "put ~ on top of its owner's library",
     "put ~ on the bottom of its owner's library",
@@ -124,8 +145,15 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
     'put target artifact card from your graveyard on top of your library',
     "put target card from a graveyard on top of its owner's library",
     "put target creature card from an opponent's graveyard on the bottom of its owner's library",
+    "put all creatures on the bottom of their owners' libraries",
+    'put all artifacts on the bottom of their owners’ libraries',
   ],
   rejects: [
+    "put all creatures on top of their owners' libraries",
+    "put target creature on the bottom of their owners' libraries",
+    "put ~ on the bottom of their owners' libraries",
+    "put all creatures on the bottom of their owners' libraries in a random order",
+    "put all creatures on the bottom of their owners' library",
     'put ~ on top of your library',
     'put it on the bottom of your library',
     "put it on the bottom of its owner's library and draw a card",

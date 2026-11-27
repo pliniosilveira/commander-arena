@@ -186,6 +186,10 @@ describe('words', () => {
       'Surveil 1: keep the card on top or put it into your graveyard.',
     );
     expect(arrangePrompt(reorder(3))).toBe('Look at the top 3 cards: put them back in any order.');
+    // CR 401.2: the cards of another player's library ("Look at the top three cards of target player's library").
+    expect(arrangePrompt({ ...reorder(3), libraryOf: 1 })).toBe(
+      "Look at the top 3 cards of that player's library: put them back in any order.",
+    );
   });
 
   test('the detail counts the piles', () => {
@@ -243,11 +247,9 @@ describe('words', () => {
     });
     expect(pileTitle(d, 'top')).toBe('Bottom');
     expect(pileHint(d, 'top')).toContain('last card is the bottom card');
-    expect(arrangePrompt(d)).toBe(
-      'Put the other 3 cards on the bottom of your library in any order.',
-    );
+    expect(arrangePrompt(d)).toBe('Put these 3 cards on the bottom of your library in any order.');
     expect(arrangePrompt(bottom(2))).toBe(
-      'Put the other 2 cards on the bottom of your library in any order.',
+      'Put these 2 cards on the bottom of your library in any order.',
     );
     expect(arrangeDetail(d, a)).toBe('3 on the bottom. The last card ends on the very bottom.');
     expect(arrangeBadge(d, a, o(3))).toBe('Bottom card');
