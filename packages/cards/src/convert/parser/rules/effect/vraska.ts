@@ -209,6 +209,8 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'choose target permanent',
     'choose target opponent',
     'choose up to one target nonland permanent',
+    // Echoing Assault (Family Matters deck, group C): the creature attacking the player the trigger is about.
+    "choose target nontoken creature that's attacking that player",
   ],
   rejects: [
     'choose',
@@ -228,6 +230,7 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
         [
           'noun.target-commander',
           'noun.target-creature-attacking-you-plain',
+          'noun.target-creature-attacking-that-player',
           'noun.target-permanent',
           'noun.player',
         ],

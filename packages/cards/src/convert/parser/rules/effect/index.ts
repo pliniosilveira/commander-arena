@@ -126,6 +126,7 @@ import { EXILE_UNTIL_PUT_REST_BOTTOM_EFFECT_RULES } from './exile-until-put-rest
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { EXTRA_TURN_EFFECT_RULES } from './extra-turns';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
+import { FAMILY_MATTERS_C_EFFECT_RULES } from './family-matters-c';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -1897,6 +1898,7 @@ export const EFFECT_RULES = [
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
   ...LOOK_ELSE_EFFECT_RULES,
+  ...FAMILY_MATTERS_C_EFFECT_RULES,
   ...LIBRARY_TOP_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,

@@ -200,6 +200,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
   // Endless Evil: a copy of the enchanted creature with a set power and toughness.
+  // Family Matters deck, group C: a copy with one exception (Helm of the Host, Echoing Assault).
+  'token.copy-token-not-legendary': permanent(
+    (e) => `At the beginning of your upkeep, create ${e}.`,
+  ),
+  'token.copy-except-one-one': permanent((e) => `Whenever you attack a player, create ${e}.`),
+  'noun.target-creature-attacking-that-player': permanent(
+    (e) => `Whenever you attack a player, choose ${e}.`,
+  ),
   'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
   // Nightmare Shepherd: a copy with a set power and toughness and one more creature type.
   'token.copy-except-pt-subtype': permanent(

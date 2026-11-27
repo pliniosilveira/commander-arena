@@ -1130,9 +1130,10 @@ export interface ObjectFilter {
    * Only creatures attacking an opponent of the controller of this ability as a player, or a planeswalker or battle that opponent controls or protects
    * (CR 508.1b, 506.3, D-218): "creatures attacking your opponents and/or planeswalkers they control". It implies `attacking`. Read where `attacking` is
    * read, and refused where it is refused. `'players'` (D-650): "creatures attacking one of your opponents", only the attackers whose attack target is an opponent as a player,
-   * not one attacking a planeswalker or battle (CR 508.1b).
+   * not one attacking a planeswalker or battle (CR 508.1b). `'triggerAttacked'` (Echoing Assault, "target nontoken creature that's attacking that player", CR 508.1b, 508.6): only
+   * the attackers whose attack target is the one player the trigger is about (`triggerAttackedPlayer`, valid where that selector is); with no such player, or with no combat, nothing matches.
    */
-  readonly attackingOpponents?: true | 'players';
+  readonly attackingOpponents?: true | 'players' | 'triggerAttacked';
   /**
    * Only creatures that are attacking or blocking (CR 506.4, 508.1k, 509.1g, D-229): "target attacking or blocking creature". A creature declared as an
    * attacker or as a blocker that is still in combat. Read where `attacking` is read, and refused where it is refused.

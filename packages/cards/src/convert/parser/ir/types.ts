@@ -354,7 +354,7 @@ export interface IrFilter {
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
   readonly attackingYou?: true | 'orPlaneswalkers';
   /** "creatures attacking your opponents and/or planeswalkers they control" (stage P65, D-218, CR 508.1b, 506.3): attackers of an opponent or of a permanent of an opponent. */
-  readonly attackingOpponents?: true | 'players';
+  readonly attackingOpponents?: true | 'players' | 'triggerAttacked';
   /** "attacking or blocking creatures" (stage P68, D-229, CR 506.4, 509.1g): creatures declared as attackers or as blockers that are still in combat. */
   readonly attackingOrBlocking?: true;
   /** "attacking creatures" (stage P31, CR 508.1k): creatures that are attacking, whoever they attack. */
