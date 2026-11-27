@@ -33,7 +33,7 @@ const DURATION = optional(
 
 /**
  * The object of a control change: one permanent, a target, the permanent with the ability or the one an earlier word of the text names, or a group of the battlefield
- * ("each noncommander creature", "all artifacts that player controls"); never "up to" or a player.
+ * ("each noncommander creature", "all artifacts that player controls"); "up to one target artifact" is the one target or none; never "up to" more than one, or a player.
  */
 const GAIN_CONTROL_OBJECT = // One permanent: a target, or "that artifact" and "it" for what the text named before. A plural, "up to" and a player are other nouns.
   refuseAt(
@@ -62,17 +62,29 @@ const GAIN_CONTROL_OBJECT = // One permanent: a target, or "that artifact" and "
         n.rule === 'noun.all-permanents-of-that-player' ||
         n.rule === 'noun.all-permanents-of-target-player' ||
         n.rule === 'noun.each-permanent') &&
+      // CR 601.2c, 115.1 (Pyreswipe Hawk): "up to one target artifact", a single target that may be left unchosen; then the effect names nothing and does nothing. More than one
+      // ("up to two target creatures") is a plural and stays unread.
       !n.upTo &&
       n.filter.player === undefined,
     (_n, _ctx, start) => start,
   );
+
+/** `GAIN_CONTROL_OBJECT`, or (Pyreswipe Hawk, CR 601.2c, 115.1) "up to one target permanent": one target that may be left unchosen, then the effect does nothing. */
+const GAIN_CONTROL_OBJECT_OR_NONE = choice(
+  GAIN_CONTROL_OBJECT,
+  refuseAt(
+    family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+    (n) => n.upTo && !n.plural && n.filter.player === undefined,
+    (_n, _ctx, start) => start,
+  ),
+);
 
 /**
  * `effect.gain-control`: "gain control of target creature until end of turn", "gain control of that artifact until the end of your next turn",
  * "gain control of target artifact for as long as you control ~", "gain control of target creature" (CR 613.1b: a control-changing effect is
  * applied in layer 2; CR 611.2a: its duration is the one it states, and none stated means the rest of the game; CR 611.2c: the permanent is
  * fixed when it begins). One object, a target, the permanent with the ability ("gain control of ~") or the permanent an earlier word of the text names ("that artifact", "it"); the player who gains
- * control is the controller of the ability. A group, "up to" and a player who is not "you" are other lines, and so are the durations the engine has
+ * control is the controller of the ability. A group, "up to" two or more and a player who is not "you" are other lines, and so are the durations the engine has
  * no node for ("until your next turn", "for as long as ~ remains tapped").
  */
 export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
@@ -94,6 +106,9 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of that creature until end of turn',
     'gain control of it until end of turn',
     'gain control of target creature for as long as you control ~',
+    // Pyreswipe Hawk (CR 601.2c, 611.2b): one target, or none.
+    'gain control of up to one target artifact for as long as you control ~',
+    'gain control of up to one target creature until end of turn',
     'gain control of target creature for as long as ~ remains on the battlefield',
     'gain control of target permanent until end of turn',
     'gain control of target creature an opponent controls until end of turn',
@@ -115,7 +130,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
     'gain control of target creature for as long as you control a Dragon',
     'gain control of target creature until end of turn and untap it',
     'gain control of target creatures until end of turn',
-    'gain control of up to one target creature until end of turn',
+    'gain control of up to two target creatures until end of turn',
     'gain control of all creatures until end of turn',
     'gain control of target player until end of turn',
     'gain control of target creature until end of turn, then',
@@ -127,7 +142,7 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
   ],
   parse: single(
     RULE,
-    sequence(literal('gain control of '), GAIN_CONTROL_OBJECT, DURATION),
+    sequence(literal('gain control of '), GAIN_CONTROL_OBJECT_OR_NONE, DURATION),
     ([, objects, ended]) => {
       const duration: IrDuration | undefined =
         ended === null

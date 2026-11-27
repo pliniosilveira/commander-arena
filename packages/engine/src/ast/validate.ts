@@ -1368,6 +1368,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'dungeonCompleted':
       break;
+    case 'expend':
+      // CR 700.14: "expend N", a positive whole number of mana.
+      if (!isCount(t.amount) || t.amount < 1) {
+        issue(out, `${path}.amount`, 'amount must be a positive integer');
+      }
+      break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
         issue(out, `${path}.bearerChosen`, 'must be true when present');

@@ -620,6 +620,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:dungeonCompleted']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'dungeonCompleted' });
     }
+    case 'expend': {
+      // "Whenever you expend N" (CR 700.14): the controller of the ability is the player who spent the mana.
+      if (t.expend === undefined) return failure(t);
+      const blocked = missingFeatures(['trigger:expend']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'expend', amount: t.expend });
+    }
     case 'ringBearerChosen': {
       // CR 701.54a: unlike `ringTempted`, this trigger needs a creature to have been chosen.
       const blocked = missingFeatures(['trigger:ringTempted']);

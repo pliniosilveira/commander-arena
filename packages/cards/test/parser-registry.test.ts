@@ -1335,6 +1335,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.opponent-attacks-you-or-planeswalkers': whenever,
   'trigger.you-attack-initiative-holder': whenever,
   'trigger.you-complete-dungeon': whenever,
+  'trigger.you-expend': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
   ),

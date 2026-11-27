@@ -729,6 +729,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'exerted':
       // CR 701.43d, 607.2h: "You may exert ~ as it attacks. When you do, ...": the creature was exerted.
       return 'When you exert this creature as it attacks';
+    case 'expend':
+      // CR 700.14: the mana you spent to cast spells this turn reaches this amount.
+      return `Whenever you expend ${trigger.amount}`;
     case 'dungeonCompleted':
       // CR 309.7, 701.49c: each time your dungeon is completed.
       return 'Whenever you complete a dungeon';

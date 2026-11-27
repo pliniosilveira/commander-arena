@@ -83,6 +83,7 @@ import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
 import { SYNTHETIC_EVASION_LIMITS_LIST } from './synthetic-evasion-limits';
 import { SYNTHETIC_EVOKE_GRANT_LIST } from './synthetic-evoke-grant';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
+import { SYNTHETIC_EXPEND_LIST } from './synthetic-expend';
 import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
 import { SYNTHETIC_EXTRA_TURNS_LIST } from './synthetic-extra-turns';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
@@ -616,6 +617,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HULK_SEARCH_LIST,
   ...SYNTHETIC_LIVING_DEATH_LIST,
   ...SYNTHETIC_EXPERIENCE_LIST,
+  ...SYNTHETIC_EXPEND_LIST,
   ...SYNTHETIC_PLANESWALKER_LIST,
   ...SYNTHETIC_PRIDE_WALKER_LIST,
   ...SYNTHETIC_MANA_TRIGGERS_LIST,
