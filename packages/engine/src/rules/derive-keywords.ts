@@ -816,7 +816,7 @@ function giftAbility(gift: Extract<Keyword, { kind: 'gift' }>['gift']): Ability 
  * permanent (CR 707.2), from its last-known information when it has left (CR 608.2h); "1/1" is part of the copiable values of the token (CR 707.9b). The cost half is asked as
  * the spell is cast (`rules/cast-offspring.ts`).
  */
-const OFFSPRING_ABILITY: Ability = {
+export const OFFSPRING_ABILITY: Ability = {
   kind: 'triggered',
   trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
   interveningIf: { kind: 'offspringPaid' },
@@ -951,6 +951,17 @@ const EXPLOIT_ABILITY: Ability = {
   },
 };
 
+/**
+ * CR 702.156a (Ravenous; the number was not checked against the repository's CR text): "When this permanent enters, if X is 5 or more, draw a card." The X is the one of the spell
+ * the permanent came from (CR 107.3m), read by `xAtLeast` as the trigger event happens and again as it resolves (CR 603.4). The counters are put on by `entersWithCounters`.
+ */
+const RAVENOUS_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+  interveningIf: { kind: 'xAtLeast', value: 5 },
+  effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+};
+
 export function expansionOf(ability: Ability): Ability[] {
   if (ability.kind !== 'keyword') return [];
   switch (ability.keyword.kind) {
@@ -1062,6 +1073,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [JOB_SELECT_ABILITY];
     case 'exploit':
       return [EXPLOIT_ABILITY];
+    case 'ravenous':
+      return [RAVENOUS_ABILITY];
     case 'hideaway':
       return [hideawayAbility(ability.keyword.count)];
     case 'vanishing':

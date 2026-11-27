@@ -1027,11 +1027,11 @@ export const readsCombatOrSource = (f: ObjectFilter): boolean =>
   f.notCommander !== undefined;
 
 /**
- * `readsCombatOrSource` without `basePowerOrToughnessIs`: the count of a "+N/+N" static ability reads the base power and toughness of what it counts (`derive-count.ts`),
- * which is the one thing of this kind `derive` can match without a loop.
+ * `readsCombatOrSource` without `basePowerOrToughnessIs` and `basePowerIs`: the count of a "+N/+N" static ability reads the base power and toughness of what it counts
+ * (`derive-count.ts`), which is the one thing of this kind `derive` can match without a loop.
  */
 export const readsCombatOrSourceBesidesBasePt = (f: ObjectFilter): boolean => {
-  const { basePowerOrToughnessIs: _base, ...rest } = f;
+  const { basePowerOrToughnessIs: _base, basePowerIs: _basePower, ...rest } = f;
   return readsCombatOrSource(rest);
 };
 
@@ -2509,6 +2509,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'chosenPlayerLead':
     case 'opponentCount':
     case 'opponentsAttackedThisCombat':
+    case 'creaturesAttackedThisTurn':
     case 'lifeGainedThisTurn':
     case 'controllerLifeLostThisTurn':
     case 'opponentsLifeLostThisTurn':
@@ -3122,6 +3123,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'opponentCount':
     case 'opponentsAttackedThisCombat':
+    case 'creaturesAttackedThisTurn':
       break;
     case 'damageToThisThisTurn':
       // CR 120.3: the damage the permanent of the ability was dealt, by the sources of the player who is "you" as it is read.
@@ -3522,7 +3524,13 @@ function checkCountOnly(
     );
   }
   // CR 208.4b, 613.8: the base power or toughness of the objects counted is read without their own static abilities, in a "+N/+N" count (layer 7c) only.
-  if (!allowKeywords && filterSome(amount.filter, (f) => f.basePowerOrToughnessIs !== undefined)) {
+  if (
+    !allowKeywords &&
+    filterSome(
+      amount.filter,
+      (f) => f.basePowerOrToughnessIs !== undefined || f.basePowerIs !== undefined,
+    )
+  ) {
     issue(
       out,
       `${path}.filter`,

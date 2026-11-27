@@ -428,6 +428,12 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
     }
+    case 'creaturesAttackedThisTurn': {
+      // CR 508.1 (Rowdy Research): the different creatures declared as attackers this turn, read as the cost is determined; `validateCard` refuses it in a static ability's power.
+      const blocked = needs('creaturesAttackedThisTurn');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'creaturesAttackedThisTurn' }, rule };
+    }
     case 'partySize': {
       // CR 700.8 (Archpriest of Iona, Malakir Blood-Priest): the party of the controller, counted as the instruction runs.
       const blocked = needs('partySize');
@@ -1328,6 +1334,7 @@ export const AMOUNT_NEEDS = [
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
+  'amount:creaturesAttackedThisTurn',
   'amount:experienceCounters',
   'amount:partySize',
   'amount:spellsCastThisTurn',

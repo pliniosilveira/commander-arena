@@ -350,6 +350,23 @@ export function replicateCostFor(
   return null;
 }
 
+/**
+ * The offspring cost of `spell` (CR 702.175a): the one its face prints, or else the one an effect gives it as it is cast ("Creature spells you cast gain offspring {2} as you cast them",
+ * `grantKeywordToSpells`, CR 613.1f), read from what `derive` gives the spell. Null for a spell with none; one with a printed cost is asked about that one only.
+ */
+export function offspringCostFor(
+  state: GameState,
+  spell: GameObject,
+  face: CardFace | null,
+): readonly Cost[] | null {
+  const printed = offspringCostOf(face);
+  if (printed !== null) return printed;
+  for (const a of derive(state, spell).abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'offspring') return a.keyword.cost;
+  }
+  return null;
+}
+
 /** The ways the caster could pay the additional cost choice of the face: all of them, or `undefined` once for a face with no choice (D-181). */
 function costOptionsOf(face: CardFace | null): readonly (number | undefined)[] {
   return face?.additionalCostChoice === undefined
@@ -483,7 +500,9 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
   // CR 702.175a: the offspring cost is an additional cost, paid once when the caster chose to (mana only).
   const offspring =
-    (request.offspring ?? spell.stack?.offspringPaid === true) ? offspringCostOf(face) : null;
+    (request.offspring ?? spell.stack?.offspringPaid === true)
+      ? offspringCostFor(state, spell, face)
+      : null;
   if (offspring !== null) symbols.push(...manaSymbolsOf(offspring));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);

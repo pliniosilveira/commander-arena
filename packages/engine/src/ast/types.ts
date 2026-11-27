@@ -522,6 +522,12 @@ export type Amount =
    */
   | { readonly kind: 'cardsDrawnThisTurn' }
   /**
+   * "For each creature that attacked this turn" (Rowdy Research; CR 508.1, 601.2f): the number of different creatures that were declared as attackers this turn by any player, in any combat
+   * phase (a creature that attacked twice counts once; one put onto the battlefield attacking was never declared, CR 508.4; one that has since left the battlefield still counts), read from
+   * `TurnLog.attackedWith`. Read as the amount is evaluated (a cost reduction reads it as the cost is determined). Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'creaturesAttackedThisTurn' }
+  /**
    * "The number of experience counters you have" (CR 122.1, Meren of Clan Nel Toth): the experience counters the controller of the spell or ability has now
    * (`SeatState.experience`, 0 when they have none), read as the instruction runs. A state amount, so valid wherever an amount is; a static ability is not refreshed when
    * the number changes (`validateCard` refuses it there).
@@ -1207,7 +1213,9 @@ export interface ObjectFilter {
   readonly powerAboveBase?: true;
   /**
    * "Creatures you control with base power 0" (CR 208.4b): the object's base power, the power layer 7b leaves before counters and "+N/+N" effects, is this whole number. An object with no power
-   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is.
+   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is, except in the count of a
+   * "+N/+N" static ability (Zinnia, Valley's Voice: "+X/+0, where X is the number of other creatures you control with base power 1"), which reads the base values of the objects it counts
+   * without their own static abilities, as `basePowerOrToughnessIs` does (CR 613.8); not in a characteristic-defining ability.
    */
   readonly basePowerIs?: number;
   /**
@@ -7947,6 +7955,12 @@ export type Keyword =
    */
   | { readonly kind: 'exploit' }
   /**
+   * CR 702.156a (Ravenous; the number was not checked against the repository's CR text, which was not available): "This permanent enters with X +1/+1 counters on it. When this
+   * permanent enters, if X is 5 or more, draw a card." The X is the one of the spell it came from (CR 107.3m; 0 for a permanent that was not cast). `entersWithCounters` reads
+   * the keyword for the counters and the engine expands it into the triggered ability (`rules/derive-keywords.ts`). Only on a card whose mana cost has an {X} (`validateCard`).
+   */
+  | { readonly kind: 'ravenous' }
+  /**
    * CR 702.182a (Job select, D-206): "When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it." A triggered
    * ability the engine writes itself (`rules/derive-keywords.ts`), as for Living weapon; only on an Equipment (`validateCard`).
    */
@@ -9294,12 +9308,21 @@ export type StaticEffect =
    * `replicateAtManaCost` ("Each Sliver spell you cast has replicate. The replicate cost is equal to its mana cost.", CR 702.56a, 118.9): the spell has a Replicate ability whose cost is
    * the mana cost of that spell as it is on the stack (after copy effects), asked as its other Replicate is, with the count the caster chooses as the spell is cast (`StackData.replicated`).
    * A spell with no mana cost or with {X} in it gets none. A spell that has a replicate cost of its own keeps that one (CR 702.56b: more than one replicate ability is redundant).
+   *
+   * `offspring` ("Creature spells you cast gain offspring {2} as you cast them.", Zinnia, Valley's Voice, CR 702.175a, 601.2b, 613.1f): the spell has an Offspring ability with that cost, which the
+   * caster is asked about as it is cast (`rules/cast-offspring.ts`). A spell with an offspring cost of its own is asked about that one only. The permanent a spell that paid the granted cost
+   * becomes still has the trigger that makes the token (`StackData.offspringGranted`, `GameObject.offspringGranted`), whether or not the permanent that gave the cost is still there.
    */
   | {
       readonly kind: 'grantKeywordToSpells';
       readonly what: ObjectFilter;
       readonly keyword:
-        | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' }>
+        | Extract<
+            Keyword,
+            {
+              readonly kind: 'demonstrate' | 'convoke' | 'improvise' | 'cascade' | 'offspring';
+            }
+          >
         | { readonly kind: 'replicateAtManaCost' };
     }
   /**

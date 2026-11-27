@@ -192,6 +192,13 @@ describe('where the engine refuses the filter', () => {
     expect(validateCard(wrap(COUNTED, 'characteristicPt')).length).toBeGreaterThan(0);
   });
 
+  // Zinnia, Valley's Voice (issue 111): "+X/+0, where X is the number of other creatures you control with base power 1": the base power alone reads the same base values.
+  test('"base power 1" is read in a "+N/+N" count and refused in a characteristic-defining ability (CR 613.8)', () => {
+    const basePower: ObjectFilter = { types: ['creature'], controller: 'you', basePowerIs: 1 };
+    expect(validateCard(wrap(basePower, 'modifyPt'))).toEqual([]);
+    expect(validateCard(wrap(basePower, 'characteristicPt')).length).toBeGreaterThan(0);
+  });
+
   test('a non-integer is refused', () => {
     expect(
       validateCard(wrap({ ...COUNTED, basePowerOrToughnessIs: 1.5 }, 'modifyPt')).length,

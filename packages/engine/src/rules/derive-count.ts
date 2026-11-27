@@ -81,7 +81,11 @@ function namesKeywords(f: ObjectFilter): boolean {
 }
 
 function readsBasePt(f: ObjectFilter): boolean {
-  return f.basePowerOrToughnessIs !== undefined || (f.anyOf?.some(readsBasePt) ?? false);
+  return (
+    f.basePowerOrToughnessIs !== undefined ||
+    f.basePowerIs !== undefined ||
+    (f.anyOf?.some(readsBasePt) ?? false)
+  );
 }
 
 /**
@@ -132,7 +136,7 @@ function countFresh(
     // D-149: the keywords the object has after layer 6, only where the filter names one (the view keeps its mana value read lazily).
     const view = (): FilterSubject => {
       const typed = typeViewOf(state, obj);
-      // CR 208.4b: only a count that says "with base power or toughness N" reads the base values.
+      // CR 208.4b: only a count that says "with base power N" or "with base power or toughness N" reads the base values.
       const based = !readsBasePt(filter)
         ? typed
         : (() => {

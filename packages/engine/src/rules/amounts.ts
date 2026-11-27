@@ -55,6 +55,7 @@ type StateAmount = Extract<
       | 'movedCount'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
+      | 'creaturesAttackedThisTurn'
       | 'experienceCounters'
       | 'partySize'
       | 'spellsCastThisTurn'
@@ -116,6 +117,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'movedCount' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
+    amount.kind === 'creaturesAttackedThisTurn' ||
     amount.kind === 'experienceCounters' ||
     amount.kind === 'partySize' ||
     amount.kind === 'spellsCastThisTurn' ||
@@ -690,6 +692,9 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'creaturesAttackedThisTurn':
+      // CR 508.1 (Rowdy Research): the different creatures any player declared as attackers this turn; the turn log keeps the ones that have since left the battlefield.
+      return new Set(state.turnLog.attackedWith.map((a) => a.object)).size;
     case 'partySize':
       // CR 700.8a, 700.8b: the creatures the controller of the effect controls, read as they are now.
       return partySizeOf(

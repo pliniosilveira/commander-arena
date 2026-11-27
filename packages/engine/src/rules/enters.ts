@@ -135,6 +135,12 @@ export function entersWithCounters(
       counters = { ...counters, time: (counters.time ?? 0) + a.keyword.count };
     }
   }
+  // CR 702.156a (Ravenous): "This permanent enters with X +1/+1 counters on it"; each instance works separately.
+  for (const a of abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'ravenous' && x > 0) {
+      counters = { ...counters, '+1/+1': (counters['+1/+1'] ?? 0) + x };
+    }
+  }
   for (const r of replacementsOf(abilities)) {
     if (r.kind === 'entersWithCounters') {
       if (r.ifEscaped === true && !escaped) continue;

@@ -299,7 +299,93 @@ export const STATIC_PERMANENT_SPELLS_FROM_HAND_GAIN_EVOKE = defineRule<IrStatic>
   },
 });
 
+/**
+ * `static.spells-you-cast-gain-offspring`: "Creature spells you cast gain offspring {2} as you cast them." (Zinnia, Valley's Voice; CR 702.175a, 601.2b, 613.1f): a static ability of a
+ * permanent that gives the spells its controller casts that the subject names ("Creature spells", "Red creature spells", "Spells") an offspring cost as they are cast. The engine's
+ * `grantKeywordToSpells` of `offspring`. The cost is a plain mana cost. Not read: spells of other players or of every player, a zone ("from your hand"), another keyword, a cost that is
+ * not mana or has an {X} or a hybrid symbol, a quality of the spell other than its types, colors and subtypes, no "as you cast them", "have" for "gain".
+ */
+export const STATIC_SPELLS_YOU_CAST_GAIN_OFFSPRING = defineRule<IrStatic>({
+  id: 'static.spells-you-cast-gain-offspring',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 702.175a (Offspring)',
+    'CR 601.2b (Casting Spells)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Creature spells you cast gain offspring {2} as you cast them.',
+    'Creature spells you cast gain offspring {1}{R} as you cast them.',
+    'Red creature spells you cast gain offspring {3} as you cast them.',
+    'Legendary creature spells you cast gain offspring {2} as you cast them.',
+  ],
+  rejects: [
+    'Creature spells you cast gain offspring {2} as you cast them',
+    'Creature spells you cast gain offspring {2}.',
+    'Creature spells gain offspring {2} as they are cast.',
+    'Creature spells your opponents cast gain offspring {2} as they cast them.',
+    'Creature spells you cast from your hand gain offspring {2} as you cast them.',
+    'Creature spells you cast gain offspring {X} as you cast them.',
+    'Creature spells you cast gain offspring {W/U} as you cast them.',
+    'Creature spells you cast gain offspring as you cast them.',
+    'Creature spells you cast gain offspring {2} and flying as you cast them.',
+    'Creature spells you cast gain flashback {2} as you cast them.',
+    'Creature spells you cast have offspring {2}.',
+    'Creature spells you cast with flying gain offspring {2} as you cast them.',
+    'Creature spells you cast gain offspring {2} until end of turn.',
+    'Creature spell you cast gains offspring {2} as you cast it.',
+  ],
+  parse: (ctx, pos) => {
+    // The words up to the cost decide whether this is the statement at all: their failure is no trace in the diagnostics.
+    const lead = sequence(
+      quiet(
+        sequence(
+          spellSubject(undefined, { supertypes: true }),
+          literal(' you cast gain offspring '),
+        ),
+      ),
+      family<IrCost>('cost', { only: ['cost.mana'] }),
+      pattern(/ as you cast them\./iu),
+    )(ctx, pos);
+    if (!lead.ok) return lead;
+    const [[spells], cost] = lead.value;
+    // A mana cost with numbers and colored symbols only (an {X} or a hybrid symbol is another cost).
+    if (cost.kind !== 'mana' || cost.symbols.some((symbol) => !/^(\d+|[WUBRGC])$/u.test(symbol))) {
+      return fail(ctx, pos);
+    }
+    // The spells are named by what they are: types, colors and subtypes. A quality the engine's filter of a granted spell does not read is never dropped.
+    if (!Object.keys(spells).every((k) => ALLOWED.has(k) && k !== 'castFromHand')) {
+      return fail(ctx, pos);
+    }
+    const rule = 'static.spells-you-cast-gain-offspring';
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...spells, controller: 'you' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: pos + spells.raw.length },
+      rule,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [{ kind: 'spellOffspring', cost }],
+        span: { start: pos, end: lead.pos },
+        rule,
+      },
+      pos: lead.pos,
+    };
+  },
+});
+
 export const SPELL_KEYWORD_GRANT_STATIC_RULES = [
+  STATIC_SPELLS_YOU_CAST_GAIN_OFFSPRING,
   STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD,
   STATIC_EACH_SPELL_YOU_CAST_HAS_REPLICATE,
   STATIC_PERMANENT_SPELLS_FROM_HAND_GAIN_EVOKE,

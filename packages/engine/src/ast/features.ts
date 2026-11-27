@@ -1023,6 +1023,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'livingWeapon',
     // CR 702.110: Exploit.
     'exploit',
+    // CR 702.156: Ravenous.
+    'ravenous',
     // D-206: Job select (CR 702.182).
     'jobSelect',
     // D-145: Escalate (CR 702.120) and Hideaway (CR 702.75).
@@ -2078,6 +2080,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesForObject',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    'creaturesAttackedThisTurn',
     // CR 122.1: "the number of experience counters you have".
     'experienceCounters',
     // CR 700.8: "the number of creatures in your party".
@@ -3539,6 +3542,8 @@ export const AMOUNT_KINDS = [
   'votesForObject',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "For each creature that attacked this turn" (CR 508.1, Rowdy Research): the engine's `creaturesAttackedThisTurn`. */
+  'creaturesAttackedThisTurn',
   /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
   'experienceCounters',
   /** "The number of creatures in your party" (CR 700.8): the engine's `partySize`, an effect's amount, a cost reduction's, a condition's (a full party) or a characteristic-defining ability's. */
@@ -4200,6 +4205,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   gift: true,
   livingWeapon: true,
   exploit: true,
+  ravenous: true,
   jobSelect: true,
   escalate: true,
   hideaway: true,
