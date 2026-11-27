@@ -1646,6 +1646,24 @@ function foldCostContainsX(triggers: readonly Trigger[]): Trigger[] | null {
   );
 }
 
+/** The zones the card a `dies` / `leavesBattlefield` trigger is about can be in, when one of them goes to exile as well; undefined for the graveyard alone. */
+function triggerCardZonesOf(
+  triggers: readonly Trigger[],
+): readonly ('graveyard' | 'exile')[] | undefined {
+  const zones = new Set<'graveyard' | 'exile'>();
+  for (const t of triggers) {
+    if (t.kind === 'dies') zones.add('graveyard');
+    else if (t.kind === 'leavesBattlefield' && t.to !== undefined) {
+      for (const z of Array.isArray(t.to) ? t.to : [t.to]) {
+        if (z === 'graveyard' || z === 'exile') zones.add(z);
+      }
+    } else return undefined;
+  }
+  return zones.has('exile')
+    ? (['graveyard', 'exile'] as const).filter((z) => zones.has(z))
+    : undefined;
+}
+
 /**
  * A triggered ability, and for "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h) the two abilities the paragraph is: the static ability that
  * offers the optional cost of attacking (`exertOnAttack`) and the triggered ability linked to it, which the engine triggers when the creature is exerted.
@@ -2002,6 +2020,8 @@ function lowerTriggeredAbility(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
+  // Athreos (CR 400.7, 603.10a): "dies or is put into exile ... return that card": the card is looked for in each zone the events name.
+  ctx.triggerCardZones = triggerCardZonesOf(triggers);
   ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
   ctx.attackBatchThose =
     triggers.length > 0 &&

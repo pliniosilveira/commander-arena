@@ -266,6 +266,11 @@ export interface LowerContext {
   itDied: boolean;
   /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
+  /**
+   * The zones "that card" may be found in, in the body of a trigger about a permanent that went to a graveyard or to exile (Athreos, CR 400.7, 603.10a): the zones the
+   * `leavesBattlefield` events name, when every event is a `dies` or a `leavesBattlefield` with `to`. Undefined elsewhere (the graveyard, the engine's default).
+   */
+  triggerCardZones: readonly ('graveyard' | 'exile')[] | undefined;
   /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
   damageBatchTrigger: boolean;
   /**
@@ -601,6 +606,7 @@ export function newContext(
     returnedDyingCard: false,
     itDied: false,
     diesTrigger: false,
+    triggerCardZones: undefined,
     damageBatchTrigger: false,
     attackBatchThose: false,
     selfAttackTrigger: false,
