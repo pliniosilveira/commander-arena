@@ -13,7 +13,7 @@ import { withCopyExceptions } from './copy-exceptions';
 import { counterBlocked } from './counter-prevention';
 import { matchesFilter } from './select';
 
-type CopyRule = Extract<Replacement, { kind: 'entersAsCopy' }>;
+export type CopyRule = Extract<Replacement, { kind: 'entersAsCopy' }>;
 
 /** Whether what is copied is a card in a graveyard rather than a permanent on the battlefield (Federation Fleet: the controller's own; The Mimeoplasm: any). */
 export function copiesFromGraveyard(rule: CopyRule): boolean {

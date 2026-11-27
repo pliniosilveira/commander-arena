@@ -874,6 +874,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-as-copy-exile-two': asIs,
   // Counter Intelligence deck, group 3 (Phyrexian Metamorph).
   'replacement.enters-as-copy-except-types': asIs,
+  // Miracle Worker deck build (issue 109), Mirrormade.
+  'replacement.enters-as-copy-plain': asIs,
   'replacement.redirect-damage': asIs,
   'replacement.damage-bonus': asIs,
   'replacement.damage-bonus-noncombat': asIs,

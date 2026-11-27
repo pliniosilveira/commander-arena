@@ -693,6 +693,7 @@ export function runInstruction(
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersCopyOther === undefined ? {} : { entersCopyOther: res.entersCopyOther }),
+      ...(res.entersAuraHost === undefined ? {} : { entersAuraHost: res.entersAuraHost }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),

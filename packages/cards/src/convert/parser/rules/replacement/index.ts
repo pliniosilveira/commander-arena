@@ -10,6 +10,7 @@ import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
 import { COPY_EXCEPT_QUOTED_REPLACEMENT_RULES } from './copy-except-quoted';
+import { COPY_PLAIN_REPLACEMENT_RULES } from './copy-plain';
 import { COUNTER_BLITZ_G_REPLACEMENT_RULES } from './counter-blitz-g';
 import { COUNTER_INTELLIGENCE_G2_REPLACEMENT_RULES } from './counter-intelligence-g2';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
@@ -431,6 +432,8 @@ export const REPLACEMENT_RULES = [
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
   ...COPY_EXCEPT_QUOTED_REPLACEMENT_RULES,
+  // Miracle Worker deck build (issue 109), Mirrormade: "You may have ~ enter as a copy of any artifact or enchantment on the battlefield."
+  ...COPY_PLAIN_REPLACEMENT_RULES,
   // Grand Larceny deck (issue 119), The Mimeoplasm: "As ~ enters, you may exile two creature cards from graveyards. If you do, it enters as a copy of one of those cards ...".
   ...EXILE_PAIR_COPY_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
