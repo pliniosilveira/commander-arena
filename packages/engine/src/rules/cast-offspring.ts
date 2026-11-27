@@ -9,7 +9,13 @@ import type { GameEvent } from '../state/events';
 import { getObject, patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { offspringCostOf } from './alt-costs';
-import { alternativeOfStack, type CastFrom, canPayRequest, castAs } from './cast-cost';
+import {
+  alternativeOfStack,
+  type CastFrom,
+  canPayRequest,
+  castAs,
+  offspringCostFor,
+} from './cast-cost';
 import { faceOf } from './legality';
 import { fail, ok, type Result } from './result';
 import { setPending } from './set-pending';
@@ -25,7 +31,7 @@ export function toOffspring(state: GameState, events: GameEvent[], after: AfterO
   const spell = getObject(state, casting.object);
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
-  const cost = offspringCostOf(faceOf(state, spell));
+  const cost = offspringCostFor(state, spell, faceOf(state, spell));
   if (cost === null) return after(state, events);
   // Costs are read from the state before the cast began (`casting.snapshot`), with the card as it was.
   const before = casting.snapshot;
@@ -74,8 +80,12 @@ export function answerOffspring(state: GameState, accept: boolean, after: AfterO
   }
   const stack = getObject(state, casting.object).stack;
   if (!stack) return fail('The spell is not on the stack');
+  // CR 702.175a, 613.1f: a cost a static ability gave the spell (its face prints none) is remembered as given, for the permanent the spell becomes.
+  const given = offspringCostOf(faceOf(state, getObject(state, casting.object))) === null;
   const next = patchObject({ ...state, pending: null }, casting.object, {
-    stack: accept ? { ...stack, offspringPaid: true } : stack,
+    stack: accept
+      ? { ...stack, offspringPaid: true, ...(given ? { offspringGranted: true as const } : {}) }
+      : stack,
   });
   return after(next, []);
 }

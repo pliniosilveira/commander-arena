@@ -71,6 +71,64 @@ export function lowerSpellEvokeStatic(ability: Static): LowerResult<readonly Abi
   };
 }
 
+type SpellOffspring = Extract<IrStaticEffect, { kind: 'spellOffspring' }>;
+
+export function isSpellOffspringStatic(effect: IrStaticEffect): effect is SpellOffspring {
+  return effect.kind === 'spellOffspring';
+}
+
+/**
+ * "Creature spells you cast gain offspring {2} as you cast them." (CR 702.175a, 601.2b, 613.1f): the engine's `grantKeywordToSpells` of an `offspring` keyword with the cost, a static
+ * ability of a permanent that gives the spells of its controller a filter names an offspring cost as they are cast. The statement has one effect and no condition of its own.
+ */
+export function lowerSpellOffspringStatic(ability: Static): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  const [effect, ...more] = statement.effects;
+  const fail = (needs: ReturnType<typeof missingFeatures> = []) => ({
+    ok: false as const,
+    needs,
+    at: ability.span,
+    rule: ability.rule,
+  });
+  if (
+    effect === undefined ||
+    !isSpellOffspringStatic(effect) ||
+    more.length > 0 ||
+    statement.subject.det !== 'each' ||
+    statement.subject.filter.controller !== 'you' ||
+    statement.condition !== undefined ||
+    statement.also !== undefined ||
+    statement.functionsIn !== undefined
+  ) {
+    return fail();
+  }
+  const blocked = missingFeatures([
+    'ability:static',
+    'static:grantKeywordToSpells',
+    'keyword:offspring',
+    'cost:mana',
+  ]);
+  if (blocked.length > 0) return fail(blocked);
+  const what = lowerFilter(statement.subject);
+  if (!what.ok) return what;
+  const cost = lowerCost(effect.cost);
+  if (!cost.ok) return cost;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantKeywordToSpells',
+          what: what.value,
+          keyword: { kind: 'offspring', cost: [cost.value] },
+        },
+      },
+    ],
+    rule: ability.rule,
+  };
+}
+
 export function isSpellKeywordStatic(effect: IrStaticEffect): effect is SpellKeyword {
   return effect.kind === 'spellKeyword';
 }

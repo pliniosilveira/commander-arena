@@ -661,6 +661,8 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
+  // "for each creature that attacked this turn" (Rowdy Research, CR 508.1): the different creatures declared as attackers this turn
+  | { readonly kind: 'creaturesAttackedThisTurn'; readonly span: Span }
   // "the number of experience counters you have" (Meren of Clan Nel Toth, CR 122.1): the experience counters the controller has now
   | { readonly kind: 'experienceCounters'; readonly span: Span }
   // "the number of creatures in your party" (CR 700.8): the party of the controller, up to one each of Cleric, Rogue, Warrior and Wizard
@@ -2378,6 +2380,11 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'spellEvoke'; readonly cost: IrCost }
   /**
+   * "Creature spells you cast gain offspring {2} as you cast them." (Zinnia, Valley's Voice; CR 702.175a, 601.2b, 613.1f): the spells the subject names (a noun with the controller `you`)
+   * are given an offspring cost `cost` (a mana cost) as they are cast.
+   */
+  | { readonly kind: 'spellOffspring'; readonly cost: IrCost }
+  /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
    */
@@ -2863,6 +2870,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',
+  'creaturesAttackedThisTurn',
   'experienceCounters',
   'partySize',
   'spellsCastThisTurn',

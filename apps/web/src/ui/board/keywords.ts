@@ -77,6 +77,11 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   extort: ['Ext', 'Extort'],
   // Exploit (CR 702.110a).
   exploit: ['Exp', 'Exploit (When this creature enters, you may sacrifice a creature.)'],
+  // Ravenous (CR 702.156a).
+  ravenous: [
+    'Rav',
+    'Ravenous (This creature enters with X +1/+1 counters on it. If X is 5 or more, draw a card when it enters.)',
+  ],
   affinity: ['Aff', 'Affinity'],
   undaunted: ['Und', 'Undaunted'],
   convoke: ['Cvk', 'Convoke'],

@@ -254,6 +254,11 @@ export interface GameObject {
    */
   readonly offspringPaid?: true;
   /**
+   * True for a permanent that came from a spell whose offspring cost was paid when the cost was one a static ability gave the spell (`grantKeywordToSpells` of `offspring`;
+   * `StackData.offspringGranted`): its face has no offspring ability, so the permanent has the trigger that makes the token itself (`rules/derive.ts`). Absent otherwise.
+   */
+  readonly offspringGranted?: true;
+  /**
    * The zone the spell this permanent came from was cast from (CR 601.2a, 603.4: "When this creature enters, if you cast it, ..."): remembered by the permanent the spell
    * became. Absent for a permanent that was put onto the battlefield without being cast (and for one that came from a copy of a spell).
    */
@@ -487,6 +492,8 @@ export interface StackData {
    * reads it. Absent for a spell with no offspring and for one whose caster did not pay it. A copy of the spell has it too (CR 707.10).
    */
   readonly offspringPaid?: true;
+  /** True when the offspring cost paid was one a static ability gave the spell (`grantKeywordToSpells` of `offspring`, CR 702.175a, 613.1f), not one the face prints. Only with `offspringPaid`. */
+  readonly offspringGranted?: true;
   /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
   readonly lifeForMana?: true;
   /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */

@@ -210,7 +210,8 @@ export function checkInvariants(state: GameState): string[] {
     // CR 702.175a: an offspring cost was paid only for a spell whose face has an offspring cost.
     if (
       obj.stack?.offspringPaid === true &&
-      (obj.stack.kind !== 'spell' || offspringCostOf(face) === null)
+      (obj.stack.kind !== 'spell' ||
+        (offspringCostOf(face) === null && obj.stack.offspringGranted !== true))
     ) {
       problems.push(`${id} paid an offspring cost but is not a spell with offspring`);
     }

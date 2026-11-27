@@ -37,7 +37,7 @@ import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { alternativeAbilitiesOf } from './derive-alt';
 import { characteristicPtOf } from './derive-count';
-import { expandKeywords, keywordKindsOf } from './derive-keywords';
+import { expandKeywords, keywordKindsOf, OFFSPRING_ABILITY } from './derive-keywords';
 import {
   applyAbilityLayer,
   applyNameEffects,
@@ -314,7 +314,12 @@ function finish(
   // print, from an effect, has their mana abilities (appended after what it keeps).
   const land = landTypeAbilities(input, line, landTypeSetIds(effects).has(obj.id));
   const printed = land.dropsRulesText ? [] : expandKeywords(input.abilities);
-  const own = land.dropsRulesText ? [] : alternativeAbilitiesOf(state, obj);
+  // CR 702.175a, 613.1f: the permanent of a spell that paid an offspring cost a static ability gave it has the trigger the keyword stands for.
+  const own = land.dropsRulesText
+    ? []
+    : obj.offspringGranted === true
+      ? [...alternativeAbilitiesOf(state, obj), OFFSPRING_ABILITY]
+      : alternativeAbilitiesOf(state, obj);
   // CR 122.1b (D-430): the keywords of the object's keyword counters, after everything it has printed.
   const counted = keywordCounterAbilities(
     obj.counters,

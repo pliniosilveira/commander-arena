@@ -110,6 +110,8 @@ function reduction(): Parser<IrAmount> {
           'amount.for-each-creature-type',
           // Bloodsoaked Insight (issue 685): "costs {1} less to cast for each 1 life your opponents have lost this turn".
           'amount.for-each-opponents-life-lost',
+          // Rowdy Research (issue 111): "costs {1} less to cast for each creature that attacked this turn".
+          'amount.for-each-creature-attacked',
         ],
       }),
     ),
