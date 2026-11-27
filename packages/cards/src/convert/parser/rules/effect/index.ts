@@ -38,6 +38,7 @@ import { ANIMATE_LANDS_EFFECT_RULES } from './animate-lands';
 import { ARCANUM_EFFECT_RULES } from './arcanum';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
+import { ARVINOX_EFFECT_RULES } from './arvinox';
 import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
@@ -1491,6 +1492,8 @@ export const EFFECT_RULES = [
   ...AHOY_G1B_EFFECT_RULES,
   // Brainstealer Dragon: "exile the top card of each opponent's library" and the any-color rider sentence start like the plain exile and "if" rules, and are tried first.
   ...BRAINSTEALER_G9_EFFECT_RULES,
+  // Arvinox, the Mind Flail: "exile the bottom card of each opponent's library face down" and the permission sentence for those cards start like the plain exile and "for as long as" rules, and are tried first.
+  ...ARVINOX_EFFECT_RULES,
   ...FLINT_RIDER_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
   ...AHOY_G10_EFFECT_RULES,

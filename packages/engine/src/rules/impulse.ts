@@ -79,7 +79,14 @@ export function runExileTop(
         : resolvePlayers(state, effect.from, ctx, targets);
   }
   if (owners.length === 0) return moving(state, []);
-  const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
+  // CR 401.1, 701.13 (Arvinox, the Mind Flail): "the bottom card of each opponent's library": the last cards of each library (the library lists its top card first), for each owner in turn.
+  const top = owners.flatMap((owner) => {
+    const library = getSeat(state, owner).library;
+    const count = Math.max(0, n);
+    return effect.bottom === true
+      ? library.slice(Math.max(0, library.length - count))
+      : library.slice(0, count);
+  });
   // CR 608.2c (Journey to the Lost City): a creature card that really goes to exile counts, "for each creature card among those cards" (a card in a library is never a token).
   const moves = moveInstructions(top, 'exile').map((m) => {
     const card = m.kind === 'move' ? state.objects[m.object] : undefined;
@@ -141,13 +148,13 @@ export function runMayPlay(
     effect.objects.kind === 'linkedExile' && ctx !== undefined
       ? resolveObjects(state, effect.objects, ctx, [])
       : (res.lastMoved ?? []);
-  const cards = named.filter((id) => {
+  const inPlace = named.filter((id) => {
     const card = state.objects[id];
-    if (
-      !(card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller))
-    ) {
-      return false;
-    }
+    return card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller);
+  });
+  const cards = inPlace.filter((id) => {
+    const card = state.objects[id];
+    if (card === undefined) return false;
     // Narset, Enlightened Master: only the cards the filter describes get the permission.
     return (
       effect.cards === undefined ||
@@ -169,14 +176,17 @@ export function runMayPlay(
     next = stamped;
     oneOf = `one${stamp}`;
   }
-  for (const id of cards) {
-    // CR 406.3 (D-187): "you may look at and play those cards": the controller may look at each card that is face down, until it leaves exile.
+  // CR 406.3 (D-187): "you may look at and play those cards": the controller may look at each card that is face down, until it leaves exile. Arvinox, the Mind Flail: "you may look at them, you
+  // may cast permanent spells from among them": looking is at every card, the permission to cast only at the ones the filter `cards` matches.
+  for (const id of inPlace) {
     if (effect.lookAt === true && next.objects[id]?.exiledFaceDown === true) {
       const lookers = next.objects[id]?.lookers ?? [];
       if (!lookers.includes(res.controller)) {
         next = patchObject(next, id, { lookers: [...lookers, res.controller] });
       }
     }
+  }
+  for (const id of cards) {
     const [timestamp, stamped] = allocateTimestamp(next);
     next = stamped;
     created.push({

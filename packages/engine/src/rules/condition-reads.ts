@@ -135,6 +135,28 @@ export function controlsCommander(
 }
 
 /**
+ * CR 108.3, 110.2, 613.8 (Arvinox, the Mind Flail): `seat` controls at least `count` permanents that it does not own ("permanents you don't own"), or that it owns (`ownedByYou`). Who
+ * controls a permanent is read with `controllerOf` (a layer 2 result, which layer 4 may read), who owns it from the object (a player who started the game with the card in their deck, or
+ * who created the token); no characteristic is read, so `validateCard` allows no other test in this filter.
+ */
+export function controlsOwnershipCountHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'controlsAtLeast' }>,
+): boolean {
+  const { filter } = condition;
+  let count = 0;
+  for (const id of objectsInZone(state, 'battlefield')) {
+    const obj = getObject(state, id);
+    if (controllerOf(state, obj) !== seat) continue;
+    if (filter.notOwnedByYou === true && obj.owner === seat) continue;
+    if (filter.ownedByYou === true && obj.owner !== seat) continue;
+    count += 1;
+  }
+  return count >= condition.count;
+}
+
+/**
  * D-151 (Celebration): at least `count` permanents entered the battlefield under `seat`'s control this turn that match the condition's card
  * types and kind (token or card). Read from the turn log, so a permanent that has left still counts as it entered.
  */
@@ -256,6 +278,12 @@ export function plainConditionHolds(
           ? Object.values(source.counters).some((n) => n > 0)
           : (source.counters[counter] ?? 0) > 0;
     }
+    case 'controlsAtLeast':
+      // Only a filter that tests ownership and nothing else reaches here (`validateCard`); any other never holds.
+      return (
+        (condition.filter.notOwnedByYou === true || condition.filter.ownedByYou === true) &&
+        controlsOwnershipCountHolds(state, controller, condition)
+      );
     case 'lifeTotal':
       return lifeTotalHolds(state, controller, condition);
     case 'controlCommander':

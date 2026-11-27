@@ -18,6 +18,8 @@ import { OPPONENTS_CANT_CAST_UNIT } from './korvold';
 
 /** The conditions a static ability reads: counts of permanents, a commander, the life total, this permanent's tapped status. */
 const STATIC_CONDITIONS = [
+  // Arvinox, the Mind Flail: "you control three or more permanents you don't own", before the plain count whose phrase is a prefix of it.
+  'condition.control-at-least-not-owned',
   // Ahoy Mateys deck, group 8: "as long as you control three or more tapped Pirates and/or Vehicles", before the plain count whose phrase is a prefix of it.
   'condition.control-at-least-subtypes',
   // Augur of Autumn (coven): "you control three or more creatures with different powers".
@@ -622,6 +624,51 @@ export const STATIC_CONDITIONAL_SUFFIX = defineRule<IrStatic>({
 });
 
 /**
+ * `static.self-isnt-creature-unless`: "~ isn't a creature unless you control three or more permanents you don't own." (Arvinox, the Mind Flail; CR 613.1d, 205.1a, 611.3a): the permanent
+ * loses the creature card type (layer 4) while the condition after "unless" does not hold, which is looked at all the time. The condition is the one of the static abilities that start
+ * with "as long as", negated: the engine's `loseTypes` with the condition `not`. Not read: another subject, another type, "is a", "unless" without a condition the grammar knows, two conditions.
+ */
+export const STATIC_SELF_ISNT_CREATURE_UNLESS = defineRule<IrStatic>({
+  id: 'static.self-isnt-creature-unless',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 205.1a (Type Line)',
+    'CR 611.3a (Continuous Effects)',
+  ],
+  examples: [
+    "~ isn't a creature unless you control three or more permanents you don't own.",
+    "~ isn't a creature unless you control a legendary creature.",
+  ],
+  rejects: [
+    "~ isn't a creature unless you control three or more permanents you don't own",
+    "~ isn't a creature unless.",
+    "~ isn't a creature unless you control a banana.",
+    "~ isn't an artifact unless you control a legendary creature.",
+    "~ isn't a creature unless you control a legendary creature and a Zombie.",
+    "~ isn't a creature unless you control a legendary creature. Draw a card.",
+    "Enchanted creature isn't a creature unless you control a legendary creature.",
+  ],
+  parse: (ctx, pos) => {
+    const read = sequence(SELF_ISNT_CREATURE_UNIT, literal(' unless '), STATIC_CONDITION)(ctx, pos);
+    if (!read.ok) return read;
+    const [part, , condition] = read.value;
+    const end = PERIOD(ctx, read.pos);
+    if (!end.ok) return end;
+    // "unless X" is "as long as X is not so".
+    const negated: IrCondition = {
+      kind: 'condition',
+      test: { kind: 'not', term: condition },
+      span: condition.span,
+      rule: 'static.self-isnt-creature-unless',
+    };
+    const value = build('static.self-isnt-creature-unless', pos, end.pos, negated, [part]);
+    return value === null ? fail(ctx, pos) : { ok: true, value, pos: end.pos };
+  },
+});
+
+/**
  * `static.cast-from-graveyard`: "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b, 601.2a): the
  * permission of the card itself while it is in its owner's graveyard, at the timing its type allows and for its ordinary
  * cost. With "as long as ..." it is `static.conditional-suffix`.
@@ -671,5 +718,6 @@ export const STATIC_CAST_FROM_GRAVEYARD = defineRule<IrStatic>({
 export const CONDITIONAL_STATIC_RULES = [
   STATIC_CONDITIONAL_PREFIX,
   STATIC_CONDITIONAL_SUFFIX,
+  STATIC_SELF_ISNT_CREATURE_UNLESS,
   STATIC_CAST_FROM_GRAVEYARD,
 ];
