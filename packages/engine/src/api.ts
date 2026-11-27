@@ -122,6 +122,7 @@ import {
   answerResolutionDevour,
   answerResolutionDredge,
   answerResolutionDungeonRoom,
+  answerResolutionEntersAuraHost,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
   answerResolutionEntersPaid,
@@ -1166,6 +1167,11 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         return finishResolutionAnswer(answerResolutionCipher(state, action.objects));
       if (d.purpose === 'entersCopy' || d.purpose === 'entersCopyOther')
         return finishResolutionAnswer(answerResolutionEntersCopy(state, action.objects));
+      // CR 303.4f (Mirrormade): the permanent a permanent entering as a copy of an Aura enchants (the question is about the permanent that asks it).
+      if (d.purpose === 'auraHost' && d.subject === d.source) {
+        const hosted = answerResolutionEntersAuraHost(state, action.objects);
+        if (hosted !== null) return finishResolutionAnswer(hosted);
+      }
       // CR 614.12, 122.1 (Sin, Unending Cataclysm): the permanents whose counters are removed as a permanent enters.
       if (d.purpose === 'entersRemoveCounters')
         return finishResolutionAnswer(answerResolutionRemoveCounters(state, action.objects));

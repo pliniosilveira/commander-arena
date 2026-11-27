@@ -2489,6 +2489,8 @@ export interface ResolutionContext {
   readonly entersCopy?: ObjectId | null;
   /** The answer to the second question of `entersAsCopy.exileTwoFromGraveyards` (The Mimeoplasm, CR 707.9b) for the move that asked it: the other card exiled, whose power gives the counters. Cleared once that move is done. */
   readonly entersCopyOther?: ObjectId;
+  /** The permanent a permanent that enters as a copy of an Aura chose to enchant (CR 303.4f, Mirrormade), for the move that asked it. Cleared once that move is done. */
+  readonly entersAuraHost?: ObjectId;
   /** The creature the controller of a resolving spell with Cipher chose to encode the card on (CR 702.99), or null for none. Absent until answered; the spell is then put where it goes. */
   readonly cipherOn?: ObjectId | null;
   /** The protector the controller of a battle chose as it entered (CR 310.9a), for the move that asked. Absent until answered; cleared once that move is done. */

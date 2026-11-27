@@ -477,9 +477,15 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
     if (
       (head.kind === 'move' || head.kind === 'enterToken') &&
       (state.resolution?.entersCopy !== undefined ||
-        state.resolution?.entersCopyOther !== undefined)
+        state.resolution?.entersCopyOther !== undefined ||
+        state.resolution?.entersAuraHost !== undefined)
     ) {
-      const { entersCopy: _answered, entersCopyOther: _other, ...rest } = state.resolution;
+      const {
+        entersCopy: _answered,
+        entersCopyOther: _other,
+        entersAuraHost: _host,
+        ...rest
+      } = state.resolution;
       state = { ...state, resolution: rest };
     }
     // The opponent chosen belongs to the one effect that asked for it (rules/choose-opponent.ts): once that effect has started, the next one asks again.
@@ -683,6 +689,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
       ...(res.entersCopyOther === undefined ? {} : { entersCopyOther: res.entersCopyOther }),
+      ...(res.entersAuraHost === undefined ? {} : { entersAuraHost: res.entersAuraHost }),
       ...(res.entersProtector === undefined ? {} : { entersProtector: res.entersProtector }),
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRemoved === undefined ? {} : { entersRemoved: res.entersRemoved }),
@@ -1301,6 +1308,29 @@ export function answerResolutionDevour(
   if (entering !== d.source) return null;
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, entersDevour: chosen } },
+    [],
+  );
+}
+
+/**
+ * Records the permanent that a permanent entering as a copy of an Aura chooses to enchant (CR 303.4f, Mirrormade) for the move or the spell that asked, then continues. Null when no
+ * such question waits (an Aura an effect puts onto the battlefield asks through `auraEntry`, a token through `enterToken`).
+ */
+export function answerResolutionEntersAuraHost(
+  state: GameState,
+  chosen: readonly ObjectId[],
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const d = state.pending;
+  const [host] = chosen;
+  if (!res || d?.kind !== 'choosePermanent' || d.purpose !== 'auraHost' || host === undefined) {
+    return null;
+  }
+  const head = res.queue[0];
+  const entering = head === undefined ? res.object : head.kind === 'move' ? head.object : null;
+  if (entering !== d.source || d.subject !== d.source) return null;
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, entersAuraHost: host } },
     [],
   );
 }
