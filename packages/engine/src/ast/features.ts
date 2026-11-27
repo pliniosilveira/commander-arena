@@ -183,6 +183,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlayWhenCast',
     // Manifest dread (CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the rest into your graveyard" (`lookAtTop` `take.to` `manifest`).
     'lookTakeManifest',
+    // CR 401.2, 115.1: "Look at the top three cards of target player's library, then put them back in any order" (`lookAndReorder.from`).
+    'lookReorderFromPlayer',
+    // CR 401.2, 608.2c: "Put one of those cards into your hand, one on top of your library, and one on the bottom of your library" (`lookAndSplit.top`).
+    'lookSplitTop',
+    // CR 401.4, 108.3: "Put all creatures on the bottom of their owners' libraries" (`moveToZone.ownersArrange`).
+    'moveOwnersArrange',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Ahoy Mateys deck, group 3 (Zara): "You may put a creature card from defending player's hand onto the battlefield" (`ChooseSelector.fromHandOf`).
@@ -2348,6 +2354,12 @@ export const ABILITY_FEATURES = [
   'mayPlayWhenCast',
   /** "Manifest dread" (CR 701.62a): the engine's `lookAtTop` with `take.to` `manifest`, one card of the top two put onto the battlefield face down and the rest into the graveyard. */
   'lookTakeManifest',
+  /** "Look at the top three cards of target player's library, then put them back in any order" (CR 401.2, 115.1): the engine's `lookAndReorder` with `from`. */
+  'lookReorderFromPlayer',
+  /** "Put one of those cards into your hand, one on top of your library, and one on the bottom of your library" (CR 401.2, 608.2c): the engine's `lookAndSplit` with `top`. */
+  'lookSplitTop',
+  /** "Put all creatures on the bottom of their owners' libraries" (CR 401.4, 108.3): the engine's `moveToZone.ownersArrange`, each owner ordering their cards. */
+  'moveOwnersArrange',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "You may put a creature card from defending player's hand onto the battlefield" (Zara, CR 608.2d, 402.3): the engine's `ChooseSelector.fromHandOf` of a `moveToZone` onto the battlefield. */
@@ -3629,6 +3641,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   exileTopRandomOpponent: true,
   mayPlayWhenCast: true,
   lookTakeManifest: true,
+  lookReorderFromPlayer: true,
+  lookSplitTop: true,
+  moveOwnersArrange: true,
   chooseFromCommandZone: true,
   chooseFromDefendersHand: true,
   chooseFromExileOwnedBy: true,

@@ -160,6 +160,7 @@ import { KEFKA_LOWERINGS } from './kefka';
 import { KENRITH_LOWERINGS } from './kenrith';
 import { KIMAHRI_LOWERINGS } from './kimahri';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LIBRARY_LOOK_LOWERINGS } from './library-look';
 import { LIBRARY_TOP_LOWERINGS } from './library-top';
 import { LIMIT_BREAK_G1_LOWERINGS } from './limit-break-g1';
 import { LOCKE_LOWERINGS } from './locke';
@@ -938,6 +939,23 @@ const PUT_LIBRARY: Lowering<IrClause, Effects> = {
     }
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
+    // "Put all creatures on the bottom of their owners' libraries" (CR 401.4, 108.3): the engine's `moveToZone` with `ownersArrange`: each owner orders the cards that reach
+    // the bottom of their library. Only a group of permanents, and only the bottom.
+    if (to.owners === true) {
+      const group = operand(clause, 'objects');
+      if (group?.kind !== 'noun' || group.det !== 'each' || position !== 'bottom') {
+        return failure(clause);
+      }
+      const blocked = missingFeatures(['ability:moveOwnersArrange']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return eachObject(clause, ctx, (objects) => ({
+        kind: 'moveToZone',
+        objects,
+        to: 'library',
+        position,
+        ownersArrange: true,
+      }));
+    }
     // "Put it into its owner's library third from the top" (stage P30, D-135, CR 401.7): "it" may be the card the permanent became.
     return eachObject(
       clause,
@@ -3211,6 +3229,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DEATH_TOLL_WINTER_LOWERINGS,
   ...PARTY_TIME_LIBRARY_LOWERINGS,
   ...IMPULSE_EXILE_LOWERINGS,
+  ...LIBRARY_LOOK_LOWERINGS,
   ...GRAND_LARCENY_B_LOWERINGS,
   ...DURNAN_LOWERINGS,
   ...MANIFEST_DREAD_LOWERINGS,

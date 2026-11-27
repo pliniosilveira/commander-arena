@@ -1746,6 +1746,9 @@ export type Instruction =
       readonly hand: number;
       readonly bottom: number;
       readonly exile: number;
+      /** `lookAndSplit.top`: the pile left on top of the library, chosen after the hand (`toTop` once chosen); the cards left then go to the bottom, unasked. */
+      readonly top?: number;
+      readonly toTop?: readonly ObjectId[];
       readonly toHand?: readonly ObjectId[];
       readonly toBottom?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
@@ -2019,19 +2022,27 @@ export type Instruction =
    * and, for a surveil, the cards put into the graveyard are moved. Purpose `bottom` (D-324, CR 401.4:
    * "put the rest on the bottom of your library in any order") arranges `cards`, the cards named by
    * the effect that are still in the library, which go to the bottom in the order chosen (answered in
-   * `other`); `count` is how many there are. See rules/arrange.ts.
+   * `other`); `count` is how many there are. `libraryOf` (purpose `reorder` only, CR 401.2: "look at the
+   * top three cards of target player's library, then put them back in any order"): the player whose
+   * library it is when it is not `seat`'s; `seat` still looks and arranges. See rules/arrange.ts.
    */
   | {
       readonly kind: 'arrange';
       readonly purpose: 'scry' | 'surveil' | 'reorder' | 'bottom';
       readonly seat: SeatId;
       readonly count: number;
+      readonly libraryOf?: SeatId;
       readonly cards?: readonly ObjectId[];
       readonly arranged: {
         readonly top: readonly ObjectId[];
         readonly other: readonly ObjectId[];
       } | null;
     }
+  /**
+   * "Put all creatures on the bottom of their owners' libraries" (`moveToZone.ownersArrange`, CR 401.4): after the moves, each owner of two or more of the cards the moves
+   * put into a library (`ResolutionContext.lastMoved`) arranges theirs on the bottom, an `arrange` of purpose `bottom` for each, in turn order. See rules/arrange.ts.
+   */
+  | { readonly kind: 'arrangeMoved' }
   /**
    * "Put N cards from your hand on top of your library in any order": `seat` chooses `count` cards
    * of their hand (all of it when it holds fewer). `chosen` is null until they have answered the

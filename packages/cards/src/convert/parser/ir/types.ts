@@ -1430,6 +1430,8 @@ export interface IrZoneSpec extends IrNode {
   readonly attacking?: true;
   /** `top`, `bottom`, or "third from the top" as 3 (stage P30, CR 401.7): a number of 2 or more. */
   readonly position?: 'top' | 'bottom' | number;
+  /** "on the bottom of their owners' libraries" (CR 401.4): a group of permanents goes to several libraries, and each owner arranges the cards that reach theirs. */
+  readonly owners?: true;
   /** How many of the cards a search found go here: "put one onto ... and the other into ...". */
   readonly count?: number;
 }
