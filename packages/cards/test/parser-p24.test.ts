@@ -20,6 +20,8 @@ const NORNS_ANNEX =
   "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of those creatures.";
 const SPHERE_OF_SAFETY =
   "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control.";
+const X_WITHOUT_VALUE =
+  "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures.";
 const OPTIONAL_UNTAP = 'You may choose not to untap ~ during your untap step.';
 
 const stat = (value: object) => ({ kind: 'static', static: value });
@@ -271,9 +273,18 @@ describe('what stays unread (never half-executed)', () => {
     expect(dropped(text, 'enchantment')).toMatchObject({ reason: 'unrecognised' });
   });
 
-  test('Sphere of Safety (the real shape, not read): the cost counts something (D-125)', () => {
-    expect(dropped(SPHERE_OF_SAFETY, 'enchantment')).toMatchObject({ reason: 'unrecognised' });
-    expect(read(SPHERE_OF_SAFETY, 'enchantment').abilities).toEqual([]);
+  test('Sphere of Safety (the real shape) is read: the cost counts the enchantments you control (X)', () => {
+    const parsed = read(SPHERE_OF_SAFETY, 'enchantment');
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toHaveLength(1);
+    const json = JSON.stringify(parsed.abilities);
+    expect(json).toContain('"kind":"attackTax"');
+    expect(json).toContain('"times"');
+  });
+
+  test('an X that nothing says the value of is not read (SYNTHETIC)', () => {
+    expect(dropped(X_WITHOUT_VALUE, 'enchantment')).toMatchObject({ reason: 'unrecognised' });
+    expect(read(X_WITHOUT_VALUE, 'enchantment').abilities).toEqual([]);
   });
 
   test('the lines are read on a permanent only: an instant has no such static (SYNTHETIC)', () => {
@@ -283,7 +294,7 @@ describe('what stays unread (never half-executed)', () => {
   });
 
   test('a line that is not read leaves the face with no ability (never half-executed)', () => {
-    const parsed = read(`${ADDITIONAL_LAND}\n${SPHERE_OF_SAFETY}`, 'enchantment');
+    const parsed = read(`${ADDITIONAL_LAND}\n${X_WITHOUT_VALUE}`, 'enchantment');
     expect(parsed.abilities).toEqual([stat({ kind: 'additionalLandDrops', count: 1 })]);
     expect(parsed.unparsed).toHaveLength(1);
   });
@@ -316,10 +327,16 @@ describe('the support of a card with these lines (validateCard is the last gate,
     expect(imported.support.status).toBe('supported');
   });
 
-  test('Sphere of Safety (the real line) is unsupported: that line is the reason', () => {
+  test('Sphere of Safety (the real line) is supported', () => {
     const imported = card('Enchantment', SPHERE_OF_SAFETY);
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+  });
+
+  test('a line with an X that nothing says the value of is unsupported: that line is the reason (SYNTHETIC)', () => {
+    const imported = card('Enchantment', X_WITHOUT_VALUE);
     expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.unparsed.map((u) => u.text)).toEqual([SPHERE_OF_SAFETY]);
+    expect(imported.support.unparsed.map((u) => u.text)).toEqual([X_WITHOUT_VALUE]);
   });
 
   test('a card with one of the lines and one that is not read is unsupported, naming the unread one', () => {
