@@ -160,6 +160,7 @@ import { SYNTHETIC_MANIFEST_B_LIST } from './synthetic-manifest-b';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
 import { SYNTHETIC_MEGAMORPH_LIST } from './synthetic-megamorph';
 import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
+import { SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST } from './synthetic-mana-cost-keyword-grant';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_MORPH_LIST } from './synthetic-morph';
@@ -576,6 +577,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_BOOK_EXALTED_LIST,
   ...SYNTHETIC_LATER_LIST,
   ...SYNTHETIC_MIRACLE_LIST,
+  ...SYNTHETIC_MANA_COST_KEYWORD_GRANT_LIST,
   ...SYNTHETIC_DELAYED_RETURN_LIST,
   ...SYNTHETIC_DIES_RETURN_LIST,
   ...SYNTHETIC_SOULBOND_LIST,

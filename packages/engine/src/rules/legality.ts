@@ -27,6 +27,7 @@ import {
   canPayRequest,
   castAs,
   isNamedAlternative,
+  spellXCostOf,
 } from './cast-cost';
 import { castInOwnMainPhase } from './cast-phase';
 import {
@@ -39,6 +40,7 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
+import { staticEscapeOf } from './mana-cost-keyword-grant';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardCastTypes, graveyardPlayPermission } from './graveyard-play';
@@ -56,7 +58,7 @@ import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
 import { flashSlotOf, sameControllerFillable, slotCanBeFilled } from './target-choice';
-import { hasX, spellXCost } from './x-value';
+import { hasX } from './x-value';
 
 export type { CastAlternative, CastFrom };
 
@@ -584,9 +586,11 @@ export function castZone(
       : null;
   }
   if (alternative === 'escape') {
-    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    if (obj.zone !== 'graveyard' || obj.card === null) return null;
     // CR 702.138a: a printed escape cost, or the one an effect gave the card until end of turn (rules/escape-grant.ts).
-    return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    if (faceIndex === 0) return escapeOf(state, obj, faceOf(state, obj)) === null ? null : 'graveyard';
+    // CR 709.3: the other half of a split card a permanent gives escape (`grantKeywordFromManaCost`): that half is cast for its own mana cost.
+    return staticEscapeOf(state, asFace(obj, faceIndex)) === null ? null : 'graveyard';
   }
   // CR 702.152a, 601.2a: "You may cast this card from your graveyard using its blitz ability": a blitz cast from a graveyard, when the card says so and its condition holds (it is cast
   // from the hand otherwise, below).
@@ -839,7 +843,9 @@ export function alternativeCostAllowed(
     // CR 702.74a, 118.9: an evoke cost a static ability gives a spell as it is cast from the hand (`grantAlternativeCostToSpells`, rules/alt-cost-grant.ts).
     if (kind === 'evoke')
       return grantedEvokeOf(state, seat, castAs(obj, seat, face), obj.zone) !== null;
-    return kind === 'escape' && grantedEscapeOf(state, obj) !== null;
+    return (
+      kind === 'escape' && grantedEscapeOf(state, face === 0 ? obj : asFace(obj, face)) !== null
+    );
   }
   // CR 702.96a: the text change of an overload cost is one the engine must be able to make.
   if (
@@ -929,7 +935,7 @@ export function canCast(
     state,
     seat,
     spell,
-    hasX(spellXCost(faceOf(state, spell), alternative)),
+    hasX(spellXCostOf(state, spell, alternative)),
   );
   if (least === null) return false;
   const timing = castTiming(state, seat, spell);
@@ -1026,6 +1032,8 @@ export function canCastDuringResolution(
   payInstead?: readonly Cost[],
   /** CR 608.2g, 402.3 (Silent-Blade Oni, Extract Brain): the card is in a hand, whoever's it is: an effect named it and the caster looked at it (`castFree.fromHand`). */
   fromAnyHand = false,
+  /** CR 709.3: the half of a split card that is cast, for a miracle a permanent gave it (`grantKeywordFromManaCost`); the front face for every other cast. */
+  face = 0,
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
@@ -1053,11 +1061,18 @@ export function canCastDuringResolution(
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (
     (alternative === 'madness' || alternative === 'miracle') &&
-    alternativeOf(faceOf(state, obj), alternative) === null
+    alternativeOf(faceOf(state, obj), alternative) === null &&
+    // CR 702.94a: or the miracle a permanent gave the card, which it was revealed for (`GameObject.miracleGrant`); a card with no mana cost has a cost that cannot be paid (CR 118.6).
+    !(
+      alternative === 'miracle' &&
+      obj.miracleGrant !== undefined &&
+      obj.card !== null &&
+      (definitionOf(state, obj.card).faces[face]?.manaCost?.length ?? 0) > 0
+    )
   ) {
     return false;
   }
-  const spell = castAs(obj, seat, 0);
+  const spell = castAs(obj, seat, face);
   if (derive(state, spell).types.includes('land')) return false;
   if (castForbiddenByOwnAbility(state, seat, spell)) return false; // CR 101.2 (D-149)
   if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-282: a free cast has X 0, CR 107.3b)
@@ -1248,9 +1263,10 @@ export function foretellCastObjects(state: GameState, seat: SeatId): ObjectId[] 
 }
 
 /** The cards in the seat's graveyard it could cast now for their escape cost (CR 702.138a, D-124). */
-export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
-  return zoneList(state, 'graveyard', seat).filter((id) =>
-    canCast(state, seat, getObject(state, id), 'escape'),
+export function escapeObjects(state: GameState, seat: SeatId): FaceOption[] {
+  // One option for each half of a split card a permanent gives escape (CR 709.3); the front face for every other card.
+  return faceOptions(state, zoneList(state, 'graveyard', seat), (obj, face) =>
+    canCast(state, seat, obj, 'escape', face),
   );
 }
 

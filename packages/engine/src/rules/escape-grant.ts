@@ -8,6 +8,7 @@ import type { CardFace } from '../cards/definition';
 import { allocateTimestamp, definitionOf, getSeat } from '../state/ops';
 import type { ContinuousEffect, GameObject, GameState, ResolutionContext } from '../state/types';
 import { alternativeOf } from './alt-costs';
+import { staticEscapeOf } from './mana-cost-keyword-grant';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -49,7 +50,8 @@ export function runGainEscape(
 
 /**
  * The escape cost an effect gave `obj`, a card in a graveyard or the same card as the spell it would be (`castAs` keeps its id; the effect names the objects of the graveyard, and a card
- * that left it is a new object, CR 400.7) (the latest of them decides, CR 613.7), or null.
+ * that left it is a new object, CR 400.7) (the latest of them decides, CR 613.7), else the one a permanent of its owner gives it while it is in the graveyard (`grantKeywordFromManaCost`,
+ * `rules/mana-cost-keyword-grant.ts`: the mana cost of the face cast), or null.
  */
 export function grantedEscapeOf(state: GameState, obj: GameObject): Escape | null {
   let found: { readonly timestamp: number; readonly escape: Escape } | null = null;
@@ -62,7 +64,7 @@ export function grantedEscapeOf(state: GameState, obj: GameObject): Escape | nul
       };
     }
   }
-  return found?.escape ?? null;
+  return found?.escape ?? staticEscapeOf(state, obj);
 }
 
 /**
@@ -85,11 +87,17 @@ export function escapeOf(
 export function escapeGrantData(
   state: GameState,
   obj: GameObject,
+  /** The face the card is cast as. */
+  face = 0,
 ):
   | { readonly escapeGrant: { readonly cost: readonly Cost[]; readonly exile: number } }
   | Record<never, never> {
   if (obj.card === null) return {};
-  if (alternativeOf(definitionOf(state, obj.card).faces[0] ?? null, 'escape') !== null) return {};
-  const granted = grantedEscapeOf(state, obj);
+  if (alternativeOf(definitionOf(state, obj.card).faces[face] ?? null, 'escape') !== null) return {};
+  // The card as the face it is cast as: a cost made from the mana cost is that face's (CR 709.3).
+  const granted = grantedEscapeOf(
+    state,
+    face === 0 || obj.zone === 'stack' ? obj : { ...obj, zone: 'stack', face },
+  );
   return granted === null ? {} : { escapeGrant: { cost: granted.cost, exile: granted.exile } };
 }

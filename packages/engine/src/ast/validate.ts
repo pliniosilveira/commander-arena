@@ -644,6 +644,34 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'grantKeywordFromManaCost':
+      // CR 702.94a, 702.138a: "Each enchantment card in your hand has miracle", "... in your graveyard has escape": the cards of the controller's zone a filter names, as the cards they are.
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a hand or a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      if (s.grant.kind === 'miracle') {
+        if (!Number.isSafeInteger(s.grant.reduce) || s.grant.reduce < 0) {
+          issue(out, `${path}.grant.reduce`, 'the reduction is a whole number of generic mana');
+        }
+      } else if (!Number.isSafeInteger(s.grant.exile) || s.grant.exile < 0) {
+        issue(out, `${path}.grant.exile`, 'the number of other cards exiled is a whole number');
+      }
+      break;
     case 'grantAlternativeCostToSpells':
       // CR 702.74a, 118.9: "Elemental permanent spells you cast from your hand gain evoke {4}": only evoke with a mana cost, for the spells of the permanent's controller a filter names,
       // as the spells they are on the stack, cast from the hand.

@@ -58,6 +58,7 @@ import { costReductionSources } from './derive-statics';
 import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
 import { escapeOf, grantedEscapeOf } from './escape-grant';
+import { grantedMiracleCost } from './mana-cost-keyword-grant';
 import { faceDownSpellFields, isFaceDown } from './face-down';
 import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeReduction } from './harmonize';
@@ -74,7 +75,14 @@ import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
 import { playerSpellDiscount } from './spell-discount';
 import { spellSpendTarget } from './spend-target';
-import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
+import {
+  hasX,
+  largestPayableX,
+  reduceGeneric,
+  spellXCost,
+  withX,
+  type XCost,
+} from './x-value';
 
 /** How a spell is cast instead of from the hand or the command zone: see `PriorityOption`. */
 export type CastAlternative = CastAlternativeKind;
@@ -203,27 +211,7 @@ export function castAs(
   return alternative === 'morph' ? { ...spell, ...faceDownSpellFields('morph', 1) } : spell;
 }
 
-const NUMERIC = /^[0-9]+$/;
-
-/** The generic mana of a cost: the sum of its numeric symbols ({2}{R} has 2). */
-function genericOf(symbols: readonly string[]): number {
-  let n = 0;
-  for (const s of symbols) if (NUMERIC.test(s)) n += Number(s);
-  return n;
-}
-
-/**
- * CR 118.7a, 601.2f: reduces the generic mana of a cost by `by`, never below zero, leaving the
- * colored mana alone. A cost with no generic mana is not changed. A cost reduced to nothing is {0}:
- * an empty list.
- */
-export function reduceGeneric(symbols: readonly string[], by: number): string[] {
-  const numeric = symbols.filter((s) => NUMERIC.test(s));
-  if (by <= 0 || numeric.length === 0) return [...symbols];
-  const left = Math.max(0, genericOf(symbols) - by);
-  const rest = symbols.filter((s) => !NUMERIC.test(s));
-  return left > 0 ? [String(left), ...rest] : rest;
-}
+export { reduceGeneric };
 
 /**
  * How much the spell's cost is reduced (CR 601.2f): its own `this` reductions and those of the
@@ -414,10 +402,19 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     alternative === 'flashback' ? (flashbackCostOf(face) ?? manaCostAsFlashbackCost(face)) : null;
   // D-121: a named alternative cost (overload, ...) is paid instead of the mana cost.
   // CR 702.138a: an escape cost the card has, or the one an effect gave it (`rules/escape-grant.ts`).
+  const escape = alternative === 'escape' ? escapeOf(state, spell, face) : null;
+  // CR 702.94a: the miracle a permanent gave the card (`grantKeywordFromManaCost`): noted on the card as it was revealed, and kept on the spell.
+  const miracleGrant =
+    alternative === 'miracle' && namedAlternativeCostOf(face, 'miracle') === null
+      ? (spell.stack?.miracleGrant ?? spell.miracleGrant ?? null)
+      : null;
   const named =
     alternative === 'escape'
-      ? (escapeOf(state, spell, face)?.cost ?? null)
-      : isNamedAlternative(alternative)
+      ? (escape?.cost ?? null)
+      : miracleGrant !== null
+        ? // The mana cost as printed: its {X} is announced before the generic mana is reduced (below).
+          grantedMiracleCost(face, 0, reduceGeneric)
+        : isNamedAlternative(alternative)
         ? (namedAlternativeCostOf(face, alternative) ??
           // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (rules/alt-cost-grant.ts).
           (alternative === 'evoke'
@@ -425,7 +422,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             : null))
         : null;
   // CR 702.33a, 107.3a ("Kicker {X}"): a kicked spell announces the X of its kicker cost too.
-  const perX = spellXCost(face, alternative, (request.kicks ?? (request.kicked ? 1 : 0)) > 0);
+  const perX = spellXCost(
+    face,
+    alternative,
+    (request.kicks ?? (request.kicked ? 1 : 0)) > 0,
+    // A printed escape cost has no X to announce; one something gave the card may be the mana cost.
+    alternativeOf(face, 'escape') === null ? (escape?.cost ?? null) : null,
+  );
   const x = hasX(perX) ? (request.x ?? 0) : 0;
   // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
@@ -448,7 +451,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             ['3']
           : named !== null
             ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
-              withX(manaSymbolsOf(named), x)
+              // CR 118.7a, 107.3a: a miracle cost "equal to its mana cost reduced by {4}" takes the generic mana off the cost with its X announced.
+              miracleGrant !== null
+              ? reduceGeneric(withX(manaSymbolsOf(named), x), miracleGrant.reduce)
+              : withX(manaSymbolsOf(named), x)
             : fromGraveyard !== null
               ? manaSymbolsOf(fromGraveyard)
               : withX(face?.manaCost ?? [], x);
@@ -611,7 +617,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         })());
   // CR 702.34a, 107.3a, 601.2b: "Flashback—..., Exile X cards from your graveyard" exiles the X announced, besides what an escape cost or a permission asks.
   const exile =
-    (alternative === 'escape' ? (escapeOf(state, spell, face)?.exile ?? 0) : permissionExile) +
+    (alternative === 'escape' ? (escape?.exile ?? 0) : permissionExile) +
     (perX.exile ?? 0) * x;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
@@ -707,7 +713,15 @@ export function spellXCostOf(
   alternative: CastAlternative | undefined,
 ): XCost {
   // CR 702.33a: the {X} of the kicker cost counts once the spell is kicked (`StackData.kicked`).
-  return spellXCost(faceOfSpell(state, spell), alternative, spell.stack?.kicked === true);
+  const face = faceOfSpell(state, spell);
+  return spellXCost(
+    face,
+    alternative,
+    spell.stack?.kicked === true,
+    alternative === 'escape' && alternativeOf(face, 'escape') === null
+      ? (escapeOf(state, spell, face)?.cost ?? null)
+      : null,
+  );
 }
 
 /**

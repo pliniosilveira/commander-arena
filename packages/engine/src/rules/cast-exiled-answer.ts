@@ -12,7 +12,7 @@ import type { ObjectId } from '../ids';
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction } from '../state/types';
 import { beginCast } from './cast';
-import type { CastExiledInstruction } from './cast-exiled';
+import { type CastExiledInstruction, nextMiracleFace } from './cast-exiled';
 import { moveInstructions } from './effect-support';
 import { fail, ok, type Result } from './result';
 import { continueResolution, type ResolveOutcome } from './stack';
@@ -40,10 +40,18 @@ export function declineCastExiled(state: GameState): ResolveOutcome | null {
   const events: GameEvent[] = [
     { kind: 'optionalAnswered', seat: res.controller, source: res.source, accepted: false },
   ];
+  // CR 709.3: a half of a split card was declined: the next half that could be cast for the miracle cost is asked about.
+  const card = a.head.card === null ? undefined : state.objects[a.head.card];
+  const nextFace =
+    a.head.mode === 'miracle' && a.head.face !== undefined && card !== undefined
+      ? nextMiracleFace(state, res.controller, card, a.head.face)
+      : null;
   const put: readonly Instruction[] =
-    a.head.mode === 'madness' && a.head.card !== null
-      ? moveInstructions([a.head.card], 'graveyard')
-      : [];
+    nextFace !== null
+      ? [{ ...a.head, face: nextFace }]
+      : a.head.mode === 'madness' && a.head.card !== null
+        ? moveInstructions([a.head.card], 'graveyard')
+        : [];
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [...put, ...a.rest] } },
     events,
@@ -66,7 +74,7 @@ export function acceptCastExiled(state: GameState): Result {
     res.controller,
     card,
     a.head.mode === 'suspend' ? 'free' : a.head.mode,
-    0,
+    a.head.face ?? 0,
     true,
     suspend,
   );

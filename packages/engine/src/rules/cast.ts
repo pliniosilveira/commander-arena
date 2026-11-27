@@ -214,6 +214,8 @@ export function beginCast(
           riders.anyManaType === true,
           riders.payInstead,
           riders.fromHand === true,
+          // CR 709.3: the half of a split card cast for a miracle a permanent gave it.
+          alternative === 'miracle' ? face : 0,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -328,7 +330,14 @@ export function beginCast(
         : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       // CR 702.138a: the escape cost an effect gave the card (`gainEscape`), kept for the spell on the stack, which is a new object the effect did not name.
-      ...(alternative === 'escape' ? escapeGrantData(state, obj) : {}),
+      ...(alternative === 'escape' ? escapeGrantData(state, obj, face) : {}),
+      // CR 702.94a: the miracle cost a permanent gave the card (`grantKeywordFromManaCost`), noted on the card as it was revealed, kept for the spell on the stack.
+      ...(alternative === 'miracle' &&
+      obj.miracleGrant !== undefined &&
+      obj.card !== null &&
+      namedAlternativeCostOf(definitionOf(state, obj.card).faces[face] ?? null, 'miracle') === null
+        ? { miracleGrant: obj.miracleGrant }
+        : {}),
       // CR 702.74a, 118.9: the evoke cost a static ability gave the spell as it was cast (`grantAlternativeCostToSpells`), kept so the permanent still has it when the source has left.
       ...(alternative === 'evoke'
         ? evokeGrantData(state, seat, castAs(obj, seat, face), zone)

@@ -900,8 +900,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
   /**
    * For a land card played from the hand that asks to pay to enter untapped (`cost` set, no
    * `purpose`, `source` in the hand): the face of the card being played, which is not 0 for the
-   * back face of a modal double-faced card (CR 712.12). Absent for face 0 and for every other
-   * question.
+   * back face of a modal double-faced card (CR 712.12). For purpose `'miracle'` when a permanent gave a split card miracle with the cost made from its mana cost (CR 709.3): the
+   * half of `subject` that accepting casts, whose reduced mana cost `cost` is; declining asks about the next half that could be cast. Absent for face 0 of a land and for every
+   * other question.
    */
   readonly face?: number;
 }
