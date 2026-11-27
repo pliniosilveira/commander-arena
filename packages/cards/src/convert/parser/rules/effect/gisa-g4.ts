@@ -181,6 +181,52 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.it-gains-exile-instead-when-leaving`: `it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else."` (Spirit-Sister's Call, CR 614.1a, 614.6, 400.7:
+ * the granted ability is a replacement effect of the permanent the instruction before it put onto the battlefield; it belongs to that object and holds when the permanent that granted it
+ * has left). The same as `effect.exile-instead-when-leaving`: the engine's `exileIfLeaves` of the `moved` objects. Not read: another subject, another replacement, another ability,
+ * a duration, anything after the quotation.
+ */
+export const EFFECT_IT_GAINS_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
+  id: 'effect.it-gains-exile-instead-when-leaving',
+  family: 'effect',
+  leading: ['it'],
+  cites: [
+    'CR 614.1a (Replacement Effects)',
+    'CR 614.6 (Replacement Effects)',
+    'CR 400.7 (General)',
+  ],
+  examples: [
+    'it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else."',
+    'It gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else"',
+  ],
+  rejects: [
+    'it gains "If ~ would die, exile it instead of putting it anywhere else."',
+    'it gains "If ~ would leave the battlefield, exile it instead."',
+    'it gains haste',
+    'it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else." until end of turn',
+    'they gain "If ~ would leave the battlefield, exile it instead of putting it anywhere else."',
+    'it gains "If ~ would leave the battlefield, exile it instead of putting it anywhere else. Draw a card."',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.it-gains-exile-instead-when-leaving';
+    const r = sequence(
+      IT(),
+      pattern(
+        /[ ]gains "if ~ would leave the battlefield, exile it instead of putting it anywhere else\.?"/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'exileIfLeaves', { objects: r.value[0] }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 /** The card types a "each [type] card exiled with ~" names. */
 const LINKED_TYPES = ['creature', 'artifact', 'enchantment', 'land', 'planeswalker'] as const;
 
@@ -491,6 +537,7 @@ export const GISA_G4_EFFECT_RULES = [
   quietly(EFFECT_GAIN_KEYWORD_FOR_GOOD),
   quietly(EFFECT_EXILE_AT_END_STEP),
   quietly(EFFECT_EXILE_INSTEAD_WHEN_LEAVING),
+  quietly(EFFECT_IT_GAINS_EXILE_INSTEAD_WHEN_LEAVING),
   quietly(EFFECT_PUT_EXILED_WITH_BATTLEFIELD),
   quietly(EFFECT_PUT_TARGET_EXILED_WITH_BATTLEFIELD),
 ];

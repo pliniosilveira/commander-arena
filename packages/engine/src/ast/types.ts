@@ -1275,8 +1275,10 @@ export interface ObjectFilter {
    * `sacrificed` (CR 205.2a, 701.21a, 113.7a; Braids, Arisen Nightmare): the permanent an earlier `sacrifice` of this resolution sacrificed (the first one), with the card types it
    * last had on the battlefield: "each opponent may sacrifice a permanent that shares a card type with it" matches a permanent with ANY of them. Read in the filter of a `choose` of
    * a `sacrifice` that comes after that sacrifice (or the `may` of one) in the same sequence.
+   * `target` (CR 205.2a, 608.2c; Spirit-Sister's Call): the first object target of the spell or ability that is resolving, a card in a graveyard ("sacrifice a permanent that shares a
+   * card type with the chosen card"), with the card types it has now; a target that is not a legal object any more shares nothing. Read in the filter of a `sacrifice`.
    */
-  readonly sharesCardTypeWith?: 'triggerSubject' | 'sacrificed';
+  readonly sharesCardTypeWith?: 'triggerSubject' | 'sacrificed' | 'target';
   /**
    * "A card that shares a color with a legendary creature you control" (CR 105.1, 105.2, 109.4, Ringsight): the object has at least one color that at least one permanent on
    * the battlefield matching this filter has, read now (so a colorless object shares none: colorless is no color, CR 105.2c). The filter names its own controller ("you control"); its

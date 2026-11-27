@@ -525,7 +525,9 @@ function lowerFilterAt(
     parts.push('selector:sharesCreatureTypeWithSource');
   }
   // CR 205.2a, 701.21a (Braids): "shares a card type with it", the permanent an earlier sacrifice sacrificed.
-  if (filter.sharesCardTypeWithSacrificed === true) parts.push('selector:sharesCardTypeWith');
+  if (filter.sharesCardTypeWithSacrificed === true || filter.sharesCardTypeWithChosen === true) {
+    parts.push('selector:sharesCardTypeWith');
+  }
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
   if (filter.singleTarget === true) {
     if (inner || filter.zone !== 'stack') return bad([]);
@@ -782,6 +784,7 @@ function lowerFilterAt(
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
+    ...(filter.sharesCardTypeWithChosen === true ? { sharesCardTypeWith: 'target' as const } : {}),
     ...(filter.sharesCreatureTypeWithSacrificed === true
       ? { sharesCreatureTypeWith: 'sacrificed' as const }
       : {}),

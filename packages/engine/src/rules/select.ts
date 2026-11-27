@@ -408,9 +408,11 @@ export function matchesFilter(
           state,
           readsSacrificedType(filter)
             ? ctx.sacrificed?.[0]
-            : readsSourceType(filter)
-              ? (ctx.source ?? undefined)
-              : ctx.triggerSubject,
+            : readsTargetType(filter)
+              ? (ctx.targets ?? []).find((t) => t.kind === 'object')?.id
+              : readsSourceType(filter)
+                ? (ctx.source ?? undefined)
+                : ctx.triggerSubject,
         )
       : {}),
   };
@@ -468,6 +470,11 @@ function readsSacrificedType(f: ObjectFilter): boolean {
     f.sharesCreatureTypeWith === 'sacrificed' ||
     (f.anyOf?.some(readsSacrificedType) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, asks for a card type shared with the target of the ability (`sharesCardTypeWith: 'target'`, Spirit-Sister's Call). */
+function readsTargetType(f: ObjectFilter): boolean {
+  return f.sharesCardTypeWith === 'target' || (f.anyOf?.some(readsTargetType) ?? false);
 }
 
 /** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the source of the ability (Titan of Littjara). */

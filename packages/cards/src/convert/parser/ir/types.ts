@@ -416,6 +416,11 @@ export interface IrFilter {
    */
   readonly sharesCardTypeWithSacrificed?: true;
   /**
+   * "a permanent that shares a card type with the chosen card" (Spirit-Sister's Call, CR 205.2a, 608.2c): the permanent has a card type the card an earlier "choose target ... card in your
+   * graveyard" chose as a target has. Read in the filter of a sacrifice; the engine's `sharesCardTypeWith: 'target'`.
+   */
+  readonly sharesCardTypeWithChosen?: true;
+  /**
    * "up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found share a land type among them, which is a condition on the whole
    * choice and not on a card. A filter that still has it is not lowered; the search lowering takes it off (the engine's `search.sharedLandType`).
    */
