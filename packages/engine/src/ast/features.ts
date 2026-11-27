@@ -1496,6 +1496,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayerWhoChose',
     // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
     'ringBearer',
+    // CR 113.6, 613.1f (Grothama, All-Devouring): the permanent that grants the ability (`ObjectRef` `granter`).
+    'granter',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
     // greatest power among creatures they control" (`ChooseSelector.anyNumber` and `greatest`), "the chosen player" of a gift.
     'notSupertypes',
@@ -2023,6 +2025,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'extreme',
     'difference',
     'opponentCount',
+    // CR 120.3 (Grothama, All-Devouring): "the amount of damage dealt to this creature this turn by sources they controlled".
+    'damageToThisThisTurn',
     'opponentsAttackedThisCombat',
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
@@ -2841,6 +2845,8 @@ export const SELECTOR_KINDS = [
   'eachPlayerWhoChose',
   /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
   'ringBearer',
+  /** "Other creatures have \"... fight [this card].\"" (CR 113.6, 613.1f, Grothama, All-Devouring): the engine's `ObjectRef` `granter`. */
+  'granter',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
   'notSupertypes',
   /** "Sacrifice any number of other permanents" (D-135): the engine's `ChooseSelector.anyNumber`. */
@@ -3450,6 +3456,8 @@ export const AMOUNT_KINDS = [
   'difference',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
+  /** "The amount of damage dealt to this creature this turn by sources they controlled" (CR 120.3, Grothama, All-Devouring): the engine's `damageToThisThisTurn`. */
+  'damageToThisThisTurn',
   /** "Each opponent you attacked this combat" (CR 702.121a, Melee): the engine's `opponentsAttackedThisCombat`. */
   'opponentsAttackedThisCombat',
   /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */

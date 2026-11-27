@@ -91,6 +91,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen): the creature that is the controller's Ring-bearer.
       return "your Ring-bearer's";
+    case 'granter':
+      // CR 113.6 (Grothama, All-Devouring): the permanent that gave the ability.
+      return "that permanent's";
   }
 }
 
@@ -132,6 +135,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'that creature';
     case 'ringBearer':
       return 'your Ring-bearer';
+    case 'granter':
+      return 'the permanent that gave this ability';
   }
 }
 
@@ -424,6 +429,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'extreme':
       // CR 608.2c: "the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater".
       return `${amount.of.map((part) => amountPhrase(part, ctx)).join(' or ')}, whichever is ${amount.pick === 'greater' ? 'greater' : 'less'}`;
+    case 'damageToThisThisTurn':
+      // CR 120.3 (Grothama, All-Devouring): the damage dealt to this permanent this turn by sources the player controlled.
+      return 'the amount of damage dealt to this permanent this turn by sources you controlled';
     case 'opponentCount':
       // CR 102.2: Rot Hulk's "where X is the number of opponents you have".
       return 'the number of opponents you have';

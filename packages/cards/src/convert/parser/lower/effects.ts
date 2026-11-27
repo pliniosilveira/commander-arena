@@ -1721,6 +1721,23 @@ function playerVerb(
       // Locke, Treasure Hunter: "a spell from among those cards" after a mill by the controller or by each player.
       if (verb === 'mill' && (player.value.kind === 'you' || player.value.kind === 'eachPlayer'))
         ctx.milledBefore = true;
+      // CR 101.4, 608.2h (Grothama, All-Devouring): "each player draws cards equal to the amount of damage dealt to ~ this turn by sources they controlled": each player's own
+      // number, so each player in turn draws as themselves ("they" is "you" in it).
+      if (typeof amount.value === 'object' && amount.value.kind === 'damageToThisThisTurn') {
+        if (verb !== 'draw' || player.value.kind !== 'eachPlayer') return failure(clause);
+        return {
+          ok: true,
+          value: [
+            {
+              kind: 'forEachPlayer',
+              players: player.value,
+              runsAs: 'each',
+              effect: { kind: 'draw', player: { kind: 'you' }, count: amount.value },
+            },
+          ],
+          rule: clause.rule,
+        };
+      }
       const effect: Effect =
         verb === 'draw' || verb === 'discard' || verb === 'mill'
           ? { kind: verb, player: player.value, count: amount.value }

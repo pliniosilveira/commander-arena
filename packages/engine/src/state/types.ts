@@ -3241,6 +3241,13 @@ export interface TurnLog {
    */
   readonly damagedObjects?: readonly ObjectId[];
   /**
+   * The damage each permanent has been dealt this turn (CR 120.3, after prevention, combat or not), by the id it had as it was dealt the damage and then by the seat of the player who
+   * controlled the source as the damage was dealt (CR 608.2h: a source that changes controller or leaves afterwards changes nothing), for "the amount of damage dealt to this creature
+   * this turn by sources they controlled" (`Amount` `damageToThisThisTurn`). It is read through the old id once the permanent has left (CR 400.7, 603.10a). Absent until some permanent
+   * was dealt damage.
+   */
+  readonly damageToObjects?: Readonly<Record<ObjectId, readonly number[]>>;
+  /**
    * Each time a creature was declared as an attacker this turn, by its id (D-151): a creature that attacks in two combat phases appears twice.
    * "Whenever this creature attacks for the first time each turn" reads it.
    */

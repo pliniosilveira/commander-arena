@@ -950,6 +950,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,
   ),
   'amount.damage-dealt-to-player-this-turn': permanent((e) => `When ~ enters, draw cards ${e}.`),
+  'amount.damage-dealt-to-this-by-their-sources': permanent(
+    (e) => `When ~ leaves the battlefield, each player draws cards ${e}.`,
+  ),
+  // Grothama, All-Devouring: the card's name inside a quotation that says "this creature" (read inside the quotation; the line is the same ability without it).
+  'noun.granter': permanent((e) => `Whenever ~ attacks, you may have it fight ${e}.`),
   'noun.one-two-or-three-targets-bare': spell(
     (e) => `~ deals 3 damage divided as you choose among ${e}.`,
   ),

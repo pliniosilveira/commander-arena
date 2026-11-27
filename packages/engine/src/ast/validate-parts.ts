@@ -1824,6 +1824,10 @@ export function checkRef(
         );
       }
       break;
+    case 'granter':
+      // CR 113.6, 613.1f: the permanent that grants the ability; where it may be written is checked for the whole face (`validate-granter.ts`).
+      if (expect === 'player') issue(out, path, "'granter' is a permanent, not a player");
+      break;
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" is a creature, never a player.
       if (expect === 'player') issue(out, path, "'ringBearer' is a creature, not a player");
@@ -3117,6 +3121,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'opponentCount':
     case 'opponentsAttackedThisCombat':
+      break;
+    case 'damageToThisThisTurn':
+      // CR 120.3: the damage the permanent of the ability was dealt, by the sources of the player who is "you" as it is read.
+      if (a.by !== 'you') issue(out, `${path}.by`, "by is 'you'");
+      if (scope.owner === 'spell') {
+        issue(out, path, "'damageToThisThisTurn' is only valid in abilities of a permanent");
+      }
       break;
     case 'movedCount':
       // CR 608.2c: what the instruction before it moved (`moved`): a trailing amount of the same resolution, never a number a static ability reads.

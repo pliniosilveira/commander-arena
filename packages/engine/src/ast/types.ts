@@ -471,6 +471,13 @@ export type Amount =
    */
   | { readonly kind: 'opponentCount' }
   /**
+   * "The amount of damage dealt to this creature this turn by sources they controlled" (Grothama, All-Devouring; CR 120.3, 608.2h, 603.10a): the damage the permanent the ability
+   * belongs to has been dealt this turn, after prevention, combat or not, by sources the controller of the effect controlled as each dealt its damage (`by: 'you'`; in a `forEachPlayer`
+   * with `runsAs: 'each'` that is each player in turn). The permanent is the object it was on the battlefield: once it has left, what it was dealt before it left is still read
+   * (a leaves-the-battlefield ability looks back in time), and a permanent that came back is a new object that was dealt none of it (CR 400.7). Only in an ability of a permanent.
+   */
+  | { readonly kind: 'damageToThisThisTurn'; readonly by: 'you' }
+  /**
    * "Each opponent you attacked this combat" (CR 702.121a Melee, 508.6; Tifa, Martial Artist): how many of the controller's opponents still in the game were attacked, as players,
    * by the controller's creatures in the combat phase in progress (`GameState.combatAttacks`: a creature attacking a planeswalker or a battle attacks that permanent, not its controller),
    * each opponent once however many creatures attacked them. 0 outside a combat phase of the controller. Not for a static ability's power or toughness.
@@ -1518,6 +1525,14 @@ export type ObjectRef =
    * creature has left or changed controller).
    */
   | { readonly kind: 'ringBearer' }
+  /**
+   * The permanent whose static ability gives the ability this reference is in (Grothama, All-Devouring: "Other creatures have \"Whenever this creature attacks, you may have it fight
+   * Grothama, All-Devouring.\"", CR 113.6, 201.5, 613.1f): inside the quotation `this` is the creature that has the ability and the card's name is the permanent that grants it. A card
+   * writes it without `object` and only inside the `ability` of a static `grantAbility`; the engine fills in `object` as the static ability gives the ability to a permanent (`derive`),
+   * so the instance each permanent has names the one permanent that gave it. It is that permanent while it is on the battlefield as the same object: nothing once it has left (CR 400.7),
+   * so an ability already on the stack then does nothing with it.
+   */
+  | { readonly kind: 'granter'; readonly object?: ObjectId }
   /**
    * "The exiled card" of a linked ability (D-145, CR 607.2a, 702.75a Hideaway): the cards the permanent the ability belongs to exiled with its
    * linked ability (`exile.linked`, or the exile of Hideaway) that are still in exile, in the order they were exiled. Nothing when the
@@ -9100,6 +9115,8 @@ export type Replacement =
    * a replacement effect of a permanent on the battlefield for every damage event, combat or not, whose source `sources` matches (read as for `damageBonus`, `controller: 'you'`
    * required) and whatever the recipient: a player or a permanent of any controller. The same source deals twice the damage; an event of 0 damage is no event. It applies once to an
    * event (CR 614.5) and the player dealt the damage orders it with the other effects that change the event (CR 616.1, `rules/damage-order.ts`). It is the ability of the permanent.
+   * With `zone: 'battlefield'` in `sources`, "If a creature you control would deal damage ..." (Gratuitous Violence, CR 109.2): only a permanent, as it is or as it last
+   * was on the battlefield, never a spell or a card elsewhere.
    */
   | { readonly kind: 'damageDouble'; readonly sources: ObjectFilter }
   /**

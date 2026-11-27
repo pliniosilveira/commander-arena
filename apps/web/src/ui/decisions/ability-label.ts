@@ -452,6 +452,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'ringBearer':
       // CR 701.54e (Galadriel, Elven-Queen).
       return 'your Ring-bearer';
+    case 'granter':
+      // CR 113.6 (Grothama, All-Devouring): the permanent that gave this ability.
+      return 'the permanent that gave this ability';
   }
 }
 
@@ -638,6 +641,7 @@ function recipientText(
     case 'votedObjects':
     case 'mostVotedObjects':
     case 'ringBearer':
+    case 'granter':
     case 'each':
       return objectText(to, ability, self);
   }

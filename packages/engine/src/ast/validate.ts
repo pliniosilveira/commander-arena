@@ -64,6 +64,7 @@ import {
   checkDragonsStatic,
   checkGraveyardAbility,
 } from './validate-dragons';
+import { checkGranterRefs } from './validate-granter';
 import { checkBatchKeyword } from './validate-keywords';
 import { layoutStructureIssues } from './validate-layouts';
 import { checkManaAbility } from './validate-mana-ability';
@@ -3554,6 +3555,7 @@ export function validateCardStructure(def: CardDefinition): AstIssue[] {
   }
   def.faces.forEach((face, i) => {
     checkFace(face, `faces[${i}]`, def.support === 'supported', out);
+    checkGranterRefs(face, `faces[${i}]`, out);
     // CR 702.94a (D-274): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
     // cost on any other face would never be offered: refused here instead of accepted and dropped without a word.
     if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'harmonize')) {
