@@ -209,6 +209,8 @@ export type GameEvent =
       readonly replicas?: number;
       /** Present (true) when the buyback cost was paid (CR 702.27a). */
       readonly boughtBack?: true;
+      /** Present (true) when the offspring cost was paid (CR 702.175a). */
+      readonly offspring?: true;
       /** The opponent the gift was promised to (CR 702.174a, D-135); present when the caster promised one. */
       readonly gift?: SeatId;
       /**
@@ -225,6 +227,11 @@ export type GameEvent =
       readonly x?: number;
       /** Present (true) when it was cast as the effect of its suspend ability (CR 702.62a, D-128). */
       readonly suspended?: true;
+      /**
+       * CR 700.14 (Expend): the mana the caster had spent to cast spells this turn before paying for this one, and after. Present when mana was spent on this spell; "Whenever you
+       * expend N" triggers when N is above `before` and at most `after`.
+       */
+      readonly expend?: { readonly before: number; readonly after: number };
     }
   /**
    * A copy of a spell was put onto the stack (CR 707.10, D-129): by Storm, or by an effect that copies a spell. `copy`

@@ -249,6 +249,11 @@ export interface GameObject {
    */
   readonly giftTo?: SeatId;
   /**
+   * True for a permanent that came from a spell whose offspring cost was paid (CR 702.175a): "when this permanent enters, if its offspring cost was paid" reads it, from
+   * last-known information once the permanent has left. Absent otherwise; a permanent that was not cast never has it.
+   */
+  readonly offspringPaid?: true;
+  /**
    * The zone the spell this permanent came from was cast from (CR 601.2a, 603.4: "When this creature enters, if you cast it, ..."): remembered by the permanent the spell
    * became. Absent for a permanent that was put onto the battlefield without being cast (and for one that came from a copy of a spell).
    */
@@ -471,6 +476,11 @@ export interface StackData {
    * difference to it: a copy is not a card and ceases to exist.
    */
   readonly boughtBack?: true;
+  /**
+   * True when the offspring cost was paid as the spell was cast (CR 702.175a): the permanent the spell becomes remembers it (`GameObject.offspringPaid`) and its enters trigger
+   * reads it. Absent for a spell with no offspring and for one whose caster did not pay it. A copy of the spell has it too (CR 707.10).
+   */
+  readonly offspringPaid?: true;
   /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
   readonly lifeForMana?: true;
   /** The energy counters paid when the spell was cast by paying energy rather than its mana cost, which a static ability of a permanent allowed (`grantEnergyAlternative`, issue 105, CR 118.9, 107.14). */
@@ -838,6 +848,12 @@ export interface SeatState {
   readonly handSizeMax: number | null;
 }
 
+/** One "spells you cast this turn can't be countered" effect (`TurnState.uncounterableSpells`). */
+export interface UncounterableSpells {
+  readonly seat: SeatId;
+  readonly spells: ObjectFilter;
+}
+
 export interface TurnState {
   /** 1-based turn counter for the whole game. */
   readonly number: number;
@@ -852,6 +868,11 @@ export interface TurnState {
   readonly extraLandDrops: number;
   /** "Damage can't be prevented this turn" (CR 615.12, Exit from Exile deck): set by the effect, gone with the turn (the next turn is built without it). */
   readonly damageUnpreventable?: true;
+  /**
+   * "Creature spells you cast this turn can't be countered" (CR 101.2, 701.6a, 611.2a; Domri, Anarch of Bolas): each effect that resolved this turn, with the seat that controlled it
+   * ("you" in its filter) and the filter of the spells; gone with the turn. Read by `canBeCountered`. Absent when none.
+   */
+  readonly uncounterableSpells?: readonly UncounterableSpells[];
   /**
    * Phases added to this turn that have not begun yet (CR 500.8, D-151, D-187), in the order they will occur. An effect that adds a phase "after this
    * phase" puts it directly after the phase that is going on, so it goes first in this list (CR 500.8: the most recently created one occurs first);
@@ -1697,6 +1718,8 @@ export type Instruction =
       readonly graveyardOf?: SeatId;
       /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
       readonly linkTo?: ObjectId;
+      /** "Put onto the battlefield with this ability" (`moveToZone.putWithSource`, CR 400.7): the permanent whose ability puts the card there; the new permanent remembers it (`GameObject.putWith`). */
+      readonly putWith?: ObjectId;
       /** "Exile them until this Vehicle leaves the battlefield" (`moveToZone.until`, CR 610.3): the permanent whose leaving returns the cards exiled. */
       readonly untilLeaves?: ObjectId;
       /** "A creature with the greatest mana value among creatures they control" (`ChooseSelector.greatest` / `least` of a `moveToZone` with `player`, or of a choice with `players`): the choice is among the candidates with the greatest (smallest) value of the stat. */
@@ -3231,6 +3254,13 @@ export interface TurnLog {
    */
   readonly damagedObjects?: readonly ObjectId[];
   /**
+   * The damage each permanent has been dealt this turn (CR 120.3, after prevention, combat or not), by the id it had as it was dealt the damage and then by the seat of the player who
+   * controlled the source as the damage was dealt (CR 608.2h: a source that changes controller or leaves afterwards changes nothing), for "the amount of damage dealt to this creature
+   * this turn by sources they controlled" (`Amount` `damageToThisThisTurn`). It is read through the old id once the permanent has left (CR 400.7, 603.10a). Absent until some permanent
+   * was dealt damage.
+   */
+  readonly damageToObjects?: Readonly<Record<ObjectId, readonly number[]>>;
+  /**
    * Each time a creature was declared as an attacker this turn, by its id (D-151): a creature that attacks in two combat phases appears twice.
    * "Whenever this creature attacks for the first time each turn" reads it.
    */
@@ -3349,6 +3379,11 @@ export interface TurnLog {
   }[];
   /** The permanents whose "once each turn" alternative cost (`grantEnergyAlternative` with `oncePerTurn`) was used this turn (Tlincalli Hunter, CR 601.2b). Absent until one is. */
   readonly oncePerTurnGrants?: readonly ObjectId[];
+  /**
+   * CR 700.14 (Expend): the mana each player has spent to cast spells this turn, by seat (CR 601.2h: the mana actually spent, whatever the spell's cost was). Absent until a player
+   * spends mana on a spell, and a seat that spent none has no entry.
+   */
+  readonly manaSpentOnSpells?: Readonly<Record<number, number>>;
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {

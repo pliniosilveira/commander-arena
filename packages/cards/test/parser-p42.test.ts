@@ -137,7 +137,7 @@ describe('"gain control of ..." (CR 613.1b, 611.2)', () => {
     'Gain control of target creature for as long as ~ remains tapped.',
     'Gain control of target creature for as long as you control a Dragon.',
     'Gain control of target creatures until end of turn.',
-    'Gain control of up to one target creature until end of turn.',
+    'Gain control of up to two target creatures until end of turn.',
     'Gain control of each creature until your next turn.',
     'Gain control of target player until end of turn.',
     'Target opponent gains control of target creature you control until end of turn.',

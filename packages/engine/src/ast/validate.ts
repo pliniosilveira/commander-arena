@@ -64,6 +64,7 @@ import {
   checkDragonsStatic,
   checkGraveyardAbility,
 } from './validate-dragons';
+import { checkGranterRefs } from './validate-granter';
 import { checkBatchKeyword } from './validate-keywords';
 import { layoutStructureIssues } from './validate-layouts';
 import { checkManaAbility } from './validate-mana-ability';
@@ -1168,6 +1169,75 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.types`, 'loseTypes names at least one card type');
       }
       break;
+    case 'animate':
+      // CR 613.6 (Bello, Bard of the Brambles): one effect of layers 4, 6 and 7b for a group, whose members are found before layer 4 changes anything.
+      if (s.subject?.kind !== 'filter') {
+        issue(out, `${path}.subject`, 'animate affects a group of permanents (a filter subject)');
+      } else {
+        checkStaticSubject(s.subject, `${path}.subject`, out);
+        if (
+          filterSome(s.subject.filter, (f) => f.power !== undefined || f.toughness !== undefined)
+        ) {
+          issue(
+            out,
+            `${path}.subject.filter`,
+            'the group of animate is found in layer 4: it cannot compare power or toughness',
+          );
+        }
+      }
+      checkEnumList(out, `${path}.types`, s.types, CARD_TYPES, 'card type');
+      if (!Array.isArray(s.types) || s.types.length === 0) {
+        issue(out, `${path}.types`, 'animate names at least one card type');
+      }
+      if (s.subtypes !== undefined) {
+        if (!Array.isArray(s.subtypes) || s.subtypes.length === 0) {
+          issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list when present');
+        } else {
+          s.subtypes.forEach((t, i) => {
+            if (typeof t !== 'string' || t === '')
+              issue(out, `${path}.subtypes[${i}]`, 'empty subtype');
+          });
+        }
+      }
+      for (const key of ['power', 'toughness'] as const) {
+        if (!Number.isSafeInteger(s[key]))
+          issue(out, `${path}.${key}`, `${key} must be a whole number`);
+      }
+      if (s.keywords !== undefined) {
+        if (!Array.isArray(s.keywords) || s.keywords.length === 0) {
+          issue(out, `${path}.keywords`, 'keywords must be a non-empty list when present');
+        } else {
+          s.keywords.forEach((k, i) => {
+            checkGrantedKeyword(k, `${path}.keywords[${i}]`, out);
+            if (typeof k === 'object' && k !== null && Object.keys(k).length > 1) {
+              issue(out, `${path}.keywords[${i}]`, 'animate gives keywords without parameters');
+            }
+          });
+        }
+      }
+      if (s.abilities !== undefined) {
+        if (!Array.isArray(s.abilities) || s.abilities.length === 0) {
+          issue(out, `${path}.abilities`, 'abilities must be a non-empty list when present');
+        } else {
+          s.abilities.forEach((a, i) => {
+            const at = `${path}.abilities[${i}]`;
+            if (a?.kind === 'mana') checkManaAbility(a, at, out);
+            else if (a?.kind === 'activated' || a?.kind === 'triggered') {
+              checkAbility(a, at, out);
+              if (a.functionsIn !== undefined && a.functionsIn !== 'battlefield') {
+                issue(out, `${at}.functionsIn`, 'a granted ability works on the battlefield');
+              }
+            } else {
+              issue(
+                out,
+                at,
+                `animate gives a mana, an activated or a triggered ability, not ${kindOf(a)}`,
+              );
+            }
+          });
+        }
+      }
+      break;
     case 'setTypes':
       // D-139: "are Juggernauts in addition to their other creature types": named types for a subject.
       if (checkArtifactsStatic(s, path, out)) break;
@@ -1367,6 +1437,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       break;
     case 'dungeonCompleted':
+      break;
+    case 'expend':
+      // CR 700.14: "expend N", a positive whole number of mana.
+      if (!isCount(t.amount) || t.amount < 1) {
+        issue(out, `${path}.amount`, 'amount must be a positive integer');
+      }
       break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
@@ -3548,6 +3624,7 @@ export function validateCardStructure(def: CardDefinition): AstIssue[] {
   }
   def.faces.forEach((face, i) => {
     checkFace(face, `faces[${i}]`, def.support === 'supported', out);
+    checkGranterRefs(face, `faces[${i}]`, out);
     // CR 702.94a (D-274): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
     // cost on any other face would never be offered: refused here instead of accepted and dropped without a word.
     if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'harmonize')) {

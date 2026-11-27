@@ -751,6 +751,11 @@ export function lowerAmount(
       if (!player.ok) return player;
       return { ok: true, value: { kind: 'damageDealtToThisTurn', player: player.value }, rule };
     }
+    case 'damageToThisThisTurn': {
+      const blocked = needs('damageToThisThisTurn');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'damageToThisThisTurn', by: 'you' }, rule };
+    }
     case 'commanderColors': {
       const blocked = needs('commanderColors');
       if (blocked !== null) return blocked;
@@ -1323,6 +1328,7 @@ export const AMOUNT_NEEDS = [
   'amount:commanderCasts',
   'amount:lifeTotalOf',
   'amount:damageDealtToThisTurn',
+  'amount:damageToThisThisTurn',
   'amount:greatestCountOfAnOpponent',
   'amount:colorsAmong',
   'amount:greatestPowerAmong',

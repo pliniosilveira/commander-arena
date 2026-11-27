@@ -837,6 +837,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'pairReturn'
     | 'castCard'
     | 'buyback'
+    // CR 702.175a, 601.2b: "pay the offspring cost?", asked as a spell with offspring is cast, only when the whole cost with it can be paid; `source` is the spell on the
+    // stack, `cost` the offspring cost. Accepting pays it, declining casts the spell without it, and `cancel` rewinds the cast, as for the kicker.
+    | 'offspring'
     | 'exileMore'
     | 'exert'
     | 'clash'

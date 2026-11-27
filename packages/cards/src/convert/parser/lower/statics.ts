@@ -31,6 +31,7 @@ import { lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
 import { isAngelStatic, lowerAngelStatic } from './angels';
+import { isAnimateStatic, lowerAnimateStatic } from './animate';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
@@ -725,6 +726,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantKeywordToHandCards'];
     case 'equipmentKit':
       return ['static:setTypes', 'static:grantAbility', 'static:grantKeyword', 'keyword:equip'];
+    case 'animate':
+      return ['static:animate'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
     case 'spellEvoke':
@@ -1381,6 +1384,24 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isEquipmentKitStatic(first)) {
     const group = subjectOf(statement.subject, ctx);
     return group.ok ? lowerEquipmentKitStatic(ability, group.value) : group;
+  }
+  // Issue 110 (Bello, Bard of the Brambles; CR 613.1d, 613.1f, 613.4b, 613.6): a group that is creatures of a stated size as well, with what they have, perhaps "during your turn".
+  if (isAnimateStatic(first)) {
+    const group = subjectOf(statement.subject, ctx);
+    if (!group.ok) return group;
+    let condition: Condition | undefined;
+    if (statement.condition !== undefined) {
+      ctx.staticCondition = true;
+      ctx.staticSubjectIsSelf = false;
+      const lowered = lowerCondition(statement.condition, true, ctx);
+      ctx.staticCondition = false;
+      if (!lowered.ok) return lowered;
+      if (conditionNamesLayerValue(lowered.value)) return failure(ability);
+      condition = lowered.value;
+    }
+    return lowerAnimateStatic(ability, group.value, condition, (effect, subject) =>
+      effectOf(effect, subject, ability, ctx),
+    );
   }
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);

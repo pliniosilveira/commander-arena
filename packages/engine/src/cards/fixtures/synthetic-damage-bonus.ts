@@ -10,6 +10,25 @@ import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 
 export const SYNTHETIC_DAMAGE_BONUS_LIST: readonly CardDefinition[] = [
+  // "If a creature you control would deal damage to a permanent or player, it deals double that damage instead." (`damageDouble` of the creatures on the battlefield)
+  singleFace({
+    name: 'SYNTHETIC Brutal Rite',
+    manaCost: ['2', 'R', 'R', 'R'],
+    types: ['enchantment'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'If a creature you control would deal damage to a permanent or player, it deals double that damage instead.',
+    abilities: [
+      {
+        kind: 'replacement',
+        replacement: {
+          kind: 'damageDouble',
+          sources: { types: ['creature'], zone: 'battlefield', controller: 'you' },
+        },
+      },
+    ],
+  }),
   // "If a source you control would deal noncombat damage to an opponent, it deals that much damage plus 2 instead."
   singleFace({
     name: 'SYNTHETIC Barbed Hall',

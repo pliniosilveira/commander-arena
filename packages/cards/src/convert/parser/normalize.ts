@@ -161,8 +161,21 @@ export function namesItselfInQuotes(text: string, options: NormalizeOptions): bo
   const names = selfNames(options).map(
     (name) => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'u'),
   );
-  return [...stripReminderText(text).matchAll(QUOTED_SPAN)].some((quoted) =>
-    names.some((re) => re.test(quoted[0])),
+  return [...stripReminderText(text).matchAll(QUOTED_SPAN)].some(
+    (quoted) => !SELF_NOUN_TEST.test(quoted[0]) && names.some((re) => re.test(quoted[0])),
+  );
+}
+
+/** A quotation that says "this creature" (or another "this <type>") has a holder that word names: the card's name in it is the permanent that grants the ability (`¤`, `noun.granter`). */
+const SELF_NOUN_TEST = new RegExp(`\\bthis (?:${SELF_NOUNS})\\b`, 'i');
+
+/** The card's names inside a quotation that also says "this creature" are written `¤`: there `~` stays the holder of the quoted ability, which "this creature" names. */
+function granterInQuotes(text: string, options: NormalizeOptions): string {
+  const names = selfNames(options).map(
+    (name) => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(name)}(?![\\p{L}\\p{N}])`, 'gu'),
+  );
+  return text.replace(QUOTED_SPAN, (quoted) =>
+    SELF_NOUN_TEST.test(quoted) ? names.reduce((q, re) => q.replace(re, '¤'), quoted) : quoted,
   );
 }
 
@@ -331,7 +344,7 @@ export function withHalfRounding(line: string): string {
 const PLANESWALKER_TYPE_LEAD = /\b(?:each|another|other|an?|target|all|those) $/iu;
 
 export function normalizeOracleText(text: string, options: NormalizeOptions): string {
-  let out = stripReminderText(text);
+  let out = granterInQuotes(stripReminderText(text), options);
   for (const name of selfNames(options)) {
     // CR 205.3j (Garruk, Cursed Huntsman: "put a loyalty counter on each Garruk you control"): a planeswalker type is also the short name of the card, but after a word that makes it a
     // kind of permanent ("each", "another", "a", ...) it is the type, which the noun rules read, and not the card itself.

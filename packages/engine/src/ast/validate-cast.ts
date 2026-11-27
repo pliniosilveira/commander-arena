@@ -458,7 +458,15 @@ export function checkCastFace(
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
   const has = (
-    kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace' | 'rebound' | 'cipher',
+    kind:
+      | 'kicker'
+      | 'flashback'
+      | 'multikicker'
+      | 'buyback'
+      | 'offspring'
+      | 'retrace'
+      | 'rebound'
+      | 'cipher',
   ) => abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
@@ -509,6 +517,22 @@ export function checkCastFace(
   // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
   if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'buyback is on an instant or a sorcery (CR 702.27a)');
+  }
+  // CR 702.175a: "When this permanent enters": offspring is on a permanent spell, which a land is not (it is played, never cast).
+  if (
+    has('offspring') &&
+    (face.types.includes('instant') ||
+      face.types.includes('sorcery') ||
+      face.types.includes('land'))
+  ) {
+    issue(out, `${path}.abilities`, 'offspring is on a permanent spell (CR 702.175a)');
+  }
+  // CR 702.175a: "if its offspring cost was paid" is the condition of the keyword's own trigger.
+  if (
+    !has('offspring') &&
+    (mentionsKind(abilities, 'offspringPaid') || mentionsKind(spell, 'offspringPaid'))
+  ) {
+    issue(out, path, 'offspringPaid needs an offspring ability (CR 702.175a)');
   }
   // CR 702.88a: "Rebound appears on some instants and sorceries".
   if (has('rebound') && !face.types.includes('instant') && !face.types.includes('sorcery')) {

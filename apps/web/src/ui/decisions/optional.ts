@@ -56,6 +56,13 @@ export function kickerPrompt(cost: readonly Cost[]): string {
   return `Pay the kicker cost: ${parts.join(' and ')}?`;
 }
 
+/** The offspring question (CR 702.175a, 601.2b): "Pay the offspring cost {1}?", asked as the spell is cast. */
+export function offspringPrompt(cost: readonly Cost[]): string {
+  const parts = cost.map(kickerCostPart);
+  const paid = parts.length === 0 ? '' : ` ${parts.join('')}`;
+  return `Pay the offspring cost${paid}? You'll create a 1/1 token copy when it enters.`;
+}
+
 /** The buyback question (CR 702.27a, 601.2b): "Pay the buyback cost {2}?", asked as the spell is cast. */
 export function buybackPrompt(cost: readonly Cost[]): string {
   const parts = cost.map(kickerCostPart);
@@ -494,6 +501,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       prompt: buybackPrompt(d.cost ?? []),
       yes: 'Buy back',
       no: "Don't buy back",
+      cancellable: true,
+    };
+  }
+  if (d.purpose === 'offspring') {
+    // Offspring (CR 702.175a, 601.2b): asked as the spell is cast, only when the whole cost with it can be paid. Declining casts the spell without it; Cancel rewinds the
+    // cast (CR 733).
+    return {
+      prompt: offspringPrompt(d.cost ?? []),
+      yes: 'Pay',
+      no: "Don't pay",
       cancellable: true,
     };
   }

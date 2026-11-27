@@ -46,6 +46,7 @@ import {
   mayCastBlitzFromGraveyard,
   modeCostsOf,
   namedAlternativeCostOf,
+  offspringCostOf,
   replicateCostOf,
 } from './alt-costs';
 import { beholdCandidates } from './behold';
@@ -306,6 +307,8 @@ export interface CostRequest {
   readonly replicas?: number;
   /** Whether the buyback cost is paid (CR 702.27a): left out, what the spell on the stack says (`StackData.boughtBack`); false for a card that is not on the stack yet. */
   readonly bought?: boolean;
+  /** Whether the offspring cost is paid (CR 702.175a): left out, what the spell on the stack says (`StackData.offspringPaid`); false for a card that is not on the stack yet. */
+  readonly offspring?: boolean;
   /** The card's own object while it is still in its zone (see `reductionFor`). */
   readonly excluded?: ObjectId;
   /** The X announced for the spell (CR 107.3a, 601.2b): 0 when it has none or none was announced yet. */
@@ -479,6 +482,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 702.27a: the buyback cost is an additional cost, paid once when the caster chose to (mana only).
   const buyback = (request.bought ?? spell.stack?.boughtBack === true) ? buybackCostOf(face) : null;
   if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
+  // CR 702.175a: the offspring cost is an additional cost, paid once when the caster chose to (mana only).
+  const offspring =
+    (request.offspring ?? spell.stack?.offspringPaid === true) ? offspringCostOf(face) : null;
+  if (offspring !== null) symbols.push(...manaSymbolsOf(offspring));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);
   const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;

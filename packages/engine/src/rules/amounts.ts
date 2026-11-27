@@ -353,6 +353,12 @@ export function amountOf(
   if (amount.kind === 'controllerLifeLostThisTurn') {
     return getSeat(state, ctx.controller).lifeLostThisTurn;
   }
+  if (amount.kind === 'damageToThisThisTurn') {
+    // CR 120.3, 603.10a: read through the id the permanent had on the battlefield, which a leaves-the-battlefield ability still has as its source.
+    return ctx.source === null
+      ? 0
+      : (state.turnLog.damageToObjects?.[ctx.source]?.[ctx.controller] ?? 0);
+  }
   if (amount.kind === 'opponentsLifeLostThisTurn') {
     // CR 119.3, 102.2: the life lost this turn by every opponent still in the game, added up.
     return opponentsOf(state, ctx.controller).reduce(

@@ -472,6 +472,11 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
     // agent pays it (a mana cost only: `validateCard` has no other).
     return { kind: 'acceptOptional' };
   }
+  if (d.purpose === 'offspring') {
+    // Offspring (CR 702.175a): the engine asks only when the whole cost with the offspring cost can be paid, so the mana is there; a second body, a 1/1 with every ability of
+    // the creature, is worth the mana, so the agent pays it (a mana cost only: `validateCard` has no other).
+    return { kind: 'acceptOptional' };
+  }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
   // CR 103.6: "begin the game with this card on the battlefield?" (a Leyline): a free permanent, so the agent always takes it.
   if (d.purpose === 'openingHand') return { kind: 'acceptOptional' };

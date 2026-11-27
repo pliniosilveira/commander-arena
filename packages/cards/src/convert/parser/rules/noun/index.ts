@@ -45,6 +45,7 @@ import { DESERT_BLOOM_NOUN_RULES } from './desert-bloom';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
+import { EACH_PAIR_NOUN_RULES } from './each-pair';
 import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
 import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
 import { ESPERS_NOUN_RULES } from './espers';
@@ -1195,6 +1196,8 @@ export const NOUN_RULES = [
   ...PLAYERS_WHO_NOUN_RULES,
   // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
   ...PAIR_NOUN_RULES,
+  // Issue 110: "each Fungus and Saproling you control", "each non-Equipment artifact and non-Aura enchantment you control": before `noun.each-permanent`, which would stop at "and".
+  ...EACH_PAIR_NOUN_RULES,
   NOUN_PLAYER,
   // Ahoy Mateys deck, group 10 (Siren Stormtamer): "target spell or ability that targets you or a creature you control" starts like "target spell", which reads a prefix of it: tried first.
   ...AHOY_G10_NOUN_RULES,

@@ -188,6 +188,8 @@ function copyObject(
       // CR 707.10: the additional costs paid are copied too (the number of times a replicate cost was paid); only casting
       // triggers Replicate, so a copy never copies again.
       ...(stack.replicated === undefined ? {} : { replicated: stack.replicated }),
+      // CR 702.175a, 707.10: whether the offspring cost was paid is copied with the spell.
+      ...(stack.offspringPaid === true ? { offspringPaid: true as const } : {}),
       // CR 702.174k, 707.10 (D-135): the opponent the gift was promised to is a choice of the spell, copied with it.
       ...(stack.giftTo === undefined ? {} : { giftTo: stack.giftTo }),
       flashback: false,

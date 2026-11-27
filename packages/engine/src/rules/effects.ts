@@ -153,7 +153,7 @@ import { successorsOf } from './melded';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
-import { cardCandidates, isCardZoneChoice, runChooseMove } from './move-choice';
+import { cardCandidates, fixedLimit, isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { runMyriad } from './myriad';
 import { nextMainStep } from './next-main';
@@ -1673,6 +1673,12 @@ function runEffect(
               ...(effect.untilSourceLeaves === true && res.source !== null
                 ? { untilLeaves: res.source }
                 : {}),
+              // CR 400.7 (Kodama of the East Tree): "put onto the battlefield with this ability": the chosen card's new permanent remembers the source.
+              ...(effect.putWithSource === true &&
+              effect.to === 'battlefield' &&
+              res.source !== null
+                ? { putWith: res.source }
+                : {}),
               // CR 608.2d: "any number of non-Angel creatures you control": none up to all of the candidates.
               ...(sel.anyNumber === true && sel.minCardTypes === undefined
                 ? { anyNumber: true as const }
@@ -1683,7 +1689,7 @@ function runEffect(
                 : { together: { later: laterChoosers, held: [] } }),
               ...(sel.greatest === undefined ? {} : { greatest: sel.greatest }),
               ...(sel.least === undefined ? {} : { least: sel.least }),
-              filter: sel.filter,
+              filter: fixedLimit(state, sel.filter, ctx, targets),
               // Issue 102, 509 (Tasigur): "of an opponent's choice": the opponent the controller chose (`chooseOpponent`, CR 801.5a), the only one when one is left.
               ...(sel.chosenBy === 'opponent' && opponentOf(state, res) !== undefined
                 ? { decider: opponentOf(state, res) as SeatId }
@@ -2808,6 +2814,19 @@ function runEffect(
     case 'damageCantBePreventedThisTurn':
       // CR 615.12, 611.2a: for the rest of this turn no damage is prevented (read by `damageCantBePrevented`, `rules/global-statics.ts`).
       return done({ ...state, turn: { ...state.turn, damageUnpreventable: true } });
+
+    case 'spellsCantBeCounteredThisTurn':
+      // CR 101.2, 611.2a: for the rest of this turn the spells the filter names are not countered (read by `canBeCountered`, `rules/restrictions.ts`).
+      return done({
+        ...state,
+        turn: {
+          ...state.turn,
+          uncounterableSpells: [
+            ...(state.turn.uncounterableSpells ?? []),
+            { seat: res.controller, spells: effect.spells },
+          ],
+        },
+      });
 
     case 'additionalLandDropThisTurn':
       // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.

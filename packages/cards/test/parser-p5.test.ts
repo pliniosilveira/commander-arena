@@ -427,7 +427,7 @@ describe('Turn to Frog: "loses all abilities and becomes a blue Frog" (CR 613.1d
     ['Target creature becomes an artifact until end of turn.', 'artifact until'],
     [
       'Target land becomes a 3/3 blue Elemental creature until end of turn. It is still a land.',
-      '3/3',
+      'blue Elemental creature until',
     ],
     ['Target creature becomes a copy of target creature until end of turn.', 'copy'],
     ['Target creature becomes a Dragon until your next turn.', 'until your next turn'],

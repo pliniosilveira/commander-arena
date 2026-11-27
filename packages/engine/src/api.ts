@@ -41,6 +41,7 @@ import {
   answerKicker,
   answerKicks,
   answerModes,
+  answerOffspring,
   answerPayment,
   answerPayOptions,
   answerReplicas,
@@ -448,6 +449,8 @@ function answerConfirm(
   if (d.purpose === 'gift') return answerGiftChoice(state, accept);
   // CR 702.27a, 601.2b (Galadriel group 3): "pay the buyback cost?" is asked while the spell is being cast.
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
+  // CR 702.175a, 601.2b: "pay the offspring cost?" is asked while the spell is being cast.
+  if (d.purpose === 'offspring') return answerOffspring(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
   // CR 103.6: "begin the game with this card on the battlefield?", asked after the mulligans and before the first turn.
@@ -1244,7 +1247,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         (d.purpose === 'kicker' ||
           d.purpose === 'gift' ||
           d.purpose === 'costChoice' ||
-          d.purpose === 'buyback') &&
+          d.purpose === 'buyback' ||
+          d.purpose === 'offspring') &&
         action.kind === 'cancel'
       ) {
         return cancelCast(state);

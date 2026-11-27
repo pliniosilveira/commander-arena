@@ -213,6 +213,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlayOneLifeForMana',
     // Grand Larceny deck, group B (Silent-Blade Oni, Extract Brain): "You may cast a spell from among those cards without paying its mana cost" after looking at a hand (`castFree.fromHand`).
     'castFreeFromHand',
+    // Sunbird's Invocation (CR 701.20a, 608.2g): "Reveal the top X cards of your library ... You may cast a spell ... from among cards revealed this way without paying its mana cost" (`lookAtTop` with `revealAll` and `take.to` `castFree`).
+    'lookRevealCastFree',
     // Nalfeshnee (CR 707.10f, 613.1f): "If it's a permanent spell, the copy gains haste and ..." (`copySpell.permanentGains`).
     'copySpellPermanentGains',
     // Issue 97 (Summon: Esper Valigarmanda): "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" as an ability resolves (`castFree` with `paying`).
@@ -610,6 +612,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDropThisTurn',
     // Exit from Exile deck (Stomp): "Damage can't be prevented this turn." (CR 615.12).
     'damageCantBePreventedThisTurn',
+    // Domri, Anarch of Bolas: "Creature spells you cast this turn can't be countered." (CR 101.2, 701.6a).
+    'spellsCantBeCounteredThisTurn',
     // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
     'moveCountersOnto',
     // Gatewatch Beacon: "move a loyalty counter from this artifact onto that planeswalker" (CR 122.1).
@@ -783,6 +787,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'ringTempted',
     // CR 309.7, 701.49c: "Whenever you complete a dungeon".
     'dungeonCompleted',
+    // CR 700.14: "Whenever you expend N".
+    'expend',
     // D-598: "When this Class becomes level N" (CR 716.2).
     'classLevel',
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
@@ -994,6 +1000,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'replicate',
     // Galadriel group 3: Buyback (CR 702.27a).
     'buyback',
+    // CR 702.175a: Offspring.
+    'offspring',
     'gravestorm',
     // CR 702.88a: Rebound.
     'rebound',
@@ -1492,6 +1500,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayerWhoChose',
     // CR 701.54e (Galadriel, Elven-Queen): "your Ring-bearer" (`ObjectRef` `ringBearer`).
     'ringBearer',
+    // CR 113.6, 613.1f (Grothama, All-Devouring): the permanent that grants the ability (`ObjectRef` `granter`).
+    'granter',
     // D-135: "nonbasic land" (`ObjectFilter.notSupertypes`), "any number of other permanents" and "a creature with the
     // greatest power among creatures they control" (`ChooseSelector.anyNumber` and `greatest`), "the chosen player" of a gift.
     'notSupertypes',
@@ -1650,6 +1660,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 602.2b, 701.9a (Moria Scavenger): "If the discarded card was a creature card".
     'discardedAsCostMatches',
     'giftPromised',
+    // CR 702.175a: "if its offspring cost was paid".
+    'offspringPaid',
     'opponentControlsAtLeast',
     // D-139: "if you control the artifact with the greatest mana value or tied for the greatest mana value".
     'controlsGreatest',
@@ -1817,6 +1829,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromGraveyard',
     // D-229: "~ isn't a creature" (layer 4, with a condition that reads no characteristic).
     'loseTypes',
+    // Bello, Bard of the Brambles: "each ... is a 4/4 Elemental creature in addition to its other types and has ...": one effect of layers 4, 6 and 7b (CR 613.6).
+    'animate',
     // D-139: base power and toughness, "can't be blocked by Walls", "has the power, toughness and creature types of the last creature
     // card exiled with it", "You may cast artifact spells as though they had flash".
     'setPt',
@@ -2017,6 +2031,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'extreme',
     'difference',
     'opponentCount',
+    // CR 120.3 (Grothama, All-Devouring): "the amount of damage dealt to this creature this turn by sources they controlled".
+    'damageToThisThisTurn',
     'opponentsAttackedThisCombat',
     // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
     'movedCount',
@@ -2378,6 +2394,8 @@ export const ABILITY_FEATURES = [
   'mayPlayOneLifeForMana',
   /** "You may cast a spell from among those cards without paying its mana cost" after "look at that player's hand" (Silent-Blade Oni, Extract Brain, CR 608.2g, 402.3): the engine's `castFree.fromHand`. */
   'castFreeFromHand',
+  /** "Reveal the top X cards of your library. You may cast a spell with mana value X or less from among cards revealed this way without paying its mana cost" (Sunbird's Invocation, CR 701.20a, 608.2g): the engine's `lookAtTop` with `revealAll` and `take.to` `castFree`. */
+  'lookRevealCastFree',
   /** "If it's a permanent spell, the copy gains haste and \"At the beginning of the end step, sacrifice this permanent.\"" (Nalfeshnee, CR 707.10f, 613.1f): the engine's `copySpell.permanentGains`. */
   'copySpellPermanentGains',
   /** "You may cast an instant or sorcery card exiled with this Saga, and mana of any type can be spent to cast that spell" (issue 97, CR 608.2g, 609.4b): the engine's `castFree` with `paying` and `anyManaType`. */
@@ -2835,6 +2853,8 @@ export const SELECTOR_KINDS = [
   'eachPlayerWhoChose',
   /** "Put a +1/+1 counter on your Ring-bearer" (CR 701.54e, Galadriel, Elven-Queen): the engine's `ObjectRef` `ringBearer`. */
   'ringBearer',
+  /** "Other creatures have \"... fight [this card].\"" (CR 113.6, 613.1f, Grothama, All-Devouring): the engine's `ObjectRef` `granter`. */
+  'granter',
   /** "Nonbasic land" (CR 205.4, D-135): the engine's `ObjectFilter.notSupertypes`. */
   'notSupertypes',
   /** "Sacrifice any number of other permanents" (D-135): the engine's `ChooseSelector.anyNumber`. */
@@ -2987,6 +3007,8 @@ export const CONDITION_KINDS = [
   'discardedAsCostMatches',
   /** "If the gift was promised" (CR 702.174k, D-135): the engine's `giftPromised`. */
   'giftPromised',
+  /** "If its offspring cost was paid" (CR 702.175a): the engine's `offspringPaid`. */
+  'offspringPaid',
   /** "If an opponent controls four or more nonbasic lands" (D-135): the engine's `opponentControlsAtLeast`. */
   'opponentControlsAtLeast',
   /** "If you do" (CR 603.12, D-135): the engine's `didPrevious`, after a `may` effect. */
@@ -3204,6 +3226,8 @@ export const STATIC_KINDS = [
   'castFromGraveyard',
   /** "~ isn't a creature" (CR 613.1d, 205.1a, D-229): the engine's static `loseTypes`, layer 4. */
   'loseTypes',
+  /** "Each ... is a 4/4 Elemental creature in addition to its other types and has ..." (CR 613.1d, 613.1f, 613.4b, 613.6): the engine's static `animate`. */
+  'animate',
   /** "Other creatures you control have base power and toughness 5/3" (CR 613.4b, D-139): the engine's static `setPt`. */
   'setPt',
   /** "Juggernauts you control can't be blocked by Walls" (CR 509.1b, D-139): the engine's `cantBeBlockedBy`. */
@@ -3442,6 +3466,8 @@ export const AMOUNT_KINDS = [
   'difference',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
+  /** "The amount of damage dealt to this creature this turn by sources they controlled" (CR 120.3, Grothama, All-Devouring): the engine's `damageToThisThisTurn`. */
+  'damageToThisThisTurn',
   /** "Each opponent you attacked this combat" (CR 702.121a, Melee): the engine's `opponentsAttackedThisCombat`. */
   'opponentsAttackedThisCombat',
   /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */
@@ -3643,6 +3669,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   castFreeCreatureGains: true,
   castFreeDiscardInstead: true,
   castFreeFromHand: true,
+  lookRevealCastFree: true,
   mayPlayOneLifeForMana: true,
   copySpellPermanentGains: true,
   castPayingFromLinkedExile: true,
@@ -3896,6 +3923,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   blight: true,
   additionalLandDropThisTurn: true,
   damageCantBePreventedThisTurn: true,
+  spellsCantBeCounteredThisTurn: true,
   moveCountersOnto: true,
   moveCounterFromThis: true,
   forgetLoyaltyActivations: true,
@@ -3982,6 +4010,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   exerted: true,
   ringTempted: true,
   dungeonCompleted: true,
+  expend: true,
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
@@ -4049,6 +4078,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   reconfigure: true,
   kicker: true,
   buyback: true,
+  offspring: true,
   flashback: true,
   prowess: true,
   ward: true,

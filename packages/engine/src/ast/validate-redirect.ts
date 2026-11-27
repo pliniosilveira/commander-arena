@@ -40,7 +40,9 @@ function checkDamageBonus(
     filterSome(
       r.sources,
       (f) =>
-        f.zone !== undefined ||
+        // CR 109.2: "a creature you control" doubles the damage of permanents only (`damageDouble` with `zone: 'battlefield'` at the top of the filter).
+        (f.zone !== undefined &&
+          !(r.kind === 'damageDouble' && f === r.sources && f.zone === 'battlefield')) ||
         f.owner !== undefined ||
         f.stackKind !== undefined ||
         f.manaValueX !== undefined ||
@@ -56,7 +58,7 @@ function checkDamageBonus(
     issue(
       out,
       `${path}.sources`,
-      'the sources are read as the damage would be dealt: no zone, owner, stackKind, X or "this turn" reading',
+      'the sources are read as the damage would be dealt: no zone (but the battlefield, for a doubling), owner, stackKind, X or "this turn" reading',
     );
   }
 }

@@ -20,6 +20,7 @@ import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
 import { MIND_FLAYARRRS_G8_KEYWORD_RULES } from './mind-flayarrrs-g8';
 import { NINJUTSU_KEYWORD_RULES } from './ninjutsu';
 import { numberedKeyword } from './numbered';
+import { OFFSPRING_KEYWORD_RULES } from './offspring';
 import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { PLOT_KEYWORD_RULES } from './plot';
 import { protectionKeyword } from './protection';
@@ -451,6 +452,8 @@ export const KEYWORD_RULES = [
   ...STATION_KEYWORD_RULES,
   // Galadriel deck, group 3 (D-548): "Buyback {2}".
   ...GALADRIEL_G3_KEYWORD_RULES,
+  // Animated Army deck (issue 110): "Offspring {1}".
+  ...OFFSPRING_KEYWORD_RULES,
   // Mind Flayarrrs deck, group 8: "Replicate—Tap an untapped Horror you control."
   ...MIND_FLAYARRRS_G8_KEYWORD_RULES,
   // CR 702.170a (Plot): "Plot {3}{U}".

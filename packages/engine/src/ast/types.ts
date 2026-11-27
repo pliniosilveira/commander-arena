@@ -471,6 +471,13 @@ export type Amount =
    */
   | { readonly kind: 'opponentCount' }
   /**
+   * "The amount of damage dealt to this creature this turn by sources they controlled" (Grothama, All-Devouring; CR 120.3, 608.2h, 603.10a): the damage the permanent the ability
+   * belongs to has been dealt this turn, after prevention, combat or not, by sources the controller of the effect controlled as each dealt its damage (`by: 'you'`; in a `forEachPlayer`
+   * with `runsAs: 'each'` that is each player in turn). The permanent is the object it was on the battlefield: once it has left, what it was dealt before it left is still read
+   * (a leaves-the-battlefield ability looks back in time), and a permanent that came back is a new object that was dealt none of it (CR 400.7). Only in an ability of a permanent.
+   */
+  | { readonly kind: 'damageToThisThisTurn'; readonly by: 'you' }
+  /**
    * "Each opponent you attacked this combat" (CR 702.121a Melee, 508.6; Tifa, Martial Artist): how many of the controller's opponents still in the game were attacked, as players,
    * by the controller's creatures in the combat phase in progress (`GameState.combatAttacks`: a creature attacking a planeswalker or a battle attacks that permanent, not its controller),
    * each opponent once however many creatures attacked them. 0 outside a combat phase of the controller. Not for a static ability's power or toughness.
@@ -1518,6 +1525,14 @@ export type ObjectRef =
    * creature has left or changed controller).
    */
   | { readonly kind: 'ringBearer' }
+  /**
+   * The permanent whose static ability gives the ability this reference is in (Grothama, All-Devouring: "Other creatures have \"Whenever this creature attacks, you may have it fight
+   * Grothama, All-Devouring.\"", CR 113.6, 201.5, 613.1f): inside the quotation `this` is the creature that has the ability and the card's name is the permanent that grants it. A card
+   * writes it without `object` and only inside the `ability` of a static `grantAbility`; the engine fills in `object` as the static ability gives the ability to a permanent (`derive`),
+   * so the instance each permanent has names the one permanent that gave it. It is that permanent while it is on the battlefield as the same object: nothing once it has left (CR 400.7),
+   * so an ability already on the stack then does nothing with it.
+   */
+  | { readonly kind: 'granter'; readonly object?: ObjectId }
   /**
    * "The exiled card" of a linked ability (D-145, CR 607.2a, 702.75a Hideaway): the cards the permanent the ability belongs to exiled with its
    * linked ability (`exile.linked`, or the exile of Hideaway) that are still in exile, in the order they were exiled. Nothing when the
@@ -5184,6 +5199,13 @@ export type Effect =
    */
   | { readonly kind: 'damageCantBePreventedThisTurn' }
   /**
+   * "Creature spells you cast this turn can't be countered." (Domri, Anarch of Bolas; CR 101.2, 701.6a, 611.2a): until the end of this turn the spells `spells` matches (the spell as it is
+   * on the stack: its types, colors, mana value; `controller` is relative to the controller of the effect: "you") are not countered by a spell or ability that tries to; they stay on the
+   * stack and resolve. It begins as the effect resolves and applies to a spell cast before or after that, as long as the turn lasts. A spell or ability that counters can still target the
+   * spell, and its other effects still happen. Read where a counter is applied (`canBeCountered`, `rules/restrictions.ts`).
+   */
+  | { readonly kind: 'spellsCantBeCounteredThisTurn'; readonly spells: ObjectFilter }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
@@ -6484,6 +6506,12 @@ export type Trigger =
   | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
   /** "Whenever you complete a dungeon" (CR 309.7, 701.49c; the `dungeonCompleted` event): once each time the dungeon of the controller of the ability is completed. */
   | { readonly kind: 'dungeonCompleted' }
+  /**
+   * "Whenever you expend N" (CR 700.14): the controller of the ability pays a cost to cast a spell, and the mana they spent to cast spells this turn was less than `amount` before
+   * that payment and is at least `amount` after it (`TurnLog.manaSpentOnSpells`, the `expend` of the `spellCast` event). At most once a turn, since the total never goes down; it
+   * counts the mana actually spent, whatever the cost was, and the mana spent before the permanent with the ability entered.
+   */
+  | { readonly kind: 'expend'; readonly amount: number }
   /** "When this Class becomes level N" (CR 716.2, D-235): once as its level changes to `level`. */
   | { readonly kind: 'classLevel'; readonly level: number }
   /**
@@ -7310,6 +7338,15 @@ export type Keyword =
    * on the stack as it would resolve, goes where it goes: the card returns to the hand only as the spell resolves. A copy of the spell is not a card and goes nowhere.
    */
   | { readonly kind: 'buyback'; readonly cost: readonly Cost[] }
+  /**
+   * CR 702.175a (Offspring): two abilities of a permanent card. An optional additional cost: the caster is asked while casting (CR 601.2b, after the kicker, replicate and buyback
+   * questions and before the gift, X and the targets) and a spell whose offspring cost was paid pays it on top of its others (CR 601.2f), once. And an enters trigger with an
+   * intervening "if its offspring cost was paid" (`offspringPaid`, CR 603.4) that creates a token that's a copy of the permanent, except it's 1/1, which the engine writes from
+   * the keyword (`rules/derive-keywords.ts`): a permanent that has lost the keyword as it enters does not trigger, and the copy is made from last-known information when the
+   * permanent has left (CR 608.2h). The spell and the permanent it becomes remember the payment (`StackData.offspringPaid`, `GameObject.offspringPaid`); a token is not cast, so
+   * the copy makes no other. One offspring per card (CR 702.175b is not supported), only `mana` costs without {X}.
+   */
+  | { readonly kind: 'offspring'; readonly cost: readonly Cost[] }
   /**
    * CR 702.34a (Flashback), on an instant or sorcery: it may be cast from its owner's graveyard by
    * paying `cost` rather than its mana cost (an alternative cost, CR 118.9), and a spell cast that
@@ -8324,6 +8361,12 @@ export type Condition =
    */
   | { readonly kind: 'giftPromised' }
   /**
+   * "If its offspring cost was paid" (CR 702.175a, 603.4): the spell was cast with its offspring cost paid, or the permanent came from such a spell. Read from the spell on the
+   * stack, from the permanent that remembers it, or from last-known information once either has left (CR 113.7a), as `kicked` is. Written by the engine for the Offspring
+   * keyword, which the face must have (`validateCard`).
+   */
+  | { readonly kind: 'offspringPaid' }
+  /**
    * "If an opponent controls four or more nonbasic lands" (D-135): some one opponent of the controller controls at least
    * `count` permanents on the battlefield that match the filter (not the opponents together). `filter` names no zone or
    * controller.
@@ -9079,6 +9122,8 @@ export type Replacement =
    * a replacement effect of a permanent on the battlefield for every damage event, combat or not, whose source `sources` matches (read as for `damageBonus`, `controller: 'you'`
    * required) and whatever the recipient: a player or a permanent of any controller. The same source deals twice the damage; an event of 0 damage is no event. It applies once to an
    * event (CR 614.5) and the player dealt the damage orders it with the other effects that change the event (CR 616.1, `rules/damage-order.ts`). It is the ability of the permanent.
+   * With `zone: 'battlefield'` in `sources`, "If a creature you control would deal damage ..." (Gratuitous Violence, CR 109.2): only a permanent, as it is or as it last
+   * was on the battlefield, never a spell or a card elsewhere.
    */
   | { readonly kind: 'damageDouble'; readonly sources: ObjectFilter }
   /**
@@ -9735,6 +9780,31 @@ export type StaticEffect =
       readonly kind: 'loseTypes';
       readonly subject: StaticSubject;
       readonly types: readonly CardType[];
+    }
+  /**
+   * "Each non-Equipment artifact and non-Aura enchantment you control with mana value 4 or greater is a 4/4 Elemental creature in addition to its other types and has indestructible, haste,
+   * and "Whenever this creature deals combat damage to a player, draw a card."" (Bello, Bard of the Brambles; CR 613.1d, 613.1f, 613.4b, 205.1b): one effect that applies in three layers.
+   * Each permanent the subject names has `types` and `subtypes` in addition to everything it has (layer 4), has the `keywords` and `abilities` (layer 6) and has base power and toughness
+   * `power`/`toughness` (layer 7b), each with the timestamp of the permanent that has this ability (CR 613.7a). What the subject matches is read as a static `setTypes` reads it. CR 613.6: the
+   * effect starts to apply in layer 4, so it goes on applying in the later layers even when its permanent loses all abilities in layer 6, which the separate static abilities
+   * `setTypes`, `setPt` and `grantKeyword` do not do; an effect that takes the abilities of the affected permanent away later (layer 6, timestamp order) still removes what this one gave.
+   * A condition is one a static `setTypes` may have (it reads no characteristic: "during your turn").
+   */
+  | {
+      readonly kind: 'animate';
+      readonly subject: Extract<StaticSubject, { readonly kind: 'filter' }>;
+      /** The card types added, never empty ("creature"). */
+      readonly types: readonly CardType[];
+      readonly subtypes?: readonly Subtype[];
+      readonly power: number;
+      readonly toughness: number;
+      /** Keywords without parameters (`GRANTABLE_KEYWORDS`), each given in layer 6. */
+      readonly keywords?: readonly Keyword[];
+      /** Activated, triggered and mana abilities given in layer 6, each read as the affected permanent's own. */
+      readonly abilities?: readonly (
+        | ManaAbility
+        | Extract<Ability, { readonly kind: 'activated' | 'triggered' }>
+      )[];
     }
   /**
    * "Other creatures you control have base power and toughness 5/3" (D-139, CR 613.4b): the subject's power and toughness are set to

@@ -1031,6 +1031,9 @@ function walkAbility(
           'mana',
           'tapPermanents',
         ]);
+      } else if (a.keyword.kind === 'offspring') {
+        // CR 702.175a: the offspring cost, an additional cost paid as the spell is cast; mana only, no X.
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'buyback') {
         // CR 702.27a: the buyback cost, an additional cost paid as the spell is cast; mana only, no X (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
@@ -1259,6 +1262,16 @@ export function unsupportedFeatureIssues(def: CardDefinition): AstIssue[] {
       out.push({
         path: `${base}.abilities`,
         message: 'more than one buyback ability is not implemented by the engine yet',
+      });
+    }
+    // CR 702.175b: each instance of offspring is paid and triggers separately; the engine asks one question, so one instance is run.
+    if (
+      face.abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'offspring').length >
+      1
+    ) {
+      out.push({
+        path: `${base}.abilities`,
+        message: 'more than one offspring ability is not implemented by the engine yet',
       });
     }
     // CR 702.56b (D-129): each instance of replicate is paid and triggers separately; the engine asks one count, so

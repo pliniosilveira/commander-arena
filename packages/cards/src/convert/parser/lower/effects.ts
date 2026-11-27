@@ -223,6 +223,7 @@ import { SECRET_VOTES_LOWERINGS } from './secret-votes';
 import { SHELL_GAME_LOWERINGS } from './shell-game';
 import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { SPELL_GAINS_KEYWORD } from './spell-keyword-grant';
+import { SPELLS_CANT_BE_COUNTERED_THIS_TURN_LOWERINGS } from './spells-cant-be-countered-this-turn';
 import { SQUIRRELED_G4_LOWERINGS } from './squirreled-g4';
 import { THE_TOKEN_LOWERINGS } from './the-token';
 import { THEN_MAY_RETURN_LOWERINGS } from './then-may-return';
@@ -1068,6 +1069,26 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       if (!x.ok) return x;
       limit = x.value;
     }
+    // Kodama of the East Tree (CR 202.3, 603.2c, 608.2d): "a permanent card with equal or lesser mana value": the mana value of the permanent the trigger is about (an {X} is 0 in the
+    // hand and on the battlefield, CR 202.3e), read as the effect starts.
+    const subjectLimit = arg(clause, 'manaValueAtMostSubject');
+    if (subjectLimit !== undefined) {
+      if (
+        limit !== undefined ||
+        !ctx.entersPermanentTrigger ||
+        to?.zone !== 'battlefield' ||
+        named.filter.zone !== 'hand'
+      ) {
+        return failure(clause);
+      }
+      const blocked = missingFeatures([
+        'selector:manaValueAtMost',
+        'amount:manaValueOf',
+        'selector:triggerSubject',
+      ]);
+      if (blocked.length > 0) return failure(clause, blocked);
+      limit = { kind: 'manaValueOf', of: { kind: 'triggerSubject' } };
+    }
     // "You may return a creature card from your graveyard to your hand" (stage P35, D-176, CR 608.2d): a card chosen from the graveyard,
     // none when the player may and does not.
     if (to?.zone === 'hand') {
@@ -1101,6 +1122,10 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       value: limit === undefined ? lowered.value : { ...lowered.value, manaValueAtMost: limit },
     };
     const optional = may?.kind === 'flag' && may.value;
+    if (ctx.putWithThis) {
+      const blocked = missingFeatures(['ability:putWithSource']);
+      if (blocked.length > 0) return failure(clause, blocked);
+    }
     // Extract from Darkness (CR 404.1, 608.2d): "you put a creature card from a graveyard onto the battlefield under your control": the cards of every graveyard are the candidates
     // (`fromAnyGraveyard`; the validator asks for `controller: 'you'`, which the engine does not read for it).
     const everyGraveyard = arg(clause, 'everyGraveyard');
@@ -1174,6 +1199,8 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       },
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
+      // CR 400.7 (Kodama of the East Tree): the card put there remembers this ability's source, for "it wasn't put onto the battlefield with this ability".
+      ...(ctx.putWithThis ? { putWithSource: true as const } : {}),
       // "... to the battlefield with a finality counter on it" (CR 122.6): the counter it enters with.
       ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
     };
@@ -1528,6 +1555,25 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // "+1: Add {R} or {G}." (Domri, Anarch of Bolas, CR 106.1b, 608.2d, 605.1a): a loyalty ability is no mana ability (CR 605.1a), so it uses the stack and the color is chosen as it
+    // resolves: the engine's `chooseOne` of the colors named, each option adding the mana of that one color.
+    if (spec.what.kind === 'oneOf' && !stays) {
+      const blocked = missingFeatures(['effect:chooseOne']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseOne',
+            options: spec.what.colors.map((color) => ({
+              label: `{${color}}`,
+              effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color as ManaColor] } },
+            })),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     // The interpreter's addMana effect adds fixed mana only: it has no color decision while a
     // spell or ability resolves (a mana ability chooses while paying instead).
     if (spec.what.kind !== 'symbols') {
@@ -1721,6 +1767,23 @@ function playerVerb(
       // Locke, Treasure Hunter: "a spell from among those cards" after a mill by the controller or by each player.
       if (verb === 'mill' && (player.value.kind === 'you' || player.value.kind === 'eachPlayer'))
         ctx.milledBefore = true;
+      // CR 101.4, 608.2h (Grothama, All-Devouring): "each player draws cards equal to the amount of damage dealt to ~ this turn by sources they controlled": each player's own
+      // number, so each player in turn draws as themselves ("they" is "you" in it).
+      if (typeof amount.value === 'object' && amount.value.kind === 'damageToThisThisTurn') {
+        if (verb !== 'draw' || player.value.kind !== 'eachPlayer') return failure(clause);
+        return {
+          ok: true,
+          value: [
+            {
+              kind: 'forEachPlayer',
+              players: player.value,
+              runsAs: 'each',
+              effect: { kind: 'draw', player: { kind: 'you' }, count: amount.value },
+            },
+          ],
+          rule: clause.rule,
+        };
+      }
       const effect: Effect =
         verb === 'draw' || verb === 'discard' || verb === 'mill'
           ? { kind: verb, player: player.value, count: amount.value }
@@ -1966,6 +2029,14 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (blocked.length > 0) return failure(clause, blocked);
       if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
     }
+    // CR 701.20a (Sunbird's Invocation, "Reveal the top X cards ... cast a spell from among cards revealed this way"): the cards are shown to every player first; read only with the free cast.
+    const revealing = arg(clause, 'revealAll');
+    const revealAll = revealing?.kind === 'flag' && revealing.value;
+    if (revealAll) {
+      if (!castFree) return failure(clause);
+      const blockedReveal = missingFeatures(['ability:lookRevealCastFree']);
+      if (blockedReveal.length > 0) return failure(clause, blockedReveal);
+    }
     // "You may reveal any number of cards of the chosen type from among them": every card looked at may be taken, so `max` is the number looked at (a number, not an amount read later).
     const any = arg(clause, 'anyNumber');
     const anyNumber = any?.kind === 'flag' && any.value;
@@ -1975,6 +2046,7 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
+      ...(revealAll ? { revealAll: true as const } : {}),
       take: {
         filter: filter.value,
         max: anyNumber && typeof count.value === 'number' ? count.value : 1,
@@ -3337,6 +3409,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...PLAYER_CHOOSES_ATTACKER_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...DAMAGE_UNPREVENTABLE_LOWERINGS,
+  ...SPELLS_CANT_BE_COUNTERED_THIS_TURN_LOWERINGS,
   ...DESTROY_COUNTERED_SOURCE_LOWERINGS,
   ...CHOOSE_ONE_OF_THEM_LOWERINGS,
   ...PUT_ALL_LINKED_EXILED_LOWERINGS,
@@ -3446,6 +3519,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'youAreDefendingPlayer' ||
         kind === 'damageDealtByType' ||
         kind === 'enteredFromGraveyard' ||
+        kind === 'notPutWithThisAbility' ||
         kind === 'discardedCardHasKeyword' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn' ||

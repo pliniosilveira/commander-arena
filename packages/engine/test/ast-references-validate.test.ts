@@ -132,6 +132,8 @@ describe('amounts that read an object', () => {
       // CR 608.2c (Jaws of Defeat): the positive gap between two amounts.
       'difference',
       'opponentCount',
+      // CR 120.3 (Grothama, All-Devouring): the damage dealt to this permanent this turn by a player's sources.
+      'damageToThisThisTurn',
       // Limit Break deck (Melee): the opponents attacked this combat.
       'opponentsAttackedThisCombat',
       'movedCount',
