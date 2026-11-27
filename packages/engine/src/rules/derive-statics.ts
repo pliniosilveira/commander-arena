@@ -37,6 +37,7 @@ import { linkedCardOf, linkedCardsOf, topCardOf } from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
+import { boundToGranter } from './granter';
 import { intrinsicManaAbilities } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { isCommanderCardId } from './melded';
@@ -1302,7 +1303,11 @@ export function staticEffectsOn(
       grants.push({ ability: null, timestamp: source.object.timestamp });
     } else if (mod.kind === 'grantAbility') {
       // D-099: a mana ability given to the subject, in layer 6 like a keyword.
-      grants.push({ ability: mod.ability, timestamp: source.object.timestamp });
+      // CR 113.6 (`granter`): the instance this permanent gets names the permanent that gives it.
+      grants.push({
+        ability: boundToGranter(mod.ability, source.object.id),
+        timestamp: source.object.timestamp,
+      });
     } else if (mod.kind === 'restriction') {
       // CR 613.11: a rules-modifying effect, read where the rule acts (no layer, no timestamp).
       if (!restrictions.includes(mod.restriction)) restrictions.push(mod.restriction);

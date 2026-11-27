@@ -1557,6 +1557,12 @@ export function objectRefOf(
       }
     );
   }
+  if (noun.det === 'granter') {
+    // CR 113.6: only inside the ability a static ability gives (`validateCard` refuses it anywhere else).
+    return (
+      gate(noun, ['selector:granter']) ?? { ok: true, value: { kind: 'granter' }, rule: noun.rule }
+    );
+  }
   if (noun.det === 'self') {
     const kind = ctx.owner === 'spell' ? 'thisSpell' : 'this';
     return gate(noun, [`selector:${kind}`]) ?? { ok: true, value: { kind }, rule: noun.rule };

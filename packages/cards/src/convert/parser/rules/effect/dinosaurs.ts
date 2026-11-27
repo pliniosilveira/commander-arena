@@ -190,6 +190,8 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
 
 /** One creature: a target or "it" or `~`, never a group or "up to". */
 const ONE_CREATURE = ['noun.target-permanent', 'noun.self', 'noun.it'] as const;
+/** The creature fought: a target, or (Grothama, All-Devouring) the permanent that grants the ability the fight is in. */
+const AGAINST = ['noun.target-permanent', 'noun.granter'] as const;
 const isOne = (noun: IrNoun): boolean => !noun.plural && !noun.upTo && noun.count === undefined;
 /** "Up to one target creature" (Primal Might): the creature fought is optional, and nothing is fought when no target was chosen (CR 701.14b, 115.1). */
 const isOneOrUpToOne = (noun: IrNoun): boolean =>
@@ -246,7 +248,7 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
         sequence(
           satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOneOrUpToOne),
           literal(' fights '),
-          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+          satisfy(family<IrNoun>('noun', { only: AGAINST }), isOneOrUpToOne),
         ),
         // Only one of the two creatures may be an "up to one" target: with neither chosen nothing would be said.
         ([fighter, , against]) => !(fighter.upTo && against.upTo),
@@ -257,7 +259,7 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
           literal('have '),
           satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
           literal(' fight '),
-          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+          satisfy(family<IrNoun>('noun', { only: AGAINST }), isOne),
         ),
         ([, fighter, , against]): [IrNoun, string, IrNoun] => [fighter, ' fights ', against],
       ),

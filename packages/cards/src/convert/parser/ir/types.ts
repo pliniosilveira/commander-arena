@@ -162,6 +162,7 @@ export interface IrNoun extends IrNode {
     | 'selfAndGroup' // "~ and land creatures you control" (Sylvan Advocate, CR 611.3a): the permanent itself and the group the filter names
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'graveyardedThisWay' // "each permanent put into a graveyard this way" (Terastodon, CR 608.2c): what the destroy effects before it put into graveyards
+    | 'granter' // the card's name inside a quoted ability that says "this creature" (Grothama, All-Devouring, CR 113.6): the permanent that grants the ability
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -717,6 +718,8 @@ export type IrAmount =
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
   // "the damage dealt to target opponent this turn" (CR 120.3): all the damage dealt to the player so far this turn
   | { readonly kind: 'damageDealtToThisTurn'; readonly of: IrNoun; readonly span: Span }
+  // "the amount of damage dealt to ~ this turn by sources they controlled" (Grothama, All-Devouring, CR 120.3): what sources of each player dealt to the permanent of the ability
+  | { readonly kind: 'damageToThisThisTurn'; readonly span: Span }
   // "the greatest number of artifacts an opponent controls" (CR 109.4): the most of those objects any one opponent controls
   | { readonly kind: 'greatestCountOfAnOpponent'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it
@@ -2800,6 +2803,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'commanderManaValue',
   'commanderCasts',
   'damageDealtToThisTurn',
+  'damageToThisThisTurn',
   'greatestCountOfAnOpponent',
   'half',
   'multiple',

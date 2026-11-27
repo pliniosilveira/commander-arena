@@ -406,6 +406,17 @@ export function dealDamageAsking(
           },
         };
       }
+      if (info !== null) {
+        // CR 120.3, 608.2h: how much of it sources of each player dealt, by the controller the source has as it deals the damage.
+        const log = state.turnLog.damageToObjects ?? {};
+        const by = [...(log[to.id] ?? [])];
+        for (let i = by.length; i < state.seats.length; i += 1) by[i] = 0;
+        by[info.controller] = (by[info.controller] ?? 0) + amount;
+        state = {
+          ...state,
+          turnLog: { ...state.turnLog, damageToObjects: { ...log, [to.id]: by } },
+        };
+      }
     }
   }
 
