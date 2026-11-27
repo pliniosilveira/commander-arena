@@ -158,6 +158,26 @@ const createdTokens: Parser<{
       };
     }
   }
+  // CR 508.4, 508.6 (Soaring Lightbringer): "a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player": the words name whom the token attacks, the
+  // player the trigger is about ("Whenever you attack a player"); "that player or a planeswalker they control" offers a choice and is not read here.
+  if (
+    token.tappedAndAttacking === true &&
+    token.copyOf === undefined &&
+    token.predefined === undefined
+  ) {
+    const named = pattern(/ that player(?![\p{L}\p{N}'’])(?!\s+(?:or|and)(?![\p{L}\p{N}]))/iu)(
+      ctx,
+      head.pos,
+    );
+    if (named.ok) {
+      const { tappedAndAttacking: _flag, ...plain } = token;
+      return {
+        ok: true,
+        value: { token: { ...plain, tappedAttackingThatPlayer: true }, alternative: null },
+        pos: named.pos,
+      };
+    }
+  }
   const rider = sequence(
     choice(literal('. They have '), literal('. Those tokens have ')),
     TOKEN_QUOTED_ABILITY,
@@ -218,8 +238,15 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     'create a number of 1/1 black and green Pest creature tokens equal to the number of +1/+1 counters on ~. They have "When ~ dies, you gain 1 life."',
     // Issue 144 (Glimpse the Impossible): the same rider with "Those tokens".
     'create a 0/1 colorless Eldrazi Spawn creature token for each card put into your graveyard this way. Those tokens have "Sacrifice ~: Add {C}."',
+    // CR 508.4, 508.6 (Soaring Lightbringer): the token attacks the player the trigger is about.
+    "create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player",
+    'create two 1/1 white Soldier creature tokens that are tapped and attacking that player',
   ],
   rejects: [
+    "create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player or a planeswalker they control",
+    "create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player's planeswalker",
+    "create a 1/1 white Glimmer enchantment creature token that's attacking that player",
+    "create a token that's a copy of ~ and that's tapped and attacking that player",
     'create X Treasure tokens for each time it was kicked',
     'create a Treasure token tapped',
     'create a copy of target creature',

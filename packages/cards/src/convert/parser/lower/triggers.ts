@@ -1041,6 +1041,13 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   if (only.event === 'attackBatch' && only.eachAttackedOpponent === true) {
     return { selector: { kind: 'triggerPlayer' }, needs: ['selector:triggerPlayer'] };
   }
+  // CR 508.6, 603.2c (Soaring Lightbringer): "that player" of "whenever you attack a player" is the player this occurrence of the trigger attacked, not the attacking player.
+  if (only.event === 'attackBatch' && only.eachAttackedPlayer === true) {
+    return {
+      selector: { kind: 'triggerAttackedPlayer' },
+      needs: ['selector:triggerAttackedPlayer'],
+    };
+  }
   if (only.actor?.det === 'you') {
     return { selector: { kind: 'you' }, needs: ['selector:you'] };
   }
@@ -1723,6 +1730,17 @@ function lowerTriggeredAbility(
     triggers[0]?.kind === 'attackBatch' &&
     triggers[0].who === 'you' &&
     triggers[0].attackedEnchantedPlayer !== true
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
+  // CR 508.4, 508.6 (Soaring Lightbringer): "that's tapped and attacking that player" after "whenever you attack a player": the one player this occurrence of the trigger is about.
+  ctx.eachAttackedPlayer =
+    triggers.length === 1 &&
+    triggers[0]?.kind === 'attackBatch' &&
+    triggers[0].who === 'you' &&
+    (triggers[0].eachAttackedPlayer === true || triggers[0].eachAttackedOpponent === true)
       ? {
           selector: { kind: 'triggerAttackedPlayer' },
           needs: ['selector:triggerAttackedPlayer'],

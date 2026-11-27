@@ -197,6 +197,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
   // Endless Evil: a copy of the enchanted creature with a set power and toughness.
   'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
+  // Nightmare Shepherd: a copy with a set power and toughness and one more creature type.
+  'token.copy-except-pt-subtype': permanent(
+    (e) => `Whenever another creature enters, create ${e}.`,
+  ),
   'token.copy-except-additive': permanent(
     (e) => `Whenever you discard a creature card, create ${e}.`,
   ),

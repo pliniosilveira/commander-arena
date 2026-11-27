@@ -133,6 +133,14 @@ export interface LowerContext {
     readonly selector: PlayerSelector;
     readonly needs: readonly FeatureRef[];
   } | null;
+  /**
+   * "that's tapped and attacking that player" of a trigger that has one occurrence for each player attacked ("Whenever you attack a player", CR 508.4, 508.6): that player, the
+   * engine's `triggerAttackedPlayer`; null for any other trigger.
+   */
+  eachAttackedPlayer: {
+    readonly selector: PlayerSelector;
+    readonly needs: readonly FeatureRef[];
+  } | null;
   /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
@@ -518,6 +526,7 @@ export function newContext(
     askedActs: false,
     attackedPlayer: null,
     attackBatchPlayer: null,
+    eachAttackedPlayer: null,
     enchantedPlayerTrigger: false,
     attachedTrigger: false,
     xIs: null,
