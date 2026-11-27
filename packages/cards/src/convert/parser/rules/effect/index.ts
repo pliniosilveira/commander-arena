@@ -213,6 +213,7 @@ import { MARDU_SURGE_EFFECT_RULES } from './mardu-surge';
 import { MAY_PLAY_ANY_TYPE_EFFECT_RULES } from './may-play-any-type';
 import { MAY_PLAY_THIS_WAY_FREE_EFFECT_RULES } from './may-play-this-way-free';
 import { MELD_EFFECT_RULES } from './meld';
+import { MEREN_2_EFFECT_RULES } from './meren-2';
 import { MNEMONIC_DELUGE_EFFECT_RULES } from './mnemonic-deluge';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
 import { NEXT_SPELL_EFFECT_RULES } from './next-spell';
@@ -1686,6 +1687,7 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  ...MEREN_2_EFFECT_RULES,
   // Baldin, Century Herdmaster: "up to one hundred target creatures each get +0/+X until end of turn".
   ...PUMP_TARGETS_EFFECT_RULES,
   // Valakut Exploration: "you may play that card for as long as it remains exiled", "put them into their owner's graveyard", "~ deals that much damage to each opponent".

@@ -21,9 +21,12 @@ import { type Clauses, single } from './operands';
 
 const RULE = 'effect.put-from-among';
 
-/** " from among them" and " from among the cards milled this way": the cards the mill before it put into the graveyard. */
+/** " from among them", " from among the cards milled this way" and " from among the milled cards": the cards the mill before it put into the graveyard. */
 const FROM_AMONG: Parser<string> = map(
-  sequence(literal(' from among '), choice(literal('them'), literal('the cards milled this way'))),
+  sequence(
+    literal(' from among '),
+    choice(literal('them'), literal('the cards milled this way'), literal('the milled cards')),
+  ),
   ([, which]) => which,
 );
 
@@ -100,6 +103,8 @@ export const EFFECT_PUT_FROM_AMONG = defineRule<Clauses>({
     'you may put a land card from among them into your hand',
     'put a land card from among them into your hand',
     'you may put a land card from among the cards milled this way into your hand',
+    'put a land card from among the milled cards into your hand',
+    'you may put an artifact, creature, or land card from among the milled cards into your hand',
     'you may put a permanent card from among them into your hand',
     'you may return a permanent card from among them to your hand',
     'you may put a Plains card or a creature card with mana value 3 or less from among the cards milled this way into your hand',

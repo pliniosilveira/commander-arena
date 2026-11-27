@@ -1866,21 +1866,29 @@ function lowerYouDont(
   previous: Step | undefined,
   ctx: LowerContext,
 ): LowerResult<Effects> | null {
-  if (sentence.condition?.test.kind !== 'youDont') return null;
+  const test = sentence.condition?.test.kind;
+  if (test !== 'youDont' && test !== 'youCant') return null;
   const last = previous?.effects[previous.effects.length - 1];
+  // "If you don't" follows an offer ("you may put ..."), "If you can't" a mandatory choice ("put ..."): declining an offer is not being unable (CR 608.2d), so each reads only its own.
   const afterChoice =
     previous?.effects.length === 1 &&
     last?.kind === 'moveToZone' &&
     last.objects.kind === 'choose' &&
     last.objects.fromMoved === true &&
-    last.objects.optional === true;
+    (last.objects.optional === true) === (test === 'youDont');
+  // "If you can't" after anything but a mandatory choice from among the cards a mill moved (a sacrifice, Eldrazi Monument) is `lowerYouCant`'s.
+  if (test === 'youCant' && !afterChoice) return null;
   // Issue 100 (Baral and Kari Zev, CR 608.2c, 608.2g): "You may cast a spell ... without paying its mana cost. If you don't, ...": the free cast is the offer (it starts what "if you do" reads
   // again, `rules/cast-free.ts`), and "you don't" is that no spell was cast: declined, or none could be.
   const afterFreeCast =
-    previous?.effects.length === 1 && last?.kind === 'castFree' && last.max === undefined;
+    test === 'youDont' &&
+    previous?.effects.length === 1 &&
+    last?.kind === 'castFree' &&
+    last.max === undefined;
   // Chandra, Torch of Defiance (CR 608.2c, 608.2g): "You may cast that card. If you don't, ...": the cast of the exiled card is the offer, and "you don't" is that no spell was cast (declined, or it
   // could not be cast: a land, nothing to pay with).
-  const afterCastCard = previous?.effects.length === 1 && last?.kind === 'castCard';
+  const afterCastCard =
+    test === 'youDont' && previous?.effects.length === 1 && last?.kind === 'castCard';
   if (
     !(afterChoice || afterFreeCast || afterCastCard) ||
     sentence.instead === true ||

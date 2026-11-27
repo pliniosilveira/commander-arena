@@ -1,5 +1,5 @@
 {
-  "parserVersion": 226,
+  "parserVersion": 227,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -4265,6 +4265,14 @@
       "reasons": [],
       "ast": "5e379997"
     },
+    "3f21c1c6-7992-4036-ad3e-b599153e54fe": {
+      "name": "Dredger's Insight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7cc435ee"
+    },
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
       "group": "acceptance",
@@ -8145,6 +8153,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d1967be3"
+    },
+    "79edf527-2de1-433a-9cac-c91f461b1ebf": {
+      "name": "Druidic Ritual",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "84a73167"
     },
     "79f94050-d850-41ca-b1db-5ae0cf743f0a": {
       "name": "Temple of Epiphany",
@@ -12518,6 +12534,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "56d24e9a"
+    },
+    "ba7c1062-f777-4ba9-84df-ec340a9ec514": {
+      "name": "Patient Naturalist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3a6b5151"
     },
     "ba9f3c5d-556f-48d1-8d87-723f7893cfcd": {
       "name": "Flayer of the Hatebound",
@@ -17137,8 +17161,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1843,
-      "total": 1859
+      "supported": 1846,
+      "total": 1862
     }
   }
 }

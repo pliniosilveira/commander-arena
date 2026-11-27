@@ -37,12 +37,18 @@ export const TRIGGER_CARDS_LEAVE_GRAVEYARD = defineRule<IrTrigger>({
     'one or more cards leave your graveyard',
     'one or more creature cards leave your graveyard',
     'one or more nonland cards leave your graveyard',
+    'one or more artifact and/or creature cards leave your graveyard',
+    'one or more creature and/or land cards leave your graveyard',
   ],
   rejects: [
     'one or more cards leave a graveyard',
     "one or more cards leave an opponent's graveyard",
     'one or more cards leaves your graveyard',
     'one or more land or creature cards leave your graveyard',
+    'one or more artifact and/or artifact cards leave your graveyard',
+    'one or more nonartifact and/or creature cards leave your graveyard',
+    'one or more artifact and/or creature and/or land cards leave your graveyard',
+    'one or more artifact and/or creature cards leaves your graveyard',
     'one or more creature cards leaves your graveyard',
     'two or more cards leave your graveyard',
     'one card leaves your graveyard',
@@ -53,13 +59,23 @@ export const TRIGGER_CARDS_LEAVE_GRAVEYARD = defineRule<IrTrigger>({
   parse: (ctx, pos) => {
     const r = pattern(
       new RegExp(
-        `one or more (?:(non)?(${CARD_KINDS}) )?cards leave your graveyard(?![\\p{L}\\p{N}])(?!\\s+and)`,
+        `one or more (?:(non)?(${CARD_KINDS})(?: and/or (${CARD_KINDS}))? )?cards leave your graveyard(?![\\p{L}\\p{N}])(?!\\s+and)`,
         'iu',
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, non, kind] = r.value;
-    const filter = cardFilter(undefined, non, kind);
+    const [, non, kind, other] = r.value;
+    // "artifact and/or creature cards" (CR 608.2c: either kind): two different kinds, neither negated; the engine's `anyOf` of one card type each.
+    if (other !== undefined && (non !== undefined || other.toLowerCase() === kind?.toLowerCase())) {
+      return fail(ctx, pos);
+    }
+    const filter =
+      other === undefined || kind === undefined
+        ? cardFilter(undefined, non, kind)
+        : {
+            anyOf: [kind, other].map((k): IrFilter => ({ types: [k.toLowerCase()], raw: k })),
+            raw: `${kind} and/or ${other} card`,
+          };
     if (filter === null) return fail(ctx, pos);
     const span = { start: pos, end: r.pos };
     const value = plain('trigger.cards-leave-graveyard', 'leftGraveyard', pos, r.pos);
