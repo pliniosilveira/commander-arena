@@ -5,7 +5,7 @@
 // The cards are SYNTHETIC (defined here).
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
-import { type Ability, type CardDefinition, validateAbility } from '../src/index';
+import { type Ability, type CardDefinition, validateAbility, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const WELL: CardDefinition = singleFace({
@@ -196,5 +196,57 @@ describe('CR 614.1c, 608.2h: a creature spell enters with an amount of counters,
   test('no lore counters: the Bears enter with none', () => {
     const g = board(0);
     g.expect.pt('Grizzly Bears', 2, 2);
+  });
+});
+
+describe("CR 508.5: a count of defending player's hand belongs to an ability of an attacking creature", () => {
+  const handOfDefender = {
+    kind: 'draw',
+    player: { kind: 'you' },
+    count: { kind: 'countOf', filter: { zone: 'hand', owner: { kind: 'defendingPlayer' } } },
+  } as const;
+  const withAbility = (ability: Ability): CardDefinition =>
+    singleFace({
+      name: 'SYNTHETIC Hand Reader',
+      manaCost: ['U'],
+      types: ['creature'],
+      colors: ['U'],
+      colorIdentity: ['U'],
+      power: 1,
+      toughness: 1,
+      oracleText: "SYNTHETIC: draw cards equal to the number of cards in defending player's hand.",
+      abilities: [ability],
+    });
+
+  test('an attacks trigger may count it', () => {
+    const card = withAbility({
+      kind: 'triggered',
+      trigger: { kind: 'attacks', what: { kind: 'this' } },
+      effect: handOfDefender,
+    } as Ability);
+    expect(validateCard(card)).toEqual([]);
+  });
+
+  test('an upkeep trigger may not: no defending player exists then', () => {
+    const card = withAbility({
+      kind: 'triggered',
+      trigger: { kind: 'step', step: 'upkeep', whose: 'you' },
+      effect: handOfDefender,
+    } as Ability);
+    expect(validateCard(card).length).toBeGreaterThan(0);
+  });
+
+  test('a spell may not', () => {
+    const card: CardDefinition = singleFace({
+      name: 'SYNTHETIC Hand Reading',
+      manaCost: ['U'],
+      types: ['sorcery'],
+      colors: ['U'],
+      colorIdentity: ['U'],
+      oracleText: "SYNTHETIC: draw cards equal to the number of cards in defending player's hand.",
+      abilities: [],
+      spell: { effect: handOfDefender },
+    });
+    expect(validateCard(card).length).toBeGreaterThan(0);
   });
 });

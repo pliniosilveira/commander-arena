@@ -1307,6 +1307,20 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
       );
     }
   });
+  // CR 508.5: a player named as defending player ("cards in defending player's hand", Mr. Foxglove; "their graveyard", Guiltfeeder) exists only for an attacking creature,
+  // so it is read in a trigger of one; elsewhere there is no defending player and the count would be of nobody's cards.
+  face.abilities.forEach((a, i) => {
+    if (!JSON.stringify(a ?? null).includes('"owner":{"kind":"defendingPlayer"}')) return;
+    const inner = a?.kind === 'static' && a.static?.kind === 'grantAbility' ? a.static.ability : a;
+    const kind = inner?.kind === 'triggered' ? inner.trigger?.kind : undefined;
+    if (kind !== 'attacks' && kind !== 'attackBatch' && kind !== 'becomesUnblocked') {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        "the owner 'defendingPlayer' needs a triggered ability of an attacking creature",
+      );
+    }
+  });
   // CR 111.4, 113.1 (Wake the Dragon): a token a spell creates has abilities of its own, triggered ones too: they are checked as the abilities they are, and the words of the
   // spell are read without them.
   const withoutTokenAbilities = (value: unknown): string =>
@@ -1325,6 +1339,7 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
   if (
     spell.includes('"controller":"triggerPlayer"') ||
     spell.includes('"controller":"defendingPlayer"') ||
+    spell.includes('"owner":{"kind":"defendingPlayer"}') ||
     spell.includes('"notRepeatedThisTurn"') ||
     spell.includes('"notRepeatedBySource"')
   ) {
