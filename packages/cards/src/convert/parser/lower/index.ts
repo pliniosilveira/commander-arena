@@ -141,10 +141,36 @@ export function lower(ability: IrAbility, ctx: LowerContext): LowerResult<Lowere
   }
 }
 
+/**
+ * "Exile X target creatures, then investigate X times. Return the exiled cards to the battlefield ... at the beginning of the next end step." (issue 128, Disorder in the Court; CR 603.7c,
+ * 400.7j): a delayed return of `moved` is bound as the delayed ability is created, to what the last instruction moved or made; a token made between the exile and the return (the Clues) would
+ * be what it names. The delayed ability is created as the spell resolves whichever sentence says it, so it is put right after the move it is about.
+ */
+function hoistDelayedReturns(effects: readonly Effect[]): readonly Effect[] {
+  const out = [...effects];
+  for (let i = 0; i < out.length; i += 1) {
+    const e = out[i];
+    if (
+      e?.kind !== 'delayedTrigger' ||
+      e.effect.kind !== 'moveToZone' ||
+      e.effect.objects.kind !== 'moved'
+    ) {
+      continue;
+    }
+    let j = i - 1;
+    while (j >= 0 && (out[j]?.kind === 'createToken' || out[j]?.kind === 'createCopies')) j -= 1;
+    if (j < i - 1 && j >= 0 && (out[j]?.kind === 'exile' || out[j]?.kind === 'moveToZone')) {
+      out.splice(i, 1);
+      out.splice(j + 1, 0, e);
+    }
+  }
+  return out;
+}
+
 /** The text of a spell from the pieces of its lines, in order: one effect stays a bare effect. */
 export function finishSpell(parts: readonly SpellParts[]): SpellText {
   const targets = parts.flatMap((p) => p.targets);
-  const effects = parts.flatMap((p) => p.effects);
+  const effects = hoistDelayedReturns(parts.flatMap((p) => p.effects));
   const x = parts.some((p) => p.x);
   // A modal spell (stage P19) is the whole text: `parseFaceText` refuses a face with other spell lines.
   const modal = parts.find((p) => p.modal !== undefined)?.modal;
