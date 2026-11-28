@@ -184,6 +184,8 @@ export const EFFECT_SPELL_ENTERS_WITH_COUNTERS = defineRule<Clauses>({
   examples: [
     'that creature enters with two additional +1/+1 counters on it',
     'that creature enters with an additional +1/+1 counter on it',
+    // Communal Brewing (CR 107.3c): the X a "where X is" of the sentence defines.
+    'that creature enters with X additional +1/+1 counters on it',
   ],
   rejects: [
     'that creature enters with two +1/+1 counters on it',
@@ -192,14 +194,20 @@ export const EFFECT_SPELL_ENTERS_WITH_COUNTERS = defineRule<Clauses>({
     'that creature enters with two additional +1/+1 counters',
     'that creature enters with additional +1/+1 counters on it',
     'that creature enters tapped',
+    'that creature enters with X additional +1/+1 counter on it',
+    'that creature enters with X +1/+1 counters on it',
   ],
   parse: (ctx, pos) => {
     const head = literal('that creature enters with ')(ctx, pos);
     if (!head.ok) return head;
-    const count = positiveCount(ctx, head.pos);
+    // Communal Brewing (CR 107.3c): "X additional +1/+1 counters on it, where X is ...": the X the sentence defines.
+    const x = literal('X')(ctx, head.pos);
+    const count = x.ok ? { ok: true as const, value: 0, pos: x.pos } : positiveCount(ctx, head.pos);
     if (!count.ok) return fail(ctx, pos);
     const counter = pattern(
-      / additional ([+-]\d+\/[+-]\d+|[a-z]+) counters? on it(?![\p{L}\p{N}])/iu,
+      x.ok
+        ? / additional ([+-]\d+\/[+-]\d+|[a-z]+) counters on it(?![\p{L}\p{N}])/iu
+        : / additional ([+-]\d+\/[+-]\d+|[a-z]+) counters? on it(?![\p{L}\p{N}])/iu,
     )(ctx, count.pos);
     if (!counter.ok) return fail(ctx, pos);
     const span = { start: pos, end: counter.pos };
@@ -217,11 +225,13 @@ export const EFFECT_SPELL_ENTERS_WITH_COUNTERS = defineRule<Clauses>({
           'spellEntersWithCounters',
           {
             counter: spec,
-            count: {
-              kind: 'number',
-              value: count.value,
-              span: { start: head.pos, end: count.pos },
-            },
+            count: x.ok
+              ? { kind: 'x', span: { start: head.pos, end: count.pos } }
+              : {
+                  kind: 'number',
+                  value: count.value,
+                  span: { start: head.pos, end: count.pos },
+                },
           },
           span,
         ),

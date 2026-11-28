@@ -1670,6 +1670,11 @@ function playerVerb(
       if (who?.kind !== 'noun') return failure(clause);
       const player = playerSelectorOf(who, ctx);
       if (!player.ok) return player;
+      // Mr. Foxglove (CR 608.2c): "If you didn't draw cards this way" reads the draws of the text, which must all be the controller's.
+      if (verb === 'draw') {
+        ctx.drewBefore =
+          player.value.kind === 'you' && ctx.drewBefore !== 'other' ? 'you' : 'other';
+      }
       if (verb === 'shuffle') {
         return { ok: true, value: [{ kind: 'shuffle', player: player.value }], rule: clause.rule };
       }
@@ -3538,7 +3543,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                           test === 'putCountersThisWay' ||
                           test === 'discardedSpellThisWay' ||
                           test === 'destroyedThisWay' ||
-                          test === 'searchedThisWay'
+                          test === 'searchedThisWay' ||
+                          test === 'notDrewThisWay'
                         ? 'thisWayAtLeast'
                         : test === 'otherAttachedToHost' || test === 'xAtLeast'
                           ? 'amountIs'

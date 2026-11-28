@@ -2344,6 +2344,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledNonland: 'an exileOwnGraveyardCard effect',
   returned: 'a moveToZone effect that chooses cards of a graveyard',
   playersDrew: 'a draw effect',
+  cardsDrawn: 'a draw effect',
   tapped: 'a tap effect',
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
@@ -2395,7 +2396,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   ) {
     return ['returned'];
   }
-  if (e?.kind === 'draw') return ['playersDrew'];
+  if (e?.kind === 'draw') return ['playersDrew', 'cardsDrawn'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
     return [
@@ -3118,8 +3119,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'difference':
+    case 'subtract':
       if (!Array.isArray(a.of) || a.of.length !== 2) {
-        issue(out, `${path}.of`, 'a difference needs exactly two amounts');
+        issue(out, `${path}.of`, `a ${a.kind} needs exactly two amounts`);
       } else {
         a.of.forEach((part, i) => {
           checkAmount(part, `${path}.of[${i}]`, scope, out);
@@ -10999,8 +11001,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
-      if (!Number.isInteger(e.count) || e.count < 1) {
-        issue(out, `${path}.count`, 'count must be a positive whole number');
+      if (typeof e.count === 'number') {
+        if (!Number.isInteger(e.count) || e.count < 1) {
+          issue(out, `${path}.count`, 'count must be a positive whole number');
+        }
+      } else {
+        // Communal Brewing (CR 608.2h): an amount read as the ability resolves.
+        checkAmount(e.count, `${path}.count`, scope, out);
       }
       if (scope.triggerSubject !== 'stack') {
         issue(out, path, 'spellEntersWithCounters names the spell a cast trigger is about');

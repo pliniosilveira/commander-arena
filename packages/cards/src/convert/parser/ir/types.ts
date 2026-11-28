@@ -773,7 +773,13 @@ export type IrAmount =
       readonly span: Span;
     }
   // "the difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the positive gap between two amounts
-  | { readonly kind: 'difference'; readonly of: readonly IrAmount[]; readonly span: Span }
+  | {
+      readonly kind: 'difference';
+      readonly of: readonly IrAmount[];
+      /** "<amount> minus <amount>" (Mr. Foxglove, CR 107.1b): the first less the second, floored at 0, not the positive gap between them. */
+      readonly ordered?: true;
+      readonly span: Span;
+    }
   // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
   // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
   | {
@@ -801,6 +807,7 @@ export type IrAmount =
         | 'destroyedCreaturesOfAffected'
         | 'destroyedValue'
         | 'playersDrew'
+        | 'cardsDrawn'
         | 'tapped'
         | 'discarded'
         | 'milledValue'
@@ -918,6 +925,8 @@ export interface IrCondition extends IrNode {
       }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
+    // "If you didn't draw cards this way" (Mr. Foxglove, CR 608.2c, 121.1): no card was drawn by a draw of the controller before it in the same text
+    | { readonly kind: 'notDrewThisWay' }
     // "If time gets more votes", "if the vote is tied" (issue 17, CR 701.38a): the tally of the vote before it in the same text; the option as the card words it
     | { readonly kind: 'voteMost'; readonly option: string }
     | { readonly kind: 'voteTied' }

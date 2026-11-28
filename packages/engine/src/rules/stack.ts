@@ -438,6 +438,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   'searchedBy',
                   mergeSeats(res.thisWay?.searchedBy, out.thisWay.searchedBy),
                 ),
+                ...(res.thisWay?.cardsDrawn === undefined && out.thisWay.cardsDrawn === undefined
+                  ? {}
+                  : { cardsDrawn: (res.thisWay?.cardsDrawn ?? 0) + (out.thisWay.cardsDrawn ?? 0) }),
                 ...(res.thisWay?.playersAccepted === undefined &&
                 out.thisWay.playersAccepted === undefined
                   ? {}

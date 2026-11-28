@@ -1532,15 +1532,32 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped.": a card chosen from the graveyard, the choice of none or one is
   // the offer itself (the engine's `moveToZone` of a `choose` with `optional`), so it is not wrapped in a `may`.
   if (clause?.verb === 'putFromZone' && clause.optional && more.length === 0) {
+    // Mr. Foxglove (CR 608.2c): "If you didn't draw cards this way, you may put a creature card from your hand onto the battlefield.": what the draw before it did, the engine's
+    // `conditional` around the offer. Any other test is still refused here, never guessed.
+    const test = sentence.condition?.test.kind;
     if (
-      sentence.condition !== undefined ||
+      (sentence.condition !== undefined && test !== 'notDrewThisWay') ||
       sentence.instead === true ||
       sentence.where !== undefined
     ) {
       return refuse(sentence);
     }
+    let guard: Condition | null = null;
+    if (sentence.condition !== undefined) {
+      const blocked = missingFeatures(['effect:conditional']);
+      if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+      const lowered = lowerCondition(sentence.condition, false, ctx);
+      if (!lowered.ok) return lowered;
+      guard = lowered.value;
+    }
     const may = { kind: 'flag' as const, value: true, span: clause.span, rule: clause.rule };
-    return lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
+    const put = lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
+    if (!put.ok || guard === null) return put;
+    return {
+      ok: true,
+      value: [{ kind: 'conditional', condition: guard, effect: oneEffect(put.value) }],
+      rule: put.rule,
+    };
   }
   if (
     clause === undefined ||
@@ -2895,6 +2912,9 @@ function countsWhatHappened(
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
+    case 'cardsDrawn':
+      // Communal Brewing (CR 121.1): "for each card drawn this way": a `draw` before it in the same text, whoever draws.
+      return earlier.verb === 'draw';
     case 'playersDrew': {
       // The engine counts the players who drew in an earlier `draw`: "opponent who drew" only fits a draw by opponents.
       const who = earlier.args.player;

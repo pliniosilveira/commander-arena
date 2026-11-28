@@ -3222,7 +3222,7 @@ function runEffect(
       return runPlayerSpellsCostLess(state, effect, ctx, targets);
     case 'spellEntersWithCounters':
       // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
-      return runSpellEntersWithCounters(state, effect, ctx);
+      return runSpellEntersWithCounters(state, effect, ctx, targets);
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
       return runNextSpellPayLife(state, res);

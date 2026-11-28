@@ -796,7 +796,23 @@ const MINUS_OR_SUM = (rule: string): Parser<IrAmount> => {
     const first = base(ctx, pos);
     if (!first.ok) return first;
     const minus = pattern(/ minus ([1-9][0-9]*)(?![\p{L}\p{N}])/u)(ctx, first.pos);
-    if (!minus.ok) return first;
+    if (!minus.ok) {
+      // Mr. Foxglove (CR 107.1b): "the number of cards in defending player's hand minus the number of cards in your hand": an amount taken away, the result floored at 0.
+      const word = literal(' minus ')(ctx, first.pos);
+      if (!word.ok) return first;
+      const second = base(ctx, word.pos);
+      if (!second.ok) return first;
+      return {
+        ok: true,
+        value: {
+          kind: 'difference',
+          of: [first.value, second.value],
+          ordered: true,
+          span: { start: pos, end: second.pos },
+        },
+        pos: second.pos,
+      };
+    }
     return {
       ok: true,
       value: {
@@ -1267,6 +1283,8 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creature card put into a graveyard this way',
     'for each land card milled this way',
     'for each card returned this way',
+    // Communal Brewing (CR 121.1, 608.2c): the cards a draw before it drew.
+    'for each card drawn this way',
   ],
   rejects: [
     'for each card returned',
@@ -1281,7 +1299,8 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who drew this way',
     'for each opponent who drew a card',
     'for each creatures sacrificed this way',
-    'for each card drawn this way',
+    'for each cards drawn this way',
+    'for each card drawn',
     'for each card discarded',
     'for each counter removed',
     'for each counters removed this way',
@@ -1296,6 +1315,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
         ok: true,
         value: { kind: 'exiledAsCost', span: { start: pos, end: exiled.pos } },
         pos: exiled.pos,
+      };
+    }
+    // Communal Brewing (CR 121.1, 608.2c): "for each card drawn this way": the cards the draws before it drew, whoever drew them.
+    const drawn = pattern(/for each card drawn this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (drawn.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'cardsDrawn',
+          words: ['card'],
+          span: { start: pos, end: drawn.pos },
+        },
+        pos: drawn.pos,
       };
     }
     // Issue 244 (Syphon Mind, CR 701.9, 608.2c): "for each card discarded this way": the cards the discard before it made players discard.
