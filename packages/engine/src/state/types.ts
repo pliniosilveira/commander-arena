@@ -866,6 +866,11 @@ export interface SeatState {
    * from then on, as with a permanent that says it (`hasNoMaximumHandSize`). Absent until the first time. Public.
    */
   readonly noMaximumHandSize?: true;
+  /**
+   * The timestamp of that effect (CR 613.7, 613.11): of it and a permanent's "Your maximum hand size is twenty", the later one decides (`maximumHandSizeOf`). Absent with
+   * `noMaximumHandSize` absent.
+   */
+  readonly noMaximumHandSizeAt?: number;
   /** The commander cards chosen for this seat, in order. */
   readonly commanders: readonly CardId[];
   readonly handSizeMax: number | null;

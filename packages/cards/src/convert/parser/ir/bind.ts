@@ -666,6 +666,28 @@ class Binder {
     return out;
   }
 
+  /**
+   * The condition of a sentence with the pronoun of its counts of counters bound: "Then if she has nine or more time counters on her" (Kes, CR 122.1), and each term of "if there are
+   * twenty or more counters on it or you have twenty or more cards in hand" (Twenty-Toed Toad, CR 608.2c). Terms that count nothing on a pronoun are left as they are.
+   */
+  countersPronoun(condition: IrCondition): IrCondition {
+    const test = condition.test;
+    if (test.kind === 'and' || test.kind === 'or') {
+      return {
+        ...condition,
+        test: { ...test, terms: test.terms.map((t) => this.countersPronoun(t)) },
+      };
+    }
+    if (
+      test.kind === 'amountIs' &&
+      test.amount.kind === 'countersOn' &&
+      test.amount.of.det === 'anaphor'
+    ) {
+      return { ...condition, test: { ...test, amount: this.amount(test.amount) } };
+    }
+    return condition;
+  }
+
   /** An amount with the nouns it names bound: what it counts, the object whose power or toughness it reads. */
   /** True while the nouns of an amount are bound ("for each artifact that player controls"). */
   private inAmount = false;
@@ -1088,11 +1110,8 @@ class Binder {
             test?.kind === 'manaValueAtLeastAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
             : // "Then if she has nine or more time counters on her, ..." (Kes, CR 122.1): the pronoun of the count is the permanent the sentences before it named.
-              s.condition !== undefined &&
-                test?.kind === 'amountIs' &&
-                test.amount.kind === 'countersOn' &&
-                test.amount.of.det === 'anaphor'
-              ? { ...s.condition, test: { ...test, amount: this.amount(test.amount) } }
+              s.condition !== undefined && countsCountersOnPronoun(s.condition)
+              ? this.countersPronoun(s.condition)
               : s.condition;
         // "Target opponent may have you draw three cards" (stage P52, D-210): the player asked is named before the clauses, and later sentences may say "that player".
         const mayBy =
@@ -1119,6 +1138,17 @@ class Binder {
     };
     return { ...bound, sentences: foldTokenAbilities(bound.sentences) };
   }
+}
+
+/** Whether the condition, or a term of its "and" or "or", counts the counters on a pronoun ("on it", "on her"). */
+function countsCountersOnPronoun(condition: IrCondition): boolean {
+  const test = condition.test;
+  if (test.kind === 'and' || test.kind === 'or') return test.terms.some(countsCountersOnPronoun);
+  return (
+    test.kind === 'amountIs' &&
+    test.amount.kind === 'countersOn' &&
+    test.amount.of.det === 'anaphor'
+  );
 }
 
 /**

@@ -9434,6 +9434,12 @@ export type StaticEffect =
       readonly kind: 'noMaximumHandSize';
     }
   /**
+   * "Your maximum hand size is twenty." (CR 402.2: the maximum hand size is normally seven; CR 514.1: the active player discards down to it as the cleanup step begins): the
+   * controller's maximum hand size is `size`. CR 613.11: effects that change a game rule apply in timestamp order, so of this and "You have no maximum hand size" (a permanent's, or
+   * an effect's for the rest of the game) the one with the latest timestamp decides (`maximumHandSizeOf`).
+   */
+  | { readonly kind: 'maximumHandSize'; readonly size: number }
+  /**
    * "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6, unchecked here: the Leylines): after the mulligans and before the first turn
    * begins, starting with the starting player in turn order, each player who kept a hand with such a card in it is asked, card by card, whether it begins on the battlefield. It does
    * nothing on the battlefield or in any other zone, and it cannot be granted.

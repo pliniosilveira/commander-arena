@@ -1808,6 +1808,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost." (CR 118.9, 601.2b).
     'castOnceEachTurn',
     'noMaximumHandSize',
+    // Twenty-Toed Toad: "Your maximum hand size is twenty." (CR 402.2, 613.11).
+    'maximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
     // Fealty to the Realm: "The monarch controls enchanted creature." (CR 613.1b, 725.1).
@@ -3216,6 +3218,8 @@ export const STATIC_KINDS = [
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
   'noMaximumHandSize',
+  /** "Your maximum hand size is twenty." (CR 402.2, 613.11): the engine's static `maximumHandSize`. */
+  'maximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */

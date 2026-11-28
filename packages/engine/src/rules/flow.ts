@@ -46,7 +46,7 @@ import { addLoreCounters } from './saga';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { resolveTop } from './stack';
-import { hasNoMaximumHandSize, keepsDamage } from './statics';
+import { keepsDamage, maximumHandSizeOf } from './statics';
 import { collectTriggers } from './triggers';
 import { untapPermanent } from './untap';
 import { untapForOthers } from './untap-others';
@@ -501,9 +501,9 @@ export function endStep(input: GameState): Outcome {
 export function runCleanup(input: GameState): Outcome {
   const active = input.turn.activeSeat;
   const seat = getSeat(input, active);
-  // CR 514.1: discard down to maximum hand size, unless a permanent says there is none (CR 402.2).
-  const max = seat.handSizeMax ?? input.settings.maxHandSize;
-  const excess = hasNoMaximumHandSize(input, active) ? 0 : seat.hand.length - max;
+  // CR 514.1: discard down to maximum hand size, unless an effect says there is none (CR 402.2, 613.11).
+  const max = maximumHandSizeOf(input, active);
+  const excess = max === null ? 0 : seat.hand.length - max;
   if (excess > 0) {
     return {
       state: setPending(input, { kind: 'discard', seat: active, count: excess, hand: seat.hand }),

@@ -58,6 +58,7 @@ import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { GRAND_LARCENY_C_CONDITION_RULES } from './grand-larceny-c';
+import { HAND_SIZE_CONDITION_RULES } from './hand-size';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
@@ -567,6 +568,9 @@ export const CONDITION_CONTROL_COMMANDER = defineRule<IrCondition>({
 });
 
 export const CONDITION_RULES = [
+  // Peace Offering deck: two counts joined by "or" (before the single conditions they start with), "you have exactly thirteen cards in your hand", "that player has no cards in
+  // hand", "there are twenty or more counters on it".
+  ...HAND_SIZE_CONDITION_RULES,
   // Quandrix Unlimited deck, group G: two conditions joined by "and", and "you control a prime number of lands", before the single conditions they start with.
   ...QUANDRIX_G_CONDITION_RULES,
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
