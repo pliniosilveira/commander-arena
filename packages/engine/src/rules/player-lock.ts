@@ -42,7 +42,14 @@ export function runPlayerCantCast(
     timestamp,
     objects: [],
     players: [...players],
-    until: 'endOfTurn',
+    until:
+      node.duration === 'untilYourNextTurn'
+        ? {
+            kind: 'turnStart',
+            seat: ctx.controller,
+            turnsTaken: (stamped.seats[ctx.controller]?.turnsTaken ?? 0) + 1,
+          }
+        : 'endOfTurn',
     change: { kind: 'playerCantCastSpells' },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, made] });

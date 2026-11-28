@@ -96,4 +96,52 @@ export const EFFECT_EACH_PLAYER_REVEALS_THEN_DRAWS = defineRule<Clauses>({
   },
 });
 
-export const PARLEY_EFFECT_RULES = [EFFECT_EACH_PLAYER_REVEALS_THEN_DRAWS];
+const INVESTIGATE_ID = 'effect.parley-investigate';
+
+/**
+ * `effect.parley-investigate`: "each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card" (Innocuous
+ * Researcher, issue 128; CR 701.20a: revealing shows the card and it stays on top, so the draw takes it; CR 701.16a: investigating makes a Clue; CR 608.2c: counted as the instruction
+ * resolves). The controller investigates once for each card that was not a land (an empty library reveals nothing); then every player draws a card. The three sentences are kept
+ * together by the segmenter (`segment.ts`). Not read: another count of cards, another kind of card, "each opponent", the revealer investigating, a draw but one card, more after it.
+ */
+export const EFFECT_PARLEY_INVESTIGATE = defineRule<Clauses>({
+  id: INVESTIGATE_ID,
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 701.20a (Reveal)',
+    'CR 701.16a (Investigate)',
+    'CR 121.1 (Drawing a Card)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card',
+  ],
+  rejects: [
+    'each player reveals the top card of their library. For each nonland card revealed this way, you investigate',
+    'each player reveals the top card of their library. For each land card revealed this way, you investigate. Then each player draws a card',
+    'each player reveals the top two cards of their library. For each nonland card revealed this way, you investigate. Then each player draws a card',
+    'each opponent reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card',
+    'each player reveals the top card of their library. For each nonland card revealed this way, each player investigates. Then each player draws a card',
+    'each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws two cards',
+    'each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card and loses 1 life',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /each player reveals the top card of their library\. for each nonland card revealed this way, you investigate\. then each player draws a card(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (/^(?:,| and\b| then\b)/iu.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(INVESTIGATE_ID, 'eachPlayerRevealsInvestigatesDraws', {}, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+export const PARLEY_EFFECT_RULES = [
+  EFFECT_EACH_PLAYER_REVEALS_THEN_DRAWS,
+  EFFECT_PARLEY_INVESTIGATE,
+];

@@ -80,6 +80,25 @@ export const CANT_CAST_ADDITIONAL_SPELLS: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "You can't cast spells until your next turn" (issue 128, CR 101.2, 611.2a, 500.1): the engine's `playerCantCastSpells` for the controller until their next turn. */
+export const CANT_CAST_UNTIL_YOUR_NEXT_TURN: Lowering<IrClause, Effects> = {
+  head: 'cantCastUntilYourNextTurn',
+  id: 'lower.cant-cast-until-your-next-turn',
+  needs: ['effect:playerCantCastSpells'],
+  lower(clause) {
+    const blocked = missingFeatures(['effect:playerCantCastSpells']);
+    if (blocked.length > 0)
+      return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    return {
+      ok: true,
+      value: [
+        { kind: 'playerCantCastSpells', player: { kind: 'you' }, duration: 'untilYourNextTurn' },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /**
  * "You may cast it from your graveyard as an Adventure until the end of your next turn" (Hildibrand Manderville, issue 98; CR 601.2, 715.3, 611.2a, 400.7, 603.10a): the engine's
  * `mayCast` with `adventure` on the card the permanent with the dying trigger became (`thisCard`), until the end of the controller's next turn. The permission is the offer, so no
@@ -127,4 +146,5 @@ export const GRAVEYARD_CAST_LOWERINGS: readonly Lowering<IrClause, Effects>[] = 
   CAST_THIS_FROM_GRAVEYARD,
   MAY_CAST_ADVENTURE,
   CANT_CAST_ADDITIONAL_SPELLS,
+  CANT_CAST_UNTIL_YOUR_NEXT_TURN,
 ];

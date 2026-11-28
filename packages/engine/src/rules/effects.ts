@@ -3506,9 +3506,12 @@ function runEffect(
         );
       }
       let changed = 0;
+      let applied = 0;
       for (const id of resolveObjects(state, what, ctx, targets)) {
         const obj = next.objects[id];
-        if (obj?.zone !== 'battlefield' || obj.tapped === tapped) continue;
+        if (obj?.zone !== 'battlefield') continue;
+        applied += 1;
+        if (obj.tapped === tapped) continue;
         if (!tapped) {
           // CR 122.1d (D-145): a permanent with a stun counter loses a counter instead of untapping.
           const r = untapPermanent(next, id);
@@ -3523,7 +3526,8 @@ function runEffect(
       // D-139: "the number tapped this way" and "if you do" read what a `tap` effect did.
       return tapped
         ? { ...done(next, events), thisWay: { tapped: changed }, performed: changed }
-        : done(next, events);
+        : // CR 608.2c (issue 128, Innocuous Researcher): "you may untap all lands you control. If you do, ...": the untap was done when it applied to a permanent (one already untapped counts).
+          { ...done(next, events), performed: applied };
     }
 
     case 'assignControlToOpponents': {

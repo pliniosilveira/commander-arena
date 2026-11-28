@@ -6223,6 +6223,8 @@ export const MAY_EFFECT_KINDS = [
   'draw',
   'mill',
   'tap',
+  // CR 701.26a, 608.2c (issue 128, Innocuous Researcher): "you may untap all lands you control. If you do, ...".
+  'untap',
   // D-151: "you may behold a Dragon. If you do, ...".
   'behold',
   // D-212: "you may have ~ become a copy of another target creature you control until end of turn. If you do, ...".
@@ -7383,8 +7385,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'playerCantCastSpells':
       // CR 101.2, 601.2: the players named can't cast spells for the rest of the turn.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (e.duration !== 'untilEndOfTurn') {
-        issue(out, `${path}.duration`, 'this player effect lasts until end of turn');
+      if (e.duration !== 'untilEndOfTurn' && e.duration !== 'untilYourNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          "this player effect lasts until end of turn or until the controller's next turn",
+        );
       }
       break;
     case 'requireAttackSource':
@@ -10328,6 +10334,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.effect`,
           `"you may" is run for ${MAY_EFFECT_KINDS.join(', ')}: "if you do" could not tell whether ${kindOf(e.effect)} was done`,
+        );
+      }
+      // CR 701.26a (issue 128): an untap of objects the player chooses as it resolves is asked after this instruction, so what it did is not known to "if you do".
+      if (e.effect?.kind === 'untap' && kindOf(e.effect.objects) === 'choose') {
+        issue(
+          out,
+          `${path}.effect`,
+          '"you may untap" of permanents the player chooses is not run: "if you do" could not tell whether anything was untapped',
         );
       }
       checkEffect(e.effect, `${path}.effect`, scope, out);

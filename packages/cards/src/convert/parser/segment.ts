@@ -1107,6 +1107,13 @@ const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
  */
 const EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE =
   /(?:^|, )each player reveals the top card of their library, then draws a card\.$/i;
+/**
+ * "Parley — Whenever ~ attacks, each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card."
+ * (Innocuous Researcher, issue 128, CR 701.20a, 701.16a, 121.1, 608.2c): three sentences that are one instruction, kept together for `effect.parley-investigate`.
+ */
+const FOR_EACH_NONLAND_REVEALED_INVESTIGATE =
+  /^for each nonland card revealed this way, you investigate\.$/i;
+const THEN_EACH_PLAYER_DRAWS_A_CARD = /^then each player draws a card\.$/i;
 const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
@@ -1685,6 +1692,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, LOOK_AT_TOP_CARD) &&
       said(b, IF_ITS_CARD_MAY_TAKE) &&
       said(c, ELSE_BOTTOM_OF_LIBRARY)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EACH_PLAYER_REVEALS_TOP) &&
+      said(b, FOR_EACH_NONLAND_REVEALED_INVESTIGATE) &&
+      said(c, THEN_EACH_PLAYER_DRAWS_A_CARD)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

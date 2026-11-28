@@ -40,12 +40,18 @@ function typesAndSubtypesOnly(filter: IrFilter): boolean {
   );
 }
 
+/** "tokens" (issue 128, Junk Winder, CR 111.1, 702.41a): every token the caster controls, whatever its types. */
+const TOKENS_PLURAL: Parser<IrFilter> = (ctx, pos) => {
+  const r = pattern(/tokens(?![\p{L}\p{N}])/u)(ctx, pos);
+  return r.ok ? { ok: true, value: { token: true, raw: 'tokens' }, pos: r.pos } : r;
+};
+
 /** "affinity for artifacts": the keyword node, its one parameter the noun that says what is counted. */
 export function affinityKeyword(rule: string): Parser<IrKeyword> {
   const what: Parser<IrNoun> = (ctx, pos) => {
-    const phrase = choice(permanentPhrase(true, 'all'), LAND_TYPE_PLURAL)(ctx, pos);
+    const phrase = choice(permanentPhrase(true, 'all'), LAND_TYPE_PLURAL, TOKENS_PLURAL)(ctx, pos);
     if (!phrase.ok) return phrase;
-    if (!typesAndSubtypesOnly(phrase.value)) return fail(ctx, pos);
+    if (!typesAndSubtypesOnly(phrase.value) && phrase.value.token !== true) return fail(ctx, pos);
     const filter: IrFilter = { ...phrase.value, raw: ctx.text.slice(pos, phrase.pos) };
     return {
       ok: true,

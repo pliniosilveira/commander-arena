@@ -187,7 +187,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
-import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
+import { EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS, EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { PILES_LOWERINGS } from './piles';
@@ -3287,6 +3287,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...WITHERBLOOM_A_LOWERINGS,
   // Federation Fleet deck, group B (Ambassador K'Ehleyr): every player reveals the top card of their library and draws a card, a counter for each nonland card revealed.
   EACH_PLAYER_REVEALS_THEN_DRAWS,
+  EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS,
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,

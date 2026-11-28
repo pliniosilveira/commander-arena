@@ -5111,7 +5111,11 @@ export type Effect =
   | {
       readonly kind: 'playerCantCastSpells';
       readonly player: PlayerSelector;
-      readonly duration: 'untilEndOfTurn';
+      /**
+       * `untilYourNextTurn` (issue 128, Innocuous Researcher: "If you do, you can't cast spells until your next turn", CR 611.2a, 500.1): the effect ends as the next turn of the controller of
+       * the spell or ability begins (the turn it resolves in is not counted).
+       */
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
     }
   /** "Target player's life total can't change until their next turn" (D-607): blocks every life-total increase and decrease. */
   | {

@@ -26,7 +26,7 @@ const PLURAL_WORDS =
 export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
   id: RULE,
   family: 'effect',
-  leading: ['target', 'that', 'those', 'up', 'one'],
+  leading: ['target', 'that', 'those', 'up', 'one', 'it'],
   cites: [
     'CR 502.3 (Untap Step)',
     'CR 611.2a (Continuous Effects)',
@@ -42,6 +42,7 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     "those creatures don't untap during their controller's next untap step",
     "up to two target creatures don't untap during their controllers' next untap steps",
     "target permanent doesn't untap during its controller's next untap step",
+    "it doesn't untap during its controller's next untap step",
   ],
   rejects: [
     "target creature doesn't untap during your next untap step",
@@ -63,7 +64,8 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     RULE,
     (ctx, pos) => {
       const subject = operands(
-        ['noun.target-permanent', 'noun.that-object', 'noun.those-creatures'],
+        // Issue 128 (Junk Winder): "tap target nonland permanent an opponent controls. It doesn't untap during its controller's next untap step."
+        ['noun.target-permanent', 'noun.that-object', 'noun.those-creatures', 'noun.it'],
         RULE,
       )(ctx, pos);
       if (!subject.ok) return subject;

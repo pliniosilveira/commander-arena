@@ -47,3 +47,32 @@ export const EACH_PLAYER_REVEALS_THEN_DRAWS: Lowering<IrClause, Effects> = {
     return { ok: true, value: effects, rule: clause.rule };
   },
 };
+
+/**
+ * "Each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card." (Innocuous Researcher, CR 701.20a, 701.16a,
+ * 121.1): the engine's `revealTopBranches` of every player, one branch for the cards that are not lands, whose Clue the controller of the ability creates (`asController`: "you" is not the player
+ * who revealed), and then a `draw` of one card for every player, after all the cards were revealed.
+ */
+export const EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS: Lowering<IrClause, Effects> = {
+  head: 'eachPlayerRevealsInvestigatesDraws',
+  id: 'lower.each-player-reveals-investigates-draws',
+  needs: ['effect:revealTopBranches', 'effect:draw', 'effect:createToken', 'selector:eachPlayer'],
+  lower(clause) {
+    const everyone = { kind: 'eachPlayer' } as const;
+    const effects: Effect[] = [
+      {
+        kind: 'revealTopBranches',
+        player: everyone,
+        branches: [
+          {
+            ifMatches: { notTypes: ['land'] },
+            onMatch: { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 },
+            asController: true,
+          },
+        ],
+      },
+      { kind: 'draw', player: everyone, count: 1 },
+    ];
+    return { ok: true, value: effects, rule: clause.rule };
+  },
+};
