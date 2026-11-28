@@ -182,7 +182,7 @@ const SELVALA_ID = 'effect.each-player-reveals-mana-life-then-draws';
  * `effect.each-player-reveals-mana-life-then-draws`: "each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player
  * draws a card" (Selvala, Explorer Returned; CR 701.20a, 608.2c, 106.4, 119.1, 121.1): every player reveals their top card (it stays on top), the controller adds the mana and gains the life once
  * for each card revealed that is not a land, then every player draws a card (the card they revealed). The engine's `revealTopBranches` of each player with a branch done by the controller
- * (`asController`) and a `draw` of each player. The ability is not a mana ability: its effect moves cards from libraries (CR 605.1a), so it uses the stack. The three sentences are kept
+ * (`asController`) and a `draw` of each player. With the {T} cost alone the lowering makes it a mana ability (CR 605.1a: it adds mana and has no target) whose mana is made by these effects (`lower/activated.ts`). The three sentences are kept
  * together by the segmenter. Not read: "each opponent", a land count, another draw, more after the draw.
  */
 export const EFFECT_EACH_PLAYER_REVEALS_MANA_LIFE_THEN_DRAWS = defineRule<Clauses>({

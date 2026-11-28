@@ -141,54 +141,7 @@ export const EFFECT_PARLEY_INVESTIGATE = defineRule<Clauses>({
   },
 });
 
-const MANA_ID = 'effect.each-player-reveals-adds-draws';
-
-/**
- * `effect.each-player-reveals-adds-draws`: "each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card"
- * (Selvala, Explorer Returned, issue 128; CR 701.20a: the cards are shown and stay on top, so the draw takes them; CR 605.1a: the ability adds mana and has no target, so it is a mana ability;
- * CR 121.1). The controller adds {G} and gains 1 life for each card that was not a land (an empty library reveals nothing); then every player draws a card. The three sentences are kept
- * together by the segmenter (`segment.ts`); the lowering makes the mana ability of the engine whose mana is made by its effects (`production` `byEffects`). Not read: another color or amount of
- * mana or of life, another kind of card, "each opponent", a draw but one card, more after it.
- */
-export const EFFECT_EACH_PLAYER_REVEALS_ADDS_DRAWS = defineRule<Clauses>({
-  id: MANA_ID,
-  family: 'effect',
-  leading: ['each'],
-  cites: [
-    'CR 701.20a (Reveal)',
-    'CR 605.1a (Mana Abilities)',
-    'CR 121.1 (Drawing a Card)',
-    'CR 608.2c (Resolving Spells and Abilities)',
-  ],
-  examples: [
-    'each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card',
-  ],
-  rejects: [
-    'each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life',
-    'each player reveals the top card of their library. For each land card revealed this way, add {G} and you gain 1 life. Then each player draws a card',
-    'each player reveals the top card of their library. For each nonland card revealed this way, add {R} and you gain 1 life. Then each player draws a card',
-    'each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 2 life. Then each player draws a card',
-    'each opponent reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card',
-    'each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws two cards',
-    'each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card and loses 1 life',
-  ],
-  parse: (ctx, pos) => {
-    const r = pattern(
-      /each player reveals the top card of their library\. for each nonland card revealed this way, add \{G\} and you gain 1 life\. then each player draws a card(?![\p{L}\p{N}])/iu,
-    )(ctx, pos);
-    if (!r.ok) return r;
-    if (/^(?:,| and\b| then\b)/iu.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
-    const span = { start: pos, end: r.pos };
-    return {
-      ok: true,
-      value: [makeClause(MANA_ID, 'eachPlayerRevealsAddsDraws', {}, span)],
-      pos: r.pos,
-    };
-  },
-});
-
 export const PARLEY_EFFECT_RULES = [
-  EFFECT_EACH_PLAYER_REVEALS_ADDS_DRAWS,
   EFFECT_EACH_PLAYER_REVEALS_THEN_DRAWS,
   EFFECT_PARLEY_INVESTIGATE,
 ];

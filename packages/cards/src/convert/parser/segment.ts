@@ -1137,14 +1137,6 @@ const MAY_PUT_NONLAND_MV_X =
   /^you may put a nonland permanent card with mana value X or less from among them onto the battlefield under your control\.$/i;
 const THAT_PLAYER_PUTS_REST_BOTTOM =
   /^that player puts the rest on the bottom of their library in a random order\.$/i;
-/**
- * "Parley — {T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card." (Selvala, Explorer
- * Returned, issue 128, CR 701.20a, 605.1a, 121.1): three sentences that are one mana ability, kept together for `effect.each-player-reveals-adds-draws`.
- */
-const COSTED_EACH_PLAYER_REVEALS_TOP =
-  /(?:^|: )each player reveals the top card of their library\.$/i;
-const FOR_EACH_NONLAND_ADD_G_GAIN_LIFE =
-  /^for each nonland card revealed this way, add \{G\} and you gain 1 life\.$/i;
 const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
@@ -1788,15 +1780,6 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, OPPONENT_REVEALS_TOP_X) &&
       said(b, MAY_PUT_NONLAND_MV_X) &&
       said(c, THAT_PLAYER_PUTS_REST_BOTTOM)
-    ) {
-      out.push({ start: a.start, end: c.end });
-      i += 2;
-    } else if (
-      a !== undefined &&
-      c !== undefined &&
-      said(a, COSTED_EACH_PLAYER_REVEALS_TOP) &&
-      said(b, FOR_EACH_NONLAND_ADD_G_GAIN_LIFE) &&
-      said(c, THEN_EACH_PLAYER_DRAWS_A_CARD)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

@@ -1,7 +1,7 @@
 // The Peace Offering deck (issue 112), group C: the REAL Oracle text of Kwain, Itinerant Meddler, Selvala, Explorer Returned, Tempt with Bunnies, Tempt with Discovery and Intellectual
 // Offering (the golden corpus, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the
 // nodes the parser writes for the real text are what the engine runs. Pins: CR 101.4 (APNAP order of the offers), 608.2d (each player's choice), 121.1 (drawing), 701.23 and 701.24
-// (searching and shuffling), 701.20a (revealing), 605.1a (an ability that moves cards out of a library is not a mana ability), 608.2c (counting what was done this way).
+// (searching and shuffling), 701.20a (revealing), 605.1a (Selvala's parley adds mana and has no target: a mana ability), 608.2c (counting what was done this way).
 // Built for more than one opponent: every offer is played with three seats, an opponent who declines beside one who accepts.
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, type SeatId, validateCard } from '@commander-arena/engine';
@@ -75,21 +75,19 @@ describe('what the grammar writes for the real text', () => {
     ]);
   });
 
-  test('Selvala: an activated ability that uses the stack, not a mana ability (CR 605.1a)', () => {
+  test('Selvala: a mana ability whose mana is made by its effects (CR 605.1a)', () => {
     expect(face(selvala).abilities).toMatchObject([
       {
-        kind: 'activated',
-        effect: {
-          kind: 'sequence',
-          effects: [
-            {
-              kind: 'revealTopBranches',
-              player: { kind: 'eachPlayer' },
-              branches: [{ ifMatches: { notTypes: ['land'] }, asController: true }],
-            },
-            { kind: 'draw', player: { kind: 'eachPlayer' }, count: 1 },
-          ],
-        },
+        kind: 'mana',
+        production: { kind: 'byEffects' },
+        also: [
+          {
+            kind: 'revealTopBranches',
+            player: { kind: 'eachPlayer' },
+            branches: [{ ifMatches: { notTypes: ['land'] }, asController: true }],
+          },
+          { kind: 'draw', player: { kind: 'eachPlayer' }, count: 1 },
+        ],
       },
     ]);
   });
@@ -249,17 +247,16 @@ describe('Selvala, Explorer Returned (CR 701.20a, 605.1a, 608.2c, 106.4)', () =>
       .at('precombatMain', { active: 0 })
       .build();
 
-  test('it is not a mana ability: it goes on the stack, and the opponents can respond', () => {
+  test('it is a mana ability (no target, adds mana): it does not use the stack (CR 605.1a, 605.3b)', () => {
     const g = board();
-    g.act(0).activate(selvala.name, { pay: true });
-    expect(g.state.stack).toHaveLength(1);
-    g.expect.pool(0, '');
+    g.act(0).tapForMana(selvala.name);
+    expect(g.state.stack).toHaveLength(0);
+    g.expect.pool(0, 'GG');
   });
 
   test('{G} and 1 life for each nonland card revealed, then every player draws the card revealed', () => {
     const g = board();
-    g.act(0).activate(selvala.name, { pay: true });
-    g.passAll();
+    g.act(0).tapForMana(selvala.name);
     // Grizzly Bears and Raging Goblin are not lands; the Island is.
     g.expect.pool(0, 'GG');
     g.expect.life(0, 22);

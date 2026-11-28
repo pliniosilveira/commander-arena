@@ -41,6 +41,8 @@ export interface SupportedFeatures {
   readonly manaProductionKinds: readonly ManaProduction['kind'][];
   /** Effects a mana ability may carry besides the mana (CR 605.1a): no target, no decision. */
   readonly manaAbilityAlsoKinds: readonly Effect['kind'][];
+  /** The extra effects of a mana ability whose mana is made by them (`production` `byEffects`). */
+  readonly manaByEffectsAlsoKinds: readonly Effect['kind'][];
   /** What a `sacrifice` effect may sacrifice (CR 701.21): this permanent, or a chosen one. */
   readonly sacrificeSelectors: readonly SacrificeSelector['kind'][];
   /** Predefined tokens (CR 111.10) whose abilities the engine can run. */
@@ -1157,17 +1159,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'producedType',
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
-  // Selvala, Explorer Returned (issue 128, CR 605.1a): `revealTopBranches`, `draw`, `addMana` and `sequence` of a `byEffects` production (validate-mana.ts `checkByEffectsAlso` limits them).
-  manaAbilityAlsoKinds: [
-    'dealDamage',
-    'loseLife',
-    'gainLife',
-    'delayedCast',
-    'revealTopBranches',
-    'draw',
-    'addMana',
-    'sequence',
-  ],
+  manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
+  // Selvala, Explorer Returned (issue 128, CR 605.1a): the extra effects of a `byEffects` production only (validate-mana.ts `checkByEffectsAlso` limits them further).
+  manaByEffectsAlsoKinds: ['revealTopBranches', 'draw', 'addMana', 'sequence'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   // CR 701.21a, 603.2c (Gorbag of Minas Morgul): `triggerSubject`, "you may sacrifice it" in a trigger about a permanent its controller controls.

@@ -850,7 +850,14 @@ function walkAbility(
         conditionIssues(a.activateOnlyIf, `${path}.activateOnlyIf`, out);
       }
       for (const [i, e] of (a.also ?? []).entries()) {
-        if (!SUPPORTED_FEATURES.manaAbilityAlsoKinds.includes(e.kind)) {
+        const allowed =
+          a.production.kind === 'byEffects'
+            ? [
+                ...SUPPORTED_FEATURES.manaAbilityAlsoKinds,
+                ...SUPPORTED_FEATURES.manaByEffectsAlsoKinds,
+              ]
+            : SUPPORTED_FEATURES.manaAbilityAlsoKinds;
+        if (!allowed.includes(e.kind)) {
           out.push({
             path: `${path}.also[${i}]`,
             message: `effect "${e.kind}" on a mana ability is not implemented by the engine yet`,
