@@ -73,8 +73,8 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'instant',
     text: "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its owner.",
-    expect: no('deals 1 damage to its owner.', 'effect.gain-keyword-each'),
-    note: 'the replay line said "to its controller", which issue 279 reads (`effect.deal-damage-to-its-controller`); "to its owner" is still read by no effect rule (an "each" that deals damage)',
+    expect: no('deals 1 damage to its owner.', 'effect.end-goad'),
+    note: 'the replay line said "to its controller", which issue 279 reads (`effect.deal-damage-to-its-controller`); "to its owner" is still read by no effect rule (an "each" that deals damage; the nearest rule is now `effect.end-goad`, which also starts with a group)',
   },
   {
     kind: 'instant',

@@ -36,7 +36,7 @@ export function adjustedAbility(
 ): ActivatedAbility {
   const worked = ability.cost.some((c) => c.kind === 'payLife' && typeof c.amount !== 'number');
   // D-461: the reduction of a permanent's static ability for the activated abilities of cards in a graveyard.
-  const { by: staticsBy, floor } = objectsReductionFor(state, source);
+  const { by: staticsBy, floor } = objectsReductionFor(state, seat, source);
   let byStatics = staticsBy;
   if (
     !worked &&
@@ -76,6 +76,7 @@ export function adjustedAbility(
  */
 function objectsReductionFor(
   state: GameState,
+  seat: SeatId,
   source: GameObject,
 ): { readonly by: number; readonly floor: number } {
   // The abilities of cards in a graveyard (D-461) and of permanents on the battlefield (Foods, CR 602.2b; with a floor, creatures, issue 345).
@@ -86,6 +87,13 @@ function objectsReductionFor(
     if (s.objects === undefined) continue;
     // A reduction of the permanents' abilities names the battlefield; one of cards in a graveyard does not reach a permanent.
     if (source.zone === 'battlefield' && s.objects.zone !== 'battlefield') continue;
+    // Tezzeret (CR 602.2b, 605.1a): only the first ability of an artifact its controller activates this turn.
+    if (
+      s.firstOfArtifactEachTurn === true &&
+      (state.turnLog.artifactActivated ?? []).includes(seat)
+    ) {
+      continue;
+    }
     const ctx = { controller: controllerOf(state, s.object), source: s.object.id };
     if (matchesFilter(state, source, s.objects, ctx)) {
       by += Math.max(0, amountOf(state, s.amount, ctx, []));

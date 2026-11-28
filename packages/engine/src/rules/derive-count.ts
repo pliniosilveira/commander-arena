@@ -354,6 +354,9 @@ export function staticAmountOf(
   if (amount.kind === 'timesAttacked') {
     return state.turnLog.attacked.filter((id) => id === recipient.id).length;
   }
+  // CR 121.1, 613.4c (issue 128, Knowledge Is Power): the cards the controller has drawn so far this turn.
+  if (amount.kind === 'cardsDrawnThisTurn')
+    return getSeat(state, controllerOf(state, source)).cardsDrawnThisTurn;
   // CR 106.4 (issue 81, Omnath): the mana in the pool of the controller.
   if (amount.kind === 'unspentMana')
     return getSeat(state, controllerOf(state, source)).manaPool.length;

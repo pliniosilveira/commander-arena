@@ -183,7 +183,7 @@ export const PLURAL_STARTS = [
 export const EFFECT_PUMP_ALL = defineRule<Clauses>({
   id: 'effect.pump-all',
   family: 'effect',
-  leading: PLURAL_STARTS,
+  leading: ['~', ...PLURAL_STARTS],
   cites: [
     'CR 611.2a (Continuous Effects)',
     'CR 611.2c (Continuous Effects)',
@@ -191,6 +191,8 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
   ],
   examples: [
     'creatures you control get +1/+1 until end of turn',
+    // Issue 128 (Alandra, Sky Dreamer): the permanent itself and a group, each of them.
+    '~ and Drakes you control each get +1/+1 until end of turn',
     'creatures you control get +2/+0 until end of turn',
     'creatures your opponents control get -1/-1 until end of turn',
     'nonland permanents you control get +1/+1 until end of turn',
@@ -216,9 +218,11 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
           'noun.attacking-opponents',
           // Issue 160 (D-627): "creatures target player controls get +2/+2 until end of turn".
           'noun.group-of-target-player',
+          // Issue 128 (Alandra, Sky Dreamer): "~ and Drakes you control each get +X/+X until end of turn".
+          'noun.self-and-group',
         ],
       }),
-      literal(' get '),
+      choice(literal(' each get '), literal(' get ')),
       PUMP_TAIL,
     ),
     ([objects, , [pt, , duration, count]]) => ({

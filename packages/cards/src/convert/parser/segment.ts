@@ -1112,6 +1112,31 @@ const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
  */
 const EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE =
   /(?:^|, )each player reveals the top card of their library, then draws a card\.$/i;
+/**
+ * "Parley — Whenever ~ attacks, each player reveals the top card of their library. For each nonland card revealed this way, you investigate. Then each player draws a card."
+ * (Innocuous Researcher, issue 128, CR 701.20a, 701.16a, 121.1, 608.2c): three sentences that are one instruction, kept together for `effect.parley-investigate`.
+ */
+const FOR_EACH_NONLAND_REVEALED_INVESTIGATE =
+  /^for each nonland card revealed this way, you investigate\.$/i;
+const THEN_EACH_PLAYER_DRAWS_A_CARD = /^then each player draws a card\.$/i;
+/**
+ * "Whenever ~ enters or deals combat damage to a player, exile up to one target nonland permanent. For as long as that card remains exiled, its owner may cast it." (Aerial Extortionist,
+ * issue 128, CR 608.2c, 611.2b): the second sentence is about the card the first one exiled, so the two are read as one instruction by `effect.exile-owner-may-cast`.
+ */
+const EXILE_UP_TO_ONE_NONLAND = /(?:^|, )exile up to one target nonland permanent\.$/i;
+const OWNER_MAY_CAST_WHILE_EXILED =
+  /^for as long as that card remains exiled, its owner may cast it\.$/i;
+/**
+ * "{T}, Sacrifice X Clues: Target opponent reveals the top X cards of their library. You may put a nonland permanent card with mana value X or less from among them onto the battlefield under
+ * your control. That player puts the rest on the bottom of their library in a random order." (Lonis, Cryptozoologist, issue 128, CR 701.20a, 110.2, 401.4): three sentences that are one
+ * instruction, kept together for `effect.opponent-reveals-put-nonland`.
+ */
+const OPPONENT_REVEALS_TOP_X =
+  /(?:^|: )target opponent reveals the top X cards of their library\.$/i;
+const MAY_PUT_NONLAND_MV_X =
+  /^you may put a nonland permanent card with mana value X or less from among them onto the battlefield under your control\.$/i;
+const THAT_PLAYER_PUTS_REST_BOTTOM =
+  /^that player puts the rest on the bottom of their library in a random order\.$/i;
 const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
@@ -1743,6 +1768,24 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, EACH_PLAYER_REVEALS_TOP) &&
+      said(b, FOR_EACH_NONLAND_REVEALED_INVESTIGATE) &&
+      said(c, THEN_EACH_PLAYER_DRAWS_A_CARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, OPPONENT_REVEALS_TOP_X) &&
+      said(b, MAY_PUT_NONLAND_MV_X) &&
+      said(c, THAT_PLAYER_PUTS_REST_BOTTOM)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, EXILE_TOP_CARDS) &&
       said(b, MAY_PUT_FROM_AMONG_ONTO) &&
       said(c, UNTIL_EOT_EACH_TYPE)
@@ -1833,6 +1876,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, EACH_PLAYER_REVEALS_TOP) && said(b, FOR_EACH_NONLAND_REVEALED_TOKEN)) ||
+        (said(a, EXILE_UP_TO_ONE_NONLAND) && said(b, OWNER_MAY_CAST_WHILE_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||

@@ -187,7 +187,44 @@ export const EFFECT_CANT_CAST_ADDITIONAL_SPELLS = defineRule<Clauses>({
   ),
 });
 
+const CANT_CAST_UNTIL_NEXT_TURN = 'effect.cant-cast-until-your-next-turn';
+
+/**
+ * `effect.cant-cast-until-your-next-turn`: "you can't cast spells until your next turn" (issue 128, Innocuous Researcher; CR 101.2: "can't" beats "can"; CR 611.2a, 500.1: the effect of a
+ * resolving ability lasts until the controller's next turn begins; CR 601.2: a spell cast earlier is unaffected). The engine's `playerCantCastSpells` for the controller until their next
+ * turn. Not read: "target player", "each opponent", "additional spells", another duration, a second instruction joined to it.
+ */
+export const EFFECT_CANT_CAST_UNTIL_YOUR_NEXT_TURN = defineRule<Clauses>({
+  id: CANT_CAST_UNTIL_NEXT_TURN,
+  family: 'effect',
+  leading: ['you'],
+  cites: [
+    'CR 101.2 (Golden Rules)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 500.1 (Beginning Phase)',
+  ],
+  examples: [
+    "you can't cast spells until your next turn",
+    'you can’t cast spells until your next turn',
+  ],
+  rejects: [
+    "you can't cast spells",
+    "you can't cast spells this turn",
+    "you can't cast spells until end of turn",
+    "you can't cast additional spells until your next turn",
+    "target player can't cast spells until your next turn",
+    "you can't cast spells until your next turn and draw a card",
+    "you can't cast a spell until your next turn",
+  ],
+  parse: single(
+    CANT_CAST_UNTIL_NEXT_TURN,
+    pattern(new RegExp(`you can['’]t cast spells until your next turn${BOUNDARY}`, 'iu')),
+    () => ({ verb: 'cantCastUntilYourNextTurn', args: {} }),
+  ),
+});
+
 export const GRAVEYARD_CAST_EFFECT_RULES = [
+  EFFECT_CANT_CAST_UNTIL_YOUR_NEXT_TURN,
   EFFECT_MAY_CAST_THAT_CARD,
   EFFECT_MAY_CAST_THIS_FROM_GRAVEYARD,
   EFFECT_MAY_CAST_IT_AS_ADVENTURE,

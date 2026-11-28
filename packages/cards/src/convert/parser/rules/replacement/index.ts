@@ -32,6 +32,7 @@ import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
 import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
 import { SQUIRREL_G1_REPLACEMENT_RULES } from './squirrel-g1';
+import { TOKEN_COPY_CHOSEN_REPLACEMENT_RULES } from './token-copy-chosen';
 import { TOKEN_EACH_OF_REPLACEMENT_RULES } from './token-each-of';
 import { TOKEN_SWAP_REPLACEMENT_RULES } from './token-swap';
 import { UNLESS_RULES } from './unless';
@@ -451,6 +452,7 @@ export const REPLACEMENT_RULES = [
   ...SQUIRREL_G1_REPLACEMENT_RULES,
   // Most Wanted deck, group 2: "If you would create a Clue, Food, or Treasure token, instead create one of each."
   ...TOKEN_EACH_OF_REPLACEMENT_RULES,
+  ...TOKEN_COPY_CHOSEN_REPLACEMENT_RULES,
   // Peace Offering deck, group F (Fisher's Talent): "If you would create a Fish token, create a 3/3 blue Shark creature token instead."
   ...TOKEN_SWAP_REPLACEMENT_RULES,
   ...DRAW_REDIRECT_REPLACEMENT_RULES,

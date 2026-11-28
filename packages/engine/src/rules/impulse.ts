@@ -196,7 +196,9 @@ export function runMayPlay(
       until,
       change: {
         kind: 'playPermission',
-        seat: res.controller,
+        // Aerial Extortionist (CR 108.3): "its owner may cast it": the card's owner holds the permission.
+        seat:
+          effect.byOwner === true ? (state.objects[id]?.owner ?? res.controller) : res.controller,
         // Lorehold group 1: "you may cast it this turn" is no permission to play a land.
         ...(effect.castOnly === true ? { castOnly: true as const } : {}),
         // Issue 101 (Neriv): "during any turn you attacked with a commander".

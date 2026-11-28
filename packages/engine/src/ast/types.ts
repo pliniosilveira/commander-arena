@@ -759,6 +759,11 @@ export type StaticPtAmount =
    */
   | { readonly kind: 'unspentMana' }
   /**
+   * "Creatures you control get +X/+X, where X is the number of cards you've drawn this turn" (issue 128, Knowledge Is Power; CR 121.1, 613.4c, 611.3a): the cards the controller of the
+   * ability has drawn so far this turn (`SeatState.cardsDrawnThisTurn`), read each time the characteristics are worked out. Plain (+N/+N) only, in a `modifyPt` of any subject.
+   */
+  | { readonly kind: 'cardsDrawnThisTurn' }
+  /**
    * "Creatures you control get +1/+1 for each unity counter on this enchantment" (CR 122.1, 613.4c, 611.3a): the counters of the kind `counter` on the permanent that has the
    * static ability (not on the permanent it affects), read each time the characteristics are worked out. Left out ("Equipped creature gets +1/+1 for each counter on this Equipment",
    * Gavel of the Righteous): the counters of every kind on it added together. Plain (+N/+N) only, in a `modifyPt` of any subject.
@@ -3876,6 +3881,11 @@ export type Effect =
        */
       readonly lifeForMana?: true;
       /**
+       * "For as long as that card remains exiled, its owner may cast it." (issue 128, Aerial Extortionist; CR 601.2, 108.3, 611.2b, 406.3): the player who may cast each card is its owner, not
+       * the controller of this effect. Needs `castOnly` and `lasts` `whileExiled`.
+       */
+      readonly byOwner?: true;
+      /**
        * "Until end of turn, you may play one of those cards" (Nashi, CR 601.2, 305.1): the permission is for one card among all the cards `objects` names: casting or playing one of them ends
        * the permissions of the others (`rules/play-permission-one.ts`).
        */
@@ -5172,7 +5182,11 @@ export type Effect =
   | {
       readonly kind: 'playerCantCastSpells';
       readonly player: PlayerSelector;
-      readonly duration: 'untilEndOfTurn';
+      /**
+       * `untilYourNextTurn` (issue 128, Innocuous Researcher: "If you do, you can't cast spells until your next turn", CR 611.2a, 500.1): the effect ends as the next turn of the controller of
+       * the spell or ability begins (the turn it resolves in is not counted).
+       */
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
     }
   /** "Target player's life total can't change until their next turn" (D-607): blocks every life-total increase and decrease. */
   | {
@@ -5426,6 +5440,11 @@ export type Effect =
    * `forever` (CR 701.15a, 611.2b): "The tokens are goaded for the rest of the game": the goad has no end, so the creatures stay goaded as long as they are in the game.
    */
   | { readonly kind: 'goad'; readonly objects: ObjectSelector; readonly forever?: true }
+  /**
+   * "Then each creature you control is no longer goaded" (issue 128, Serene Sleuth; CR 701.15a, 611.2c): each creature `objects` names is no longer goaded by any player: the goads that
+   * `goad` effects made on it end. The set is fixed when the effect resolves. The designation of an Aura's static "is goaded" is not an effect of the game and stays.
+   */
+  | { readonly kind: 'endGoad'; readonly objects: ObjectSelector }
   /**
    * "Remove enchanted creature from combat" (CR 506.4, Observed Stasis): each creature `objects` names that is attacking or blocking is taken out of the combat in progress, as a
    * permanent that changes controller is (`rules/combat-removal.ts`): it stops attacking or blocking, a creature it blocked stays blocked (CR 509.1h) and no combat damage is dealt by or
@@ -6185,6 +6204,11 @@ export type Effect =
       readonly count: Amount;
       readonly controller?: PlayerSelector;
       /**
+       * "Investigate", "investigate twice" (CR 701.16a, issue 128): the Clue is made by the keyword action, which the player does `count` times (each time making one Clue), so each time is
+       * an `investigated` event, whatever the replacement effects of the tokens made (Academy Manufactor) do to the tokens. Only with the preset Clue.
+       */
+      readonly investigate?: true;
+      /**
        * "Create two tapped Treasure tokens" (CR 110.5b, 614.1c, D-131): the tokens enter the battlefield tapped (they are
        * not tapped afterwards: nothing triggers from becoming tapped, CR 603.2e). A token that would enter tapped
        * anyway still does.
@@ -6242,6 +6266,13 @@ export type Effect =
     };
 
 export type ManaProduction =
+  /**
+   * "{T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card." (Selvala, Explorer
+   * Returned; issue 128; CR 605.1a, 605.3b, 701.20a): a mana ability that makes its mana only through its effects (`ManaAbility.also`, run at once, in order, as a short resolution
+   * that may reveal, add mana with `addMana`, gain life and draw). It adds nothing as it is activated, so what it will make is not known in advance: the payment planner does not
+   * count on it, and a player activates it by hand. A decision a draw would ask (a commander drawn, CR 903.9b) is answered "no".
+   */
+  | { readonly kind: 'byEffects' }
   | {
       readonly kind: 'fixed';
       readonly mana: readonly ManaColor[];
@@ -7113,6 +7144,16 @@ export type Trigger =
    */
   | {
       readonly kind: 'lifeGained';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly firstEachTurn?: true;
+    }
+  /**
+   * "Whenever you investigate for the first time each turn" (CR 701.16a, 603.2, issue 128, Erdwal Illuminator): once for each time the player `who` names (relative to the controller of this
+   * ability) investigates, the keyword action of a `createToken` with `investigate`; "investigate twice" is two investigations. `firstEachTurn` limits it to the first investigation of that
+   * player in the turn (CR 603.2: the trigger counts the player's investigations, not this ability's resolutions). `triggerPlayer` is the player who investigated.
+   */
+  | {
+      readonly kind: 'investigated';
       readonly who: 'you' | 'opponent' | 'any';
       readonly firstEachTurn?: true;
     }
@@ -9048,6 +9089,16 @@ export type Replacement =
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
   /**
+   * "The first time you would create one or more tokens during each of your turns, you may instead choose a creature other than ~ and create that many tokens that are copies of that
+   * creature." (Esix, Fractal Bloom; issue 128; CR 614.1a, 614.5, 616.1, 707.2, 111.4): a replacement effect of a permanent on the battlefield that applies only on its controller's turn and
+   * only to the first creation of tokens by that player in the turn, whether or not anything applied to an earlier one (`TurnLog.tokensCreatedBy`: a token made before the permanent came under
+   * its control that turn counts). It is optional: the player is asked, among the effects that can apply, whether to apply it and which creature to copy (the creatures on the battlefield but the
+   * permanent with the ability); declining uses it up for the turn. It applies before any other effect of the creation (it replaces the tokens as the instruction described them, before anything
+   * that changes how they enter), and every token of the event becomes a copy (`what` names the tokens it applies to: all of them). The copies are made as the creature is now (its copiable
+   * values; counters and damage are not copied), under the controller's control, untapped and with none of what the instruction said about the original tokens. Not with a `token`.
+   */
+  | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'copyChosen' }
+  /**
    * "If you would create a Clue, Food, or Treasure token, instead create one of each." (Academy Manufactor, CR 614.1a, 111.2, 614.5): every token `what` matches among the ones its
    * controller would create at once is replaced by one of each of the predefined tokens `tokens` for each such token (a count of N is N of each), so a Treasure becomes a Clue, a
    * Food and a Treasure. The tokens it makes are the ones it names (what the instruction said about the replaced ones, tapped for one, does not carry over, as for `thatMany`). It is
@@ -9910,6 +9961,13 @@ export type StaticEffect =
        * (`zone: 'battlefield'`) as well as cards in a graveyard.
        */
       readonly minTotal?: number;
+      /**
+       * "The first activated ability of an artifact you activate each turn costs {2} less to activate." (Tezzeret, Betrayer of Flesh; issue 128, CR 601.2f, 602.2b, 605.1a): the reduction applies
+       * only to the first ability of a permanent `objects` describes (an artifact; the controller's own) that its controller activates in the turn, a mana ability included, whatever it is: later
+       * ones, and the first one of another player, are unaffected. Counted from `TurnLog.artifactActivated`, kept while some permanent has this ability. Only a battlefield filter that names
+       * the card type artifact and `controller: 'you'`.
+       */
+      readonly firstOfArtifactEachTurn?: true;
     }
   /**
    * "Lands you control have "{T}: Add one mana of any color."" (D-099): the subject has the mana

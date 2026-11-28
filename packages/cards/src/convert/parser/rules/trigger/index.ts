@@ -941,7 +941,7 @@ function aimedFilter(aimed: Aimed): IrFilter {
 export const TRIGGER_CAST = defineRule<IrTrigger>({
   id: 'trigger.cast',
   family: 'trigger',
-  leading: ['you', 'a', 'an', 'the'],
+  leading: ['you', 'a', 'an', 'the', 'another'],
   cites: [
     'CR 601.2i (Casting Spells)',
     'CR 603.2 (Handling Triggered Abilities)',
@@ -963,6 +963,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'a player casts a spell',
     'a player casts a creature spell',
     'an opponent casts a spell',
+    'another player casts a spell',
+    'another player casts a noncreature spell',
     'an opponent casts a noncreature spell',
     'an opponent casts an instant or sorcery spell',
     'an opponent casts a spell with mana value 3 or less',
@@ -1075,6 +1077,15 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
             { start: span.start, end: span.start + 'an opponent'.length },
             'eachOpponent',
             { raw: 'an opponent' },
+          ),
+        ),
+        // Issue 128 (Aerial Extortionist, CR 102.2): "another player" is a player other than the controller of the ability: an opponent.
+        map(spanned(literal('another player casts ')), ({ span }) =>
+          makeNoun(
+            'trigger.cast',
+            { start: span.start, end: span.start + 'another player'.length },
+            'eachOpponent',
+            { raw: 'another player' },
           ),
         ),
       ),

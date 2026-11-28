@@ -294,6 +294,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
     to: 'opponents',
   },
   lifeGained: { kind: 'lifeGained', who: 'you', firstEachTurn: true },
+  investigated: { kind: 'investigated', who: 'you', firstEachTurn: true },
   lifeLost: { kind: 'lifeLost', who: 'you', firstEachTurn: true },
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },
   lastCounterRemoved: { kind: 'lastCounterRemoved', what: { kind: 'this' }, counter: 'time' },

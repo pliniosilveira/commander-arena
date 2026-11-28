@@ -332,6 +332,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-ability-cost-reduction': asIs,
   // Food and Fellowship deck, group B: the reduction of the abilities of a group of permanents (Sam).
   'static.permanent-ability-cost-reduction': asIs,
+  'static.first-artifact-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
   'static.spells-cost-increase-targeting-self': asIs,
@@ -650,6 +651,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-matches': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
+  // Issue 128 (Tezzeret, Betrayer of Flesh): "If it isn't a Vehicle, ..." after an instruction that named a target.
+  'condition.it-isnt-a': spell(
+    (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
+  ),
   // Sauron deck (Uglúk of the White Hand): the creature that died, said as one of two creature types.
   'condition.that-was-either': permanent(
     (e) =>
@@ -787,6 +792,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.others-enter-with-x-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
+  'trigger.investigates': whenever,
   'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
   // Midnight Clock (issue 121): the Nth counter of a kind put on the permanent.
@@ -1372,6 +1378,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'replacement.tokens-plus-that-many': asIs,
   'replacement.tokens-each-of': asIs,
+  'replacement.tokens-copy-chosen': asIs,
   // Peace Offering deck, group F (Fisher's Talent): a level's replacement is a line of its own.
   'replacement.token-swap': asIs,
   'static.cant-have-counters': asIs,

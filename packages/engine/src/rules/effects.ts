@@ -128,7 +128,7 @@ import { runExplore } from './explore';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runMayCastEachType } from './free-cast-effect';
-import { runGoad } from './goad';
+import { runEndGoad, runGoad } from './goad';
 import { landCardsToGraveyard } from './graveyard-lands';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { runHandCards, startHandCards } from './hand-cards';
@@ -949,13 +949,33 @@ export function runImmediateEffects(
   };
   let next = state;
   const events: GameEvent[] = [];
-  for (const effect of effects) {
-    const out = runEffect(next, res, effect, [], quietFlow());
-    if (out.needs !== null || out.front.length > 0) {
-      throw new Error(`The ${effect.kind} effect of a mana ability needed a decision`);
+  // CR 605.3b (Selvala, issue 128): a mana ability resolves at once, so the instructions an effect leaves (the cards a reveal sends on, the draws, a branch's effect) run right after
+  // it, in order, with no one asked: a draw that would ask about a commander (CR 903.9b) is answered "no". An effect that still needs a decision is an engine bug.
+  const queue: Instruction[] = effects.map((effect) => ({ kind: 'effect' as const, effect }));
+  while (queue.length > 0) {
+    const [first, ...rest] = queue;
+    if (first === undefined) break;
+    const instruction: Instruction =
+      first.kind === 'draw' || first.kind === 'move'
+        ? { ...first, commanderChoice: first.commanderChoice ?? false }
+        : first;
+    const step = { ...res, queue: rest };
+    const out =
+      instruction.kind === 'effect'
+        ? runEffect(
+            next,
+            instruction.as === undefined ? step : { ...step, controller: instruction.as },
+            instruction.effect,
+            [],
+            quietFlow(),
+          )
+        : runInstruction(next, step, instruction as EffectInstruction, []);
+    if (out.needs !== null) {
+      throw new Error(`The ${instruction.kind} of a mana ability needed a decision`);
     }
     next = out.state;
     events.push(...out.events);
+    queue.splice(0, queue.length, ...out.front, ...rest);
   }
   return { state: next, events };
 }
@@ -3541,9 +3561,12 @@ function runEffect(
         );
       }
       let changed = 0;
+      let applied = 0;
       for (const id of resolveObjects(state, what, ctx, targets)) {
         const obj = next.objects[id];
-        if (obj?.zone !== 'battlefield' || obj.tapped === tapped) continue;
+        if (obj?.zone !== 'battlefield') continue;
+        applied += 1;
+        if (obj.tapped === tapped) continue;
         if (!tapped) {
           // CR 122.1d (D-145): a permanent with a stun counter loses a counter instead of untapping.
           const r = untapPermanent(next, id);
@@ -3558,7 +3581,8 @@ function runEffect(
       // D-139: "the number tapped this way" and "if you do" read what a `tap` effect did.
       return tapped
         ? { ...done(next, events), thisWay: { tapped: changed }, performed: changed }
-        : done(next, events);
+        : // CR 608.2c (issue 128, Innocuous Researcher): "you may untap all lands you control. If you do, ...": the untap was done when it applied to a permanent (one already untapped counts).
+          { ...done(next, events), performed: applied };
     }
 
     case 'assignControlToOpponents': {
@@ -3862,6 +3886,22 @@ function runEffect(
         events.push(...made.events);
         front.push(...made.front);
         created = [...created, ...made.created];
+      }
+      // CR 701.16a (issue 128): each time the keyword action "investigate" was done is an event, however the Clue made was replaced.
+      if (effect.investigate === true) {
+        for (const seat of creators) {
+          for (let i = 0; i < count; i += 1) {
+            const nth = (next.turnLog.investigated ?? []).filter((who) => who === seat).length + 1;
+            next = {
+              ...next,
+              turnLog: {
+                ...next.turnLog,
+                investigated: [...(next.turnLog.investigated ?? []), seat],
+              },
+            };
+            events.push({ kind: 'investigated', seat, nth });
+          }
+        }
       }
       // D-230 (CR 607.2a): a token that copies a creature and links the cards exiled by the effect before it remembers them.
       if (effect.token.kind === 'copyOf' && effect.token.linkExiled === true) {
@@ -5180,6 +5220,10 @@ function runEffect(
     case 'goad':
       // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
       return runGoad(state, effect, ctx, targets);
+
+    case 'endGoad':
+      // CR 701.15a (issue 128): the goads of the game on the creatures end (`rules/goad.ts`).
+      return runEndGoad(state, effect, ctx, targets);
 
     case 'removeFromCombat':
       // CR 506.4: the creatures are taken out of the combat in progress (`rules/remove-from-combat.ts`).

@@ -3656,6 +3656,13 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     }
     return;
   }
+  // Issue 128 (Knowledge Is Power, CR 121.1): "the number of cards you've drawn this turn": plain (+N/+N) only, the controller's own count now.
+  if (amount?.kind === 'cardsDrawnThisTurn') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not cards drawn');
+    }
+    return;
+  }
   // CR 122.1 (Call for Unity): "for each unity counter on this enchantment": plain (+N/+N) only, the counters of one kind on the permanent that has the ability.
   if (amount?.kind === 'countersOnSource') {
     if (!plain) {
@@ -6305,6 +6312,8 @@ export const MAY_EFFECT_KINDS = [
   'draw',
   'mill',
   'tap',
+  // CR 701.26a, 608.2c (issue 128, Innocuous Researcher): "you may untap all lands you control. If you do, ...".
+  'untap',
   // D-151: "you may behold a Dragon. If you do, ...".
   'behold',
   // D-212: "you may have ~ become a copy of another target creature you control until end of turn. If you do, ...".
@@ -7217,6 +7226,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
+      // CR 701.16a (issue 128): the keyword action "investigate" makes a Clue.
+      if (
+        e.investigate !== undefined &&
+        (e.investigate !== true || e.token?.kind !== 'preset' || e.token.preset !== 'Clue')
+      ) {
+        issue(out, `${path}.investigate`, 'investigate is true on the preset Clue token');
+      }
       // D-648 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
       if (e.attacking !== undefined) {
         // CR 508.4: with `controllerChooses` the first player an attack batch attacked is only where the token enters; its controller then chooses what it attacks, so a batch that
@@ -7469,8 +7485,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'playerCantCastSpells':
       // CR 101.2, 601.2: the players named can't cast spells for the rest of the turn.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (e.duration !== 'untilEndOfTurn') {
-        issue(out, `${path}.duration`, 'this player effect lasts until end of turn');
+      if (e.duration !== 'untilEndOfTurn' && e.duration !== 'untilYourNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          "this player effect lasts until end of turn or until the controller's next turn",
+        );
       }
       break;
     case 'requireAttackSource':
@@ -7681,6 +7701,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.forever !== undefined && e.forever !== true) {
         issue(out, `${path}.forever`, 'forever must be true when present');
       }
+      break;
+    case 'endGoad':
+      // Issue 128 (CR 701.15a): each creature the selector names is no longer goaded.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'removeFromCombat':
       // CR 506.4: each creature the selector names is taken out of the combat in progress.
@@ -8990,11 +9014,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
       }
-      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked' && !lookOnly) {
+      // Lonis, Cryptozoologist (CR 701.20a, 110.2, 401.4): "Target opponent reveals the top X cards of their library. You may put a nonland permanent card with mana value X or less from among
+      // them onto the battlefield under your control. That player puts the rest on the bottom of their library in a random order.": the cards of another player's library are revealed, one
+      // may be put onto the battlefield under the control of the controller of the effect, and the rest go to the bottom of that library in a random order.
+      const revealedPut =
+        e.take?.to === 'battlefield' &&
+        e.revealAll === true &&
+        e.rest === 'bottomRandom' &&
+        e.take.max === 1 &&
+        e.take.min === undefined &&
+        e.take.kinds === undefined &&
+        e.take.hidden === undefined &&
+        e.take.all === undefined;
+      if (
+        e.from !== undefined &&
+        e.take?.to !== 'exileFaceDownUnlinked' &&
+        !lookOnly &&
+        !revealedPut
+      ) {
         issue(
           out,
           `${path}.from`,
-          "from (another player's library) needs take.to 'exileFaceDownUnlinked', or a look with nothing taken (max 0)",
+          "from (another player's library) needs take.to 'exileFaceDownUnlinked', a look with nothing taken (max 0), or revealed cards of which one is put onto the battlefield (revealAll, take.to 'battlefield', max 1, rest 'bottomRandom')",
         );
       }
       if (
@@ -10443,6 +10484,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.effect`,
           `"you may" is run for ${MAY_EFFECT_KINDS.join(', ')}: "if you do" could not tell whether ${kindOf(e.effect)} was done`,
+        );
+      }
+      // CR 701.26a (issue 128): an untap of objects the player chooses as it resolves is asked after this instruction, so what it did is not known to "if you do".
+      if (e.effect?.kind === 'untap' && kindOf(e.effect.objects) === 'choose') {
+        issue(
+          out,
+          `${path}.effect`,
+          '"you may untap" of permanents the player chooses is not run: "if you do" could not tell whether anything was untapped',
         );
       }
       checkEffect(e.effect, `${path}.effect`, scope, out);

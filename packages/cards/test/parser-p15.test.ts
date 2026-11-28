@@ -546,7 +546,12 @@ describe('effect.create-token: a single token counted "for each", and "Investiga
     expect(readAll('Investigate, then draw a card.', 'sorcery').spell?.effect).toEqual({
       kind: 'sequence',
       effects: [
-        { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 },
+        {
+          kind: 'createToken',
+          token: { kind: 'preset', preset: 'Clue' },
+          count: 1,
+          investigate: true,
+        },
         { kind: 'draw', player: { kind: 'you' }, count: 1 },
       ],
     });
@@ -557,18 +562,25 @@ describe('effect.create-token: a single token counted "for each", and "Investiga
       kind: 'createToken',
       token: { kind: 'preset', preset: 'Clue' },
       count: 1,
+      investigate: true,
     });
     expect(abilities('Whenever a land you control enters, investigate.')).toEqual([
       {
         kind: 'triggered',
         trigger: { kind: 'landfall' },
-        effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 },
+        effect: {
+          kind: 'createToken',
+          token: { kind: 'preset', preset: 'Clue' },
+          count: 1,
+          investigate: true,
+        },
       },
     ]);
   });
 
   test.each([
-    ['Investigate twice.', 'twice.'],
+    // "Investigate twice" is read since issue 128 (`effect.investigate-times`): a count word it does not know stays unread.
+    ['Investigate thrice.', 'thrice.'],
     ['Investigates.', 'Investigates.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ stoppedAt });
@@ -751,10 +763,7 @@ describe('effect.restrict-all: "creatures your opponents control attack this tur
     ["Creatures you control can't be blocked.", "can't be blocked."],
     ["Creatures without flying or reach can't block this turn.", "or reach can't block this turn."],
     ["Artifacts you control can't be blocked this turn.", "can't be blocked this turn."],
-    [
-      "Other creatures you control can't be blocked this turn.",
-      "Other creatures you control can't be blocked this turn.",
-    ],
+    ["Other creatures you control can't be blocked this turn.", "can't be blocked this turn."],
     ["Creatures you control can't attack this turn.", "can't attack this turn."],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text)).toMatchObject({ stoppedAt });

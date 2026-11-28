@@ -203,6 +203,23 @@ export function checkDragonsEffect(
           );
         }
       }
+      // Aerial Extortionist (CR 108.3, 611.2b): "its owner may cast it" for as long as the card remains exiled: a permission to cast, held by the card's owner.
+      if (e.byOwner !== undefined) {
+        if (
+          e.byOwner !== true ||
+          e.castOnly !== true ||
+          e.lasts !== 'whileExiled' ||
+          kindOf(e.objects) !== 'moved' ||
+          e.oneOf !== undefined ||
+          e.lookAt !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.byOwner`,
+            "byOwner is true, on the cards an effect before moved ('moved'), with castOnly and lasts whileExiled, and with no oneOf or lookAt",
+          );
+        }
+      }
       if (e.creatureSpellsOnly !== undefined) {
         if (e.creatureSpellsOnly !== true || e.castOnly !== true) {
           issue(

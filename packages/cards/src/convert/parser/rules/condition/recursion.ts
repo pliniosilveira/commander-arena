@@ -236,6 +236,76 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.it-isnt-a`: "it isn't a Vehicle", "it isn't a creature" (CR 608.2c, 113.7a, 205.3, 205.2: an instruction later in the text asks what an object an earlier one named is not; Tezzeret,
+ * Betrayer of Flesh: "If it isn't a Vehicle, it has base power and toughness 4/4", issue 128). One subtype or one card type, in the singular. The engine's `objectMatches` of the filter
+ * that leaves out that subtype or card type, in a `conditional` effect. Not read: "it's not", "is not", several words, a modifier, "card", a plural, the past tense.
+ */
+export const CONDITION_IT_ISNT_A = defineRule<IrCondition>({
+  id: 'condition.it-isnt-a',
+  family: 'condition',
+  leading: ['it'],
+  cites: [
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 113.7a (Abilities)',
+    'CR 205.3 (Subtypes)',
+  ],
+  examples: [
+    "it isn't a Vehicle",
+    'it isn’t a Vehicle',
+    "it isn't a creature",
+    "it isn't an Angel",
+  ],
+  rejects: [
+    "it isn't Vehicle",
+    "it's not a Vehicle",
+    'it is not a Vehicle',
+    "it isn't a Vehicle card",
+    "it isn't a Vehicle or a creature",
+    "it isn't a legendary creature",
+    "it isn't a Vehicles",
+    "it wasn't a Vehicle",
+    "it isn't",
+  ],
+  parse: (ctx, pos) => {
+    const lead = spanned(pattern(/it isn['’]t (?:a|an) /iu))(ctx, pos);
+    if (!lead.ok) return lead;
+    const what = WHAT_IT_IS(ctx, lead.pos);
+    if (!what.ok) return what;
+    const { raw: _raw, subtypes, types, ...rest } = what.value;
+    void _raw;
+    // One word of one kind: a subtype or a card type, nothing else said (no modifier, no zone, no controller).
+    const onlySubtype = (subtypes?.length ?? 0) === 1 && (types?.length ?? 0) === 0;
+    const onlyType = (types?.length ?? 0) === 1 && (subtypes?.length ?? 0) === 0;
+    if (Object.keys(rest).length > 0 || (!onlySubtype && !onlyType)) return fail(ctx, pos);
+    const text = ctx.text.slice(lead.pos, what.pos);
+    if (/ card$/iu.test(text)) return fail(ctx, pos);
+    const filter: IrFilter = onlySubtype
+      ? { notSubtypes: [...(subtypes ?? [])], raw: text }
+      : { notTypes: [...(types ?? [])], raw: text };
+    const it: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'it' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 'it'.length },
+      rule: 'condition.it-isnt-a',
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'objectMatches', who: it, filter },
+        span: { start: pos, end: what.pos },
+        rule: 'condition.it-isnt-a',
+      },
+      pos: what.pos,
+    };
+  },
+});
+
+/**
  * `condition.its-mana-value`: "its mana value was 3 or less", "its mana value is 4 or greater", "its mana value was 2" (D-298, CR 202.3, 608.2c, 113.7a: an
  * instruction later in the text asks the mana value of an object an earlier one named, as it is or, once it has left, as it last was). "It" is an object
  * the binding pass finds (a target of the text; the lowering refuses what it cannot find); the number is a digit string and the direction "or less" or "or
@@ -567,6 +637,7 @@ export const RECURSION_CONDITION_RULES = [
   CONDITION_DISCARDED_CARD_MATCHES,
   CONDITION_EXILED_THIS_WAY,
   CONDITION_IT_MATCHES,
+  CONDITION_IT_ISNT_A,
   CONDITION_ITS_MANA_VALUE,
   CONDITION_THAT_SPELLS_STAT,
   CONDITION_GIFT_PROMISED,

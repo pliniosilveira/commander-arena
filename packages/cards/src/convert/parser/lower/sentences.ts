@@ -1108,6 +1108,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'removeChosenCounters',
   // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, ...": done when some life was lost.
   'loseLife',
+  // Innocuous Researcher (issue 128, CR 701.26a, 608.2c): "you may untap all lands you control. If you do, ...": done when it applied to some permanent.
+  'untap',
   // Skyfisher Spider (CR 608.2c, 119.3): "you may gain 1 life for each creature card in your graveyard. If you do, ...": done when some life was gained.
   'gainLife',
 ]);

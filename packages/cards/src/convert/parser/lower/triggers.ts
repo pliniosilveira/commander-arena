@@ -777,6 +777,16 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
       });
     }
+    case 'investigated': {
+      // "Whenever you investigate [for the first time each turn]" (CR 701.16a, 603.2, issue 128): the player is relative to the controller.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      return ok({
+        kind: 'investigated',
+        who,
+        ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+      });
+    }
     case 'lifeLost': {
       // "Whenever you lose life [for the first time each turn]" (CR 119.3, 603.2): the player is relative to the controller.
       const who = whoOf(t.actor);
@@ -1107,6 +1117,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'drawn',
       'sacrifice',
       'lifeGained',
+      'investigated',
       'lifeLost',
       'attackBatch',
       // CR 509.1h: the opponent whose creatures were not blocked ("that player").

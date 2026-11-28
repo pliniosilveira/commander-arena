@@ -19,25 +19,27 @@ describe('the card is valid', () => {
     expect(validateCard(syntheticCard(FIST))).toEqual([]);
   });
 
-  test('a static ability cannot read it: nothing would refresh the layer when a card is drawn', () => {
+  test('a static ability reads it as the layers are worked out (issue 128)', () => {
+    expect(validateCard(syntheticCard('SYNTHETIC Drawn Anthem'))).toEqual([]);
+  });
+
+  test('a characteristic-defining ability cannot count cards drawn', () => {
     const card = singleFace({
-      name: 'SYNTHETIC Test Drawn Static',
+      name: 'SYNTHETIC Test Drawn Defined',
       manaCost: ['1'],
       types: ['creature'],
       colors: [],
       colorIdentity: [],
       power: 1,
       toughness: 1,
-      oracleText: "This creature gets +1/+0 for each card you've drawn this turn.",
+      oracleText: "This creature's power is equal to the cards you've drawn this turn.",
       abilities: [
         {
           kind: 'static',
           static: {
-            kind: 'modifyPt',
-            subject: { kind: 'this' },
+            kind: 'definePt',
             power: { kind: 'cardsDrawnThisTurn' } as never,
-            toughness: 0,
-          },
+          } as never,
         },
       ],
     });
@@ -128,6 +130,44 @@ describe('"+1/+0 for each card you\'ve drawn this turn" (CR 121.1, 608.2h)', () 
     g.act(0).cast(FIST, { targets: ['mine'], pay: true });
     g.passAll();
     g.expect.pt('mine', 3, 2);
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.pt('mine', 2, 2);
+  });
+});
+
+describe('"Creatures you control get +X/+X, where X is the number of cards you\'ve drawn this turn" (CR 121.1, 613.4c, 611.3a)', () => {
+  const ANTHEM = 'SYNTHETIC Drawn Anthem';
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .library(...LIBRARY)
+      .hand(DIVINATION)
+      .battlefield('Island', 'Island', 'Island', ANTHEM)
+      .battlefield(BEARS, { label: 'mine' })
+      .seat(1)
+      .life(20)
+      .library(...LIBRARY)
+      .battlefield('Island')
+      .battlefield(BEARS, { label: 'theirs' })
+      .at('precombatMain', { active: 0, priority: 0 })
+      .build();
+
+  test('no cards drawn: no bonus; two drawn: +2/+2, for your creatures only', () => {
+    const g = start();
+    g.expect.pt('mine', 2, 2);
+    g.act(0).cast(DIVINATION, { pay: true });
+    g.passAll();
+    g.expect.pt('mine', 4, 4);
+    g.expect.pt('theirs', 2, 2);
+    g.expect.invariants();
+  });
+
+  test('the bonus follows the count and ends with the turn', () => {
+    const g = start();
+    g.act(0).cast(DIVINATION, { pay: true });
+    g.passAll();
+    g.expect.pt('mine', 4, 4);
     g.advanceTo('upkeep', { turn: 'next' });
     g.expect.pt('mine', 2, 2);
   });

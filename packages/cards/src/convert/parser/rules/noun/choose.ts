@@ -634,8 +634,16 @@ export const NOUN_A_TOKEN = defineRule<IrNoun>({
   family: 'noun',
   leading: [],
   cites: ['CR 111.1 (Tokens)', 'CR 701.21a (Sacrifice)'],
-  examples: ['a token', 'another token', 'two tokens'],
-  rejects: ['target token', 'a token an opponent controls', 'tokens', 'one token', 'a tokens'],
+  examples: ['a token', 'another token', 'two tokens', 'an artifact token', 'a creature token'],
+  rejects: [
+    'target token',
+    'a token an opponent controls',
+    'tokens',
+    'one token',
+    'a tokens',
+    'a nonartifact token',
+    'an artifacts token',
+  ],
   parse: node<Bare, IrNoun>(
     'noun.a-token',
     choice<Bare>(
@@ -657,6 +665,11 @@ export const NOUN_A_TOKEN = defineRule<IrNoun>({
       map(pattern(new RegExp(`another token${BOUNDARY}`, 'iu')), () =>
         bare('a', { token: true, raw: 'token' }, { other: true }),
       ),
+      // CR 111.1, 205.2a (issue 128, Sophia, Dogged Detective): "an artifact token", "a creature token": a token with that card type.
+      map(
+        pattern(new RegExp(`an? (artifact|creature|enchantment|land) token${BOUNDARY}`, 'iu')),
+        (m) => bare('a', { token: true, types: [(m[1] ?? '').toLowerCase()], raw: 'token' }),
+      ),
       map(pattern(new RegExp(`an? token${BOUNDARY}`, 'iu')), () =>
         bare('a', { token: true, raw: 'token' }),
       ),
@@ -673,9 +686,10 @@ export const CHOOSE_NOUN_RULES = [
   ...BRAIDS_NOUN_RULES,
   // Before the plain "a creature", which would stop at "they control" (Agitator Ant).
   NOUN_A_PERMANENT_THEY_CONTROL,
+  // Before the plain "an artifact", which would stop before " token" (Sophia, Dogged Detective).
+  NOUN_A_TOKEN,
   NOUN_A_PERMANENT,
   NOUN_EACH_OF_UP_TO_PERMANENTS,
-  NOUN_A_TOKEN,
   NOUN_ANY_NUMBER_PERMANENTS,
   NOUN_ONE_OR_MORE_PERMANENTS,
   NOUN_ALL_NONLAND_THEY_CONTROL,

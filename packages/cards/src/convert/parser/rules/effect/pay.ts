@@ -38,6 +38,8 @@ export const EFFECT_PAY = defineRule<Clauses>({
     'pay that much life',
     'pay {1} and discard a card',
     'pay {2}{R} and discard two cards',
+    'pay {2} and sacrifice a token',
+    'pay {1} and sacrifice a creature',
   ],
   rejects: [
     'pay {1} and discard',
@@ -45,6 +47,8 @@ export const EFFECT_PAY = defineRule<Clauses>({
     'pay {1} and discard a card at random',
     'pay {1} and discard this card',
     'pay {1} and discard a card and draw a card',
+    'pay {1} and sacrifice',
+    'pay {1} and sacrifice target creature',
     'pay {1}, discard a card',
     'pay 2 life and discard a card',
     'pay {X} and discard a card',
@@ -74,10 +78,13 @@ export const EFFECT_PAY = defineRule<Clauses>({
           sequence(
             literal('pay '),
             family<IrCost>('cost', { only: ['cost.mana', 'cost.mana-hybrid'] }),
-            // Lorehold group 1: "pay {1} and discard a card".
+            // Lorehold group 1: "pay {1} and discard a card". Issue 128 (Killer Service, CR 701.21a): "pay {2} and sacrifice a token".
             optional(
               map(
-                sequence(literal(' and '), family<IrCost>('cost', { only: ['cost.discard'] })),
+                sequence(
+                  literal(' and '),
+                  family<IrCost>('cost', { only: ['cost.discard', 'cost.sacrifice'] }),
+                ),
                 ([, discard]) => discard,
               ),
               null,

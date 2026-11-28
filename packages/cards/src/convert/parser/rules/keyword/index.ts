@@ -197,6 +197,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Flying, soulbond',
     'Soulbond, flying',
     'Affinity for artifacts',
+    'Affinity for tokens',
     'Affinity for artifact creatures',
     'Affinity for Plains',
     'Affinity for Islands',

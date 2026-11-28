@@ -1188,6 +1188,13 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (!tokens.every(isEachOfPreset)) return failure(ability);
     return built({ kind: 'tokensInstead', what: filter, mode: 'eachOf', tokens });
   }
+  if (event.verb === 'tokensInstead' && event.args.copyChosen !== undefined) {
+    // "The first time you would create one or more tokens during each of your turns, you may instead choose a creature other than ~ and create that many tokens that are copies of that
+    // creature." (Esix, Fractal Bloom, issue 128, CR 614.1a, 707.2): the engine's `tokensInstead` in `copyChosen` mode, which applies to every token.
+    const blocked = gate(ability, ['ability:replacement', 'replacement:tokensInstead']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'tokensInstead', what: {}, mode: 'copyChosen' });
+  }
   if (event.verb === 'tokensInstead' && event.args.double !== undefined) {
     // "If one or more tokens would be created under your control, twice that many of those tokens are created instead." (Hashaton deck group 3, D-378, CR 614.1a,
     // 614.5): the engine's `tokensInstead` in `double` mode of the permanent, which names the tokens and makes no token of its own.

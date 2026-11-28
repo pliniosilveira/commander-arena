@@ -1563,6 +1563,8 @@ export interface IrToken extends IrNode {
     | 'Wicked Role'
     | 'Junk'
     | 'Blood';
+  /** The Clue is made by the keyword action "investigate" (CR 701.16a, issue 128), not by "create a Clue token": the engine's `createToken` `investigate`. */
+  readonly investigate?: true;
   readonly power?: number;
   readonly toughness?: number;
   /** "X/X creature token": use the X value bound by the enclosing ability's where-X clause. */
@@ -2207,6 +2209,8 @@ export type IrStaticEffect =
       readonly kind: 'permanentAbilityCostReduction';
       readonly amount: number;
       readonly objects: IrNoun;
+      /** "The first activated ability of an artifact you activate each turn costs {2} less to activate." (Tezzeret, Betrayer of Flesh, issue 128, CR 602.2b, 605.1a): only the first activation of the turn. */
+      readonly firstEachTurn?: true;
     }
   // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana." (Agatha of the
   // Vile Cauldron, issue 345, CR 601.2f, 118.7): the power of the permanent itself taken off the generic mana, leaving at least one mana.

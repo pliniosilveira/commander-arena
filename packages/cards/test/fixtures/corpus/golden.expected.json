@@ -1,5 +1,5 @@
 {
-  "parserVersion": 229,
+  "parserVersion": 230,
   "cards": {
     "00037840-6089-42ec-8c5c-281f9f474504": {
       "name": "Nissa, Worldsoul Speaker",
@@ -1080,6 +1080,14 @@
       "reasons": [],
       "ast": "3b98be66"
     },
+    "0ee06ed0-717a-4bfa-b634-d00e013c1f16": {
+      "name": "Lonis, Cryptozoologist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9a1d2abc"
+    },
     "0ee41ef9-0b39-4d00-a68e-7914839a7175": {
       "name": "Bone Devourer",
       "group": "acceptance",
@@ -1119,6 +1127,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1d774bab"
+    },
+    "0f30f32f-3c4c-4f73-8b2a-82045a40bda9": {
+      "name": "Killer Service",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eae12274"
     },
     "0f4350ad-dc44-4942-b097-e4033e29d659": {
       "name": "Umaro, Raging Yeti",
@@ -1993,6 +2009,14 @@
       "reasons": [],
       "ast": "b6cf6256"
     },
+    "1d7d9404-cad6-4c1a-bd47-7a31ebb2791c": {
+      "name": "Tangletrove Kelp",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1f1b5d51"
+    },
     "1d85eec2-80db-466c-bd48-d2a12866e8bd": {
       "name": "Old Stickfingers",
       "group": "acceptance",
@@ -2401,6 +2425,14 @@
       "reasons": [],
       "ast": "871fd979"
     },
+    "24038629-7c12-45ef-8ec4-0d2bb3e2265c": {
+      "name": "Ethereal Investigator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6a2fcd5e"
+    },
     "240e85d3-e495-4877-8609-4b4056c402f7": {
       "name": "Victimize",
       "group": "acceptance",
@@ -2519,7 +2551,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "5734b310"
+      "ast": "fcbd2ba9"
     },
     "25877c41-39a4-4cc3-ac4b-8f3dd06d579b": {
       "name": "Stensian Sanguinist // Exsanguinate",
@@ -3968,6 +4000,14 @@
       "reasons": [],
       "ast": "3178465c"
     },
+    "39d8406a-90c3-460c-b4e8-0f590573db51": {
+      "name": "Mechanized Production",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da729e79"
+    },
     "3a16bdda-8499-47e4-b870-b9576f4c1a83": {
       "name": "Master of Death",
       "group": "acceptance",
@@ -4270,7 +4310,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "b7b64a22"
+      "ast": "5cd53ce7"
     },
     "3d6fa57a-aa53-4b5c-b8af-a7612c823117": {
       "name": "Faithless Looting",
@@ -5568,7 +5608,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "5dfc9bb5"
+      "ast": "b79dc4b6"
     },
     "52b3a979-3b93-4441-9237-0c8a754e5523": {
       "name": "Furious Rise",
@@ -6310,6 +6350,14 @@
       "reasons": [],
       "ast": "64200be0"
     },
+    "5dedd5a9-bc5d-47bb-9ae1-7d683843d041": {
+      "name": "Tezzeret, Betrayer of Flesh",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ddb9ad86"
+    },
     "5def9f38-0a0b-4e8d-9f9d-29dcb46520b4": {
       "name": "Esper Sentinel",
       "group": "training",
@@ -6399,6 +6447,14 @@
       "reasons": [],
       "ast": "2fd7ecce"
     },
+    "5e7586dd-d42e-4ac6-adb8-d46b6cdef923": {
+      "name": "Disorder in the Court",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "30c4c25d"
+    },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
       "group": "acceptance",
@@ -6478,6 +6534,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bc9399d0"
+    },
+    "5ff4ef34-acb9-46c3-8530-f4b093807066": {
+      "name": "Erdwal Illuminator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "749b0dcc"
     },
     "60040023-7bf0-42e0-ab30-46a730675564": {
       "name": "Hoarder's Greed",
@@ -8661,6 +8725,14 @@
       "reasons": [],
       "ast": "5c6a268e"
     },
+    "7e7d7f4d-2c22-4803-ba5e-5eb653c25b5e": {
+      "name": "Aerial Extortionist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "687e8046"
+    },
     "7e84aff5-2cb6-4214-befd-3d2de31229e5": {
       "name": "Lovestruck Beast // Heart's Desire",
       "group": "acceptance",
@@ -9052,7 +9124,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "9eaa310a"
+      "ast": "107b7195"
     },
     "84391c32-5bb7-4c36-be50-bbb5f8732156": {
       "name": "Rukarumel, Biologist",
@@ -9253,6 +9325,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca74f1c1"
+    },
+    "8806ee05-10d5-4492-b672-2f6bcab94be0": {
+      "name": "Knowledge Is Power",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c1cc628"
     },
     "883ad210-917b-40e6-8682-31d6eb3ed12a": {
       "name": "Burakos, Party Leader",
@@ -10297,6 +10377,14 @@
       "reasons": [],
       "ast": "124087ac"
     },
+    "97bb1589-2941-4a75-a5f6-916871e51e9e": {
+      "name": "Alandra, Sky Dreamer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2ab45a4d"
+    },
     "97d61346-bd53-4eb8-a920-6ae0382eb20d": {
       "name": "Thief of Blood",
       "group": "acceptance",
@@ -10720,6 +10808,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "36b41ee1"
+    },
+    "9d22960b-babc-4cf3-b228-d32e13bc6014": {
+      "name": "Esix, Fractal Bloom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e31c67ec"
     },
     "9d2aea05-f55c-4355-950f-bfdc4e985e80": {
       "name": "Selvala's Stampede",
@@ -11160,6 +11256,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "74900873"
+    },
+    "a30d076b-c942-45e4-b943-3749ce955291": {
+      "name": "Confirm Suspicions",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "34a2acfe"
     },
     "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
       "name": "Ganax, Astral Hunter",
@@ -12203,6 +12307,14 @@
       "reasons": [],
       "ast": "ec1fcda8"
     },
+    "b0d639cb-71d4-454f-9dd6-89cd7a59b702": {
+      "name": "Serene Sleuth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c32032ea"
+    },
     "b0efb6fb-f2d1-4027-90b5-44fb3f5dd538": {
       "name": "Unification",
       "group": "acceptance",
@@ -12382,6 +12494,14 @@
       "reasons": [],
       "ast": "9387e928"
     },
+    "b401a490-d25f-4029-bb91-8999e140c6a1": {
+      "name": "Armed with Proof",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "13d67517"
+    },
     "b4429e71-434e-480c-a8d1-2ad11de8b2d9": {
       "name": "Convert to Slime",
       "group": "acceptance",
@@ -12476,7 +12596,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "27190ec2"
+      "ast": "14500813"
     },
     "b655bee5-52d3-467e-b16c-cfc2edf2b1a1": {
       "name": "Arachnogenesis",
@@ -14335,6 +14455,14 @@
       "reasons": [],
       "ast": "6d0089b6"
     },
+    "d1ec1e4e-faa6-4afc-9e00-a3327105c11b": {
+      "name": "Wavesifter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f08535f4"
+    },
     "d1ecfad3-e79a-447b-a932-68ef728eaf1f": {
       "name": "Rockalanche",
       "group": "acceptance",
@@ -14917,7 +15045,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "3bd830cb"
+      "ast": "15f30e70"
     },
     "d9826660-0f34-4d82-8915-cf2796ab8d9a": {
       "name": "Sproutback Trudge",
@@ -15984,6 +16112,14 @@
       "reasons": [],
       "ast": "52b36118"
     },
+    "eaf8027a-017a-4471-ae7b-a372fd8e0ff3": {
+      "name": "Sophia, Dogged Detective",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "94930546"
+    },
     "eaffdf95-8e20-408d-99fa-3adc9e19523d": {
       "name": "Misleading Signpost",
       "group": "holdout",
@@ -16336,6 +16472,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6c5bd8cb"
+    },
+    "ef764497-800e-4cbd-805e-7635919a983c": {
+      "name": "Innocuous Researcher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d315016d"
     },
     "ef833546-f755-4ac5-867a-3926984e68a0": {
       "name": "Archaeomancer's Map",
@@ -17512,8 +17656,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1892,
-      "total": 1908
+      "supported": 1910,
+      "total": 1926
     }
   }
 }

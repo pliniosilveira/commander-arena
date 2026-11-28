@@ -5,7 +5,7 @@
 // import as supported, or where and why it stops, so a change that makes the grammar read less OR
 // more than it should fails here. The kinds of expectation are those of convert-grammar-corpus.test.ts.
 import { expect, test } from 'vitest';
-import { type Line, NONE, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
+import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
 
 const NOT_RUNNABLE = { reason: 'notRunnable' } as const;
 
@@ -449,10 +449,7 @@ const CHOICES: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Other creatures you control get +1/+1 and gain trample until your next turn.',
-    expect: no(
-      'Other creatures you control get +1/+1 and gain trample until your next turn.',
-      NONE,
-    ),
+    expect: no('get +1/+1 and gain trample until your next turn.', 'effect.group-become-creatures'),
     note: '"other" with a second change and a duration of the end of the turn is read since issue 345 (`effect.gain-keyword-others`); another duration is not',
   },
   {

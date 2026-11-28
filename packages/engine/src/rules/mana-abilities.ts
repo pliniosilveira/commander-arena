@@ -11,6 +11,7 @@ import type { ManaColor } from '../mana/types';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { withArtifactActivation } from './artifact-activations';
 import { evaluateCondition } from './conditions';
 import { controlledSince, controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
@@ -325,7 +326,12 @@ export function recordManaActivation(
   object: ObjectId,
   abilityIndex: number,
   ability: ManaAbility,
+  seat?: SeatId,
 ): GameState {
+  // Tezzeret (issue 128, CR 605.1a): a mana ability is an activated ability, so it counts as "the first activated ability of an artifact" when the log is kept.
+  if (seat !== undefined) {
+    state = withArtifactActivation(state, seat, state.objects[object]);
+  }
   if (ability.oncePerTurn !== true) return state;
   return {
     ...state,
@@ -558,7 +564,8 @@ export function activationChoices(
     extraColors?: readonly ManaColor[];
   }[] = [];
   for (const outcome of productionOutcomes(state, obj, ability)) {
-    if (outcome.length === 0) continue;
+    // Selvala (issue 128): a `byEffects` ability makes its mana as its effects run, so its one outcome is empty and is still an activation.
+    if (outcome.length === 0 && ability.production.kind !== 'byEffects') continue;
     const base = isCombinationProduction(ability.production)
       ? { color: null, combination: outcome }
       : { color: isColorChoice(ability.production) ? outcomeColor(outcome) : null };

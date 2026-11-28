@@ -41,6 +41,8 @@ export interface SupportedFeatures {
   readonly manaProductionKinds: readonly ManaProduction['kind'][];
   /** Effects a mana ability may carry besides the mana (CR 605.1a): no target, no decision. */
   readonly manaAbilityAlsoKinds: readonly Effect['kind'][];
+  /** The extra effects of a mana ability whose mana is made by them (`production` `byEffects`). */
+  readonly manaByEffectsAlsoKinds: readonly Effect['kind'][];
   /** What a `sacrifice` effect may sacrifice (CR 701.21): this permanent, or a chosen one. */
   readonly sacrificeSelectors: readonly SacrificeSelector['kind'][];
   /** Predefined tokens (CR 111.10) whose abilities the engine can run. */
@@ -429,6 +431,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantPlayerManaAbility',
     // D-639: "Goad target creature" (CR 701.15).
     'goad',
+    // CR 701.15a (Serene Sleuth): "each creature you control is no longer goaded".
+    'endGoad',
     // CR 506.4 (Observed Stasis): "Remove enchanted creature from combat."
     'removeFromCombat',
     'grantPlayerProtectionEverything',
@@ -783,6 +787,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "whenever you gain life [for the first time each turn]", "whenever you put one or more +1/+1 counters on this creature",
     // "whenever you attack with two or more creatures".
     'lifeGained',
+    // CR 701.16a, 603.2 (issue 128): "whenever you investigate [for the first time each turn]".
+    'investigated',
     // CR 119.3, 603.2: "whenever you lose life [for the first time each turn]".
     'lifeLost',
     'countersAdded',
@@ -1126,6 +1132,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
     'fixed',
+    // Selvala, Explorer Returned (issue 128): the mana is made by the ability's own effects (`ManaAbility.also`).
+    'byEffects',
     'anyColor',
     'commanderIdentity',
     'oneOf',
@@ -1152,6 +1160,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
+  // Selvala, Explorer Returned (issue 128, CR 605.1a): the extra effects of a `byEffects` production only (validate-mana.ts `checkByEffectsAlso` limits them further).
+  manaByEffectsAlsoKinds: ['revealTopBranches', 'draw', 'addMana', 'sequence'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   // CR 701.21a, 603.2c (Gorbag of Minas Morgul): `triggerSubject`, "you may sacrifice it" in a trigger about a permanent its controller controls.
@@ -3893,6 +3903,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantAbility: true,
   restrict: true,
   goad: true,
+  endGoad: true,
   removeFromCombat: true,
   requireAttack: true,
   attackRandomOpponent: true,
@@ -4094,6 +4105,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   combatDamageBatch: true,
   damageBatch: true,
   lifeGained: true,
+  investigated: true,
   lifeLost: true,
   countersAdded: true,
   lastCounterRemoved: true,
@@ -4293,6 +4305,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
+  byEffects: true,
   fixed: true,
   anyColor: true,
   commanderIdentity: true,

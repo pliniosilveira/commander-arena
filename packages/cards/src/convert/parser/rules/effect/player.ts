@@ -566,6 +566,7 @@ const investigateAction: Action = (subject, you, rule) =>
       const token: IrToken = {
         kind: 'token',
         predefined: 'Clue',
+        investigate: true,
         count: { kind: 'number', value: 1, span },
         span,
         rule,

@@ -70,9 +70,9 @@ const TOKENS: readonly Line[] = [
   },
   {
     kind: 'sorcery',
-    text: 'Investigate twice.',
-    expect: no('twice.', 'effect.investigate'),
-    note: 'SYNTHETIC; "investigate" alone is read',
+    text: 'Investigate thrice.',
+    expect: no('thrice.', 'effect.investigate'),
+    note: 'SYNTHETIC; "investigate" alone is read, and since issue 128 "twice" and "N times" too (`effect.investigate-times`), not a count word it does not know',
   },
 ];
 

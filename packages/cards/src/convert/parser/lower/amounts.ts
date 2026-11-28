@@ -1199,6 +1199,11 @@ export function lowerStaticAmount(
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderCasts' }, rule } : lowered;
   }
+  // CR 121.1, 613.4c (Knowledge Is Power): "where X is the number of cards you've drawn this turn", the engine's `cardsDrawnThisTurn` read as the layers are worked out.
+  if (amount.kind === 'cardsDrawnThisTurn') {
+    const lowered = lowerAmount(amount, ctx, rule);
+    return lowered.ok ? { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule } : lowered;
+  }
   // "+X/+0, where X is the greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, which reads the printed power of cards
   // in a zone outside the battlefield (a greatest power among permanents would read layer 7 itself, CR 613.8: refused).
   if (amount.kind === 'aggregate' && amount.how === 'greatest' && amount.stat === 'power') {

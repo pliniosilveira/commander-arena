@@ -44,6 +44,7 @@ import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BECOMES_COPY_GRAVEYARD_EFFECT_RULES } from './becomes-copy-graveyard';
+import { BECOMES_PERMANENTLY_EFFECT_RULES } from './becomes-permanently';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
@@ -118,6 +119,7 @@ import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_COUNTERS_EFFECT_RULES } from './exile-counters';
+import { EXILE_OWNER_CAST_EFFECT_RULES } from './exile-owner-cast';
 import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
@@ -234,6 +236,7 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { OPPONENT_GRAVEYARD_CAST_EFFECT_RULES } from './opponent-graveyard-cast';
+import { OPPONENT_REVEALS_PUT_EFFECT_RULES } from './opponent-reveals-put';
 import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
@@ -1818,6 +1821,8 @@ export const EFFECT_RULES = [
   ...SQUIRRELED_G4_EFFECT_RULES,
   // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
   ...EXILE_SPELL_RULES,
+  // Aerial Extortionist (issue 128): before `effect.exile`, which would read only its first sentence.
+  ...EXILE_OWNER_CAST_EFFECT_RULES,
   EFFECT_EXILE,
   // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
   ...WITHERBLOOM_C_EARLY_EFFECT_RULES,
@@ -1835,6 +1840,8 @@ export const EFFECT_RULES = [
   ...WITHERBLOOM_A_EFFECT_RULES,
   // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
   ...PARLEY_EFFECT_RULES,
+  ...BECOMES_PERMANENTLY_EFFECT_RULES,
+  ...OPPONENT_REVEALS_PUT_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
   // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."

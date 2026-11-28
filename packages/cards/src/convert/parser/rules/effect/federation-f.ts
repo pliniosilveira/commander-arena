@@ -113,12 +113,13 @@ export const EFFECT_RETURN_THOSE_DELAYED = defineRule<Clauses>({
     "return those cards to the battlefield under their owner's control at the beginning of the next end step",
     'return those cards to the battlefield under their owner’s control at the beginning of the next end step',
     "return those cards to the battlefield under their owners' control at the beginning of the next end step",
+    // Issue 128 (Disorder in the Court): "the exiled cards", returned tapped.
+    "return the exiled cards to the battlefield tapped under their owners' control at the beginning of the next end step",
   ],
   rejects: [
     "return those cards to the battlefield under their owner's control",
     'return those cards to the battlefield at the beginning of the next end step',
     'return those cards to the battlefield under your control at the beginning of the next end step',
-    "return those cards to the battlefield tapped under their owner's control at the beginning of the next end step",
     "return them to the battlefield under their owner's control at the beginning of the next end step",
     "return those creatures to the battlefield under their owner's control at the beginning of the next end step",
     "return that card to the battlefield under its owner's control at the beginning of the next end step",
@@ -131,7 +132,7 @@ export const EFFECT_RETURN_THOSE_DELAYED = defineRule<Clauses>({
     const r = spanned(
       pattern(
         new RegExp(
-          `return those cards to the battlefield under their owners?['’]s? control at the beginning of the next end step${END}(?!\\s+and\\b)`,
+          `return (?:those|the exiled) cards to the battlefield (tapped )?under their owners?['’]s? control at the beginning of the next end step${END}(?!\\s+and\\b)`,
           'iu',
         ),
       ),
@@ -152,6 +153,8 @@ export const EFFECT_RETURN_THOSE_DELAYED = defineRule<Clauses>({
       kind: 'zoneSpec',
       zone: 'battlefield',
       whose: 'owner',
+      // Issue 128 (Disorder in the Court, CR 110.5b): "tapped".
+      ...(r.value.value[1] === undefined ? {} : { tapped: true as const }),
       span: r.value.span,
       rule: id,
     };

@@ -35,6 +35,7 @@ import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
 import { BECOME_COPY_GRAVEYARD_LOWERINGS } from './become-copy-graveyard';
+import { BECOMES_PERMANENTLY_LOWERINGS } from './becomes-permanently';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CASE_LOWERINGS } from './case-solved';
@@ -110,6 +111,7 @@ import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_COUNTERS_LOWERINGS } from './exile-counters';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
+import { EXILE_OWNER_CAST_LOWERINGS } from './exile-owner-cast';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
@@ -188,7 +190,8 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
-import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
+import { OPPONENT_REVEALS_PUT_LOWERINGS } from './opponent-reveals-put';
+import { EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS, EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { peaceOfferingLowerings } from './peace-offering';
@@ -330,6 +333,20 @@ const GOAD: Lowering<IrClause, Effects> = {
       ],
       rule: clause.rule,
     };
+  },
+};
+
+/** "Each creature you control is no longer goaded" (issue 128, Serene Sleuth, CR 701.15a): the engine's `endGoad` on what the operand names. */
+const END_GOAD: Lowering<IrClause, Effects> = {
+  head: 'endGoad',
+  id: 'lower.end-goad',
+  needs: ['effect:endGoad'],
+  lower(clause, ctx) {
+    const operandNoun = operand(clause, 'objects');
+    if (operandNoun?.kind !== 'noun') return failure(clause);
+    const object = objectSelectorOf(operandNoun, ctx);
+    if (!object.ok) return object;
+    return { ok: true, value: [{ kind: 'endGoad', objects: object.value }], rule: clause.rule };
   },
 };
 
@@ -2635,7 +2652,27 @@ function ownTokenName(named: string, ctx: LowerContext): string | null {
   return ctx.selfName === '' ? null : named.split('~').join(ctx.selfName);
 }
 
+/**
+ * "Investigate" (CR 701.16a, issue 128): the `createToken` of the Clue marks that the keyword action was done, for "whenever you investigate" (the engine's `investigate`).
+ */
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
+  const lowered = lowerCreateTokenBase(clause, ctx);
+  if (!lowered.ok) return lowered;
+  const token = arg(clause, 'token');
+  if (token?.kind !== 'token' || token.investigate !== true) return lowered;
+  return {
+    ...lowered,
+    value: lowered.value.map((effect) =>
+      effect.kind === 'createToken' &&
+      effect.token.kind === 'preset' &&
+      effect.token.preset === 'Clue'
+        ? { ...effect, investigate: true as const }
+        : effect,
+    ),
+  };
+}
+
+function lowerCreateTokenBase(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
   // "Create a tapped and attacking X/X ... creature token" (CR 508.4, Ghalta and Mavren): the tokens are created tapped, then the engine's `enterAttacking` of what was just made
@@ -3199,6 +3236,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  END_GOAD,
   GOAD_COUNTERED,
   REMOVE_FROM_COMBAT,
   ATTACK_RANDOM_OPPONENT,
@@ -3282,6 +3320,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...WITHERBLOOM_A_LOWERINGS,
   // Federation Fleet deck, group B (Ambassador K'Ehleyr): every player reveals the top card of their library and draws a card, a counter for each nonland card revealed.
   EACH_PLAYER_REVEALS_THEN_DRAWS,
+  EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS,
   // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
   revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
@@ -3436,6 +3475,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   ...RANDOM_OPPONENT_LOWERINGS,
   ...FLORIAN_LOWERINGS,
+  ...BECOMES_PERMANENTLY_LOWERINGS,
+  ...OPPONENT_REVEALS_PUT_LOWERINGS,
+  ...EXILE_OWNER_CAST_LOWERINGS,
   ...SHELL_GAME_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,

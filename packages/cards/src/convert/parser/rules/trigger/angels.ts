@@ -21,6 +21,68 @@ import { defineRule, quietly, spanned } from '../registry';
 import { makeNoun, triggerSubject, youNoun } from './subjects';
 
 /**
+ * `trigger.investigates`: "you investigate", "you investigate for the first time each turn", "an opponent investigates", "a player investigates" (CR 701.16a: the keyword action, once for each
+ * time a player does it; "investigate twice" is two; issue 128, Erdwal Illuminator). "For the first time each turn" limits it to the player's first investigation in the turn (CR 603.2). The player
+ * is relative to the controller of the ability. Not read: another ordinal, "investigate" for a creature, "whenever you create a Clue" (another event: tokens made by other means).
+ */
+export const TRIGGER_INVESTIGATES = defineRule<IrTrigger>({
+  id: 'trigger.investigates',
+  family: 'trigger',
+  leading: ['you', 'an', 'a'],
+  cites: ['CR 701.16a (Investigate)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: [
+    'you investigate',
+    'you investigate for the first time each turn',
+    'an opponent investigates',
+    'a player investigates',
+  ],
+  rejects: [
+    'you investigate for the first time',
+    'you investigate for the second time each turn',
+    'you investigates',
+    'an opponent investigate',
+    'each opponent investigates',
+    'a creature investigates',
+    'you investigate this turn',
+    'you investigate or',
+    'you investigate for the first time each turn or',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.investigates';
+    const who = spanned(
+      choice(
+        map(pattern(/you investigate(?![\p{L}\p{N}])/iu), () => 'you' as const),
+        map(pattern(/an opponent investigates(?![\p{L}\p{N}])/iu), () => 'opponent' as const),
+        map(pattern(/a player investigates(?![\p{L}\p{N}])/iu), () => 'any' as const),
+      ),
+    )(ctx, pos);
+    if (!who.ok) return who;
+    const first = optional(literal(' for the first time each turn'), null)(ctx, who.pos);
+    if (!first.ok) return first;
+    const kind = who.value.value;
+    const actor: IrNoun =
+      kind === 'you'
+        ? makeNoun(id, who.value.span, 'you', { raw: 'you' })
+        : makeNoun(id, who.value.span, kind === 'opponent' ? 'eachOpponent' : 'eachPlayer', {
+            raw: kind === 'opponent' ? 'an opponent' : 'a player',
+          });
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'investigated',
+        actor,
+        ...(first.value === null ? {} : { firstEachTurn: true as const }),
+        args: {},
+        span: { start: pos, end: first.pos },
+        rule: id,
+      },
+      pos: first.pos,
+    };
+  },
+});
+
+/**
  * `trigger.life-gained`: "you gain life", "you gain life for the first time each turn", "an opponent gains life", "a player gains life"
  * (CR 119.9: a life gain event, once for each time a player gains life; the amount is what was gained after any replacement; a gain of 0 is
  * no event). "For the first time each turn" limits it to the first gain of that player in the turn (CR 603.2). The player is relative to the
@@ -572,6 +634,7 @@ export const TRIGGER_PLAYER_ATTACKS_OPPONENT = defineRule<IrTrigger>({
 
 export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
+  TRIGGER_INVESTIGATES,
   TRIGGER_LIFE_LOST,
   TRIGGER_COUNTERS_ADDED,
   TRIGGER_NTH_COUNTER_PUT,

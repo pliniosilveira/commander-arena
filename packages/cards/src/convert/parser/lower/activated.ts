@@ -1181,6 +1181,12 @@ export function lowerActivated(
 ): LowerResult<readonly Ability[]> {
   if (ability.modal !== undefined) return lowerModalActivated(ability, ability.modal, ctx);
   const clauses = ability.body.sentences.flatMap((s) => s.clauses);
+  // "Parley — {T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card." (Selvala,
+  // Explorer Returned, issue 128, CR 605.1a): a mana ability that makes its mana by its effects.
+  if (clauses.length === 1 && clauses[0]?.verb === 'revealEachManaLifeThenDraw') {
+    const parley = lowerParleyMana(ability, ctx);
+    if (parley !== null) return parley;
+  }
   if (
     clauses.some((c) => c.verb === 'addMana') &&
     !ability.costs.some((c) => c.kind === 'loyalty')
@@ -1199,6 +1205,35 @@ export function lowerActivated(
     if (mana !== null) return mana;
   }
   return lowerOrdinary(ability, ctx);
+}
+
+/**
+ * Selvala's parley mana ability (issue 128): "{T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player
+ * draws a card." It adds mana, has no target and is no loyalty ability, so it is a mana ability (CR 605.1a): it does not use the stack (CR 605.3b). The effects are the ordinary reading of the
+ * sentences (`lower.reveal-each-mana-life-then-draw`), kept as the `also` effects of a mana ability whose mana is made by them (`production` `byEffects`). Null when the ability is not that
+ * one (the ordinary reading stands).
+ */
+function lowerParleyMana(
+  ability: Activated,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> | null {
+  if (ability.costs.length !== 1 || ability.costs[0]?.kind !== 'tap') return null;
+  const ordinary = lowerOrdinary(ability, ctx);
+  if (!ordinary.ok) return ordinary;
+  const [only] = ordinary.value;
+  if (ordinary.value.length !== 1 || only?.kind !== 'activated') return null;
+  const body = only.effect;
+  if (body.kind !== 'sequence' || body.effects.length !== 2) return null;
+  const [reveal, draw] = body.effects;
+  if (reveal?.kind !== 'revealTopBranches' || draw?.kind !== 'draw') return null;
+  if (Object.keys(only).some((k) => k !== 'kind' && k !== 'cost' && k !== 'effect')) return null;
+  const mana: ManaAbility = {
+    kind: 'mana',
+    cost: only.cost,
+    production: { kind: 'byEffects' },
+    also: [reveal, draw],
+  };
+  return { ok: true, value: [mana], rule: ordinary.rule };
 }
 
 /**

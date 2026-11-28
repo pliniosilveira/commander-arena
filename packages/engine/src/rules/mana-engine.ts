@@ -352,7 +352,7 @@ export function activateManaAbility(
   }
   const made = [...chosen, ...extra];
   let next = patchSeat(
-    recordManaActivation(paid.state, source, abilityIndex, found.ability),
+    recordManaActivation(paid.state, source, abilityIndex, found.ability, seat),
     seat,
     {
       manaPool: addToPool(
@@ -459,7 +459,7 @@ export function applyPaymentPlan(
       undefined,
       new Set(plan.taps.map((t) => t.object)),
     );
-    next = recordManaActivation(paid.state, tap.object, tap.abilityIndex, ability);
+    next = recordManaActivation(paid.state, tap.object, tap.abilityIndex, ability, seat);
     events.push(...paid.events);
     // D-151: mana of a source that was tapped for this payment and not left over was spent on it, with what it carries.
     const rider = spentRiderOf(ability, tap.object);

@@ -54,6 +54,8 @@ export const NOUN_ATTACHED_PERMANENT = defineRule<IrNoun>({
   examples: [
     'enchanted creature',
     'enchanted land',
+    // Issue 128 (Mechanized Production): an Aura with "Enchant artifact".
+    'enchanted artifact',
     'enchanted permanent',
     'equipped creature',
     'enchanted legendary creature',
@@ -77,12 +79,15 @@ export const NOUN_ATTACHED_PERMANENT = defineRule<IrNoun>({
   parse: node<AttachedWords, IrNoun>(
     'noun.attached-permanent',
     choice<AttachedWords>(
-      map(pattern(new RegExp(`enchanted ${SUPERTYPE}(creature|land)${BOUNDARY}`, 'iu')), (m) => ({
-        det: 'enchanted' as const,
-        types: [(m[2] ?? '').toLowerCase()],
-        supertypes: supertypeOf(m[1]),
-        raw: m[0],
-      })),
+      map(
+        pattern(new RegExp(`enchanted ${SUPERTYPE}(creature|land|artifact)${BOUNDARY}`, 'iu')),
+        (m) => ({
+          det: 'enchanted' as const,
+          types: [(m[2] ?? '').toLowerCase()],
+          supertypes: supertypeOf(m[1]),
+          raw: m[0],
+        }),
+      ),
       map(pattern(new RegExp(`enchanted ${SUPERTYPE}permanent${BOUNDARY}`, 'iu')), (m) => ({
         det: 'enchanted' as const,
         types: [],

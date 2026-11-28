@@ -200,7 +200,7 @@ export const TRIGGER_CAST_WITH_KEYWORD = defineRule<IrTrigger>({
 export const TRIGGER_CAST_NOT_FROM_HAND = defineRule<IrTrigger>({
   id: 'trigger.cast-not-from-hand',
   family: 'trigger',
-  leading: ['you', 'a', 'an'],
+  leading: ['you', 'a', 'an', 'another'],
   cites: [
     'CR 601.2a (Casting Spells)',
     'CR 601.2i (Casting Spells)',
@@ -211,6 +211,7 @@ export const TRIGGER_CAST_NOT_FROM_HAND = defineRule<IrTrigger>({
     'an opponent casts a creature spell from anywhere other than their hand',
     'you cast a spell from anywhere other than your hand',
     'a player casts a spell from anywhere other than their hand',
+    'another player casts a spell from anywhere other than their hand',
   ],
   rejects: [
     'an opponent casts a spell from anywhere other than your hand',

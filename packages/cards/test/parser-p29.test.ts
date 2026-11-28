@@ -277,7 +277,12 @@ const REAL: readonly (readonly [string, FaceType, { abilities?: unknown; spell?:
         {
           kind: 'triggered',
           trigger: { kind: 'attacks', what: { types: ['creature'] }, at: 'youOrPlaneswalkers' },
-          effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 },
+          effect: {
+            kind: 'createToken',
+            token: { kind: 'preset', preset: 'Clue' },
+            count: 1,
+            investigate: true,
+          },
         },
       ],
     },
@@ -575,7 +580,12 @@ const REAL: readonly (readonly [string, FaceType, { abilities?: unknown; spell?:
         {
           kind: 'triggered',
           trigger: { kind: 'dies', what: { types: ['creature'], token: false, controller: 'you' } },
-          effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 },
+          effect: {
+            kind: 'createToken',
+            token: { kind: 'preset', preset: 'Clue' },
+            count: 1,
+            investigate: true,
+          },
         },
       ],
     },

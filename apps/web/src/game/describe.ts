@@ -1684,6 +1684,9 @@ export function describeEvent(
     case 'lifeGained':
       // D-149 (CR 119.9): the `lifeChanged` event that comes with it is the line; this one is for the triggers.
       return null;
+    case 'investigated':
+      // CR 701.16a (issue 128): the Clue token that comes with it (`tokenCreated`) is the line; this one is for the triggers.
+      return null;
     case 'proliferated':
       // CR 701.34a (D-149): the counters added follow as `counterAdded` events.
       return line(
