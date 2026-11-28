@@ -191,6 +191,7 @@ import {
 import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
+import { peaceOfferingLowerings } from './peace-offering';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_CHOICES_LOWERINGS } from './player-choices';
@@ -3329,6 +3330,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Ahoy Mateys deck, group 10: "Each creature that convoked this spell connives.", "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token."
   ...AHOY_G10_LOWERINGS,
   revealEachTokenLowering(lowerCreateToken),
+  ...peaceOfferingLowerings(lowerCreateToken),
   // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,

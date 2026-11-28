@@ -1552,6 +1552,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discardedThisWay',
     // CR 701.21a (Plaguecrafter): "each player who can't" (`PlayerSelector` `couldntSacrificeThisWay`) and `discard.together`.
     'couldntSacrificeThisWay',
+    // Kwain, Itinerant Meddler; Tempt with Discovery (CR 121.1, 701.23): "each player who drew a card this way", "who searched a library this way" (`PlayerSelector` `actedThisWay`).
+    'actedThisWay',
     'discardTogether',
     // CR 701.9 (Cathartic Pyre): "discard up to two cards" (`discard.upTo`).
     'discardUpTo',
@@ -2935,6 +2937,8 @@ export const SELECTOR_KINDS = [
   'discardedThisWay',
   /** "Each player who can't" after a sacrifice (CR 701.21a, Plaguecrafter): the engine's `PlayerSelector` `couldntSacrificeThisWay`. */
   'couldntSacrificeThisWay',
+  /** "Each player who drew a card this way", "each player who searched a library this way" (CR 121.1, 701.23): the engine's `PlayerSelector` `actedThisWay`. */
+  'actedThisWay',
   /** "Each player who can't discards a card" (CR 701.9, 101.4): all the cards chosen are discarded at once, the engine's `discard.together`. */
   'discardTogether',
   /** "Discard up to two cards" (CR 701.9, 107.1c, Cathartic Pyre): the player chooses none to N, the engine's `discard.upTo`. */

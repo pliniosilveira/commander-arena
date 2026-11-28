@@ -204,7 +204,8 @@ export function runSearch(
       const library = search.zones === undefined || search.zones.includes('library');
       return {
         ...done(state, library ? [{ kind: 'librarySearched', seat, found: 0 }] : [], shuffle),
-        thisWay: library ? { searched: 1 } : {},
+        // Tempt with Discovery: "each player who searched a library this way" names the player who searched (CR 701.23c: finding nothing is still a search).
+        thisWay: library ? { searched: 1, searchedBy: [seat] } : {},
       };
     }
     const total = search.totalManaValue;
@@ -344,7 +345,7 @@ export function runSearch(
   return {
     // CR 303.4f: an Aura found for the battlefield chooses what it enchants as it enters.
     ...done(state, events, [...withAuraEntries(state, placed.now), ...shuffled, ...top]),
-    thisWay: searched ? { searched: 1 } : {},
+    thisWay: searched ? { searched: 1, searchedBy: [seat] } : {},
   };
 }
 

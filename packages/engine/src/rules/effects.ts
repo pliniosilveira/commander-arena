@@ -575,20 +575,25 @@ export function runInstruction(
       };
     }
     const chosen = instruction.answer ? instruction.effect : instruction.otherwise;
-    if (chosen === undefined) return done(state);
+    // CR 101.4, 608.2d (Tempt with Bunnies): "for each opponent who does" counts the players who accepted the offer.
+    const accepted = instruction.answer ? { thisWay: { playersAccepted: 1 } } : {};
+    if (chosen === undefined) return { ...done(state), ...accepted };
     const as = instruction.answer ? instruction.as : undefined;
-    return done(
-      state,
-      [],
-      [
-        {
-          kind: 'effect',
-          effect: chosen,
-          ...(as === undefined ? {} : { as }),
-          ...(!instruction.answer ? { declinedBy: instruction.seat } : {}),
-        },
-      ],
-    );
+    return {
+      ...done(
+        state,
+        [],
+        [
+          {
+            kind: 'effect',
+            effect: chosen,
+            ...(as === undefined ? {} : { as }),
+            ...(!instruction.answer ? { declinedBy: instruction.seat } : {}),
+          },
+        ],
+      ),
+      ...accepted,
+    };
   }
   if (instruction.kind === 'mayEffect') {
     // D-111: "you may [effect]" inside an effect: the controller answers, accepting runs the effect.
