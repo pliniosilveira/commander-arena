@@ -21,7 +21,9 @@
  *  3. Everything else that an instant-speed card could do waits for a window (below); the mana it needs
  *     stays untapped because the set above does not count it.
  *  4. What is left is the casual rules without the plays above (flashback, escape, special actions,
- *     activations such as a regeneration or a pump ability), then pass.
+ *     activations such as a regeneration or a pump ability); when they pass, the activated ability that gains
+ *     the most on the sample (`heuristic-activations.ts`) if it beats passing by `main.trickMargin` (in the
+ *     first main phase not one that taps a creature), reason `ability`; then pass.
  *
  * WINDOWS (any other priority decision) for instant-speed plays (the end-step set is vetted on the sample like a main-phase set):
  *  - after blockers are declared (declare-blockers step, empty stack): each instant-speed candidate is
@@ -51,7 +53,7 @@ import {
   withFace,
 } from './casual-priority';
 import { manaValueOf } from './casual-view';
-import type { RankedActivation } from './heuristic-activations';
+import type { Activation, RankedActivation } from './heuristic-activations';
 import type { Think } from './heuristic-budget';
 import type { LookRecord } from './heuristic-combat-look';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
@@ -114,6 +116,7 @@ function mainPhase(
   think: Think,
   activations: Set<string>,
   answer: Answer,
+  ranked: (() => readonly RankedActivation[]) | undefined,
 ): PriorityChoice {
   const weights = think.weights;
   const land = planLand(view, d, weights);
@@ -159,7 +162,12 @@ function mainPhase(
   }
   const rest = casualRemainder(view, d, think, activations, reserve !== null);
   if (rest.kind === 'pass') {
-    return { action: rest, reason: land?.hold === true ? 'hold' : 'no-play' };
+    if (land?.hold === true) return { action: rest, reason: 'hold' };
+    const spare =
+      ranked === undefined ? null : spareAbility(view, d, ranked, weights.main.trickMargin);
+    return spare === null
+      ? { action: rest, reason: 'no-play' }
+      : { action: spare, reason: 'ability' };
   }
   return { action: rest, reason: rest.kind === 'bringCompanion' ? 'companion' : 'delegated' };
 }
@@ -316,7 +324,7 @@ export function choosePriorityHeuristic(
     view.activeSeat === me &&
     (view.step === 'precombatMain' || view.step === 'postcombatMain') &&
     view.stack.length === 0;
-  if (mainWindow) return mainPhase(view, d, think, activations, answer);
+  if (mainWindow) return mainPhase(view, d, think, activations, answer, ranked);
   const faceUp = faceUpWindow(view, d, think, answer);
   if (faceUp !== null) return faceUp;
   const play = windowPlay(view, d, think, activations, answer, agents);
@@ -330,9 +338,10 @@ export function choosePriorityHeuristic(
 }
 
 /**
- * The opponent's end step before the agent's turn, nothing else played: the ability of the ranking that gains
- * the most on the sample, when it beats passing by `main.trickMargin` (the lands untap next, so the mana is
- * spare). The planner may still choose otherwise for the window (`heuristic-plan-lines.ts`, `windowLines`).
+ * Spare mana, nothing else played: the ability of the ranking that gains the most on the sample, when it beats
+ * passing by `main.trickMargin`. At the opponent's end step before the agent's turn (its lands untap next) and
+ * in the agent's main phases; in the first main phase not one that taps a creature, which may attack. The
+ * planner may still choose otherwise (`heuristic-plan-lines.ts`): this is today's line.
  */
 function spareAbility(
   view: GameView,
@@ -340,7 +349,21 @@ function spareAbility(
   ranked: () => readonly RankedActivation[],
   margin: number,
 ): Action | null {
-  if (windowOf(view, d) !== 'theirEnd') return null;
-  const best = ranked()[0];
-  return best !== undefined && best.gain !== null && best.gain > margin ? best.action : null;
+  const when = windowOf(view, d);
+  if (when !== 'theirEnd' && when !== 'main1' && when !== 'main2') return null;
+  for (const r of ranked()) {
+    // Scored abilities come first, best first: past the margin nothing later beats it.
+    if (r.gain === null || r.gain <= margin) return null;
+    if (when === 'main1' && tapsCreature(view, r.action)) continue;
+    return r.action;
+  }
+  return null;
+}
+
+/** Whether an ability taps the creature it belongs to (CR 302.6: then it cannot attack this turn). */
+function tapsCreature(view: GameView, a: Activation): boolean {
+  const o = view.battlefield.find((x) => x.id === a.object);
+  if (o === undefined || !o.types.includes('creature')) return false;
+  const ability = o.activated?.find((x) => x.abilityIndex === a.abilityIndex)?.ability;
+  return ability?.cost.some((c) => c.kind === 'tap') === true;
 }

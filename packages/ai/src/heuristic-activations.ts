@@ -11,8 +11,9 @@
  * the text of the id ("o105" before "o23"). The measure is honest about what it misses: a pump or a tapper
  * matters in a combat the pass-out does not play, so a low gain only ranks an ability later, it never drops it.
  *
- * At the opponent's end step, when nothing else is played, the best ability whose gain beats
- * `main.trickMargin` is today's choice (`heuristic-main.ts`): spare mana is used even when no planning runs.
+ * When nothing else is played, at the opponent's end step before the agent's turn or in its main phases, the
+ * best ability whose gain beats `main.trickMargin` is today's choice (`heuristic-main.ts`): spare mana is used
+ * even when no planning runs, or when the planning is cut before it reaches the ability lines.
  */
 import type { Action, GameView, ObjectId, PriorityDecision } from '@commander-arena/engine';
 import type { Think } from './heuristic-budget';
