@@ -158,6 +158,20 @@ const createdTokens: Parser<{
       };
     }
   }
+  // CR 508.4, 508.6 (Echoing Assault): "create a token that's a copy of that creature, except it's 1/1. The token enters tapped and attacking that player.": the second sentence says
+  // how the copy just made enters, as the words of a custom token do ("that's tapped and attacking that player"), read only about one token that is a copy.
+  if (token.copyOf !== undefined && token.tapped !== true && token.tappedAndAttacking !== true) {
+    const enters = pattern(
+      /\. the token enters tapped and attacking that player(?![\p{L}\p{N}'’])(?!\s+(?:or|and)(?![\p{L}\p{N}]))/iu,
+    )(ctx, head.pos);
+    if (enters.ok) {
+      return {
+        ok: true,
+        value: { token: { ...token, tappedAttackingThatPlayer: true }, alternative: null },
+        pos: enters.pos,
+      };
+    }
+  }
   // CR 508.4, 508.6 (Soaring Lightbringer): "a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player": the words name whom the token attacks, the
   // player the trigger is about ("Whenever you attack a player"); "that player or a planeswalker they control" offers a choice and is not read here.
   if (
@@ -241,8 +255,15 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     // CR 508.4, 508.6 (Soaring Lightbringer): the token attacks the player the trigger is about.
     "create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player",
     'create two 1/1 white Soldier creature tokens that are tapped and attacking that player',
+    // CR 508.4, 508.6 (Echoing Assault): the copy enters tapped and attacking that player, said in the sentence after.
+    "create a token that's a copy of that creature, except it's 1/1. The token enters tapped and attacking that player",
   ],
   rejects: [
+    "create a token that's a copy of that creature, except it's 1/1. The token enters tapped and attacking that player or a planeswalker they control",
+    "create a token that's a copy of that creature, except it's 1/1. The token enters tapped and attacking",
+    "create a token that's a copy of that creature, except it's 1/1. The token enters tapped and attacking that opponent",
+    "create a token that's a copy of that creature, except it's 1/1. The token enters attacking that player",
+    'create a 1/1 white Glimmer enchantment creature token. The token enters tapped and attacking that player',
     "create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player or a planeswalker they control",
     "create a 1/1 white Glimmer enchantment creature token that's tapped and attacking that player's planeswalker",
     "create a 1/1 white Glimmer enchantment creature token that's attacking that player",

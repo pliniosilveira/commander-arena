@@ -766,13 +766,16 @@ describe('effect.pay and condition.if-you-do: "You may pay [cost]. If you do, ..
       'a second "If you do" after the first',
     ],
     ['Pay {1}. Draw a card.', 'a payment nobody offered'],
+    [
+      'At the beginning of your upkeep, you may pay {X}. If you do, draw a card.',
+      'an X payment without a reflexive "When you do" ability',
+    ],
   ])('"%s" is read and not run (%s)', (text, _why) => {
     const first = dropped(text, text.startsWith('Pay') ? 'sorcery' : 'creature');
     expect(first).toMatchObject({ reason: 'notRunnable' });
   });
 
   test.each([
-    'At the beginning of your upkeep, you may pay {X}. If you do, draw a card.',
     'At the beginning of your upkeep, you may pay {G/P}. If you do, draw a card.',
     'At the beginning of your upkeep, you may pay {1} and 2 life. If you do, draw a card.',
     'At the beginning of your upkeep, you may pay {T}. If you do, draw a card.',

@@ -214,8 +214,8 @@ describe('what the real planeswalkers still stop at (no card is half read)', () 
     ['Jace, the Mind Sculptor', /bottom of that player/],
     ['Nissa, Who Shakes the World', /noncreature land/],
     // Gideon Jura stopped at "attack ~ if able" until the First Flight decks taught the engine `requireAttackSource` (CR 508.1d).
-    // Compleated is read now (CR 702.150a); the first line still unread is her +1.
-    ['Tamiyo, Compleated Sage', /Tap up to one target artifact or creature/],
+    // Compleated is read now (CR 702.150a), and so is her +1; the first line still unread is her −X.
+    ['Tamiyo, Compleated Sage', /Exile target nonland permanent/],
     // Narset, Parter of Veils stopped at "can't draw more than one card" until the Planeswalker Party deck taught the engine `drawLimit`; it is supported now.
   ];
   test.each(stops)(

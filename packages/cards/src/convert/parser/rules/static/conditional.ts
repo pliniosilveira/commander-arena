@@ -53,6 +53,8 @@ const STATIC_CONDITIONS = [
   'condition.this-entered-this-turn',
   // Lyse Hext (CR 601.2i, 611.3a): "you've cast two or more noncreature spells this turn", a read of the turn log.
   'condition.spells-cast-this-turn',
+  // Fortune Teller's Talent (CR 601.2i): "you've cast a spell this turn".
+  'condition.cast-a-spell-this-turn',
   // Arixmethes, Slumbering Isle: "~ has a slumber counter on it", a plain test of the layer 4 effect that makes it a land.
   'condition.this-has-counter',
   // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
@@ -99,7 +101,7 @@ const ATTACHED_UNIT = unit(['noun.attached-permanent'], 'attached');
  */
 const PLAY_FROM_TOP_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   const r = pattern(
-    /you may play lands and cast spells from the top of your library(?![\p{L}\p{N}])/iu,
+    /you may play (?:lands and cast spells|cards) from the top of your library(?![\p{L}\p{N}])/iu,
   )(ctx, pos);
   if (!r.ok) return r;
   return {
@@ -418,6 +420,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as ~ is attached to a creature, you may play lands and cast spells from the top of your library.',
     // Verge Rangers: the permission to play lands from the top of the library while an opponent controls more lands.
     'As long as an opponent controls more lands than you, you may play lands from the top of your library.',
+    // Fortune Teller's Talent (CR 305.1, 601.3, 601.2i): "play cards" is both permissions, while a spell was cast this turn.
+    "As long as you've cast a spell this turn, you may play cards from the top of your library.",
   ],
   rejects: [
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',
@@ -451,6 +455,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as an opponent controls more lands than you, ~ gets +1/+1.',
     'As long as an opponent controls more lands than you, you may play lands from the top of your graveyard.',
     'As long as you control a Forest, you may play lands from the top of your library.',
+    "As long as you've cast a spell this turn, you may play cards from the top of your library",
+    "As long as you've cast a spell this turn, you may play cards from the top of your graveyard.",
   ],
   parse: (ctx, pos) => {
     const lead = literal('as long as ')(ctx, pos);

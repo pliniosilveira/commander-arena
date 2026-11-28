@@ -1410,8 +1410,13 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       if (typeof counted.value !== 'object' || counted.value.kind !== 'sum') {
         return failure(ability);
       }
-      const parts: Extract<Amount, { kind: 'countOf' }>[] = [];
+      // Boss's Chauffeur ("one plus the number of other creatures you control"): a whole number of 1 or more is a part too.
+      const parts: (number | Extract<Amount, { kind: 'countOf' }>)[] = [];
       for (const part of counted.value.of) {
+        if (typeof part === 'number' && Number.isInteger(part) && part >= 1) {
+          parts.push(part);
+          continue;
+        }
         if (typeof part !== 'object' || part.kind !== 'countOf') return failure(ability);
         parts.push(part);
       }

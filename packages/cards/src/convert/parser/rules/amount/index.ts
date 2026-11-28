@@ -2,6 +2,7 @@ import { choice, fail, map, type Parser, pattern, satisfy } from '../../combinat
 import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
+import { ATTACKED_THIS_TURN_AMOUNT_RULES } from './attacked-this-turn';
 import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { CHOSEN_PLAYER_LEAD_AMOUNT_RULES } from './chosen-player-lead';
 import { COUNT_AMOUNT_RULES } from './count';
@@ -542,6 +543,8 @@ export const AMOUNT_RULES = [
   ...HAND_OF_THAT_PLAYER_AMOUNT_RULES,
   // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
   ...FEATHER_G1_AMOUNT_RULES,
+  // Family Matters deck (Rowdy Research): "for each creature that attacked this turn".
+  ...ATTACKED_THIS_TURN_AMOUNT_RULES,
   ...SPELLS_CAST_EACH_AMOUNT_RULES,
   // Ahoy Mateys deck, group 1 (Malcolm): "for each opponent dealt damage".
   ...DAMAGED_PLAYERS_AMOUNT_RULES,

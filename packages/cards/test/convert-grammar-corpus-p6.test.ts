@@ -141,12 +141,12 @@ const COPIES: readonly Line[] = [
   },
   {
     kind: 'enchantment',
-    text: "At the beginning of combat on your turn, create a token that's a copy of equipped creature, except the token isn't legendary. That token gains haste.",
+    text: "At the beginning of combat on your turn, create a token that's a copy of equipped creature, except the token isn't legendary and has haste.",
     expect: no(
-      "equipped creature, except the token isn't legendary. That token gains haste.",
-      'token.copy-except',
+      ", except the token isn't legendary and has haste.",
+      'token.copy-token-not-legendary',
     ),
-    note: 'backlog: 1 card (Helm of the Host); "except" and a rider are not read (the rule that gets furthest is `token.copy-except` since Hashaton group 5, D-382)',
+    note: 'SYNTHETIC; near miss of Helm of the Host (read since the Family Matters deck, group C, with "That token gains haste." as its own sentence): a second exception in the same words is not read',
   },
 ];
 

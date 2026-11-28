@@ -200,6 +200,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
   // Endless Evil: a copy of the enchanted creature with a set power and toughness.
+  // Family Matters deck, group C: a copy with one exception (Helm of the Host, Echoing Assault).
+  'token.copy-token-not-legendary': permanent(
+    (e) => `At the beginning of your upkeep, create ${e}.`,
+  ),
+  'token.copy-except-one-one': permanent((e) => `Whenever you attack a player, create ${e}.`),
+  'noun.target-creature-attacking-that-player': permanent(
+    (e) => `Whenever you attack a player, choose ${e}.`,
+  ),
   'token.copy-except-pt': permanent((e) => `At the beginning of your upkeep, create ${e}.`),
   // Nightmare Shepherd: a copy with a set power and toughness and one more creature type.
   'token.copy-except-pt-subtype': permanent(
@@ -280,6 +288,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Flint deck (issue 685): the count of the spell's own cost reduction.
   'amount.for-each-opponents-life-lost': spell((e) => `~ costs {1} less to cast ${e}.`),
+  'amount.for-each-creature-attacked': spell((e) => `~ costs {1} less to cast ${e}.`),
   // Celeborn the Wise (issue 98): the cards of the scry that caused the trigger.
   'amount.for-each-scried': permanent(
     (e) => `Whenever you scry, ~ gets +1/+1 until end of turn ${e}.`,
@@ -1190,6 +1199,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.first-spell-with-treasure-mana-has-cascade': asIs,
   'static.each-spell-you-cast-has-replicate': asIs,
   'static.permanent-spells-from-hand-gain-evoke': asIs,
+  'static.spells-you-cast-gain-offspring': asIs,
   'static.legend-rule-doesnt-apply': asIs,
   'static.groups-are-the-chosen-type': asIs,
   'static.graveyard-cards-have-encore': asIs,
@@ -1234,6 +1244,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever another permanent you control enters, if ${e}, you may put a permanent card with equal or lesser mana value from your hand onto the battlefield.`,
   ),
+  // Rapid Augmenter: the intervening "if" of a trigger about another creature that enters.
+  'condition.not-cast': permanent(
+    (e) => `Whenever another creature you control enters, if ${e}, you gain 1 life.`,
+  ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   // Miracle Worker deck (issue 109, Secret Arcade).
@@ -1262,6 +1276,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 279 (Windfall).
   'amount.discarded-most-this-way': spell(
     (e) => `Each player discards their hand, then draws cards ${e}.`,
+  ),
+  // Fortune Teller's Talent: the "as long as" of a static ability that lets the controller play from the top of the library.
+  'condition.cast-a-spell-this-turn': permanent(
+    (e) => `As long as ${e}, you may play lands and cast spells from the top of your library.`,
   ),
   // Issue 279 (Windbrisk Heights).
   'condition.attacked-with-creatures': permanent(

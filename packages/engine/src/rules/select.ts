@@ -353,6 +353,19 @@ export function matchesFilter(
     (filter.anyOf?.some((m) => m.attackingOpponents === 'players') ?? false)
       ? { attackersOfOpponentPlayers: attackersOfOpponentPlayers(state, ctx.controller) }
       : {}),
+    // CR 508.6: the creatures attacking the one player the trigger is about (`triggerAttackedPlayer`), if still in the game.
+    ...(filter.attackingOpponents === 'triggerAttacked' ||
+    (filter.anyOf?.some((m) => m.attackingOpponents === 'triggerAttacked') ?? false)
+      ? (() => {
+          const attacked = ctx.triggerAttacked?.[0];
+          return {
+            attackersOfTriggerAttacked:
+              attacked === undefined || getSeat(state, attacked).hasLost
+                ? []
+                : attackersOfPlayer(state, attacked),
+          };
+        })()
+      : {}),
     ...((filter.powerLessThanSource === true || filter.powerGreaterThanSource === true) &&
     ctx.source !== null
       ? { sourcePower: powerOfObject(state, ctx.source) }

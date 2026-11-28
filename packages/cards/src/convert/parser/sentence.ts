@@ -345,17 +345,40 @@ const TRAILING_CONDITIONS = [
   'condition.resolved-times',
 ] as const;
 
+/**
+ * The tests of the turn a sentence may end with after " unless " (Chart a Course: "Then discard a card unless you attacked this turn.", CR 608.2c): the instruction is
+ * followed only when the test does not hold as it comes up, so the sentence's condition is the negation of the test.
+ */
+const TRAILING_UNLESS_CONDITIONS = ['condition.attacked-with-creatures'] as const;
+
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
-  map(
-    sequence(
-      choice(literal(' instead if '), literal(' if ')),
-      family<IrCondition>('condition', { only: TRAILING_CONDITIONS }),
-      optional(literal(' instead'), null),
+  choice(
+    map(
+      sequence(
+        choice(literal(' instead if '), literal(' if ')),
+        family<IrCondition>('condition', { only: TRAILING_CONDITIONS }),
+        optional(literal(' instead'), null),
+      ),
+      ([lead, condition, tail]) => ({
+        condition,
+        instead: lead.startsWith(' instead') || tail !== null,
+      }),
     ),
-    ([lead, condition, tail]) => ({
-      condition,
-      instead: lead.startsWith(' instead') || tail !== null,
-    }),
+    map(
+      sequence(
+        literal(' unless '),
+        family<IrCondition>('condition', { only: TRAILING_UNLESS_CONDITIONS }),
+      ),
+      ([, condition]) => ({
+        condition: {
+          kind: 'condition' as const,
+          test: { kind: 'not' as const, term: condition },
+          span: condition.span,
+          rule: condition.rule,
+        },
+        instead: false,
+      }),
+    ),
   ),
 );
 

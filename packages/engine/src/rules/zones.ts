@@ -1185,6 +1185,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     ...(to === 'battlefield' && old.stack?.offspringPaid === true
       ? { offspringPaid: true as const }
       : {}),
+    // CR 702.175a, 613.1f: the offspring cost was one a static ability gave the spell, so the permanent's face has no trigger for it.
+    ...(to === 'battlefield' && old.stack?.offspringGranted === true
+      ? { offspringGranted: true as const }
+      : {}),
     // CR 702.174 (D-135): a permanent remembers the opponent its spell's gift was promised to.
     ...(to === 'battlefield' && old.stack?.giftTo !== undefined
       ? { giftTo: old.stack.giftTo }

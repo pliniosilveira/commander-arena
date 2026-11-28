@@ -1,7 +1,7 @@
 /**
  * "Affinity for artifacts" (CR 702.41a, stage P21): the keyword with the kind of permanent it counts, a
  * plural noun phrase of the kinds the engine's filter can say: card types ("artifacts", "artifact
- * creatures") and subtypes ("Equipment", "Plains", "Islands"). Read by `keyword.line` like the other
+ * creatures"), tokens ("tokens", Junk Winder, CR 111.1) and subtypes ("Equipment", "Plains", "Islands"). Read by `keyword.line` like the other
  * keywords, so it stands alone or in a list ("Flying, affinity for artifacts"). The engine counts the
  * permanents the caster controls (`derive-keywords.ts`), so the text names no controller: "affinity for
  * artifacts you control", a color, a quality ("with power 4 or greater") and "nonland" are not read.
@@ -31,27 +31,21 @@ const LAND_TYPE_PLURAL: Parser<IrFilter> = (ctx, pos) => {
 
 /** True for a filter that says only card types and subtypes of permanents on the battlefield. */
 function typesAndSubtypesOnly(filter: IrFilter): boolean {
-  const { raw: _raw, zone, types, subtypes, ...rest } = filter;
+  const { raw: _raw, zone, types, subtypes, token, ...rest } = filter;
   void _raw;
   return (
     (zone === undefined || zone === 'battlefield') &&
     Object.keys(rest).length === 0 &&
-    ((types?.length ?? 0) > 0 || (subtypes?.length ?? 0) > 0)
+    ((types?.length ?? 0) > 0 || (subtypes?.length ?? 0) > 0 || token === true)
   );
 }
-
-/** "tokens" (issue 128, Junk Winder, CR 111.1, 702.41a): every token the caster controls, whatever its types. */
-const TOKENS_PLURAL: Parser<IrFilter> = (ctx, pos) => {
-  const r = pattern(/tokens(?![\p{L}\p{N}])/u)(ctx, pos);
-  return r.ok ? { ok: true, value: { token: true, raw: 'tokens' }, pos: r.pos } : r;
-};
 
 /** "affinity for artifacts": the keyword node, its one parameter the noun that says what is counted. */
 export function affinityKeyword(rule: string): Parser<IrKeyword> {
   const what: Parser<IrNoun> = (ctx, pos) => {
-    const phrase = choice(permanentPhrase(true, 'all'), LAND_TYPE_PLURAL, TOKENS_PLURAL)(ctx, pos);
+    const phrase = choice(permanentPhrase(true, 'all', true), LAND_TYPE_PLURAL)(ctx, pos);
     if (!phrase.ok) return phrase;
-    if (!typesAndSubtypesOnly(phrase.value) && phrase.value.token !== true) return fail(ctx, pos);
+    if (!typesAndSubtypesOnly(phrase.value)) return fail(ctx, pos);
     const filter: IrFilter = { ...phrase.value, raw: ctx.text.slice(pos, phrase.pos) };
     return {
       ok: true,

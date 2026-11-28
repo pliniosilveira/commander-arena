@@ -38,6 +38,7 @@ import {
 } from './copy-except';
 import { TOKEN_COPY_EXCEPT_PT, TOKEN_COPY_EXCEPT_PT_SUBTYPE } from './copy-except-pt';
 import { TOKEN_COPY_EXCEPT_ADDITIVE_TYPES, TOKEN_COPY_EXCEPT_SET_TYPES } from './copy-except-types';
+import { FAMILY_MATTERS_C_TOKEN_RULES } from './family-matters-c';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
 import { SEEK_OUT_TOKEN_RULES } from './seek-out';
@@ -398,10 +399,22 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           ),
           null,
         ),
+        // CR 111.4 (Murmuration): the name after the keywords, "a 1/2 blue Bird creature token with flying named Storm Crow"; read only after keywords and with no name before them.
+        optional(
+          quiet(
+            map(
+              sequence(literal(' named '), choice(SELF_TOKEN_NAME, TOKEN_NAME)),
+              ([, name]) => name,
+            ),
+          ),
+          null,
+        ),
       ),
-      ([amount, , , pt, , , , , plural]) =>
+      ([amount, , , pt, , , , , plural, named, withs, , , namedAfter]) =>
         ((amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural) &&
-        ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')),
+        ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')) &&
+        (namedAfter === null ||
+          (named === null && withs.keywords.length > 0 && withs.abilities.length === 0)),
     ),
     ([
       amount,
@@ -417,13 +430,14 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       { keywords, abilities },
       attackingThatOpponent,
       tappedAndAttacking,
+      namedAfter,
     ]): Bare => ({
       kind: 'token',
       ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
       ...(tappedAndAttacking === null ? {} : { tappedAndAttacking }),
       ...(tapped === null ? {} : { tapped: true as const }),
       ...(tapped === 'attacking' ? { attacking: true as const } : {}),
-      ...(named === null ? {} : { named }),
+      ...(named === null && namedAfter === null ? {} : { named: named ?? namedAfter ?? '' }),
       ...(pt[1] === 'X'
         ? { ptAmount: true as const }
         : { power: Number(pt[1]), toughness: Number(pt[2]) }),
@@ -491,6 +505,9 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token named Hero',
     'a 0/1 red Kobold creature token named Kobolds of ~',
     'two 2/2 black Zombie creature tokens named Dead Knights with menace',
+    // Murmuration (Family Matters deck, group C): the name after the keywords.
+    'a 1/2 blue Bird creature token with flying named Storm Crow',
+    'two 1/1 white Spirit creature tokens with flying and vigilance named Wisps',
     // Stage P40 (D-186, CR 702.82a): a token with devour.
     'a 1/1 red and green Dragon creature token with flying and devour 2',
     'a 2/2 red Goblin creature token with devour 1',
@@ -554,6 +571,11 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token named',
     'a 1/1 white Soldier creature token named hero',
     'a 1/1 white Soldier creature token named Hero named Villain',
+    'a 1/1 white Soldier creature token named Hero with flying named Villain',
+    'a 1/2 blue Bird creature token named Storm Crow with flying named Crow',
+    'a 1/2 blue Bird creature token with flying named',
+    'a 1/2 blue Bird creature token with flying named storm crow',
+    'a 1/2 blue Bird creature token with "{T}: You gain 1 life." named Storm Crow',
   ],
   parse: node<Bare, IrToken>('token.custom', customToken(COUNT), (b) => b),
 });
@@ -1038,6 +1060,8 @@ export const TOKEN_RULES = [
   TOKEN_COPIES_HALF_PT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
   ...GALADRIEL_G3_TOKEN_RULES,
+  // Family Matters deck, group C: "..., except the token isn't legendary" and "..., except it's 1/1", before the plain copies.
+  ...FAMILY_MATTERS_C_TOKEN_RULES,
   // Federation Fleet deck, group A (Reg Barclay): "..., except it isn't legendary, it's an Illusion artifact in addition to its other types, and it has haste".
   ...SEEK_OUT_TOKEN_RULES,
   ...AURA_TOKEN_RULES,

@@ -393,7 +393,7 @@ function subtyped(
 }
 
 /** The values of an object a comparison can read (stage P18, D-111). */
-export type Comparable = 'power' | 'toughness' | 'manaValue';
+export type Comparable = 'power' | 'toughness' | 'manaValue' | 'powerOrToughness';
 
 /** One comparison of a filter: which value, and how it is compared with the number. */
 export interface Comparison extends IrComparison {
@@ -404,6 +404,7 @@ const COMPARED_WORDS: Readonly<Record<string, Comparable>> = {
   power: 'power',
   toughness: 'toughness',
   'mana value': 'manaValue',
+  'power or toughness': 'powerOrToughness',
 };
 
 /**
@@ -416,7 +417,7 @@ export function comparisonSuffix(only: readonly Comparable[]): Parser<Comparison
   return (ctx, pos) => {
     const r = pattern(
       new RegExp(
-        ` with (power|toughness|mana value) (\\d+)(?: or (greater|less))?${BOUNDARY}`,
+        ` with (power or toughness|power|toughness|mana value) (\\d+)(?: or (greater|less))?${BOUNDARY}`,
         'iu',
       ),
     )(ctx, pos);
@@ -433,6 +434,19 @@ export function comparisonSuffix(only: readonly Comparable[]): Parser<Comparison
 export function withComparison(filter: IrFilter, comparison: Comparison | undefined): IrFilter {
   if (comparison === undefined) return filter;
   const { of, ...compared } = comparison;
+  if (of === 'powerOrToughness') {
+    // "with power or toughness 1 or less" (Tetsuko Umezawa, Fugitive, CR 208.1): the power or the toughness meets the comparison, a disjunction that is
+    // distributed over the members the filter already has (A or B) and (P or T) = (A and P) or (A and T) or (B and P) or (B and T).
+    const withEach = (member: IrFilter): readonly IrFilter[] => [
+      { ...member, power: compared },
+      { ...member, toughness: compared },
+    ];
+    const { anyOf, ...rest } = filter;
+    return {
+      ...rest,
+      anyOf: anyOf === undefined ? withEach({ raw: filter.raw }) : anyOf.flatMap(withEach),
+    };
+  }
   return { ...filter, [of]: compared };
 }
 
@@ -630,7 +644,10 @@ export function permanentPhrase(
       notChosen.value === undefined ? control.pos : notChosen.pos,
     );
     if (!chosen.ok) return chosen;
-    const compared = optional(quiet(comparisonSuffix(ALL_COMPARABLE)), undefined)(ctx, chosen.pos);
+    const compared = optional(
+      quiet(comparisonSuffix([...ALL_COMPARABLE, 'powerOrToughness'])),
+      undefined,
+    )(ctx, chosen.pos);
     if (!compared.ok) return compared;
     // "with mana value X" (stage P31): the X announced for the ability.
     const manaValueX =

@@ -120,6 +120,8 @@ export interface FilterContext {
    * from the combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfOpponents?: readonly ObjectId[];
+  /** The creatures attacking the player the trigger is about, for `attackingOpponents: 'triggerAttacked'` (CR 508.6). */
+  readonly attackersOfTriggerAttacked?: readonly ObjectId[];
   /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-650). */
   readonly attackersOfOpponentPlayers?: readonly ObjectId[];
   /**
@@ -340,6 +342,13 @@ export function matchesFilterWith(
   }
   // D-218: "attacking your opponents and/or planeswalkers they control".
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
+    return false;
+  }
+  // CR 508.1b, 508.6 (Echoing Assault): "attacking that player" is an attacker whose target is the player the trigger is about.
+  if (
+    filter.attackingOpponents === 'triggerAttacked' &&
+    !(ctx.attackersOfTriggerAttacked ?? []).includes(obj.id)
+  ) {
     return false;
   }
   // D-650 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
@@ -603,6 +612,13 @@ export function matchesFilterWith(
   }
   // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura": the object remembers the source, as the same object.
   if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
+    return false;
+  }
+  // CR 601.2a, 603.4 (Rapid Augmenter): "if it wasn't cast": the permanent remembers no cast spell it came from (read from last-known information once it has left).
+  if (
+    filter.notCast === true &&
+    (obj.castFrom !== undefined || obj.stack?.castFrom !== undefined)
+  ) {
     return false;
   }
   // CR 702.134a (D-120): "with power less than this creature's power".

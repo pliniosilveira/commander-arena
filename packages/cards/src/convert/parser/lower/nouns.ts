@@ -100,6 +100,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:manaValue',
   'selector:attackingYou',
   'selector:attackingOpponents',
+  'selector:attackingTriggerAttacked',
   'selector:attackingOrBlocking',
   'selector:damageSource',
   'selector:token',
@@ -326,6 +327,7 @@ function lowerFilterAt(
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
   if (filter.blocking === true) parts.push('selector:blocking');
   if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
+  if (filter.manaValueBelowSourcePower === true) parts.push('selector:manaValueBelow');
   if (filter.powerGreaterThanSource === true) parts.push('selector:powerGreaterThanSource');
   // CR 725.1: "creatures the monarch controls" (the blockers of a `cantBeBlockedBy`).
   if (filter.controller === 'monarch') parts.push('selector:monarchController');
@@ -646,7 +648,11 @@ function lowerFilterAt(
     if (missing.length > 0) return bad(missing);
   }
   if (filter.attackingOpponents !== undefined) {
-    const missing = missingFeatures(['selector:attackingOpponents']);
+    const missing = missingFeatures([
+      filter.attackingOpponents === 'triggerAttacked'
+        ? 'selector:attackingTriggerAttacked'
+        : 'selector:attackingOpponents',
+    ]);
     if (missing.length > 0) return bad(missing);
   }
   // "with mana value X or less" (stage P68, D-230): only a target reads it, and `declareTarget` takes the flag off once it has the amount (a filter that still has it is
@@ -708,6 +714,9 @@ function lowerFilterAt(
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
     ...(filter.blocking === true ? { blocking: true as const } : {}),
     ...(filter.powerLessThanSource === true ? { powerLessThanSource: true as const } : {}),
+    ...(filter.manaValueBelowSourcePower === true
+      ? { manaValueBelow: { kind: 'powerOf' as const, of: { kind: 'this' as const } } }
+      : {}),
     ...(filter.powerGreaterThanSource === true ? { powerGreaterThanSource: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}
@@ -880,6 +889,10 @@ export function declareDividedTarget(
 function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   const id = noun.ref;
   if (id === undefined) return failure(noun, []);
+  // CR 508.6 (Echoing Assault): "attacking that player" is the one player a trigger with an occurrence for each player attacked is about; anywhere else the words name no player.
+  if (noun.filter.attackingOpponents === 'triggerAttacked' && ctx.eachAttackedPlayer === null) {
+    return failure(noun, []);
+  }
   // Issue 81 (Plan for All Outcomes): "up to one other target nonland permanent" as the first target of an ability of a permanent: there is no slot before it to be different
   // from, so "other" is the permanent with the ability (CR 115.1, 109.1), as in "another target ...".
   if (noun.otherTarget === true && ctx.targets.length === 0 && ctx.owner === 'ability') {

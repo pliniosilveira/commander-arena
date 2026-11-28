@@ -144,6 +144,32 @@ export function runGainControl(
   const player =
     node.player === undefined ? [ctx.controller] : resolvePlayers(state, node.player, ctx, targets);
   if (player.length !== 1 || player[0] === undefined) return done(state);
+  // CR 611.2b, 122.1 (Shield Broker): "for as long as it has a shield counter on it": one effect for each object that has the counter now, each ending, for good, as that object
+  // stops having it (`endLostControlEffects`); an object with none has the duration over before the effect begins, so it is not taken.
+  if (node.whileHasCounter !== undefined) {
+    const counter = node.whileHasCounter;
+    const held = affected.filter((id) => (state.objects[id]?.counters[counter] ?? 0) > 0);
+    if (held.length === 0) return done(state);
+    const beforeHeld = controllersOf(state, held);
+    let next = state;
+    const made: ContinuousEffect[] = [];
+    for (const id of held) {
+      const [stamp, stampedNext] = allocateTimestamp(next);
+      next = stampedNext;
+      made.push({
+        id: `ce${stamp}`,
+        timestamp: stamp,
+        objects: [id],
+        until: { kind: 'whileHasCounter', object: id, counter },
+        change: { kind: 'control', seat: player[0] },
+      });
+    }
+    const changedHeld = controlChanges(
+      { ...next, continuousEffects: [...next.continuousEffects, ...made] },
+      beforeHeld,
+    );
+    return { ...done(changedHeld.state, changedHeld.events), lastMoved: held };
+  }
   const before = controllersOf(state, affected);
   const [timestamp, stamped] = allocateTimestamp(state);
   const created: ContinuousEffect = {

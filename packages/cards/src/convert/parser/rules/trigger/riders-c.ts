@@ -2,7 +2,7 @@
  * Trigger rules of the Riders of Rohan deck, group C (combat): "Whenever ~ and at least two other creatures attack" (Frontline Medic, battalion; CR 508.1, 603.2c) and "Whenever
  * one or more creatures attack one of your opponents or a planeswalker they control" (Frontier Warmonger; CR 508.1b, 506.3, 603.2c).
  */
-import { fail, literal, pattern, satisfy, sequence } from '../../combinators';
+import { choice, fail, literal, map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrTrigger } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, spanned } from '../registry';
@@ -11,8 +11,8 @@ import { makeNoun } from './subjects';
 /**
  * `trigger.self-and-others-attack`: "~ and at least two other creatures attack" (CR 508.1, 603.2c: the attackers are declared together and the ability triggers once for the
  * declaration; the permanent with the ability must be one of them, and it counts). The engine's `attackBatch` of `who` "you" with `includesSource` and `atLeast` the number of
- * other creatures plus one. Not read: "at least one other" (a single other creature is `trigger.attacks-with-another`'s kind of wording), "other" with a kind of creature,
- * "attacks", "attack you", more words after "attack".
+ * other creatures plus one; "at least one other creature" (Arthur, Marigold Knight) is two attackers. Not read: "other" with a kind of creature, "attacks", "attack you",
+ * more words after "attack".
  */
 export const TRIGGER_SELF_AND_OTHERS_ATTACK = defineRule<IrTrigger>({
   id: 'trigger.self-and-others-attack',
@@ -27,9 +27,13 @@ export const TRIGGER_SELF_AND_OTHERS_ATTACK = defineRule<IrTrigger>({
     '~ and at least two other creatures attack',
     '~ and at least three other creatures attack',
     'this creature and at least two other creatures attack',
+    // Arthur, Marigold Knight (Family Matters deck, group C).
+    '~ and at least one other creature attack',
   ],
   rejects: [
-    '~ and at least one other creature attack',
+    '~ and at least one other creatures attack',
+    '~ and at least one other creature attacks',
+    '~ and at least two other creature attack',
     '~ and at least two other creatures attacks',
     '~ and at least two other creatures attack you',
     '~ and at least two other creatures attack a player',
@@ -46,8 +50,13 @@ export const TRIGGER_SELF_AND_OTHERS_ATTACK = defineRule<IrTrigger>({
     const r = sequence(
       pattern(/(?:~|this creature)(?![\p{L}\p{N}])/iu),
       literal(' and at least '),
-      spanned(satisfy(quantity, (n) => n >= 2)),
-      literal(' other creatures attack'),
+      choice(
+        map(
+          sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' other creatures attack')),
+          ([n]) => n.value,
+        ),
+        map(literal('one other creature attack'), () => 1),
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     // Words after "attack" ("attack you", "attack a player", "attack and ...", "attacks") belong to another reading.
@@ -61,7 +70,7 @@ export const TRIGGER_SELF_AND_OTHERS_ATTACK = defineRule<IrTrigger>({
         kind: 'trigger',
         event: 'attackBatch',
         actor: makeNoun(id, { start: pos, end: pos }, 'you', { raw: '' }),
-        atLeast: others.value + 1,
+        atLeast: others + 1,
         includesSource: true,
         args: {},
         span: { start: pos, end: r.pos },

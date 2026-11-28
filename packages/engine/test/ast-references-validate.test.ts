@@ -159,6 +159,7 @@ describe('amounts that read an object', () => {
       'votesForObject',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
+      'creaturesAttackedThisTurn',
       // CR 122.1: the experience counters a player has.
       'experienceCounters',
       'partySize',

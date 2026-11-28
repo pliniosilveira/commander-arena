@@ -42,7 +42,9 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     "those creatures don't untap during their controller's next untap step",
     "up to two target creatures don't untap during their controllers' next untap steps",
     "target permanent doesn't untap during its controller's next untap step",
+    // Junk Winder: "Tap target nonland permanent an opponent controls. It doesn't untap during its controller's next untap step."
     "it doesn't untap during its controller's next untap step",
+    "It doesn't untap during its controller's next untap step",
   ],
   rejects: [
     "target creature doesn't untap during your next untap step",
@@ -59,12 +61,14 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     "target creature doesn't untap during its controller's next upkeep",
     "creatures you control don't untap during their controllers' next untap steps",
     "~ doesn't untap during its controller's next untap step",
+    "it doesn't untap during its controller's next untap steps",
+    "it don't untap during its controller's next untap step",
+    "it doesn't untap during your next untap step",
   ],
   parse: single(
     RULE,
     (ctx, pos) => {
       const subject = operands(
-        // Issue 128 (Junk Winder): "tap target nonland permanent an opponent controls. It doesn't untap during its controller's next untap step."
         ['noun.target-permanent', 'noun.that-object', 'noun.those-creatures', 'noun.it'],
         RULE,
       )(ctx, pos);

@@ -43,6 +43,7 @@ export type SimpleKeyword = Extract<
   | 'evolve'
   | 'extort'
   | 'exploit'
+  | 'ravenous'
   | 'convoke'
   | 'improvise'
   | 'delve'
@@ -131,6 +132,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['extort', 'extort'],
   // CR 702.110 (Exploit): a printed ability with no parameter, never granted; the engine expands it into "When this creature enters, you may sacrifice a creature".
   ['exploit', 'exploit'],
+  // CR 702.156a (Ravenous): a printed ability with no parameter, never granted; the engine enters the permanent with X +1/+1 counters and expands the draw trigger.
+  ['ravenous', 'ravenous'],
   ['convoke', 'convoke'],
   ['improvise', 'improvise'],
   ['delve', 'delve'],
