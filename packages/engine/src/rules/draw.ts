@@ -174,5 +174,6 @@ export function runDraw(state: GameState, input: DrawInstruction): StepOutcome {
       ? { lastMoved: drawn?.kind === 'cardDrawn' ? [drawn.object] : [] }
       : {}),
   };
-  return first ? { ...outcome, thisWay: { playersDrew: 1 } } : outcome;
+  // Kwain, Itinerant Meddler (CR 121.1): "each player who drew a card this way" names this player.
+  return first ? { ...outcome, thisWay: { playersDrew: 1, drewBy: [instruction.seat] } } : outcome;
 }

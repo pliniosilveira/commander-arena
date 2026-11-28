@@ -93,6 +93,17 @@ export function playerSubject(
     case 'couldntSacrificeThisWay':
       // CR 701.21a: "each player who can't discards a card" after a sacrifice.
       return { text: "each player who can't", base: false };
+    case 'actedThisWay': {
+      // Kwain, Itinerant Meddler; Tempt with Discovery (CR 121.1, 701.23).
+      const group = player.of?.kind === 'eachOpponent' ? 'opponent' : 'player';
+      return {
+        text:
+          player.act === 'drew'
+            ? `each ${group} who drew a card this way`
+            : `each ${group} who searched a library this way`,
+        base: false,
+      };
+    }
     case 'eachPlayerWhoChose':
       // CR 101.4 (Seize the Spotlight).
       return { text: `each player who chose ${player.option}`, base: false };

@@ -432,6 +432,19 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                     ...(out.thisWay.couldntSacrifice ?? []),
                   ]),
                 ],
+                // Left out until there is some, so the state of every game that never reads them is what it was.
+                ...seatsOf('drewBy', mergeSeats(res.thisWay?.drewBy, out.thisWay.drewBy)),
+                ...seatsOf(
+                  'searchedBy',
+                  mergeSeats(res.thisWay?.searchedBy, out.thisWay.searchedBy),
+                ),
+                ...(res.thisWay?.playersAccepted === undefined &&
+                out.thisWay.playersAccepted === undefined
+                  ? {}
+                  : {
+                      playersAccepted:
+                        (res.thisWay?.playersAccepted ?? 0) + (out.thisWay.playersAccepted ?? 0),
+                    }),
               },
             }),
         // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
@@ -546,6 +559,22 @@ function mergePutOn(
     out[kind] = [...new Set([...(out[kind] ?? []), ...ids])];
   }
   return out;
+}
+
+/** The players of two `thisWay` tallies (who drew, who searched), each once, in the order they did it; undefined when neither has any. */
+function mergeSeats(
+  a: readonly SeatId[] | undefined,
+  b: readonly SeatId[] | undefined,
+): readonly SeatId[] | undefined {
+  if (a === undefined && b === undefined) return undefined;
+  return [...new Set([...(a ?? []), ...(b ?? [])])];
+}
+
+function seatsOf(
+  key: 'drewBy' | 'searchedBy',
+  seats: readonly SeatId[] | undefined,
+): { readonly drewBy?: readonly SeatId[]; readonly searchedBy?: readonly SeatId[] } {
+  return seats === undefined ? {} : { [key]: seats };
 }
 
 function mergeTypes(
