@@ -3190,6 +3190,21 @@ function runEffect(
                       effect: effect.atBeginning,
                     },
                   }),
+              // Illusionist's Gambit (CR 508.1c, 508.1d, 611.2c): "those creatures" are fixed now; what binds them is put in place as that combat begins (`rules/flow.ts`).
+              ...(effect.those === undefined
+                ? {}
+                : {
+                    those: {
+                      objects: resolveObjects(state, effect.those.objects, ctx, targets),
+                      controller: res.controller,
+                      ...(effect.those.attackIfAble === true
+                        ? { attackIfAble: true as const }
+                        : {}),
+                      ...(effect.those.cantAttackYou === true
+                        ? { cantAttackYou: true as const }
+                        : {}),
+                    },
+                  }),
             },
             ...(state.turn.addedPhases ?? []),
           ],

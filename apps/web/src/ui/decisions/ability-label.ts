@@ -393,6 +393,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'it';
     case 'putIntoGraveyardThisWay':
       return 'each permanent put into a graveyard this way';
+    case 'removedFromCombat':
+      // Illusionist's Gambit (CR 608.2c): the creatures the removal from combat before it took out.
+      return 'them';
     case 'putCountersOn':
       // Spectacular Showdown (CR 608.2c): the objects the counters of the instruction before it went on.
       return what.counter === undefined
@@ -635,6 +638,7 @@ function recipientText(
     case 'moved':
     case 'putCountersOn':
     case 'putIntoGraveyardThisWay':
+    case 'removedFromCombat':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -1802,6 +1806,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         effect.atBeginning === undefined
           ? null
           : effectText(effect.atBeginning, ability, self, defs),
+        effect.those,
       );
     case 'extraBeginningPhase':
       // D-356 (CR 500.8): "After this phase, there is an additional beginning phase".

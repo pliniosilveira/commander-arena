@@ -20,6 +20,7 @@ import {
 } from '../state/ops';
 import type { GameState, PhaseId, StepId } from '../state/types';
 import { EMPTY_TURN_LOG } from '../state/types';
+import { bindThoseCreatures } from './added-combat';
 import { beginCombatRecord } from './attack-random-opponent';
 import { endCombat } from './combat';
 import { beginCombatStep, nextCombatStep } from './combat-flow';
@@ -479,6 +480,8 @@ export function endStep(input: GameState): Outcome {
                 },
               ],
       };
+      // Illusionist's Gambit (CR 508.1c, 508.1d): what binds "those creatures" for that combat is put in place as it begins.
+      state = bindThoseCreatures(state, next);
       // CR 500.8, 500.10 (D-356): an added beginning phase has all of its steps, from the untap step; an added combat phase begins with its first step.
       return join(
         { state, events },

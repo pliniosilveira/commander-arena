@@ -981,6 +981,11 @@ export function resolveObjects(
       const kinds = selector.counter === undefined ? Object.keys(byKind) : [selector.counter];
       return [...new Set(kinds.flatMap((kind) => byKind[kind] ?? []))];
     }
+    case 'removedFromCombat':
+      // CR 608.2c, 400.7 (Illusionist's Gambit): the creatures the `removeFromCombat` effects of this resolution took out of combat, still the same objects on the battlefield.
+      return (ctx.thisWay?.removedFromCombat ?? []).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
     case 'triggerSubject':
       return ctx.triggerSubject === undefined ? [] : [ctx.triggerSubject];
     case 'sacrificed':

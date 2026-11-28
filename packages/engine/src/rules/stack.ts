@@ -370,6 +370,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                         ]),
                       ],
                     }),
+                // Illusionist's Gambit (CR 608.2c): the creatures removed from combat; left out until there are some.
+                ...(res.thisWay?.removedFromCombat === undefined &&
+                out.thisWay.removedFromCombat === undefined
+                  ? {}
+                  : {
+                      removedFromCombat: [
+                        ...new Set([
+                          ...(res.thisWay?.removedFromCombat ?? []),
+                          ...(out.thisWay.removedFromCombat ?? []),
+                        ]),
+                      ],
+                    }),
                 // Left out until there is some, so the state of every game that never reads it is what it was.
                 ...(res.thisWay?.discardedValue === undefined &&
                 out.thisWay.discardedValue === undefined

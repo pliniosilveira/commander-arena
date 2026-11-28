@@ -16,6 +16,7 @@ import {
   checkEffect,
   checkEnumList,
   checkFilter,
+  checkObjectSelector,
   checkPlayerSelector,
   checkRef,
   declareTargets,
@@ -669,13 +670,26 @@ export function checkDragonsEffect(
         scope.exertTrigger !== true &&
         scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
-        scope.combatPhaseCondition !== true
+        scope.combatPhaseCondition !== true &&
+        scope.combatStepSpell !== true
       ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
+          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, an effect that checks that it is your combat phase, or a spell cast only during a step of combat',
         );
+      }
+      // Illusionist's Gambit (CR 508.1c, 508.1d): what binds "those creatures" in that combat: a set of permanents, and at least one of the requirement and the restriction.
+      if (e.those !== undefined) {
+        checkObjectSelector(e.those.objects, `${path}.those.objects`, scope, out);
+        for (const flag of ['attackIfAble', 'cantAttackYou'] as const) {
+          if (e.those[flag] !== undefined && e.those[flag] !== true) {
+            issue(out, `${path}.those.${flag}`, `${flag} must be true when present`);
+          }
+        }
+        if (e.those.attackIfAble !== true && e.those.cantAttackYou !== true) {
+          issue(out, `${path}.those`, 'those needs attackIfAble or cantAttackYou');
+        }
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the
       // ability that created it (CR 603.7c: that ability is gone when it triggers).
