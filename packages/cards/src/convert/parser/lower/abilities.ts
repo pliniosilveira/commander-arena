@@ -702,7 +702,9 @@ export function lowerKeyword(
   if (ability.name === 'crew') return lowerCrew(ability, ctx);
   if (ability.name === 'station') return lowerStation(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
-  if (ability.name === 'enchantPlayer') return lowerEnchantPlayer(ability);
+  if (ability.name === 'enchantPlayer' || ability.name === 'enchantOpponent') {
+    return lowerEnchantPlayer(ability);
+  }
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
@@ -1205,7 +1207,13 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const objects = event.args.what;
     const token = event.args.token;
     if (objects?.kind !== 'noun' || token?.kind !== 'token') return failure(ability);
-    const blocked = gate(ability, ['ability:replacement', 'replacement:tokensInstead']);
+    // Fisher's Talent (CR 614.1a): "If you would create a Fish token, create a 3/3 blue Shark creature token instead." is the `swap` mode.
+    const swap = event.args.swap !== undefined;
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:tokensInstead',
+      ...(swap ? (['ability:tokensSwap'] as const) : []),
+    ]);
     if (blocked !== null) return blocked;
     const what = lowerFilter(objects);
     if (!what.ok) return what;
@@ -1229,8 +1237,9 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     return built({
       kind: 'tokensInstead',
       what: filter,
-      mode:
-        event.args.plusThatMany !== undefined
+      mode: swap
+        ? 'swap'
+        : event.args.plusThatMany !== undefined
           ? 'plusThatMany'
           : event.args.plus === undefined
             ? 'thatMany'

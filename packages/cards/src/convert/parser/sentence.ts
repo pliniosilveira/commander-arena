@@ -220,6 +220,8 @@ const LEAD_CONDITIONS = [
   'condition.put-counters-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
+  // Mr. Foxglove: "If you didn't draw cards this way, you may put a creature card from your hand onto the battlefield." after a draw.
+  'condition.didnt-draw-this-way',
   // Elven Council deck: "If time gets more votes, ..." after a vote.
   'condition.vote-result',
   // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.
@@ -339,6 +341,10 @@ const TRAILING_CONDITIONS = [
   'condition.card-types-among',
   // Zimone, Mystery Unraveler: "manifest dread if this is the first time this ability has resolved this turn. Otherwise, ..." (CR 608.2c).
   'condition.resolved-times',
+  // Twenty-Toed Toad: "you win the game if there are twenty or more counters on it or you have twenty or more cards in hand" (CR 122.1, 402.1, 608.2c).
+  'condition.or',
+  'condition.there-are-counters-on-it',
+  'condition.you-have-many-cards-in-hand',
 ] as const;
 
 /**
@@ -522,6 +528,17 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
       () => ({
         step: 'combatDamageBatch' as const,
         whose: 'you' as const,
+      }),
+    ),
+    // Tamiyo, Field Researcher (CR 603.7, 603.7c, 510.2, 500.1): the creature or creatures a target before it named, each time it deals combat damage, until the controller's next turn.
+    map(
+      pattern(
+        /until your next turn, whenever (either of those creatures|that creature) deals combat damage, /iu,
+      ),
+      (m) => ({
+        step: 'combatDamageUntilNextTurn' as const,
+        whose: 'you' as const,
+        those: (m[1]?.toLowerCase() === 'that creature' ? 'one' : 'several') as 'one' | 'several',
       }),
     ),
     // Massacre Girl (CR 603.7, 603.10a, 700.4): the creatures that die, any player's, for the rest of the turn.

@@ -176,6 +176,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeFromPlayer',
     // Orcish Spy (CR 401.2, 701.20e): "Look at the top three cards of target player's library" (`lookAtTop` with `take.max` 0).
     'lookTakeNothing',
+    // Fisher's Talent (CR 701.20a, 701.20b): "Look at the top card of your library. You may reveal it if it's a land card." (`lookAtTop` with `take.to` `reveal`).
+    'lookTakeReveal',
+    // Fisher's Talent (CR 614.1a): "If you would create a Fish token, create a 3/3 blue Shark creature token instead." (`tokensInstead` in `swap` mode).
+    'tokensSwap',
     // Cruelclaw's Heist (CR 701.20a, 402.3, 608.2d): "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (`ChooseSelector.revealHand`).
     'chooseRevealedHand',
     // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
@@ -804,6 +808,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
+    // Issue 112 (Jolly Gerbils): "Whenever you give a gift" (CR 702.174c).
+    'givesGift',
     // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
     'activatesAbility',
     // Aboleth Spawn: "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (CR 603.2, 603.6a).
@@ -878,6 +884,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveilsFirstEachTurn',
     // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
     'stepMonarch',
+    // Tenuous Truce: "At the beginning of enchanted opponent's end step" (`step` with `whose: 'enchantedPlayer'`).
+    'stepEnchantedPlayer',
+    // Tenuous Truce: "When you attack enchanted opponent or a planeswalker they control or when they attack you or a planeswalker you control" (`attackBatch` with
+    // `attackedEnchantedPlayerOrPlaneswalkers`, or with `byEnchantedPlayer` and `attackedYouOrPlaneswalkers`).
+    'attackBatchEnchantedPlayer',
     // "Whenever a creature is dealt noncombat damage" (`dealtDamage` with `noncombat`).
     'dealtDamageNoncombat',
     // Fall of Cair Andros: "Whenever a creature an opponent controls is dealt excess noncombat damage" (`dealtDamage` with `excess`).
@@ -1401,6 +1412,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'moved',
     // CR 608.2c: "each creature that had a double strike counter put on it this way" (`ObjectRef` `putCountersOn`).
     'putCountersOn',
+    // CR 608.2c (Illusionist's Gambit): "remove all attacking creatures from combat and untap them" (`ObjectRef` `removedFromCombat`).
+    'removedFromCombat',
     // CR 608.2c, 400.7: "for each permanent put into a graveyard this way, its controller creates a token" (`ObjectRef` `putIntoGraveyardThisWay`).
     'putIntoGraveyardThisWay',
     'triggerSubject',
@@ -1552,6 +1565,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discardedThisWay',
     // CR 701.21a (Plaguecrafter): "each player who can't" (`PlayerSelector` `couldntSacrificeThisWay`) and `discard.together`.
     'couldntSacrificeThisWay',
+    // Kwain, Itinerant Meddler; Tempt with Discovery (CR 121.1, 701.23): "each player who drew a card this way", "who searched a library this way" (`PlayerSelector` `actedThisWay`).
+    'actedThisWay',
     'discardTogether',
     // CR 701.9 (Cathartic Pyre): "discard up to two cards" (`discard.upTo`).
     'discardUpTo',
@@ -1808,6 +1823,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost." (CR 118.9, 601.2b).
     'castOnceEachTurn',
     'noMaximumHandSize',
+    // Twenty-Toed Toad: "Your maximum hand size is twenty." (CR 402.2, 613.11).
+    'maximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
     // Fealty to the Realm: "The monarch controls enchanted creature." (CR 613.1b, 725.1).
@@ -2055,6 +2072,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sum',
     'extreme',
     'difference',
+    // CR 107.1b (Mr. Foxglove): "... minus the number of cards in your hand".
+    'subtract',
     'opponentCount',
     // CR 120.3 (Grothama, All-Devouring): "the amount of damage dealt to this creature this turn by sources they controlled".
     'damageToThisThisTurn',
@@ -2384,6 +2403,10 @@ export const ABILITY_FEATURES = [
   'lookTakeFromPlayer',
   /** "Look at the top three cards of target player's library" (Orcish Spy, CR 401.2, 701.20e): the engine's `lookAtTop` with nothing taken (`take.max` 0, `rest` `top`). */
   'lookTakeNothing',
+  /** "Look at the top card of your library. You may reveal it if it's a land card." (Fisher's Talent, CR 701.20a, 701.20b): the engine's `lookAtTop` with `take.to` `reveal`: the card is only shown and stays on top. */
+  'lookTakeReveal',
+  /** "If you would create a Fish token, create a 3/3 blue Shark creature token instead." (Fisher's Talent, CR 614.1a, 616.1f): the engine's `tokensInstead` in `swap` mode. */
+  'tokensSwap',
   /** "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3): the engine's `ChooseSelector.revealHand` with `fromHandOf`. */
   'chooseRevealedHand',
   /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
@@ -2574,6 +2597,10 @@ export const TRIGGER_FEATURES = [
   'surveilsFirstEachTurn',
   /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
   'stepMonarch',
+  /** "At the beginning of enchanted opponent's end step" (CR 303.4m, 603.2b): the engine's `step` with `whose: 'enchantedPlayer'`. */
+  'stepEnchantedPlayer',
+  /** "When you attack enchanted opponent or a planeswalker they control", "when they attack you or a planeswalker you control" (CR 303.4m, 508.1b, 508.6): the engine's `attackBatch` with `attackedEnchantedPlayerOrPlaneswalkers` or `byEnchantedPlayer`. */
+  'attackBatchEnchantedPlayer',
   /** "Whenever a creature is dealt noncombat damage" (CR 120.2b, 603.2): the engine's `dealtDamage` with `noncombat`. */
   'dealtDamageNoncombat',
   /** "Whenever a creature is dealt excess damage" (CR 120.10, 603.2): the engine's `dealtDamage` with `excess`; `triggerDamage` is then the excess. */
@@ -2628,6 +2655,8 @@ export const SELECTOR_KINDS = [
   'moved',
   /** "Each creature that had a counter put on it this way" (CR 608.2c): the engine's `putCountersOn`. */
   'putCountersOn',
+  /** "Remove all attacking creatures from combat and untap them" (CR 608.2c): the engine's `removedFromCombat`. */
+  'removedFromCombat',
   /** "For each permanent put into a graveyard this way" (CR 608.2c): the engine's `putIntoGraveyardThisWay`. */
   'putIntoGraveyardThisWay',
   /** A choice of color while a spell or ability resolves: the interpreter has none, a mana ability chooses while paying. */
@@ -2933,6 +2962,8 @@ export const SELECTOR_KINDS = [
   'discardedThisWay',
   /** "Each player who can't" after a sacrifice (CR 701.21a, Plaguecrafter): the engine's `PlayerSelector` `couldntSacrificeThisWay`. */
   'couldntSacrificeThisWay',
+  /** "Each player who drew a card this way", "each player who searched a library this way" (CR 121.1, 701.23): the engine's `PlayerSelector` `actedThisWay`. */
+  'actedThisWay',
   /** "Each player who can't discards a card" (CR 701.9, 101.4): all the cards chosen are discarded at once, the engine's `discard.together`. */
   'discardTogether',
   /** "Discard up to two cards" (CR 701.9, 107.1c, Cathartic Pyre): the player chooses none to N, the engine's `discard.upTo`. */
@@ -3216,6 +3247,8 @@ export const STATIC_KINDS = [
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
   'noMaximumHandSize',
+  /** "Your maximum hand size is twenty." (CR 402.2, 613.11): the engine's static `maximumHandSize`. */
+  'maximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
@@ -3514,6 +3547,8 @@ export const AMOUNT_KINDS = [
   'extreme',
   /** "The difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the engine's `difference`, the positive gap between two amounts. */
   'difference',
+  /** "... minus the number of cards in your hand" (Mr. Foxglove, CR 107.1b): the engine's `subtract`, one amount less another, floored at 0. */
+  'subtract',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
   /** "The amount of damage dealt to this creature this turn by sources they controlled" (CR 120.3, Grothama, All-Devouring): the engine's `damageToThisThisTurn`. */
@@ -3703,6 +3738,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeKinds: true,
   lookTakeFromPlayer: true,
   lookTakeNothing: true,
+  lookTakeReveal: true,
+  tokensSwap: true,
   chooseRevealedHand: true,
   exileTopRandomOpponent: true,
   exileTopBottom: true,
@@ -4070,6 +4107,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   expend: true,
   classLevel: true,
   crimeCommitted: true,
+  givesGift: true,
   tokenCreated: true,
   playsCard: true,
   activatesAbility: true,
@@ -4110,6 +4148,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   surveilsFirstEachTurn: true,
   votingFinished: true,
   stepMonarch: true,
+  stepEnchantedPlayer: true,
+  attackBatchEnchantedPlayer: true,
   dealtDamageNoncombat: true,
   dealtDamageExcess: true,
 };

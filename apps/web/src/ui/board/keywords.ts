@@ -115,8 +115,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   buyback: ['Bb', 'Buyback'],
   // Offspring (CR 702.175a): the cost rides in the chip (`PARAMETERIZED`).
   offspring: ['Off', 'Offspring'],
-  // Gift a card (D-135).
-  gift: ['Gft', 'Gift a card'],
+  // Gift (D-135, CR 702.174): what is given rides in the tooltip (`PARAMETERIZED`).
+  gift: ['Gft', 'Gift'],
   // The Artifacts slice (D-139): the reminder text rides in the tooltip (CR 702.92a).
   livingWeapon: ['LW', LIVING_WEAPON_REMINDER],
   // Job select (D-206).
@@ -160,6 +160,11 @@ const PARAMETERIZED: Readonly<
   Record<string, (text: string) => readonly (readonly [short: string, full: string])[]>
 > = {
   annihilator: (text) => numbered(text, 'Annihilator', 'Ann'),
+  // "Gift an Octopus" (CR 702.174a): the chip names the gift.
+  gift: (text) =>
+    [...text.matchAll(/\bgift (an? [^.(\n,]+)/gi)].map(
+      (m) => ['Gft', `Gift ${(m[1] ?? '').trim()}`] as const,
+    ),
   // "Firebending 2": one chip per instance (CR 702.189a: each triggers separately).
   firebending: (text) => numbered(text, 'Firebending', 'Fbd'),
   // "Afflict 3": one chip per instance (CR 702.130b: each triggers separately).

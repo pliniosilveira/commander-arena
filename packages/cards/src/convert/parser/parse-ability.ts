@@ -70,6 +70,8 @@ const SPELL_STATICS = [
   'static.pay-life-alt-cost',
   // Baleful Mastery (CR 118.9): "You may pay {1}{B} rather than pay this spell's mana cost."
   'static.pay-mana-alt-cost',
+  // Illusionist's Gambit (CR 101.2, 601.3): "Cast this spell only during the declare blockers step on an opponent's turn."
+  'static.cast-only-during-step',
 ] as const;
 
 const FAMILIES: ReadonlySet<string> = new Set([

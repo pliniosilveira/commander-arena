@@ -79,16 +79,25 @@ export const NOUN_OTHER_COMMANDERS_YOU_CONTROL = defineRule<IrNoun>({
 });
 
 /**
- * `noun.target-creature-token`: "target creature token" (CR 111.1, 115.1: a token that is a creature, on the battlefield; one target), read by `effect.restrict` only. Not
- * read: "target creature tokens", "target token", "target nontoken creature", "target creature token you control", "another target creature token".
+ * `noun.target-creature-token`: "target creature token" (CR 111.1, 115.1: a token that is a creature, on the battlefield; one target), read by `effect.restrict` and, as
+ * what a token copies, by `token.copy`. Octomancer (issue 112, CR 400.7): "that entered the battlefield this turn" (or "that entered this turn"), the engine's
+ * `enteredThisTurn`. Not read: "target creature tokens", "target token", "target nontoken creature", "target creature token you control", "another target creature token".
  */
 export const NOUN_TARGET_CREATURE_TOKEN = defineRule<IrNoun>({
   id: 'noun.target-creature-token',
   family: 'noun',
   leading: ['target'],
-  cites: ['CR 111.1 (Tokens)', 'CR 115.1 (Targets)'],
-  examples: ['target creature token', 'Target creature token'],
+  cites: ['CR 111.1 (Tokens)', 'CR 115.1 (Targets)', 'CR 400.7 (Zones)'],
+  examples: [
+    'target creature token',
+    'Target creature token',
+    'target creature token that entered the battlefield this turn',
+    'target creature token that entered this turn',
+  ],
   rejects: [
+    'target creature tokens that entered this turn',
+    'target creature token that entered the battlefield',
+    'target creature token that entered last turn',
     'target creature tokens',
     'target token',
     'target nontoken creature',
@@ -97,16 +106,27 @@ export const NOUN_TARGET_CREATURE_TOKEN = defineRule<IrNoun>({
     'target creature',
     'target creature tokenizer',
   ],
-  parse: node<string, IrNoun>(
+  parse: node<{ readonly raw: string; readonly entered: boolean }, IrNoun>(
     'noun.target-creature-token',
     map(
-      pattern(new RegExp(`target creature token${BOUNDARY}(?!s| you control)`, 'iu')),
-      (m) => m[0],
+      pattern(
+        new RegExp(
+          `target creature token(?<entered> that entered (?:the battlefield )?this turn)?${BOUNDARY}(?!s| you control)`,
+          'iu',
+        ),
+      ),
+      (m) => ({ raw: m[0], entered: m.groups?.entered !== undefined }),
     ),
-    (raw) => ({
+    ({ raw, entered }) => ({
       kind: 'noun',
       det: 'target',
-      filter: { zone: 'battlefield', types: ['creature'], token: true, raw },
+      filter: {
+        zone: 'battlefield',
+        types: ['creature'],
+        token: true,
+        ...(entered ? { enteredThisTurn: true as const } : {}),
+        raw,
+      },
       upTo: false,
       plural: false,
       other: false,

@@ -438,6 +438,8 @@ export function lowerCondition(
       if (ctx?.thatPlayer?.selector.kind !== 'triggerPlayer') return failure(c, []);
       const terms: Condition[] = [];
       if (test.opponent === true) {
+        // CR 603.2b, 608.2c: the engine reads `triggerPlayerIsOpponent` as an instruction comes up, never as the intervening "if" of the trigger.
+        if (ctx.interveningCondition === true) return failure(c, []);
         const blocked = missingFeatures(['condition:triggerPlayerIsOpponent']);
         if (blocked.length > 0) return failure(c, blocked);
         terms.push({ kind: 'triggerPlayerIsOpponent' });
@@ -1098,6 +1100,14 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       if (ctx?.didSearch !== true) return failure(c, []);
       return ok({ kind: 'thisWayAtLeast', what: 'searched', count: 1 });
+    }
+    case 'notDrewThisWay': {
+      // "If you didn't draw cards this way" (Mr. Foxglove, CR 608.2c, 121.1): the draws before it in the same text are the controller's alone, so "you drew" is "a player drew" of this
+      // resolution, and an amount of 0 or an empty library draws none.
+      const blocked = missingFeatures(['condition:thisWayAtLeast', 'condition:not']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.drewBefore !== 'you') return failure(c, []);
+      return ok({ kind: 'not', term: { kind: 'thisWayAtLeast', what: 'playersDrew', count: 1 } });
     }
     case 'destroyedThisWay': {
       // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did. The engine counts the permanents the destroy really

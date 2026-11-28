@@ -18,6 +18,11 @@ import { CHAPTER_PREFIX } from './roman';
 import { COUNTER_BLITZ_C_JOINS } from './segment-counter-blitz-c';
 import { COUNTER_BLITZ_E_SEARCH_JOIN } from './segment-counter-blitz-e';
 import { CHOOSE_TARGET_CREATURE, WHEN_THAT_CREATURE_DIES_RETURN } from './segment-counter-group-a';
+import {
+  PEACE_OFFERING_PAIR_JOINS,
+  PEACE_OFFERING_QUAD_JOINS,
+  PEACE_OFFERING_TRIPLE_JOINS,
+} from './segment-peace-offering';
 
 export type FaceKind = 'spell' | 'permanent';
 
@@ -1532,6 +1537,27 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       d !== undefined &&
+      PEACE_OFFERING_QUAD_JOINS.some(
+        ([first, second, third, fourth]) =>
+          said(a, first) && said(b, second) && said(c, third) && said(d, fourth),
+      )
+    ) {
+      // Illusionist's Gambit: four sentences of one instruction (`segment-peace-offering.ts`).
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      PEACE_OFFERING_TRIPLE_JOINS.some(
+        ([first, second, third]) => said(a, first) && said(b, second) && said(c, third),
+      )
+    ) {
+      // Tempt with Discovery, Selvala, Explorer Returned: three sentences of one instruction (`segment-peace-offering.ts`).
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      d !== undefined &&
       said(a, FINALE_CAST) &&
       said(b, FINALE_EXILE_INSTEAD) &&
       said(c, FINALE_COPY_TWICE) &&
@@ -1813,6 +1839,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_OPPONENT_CHOOSE) && said(b, DESTROY_THE_CHOSEN_PERMANENTS)) ||
         // Counter Blitz deck, group C (Summon: Valefor): each opponent's choice and the move of the permanents chosen.
         COUNTER_BLITZ_C_JOINS.some(([first, second]) => said(a, first) && said(b, second)) ||
+        // Tempt with Bunnies: the offer to each opponent and what the controller does for each who accepts.
+        PEACE_OFFERING_PAIR_JOINS.some(([first, second]) => said(a, first) && said(b, second)) ||
         (said(a, EXILE_TOP_CARD_SENTENCE) && said(b, PLAY_UNTIL_EXILE_ANOTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||

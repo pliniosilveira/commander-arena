@@ -171,6 +171,11 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ? effect
       : { kind: 'sequence', effects: [giftFirst, ...(effect === undefined ? [] : [effect])] };
   const queue: Instruction[] = withGift ? [{ kind: 'effect', effect: withGift }] : [];
+  // CR 702.174c: a player gives a gift as an instant or sorcery they control whose gift cost was paid resolves, or as the gift triggered ability of a permanent
+  // they control resolves, whatever the gift turns out to do.
+  if (giftFirst !== null || (ability?.kind === 'triggered' && ability.giftAbility === true)) {
+    events.push({ kind: 'giftGiven', seat: controllerOf(input, obj), object: id });
+  }
   // CR 603.5: "you may": the controller answers when the ability resolves, before anything else.
   if (ability?.kind === 'triggered' && ability.optional)
     queue.unshift({ kind: 'confirmOptional', answer: null });
@@ -370,6 +375,18 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                         ]),
                       ],
                     }),
+                // Illusionist's Gambit (CR 608.2c): the creatures removed from combat; left out until there are some.
+                ...(res.thisWay?.removedFromCombat === undefined &&
+                out.thisWay.removedFromCombat === undefined
+                  ? {}
+                  : {
+                      removedFromCombat: [
+                        ...new Set([
+                          ...(res.thisWay?.removedFromCombat ?? []),
+                          ...(out.thisWay.removedFromCombat ?? []),
+                        ]),
+                      ],
+                    }),
                 // Left out until there is some, so the state of every game that never reads it is what it was.
                 ...(res.thisWay?.discardedValue === undefined &&
                 out.thisWay.discardedValue === undefined
@@ -432,6 +449,22 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                     ...(out.thisWay.couldntSacrifice ?? []),
                   ]),
                 ],
+                // Left out until there is some, so the state of every game that never reads them is what it was.
+                ...seatsOf('drewBy', mergeSeats(res.thisWay?.drewBy, out.thisWay.drewBy)),
+                ...seatsOf(
+                  'searchedBy',
+                  mergeSeats(res.thisWay?.searchedBy, out.thisWay.searchedBy),
+                ),
+                ...(res.thisWay?.cardsDrawn === undefined && out.thisWay.cardsDrawn === undefined
+                  ? {}
+                  : { cardsDrawn: (res.thisWay?.cardsDrawn ?? 0) + (out.thisWay.cardsDrawn ?? 0) }),
+                ...(res.thisWay?.playersAccepted === undefined &&
+                out.thisWay.playersAccepted === undefined
+                  ? {}
+                  : {
+                      playersAccepted:
+                        (res.thisWay?.playersAccepted ?? 0) + (out.thisWay.playersAccepted ?? 0),
+                    }),
               },
             }),
         // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
@@ -546,6 +579,22 @@ function mergePutOn(
     out[kind] = [...new Set([...(out[kind] ?? []), ...ids])];
   }
   return out;
+}
+
+/** The players of two `thisWay` tallies (who drew, who searched), each once, in the order they did it; undefined when neither has any. */
+function mergeSeats(
+  a: readonly SeatId[] | undefined,
+  b: readonly SeatId[] | undefined,
+): readonly SeatId[] | undefined {
+  if (a === undefined && b === undefined) return undefined;
+  return [...new Set([...(a ?? []), ...(b ?? [])])];
+}
+
+function seatsOf(
+  key: 'drewBy' | 'searchedBy',
+  seats: readonly SeatId[] | undefined,
+): { readonly drewBy?: readonly SeatId[]; readonly searchedBy?: readonly SeatId[] } {
+  return seats === undefined ? {} : { [key]: seats };
 }
 
 function mergeTypes(

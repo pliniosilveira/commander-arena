@@ -1532,15 +1532,32 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   // Issue 102 (Teval, the Balanced Scale): "Then you may return a land card from your graveyard to the battlefield tapped.": a card chosen from the graveyard, the choice of none or one is
   // the offer itself (the engine's `moveToZone` of a `choose` with `optional`), so it is not wrapped in a `may`.
   if (clause?.verb === 'putFromZone' && clause.optional && more.length === 0) {
+    // Mr. Foxglove (CR 608.2c): "If you didn't draw cards this way, you may put a creature card from your hand onto the battlefield.": what the draw before it did, the engine's
+    // `conditional` around the offer. Any other test is still refused here, never guessed.
+    const test = sentence.condition?.test.kind;
     if (
-      sentence.condition !== undefined ||
+      (sentence.condition !== undefined && test !== 'notDrewThisWay') ||
       sentence.instead === true ||
       sentence.where !== undefined
     ) {
       return refuse(sentence);
     }
+    let guard: Condition | null = null;
+    if (sentence.condition !== undefined) {
+      const blocked = missingFeatures(['effect:conditional']);
+      if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+      const lowered = lowerCondition(sentence.condition, false, ctx);
+      if (!lowered.ok) return lowered;
+      guard = lowered.value;
+    }
     const may = { kind: 'flag' as const, value: true, span: clause.span, rule: clause.rule };
-    return lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
+    const put = lowerClauses([{ ...clause, optional: false, args: { ...clause.args, may } }], ctx);
+    if (!put.ok || guard === null) return put;
+    return {
+      ok: true,
+      value: [{ kind: 'conditional', condition: guard, effect: oneEffect(put.value) }],
+      rule: put.rule,
+    };
   }
   if (
     clause === undefined ||
@@ -2895,6 +2912,9 @@ function countsWhatHappened(
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
+    case 'cardsDrawn':
+      // Communal Brewing (CR 121.1): "for each card drawn this way": a `draw` before it in the same text, whoever draws.
+      return earlier.verb === 'draw';
     case 'playersDrew': {
       // The engine counts the players who drew in an earlier `draw`: "opponent who drew" only fits a draw by opponents.
       const who = earlier.args.player;
@@ -3084,6 +3104,63 @@ function lowerCreatureDies(
   const effect: Effect = {
     kind: 'delayedDiesTurn',
     filter: { types: ['creature'] },
+    effect: oneEffect(inner.value),
+  };
+  steps.push({ effects: [effect], replaceable: false });
+  return { last: i };
+}
+
+/** What "Until your next turn, whenever either of those creatures deals combat damage, ..." needs of the engine (Tamiyo, Field Researcher). */
+export const COMBAT_DAMAGE_UNTIL_NEXT_TURN_NEEDS: readonly FeatureRef[] = [
+  'effect:delayedCombatDamage',
+  'selector:target',
+  'duration:untilYourNextTurn',
+];
+
+/**
+ * "Choose up to two target creatures. Until your next turn, whenever either of those creatures deals combat damage, you draw a card." (Tamiyo, Field Researcher; CR 603.7, 603.7c,
+ * 603.7e, 510.2, 500.1): the sentence is what a delayed triggered ability does, one for each creature the target slot before it chose, which the engine's `delayedCombatDamage`
+ * with `to` `any` and `until` `yourNextTurn` creates. "Those creatures" (or "that creature") is the one target slot of creatures of the text, of more than one creature (or of one);
+ * with none, or several, there is nothing sure to say it of. The sentence names no target of its own, and a test, a "you may" or a "where X" in it is not read inside it.
+ */
+function lowerCombatDamageUntilNextTurn(
+  sentence: IrSentence,
+  those: 'one' | 'several',
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  const blocked = missingFeatures(COMBAT_DAMAGE_UNTIL_NEXT_TURN_NEEDS);
+  if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+  if (
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return stop(refuse(sentence));
+  }
+  const slots = ctx.targets.filter(
+    (t) => t.what.kind === 'object' && (t.what.filter.types ?? []).includes('creature'),
+  );
+  const [slot] = slots;
+  if (slots.length !== 1 || slot === undefined || ctx.targets.length !== 1) {
+    return stop(refuse(sentence));
+  }
+  const max = slot.max ?? 1;
+  if (those === 'several' ? max < 2 : max !== 1) return stop(refuse(sentence));
+  const before = ctx.targets.length;
+  const inner = lowerClauses(sentence.clauses, ctx);
+  if (!inner.ok) return stop(inner);
+  // What the ability does reads nothing the spell chose (CR 603.7c): no target of its own.
+  if (ctx.targets.length !== before) return stop(refuse(sentence));
+  const effect: Effect = {
+    kind: 'delayedCombatDamage',
+    objects: { kind: 'target', id: slot.id },
+    to: 'any',
+    until: 'yourNextTurn',
     effect: oneEffect(inner.value),
   };
   steps.push({ effects: [effect], replaceable: false });
@@ -3418,6 +3495,15 @@ function lowerStep(
       return lowerCombatDamageToThatPlayer(sentence, i, steps, ctx);
     if (step === 'combatDamageBatch') return lowerCombatDamageBatch(sentence, i, steps, ctx);
     if (step === 'creatureDies') return lowerCreatureDies(sentence, i, steps, ctx);
+    if (step === 'combatDamageUntilNextTurn') {
+      return lowerCombatDamageUntilNextTurn(
+        sentence,
+        sentence.delayed.those ?? 'several',
+        i,
+        steps,
+        ctx,
+      );
+    }
     const blocked = missingFeatures(['effect:delayedTrigger']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
     // A test or a "you may" of the sentence is not read inside what a delayed ability does.

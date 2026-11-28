@@ -174,6 +174,7 @@ import { SYNTHETIC_NIV_GROUP_3_C_LIST } from './synthetic-niv-group-3-c';
 import { SYNTHETIC_NIV_PRIMITIVES_LIST } from './synthetic-niv-primitives';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PARTY_LIST } from './synthetic-party';
+import { SYNTHETIC_PEACE_OFFERING_FISHER_LIST } from './synthetic-peace-offering-fisher';
 import { SYNTHETIC_PILES_LIST } from './synthetic-piles';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
 import { SYNTHETIC_PLATE_LIST } from './synthetic-plate';
@@ -516,6 +517,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
+  ...SYNTHETIC_PEACE_OFFERING_FISHER_LIST,
   ...SYNTHETIC_SQUIRREL_G1_LIST,
   ...SYNTHETIC_CANT_SACRIFICE_LIST,
   ...SYNTHETIC_CAST_ONCE_LIST,

@@ -685,6 +685,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'maxHandSize':
+      return ['static:maximumHandSize'];
     case 'beginGameOnBattlefield':
       return ['static:beginGameOnBattlefield'];
     case 'creatureOffBattlefield':
@@ -825,6 +827,14 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
+      if (effect.onlyDuring !== undefined) {
+        return [
+          'static:cantCastThis',
+          'condition:duringStep',
+          'condition:yourTurn',
+          'condition:not',
+        ];
+      }
       return effect.unlessOpponentLostLife === true
         ? ['static:cantCastThis', 'condition:aPlayerLostLifeThisTurn', 'condition:not']
         : ['static:cantCastThis', 'condition:ownTurnNumber'];
@@ -882,6 +892,17 @@ function readsCombat(filter: ObjectFilter): boolean {
 /** Whether the filter, or one of its `anyOf` members, names a goaded creature (CR 701.15b). */
 function readsGoaded(filter: ObjectFilter): boolean {
   return filter.goaded === true || (filter.anyOf?.some(readsGoaded) ?? false);
+}
+
+/** "Your maximum hand size is twenty." (CR 402.2, 613.11): the controller's maximum hand size is the number. */
+function lowerMaximumHandSize(ability: Static, size: number): LowerResult<readonly Ability[]> {
+  const missing = missingFeatures(['ability:static', 'static:maximumHandSize']);
+  if (missing.length > 0) return failure(ability, missing);
+  return {
+    ok: true,
+    value: [{ kind: 'static', static: { kind: 'maximumHandSize', size } }],
+    rule: ability.rule,
+  };
 }
 
 /** "You have no maximum hand size." (CR 402.2). */
@@ -1497,6 +1518,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
             spells: first.types === undefined ? {} : { types: [...first.types] as never },
             ...(first.from === undefined ? {} : { from: [...first.from] }),
             alternative: first.alternative,
+            ...(first.unlimited === true ? { unlimited: true as const } : {}),
           },
         },
       ],
@@ -1936,6 +1958,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (more.length > 0 || statement.subject.det !== 'you') return failure(ability);
     return lowerNoMaximum(ability);
   }
+  if (first.kind === 'maxHandSize') {
+    if (more.length > 0 || statement.subject.det !== 'you') return failure(ability);
+    return lowerMaximumHandSize(ability, first.size);
+  }
   if (isPlayRule(first)) {
     // Stage P24, D-125: a statement of one effect whose subject is the rule's own (a player, `~`, creatures).
     if (more.length > 0) return failure(ability);
@@ -2170,6 +2196,7 @@ function lowerPermanentsAndPermanentSpells(
 export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
+  'static:maximumHandSize',
   'static:creatureOffBattlefield',
   'static:beginGameOnBattlefield',
   'static:modifyPt',

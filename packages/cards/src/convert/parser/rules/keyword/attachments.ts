@@ -99,6 +99,34 @@ export const KEYWORD_ENCHANT_PLAYER = defineRule<readonly IrKeyword[]>({
 });
 
 /**
+ * `keyword.enchant-opponent`: "Enchant opponent" (Tenuous Truce, CR 702.5a, 303.4a, 102.3): the Aura spell targets an opponent of its caster, and the Aura stays on that player while
+ * they are an opponent of its controller. The engine's `enchant` keyword with `player` and `opponent`. Not read: "Enchant opponents", "Enchant opponent." and other words after it.
+ */
+export const KEYWORD_ENCHANT_OPPONENT = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.enchant-opponent',
+  family: 'keyword',
+  leading: ['enchant'],
+  cites: ['CR 702.5a (Enchant)', 'CR 303.4a (Enchantments)', 'CR 102.3 (Players)'],
+  examples: ['Enchant opponent', 'enchant opponent'],
+  rejects: [
+    'Enchant opponents',
+    'Enchant opponent.',
+    "Enchant opponent's creature",
+    'Enchant opponent you control',
+    'Enchant player',
+    'Enchant an opponent',
+  ],
+  parse: map(
+    node<string, IrKeyword>(
+      'keyword.enchant-opponent',
+      map(pattern(/enchant opponent(?![\p{L}\p{N}'’.])/iu), (m) => m[0]),
+      () => ({ kind: 'keyword', name: 'enchantOpponent', params: [] }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
+/**
  * `keyword.equip`: "Equip {1}", "Equip—Pay 2 life" and, since stage P35 (D-176), "Equip—{2}, Pay 2 life." (CR 702.6a: "[Cost]: Attach this
  * permanent to target creature you control. Activate only as a sorcery."). The cost is a plain mana cost, a
  * payment of life or the two together, the two the engine pays for it. "Equip legendary creature {3}" and "Equip
@@ -339,6 +367,7 @@ export const KEYWORD_RECONFIGURE = defineRule<readonly IrKeyword[]>({
 export const ATTACHMENT_KEYWORD_RULES = [
   KEYWORD_ENCHANT,
   KEYWORD_ENCHANT_PLAYER,
+  KEYWORD_ENCHANT_OPPONENT,
   KEYWORD_EQUIP,
   KEYWORD_EQUIP_QUALITY,
   KEYWORD_EQUIP_COMMANDER,

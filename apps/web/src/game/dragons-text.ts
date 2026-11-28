@@ -84,10 +84,24 @@ export const EXTRA_BEGINNING_PHASE_TEXT =
  * D-187: "There's an additional combat phase after this phase. At the beginning of that combat, untap all creatures you control": the same phase,
  * with what a delayed ability does as it begins (`atBeginning`, said by the caller in the words of the effect).
  */
-export function extraCombatText(atBeginning: string | null): string {
-  return atBeginning === null
-    ? EXTRA_COMBAT_TEXT
-    : `${EXTRA_COMBAT_TEXT}. At the beginning of that combat, ${lowerFirst(atBeginning)}`;
+export function extraCombatText(
+  atBeginning: string | null,
+  those?: { readonly attackIfAble?: true; readonly cantAttackYou?: true },
+): string {
+  const base =
+    atBeginning === null
+      ? EXTRA_COMBAT_TEXT
+      : `${EXTRA_COMBAT_TEXT}. At the beginning of that combat, ${lowerFirst(atBeginning)}`;
+  // Illusionist's Gambit (CR 508.1c, 508.1d): what binds "those creatures" in that combat only.
+  const bound = [
+    ...(those?.attackIfAble === true
+      ? ['Each of those creatures attacks that combat if able']
+      : []),
+    ...(those?.cantAttackYou === true
+      ? ["They can't attack you or planeswalkers you control that combat"]
+      : []),
+  ];
+  return [base, ...bound].join('. ');
 }
 
 const lowerFirst = (text: string): string => `${text.charAt(0).toLowerCase()}${text.slice(1)}`;

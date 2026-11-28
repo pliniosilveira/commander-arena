@@ -45,6 +45,7 @@ import { DEVOTION_CONDITION_RULES } from './devotion';
 import { DIFFERENT_POWERS_CONDITION_RULES } from './different-powers';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
+import { DREW_THIS_WAY_CONDITION_RULES } from './drew-this-way';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
@@ -58,6 +59,7 @@ import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { GRAND_LARCENY_C_CONDITION_RULES } from './grand-larceny-c';
+import { HAND_SIZE_CONDITION_RULES } from './hand-size';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
@@ -567,6 +569,9 @@ export const CONDITION_CONTROL_COMMANDER = defineRule<IrCondition>({
 });
 
 export const CONDITION_RULES = [
+  // Peace Offering deck: two counts joined by "or" (before the single conditions they start with), "you have exactly thirteen cards in your hand", "that player has no cards in
+  // hand", "there are twenty or more counters on it".
+  ...HAND_SIZE_CONDITION_RULES,
   // Quandrix Unlimited deck, group G: two conditions joined by "and", and "you control a prime number of lands", before the single conditions they start with.
   ...QUANDRIX_G_CONDITION_RULES,
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
@@ -675,6 +680,7 @@ export const CONDITION_RULES = [
   ...COUNTER_GROUP_A_CONDITION_RULES,
   // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
   ...FEDERATION_D_CONDITION_RULES,
+  ...DREW_THIS_WAY_CONDITION_RULES,
   // Limit Break deck, group 4: "~'s power is 7 or greater".
   ...LIMIT_BREAK_G4_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".

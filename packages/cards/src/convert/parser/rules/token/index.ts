@@ -893,8 +893,13 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
   ),
 });
 
-/** What a copy can be made of: this permanent, one target permanent, or "it" (CR 707.2). */
-const COPY_SOURCES = ['noun.self', 'noun.target-permanent', 'noun.it'] as const;
+/** What a copy can be made of: this permanent, one target permanent (Octomancer: a target creature token), or "it" (CR 707.2). */
+const COPY_SOURCES = [
+  'noun.self',
+  'noun.target-permanent',
+  'noun.target-creature-token',
+  'noun.it',
+] as const;
 
 const COPY_SOURCE = satisfy(family<IrNoun>('noun', { only: COPY_SOURCES }), (noun) => !noun.plural);
 
@@ -924,6 +929,8 @@ export const TOKEN_COPY = defineRule<IrToken>({
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
     "a token that's a copy of target token you control",
+    // Octomancer (issue 112, CR 707.2, 400.7).
+    "a token that's a copy of target creature token that entered the battlefield this turn",
     'two tokens that are copies of it',
     // Flamerush Rider (CR 508.4, 110.5b, 707.2): a copy that enters tapped and attacking.
     "a token that's a copy of another target attacking creature and that's tapped and attacking",

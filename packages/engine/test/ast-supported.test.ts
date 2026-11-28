@@ -416,6 +416,7 @@ describe('supported feature gate', () => {
         'expend',
         'exiledFromLibraryOrGraveyard',
         'exploits',
+        'givesGift',
         'landfall',
         'lastCounterRemoved',
         'leavesBattlefield',
@@ -521,6 +522,8 @@ describe('supported feature gate', () => {
       // Whispering Snitch: "Whenever you surveil for the first time each turn".
       'surveilsFirstEachTurn',
       'stepMonarch',
+      'stepEnchantedPlayer',
+      'attackBatchEnchantedPlayer',
       'dealtDamageNoncombat',
       'dealtDamageExcess',
     ]);

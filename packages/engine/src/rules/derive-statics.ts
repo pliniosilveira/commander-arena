@@ -344,6 +344,8 @@ export interface OnceCastSource {
   readonly from?: readonly ('hand' | 'libraryTop')[];
   readonly alternative: 'lifeForMana' | 'free';
   readonly condition?: Condition;
+  /** "You may cast spells from your hand without paying their mana costs." (`castOnceEachTurn` `unlimited`): no turn or use limit. */
+  readonly unlimited?: true;
 }
 
 interface BoardIndex {
@@ -857,13 +859,7 @@ function buildIndex(state: GameState): BoardIndex {
         a.static.kind === 'castOnceEachTurn' &&
         (a.functionsIn ?? 'battlefield') === 'battlefield'
       ) {
-        onceCasts.push({
-          object,
-          spells: a.static.spells,
-          alternative: a.static.alternative,
-          ...(a.static.from === undefined ? {} : { from: a.static.from }),
-          ...(a.condition === undefined ? {} : { condition: a.condition }),
-        });
+        onceCasts.push(onceCastOf(object, a.static, a.condition));
       }
     }
     legendExemptions.push(...legendExemptionsOf(object, printed));
@@ -885,6 +881,12 @@ function buildIndex(state: GameState): BoardIndex {
     }
     reductions.push(...costReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
+    // Tamiyo, Field Researcher: "You may cast spells from your hand without paying their mana costs."
+    for (const a of printed) {
+      if (a.kind === 'static' && a.static.kind === 'castOnceEachTurn') {
+        onceCasts.push(onceCastOf(object, a.static, a.condition));
+      }
+    }
   }
   // CR 113.6, 903.8 (issue 81, Eminence): a commander in the command zone has the cost reductions that say they work there.
   for (const seat of state.seats) {
@@ -1082,7 +1084,23 @@ export function altCostGrantSources(state: GameState): readonly AltCostGrantSour
   return indexOf(state).altCostGrants;
 }
 
-/** The static abilities of the permanents on the battlefield that let their controller cast one spell in each of their turns for an alternative cost (`castOnceEachTurn`, CR 118.9). */
+/** The `castOnceEachTurn` static ability `ability` of `object`, as `rules/cast-once.ts` reads it. */
+function onceCastOf(
+  object: GameObject,
+  ability: Extract<StaticEffect, { kind: 'castOnceEachTurn' }>,
+  condition: Condition | undefined,
+): OnceCastSource {
+  return {
+    object,
+    spells: ability.spells,
+    alternative: ability.alternative,
+    ...(ability.from === undefined ? {} : { from: ability.from }),
+    ...(condition === undefined ? {} : { condition }),
+    ...(ability.unlimited === true ? { unlimited: true as const } : {}),
+  };
+}
+
+/** The static abilities of the permanents on the battlefield (and of the emblems, CR 114.4) that let their controller cast spells for an alternative cost (`castOnceEachTurn`, CR 118.9). */
 export function onceCastSources(state: GameState): readonly OnceCastSource[] {
   return indexOf(state).onceCasts;
 }

@@ -244,6 +244,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   roomFullyUnlocked: { kind: 'roomFullyUnlocked', who: 'you' },
   exploits: { kind: 'exploits' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
+  givesGift: { kind: 'givesGift', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
   playsCard: { kind: 'playsCard', minCardTypes: 2 },
   activatesAbility: { kind: 'activatesAbility', who: 'you' },

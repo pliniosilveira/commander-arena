@@ -405,6 +405,11 @@ export type Amount =
    */
   | { readonly kind: 'difference'; readonly of: readonly [Amount, Amount] }
   /**
+   * "The number of cards in defending player's hand minus the number of cards in your hand" (Mr. Foxglove, CR 107.1b, 608.2c): the first amount less the second, each read as the
+   * instruction runs, a negative result counting as 0 (CR 107.1b). The `minus` of an amount, not a whole number. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'subtract'; readonly of: readonly [Amount, Amount] }
+  /**
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
    * controllers sacrifice), "for each creature destroyed this way" (`destroyed`: the permanents an earlier
@@ -612,6 +617,8 @@ export type ThisWayKind =
   // Occult Epiphany (CR 205.2a, 608.2c): "for each card type among cards discarded this way": how many different card types the cards `discard` effects discarded have.
   | 'discardedTypeCount'
   | 'playersDrew'
+  // Communal Brewing (CR 121.1, 608.2c): "for each card drawn this way": the cards the `draw` effects of this resolution really drew, whoever drew them (a card a replacement drew instead of is not counted).
+  | 'cardsDrawn'
   | 'tapped'
   | 'discarded'
   // D-210: "the total mana value of those cards" milled this way, and "if a creature card (a noncreature card) was discarded this way".
@@ -636,6 +643,8 @@ export type ThisWayKind =
   | 'discardedMost'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
   | 'searched'
+  // Tempt with Bunnies (CR 101.4, 608.2d): "For each opponent who does": the players who accepted the offer of a `playersMay` effect of this resolution.
+  | 'playersAccepted'
   // Nexus Mentality: "Draw a card for each counter removed this way": the counters the `removeAllCounters` effects of this resolution took off (CR 122.1, 608.2c).
   | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
@@ -1433,6 +1442,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'putCountersOn'; readonly counter?: string }
   /**
+   * "Remove all attacking creatures from combat and untap them" (Illusionist's Gambit, CR 506.4, 608.2c): the creatures the `removeFromCombat` effects earlier in the same resolution
+   * really took out of combat (each was attacking or blocking as it was removed), each once, by their ids; one that has left the battlefield since is a new object (CR 400.7) and is
+   * not found by the effects that read permanents. Empty when nothing was removed. Valid only after a `removeFromCombat` in the same sequence (`validateCard`).
+   */
+  | { readonly kind: 'removedFromCombat' }
+  /**
    * "For each permanent put into a graveyard this way, its controller creates ..." (Terastodon, CR 608.2c, 608.2h, 400.7): the permanents the `destroy` effects before it in the resolution
    * really put into a graveyard, each once, by the id they had on the battlefield, so that `controllerOf` reads the player who controlled each as it left (last-known information).
    * A permanent that was not destroyed (indestructible, regenerated, gone before the effect resolved) or that went to another zone instead (a replacement effect exiled it) is not in it.
@@ -1723,6 +1738,16 @@ export type PlayerSelector =
    * ("any number") is not one of them. Valid after a `sacrifice` effect in the same sequence.
    */
   | { readonly kind: 'couldntSacrificeThisWay' }
+  /**
+   * "Each player who drew a card this way" (Kwain, Itinerant Meddler; CR 121.1, 101.4) and "each player who searched a library this way" (Tempt with Discovery; CR 701.23, 101.4): the
+   * players who drew at least one card to a `draw` effect (`drew`), or who searched a library to a `search` effect (`searched`, a search that found nothing included, CR 701.23c), of this
+   * same resolution so far, still in the game, in the order CR 101.4 gives. `of` (`eachPlayer` or `eachOpponent`) narrows them to that group. Valid after such an effect in the same sequence.
+   */
+  | {
+      readonly kind: 'actedThisWay';
+      readonly act: 'drew' | 'searched';
+      readonly of?: PlayerSelector;
+    }
   /**
    * "Each player this creature attacked this turn" (D-269, CR 508.6): the players the creature the ability belongs to was declared as an attacker
    * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An
@@ -2938,10 +2963,20 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly effect: Effect;
     }
+  /**
+   * "When this creature deals combat damage to a player this combat, ..." (the prepare trigger) and "Until your next turn, whenever either of those creatures deals combat damage, you
+   * draw a card." (Tamiyo, Field Researcher; CR 603.7, 603.7b, 603.7c, 603.7e, 510.2, 500.1): for each permanent `objects` names as the effect resolves, a delayed triggered ability of
+   * the controller of the spell or ability that triggers each time that permanent deals combat damage, about that object only (CR 603.7c: it still triggers when the permanent changes
+   * controller; it is the controller of the ability who is "you"). Left out, `to` is a player and the ability ends with the combat; `to` `any` is any recipient, once for each
+   * permanent in each combat damage event however many objects and players it damages (CR 510.2: the damage of one step is dealt at once), and `until` `yourNextTurn` ends it as the
+   * next turn of the controller begins (CR 500.1), whether or not the source of the ability is still on the battlefield. `effect` runs each time, with the controller as "you".
+   */
   | {
       readonly kind: 'delayedCombatDamage';
       readonly objects: ObjectSelector;
       readonly effect: Effect;
+      readonly to?: 'any';
+      readonly until?: 'yourNextTurn';
     }
   | { readonly kind: 'sequence'; readonly effects: readonly Effect[] }
   /**
@@ -3592,7 +3627,21 @@ export type Effect =
    * `atBeginning` (D-187): "At the beginning of that combat, untap all creatures you control": an effect that a delayed triggered ability of the same
    * controller runs as the beginning of combat step of that added phase begins (CR 603.7); it names no target.
    */
-  | { readonly kind: 'extraCombat'; readonly atBeginning?: Effect }
+  | {
+      readonly kind: 'extraCombat';
+      readonly atBeginning?: Effect;
+      /**
+       * "Each of those creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat." (Illusionist's Gambit, CR 508.1c, 508.1d, 506.1): the
+       * permanents `objects` names as the effect resolves (the set is fixed then, CR 611.2c) get, for the added combat phase only, the requirement to attack if able
+       * (`attackIfAble`) and the restriction that they can't attack the controller of the effect or the planeswalkers that player controls (`cantAttackYou`). Both are put in
+       * place as the added phase begins and end with it (`until` `endOfCombat`); nothing else in the turn is changed. At least one of the two.
+       */
+      readonly those?: {
+        readonly objects: ObjectSelector;
+        readonly attackIfAble?: true;
+        readonly cantAttackYou?: true;
+      };
+    }
   /**
    * "There is an additional beginning phase after this phase" (CR 500.8, 500.10, 502-504; Sphinx of the Second Sun, D-356): when the phase that is now going
    * on is over, a whole beginning phase follows it (untap, upkeep and draw steps, in which the active player untaps, triggers and draws again), then the turn
@@ -4251,9 +4300,11 @@ export type Effect =
   /**
    * "That creature enters with two additional +1/+1 counters on it" (Yuna, Grand Summoner, CR 614.1c, 122.6, 603.7): only in the effect of a `delayedCast` whose filter names creature spells: the spell
    * that was cast (the `triggerSubject`) remembers that the permanent it becomes enters with `count` counters of the kind `counter` on it, with those it already enters with. Does nothing when
-   * the spell has left the stack as the ability resolves.
+   * the spell has left the stack as the ability resolves. `count` may be an amount (Communal Brewing: "X additional +1/+1 counters on it, where X is the number of ingredient counters on
+   * ~"), read as the ability resolves (CR 608.2h), the permanent with the ability as it last existed when it has left (CR 113.7a); nothing for 0.
+   * It is also the body of a cast trigger (`castSpell`) whose filter names creature spells.
    */
-  | { readonly kind: 'spellEntersWithCounters'; readonly counter: string; readonly count: number }
+  | { readonly kind: 'spellEntersWithCounters'; readonly counter: string; readonly count: Amount }
   /**
    * "Whenever you cast an artifact creature spell, it gains sunburst." (CR 702.44a, 702.44d, 400.7, 611.2): the spell `spell` names, a spell on the stack (the `triggerSubject` of a cast
    * trigger or of a `delayedCast`), gains the keyword for as long as it is a spell: it is kept in its stack data (`StackData.gainedKeywords`), and the permanent the spell becomes reads it as
@@ -5641,6 +5692,9 @@ export type Effect =
         // `manifest` (Manifest dread, CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the cards you looked at that were not manifested this way into your
         // graveyard." The card taken is put onto the battlefield face down as a manifested 2/2 creature under the controller's control (CR 701.40a), unrevealed (nobody sees it, CR 708.5); what
         // `moved` names afterwards is that permanent. `min` and `max` of 1 and `hidden`, with `rest` the graveyard (a single card is manifested with no question, CR 701.62a).
+        // `reveal` (Fisher's Talent, CR 701.20a, 701.20b, 608.2c): "Look at the top card of your library. You may reveal it if it's a land card.": the card taken is only revealed to every player
+        // and stays where it is (revealing does not move a card); the reveal is what "if you revealed it this way" after it reads (`didPrevious`). `max` of 1 with no `min`, `hidden`, `tapped`,
+        // `totalManaValue`, `all`, `any`, `kinds` or `elseAnyToHand`, no `revealAll` or `from`, and `rest` `top`.
         readonly to?:
           | 'hand'
           | 'battlefield'
@@ -5649,7 +5703,8 @@ export type Effect =
           | 'exile'
           | 'castFree'
           | 'top'
-          | 'manifest';
+          | 'manifest'
+          | 'reveal';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.
@@ -6637,7 +6692,11 @@ export type Trigger =
        * `monarch` (Archivist of Gondor, "At the beginning of the monarch's end step", CR 725.2, 603.2b): the turn of the player who is the monarch as the step begins;
        * with no monarch it never triggers. `triggerPlayer` is that player.
        */
-      readonly whose: 'you' | 'each' | 'opponent' | 'monarch';
+      /**
+       * `enchantedPlayer` (Tenuous Truce, "At the beginning of enchanted opponent's end step", CR 303.4m, 603.2b): the turn of the player the Aura with this ability is attached to;
+       * attached to no player, it never triggers. Only in an Aura that enchants a player (`validateCard`). `triggerPlayer` is that player.
+       */
+      readonly whose: 'you' | 'each' | 'opponent' | 'monarch' | 'enchantedPlayer';
       /**
        * "At the beginning of each of your main phases" (CR 505.1, 603.2b; issue 103): it triggers as `alsoStep` begins too, a second step of the same turn.
        * Never the same as `step`.
@@ -6793,6 +6852,12 @@ export type Trigger =
    * the bottom, so at most the cards the library held), which `TargetSpec.upToTriggerAmount` and "that many" read.
    */
   | { readonly kind: 'scries'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
+   * "Whenever you give a gift" (CR 702.174c, 603.2; Jolly Gerbils): once each time the player `who` names (relative to the controller of this ability) gives a gift: an instant
+   * or sorcery spell they control whose gift cost was paid resolves, or the gift triggered ability of a permanent they control resolves (the event `giftGiven`). What the gift
+   * became or whether the chosen player received it does not matter. `triggerPlayer` is the player who gave it.
+   */
+  | { readonly kind: 'givesGift'; readonly who: 'you' | 'opponent' | 'any' }
   /**
    * "Whenever you surveil" (CR 701.25, 603.2; Galadriel group 1): once each time the player `who` names (relative to the controller of this ability) surveils (the event `surveiled`:
    * also a surveil of a library with no card, CR 701.25d; never "surveil 0", CR 701.25c). "Whenever you scry or surveil" is two abilities with one body, as every "or" of events is.
@@ -7123,6 +7188,17 @@ export type Trigger =
        */
       readonly attackedEnchantedPlayer?: true;
       /**
+       * "When you attack enchanted opponent or a planeswalker they control" (Tenuous Truce, CR 303.4m, 508.1b, 508.6, 603.2c): only when at least one creature of the declaration was
+       * declared as attacking the player this Aura enchants or a planeswalker that player controls (a battle is neither); once for the declaration, however many creatures attack.
+       * Only in an Aura that enchants a player (`validateCard`). Not with `attackedEnchantedPlayer`, `attackedYou`, `attackedYouOrPlaneswalkers` or `eachAttackedPlayer`.
+       */
+      readonly attackedEnchantedPlayerOrPlaneswalkers?: true;
+      /**
+       * "When they attack you" after "enchanted opponent" (Tenuous Truce, CR 303.4m, 508.1, 603.2): only a declaration of attackers by the player this Aura enchants. Only with `who`
+       * `any`, in an Aura that enchants a player (`validateCard`).
+       */
+      readonly byEnchantedPlayer?: true;
+      /**
        * "Whenever an opponent attacks you" (CR 508.1b, 603.2; Lulu, Stern Guardian): only when at least one creature of the declaration was declared as attacking the controller of this
        * ability as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the
        * attacking player.
@@ -7331,6 +7407,11 @@ export type Keyword =
        * `filter` is `{}` and unread then.
        */
       readonly player?: true;
+      /**
+       * "Enchant opponent" (Tenuous Truce; CR 702.5a, 303.4a, 102.2, 102.3): with `player`, the player must be an opponent of the Aura's controller: its spell targets an opponent,
+       * and it is put into its owner's graveyard when the player it enchants is no longer an opponent of its controller (CR 303.4c, 704.5m).
+       */
+      readonly opponent?: true;
     }
   /**
    * CR 702.6a (Equip): "Equip [cost]" means "[Cost]: Attach this permanent to target creature you
@@ -7902,9 +7983,10 @@ export type Keyword =
    * permanent: "When this permanent enters, if its gift cost was paid, the chosen player draws a card"; of an instant or sorcery:
    * "if its gift cost was paid, the chosen player draws a card", before the other effects, and not at all if the spell is
    * countered or leaves the stack (CR 702.174j). The engine writes both abilities itself (`giftRecipient`, `giftPromised`);
-   * the card adds its own text that reads `giftPromised`. `gift` names what is given: this engine supports `card` and `tappedFish`.
+   * the card adds its own text that reads `giftPromised`. `gift` names what is given (`rules/gift-effect.ts`): a card (CR 702.174e), a tapped
+   * 1/1 blue Fish (CR 702.174f), an extra turn after this one (CR 702.174g) or an 8/8 blue Octopus (CR 702.174i).
    */
-  | { readonly kind: 'gift'; readonly gift: 'card' | 'tappedFish' }
+  | { readonly kind: 'gift'; readonly gift: 'card' | 'tappedFish' | 'extraTurn' | 'octopus' }
   /**
    * CR 702.75a (Hideaway, D-145): "Hideaway N" means "When this permanent enters, look at the top N cards of your library. Exile one of them face
    * down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that
@@ -8954,11 +9036,14 @@ export type Replacement =
    * created instead." The tokens `what` matches stay what they are (the same definition and what the instruction said about them, tapped for one) and are
    * made twice over: there is no `token`. It is applied once to one event (CR 614.5), so two of them make four; it does not change which tokens, so the order
    * of it and of the other effects never changes the result of a `thatMany` (the same number of the other token) and is only asked when it can.
+   * `swap` (Fisher's Talent): "If you would create a Fish token, create a 3/3 blue Shark creature token instead." Each token `what` matches is replaced by one `token`, and what the
+   * instruction said about it still applies (the card's ruling of 2024-07-26: tapped, attacking, "that token gains haste"); only the characteristics change. It applies to the tokens of any
+   * effect its controller creates, and a second `swap` sees the tokens the first made (CR 614.5, 616.1f: a Fish becomes a Shark, then the Shark an Octopus).
    */
   | {
       readonly kind: 'tokensInstead';
       readonly what: ObjectFilter;
-      readonly mode: 'thatMany' | 'plus' | 'plusThatMany';
+      readonly mode: 'thatMany' | 'plus' | 'plusThatMany' | 'swap';
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
@@ -9416,6 +9501,11 @@ export type StaticEffect =
       readonly spells: ObjectFilter;
       readonly from?: readonly ('hand' | 'libraryTop')[];
       readonly alternative: 'lifeForMana' | 'free';
+      /**
+       * "You may cast spells from your hand without paying their mana costs." (the emblem of Tamiyo, Field Researcher; CR 118.9, 601.2b, 601.2f, 107.3b): the permission has no
+       * limit: every spell `spells` matches, in any turn (at the timing of its types, CR 601.3), and nothing is recorded as used. Only with `from` `hand` and `free`.
+       */
+      readonly unlimited?: true;
     }
   /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
@@ -9433,6 +9523,12 @@ export type StaticEffect =
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';
     }
+  /**
+   * "Your maximum hand size is twenty." (CR 402.2: the maximum hand size is normally seven; CR 514.1: the active player discards down to it as the cleanup step begins): the
+   * controller's maximum hand size is `size`. CR 613.11: effects that change a game rule apply in timestamp order, so of this and "You have no maximum hand size" (a permanent's, or
+   * an effect's for the rest of the game) the one with the latest timestamp decides (`maximumHandSizeOf`).
+   */
+  | { readonly kind: 'maximumHandSize'; readonly size: number }
   /**
    * "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6, unchecked here: the Leylines): after the mulligans and before the first turn
    * begins, starting with the starting player in turn order, each player who kept a hand with such a card in it is asked, card by card, whether it begins on the battlefield. It does
@@ -10498,6 +10594,11 @@ export type Ability =
        * turn, and an ability that triggers twice before the first resolves resolves twice. Not with `oncePerTurn`, which counts the triggering.
        */
       readonly doOnlyOnceEachTurn?: true;
+      /**
+       * The gift triggered ability of a permanent (CR 702.174b): "When this permanent enters, if its gift cost was paid, [gift]". Written only by the engine as it derives the
+       * ability from the Gift keyword (`rules/derive-keywords.ts`), never by a card: its resolution is the giving of a gift (CR 702.174c, the event `giftGiven`).
+       */
+      readonly giftAbility?: true;
       /**
        * "Whenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand." (CR 113.6b, 603.2, D-151):
        * the ability triggers while its card is in its owner's graveyard, and not on the battlefield. The card is "this" (`this` names it while it

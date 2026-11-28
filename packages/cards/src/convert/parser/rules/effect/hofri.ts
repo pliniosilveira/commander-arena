@@ -2,8 +2,8 @@
  * Effect rules of the Hofri Ghostforge deck (stage P68, D-229). Each rule is one phrase; the lowerings are in `lower/hofri.ts`.
  */
 
-import { fail, literal, pattern, satisfy, sequence } from '../../combinators';
-import type { IrAmount, IrArg, IrFlag, IrNoun, IrToken } from '../../ir/types';
+import { choice, fail, literal, pattern, satisfy, sequence } from '../../combinators';
+import type { IrAmount, IrArg, IrFlag, IrNoun, IrNounList, IrToken } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { readQuotedAbility } from '../static/quoted';
 import { makeNoun } from '../trigger/subjects';
@@ -903,6 +903,8 @@ export const EFFECT_PHASE_OUT = defineRule<Clauses>({
     'it phases out',
     'any number of target creatures phase out',
     'all nonland permanents they control phase out',
+    'all permanents you control phase out',
+    'all creatures you control phase out',
   ],
   rejects: [
     'any number of other target creatures you control phase in',
@@ -911,21 +913,29 @@ export const EFFECT_PHASE_OUT = defineRule<Clauses>({
     'target creature phase out',
     'any number of other target creatures you control phase out and draw a card',
     'all nonland permanents they control phase in',
+    'all permanents you control phases out',
     'phase out',
   ],
   parse: single(
     'effect.phase-out',
     satisfy(
       sequence(
-        operands(
-          [
-            'noun.any-number-targets',
-            'noun.target-permanent',
-            'noun.it',
-            'noun.all-nonland-they-control',
-            'noun.all-they-control',
-          ],
-          'effect.phase-out',
+        choice<IrNoun | IrNounList>(
+          operands(
+            [
+              'noun.any-number-targets',
+              'noun.target-permanent',
+              'noun.it',
+              'noun.all-nonland-they-control',
+              'noun.all-they-control',
+            ],
+            'effect.phase-out',
+          ),
+          // Perch Protection (issue 112): "all permanents you control phase out", of the controller only.
+          satisfy(
+            family<IrNoun>('noun', { only: ['noun.all-permanents'] }),
+            (noun) => noun.filter.controller === 'you',
+          ),
         ),
         pattern(/ phases? out(?![\p{L}\p{N}])/iu),
       ),

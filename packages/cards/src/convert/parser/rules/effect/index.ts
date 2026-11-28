@@ -244,6 +244,8 @@ import { EFFECT_PAY_ENERGY_ANY } from './pay-energy-any';
 import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack';
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PAY_X_REFLEXIVE_EFFECT_RULES } from './pay-x-reflexive';
+import { PEACE_OFFERING_EFFECT_RULES } from './peace-offering';
+import { PEACE_OFFERING_FISHER_EFFECT_RULES } from './peace-offering-fisher';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import { PLANESWALKER_PARTY_EFFECT_RULES } from './planeswalker-party';
@@ -344,6 +346,8 @@ const TAP_OPERANDS = [
   'noun.target-permanent-of-that-player',
   // D-517 (Hylda deck, group 2): "tap all creatures target player controls".
   'noun.all-permanents-of-target-player',
+  // Intellectual Offering (CR 608.2d): "untap all nonland permanents that player controls", the player chosen before it.
+  'noun.all-permanents-of-that-player',
 ] as const;
 
 /** `effect.damage`: "~ deals 3 damage to any target" (CR 120.2: damage to an object or a player). */
@@ -1502,6 +1506,10 @@ export const EFFECT_RULES = [
   ...FLINT_RIDER_EFFECT_RULES,
   // Ahoy Mateys deck, group 10: "each creature that convoked ~ connives" and the reveal of each player's top card with a token for each nonland card; they start like other rules on "each" and are tried first.
   ...AHOY_G10_EFFECT_RULES,
+  // Peace Offering deck (issue 112): the offers to each player or each opponent and what follows for those who took them, and Selvala's reveal; they start like other rules on "each" and are tried first.
+  ...PEACE_OFFERING_EFFECT_RULES,
+  // Peace Offering deck, group F (Fisher's Talent): a look at the top card whose land may be revealed, and a token if it was; it starts like other rules on "look" and is tried first.
+  ...PEACE_OFFERING_FISHER_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,

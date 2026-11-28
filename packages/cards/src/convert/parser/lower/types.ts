@@ -346,6 +346,8 @@ export interface LowerContext {
   triggeredBody: boolean;
   /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
   didSearch: boolean;
+  /** Who the `draw` instructions lowered so far make draw (Mr. Foxglove: "If you didn't draw cards this way" needs the controller alone): null before any, 'other' once one is another player's. */
+  drewBefore: 'you' | 'other' | null;
   /** The counters the `addCounters` instructions lowered so far put, by kind and whether every object they go on is a creature (Federation Fleet group D: "If you put two or more +1/+1 counters on creatures this way"). */
   putCounters: { counter: string; creatures: boolean }[];
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
@@ -569,6 +571,7 @@ export function newContext(
     putWithThis: false,
     entersPermanentTrigger: false,
     didSearch: false,
+    drewBefore: null,
     putCounters: [],
     searched: null,
     sacrificedRef: null,

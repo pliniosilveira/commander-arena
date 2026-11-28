@@ -773,7 +773,13 @@ export type IrAmount =
       readonly span: Span;
     }
   // "the difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the positive gap between two amounts
-  | { readonly kind: 'difference'; readonly of: readonly IrAmount[]; readonly span: Span }
+  | {
+      readonly kind: 'difference';
+      readonly of: readonly IrAmount[];
+      /** "<amount> minus <amount>" (Mr. Foxglove, CR 107.1b): the first less the second, floored at 0, not the positive gap between them. */
+      readonly ordered?: true;
+      readonly span: Span;
+    }
   // "If that player has more cards in hand than you", "draw cards equal to the difference" (Slithermuse, CR 608.2c): how much more of `stat` the player chosen before has than you; the
   // words "the difference" name no stat, so it is absent there and the lowering takes the one the condition before it compared
   | {
@@ -801,6 +807,7 @@ export type IrAmount =
         | 'destroyedCreaturesOfAffected'
         | 'destroyedValue'
         | 'playersDrew'
+        | 'cardsDrawn'
         | 'tapped'
         | 'discarded'
         | 'milledValue'
@@ -918,6 +925,8 @@ export interface IrCondition extends IrNode {
       }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
+    // "If you didn't draw cards this way" (Mr. Foxglove, CR 608.2c, 121.1): no card was drawn by a draw of the controller before it in the same text
+    | { readonly kind: 'notDrewThisWay' }
     // "If time gets more votes", "if the vote is tied" (issue 17, CR 701.38a): the tally of the vote before it in the same text; the option as the card words it
     | { readonly kind: 'voteMost'; readonly option: string }
     | { readonly kind: 'voteTied' }
@@ -1778,7 +1787,14 @@ export interface IrSentence extends IrNode {
       | 'nextCast'
       | 'combatDamageToThatPlayer'
       | 'combatDamageBatch'
-      | 'creatureDies';
+      | 'creatureDies'
+      | 'combatDamageUntilNextTurn';
+    /**
+     * `combatDamageUntilNextTurn` (Tamiyo, Field Researcher; CR 603.7, 603.7c, 510.2, 500.1): "Until your next turn, whenever either of those creatures deals combat damage, you draw a
+     * card": a delayed ability for each creature the target slot before it chose, until the next turn of the controller. `those` is `several` for "either of those creatures" and `one` for
+     * "that creature": the lowering finds the target slot it names, of up to that many creatures.
+     */
+    readonly those?: 'one' | 'several';
     /**
      * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
      * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
@@ -1896,6 +1912,8 @@ export interface IrTrigger extends IrNode {
     | 'you';
   /** 'endStep' "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the turn of the player who is the monarch; `actor` is `eachPlayer`. */
   readonly monarchTurn?: true;
+  /** 'endStep' "At the beginning of enchanted opponent's end step" (Tenuous Truce, CR 303.4m, 603.2b): the turn of the player the Aura is attached to; `actor` is `eachPlayer`. */
+  readonly enchantedPlayerTurn?: true;
   /** 'combatDamageBatch' "... while you're the monarch" (issue 81, CR 725.2): the controller was the monarch as the damage was dealt. */
   readonly whileMonarch?: true;
   /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
@@ -1948,6 +1966,10 @@ export interface IrTrigger extends IrNode {
   readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
+  /** 'attackBatch' "When you attack enchanted opponent or a planeswalker they control" (Tenuous Truce, CR 303.4m, 508.1b, 508.6): that player or one of their planeswalkers was declared as attacked. */
+  readonly attackedEnchantedPlayerOrPlaneswalkers?: true;
+  /** 'attackBatch' "when they attack you" after "enchanted opponent" (Tenuous Truce, CR 303.4m, 508.1): the player the Aura enchants declared the attackers. */
+  readonly byEnchantedPlayer?: true;
   /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
   readonly attackedYou?: true;
   /** 'attackBatch' "Whenever an opponent attacks you and/or one or more planeswalkers you control" (Cunning Rhetoric, CR 508.1b, 508.6): the controller of the ability or a planeswalker they control was declared as attacked. */
@@ -2133,6 +2155,8 @@ export type IrStaticEffect =
   // Fealty to the Realm (CR 613.1b, 725.1): "The monarch controls enchanted creature.": the engine's `controlAttached` by the monarch.
   | { readonly kind: 'controlByMonarch' }
   | { readonly kind: 'noMaxHandSize' }
+  /** "Your maximum hand size is twenty." (Twenty-Toed Toad, CR 402.2, 613.11): the engine's `maximumHandSize` of the controller. */
+  | { readonly kind: 'maxHandSize'; readonly size: number }
   /** "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the engine's `beginGameOnBattlefield` of the card itself. */
   | { readonly kind: 'beginGameOnBattlefield' }
   /**
@@ -2451,6 +2475,8 @@ export type IrStaticEffect =
       readonly alternative: 'lifeForMana' | 'free';
       readonly types?: readonly string[];
       readonly from?: readonly ('hand' | 'libraryTop')[];
+      /** "You may cast spells from your hand without paying their mana costs." (Tamiyo, Field Researcher's emblem, CR 118.9): every spell, in any turn. */
+      readonly unlimited?: true;
     }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
@@ -2537,6 +2563,14 @@ export type IrStaticEffect =
       readonly turns?: number;
       /** "You can't cast ~ unless an opponent lost life this turn." (Rakdos, Lord of Riots; CR 101.2, 119.3): the card can be cast only when an opponent has lost life this turn. */
       readonly unlessOpponentLostLife?: true;
+      /**
+       * "Cast ~ only during the declare blockers step on an opponent's turn." (Illusionist's Gambit; CR 101.2, 601.3): the card can be cast only during `step` and, with `opponentsTurn`,
+       * only on a turn of an opponent.
+       */
+      readonly onlyDuring?: {
+        readonly step: 'declareAttackers' | 'declareBlockers';
+        readonly opponentsTurn?: true;
+      };
     }
   /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (stage P33, D-150, CR 509.1b, 509.1d): `cost` is
@@ -2728,8 +2762,8 @@ export interface IrKeyword extends IrNode {
   readonly kind: 'keyword';
   readonly name: string;
   readonly params: readonly IrArg[];
-  /** What Gift gives when its line names the gift. */
-  readonly gift?: 'card' | 'tappedFish';
+  /** What Gift gives when its line names the gift (CR 702.174e to 702.174i). */
+  readonly gift?: 'card' | 'tappedFish' | 'extraTurn' | 'octopus';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
   /** "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): the kicker cost is {X}, announced as at least 1. */

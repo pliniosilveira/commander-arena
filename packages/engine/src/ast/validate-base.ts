@@ -57,6 +57,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'tappedForMana':
     case 'discarded':
     case 'crimeCommitted':
+    // CR 702.174c: the player who gave the gift.
+    case 'givesGift':
     case 'tokenCreated':
     case 'playsCard':
     case 'activatesAbility':

@@ -200,6 +200,14 @@ export interface Scope {
   readonly mainPhaseTrigger?: boolean;
   /** True in the effect of a `conditional` whose condition is `yourCombatPhase`: an `extraCombat` follows the combat phase that is going on (issue 144). */
   readonly combatPhaseCondition?: boolean;
+  /**
+   * True in the effect of a spell that can be cast only during a step of combat (Illusionist's Gambit: "Cast this spell only during the declare blockers step on an opponent's turn",
+   * a `cantCastThis` whose condition is the negation of one that needs `duringStep`): it resolves in that step (the stack empties before a step ends, CR 500.2), so an
+   * `extraCombat` follows the combat phase that is going on.
+   */
+  readonly combatStepSpell?: boolean;
+  /** True after a `removeFromCombat` in the same sequence: the `removedFromCombat` reference has something to mean (CR 608.2c). */
+  readonly removedAvailable?: boolean;
   /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
   readonly postcombatMainTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
@@ -1749,6 +1757,16 @@ export function checkRef(
     case 'putCountersOn':
       // CR 608.2c: the objects the `addCounters` effects before it in the resolution put counters on; empty when there were none.
       break;
+    case 'removedFromCombat':
+      // CR 608.2c (Illusionist's Gambit): the creatures the `removeFromCombat` effects before it in the sequence took out of combat.
+      if (scope.removedAvailable !== true) {
+        issue(
+          out,
+          path,
+          "'removedFromCombat' needs a removeFromCombat effect before it in the sequence",
+        );
+      }
+      break;
     case 'putIntoGraveyardThisWay':
       // CR 608.2c: the permanents the `destroy` effects before it in the resolution put into graveyards; empty when there were none.
       if (!(scope.thisWay ?? []).includes('destroyed')) {
@@ -1979,6 +1997,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
     case 'discardedThisWay':
+    case 'actedThisWay':
     case 'opponentsAttackingTriggerPlayer':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
@@ -2188,6 +2207,25 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, `${path}.choice`, "'eachOpponentWhoVoted' reads 'same' or 'different'");
       }
       break;
+    case 'actedThisWay':
+      // Kwain, Itinerant Meddler; Tempt with Discovery (CR 121.1, 701.23): a draw (`drew`) or a search (`searched`) before it in the same sequence.
+      if (sel.act !== 'drew' && sel.act !== 'searched') {
+        issue(out, `${path}.act`, "'actedThisWay' reads 'drew' or 'searched'");
+      } else if (!(scope.thisWay ?? []).includes(sel.act === 'drew' ? 'playersDrew' : 'searched')) {
+        issue(
+          out,
+          path,
+          `'actedThisWay' needs a ${sel.act === 'drew' ? 'draw' : 'search'} effect before it in the same sequence`,
+        );
+      }
+      if (
+        sel.of !== undefined &&
+        kindOf(sel.of) !== 'eachPlayer' &&
+        kindOf(sel.of) !== 'eachOpponent'
+      ) {
+        issue(out, `${path}.of`, "'actedThisWay' reads the group 'eachPlayer' or 'eachOpponent'");
+      }
+      break;
     case 'couldntSacrificeThisWay':
       // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('sacrificed')) {
@@ -2263,6 +2301,7 @@ export const PLAYER_ONLY = [
   'lostLifeThisTurn',
   'combatDamagedThisTurn',
   'discardedThisWay',
+  'actedThisWay',
   'eachPlayerWithoutVotes',
   'eachOpponentWhoVoted',
   'eachPlayerWhoChose',
@@ -2323,6 +2362,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   exiledNonland: 'an exileOwnGraveyardCard effect',
   returned: 'a moveToZone effect that chooses cards of a graveyard',
   playersDrew: 'a draw effect',
+  cardsDrawn: 'a draw effect',
   tapped: 'a tap effect',
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
@@ -2340,6 +2380,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   excessDamageDealt: 'a dealDamage effect',
   countersRemoved: 'a removeAllCounters, removeChosenCounters or removeCounters effect',
   searched: 'a search effect',
+  playersAccepted: 'a playersMay effect',
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
@@ -2373,7 +2414,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   ) {
     return ['returned'];
   }
-  if (e?.kind === 'draw') return ['playersDrew'];
+  if (e?.kind === 'draw') return ['playersDrew', 'cardsDrawn'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
     return [
@@ -2412,6 +2453,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   // "Discard a card or sacrifice a permanent" (Eumidian Wastewaker): what the declined (otherwise) effect does is counted too.
   if (e?.kind === 'playersMay') {
     return [
+      // Tempt with Bunnies (CR 101.4): "for each opponent who does": the players who accepted.
+      'playersAccepted',
       ...thisWayProduced(e.effect),
       ...(e.otherwise === undefined ? [] : thisWayProduced(e.otherwise)),
     ];
@@ -3094,8 +3137,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'difference':
+    case 'subtract':
       if (!Array.isArray(a.of) || a.of.length !== 2) {
-        issue(out, `${path}.of`, 'a difference needs exactly two amounts');
+        issue(out, `${path}.of`, `a ${a.kind} needs exactly two amounts`);
       } else {
         a.of.forEach((part, i) => {
           checkAmount(part, `${path}.of[${i}]`, scope, out);
@@ -4370,7 +4414,20 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
 // ---- Effects
 
 /** A condition (see `Condition`): a count of permanents or opponents, or a combination. */
-export function checkCondition(c: Condition, path: string, out: Out): void {
+/**
+ * `triggerPlayer`: the condition is the intervening "if" of a triggered ability whose event is about a player (CR 603.4), which `triggerPlayerStat` may read
+ * (the player stays on the stack with the ability, so it is read again as the ability resolves).
+ */
+export interface ConditionScope {
+  readonly triggerPlayer?: boolean;
+}
+
+export function checkCondition(
+  c: Condition,
+  path: string,
+  out: Out,
+  scope: ConditionScope = {},
+): void {
   const positive = (n: unknown): boolean => isCount(n) && n >= 1;
   switch (c?.kind) {
     case 'controlsAtLeast':
@@ -4690,8 +4747,26 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'triggerPlayerTurn':
       // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       break;
-    case 'triggerPlayerIsOpponent':
     case 'triggerPlayerStat':
+      // CR 603.4, 402.1 (Ghirapur Orrery): "if that player has no cards in hand", the intervening "if" of a trigger about a player, read as the ability triggers and as it resolves.
+      if (scope.triggerPlayer === true) {
+        if (!isOneOf(c.stat, PLAYER_STATS))
+          issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+        if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+          issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+        }
+        if (!Number.isSafeInteger(c.compare?.value)) {
+          issue(out, `${path}.compare.value`, 'a player stat is compared with a whole number');
+        }
+        break;
+      }
+      issue(
+        out,
+        path,
+        'triggerPlayerStat reads the player the event of a trigger is about: it is only valid in a conditional effect or the intervening "if" of such a trigger, not as a static condition or the condition of another trigger',
+      );
+      break;
+    case 'triggerPlayerIsOpponent':
       // CR 603.2b, 608.2c: read as the instruction comes up, from the player the event is about: only in a conditional effect of a trigger about a player (`checkEffectCondition`).
       issue(
         out,
@@ -4966,12 +5041,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.terms`, `${c.kind} needs at least one term`);
       } else {
         c.terms.forEach((t, i) => {
-          checkCondition(t, `${path}.terms[${i}]`, out);
+          checkCondition(t, `${path}.terms[${i}]`, out, scope);
         });
       }
       break;
     case 'not':
-      checkCondition(c.term, `${path}.term`, out);
+      checkCondition(c.term, `${path}.term`, out, scope);
       break;
     default:
       issue(out, path, `unknown condition ${kindOf(c)}`);
@@ -6830,7 +6905,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done (`performed`).
               child?.kind === 'addCounters' ||
               // Earth Rumble: "Earthbend 2. When you do, ...": the counters put on the land are something done (`performed`).
-              child?.kind === 'earthbend') &&
+              child?.kind === 'earthbend' ||
+              // Fisher's Talent (CR 701.20a, 608.2c): "You may reveal it if it's a land card. Create a 1/1 blue Fish creature token if you revealed it this way.": the reveal is something done (`performed`).
+              (child?.kind === 'lookAtTop' && child.take?.to === 'reveal')) &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -6857,6 +6934,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           }
           // CR 701.30d: after a clash, the condition `clashWon` can read who won it.
           if (child?.kind === 'clash') after = { ...after, clashed: true };
+          // CR 608.2c (Illusionist's Gambit): after a removal from combat, "them" can name the creatures removed.
+          if (child?.kind === 'removeFromCombat') after = { ...after, removedAvailable: true };
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
             after = { ...after, voteOptions: child.options, voteChoices: 'words' };
@@ -8983,6 +9062,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'castFree',
           'top',
           'manifest',
+          'reveal',
         ])
       ) {
         issue(
@@ -9029,6 +9109,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.take`,
           'a card put on top is one card (min and max 1), hidden, with no tapped, totalManaValue, all, elseAnyToHand or revealAll, and the rest goes to the bottom or the graveyard',
+        );
+      }
+      // CR 701.20a, 701.20b (Fisher's Talent): "You may reveal it if it's a land card": at most one card, only revealed, so it stays where it is with what was not taken.
+      if (
+        e.take?.to === 'reveal' &&
+        (e.take.max !== 1 ||
+          e.take.min !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.all !== undefined ||
+          e.take.any !== undefined ||
+          e.take.kinds !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.take.withCounters !== undefined ||
+          e.revealAll !== undefined ||
+          e.from !== undefined ||
+          e.rest !== 'top')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a card that is only revealed is one card at most (max 1, no min), shown to all, and every card looked at stays on top',
         );
       }
       // CR 608.2g: "You may cast ... from among them without paying its mana cost": one spell, chosen from those that match.
@@ -10944,8 +11047,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
-      if (!Number.isInteger(e.count) || e.count < 1) {
-        issue(out, `${path}.count`, 'count must be a positive whole number');
+      if (typeof e.count === 'number') {
+        if (!Number.isInteger(e.count) || e.count < 1) {
+          issue(out, `${path}.count`, 'count must be a positive whole number');
+        }
+      } else {
+        // Communal Brewing (CR 608.2h): an amount read as the ability resolves.
+        checkAmount(e.count, `${path}.count`, scope, out);
       }
       if (scope.triggerSubject !== 'stack') {
         issue(out, path, 'spellEntersWithCounters names the spell a cast trigger is about');

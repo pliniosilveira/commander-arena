@@ -866,6 +866,11 @@ export interface SeatState {
    * from then on, as with a permanent that says it (`hasNoMaximumHandSize`). Absent until the first time. Public.
    */
   readonly noMaximumHandSize?: true;
+  /**
+   * The timestamp of that effect (CR 613.7, 613.11): of it and a permanent's "Your maximum hand size is twenty", the later one decides (`maximumHandSizeOf`). Absent with
+   * `noMaximumHandSize` absent.
+   */
+  readonly noMaximumHandSizeAt?: number;
   /** The commander cards chosen for this seat, in order. */
   readonly commanders: readonly CardId[];
   readonly handSizeMax: number | null;
@@ -939,6 +944,17 @@ export interface AddedPhase {
     readonly source: ObjectId;
     readonly controller: SeatId;
     readonly effect: Effect;
+  };
+  /**
+   * "Each of those creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat." (`extraCombat.those`, CR 508.1c, 508.1d, 506.1): the
+   * permanents `objects` (fixed as the effect resolved) get the requirement (`attackIfAble`) and the restriction against `controller` and the planeswalkers that player controls
+   * (`cantAttackYou`) as this phase begins, as continuous effects of this combat (`until` `endOfCombat`). A permanent no longer on the battlefield then gets nothing (CR 400.7).
+   */
+  readonly those?: {
+    readonly objects: readonly ObjectId[];
+    readonly controller: SeatId;
+    readonly attackIfAble?: true;
+    readonly cantAttackYou?: true;
   };
 }
 
@@ -1101,6 +1117,11 @@ export interface DelayedTrigger {
   readonly untilEndOfTurn?: true;
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
+  /**
+   * With `repeat`: the ability triggers at most once in one run of events (Tamiyo, Field Researcher: "whenever either of those creatures deals combat damage", CR 510.2, 603.2c: the
+   * permanent deals all its combat damage of a step at once, to however many objects and players, and that is one event).
+   */
+  readonly oncePerEvents?: true;
   /**
    * "Until your next turn" (`delayedAttackerPump`, CR 500.1): the ability ends as the next turn of `seat` begins, once `turnsTaken` of that player's turns have begun (the turn it was made in
    * not counted); `expireTurnStartEffects`.
@@ -1903,7 +1924,8 @@ export type Instruction =
         | 'exile'
         | 'castFree'
         | 'top'
-        | 'manifest';
+        | 'manifest'
+        | 'reveal';
       /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
       readonly libraryOf?: SeatId;
       /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */
@@ -2684,6 +2706,14 @@ export interface ThisWayCounts {
   readonly discardedHandBy?: readonly SeatId[];
   /** The players who had nothing to sacrifice to a `sacrifice` effect that names a choice (Plaguecrafter: "each player who can't"), in the order they were asked. */
   readonly couldntSacrifice?: readonly SeatId[];
+  /** The players who drew at least one card to a `draw` effect (Kwain, Itinerant Meddler: "each player who drew a card this way"), in the order they did; left out until there is one. */
+  readonly drewBy?: readonly SeatId[];
+  /** The cards `draw` effects really drew, every player's added (Communal Brewing: "for each card drawn this way", CR 121.1); left out until one is drawn. */
+  readonly cardsDrawn?: number;
+  /** The players who searched a library to a `search` effect (Tempt with Discovery: "each player who searched a library this way"), in the order they did; left out until there is one. */
+  readonly searchedBy?: readonly SeatId[];
+  /** The players who accepted the offer of a `playersMay` effect (Tempt with Bunnies: "for each opponent who does", CR 101.4); left out until one does. */
+  readonly playersAccepted?: number;
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
   readonly searched?: number;
   /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */
@@ -2698,6 +2728,8 @@ export interface ThisWayCounts {
   readonly chosenStillOnBattlefield?: number;
   /** The permanents `destroy` effects destroyed, by the id they had on the battlefield (Terastodon: "for each permanent put into a graveyard this way, its controller creates ..."); left out until some are. */
   readonly destroyedObjects?: readonly ObjectId[];
+  /** The permanents `removeFromCombat` effects took out of combat (Illusionist's Gambit: "remove all attacking creatures from combat and untap them"), by id; left out until some are. */
+  readonly removedFromCombat?: readonly ObjectId[];
   /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
   readonly exiledPowerOwn?: number;
 }

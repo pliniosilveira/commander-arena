@@ -20,6 +20,7 @@ import {
 } from '../state/ops';
 import type { GameState, PhaseId, StepId } from '../state/types';
 import { EMPTY_TURN_LOG } from '../state/types';
+import { bindThoseCreatures } from './added-combat';
 import { beginCombatRecord } from './attack-random-opponent';
 import { endCombat } from './combat';
 import { beginCombatStep, nextCombatStep } from './combat-flow';
@@ -46,7 +47,7 @@ import { addLoreCounters } from './saga';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { resolveTop } from './stack';
-import { hasNoMaximumHandSize, keepsDamage } from './statics';
+import { keepsDamage, maximumHandSizeOf } from './statics';
 import { collectTriggers } from './triggers';
 import { untapPermanent } from './untap';
 import { untapForOthers } from './untap-others';
@@ -479,6 +480,8 @@ export function endStep(input: GameState): Outcome {
                 },
               ],
       };
+      // Illusionist's Gambit (CR 508.1c, 508.1d): what binds "those creatures" for that combat is put in place as it begins.
+      state = bindThoseCreatures(state, next);
       // CR 500.8, 500.10 (D-356): an added beginning phase has all of its steps, from the untap step; an added combat phase begins with its first step.
       return join(
         { state, events },
@@ -501,9 +504,9 @@ export function endStep(input: GameState): Outcome {
 export function runCleanup(input: GameState): Outcome {
   const active = input.turn.activeSeat;
   const seat = getSeat(input, active);
-  // CR 514.1: discard down to maximum hand size, unless a permanent says there is none (CR 402.2).
-  const max = seat.handSizeMax ?? input.settings.maxHandSize;
-  const excess = hasNoMaximumHandSize(input, active) ? 0 : seat.hand.length - max;
+  // CR 514.1: discard down to maximum hand size, unless an effect says there is none (CR 402.2, 613.11).
+  const max = maximumHandSizeOf(input, active);
+  const excess = max === null ? 0 : seat.hand.length - max;
   if (excess > 0) {
     return {
       state: setPending(input, { kind: 'discard', seat: active, count: excess, hand: seat.hand }),
