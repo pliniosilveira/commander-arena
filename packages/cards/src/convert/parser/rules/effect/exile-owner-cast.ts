@@ -28,7 +28,6 @@ export const EFFECT_EXILE_OWNER_MAY_CAST = defineRule<Clauses>({
   ],
   examples: [
     'exile up to one target nonland permanent. For as long as that card remains exiled, its owner may cast it',
-    'exile target nonland permanent. For as long as that card remains exiled, its owner may cast it',
   ],
   rejects: [
     'exile up to one target nonland permanent',
