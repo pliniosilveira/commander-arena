@@ -67,6 +67,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerSources':
     case 'triggerAttackers':
     case 'convokers':
+    case 'removedFromCombat':
       return 'their';
     case 'sacrificedCost':
       // D-133: the permanent sacrificed to pay the cost ("the sacrificed creature's power").
@@ -118,6 +119,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'it';
     case 'triggerSources':
     case 'triggerAttackers':
+    case 'removedFromCombat':
       return 'those creatures';
     case 'convokers':
       return 'each creature that convoked this spell';

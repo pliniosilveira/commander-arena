@@ -1442,6 +1442,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'putCountersOn'; readonly counter?: string }
   /**
+   * "Remove all attacking creatures from combat and untap them" (Illusionist's Gambit, CR 506.4, 608.2c): the creatures the `removeFromCombat` effects earlier in the same resolution
+   * really took out of combat (each was attacking or blocking as it was removed), each once, by their ids; one that has left the battlefield since is a new object (CR 400.7) and is
+   * not found by the effects that read permanents. Empty when nothing was removed. Valid only after a `removeFromCombat` in the same sequence (`validateCard`).
+   */
+  | { readonly kind: 'removedFromCombat' }
+  /**
    * "For each permanent put into a graveyard this way, its controller creates ..." (Terastodon, CR 608.2c, 608.2h, 400.7): the permanents the `destroy` effects before it in the resolution
    * really put into a graveyard, each once, by the id they had on the battlefield, so that `controllerOf` reads the player who controlled each as it left (last-known information).
    * A permanent that was not destroyed (indestructible, regenerated, gone before the effect resolved) or that went to another zone instead (a replacement effect exiled it) is not in it.
@@ -3621,7 +3627,21 @@ export type Effect =
    * `atBeginning` (D-187): "At the beginning of that combat, untap all creatures you control": an effect that a delayed triggered ability of the same
    * controller runs as the beginning of combat step of that added phase begins (CR 603.7); it names no target.
    */
-  | { readonly kind: 'extraCombat'; readonly atBeginning?: Effect }
+  | {
+      readonly kind: 'extraCombat';
+      readonly atBeginning?: Effect;
+      /**
+       * "Each of those creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat." (Illusionist's Gambit, CR 508.1c, 508.1d, 506.1): the
+       * permanents `objects` names as the effect resolves (the set is fixed then, CR 611.2c) get, for the added combat phase only, the requirement to attack if able
+       * (`attackIfAble`) and the restriction that they can't attack the controller of the effect or the planeswalkers that player controls (`cantAttackYou`). Both are put in
+       * place as the added phase begins and end with it (`until` `endOfCombat`); nothing else in the turn is changed. At least one of the two.
+       */
+      readonly those?: {
+        readonly objects: ObjectSelector;
+        readonly attackIfAble?: true;
+        readonly cantAttackYou?: true;
+      };
+    }
   /**
    * "There is an additional beginning phase after this phase" (CR 500.8, 500.10, 502-504; Sphinx of the Second Sun, D-356): when the phase that is now going
    * on is over, a whole beginning phase follows it (untap, upkeep and draw steps, in which the active player untaps, triggers and draws again), then the turn

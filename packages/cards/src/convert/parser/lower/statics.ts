@@ -827,6 +827,14 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
+      if (effect.onlyDuring !== undefined) {
+        return [
+          'static:cantCastThis',
+          'condition:duringStep',
+          'condition:yourTurn',
+          'condition:not',
+        ];
+      }
       return effect.unlessOpponentLostLife === true
         ? ['static:cantCastThis', 'condition:aPlayerLostLifeThisTurn', 'condition:not']
         : ['static:cantCastThis', 'condition:ownTurnNumber'];

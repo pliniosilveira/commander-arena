@@ -200,6 +200,14 @@ export interface Scope {
   readonly mainPhaseTrigger?: boolean;
   /** True in the effect of a `conditional` whose condition is `yourCombatPhase`: an `extraCombat` follows the combat phase that is going on (issue 144). */
   readonly combatPhaseCondition?: boolean;
+  /**
+   * True in the effect of a spell that can be cast only during a step of combat (Illusionist's Gambit: "Cast this spell only during the declare blockers step on an opponent's turn",
+   * a `cantCastThis` whose condition is the negation of one that needs `duringStep`): it resolves in that step (the stack empties before a step ends, CR 500.2), so an
+   * `extraCombat` follows the combat phase that is going on.
+   */
+  readonly combatStepSpell?: boolean;
+  /** True after a `removeFromCombat` in the same sequence: the `removedFromCombat` reference has something to mean (CR 608.2c). */
+  readonly removedAvailable?: boolean;
   /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
   readonly postcombatMainTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
@@ -1748,6 +1756,16 @@ export function checkRef(
       break;
     case 'putCountersOn':
       // CR 608.2c: the objects the `addCounters` effects before it in the resolution put counters on; empty when there were none.
+      break;
+    case 'removedFromCombat':
+      // CR 608.2c (Illusionist's Gambit): the creatures the `removeFromCombat` effects before it in the sequence took out of combat.
+      if (scope.removedAvailable !== true) {
+        issue(
+          out,
+          path,
+          "'removedFromCombat' needs a removeFromCombat effect before it in the sequence",
+        );
+      }
       break;
     case 'putIntoGraveyardThisWay':
       // CR 608.2c: the permanents the `destroy` effects before it in the resolution put into graveyards; empty when there were none.
@@ -6916,6 +6934,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           }
           // CR 701.30d: after a clash, the condition `clashWon` can read who won it.
           if (child?.kind === 'clash') after = { ...after, clashed: true };
+          // CR 608.2c (Illusionist's Gambit): after a removal from combat, "them" can name the creatures removed.
+          if (child?.kind === 'removeFromCombat') after = { ...after, removedAvailable: true };
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
             after = { ...after, voteOptions: child.options, voteChoices: 'words' };

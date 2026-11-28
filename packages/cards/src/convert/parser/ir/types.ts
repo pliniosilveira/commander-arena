@@ -2563,6 +2563,14 @@ export type IrStaticEffect =
       readonly turns?: number;
       /** "You can't cast ~ unless an opponent lost life this turn." (Rakdos, Lord of Riots; CR 101.2, 119.3): the card can be cast only when an opponent has lost life this turn. */
       readonly unlessOpponentLostLife?: true;
+      /**
+       * "Cast ~ only during the declare blockers step on an opponent's turn." (Illusionist's Gambit; CR 101.2, 601.3): the card can be cast only during `step` and, with `opponentsTurn`,
+       * only on a turn of an opponent.
+       */
+      readonly onlyDuring?: {
+        readonly step: 'declareAttackers' | 'declareBlockers';
+        readonly opponentsTurn?: true;
+      };
     }
   /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (stage P33, D-150, CR 509.1b, 509.1d): `cost` is

@@ -3225,8 +3225,14 @@ export function validateAbility(a: Ability): AstIssue[] {
 
 // ---- Spell text (CR 608)
 
-function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
+function checkSpellText(
+  s: SpellText,
+  path: string,
+  out: AstIssue[],
+  combatStepSpell = false,
+): void {
   const xAllowed = s.x === true;
+  const combat = combatStepSpell ? { combatStepSpell: true } : {};
   const hasModes = s.modes !== undefined;
   if (s.x !== undefined && typeof s.x !== 'boolean') issue(out, `${path}.x`, 'x must be a boolean');
 
@@ -3241,7 +3247,7 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
       s.modes,
       s.chooseModes,
       path,
-      (targets) => ({ owner: 'spell', targets, xAllowed, ...HOOKS }),
+      (targets) => ({ owner: 'spell', targets, xAllowed, ...combat, ...HOOKS }),
       out,
       false,
       true,
@@ -3277,10 +3283,32 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
     issue(out, `${path}.x`, 'a target with mana value X needs x: true (the spell announces an X)');
   }
   if (s.effect !== undefined) {
-    checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
+    checkEffect(
+      s.effect,
+      `${path}.effect`,
+      { owner: 'spell', targets, xAllowed, ...combat, ...HOOKS },
+      out,
+    );
   } else if (targets.size > 0) {
     issue(out, `${path}.targets`, 'targets are declared but there is no effect to use them');
   }
+}
+
+/**
+ * Illusionist's Gambit (CR 101.2, 601.3, 500.2): the face can be cast only during a step of combat: it has a `cantCastThis` whose condition is "not X" where X holds only during a
+ * combat step (`duringStep`, alone or as a term of an `and`). The spell then resolves in that step, since the stack empties before a step ends.
+ */
+function castOnlyDuringCombatStep(face: CardFace): boolean {
+  const needsStep = (c: Condition | undefined): boolean =>
+    c?.kind === 'duringStep' ||
+    (c?.kind === 'and' && Array.isArray(c.terms) && c.terms.some((t) => t?.kind === 'duringStep'));
+  return face.abilities.some(
+    (a) =>
+      a.kind === 'static' &&
+      a.static?.kind === 'cantCastThis' &&
+      a.condition?.kind === 'not' &&
+      needsStep(a.condition.term),
+  );
 }
 
 /** A spell's resolution effect exists: either `effect`, or modes that each carry one. */
@@ -3483,7 +3511,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   }
 
   if (face.spell !== null) {
-    checkSpellText(face.spell, `${path}.spell`, out);
+    checkSpellText(face.spell, `${path}.spell`, out, castOnlyDuringCombatStep(face));
     // D-135: a gift-conditioned target is used only in the matching promised or unpromised branch.
     for (const id of giftTargetsUsedUnguarded(face.spell)) {
       issue(

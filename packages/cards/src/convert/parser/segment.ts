@@ -18,7 +18,11 @@ import { CHAPTER_PREFIX } from './roman';
 import { COUNTER_BLITZ_C_JOINS } from './segment-counter-blitz-c';
 import { COUNTER_BLITZ_E_SEARCH_JOIN } from './segment-counter-blitz-e';
 import { CHOOSE_TARGET_CREATURE, WHEN_THAT_CREATURE_DIES_RETURN } from './segment-counter-group-a';
-import { PEACE_OFFERING_PAIR_JOINS, PEACE_OFFERING_TRIPLE_JOINS } from './segment-peace-offering';
+import {
+  PEACE_OFFERING_PAIR_JOINS,
+  PEACE_OFFERING_QUAD_JOINS,
+  PEACE_OFFERING_TRIPLE_JOINS,
+} from './segment-peace-offering';
 
 export type FaceKind = 'spell' | 'permanent';
 
@@ -1528,6 +1532,17 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(c, COUNTER_BLITZ_E_SEARCH_JOIN[2]) &&
       said(d, COUNTER_BLITZ_E_SEARCH_JOIN[3])
     ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
+      a !== undefined &&
+      d !== undefined &&
+      PEACE_OFFERING_QUAD_JOINS.some(
+        ([first, second, third, fourth]) =>
+          said(a, first) && said(b, second) && said(c, third) && said(d, fourth),
+      )
+    ) {
+      // Illusionist's Gambit: four sentences of one instruction (`segment-peace-offering.ts`).
       out.push({ start: a.start, end: d.end });
       i += 3;
     } else if (

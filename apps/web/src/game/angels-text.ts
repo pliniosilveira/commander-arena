@@ -10,6 +10,7 @@
  */
 import type {
   Ability,
+  Condition,
   Cost,
   Effect,
   ManaAbility,
@@ -160,6 +161,8 @@ export function angelsStaticWording(effect: StaticEffect, noun: string): string 
 export function cantCastWording(ability: Extract<Ability, { kind: 'static' }>): string | null {
   if (ability.static.kind !== 'cantCastThis') return null;
   const { condition } = ability;
+  const only = condition?.kind === 'not' ? castOnlyDuringWording(condition.term) : null;
+  if (only !== null) return only;
   if (condition?.kind !== 'ownTurnNumber') return null;
   const { cmp, value } = condition.compare;
   if (cmp === 'atMost') {
@@ -170,6 +173,30 @@ export function cantCastWording(ability: Extract<Ability, { kind: 'static' }>): 
   return cmp === 'atLeast'
     ? `You can't cast this card from your ${ordinalWord(value)} turn of the game on`
     : `You can't cast this card during your ${ordinalWord(value)} turn of the game`;
+}
+
+const STEP_NAMES: Readonly<Record<string, string>> = {
+  beginningOfCombat: 'the beginning of combat step',
+  declareAttackers: 'the declare attackers step',
+  declareBlockers: 'the declare blockers step',
+  combatDamage: 'the combat damage step',
+  endOfCombat: 'the end of combat step',
+};
+
+/**
+ * "Cast this spell only during the declare blockers step on an opponent's turn." (Illusionist's Gambit, CR 101.2, 601.3): the spell can't be cast unless it is that step (`duringStep`),
+ * on a turn of an opponent when the condition also says `not yourTurn`. Null for any other condition.
+ */
+function castOnlyDuringWording(term: Condition): string | null {
+  const terms = term.kind === 'and' ? term.terms : [term];
+  const step = terms.find((t) => t.kind === 'duringStep');
+  const name = step?.kind === 'duringStep' ? STEP_NAMES[step.step] : undefined;
+  if (name === undefined) return null;
+  const rest = terms.filter((t) => t !== step);
+  if (rest.length === 0) return `Cast this spell only during ${name}`;
+  const [other, ...more] = rest;
+  if (more.length > 0 || other?.kind !== 'not' || other.term.kind !== 'yourTurn') return null;
+  return `Cast this spell only during ${name} on an opponent's turn`;
 }
 
 /** "You can't lose the game and your opponents can't win the game": the two statics of one sentence, when both are there. */

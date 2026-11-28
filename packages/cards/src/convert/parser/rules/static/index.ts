@@ -22,6 +22,7 @@ import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
 import { STATIC_CAST_FROM_HAND_FREE, STATIC_CAST_ONCE_EACH_TURN } from './cast-once';
+import { CAST_ONLY_DURING_STATIC_RULES } from './cast-only-during';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
@@ -171,6 +172,8 @@ export const STATIC_RULES = [
   // Stage P33 (D-150): protections of a player, damage prevented to ~, a card that can't be cast early, a tax on blocking, permanents that
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,
+  // Illusionist's Gambit (CR 101.2, 601.3): "Cast ~ only during the declare blockers step on an opponent's turn."
+  ...CAST_ONLY_DURING_STATIC_RULES,
   ...ANGEL_PLAY_RULES,
   ...ARWEN_STATIC_RULES,
   // Stage P34 (D-152): mana that stays through steps and phases, casting from the top of the library.
