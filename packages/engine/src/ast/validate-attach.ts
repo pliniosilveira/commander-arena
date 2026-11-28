@@ -5,7 +5,14 @@
  */
 import { CARD_TYPES, type CardType, COLORS, SUPERTYPES, type Subtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
-import type { Ability, AlternativeCost, Keyword, ObjectFilter, StaticSubject } from './types';
+import type {
+  Ability,
+  AlternativeCost,
+  Keyword,
+  ObjectFilter,
+  StaticSubject,
+  Trigger,
+} from './types';
 import { isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
@@ -299,17 +306,8 @@ export function checkAttachmentFace(
     (a) => a.kind === 'keyword' && a.keyword.kind === 'enchant' && a.keyword.player === true,
   );
   abilities.forEach((a, i) => {
-    if (
-      a.kind === 'triggered' &&
-      a.trigger.kind === 'attackBatch' &&
-      a.trigger.attackedEnchantedPlayer === true &&
-      !enchantsPlayer
-    ) {
-      issue(
-        out,
-        `${path}.abilities[${i}].trigger`,
-        'attackedEnchantedPlayer needs an Aura that enchants a player (D-629)',
-      );
+    if (a.kind === 'triggered') {
+      checkEnchantedPlayerTrigger(a.trigger, enchantsPlayer, `${path}.abilities[${i}].trigger`, out);
     }
     const subject = a.kind === 'static' && 'subject' in a.static ? a.static.subject : null;
     if (subject?.kind === 'attached' && !isAura && !isEquipment && !bestows) {
@@ -347,4 +345,57 @@ function scanLink(node: unknown, found: { link: boolean; makes: boolean }): void
     else found.link = true;
   }
   for (const value of Object.values(record)) scanLink(value, found);
+}
+
+/**
+ * The triggers about the player an Aura enchants (D-629; Tenuous Truce, CR 303.4m): "Whenever enchanted player is attacked", "At the beginning of enchanted opponent's end step",
+ * "When you attack enchanted opponent or a planeswalker they control", "when they attack you": each belongs to an Aura that enchants a player. The two flags of Tenuous Truce are
+ * true when present; "they attack" is whoever declares (`who` `any`), and the attack on the enchanted player or their planeswalkers is not one of the other readings of whom was
+ * attacked.
+ */
+function checkEnchantedPlayerTrigger(
+  t: Trigger,
+  enchantsPlayer: boolean,
+  path: string,
+  out: AstIssue[],
+): void {
+  const needsPlayer =
+    (t.kind === 'step' && t.whose === 'enchantedPlayer') ||
+    (t.kind === 'attackBatch' &&
+      (t.attackedEnchantedPlayer === true ||
+        t.attackedEnchantedPlayerOrPlaneswalkers === true ||
+        t.byEnchantedPlayer === true));
+  if (needsPlayer && !enchantsPlayer) {
+    issue(out, path, 'a trigger about the enchanted player needs an Aura that enchants a player (D-629)');
+  }
+  if (t.kind !== 'attackBatch') return;
+  if (t.byEnchantedPlayer !== undefined) {
+    if (t.byEnchantedPlayer !== true) {
+      issue(out, `${path}.byEnchantedPlayer`, 'byEnchantedPlayer is true when present');
+    }
+    if (t.who !== 'any') {
+      issue(out, `${path}.who`, "byEnchantedPlayer names the attacking player: who is 'any'");
+    }
+  }
+  if (t.attackedEnchantedPlayerOrPlaneswalkers !== undefined) {
+    if (t.attackedEnchantedPlayerOrPlaneswalkers !== true) {
+      issue(
+        out,
+        `${path}.attackedEnchantedPlayerOrPlaneswalkers`,
+        'attackedEnchantedPlayerOrPlaneswalkers is true when present',
+      );
+    }
+    if (
+      t.attackedEnchantedPlayer === true ||
+      t.attackedYou === true ||
+      t.attackedYouOrPlaneswalkers === true ||
+      t.eachAttackedPlayer === true
+    ) {
+      issue(
+        out,
+        `${path}.attackedEnchantedPlayerOrPlaneswalkers`,
+        'attackedEnchantedPlayerOrPlaneswalkers does not go with attackedEnchantedPlayer, attackedYou, attackedYouOrPlaneswalkers or eachAttackedPlayer',
+      );
+    }
+  }
 }

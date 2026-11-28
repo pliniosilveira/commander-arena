@@ -6647,7 +6647,11 @@ export type Trigger =
        * `monarch` (Archivist of Gondor, "At the beginning of the monarch's end step", CR 725.2, 603.2b): the turn of the player who is the monarch as the step begins;
        * with no monarch it never triggers. `triggerPlayer` is that player.
        */
-      readonly whose: 'you' | 'each' | 'opponent' | 'monarch';
+      /**
+       * `enchantedPlayer` (Tenuous Truce, "At the beginning of enchanted opponent's end step", CR 303.4m, 603.2b): the turn of the player the Aura with this ability is attached to;
+       * attached to no player, it never triggers. Only in an Aura that enchants a player (`validateCard`). `triggerPlayer` is that player.
+       */
+      readonly whose: 'you' | 'each' | 'opponent' | 'monarch' | 'enchantedPlayer';
       /**
        * "At the beginning of each of your main phases" (CR 505.1, 603.2b; issue 103): it triggers as `alsoStep` begins too, a second step of the same turn.
        * Never the same as `step`.
@@ -7133,6 +7137,17 @@ export type Trigger =
        */
       readonly attackedEnchantedPlayer?: true;
       /**
+       * "When you attack enchanted opponent or a planeswalker they control" (Tenuous Truce, CR 303.4m, 508.1b, 508.6, 603.2c): only when at least one creature of the declaration was
+       * declared as attacking the player this Aura enchants or a planeswalker that player controls (a battle is neither); once for the declaration, however many creatures attack.
+       * Only in an Aura that enchants a player (`validateCard`). Not with `attackedEnchantedPlayer`, `attackedYou`, `attackedYouOrPlaneswalkers` or `eachAttackedPlayer`.
+       */
+      readonly attackedEnchantedPlayerOrPlaneswalkers?: true;
+      /**
+       * "When they attack you" after "enchanted opponent" (Tenuous Truce, CR 303.4m, 508.1, 603.2): only a declaration of attackers by the player this Aura enchants. Only with `who`
+       * `any`, in an Aura that enchants a player (`validateCard`).
+       */
+      readonly byEnchantedPlayer?: true;
+      /**
        * "Whenever an opponent attacks you" (CR 508.1b, 603.2; Lulu, Stern Guardian): only when at least one creature of the declaration was declared as attacking the controller of this
        * ability as a player (an attack on their planeswalker or battle is not an attack on them); it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the
        * attacking player.
@@ -7341,6 +7356,11 @@ export type Keyword =
        * `filter` is `{}` and unread then.
        */
       readonly player?: true;
+      /**
+       * "Enchant opponent" (Tenuous Truce; CR 702.5a, 303.4a, 102.2, 102.3): with `player`, the player must be an opponent of the Aura's controller: its spell targets an opponent,
+       * and it is put into its owner's graveyard when the player it enchants is no longer an opponent of its controller (CR 303.4c, 704.5m).
+       */
+      readonly opponent?: true;
     }
   /**
    * CR 702.6a (Equip): "Equip [cost]" means "[Cost]: Attach this permanent to target creature you

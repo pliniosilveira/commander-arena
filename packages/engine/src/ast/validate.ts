@@ -126,9 +126,15 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       } else if (k.player !== undefined) {
         // Issue 159 (CR 702.5a, 702.5d): "Enchant player": a player, never a permanent, so there is nothing to describe.
         if (k.player !== true) issue(out, `${path}.player`, 'player must be true when present');
+        if (k.opponent !== undefined && k.opponent !== true) {
+          issue(out, `${path}.opponent`, 'opponent must be true when present');
+        }
         if (Object.keys(k.filter).length > 0) {
           issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
         }
+      } else if (k.opponent !== undefined) {
+        // CR 702.5a (Tenuous Truce): "Enchant opponent" is a player who is an opponent: it goes with `player` only.
+        issue(out, `${path}.opponent`, 'opponent goes only with player ("Enchant opponent")');
       } else if (k.filter.zone === 'graveyard') {
         // CR 702.5a, 303.4a (Animate Dead): "Enchant creature card in a graveyard": the spell targets such a card, which the Aura is attached to while it stays there.
         checkFilter(k.filter, `${path}.filter`, out);
@@ -1989,7 +1995,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           `alsoStep must be another known step, not ${String(t.alsoStep)}`,
         );
       }
-      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch'])) {
+      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch', 'enchantedPlayer'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;

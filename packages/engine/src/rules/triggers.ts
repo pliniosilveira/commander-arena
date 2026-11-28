@@ -1318,6 +1318,22 @@ function matches(
       ) {
         return false;
       }
+      // CR 303.4m, 508.1b, 508.6 (Tenuous Truce): "you attack enchanted opponent or a planeswalker they control": a creature was declared as attacking the Aura's player or a
+      // planeswalker that player controls (`attackersAt`).
+      if (
+        trigger.attackedEnchantedPlayerOrPlaneswalkers === true &&
+        (candidate.attachedToPlayer === undefined ||
+          !(occ.attackersAt ?? []).includes(candidate.attachedToPlayer))
+      ) {
+        return false;
+      }
+      // CR 303.4m, 508.1 (Tenuous Truce): "when they attack": the player the Aura enchants declared the attackers.
+      if (
+        trigger.byEnchantedPlayer === true &&
+        (candidate.attachedToPlayer === undefined || occ.seat !== candidate.attachedToPlayer)
+      ) {
+        return false;
+      }
       // CR 508.1b: "Whenever an opponent attacks you": the controller of the ability was declared as attacked, as a player.
       if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
         return false;
@@ -1425,6 +1441,10 @@ function matches(
       if (trigger.whose === 'you') return occ.seat === candidate.controller;
       // CR 725.2, 603.2b: the active player is the monarch as the step begins.
       if (trigger.whose === 'monarch') return state.monarch !== null && occ.seat === state.monarch;
+      // CR 303.4m, 603.2b (Tenuous Truce): "enchanted opponent's end step": the turn of the player the Aura is attached to.
+      if (trigger.whose === 'enchantedPlayer') {
+        return candidate.attachedToPlayer !== undefined && occ.seat === candidate.attachedToPlayer;
+      }
       return trigger.whose === 'each' || occ.seat !== candidate.controller;
     case 'drawn':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
