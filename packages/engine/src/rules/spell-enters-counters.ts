@@ -5,9 +5,8 @@
  */
 import type { Effect } from '../ast/types';
 import { setObject } from '../state/ops';
-import type { GameState } from '../state/types';
+import type { ChosenTarget, GameState } from '../state/types';
 import { amountOf } from './amounts';
-import type { ChosenTarget } from '../state/types';
 import type { SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 

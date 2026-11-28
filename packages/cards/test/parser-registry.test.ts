@@ -1803,6 +1803,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `{1}, {T}: Put a +1/+1 counter on each creature you control that entered this turn. If ${e}, draw a card.`,
   ),
+  // Mr. Foxglove (CR 608.2c): what the draw before it did.
+  'condition.didnt-draw-this-way': permanent(
+    (e) =>
+      `Whenever ~ attacks, draw cards equal to the number of cards in defending player's hand minus the number of cards in your hand. If ${e}, you may put a creature card from your hand onto the battlefield.`,
+  ),
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,

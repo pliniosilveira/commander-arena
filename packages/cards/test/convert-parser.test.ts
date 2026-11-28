@@ -712,6 +712,7 @@ describe('unmatched abilities', () => {
       'condition.its-power-less-than-self',
       'condition.it-has-greater-power',
       'condition.put-counters-this-way',
+      'condition.didnt-draw-this-way',
       'condition.this-power',
       'condition.first-combat-phase',
       'condition.combat-damaged-by',

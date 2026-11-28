@@ -131,6 +131,8 @@ describe('amounts that read an object', () => {
       'extreme',
       // CR 608.2c (Jaws of Defeat): the positive gap between two amounts.
       'difference',
+      // Mr. Foxglove (CR 107.1b): one amount less another.
+      'subtract',
       'opponentCount',
       // CR 120.3 (Grothama, All-Devouring): the damage dealt to this permanent this turn by a player's sources.
       'damageToThisThisTurn',
