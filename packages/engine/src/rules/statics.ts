@@ -24,22 +24,36 @@ export function keepsDamage(state: GameState, obj: GameObject): boolean {
 }
 
 /**
- * Whether `seat` controls a permanent that says "You have no maximum hand size" (CR 402.2), so they
- * discard nothing as cleanup begins (CR 514.1). Several such permanents do the same as one.
+ * The maximum hand size of `seat` (CR 402.2), or null when they have none, so they discard nothing as cleanup begins (CR 514.1). It is seven
+ * (`settings.maxHandSize`, or the seat's own `handSizeMax`) unless an effect changes it: "You have no maximum hand size" and "Your maximum hand size is
+ * twenty" of the permanents the seat controls (read from their derived abilities, so a permanent that lost its abilities changes nothing), and "you have no
+ * maximum hand size for the rest of the game" (`noMaxHandSizeForGame`). CR 613.11: an effect that changes a game rule is applied after the others, in
+ * timestamp order, so the one with the latest timestamp decides. A static ability's effect has the timestamp of its permanent (CR 613.7a, `timestamp`);
+ * an effect for the rest of the game has the one it got as it began (`noMaximumHandSizeAt`, 0 for one recorded without it). Several permanents that say the
+ * same do the same as one.
  */
-export function hasNoMaximumHandSize(state: GameState, seat: SeatId): boolean {
-  // CR 402.2: an effect that gave the player no maximum hand size for the rest of the game (`noMaxHandSizeForGame`).
-  if (getSeat(state, seat).noMaximumHandSize === true) return true;
-  return state.battlefield.some((id) => {
+export function maximumHandSizeOf(state: GameState, seat: SeatId): number | null {
+  const s = getSeat(state, seat);
+  // The latest effect so far: its timestamp and the size it says (null: no maximum hand size).
+  let latest: { readonly at: number; readonly size: number | null } | null =
+    s.noMaximumHandSize === true ? { at: s.noMaximumHandSizeAt ?? 0, size: null } : null;
+  for (const id of state.battlefield) {
     const obj = getObject(state, id);
-    return (
-      controllerOf(state, obj) === seat &&
-      mayHaveStatic(state, obj, 'noMaximumHandSize') &&
-      derive(state, obj).abilities.some(
-        (a) => a.kind === 'static' && a.static.kind === 'noMaximumHandSize',
-      )
-    );
-  });
+    if (controllerOf(state, obj) !== seat) continue;
+    const none = mayHaveStatic(state, obj, 'noMaximumHandSize');
+    const sized = mayHaveStatic(state, obj, 'maximumHandSize');
+    if (!none && !sized) continue;
+    if (latest !== null && obj.timestamp < latest.at) continue;
+    for (const a of derive(state, obj).abilities) {
+      if (a.kind !== 'static') continue;
+      if (a.static.kind === 'noMaximumHandSize') latest = { at: obj.timestamp, size: null };
+      else if (a.static.kind === 'maximumHandSize') {
+        latest = { at: obj.timestamp, size: a.static.size };
+      }
+    }
+  }
+  if (latest !== null) return latest.size;
+  return s.handSizeMax ?? state.settings.maxHandSize;
 }
 
 /**

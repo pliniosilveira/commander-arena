@@ -4370,7 +4370,20 @@ function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): voi
 // ---- Effects
 
 /** A condition (see `Condition`): a count of permanents or opponents, or a combination. */
-export function checkCondition(c: Condition, path: string, out: Out): void {
+/**
+ * `triggerPlayer`: the condition is the intervening "if" of a triggered ability whose event is about a player (CR 603.4), which `triggerPlayerStat` may read
+ * (the player stays on the stack with the ability, so it is read again as the ability resolves).
+ */
+export interface ConditionScope {
+  readonly triggerPlayer?: boolean;
+}
+
+export function checkCondition(
+  c: Condition,
+  path: string,
+  out: Out,
+  scope: ConditionScope = {},
+): void {
   const positive = (n: unknown): boolean => isCount(n) && n >= 1;
   switch (c?.kind) {
     case 'controlsAtLeast':
@@ -4690,8 +4703,26 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'triggerPlayerTurn':
       // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       break;
-    case 'triggerPlayerIsOpponent':
     case 'triggerPlayerStat':
+      // CR 603.4, 402.1 (Ghirapur Orrery): "if that player has no cards in hand", the intervening "if" of a trigger about a player, read as the ability triggers and as it resolves.
+      if (scope.triggerPlayer === true) {
+        if (!isOneOf(c.stat, PLAYER_STATS))
+          issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+        if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+          issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+        }
+        if (!Number.isSafeInteger(c.compare?.value)) {
+          issue(out, `${path}.compare.value`, 'a player stat is compared with a whole number');
+        }
+        break;
+      }
+      issue(
+        out,
+        path,
+        'triggerPlayerStat reads the player the event of a trigger is about: it is only valid in a conditional effect or the intervening "if" of such a trigger, not as a static condition or the condition of another trigger',
+      );
+      break;
+    case 'triggerPlayerIsOpponent':
       // CR 603.2b, 608.2c: read as the instruction comes up, from the player the event is about: only in a conditional effect of a trigger about a player (`checkEffectCondition`).
       issue(
         out,
@@ -4966,12 +4997,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.terms`, `${c.kind} needs at least one term`);
       } else {
         c.terms.forEach((t, i) => {
-          checkCondition(t, `${path}.terms[${i}]`, out);
+          checkCondition(t, `${path}.terms[${i}]`, out, scope);
         });
       }
       break;
     case 'not':
-      checkCondition(c.term, `${path}.term`, out);
+      checkCondition(c.term, `${path}.term`, out, scope);
       break;
     default:
       issue(out, path, `unknown condition ${kindOf(c)}`);

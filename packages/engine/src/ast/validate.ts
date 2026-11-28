@@ -925,6 +925,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'noMaximumHandSize':
     case 'beginGameOnBattlefield':
       break;
+    case 'maximumHandSize':
+      // CR 402.2: a number of cards, a whole number (0 is a hand that is emptied each cleanup step).
+      if (!isCount(s.size)) issue(out, `${path}.size`, 'the maximum hand size is a whole number, 0 or more');
+      break;
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
     case 'optionalUntap':
@@ -2808,7 +2812,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         if (a.interveningIf.kind === 'objectMatches' && kindOf(a.interveningIf.of) === 'attached') {
           checkAttachedIf(a.interveningIf, `${path}.interveningIf`, out);
         } else {
-          checkCondition(a.interveningIf, `${path}.interveningIf`, out);
+          // CR 603.4: "if that player has no cards in hand" reads the player the event is about (`triggerPlayerStat`), which only such a trigger has.
+          checkCondition(a.interveningIf, `${path}.interveningIf`, out, {
+            triggerPlayer: triggerHasPlayer(a.trigger),
+          });
         }
         // D-120: Evolve's comparison reads the creature that entered, so only an enters trigger has one.
         if (
