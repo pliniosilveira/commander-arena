@@ -878,6 +878,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveilsFirstEachTurn',
     // "At the beginning of the monarch's end step" (`step` with `whose: 'monarch'`).
     'stepMonarch',
+    // Tenuous Truce: "At the beginning of enchanted opponent's end step" (`step` with `whose: 'enchantedPlayer'`).
+    'stepEnchantedPlayer',
+    // Tenuous Truce: "When you attack enchanted opponent or a planeswalker they control or when they attack you or a planeswalker you control" (`attackBatch` with
+    // `attackedEnchantedPlayerOrPlaneswalkers`, or with `byEnchantedPlayer` and `attackedYouOrPlaneswalkers`).
+    'attackBatchEnchantedPlayer',
     // "Whenever a creature is dealt noncombat damage" (`dealtDamage` with `noncombat`).
     'dealtDamageNoncombat',
     // Fall of Cair Andros: "Whenever a creature an opponent controls is dealt excess noncombat damage" (`dealtDamage` with `excess`).
@@ -2578,6 +2583,10 @@ export const TRIGGER_FEATURES = [
   'surveilsFirstEachTurn',
   /** "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the engine's `step` with `whose: 'monarch'`. */
   'stepMonarch',
+  /** "At the beginning of enchanted opponent's end step" (CR 303.4m, 603.2b): the engine's `step` with `whose: 'enchantedPlayer'`. */
+  'stepEnchantedPlayer',
+  /** "When you attack enchanted opponent or a planeswalker they control", "when they attack you or a planeswalker you control" (CR 303.4m, 508.1b, 508.6): the engine's `attackBatch` with `attackedEnchantedPlayerOrPlaneswalkers` or `byEnchantedPlayer`. */
+  'attackBatchEnchantedPlayer',
   /** "Whenever a creature is dealt noncombat damage" (CR 120.2b, 603.2): the engine's `dealtDamage` with `noncombat`. */
   'dealtDamageNoncombat',
   /** "Whenever a creature is dealt excess damage" (CR 120.10, 603.2): the engine's `dealtDamage` with `excess`; `triggerDamage` is then the excess. */
@@ -4118,6 +4127,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   surveilsFirstEachTurn: true,
   votingFinished: true,
   stepMonarch: true,
+  stepEnchantedPlayer: true,
+  attackBatchEnchantedPlayer: true,
   dealtDamageNoncombat: true,
   dealtDamageExcess: true,
 };

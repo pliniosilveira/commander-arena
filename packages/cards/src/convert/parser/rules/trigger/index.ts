@@ -1402,6 +1402,8 @@ function stepRule(
           ? choice(
               // CR 725.2: "the monarch's end step" is the turn of whoever is the monarch as it begins (before "the ", the bare reading of `stepOwner`).
               map(pattern(/the monarch['’]s /i), () => 'monarch' as const),
+              // CR 303.4m, 603.2b (Tenuous Truce): "enchanted opponent's end step" is the turn of the player the Aura is attached to.
+              map(pattern(/enchanted opponent['’]s /i), () => 'enchanted' as const),
               stepOwner(bare),
             )
           : stepOwner(bare),
@@ -1409,13 +1411,15 @@ function stepRule(
       )(ctx, pos);
       if (!r.ok) return r;
       const span = { start: pos, end: r.pos };
-      const owner = r.value[1] === 'monarch' ? 'eachPlayer' : r.value[1];
+      const who = r.value[1];
+      const owner = who === 'monarch' || who === 'enchanted' ? 'eachPlayer' : who;
       const actor = makeNoun(id, span, owner, { raw: owner });
       return {
         ok: true,
         value: {
           ...trigger(id, span, event, { actor }),
           ...(r.value[1] === 'monarch' ? { monarchTurn: true as const } : {}),
+          ...(r.value[1] === 'enchanted' ? { enchantedPlayerTurn: true as const } : {}),
         },
         pos: r.pos,
       };
@@ -1455,8 +1459,13 @@ export const TRIGGER_END_STEP = stepRule(
       // Archivist of Gondor (CR 725.2, 603.2b): the end step of the turn of the monarch.
       "the beginning of the monarch's end step",
       'the beginning of the monarch’s end step',
+      // Tenuous Truce (CR 303.4m, 603.2b): the end step of the player the Aura enchants.
+      "the beginning of enchanted opponent's end step",
     ],
     rejects: [
+      "the beginning of enchanted opponents' end step",
+      "the beginning of enchanted opponent's upkeep",
+      "the beginning of each enchanted opponent's end step",
       "the beginning of the monarch's upkeep",
       "the beginning of the monarch's",
       'the beginning of the monarch end step',

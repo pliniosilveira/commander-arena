@@ -51,8 +51,11 @@ export function auraTargetSpec(face: CardFace | null): TargetSpec | null {
   const enchant = enchantKeywordIn(face);
   if (enchant === null) return null;
   // CR 702.5a, 303.4a (issue 160, D-629): "Enchant player": the Aura spell targets a player.
-  if (enchant.player === true)
-    return { id: ENCHANT_TARGET_ID, what: { kind: 'player', filter: 'any' } };
+  // CR 702.5a, 102.3 (Tenuous Truce): "Enchant opponent": an opponent of the spell's controller.
+  if (enchant.player === true) {
+    const filter = enchant.opponent === true ? 'opponent' : 'any';
+    return { id: ENCHANT_TARGET_ID, what: { kind: 'player', filter } };
+  }
   return {
     id: ENCHANT_TARGET_ID,
     what: { kind: 'object', filter: { ...enchant.filter, zone: enchantZone(enchant.filter) } },
@@ -94,15 +97,23 @@ function enchantFilterOf(state: GameState, aura: GameObject): ObjectFilter | nul
   return null;
 }
 
+/** The "Enchant player" abilities of a permanent that is an Aura now (CR 702.5a, D-629); empty when it enchants objects. */
+function playerEnchants(
+  state: GameState,
+  aura: GameObject,
+): Extract<Keyword, { kind: 'enchant' }>[] {
+  const d = derive(state, aura);
+  if (!d.subtypes.includes('Aura')) return [];
+  return d.abilities.flatMap((a) =>
+    a.kind === 'keyword' && a.keyword.kind === 'enchant' && a.keyword.player === true
+      ? [a.keyword]
+      : [],
+  );
+}
+
 /** Whether a permanent that is an Aura now enchants players (CR 702.5a, "Enchant player", D-629). */
 export function enchantsPlayers(state: GameState, aura: GameObject): boolean {
-  const d = derive(state, aura);
-  return (
-    d.subtypes.includes('Aura') &&
-    d.abilities.some(
-      (a) => a.kind === 'keyword' && a.keyword.kind === 'enchant' && a.keyword.player === true,
-    )
-  );
+  return playerEnchants(state, aura).length > 0;
 }
 
 /**
@@ -110,9 +121,13 @@ export function enchantsPlayers(state: GameState, aura: GameObject): boolean {
  * or from everything).
  */
 export function canEnchantPlayer(state: GameState, aura: GameObject, seat: SeatId): boolean {
-  if (aura.zone !== 'battlefield' || !enchantsPlayers(state, aura)) return false;
+  if (aura.zone !== 'battlefield') return false;
+  const enchants = playerEnchants(state, aura);
+  if (enchants.length === 0) return false;
   const player = state.seats[seat];
   if (player === undefined || player.hasLost) return false;
+  // CR 702.5c, 102.3, 704.5m (Tenuous Truce): "Enchant opponent": the player must be an opponent of the Aura's controller as it is now (every other player, with no teams).
+  if (enchants.some((k) => k.opponent === true) && seat === controllerOf(state, aura)) return false;
   return !playerHasProtectionFrom(state, seat, aura.id);
 }
 

@@ -53,6 +53,19 @@ export function lowerEnchantPlayer(ability: IrKeyword): LowerResult<readonly Abi
   if (missing.length > 0) {
     return { ok: false, needs: missing, at: ability.span, rule: ability.rule };
   }
+  // CR 702.5a, 102.3 (Tenuous Truce): "Enchant opponent" is a player Aura whose player must be an opponent of its controller.
+  if (ability.name === 'enchantOpponent') {
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'keyword',
+          keyword: { kind: 'enchant', filter: {}, player: true, opponent: true },
+        },
+      ],
+      rule: 'keyword.enchant-opponent',
+    };
+  }
   return {
     ok: true,
     value: [{ kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } }],

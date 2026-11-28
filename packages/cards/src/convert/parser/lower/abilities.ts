@@ -702,7 +702,9 @@ export function lowerKeyword(
   if (ability.name === 'crew') return lowerCrew(ability, ctx);
   if (ability.name === 'station') return lowerStation(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
-  if (ability.name === 'enchantPlayer') return lowerEnchantPlayer(ability);
+  if (ability.name === 'enchantPlayer' || ability.name === 'enchantOpponent') {
+    return lowerEnchantPlayer(ability);
+  }
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
