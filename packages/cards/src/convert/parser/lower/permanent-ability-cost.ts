@@ -38,6 +38,7 @@ export function lowerPermanentAbilityCostReduction(
           abilities: 'ofObjects',
           objects,
           amount: effect.amount,
+          ...(effect.firstEachTurn === true ? { firstOfArtifactEachTurn: true as const } : {}),
         },
       },
     ],

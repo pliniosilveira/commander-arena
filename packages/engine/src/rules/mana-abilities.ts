@@ -11,6 +11,7 @@ import type { ManaColor } from '../mana/types';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { withArtifactActivation } from './artifact-activations';
 import { evaluateCondition } from './conditions';
 import { controlledSince, controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
@@ -325,7 +326,12 @@ export function recordManaActivation(
   object: ObjectId,
   abilityIndex: number,
   ability: ManaAbility,
+  seat?: SeatId,
 ): GameState {
+  // Tezzeret (issue 128, CR 605.1a): a mana ability is an activated ability, so it counts as "the first activated ability of an artifact" when the log is kept.
+  if (seat !== undefined) {
+    state = withArtifactActivation(state, seat, state.objects[object]);
+  }
   if (ability.oncePerTurn !== true) return state;
   return {
     ...state,

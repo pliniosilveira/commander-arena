@@ -35,6 +35,7 @@ import { ARDEN_LOWERINGS } from './arden';
 import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
 import { BECOME_COPY_GRAVEYARD_LOWERINGS } from './become-copy-graveyard';
+import { BECOMES_PERMANENTLY_LOWERINGS } from './becomes-permanently';
 import { BLIGHT_LOWERINGS } from './blight';
 import { BOTTOM_GRAVEYARD_LOWERINGS } from './bottom-graveyard';
 import { CASE_LOWERINGS } from './case-solved';
@@ -3460,6 +3461,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   ...RANDOM_OPPONENT_LOWERINGS,
   ...FLORIAN_LOWERINGS,
+  ...BECOMES_PERMANENTLY_LOWERINGS,
   ...OPPONENT_REVEALS_PUT_LOWERINGS,
   ...EXILE_OWNER_CAST_LOWERINGS,
   ...SHELL_GAME_LOWERINGS,

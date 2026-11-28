@@ -593,6 +593,22 @@ function checkObjectsAbilityReduction(
         'the abilities of cards in a graveyard or of permanents are the ones named (zone: "graveyard" or "battlefield")',
       );
     }
+    // Tezzeret (CR 602.2b, 605.1a): "the first activated ability of an artifact you activate each turn": the artifacts of the controller on the battlefield.
+    if (s.firstOfArtifactEachTurn !== undefined) {
+      if (
+        s.firstOfArtifactEachTurn !== true ||
+        s.objects.zone !== 'battlefield' ||
+        s.objects.controller !== 'you' ||
+        !(s.objects.types ?? []).includes('artifact') ||
+        s.minTotal !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.firstOfArtifactEachTurn`,
+          "firstOfArtifactEachTurn is true, for the artifacts the controller has on the battlefield (zone 'battlefield', controller 'you', types with artifact), with no floor",
+        );
+      }
+    }
     if (s.minTotal !== undefined && (!isCount(s.minTotal) || s.minTotal < 1)) {
       issue(
         out,

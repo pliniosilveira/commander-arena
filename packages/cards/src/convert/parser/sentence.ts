@@ -81,6 +81,8 @@ const CLAUSES_WITH_OFFER: Parser<{ items: (readonly IrClause[])[]; joins: string
 const RECURSION_LEAD_CONDITIONS = [
   'condition.exiled-this-way',
   'condition.it-matches',
+  // Issue 128 (Tezzeret, Betrayer of Flesh): "If it isn't a Vehicle, ...".
+  'condition.it-isnt-a',
   // Uglúk of the White Hand: "If that creature was a Goblin or Orc, put two +1/+1 counters on ~ instead."
   'condition.that-was-either',
   // Moria Scavenger (CR 602.2b, 701.9a): "If the discarded card was a creature card, amass Orcs 1." in the body of an activated ability whose cost discards.

@@ -110,4 +110,91 @@ export const STATIC_PERMANENT_ABILITY_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
-export const PERMANENT_ABILITY_COST_STATIC_RULES = [STATIC_PERMANENT_ABILITY_COST_REDUCTION];
+/**
+ * `static.first-artifact-ability-cost-reduction`: "The first activated ability of an artifact you activate each turn costs {2} less to activate." (Tezzeret, Betrayer of Flesh, issue 128; CR
+ * 601.2f, 602.2b, 605.1a, 118.7). A static ability of a permanent: the engine's `abilityCostReduction` of the abilities of the artifacts its controller has, only the first one the controller
+ * activates in the turn (a mana ability counts), generic mana only, never below zero. Not read: another number, "{X}", colored mana, "more", "second", a missing "each turn", another kind of
+ * permanent, "you" left out, a missing "to activate".
+ */
+export const STATIC_FIRST_ARTIFACT_ABILITY_COST_REDUCTION = defineRule<IrStatic>({
+  id: 'static.first-artifact-ability-cost-reduction',
+  family: 'static',
+  leading: ['the'],
+  cites: [
+    'CR 601.2f (Casting Spells)',
+    'CR 602.2b (Activating Activated Abilities)',
+    'CR 605.1a (Mana Abilities)',
+    'CR 118.7 (Costs)',
+  ],
+  examples: [
+    'The first activated ability of an artifact you activate each turn costs {2} less to activate.',
+    'The first activated ability of an artifact you activate each turn costs {1} less to activate.',
+  ],
+  rejects: [
+    'The first activated ability of an artifact you activate each turn costs {2} less to activate',
+    'The first activated ability of an artifact you activate each turn costs {X} less to activate.',
+    'The first activated ability of an artifact you activate each turn costs {G} less to activate.',
+    'The first activated ability of an artifact you activate each turn costs {0} less to activate.',
+    'The first activated ability of an artifact you activate each turn costs {2} more to activate.',
+    'The first activated ability of an artifact you activate costs {2} less to activate.',
+    'The second activated ability of an artifact you activate each turn costs {2} less to activate.',
+    'The first activated ability of a creature you activate each turn costs {2} less to activate.',
+    'The first activated ability of an artifact you activate each turn costs {2} less to cast.',
+    'The first activated ability of an artifact an opponent controls activate each turn costs {2} less to activate.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.first-artifact-ability-cost-reduction';
+    const r = sequence(
+      literal('the first activated ability of an artifact you activate each turn costs '),
+      pattern(/\{([1-9]\d*)\}/),
+      literal(' less to activate'),
+      literal('.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, amount] = r.value;
+    const span = { start: pos, end: r.pos };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { types: ['artifact'], controller: 'you', raw: 'artifacts you control' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span,
+      rule: id,
+    };
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'self',
+      filter: { raw: '~' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [
+          {
+            kind: 'permanentAbilityCostReduction',
+            amount: Number(amount[1]),
+            objects,
+            firstEachTurn: true,
+          },
+        ],
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const PERMANENT_ABILITY_COST_STATIC_RULES = [
+  STATIC_PERMANENT_ABILITY_COST_REDUCTION,
+  STATIC_FIRST_ARTIFACT_ABILITY_COST_REDUCTION,
+];

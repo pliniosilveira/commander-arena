@@ -9809,6 +9809,13 @@ export type StaticEffect =
        * (`zone: 'battlefield'`) as well as cards in a graveyard.
        */
       readonly minTotal?: number;
+      /**
+       * "The first activated ability of an artifact you activate each turn costs {2} less to activate." (Tezzeret, Betrayer of Flesh; issue 128, CR 601.2f, 602.2b, 605.1a): the reduction applies
+       * only to the first ability of a permanent `objects` describes (an artifact; the controller's own) that its controller activates in the turn, a mana ability included, whatever it is: later
+       * ones, and the first one of another player, are unaffected. Counted from `TurnLog.artifactActivated`, kept while some permanent has this ability. Only a battlefield filter that names
+       * the card type artifact and `controller: 'you'`.
+       */
+      readonly firstOfArtifactEachTurn?: true;
     }
   /**
    * "Lands you control have "{T}: Add one mana of any color."" (D-099): the subject has the mana

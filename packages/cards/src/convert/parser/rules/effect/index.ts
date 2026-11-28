@@ -44,6 +44,7 @@ import { ATTACH_RULES } from './attach';
 import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BECOMES_COPY_GRAVEYARD_EFFECT_RULES } from './becomes-copy-graveyard';
+import { BECOMES_PERMANENTLY_EFFECT_RULES } from './becomes-permanently';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BLACK_GATE_EFFECT_RULES } from './black-gate';
 import { BLIGHT_EFFECT_RULES } from './blight';
@@ -1829,6 +1830,7 @@ export const EFFECT_RULES = [
   ...WITHERBLOOM_A_EFFECT_RULES,
   // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
   ...PARLEY_EFFECT_RULES,
+  ...BECOMES_PERMANENTLY_EFFECT_RULES,
   ...OPPONENT_REVEALS_PUT_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,

@@ -55,6 +55,7 @@ import {
   linkedExileToGraveyard,
   opponentExileCandidates,
 } from './activation-exile';
+import { withArtifactActivation } from './artifact-activations';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
 import { crimeEvents } from './crime';
@@ -874,6 +875,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
     // CR 113.6: read before the cost moved the source (a sacrificed permanent is still "a permanent" the ability of which was activated).
     ...(casting.fromZone === 'battlefield' ? { fromBattlefield: true as const } : {}),
   });
+  const logged = withArtifactActivation(state, casting.seat, state.objects[activation.source]);
+  const artifactActivated = logged.turnLog.artifactActivated;
   const next: GameState = {
     ...state,
     casting: null,
@@ -881,6 +884,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
     // D-139: "Activate only once each turn" reads this.
     turnLog: {
       ...state.turnLog,
+      // Tezzeret (issue 128): this activation is of an artifact's ability, for "the first activated ability of an artifact you activate each turn".
+      ...(artifactActivated === undefined ? {} : { artifactActivated }),
       activated: [
         ...state.turnLog.activated,
         {
