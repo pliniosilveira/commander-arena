@@ -8,6 +8,8 @@
  *   shuffles every library searched (`effect.opponents-may-search-for-each-who-searches`).
  * - Selvala, Explorer Returned (CR 701.20a, 608.2c): "Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each
  *   player draws a card.": the second counts the cards the first revealed, and the third draws them (`effect.each-player-reveals-mana-life-then-draws`).
+ * - Fisher's Talent (CR 701.20a, 608.2c): "Look at the top card of your library. You may reveal it if it's a land card. Create a 1/1 blue Fish creature token if you revealed it this
+ *   way.": the second reveals the card the first looked at, and the third reads the reveal (`effect.look-top-may-reveal-create-if-revealed`).
  */
 
 /** Two sentences that are one instruction. */
@@ -29,5 +31,11 @@ export const PEACE_OFFERING_TRIPLE_JOINS: readonly (readonly [RegExp, RegExp, Re
     /^each player reveals the top card of their library\.$/i,
     /^for each nonland card revealed this way, add (?:\{[wubrgc]\})+ and you gain \d+ life\.$/i,
     /^then each player draws a card\.$/i,
+  ],
+  // Fisher's Talent (`effect.look-top-may-reveal-create-if-revealed`).
+  [
+    /^look at the top card of your library\.$/i,
+    /^you may reveal it if it['’]s an? [^.,]* card\.$/i,
+    /^create [^.]* if you revealed it this way\.$/i,
   ],
 ];

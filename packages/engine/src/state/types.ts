@@ -1913,7 +1913,8 @@ export type Instruction =
         | 'exile'
         | 'castFree'
         | 'top'
-        | 'manifest';
+        | 'manifest'
+        | 'reveal';
       /** The library looked at is this player's, not the chooser's (`lookAtTop.from`, Gonti); the rest go to the bottom of it. */
       readonly libraryOf?: SeatId;
       /** With `exileFaceDown`: no permanent remembers the card (`take.to` `exileFaceDownUnlinked`). */

@@ -6887,7 +6887,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // CR 603.12 (Auron, Venerated Guardian): "Put a +1/+1 counter on it. When you do, ...": a counter put is something done (`performed`).
               child?.kind === 'addCounters' ||
               // Earth Rumble: "Earthbend 2. When you do, ...": the counters put on the land are something done (`performed`).
-              child?.kind === 'earthbend') &&
+              child?.kind === 'earthbend' ||
+              // Fisher's Talent (CR 701.20a, 608.2c): "You may reveal it if it's a land card. Create a 1/1 blue Fish creature token if you revealed it this way.": the reveal is something done (`performed`).
+              (child?.kind === 'lookAtTop' && child.take?.to === 'reveal')) &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -9040,6 +9042,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'castFree',
           'top',
           'manifest',
+          'reveal',
         ])
       ) {
         issue(
@@ -9086,6 +9089,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.take`,
           'a card put on top is one card (min and max 1), hidden, with no tapped, totalManaValue, all, elseAnyToHand or revealAll, and the rest goes to the bottom or the graveyard',
+        );
+      }
+      // CR 701.20a, 701.20b (Fisher's Talent): "You may reveal it if it's a land card": at most one card, only revealed, so it stays where it is with what was not taken.
+      if (
+        e.take?.to === 'reveal' &&
+        (e.take.max !== 1 ||
+          e.take.min !== undefined ||
+          e.take.hidden !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.all !== undefined ||
+          e.take.any !== undefined ||
+          e.take.kinds !== undefined ||
+          e.take.elseAnyToHand !== undefined ||
+          e.take.withCounters !== undefined ||
+          e.revealAll !== undefined ||
+          e.from !== undefined ||
+          e.rest !== 'top')
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a card that is only revealed is one card at most (max 1, no min), shown to all, and every card looked at stays on top',
         );
       }
       // CR 608.2g: "You may cast ... from among them without paying its mana cost": one spell, chosen from those that match.

@@ -35,6 +35,7 @@ const LOOK_TAKE_WORDS = {
   exile: ' to exile',
   top: ' to put on top of your library',
   manifest: ' to manifest', // CR 701.62a, manifest dread
+  reveal: ' to reveal', // CR 701.20a: the card stays on top of the library (Fisher's Talent)
 } as const;
 
 /**

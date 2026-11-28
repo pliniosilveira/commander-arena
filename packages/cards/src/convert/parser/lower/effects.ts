@@ -192,6 +192,7 @@ import { EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
 import { peaceOfferingLowerings } from './peace-offering';
+import { lookTopMayRevealCreateLowering } from './peace-offering-fisher';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_CHOICES_LOWERINGS } from './player-choices';
@@ -3336,6 +3337,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...AHOY_G10_LOWERINGS,
   revealEachTokenLowering(lowerCreateToken),
   ...peaceOfferingLowerings(lowerCreateToken),
+  // Peace Offering deck, group F (Fisher's Talent): "Look at the top card of your library. You may reveal it if it's a land card. Create ... if you revealed it this way."
+  lookTopMayRevealCreateLowering(lowerCreateToken),
   // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
