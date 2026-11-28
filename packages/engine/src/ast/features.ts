@@ -2059,6 +2059,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sum',
     'extreme',
     'difference',
+    // CR 107.1b (Mr. Foxglove): "... minus the number of cards in your hand".
+    'subtract',
     'opponentCount',
     // CR 120.3 (Grothama, All-Devouring): "the amount of damage dealt to this creature this turn by sources they controlled".
     'damageToThisThisTurn',
@@ -3522,6 +3524,8 @@ export const AMOUNT_KINDS = [
   'extreme',
   /** "The difference between that creature's power and its toughness" (Jaws of Defeat, CR 608.2c): the engine's `difference`, the positive gap between two amounts. */
   'difference',
+  /** "... minus the number of cards in your hand" (Mr. Foxglove, CR 107.1b): the engine's `subtract`, one amount less another, floored at 0. */
+  'subtract',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
   /** "The amount of damage dealt to this creature this turn by sources they controlled" (CR 120.3, Grothama, All-Devouring): the engine's `damageToThisThisTurn`. */

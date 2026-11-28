@@ -52,12 +52,14 @@ const SPELL_ENTERS_WITH_COUNTERS: Lowering<IrClause, Effects> = {
   head: 'spellEntersWithCounters',
   id: 'lower.spell-enters-with-counters',
   needs: ['effect:spellEntersWithCounters'],
-  lower(clause) {
+  lower(clause, ctx) {
     const counter = arg(clause, 'counter');
-    const count = arg(clause, 'count');
-    if (counter?.kind !== 'counterSpec' || counter.name !== '+1/+1' || count?.kind !== 'number') {
+    if (counter?.kind !== 'counterSpec' || counter.name !== '+1/+1') {
       return { ok: false, needs: [], at: clause.span, rule: clause.rule };
     }
+    // Communal Brewing (CR 107.3c, 608.2h): "X additional +1/+1 counters on it, where X is ...": the amount the sentence defines.
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
     return {
       ok: true,
       value: [{ kind: 'spellEntersWithCounters', counter: counter.name, count: count.value }],

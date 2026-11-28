@@ -547,6 +547,11 @@ export function amountOf(
     const [a, b] = amount.of.map((part) => amountOf(state, part, ctx, targets));
     return Math.abs((a ?? 0) - (b ?? 0));
   }
+  if (amount.kind === 'subtract') {
+    // CR 107.1b (Mr. Foxglove): the first less the second; a negative result counts as 0.
+    const [a, b] = amount.of.map((part) => amountOf(state, part, ctx, targets));
+    return Math.max(0, (a ?? 0) - (b ?? 0));
+  }
   if (amount.kind === 'extreme') {
     const values = amount.of.map((part) => amountOf(state, part, ctx, targets));
     return amount.pick === 'greater' ? Math.max(...values) : Math.min(...values);

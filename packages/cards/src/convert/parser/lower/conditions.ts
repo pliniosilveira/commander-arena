@@ -1101,6 +1101,14 @@ export function lowerCondition(
       if (ctx?.didSearch !== true) return failure(c, []);
       return ok({ kind: 'thisWayAtLeast', what: 'searched', count: 1 });
     }
+    case 'notDrewThisWay': {
+      // "If you didn't draw cards this way" (Mr. Foxglove, CR 608.2c, 121.1): the draws before it in the same text are the controller's alone, so "you drew" is "a player drew" of this
+      // resolution, and an amount of 0 or an empty library draws none.
+      const blocked = missingFeatures(['condition:thisWayAtLeast', 'condition:not']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.drewBefore !== 'you') return failure(c, []);
+      return ok({ kind: 'not', term: { kind: 'thisWayAtLeast', what: 'playersDrew', count: 1 } });
+    }
     case 'destroyedThisWay': {
       // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did. The engine counts the permanents the destroy really
       // destroyed (an indestructible one, or one a regeneration shield saved, is not counted); the sentence that offers the destroy checks that the permanents it names are creatures.

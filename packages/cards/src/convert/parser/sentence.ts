@@ -220,6 +220,8 @@ const LEAD_CONDITIONS = [
   'condition.put-counters-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
+  // Mr. Foxglove: "If you didn't draw cards this way, you may put a creature card from your hand onto the battlefield." after a draw.
+  'condition.didnt-draw-this-way',
   // Elven Council deck: "If time gets more votes, ..." after a vote.
   'condition.vote-result',
   // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.

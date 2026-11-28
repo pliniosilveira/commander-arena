@@ -51,6 +51,7 @@ import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { EXACT_PT_CONDITION_RULES } from './exact-pt';
 import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
+import { DREW_THIS_WAY_CONDITION_RULES } from './drew-this-way';
 import { FEDERATION_D_CONDITION_RULES } from './federation-d';
 import { FLINT_CONDITION_RULES } from './flint';
 import { CONDITION_FORETOLD } from './foretold';
@@ -679,6 +680,7 @@ export const CONDITION_RULES = [
   ...COUNTER_GROUP_A_CONDITION_RULES,
   // Federation Fleet deck, group D: "it has greater power than ~", "you put two or more +1/+1 counters on creatures this way".
   ...FEDERATION_D_CONDITION_RULES,
+  ...DREW_THIS_WAY_CONDITION_RULES,
   // Limit Break deck, group 4: "~'s power is 7 or greater".
   ...LIMIT_BREAK_G4_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".

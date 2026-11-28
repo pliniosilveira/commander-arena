@@ -175,5 +175,12 @@ export function runDraw(state: GameState, input: DrawInstruction): StepOutcome {
       : {}),
   };
   // Kwain, Itinerant Meddler (CR 121.1): "each player who drew a card this way" names this player.
-  return first ? { ...outcome, thisWay: { playersDrew: 1, drewBy: [instruction.seat] } } : outcome;
+  // Communal Brewing (CR 121.1): "for each card drawn this way" counts every card drawn, beside the players who drew.
+  if (!drew) return outcome;
+  return {
+    ...outcome,
+    thisWay: first
+      ? { playersDrew: 1, drewBy: [instruction.seat], cardsDrawn: 1 }
+      : { cardsDrawn: 1 },
+  };
 }

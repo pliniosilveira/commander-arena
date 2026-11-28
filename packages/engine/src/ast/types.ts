@@ -405,6 +405,11 @@ export type Amount =
    */
   | { readonly kind: 'difference'; readonly of: readonly [Amount, Amount] }
   /**
+   * "The number of cards in defending player's hand minus the number of cards in your hand" (Mr. Foxglove, CR 107.1b, 608.2c): the first amount less the second, each read as the
+   * instruction runs, a negative result counting as 0 (CR 107.1b). The `minus` of an amount, not a whole number. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'subtract'; readonly of: readonly [Amount, Amount] }
+  /**
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
    * controllers sacrifice), "for each creature destroyed this way" (`destroyed`: the permanents an earlier
@@ -612,6 +617,8 @@ export type ThisWayKind =
   // Occult Epiphany (CR 205.2a, 608.2c): "for each card type among cards discarded this way": how many different card types the cards `discard` effects discarded have.
   | 'discardedTypeCount'
   | 'playersDrew'
+  // Communal Brewing (CR 121.1, 608.2c): "for each card drawn this way": the cards the `draw` effects of this resolution really drew, whoever drew them (a card a replacement drew instead of is not counted).
+  | 'cardsDrawn'
   | 'tapped'
   | 'discarded'
   // D-210: "the total mana value of those cards" milled this way, and "if a creature card (a noncreature card) was discarded this way".
@@ -4273,9 +4280,11 @@ export type Effect =
   /**
    * "That creature enters with two additional +1/+1 counters on it" (Yuna, Grand Summoner, CR 614.1c, 122.6, 603.7): only in the effect of a `delayedCast` whose filter names creature spells: the spell
    * that was cast (the `triggerSubject`) remembers that the permanent it becomes enters with `count` counters of the kind `counter` on it, with those it already enters with. Does nothing when
-   * the spell has left the stack as the ability resolves.
+   * the spell has left the stack as the ability resolves. `count` may be an amount (Communal Brewing: "X additional +1/+1 counters on it, where X is the number of ingredient counters on
+   * ~"), read as the ability resolves (CR 608.2h), the permanent with the ability as it last existed when it has left (CR 113.7a); nothing for 0.
+   * It is also the body of a cast trigger (`castSpell`) whose filter names creature spells.
    */
-  | { readonly kind: 'spellEntersWithCounters'; readonly counter: string; readonly count: number }
+  | { readonly kind: 'spellEntersWithCounters'; readonly counter: string; readonly count: Amount }
   /**
    * "Whenever you cast an artifact creature spell, it gains sunburst." (CR 702.44a, 702.44d, 400.7, 611.2): the spell `spell` names, a spell on the stack (the `triggerSubject` of a cast
    * trigger or of a `delayedCast`), gains the keyword for as long as it is a spell: it is kept in its stack data (`StackData.gainedKeywords`), and the permanent the spell becomes reads it as

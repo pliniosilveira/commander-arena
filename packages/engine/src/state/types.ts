@@ -2696,6 +2696,8 @@ export interface ThisWayCounts {
   readonly couldntSacrifice?: readonly SeatId[];
   /** The players who drew at least one card to a `draw` effect (Kwain, Itinerant Meddler: "each player who drew a card this way"), in the order they did; left out until there is one. */
   readonly drewBy?: readonly SeatId[];
+  /** The cards `draw` effects really drew, every player's added (Communal Brewing: "for each card drawn this way", CR 121.1); left out until one is drawn. */
+  readonly cardsDrawn?: number;
   /** The players who searched a library to a `search` effect (Tempt with Discovery: "each player who searched a library this way"), in the order they did; left out until there is one. */
   readonly searchedBy?: readonly SeatId[];
   /** The players who accepted the offer of a `playersMay` effect (Tempt with Bunnies: "for each opponent who does", CR 101.4); left out until one does. */

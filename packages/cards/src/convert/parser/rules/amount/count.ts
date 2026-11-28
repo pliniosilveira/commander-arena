@@ -348,6 +348,31 @@ const inThatPlayersGraveyard: Parser<{
   return { ok: true, value: { zone: 'graveyard', controller: { noun: player } }, pos: r.pos };
 };
 
+/**
+ * " in defending player's hand" (Mr. Foxglove, CR 508.5, 108.3, 402.1): the hand of the player the attacking creature with the ability attacks (or the controller of the planeswalker, the
+ * protector of the battle it attacks). The engine refuses it outside an ability of an attacking creature.
+ */
+const inDefendingPlayersHand: Parser<{
+  zone: 'hand';
+  controller: { readonly noun: IrNoun };
+}> = (ctx, pos) => {
+  const r = pattern(/ in (defending player)['’]s hand(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const word = r.value[1] ?? '';
+  const start = pos + ' in '.length;
+  const player: IrNoun = {
+    kind: 'noun',
+    det: 'defendingPlayer',
+    filter: { raw: word },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start, end: start + word.length },
+    rule: 'noun.player',
+  };
+  return { ok: true, value: { zone: 'hand', controller: { noun: player } }, pos: r.pos };
+};
+
 function cards(plural: boolean, are = false): Parser<IrFilter> {
   const itsControllerGraveyard: Parser<{
     zone: 'graveyard';
@@ -428,6 +453,7 @@ function cards(plural: boolean, are = false): Parser<IrFilter> {
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersZone,
     inThatPlayersGraveyard,
+    inDefendingPlayersHand,
   );
   // Scouring Swarm (CR 603.4): "seven or more land cards are in your graveyard": the zone said after "are", not "in" alone.
   const zoneOf = are ? map(sequence(literal(' are'), where), ([, place]) => place) : where;

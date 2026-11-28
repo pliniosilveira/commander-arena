@@ -6,6 +6,8 @@
 import type { Effect } from '../ast/types';
 import { setObject } from '../state/ops';
 import type { GameState } from '../state/types';
+import { amountOf } from './amounts';
+import type { ChosenTarget } from '../state/types';
 import type { SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -13,6 +15,7 @@ export function runSpellEntersWithCounters(
   state: GameState,
   effect: Extract<Effect, { kind: 'spellEntersWithCounters' }>,
   ctx: SelectContext,
+  targets: readonly ChosenTarget[],
 ): StepOutcome {
   const id = ctx.triggerSubject;
   const spell = id === undefined ? undefined : state.objects[id];
@@ -20,7 +23,10 @@ export function runSpellEntersWithCounters(
   if (spell === undefined || spell.zone !== 'stack' || stack === null || stack === undefined) {
     return done(state);
   }
+  // CR 608.2h (Communal Brewing): an amount is read as the ability resolves; 0 adds nothing.
+  const count = amountOf(state, effect.count, ctx, targets);
+  if (count <= 0) return done(state);
   const counters = { ...(stack.entersWithCounters ?? {}) };
-  counters[effect.counter] = (counters[effect.counter] ?? 0) + effect.count;
+  counters[effect.counter] = (counters[effect.counter] ?? 0) + count;
   return done(setObject(state, { ...spell, stack: { ...stack, entersWithCounters: counters } }));
 }
