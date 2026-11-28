@@ -10,10 +10,10 @@
  *    A cast that goes through moves the card to the stack, where it is a new object (CR 400.7); the same
  *    object offered again means the cast did not go through. Without this the game cycled cast, refusal and
  *    cancel until the action cap (2 of 12 precon games, thousands of refused answers);
- *  - an activation (object and ability index) whose targets decision was answered with that `cancel` is not chosen
- *    again in that turn (issue 638: a four-seat precon game cycled activate and cancel until the action cap). It is
- *    recorded on the failure, not on the choice: an activation that went through leaves the permanent the same object,
- *    and activating it again is legitimate.
+ *  - an activation (object and ability index) whose targets decision the agent answered with a `cancel` (that one, or
+ *    any other: asked again, it would cancel again) is not chosen again in that turn (issue 638: four-seat precon games
+ *    cycled activate and cancel until the action cap). It is recorded on the failure, not on the choice: an activation
+ *    that went through leaves the permanent the same object, and activating it again is legitimate.
  */
 import {
   type Action,
@@ -75,7 +75,7 @@ const clearPending = (tried: Set<string>): void => {
 
 /**
  * Records the priority answer: a cast is remembered for the turn; an activation is marked as the one being made, so a targets
- * decision with nothing to choose can name it (`noteNoTarget`). Any other answer ends the mark.
+ * decision the agent cancels can name it (`noteCancelled`). Any other answer ends the mark.
  */
 export function noteChoice(view: GameView, action: Action, tried: Set<string>): void {
   clearPending(tried);
@@ -83,8 +83,8 @@ export function noteChoice(view: GameView, action: Action, tried: Set<string>): 
   if (action.kind === 'activate') tried.add(`${PENDING}${activationKey(view, action)}`);
 }
 
-/** The activation being made has no targets to choose and is cancelled: it is left out for the rest of the turn. */
-export function noteNoTarget(tried: Set<string>): void {
+/** The targets decision of the activation being made was answered with a cancel: the activation is left out for the rest of the turn. */
+export function noteCancelled(tried: Set<string>): void {
   for (const key of tried) {
     if (key.startsWith(PENDING)) {
       tried.delete(key);

@@ -9,8 +9,8 @@ import { describe, expect, test } from 'vitest';
 import { createCasualHandlers } from '../src/casual-agent';
 import {
   hasNoTargetToChoose,
+  noteCancelled,
   noteChoice,
-  noteNoTarget,
   withoutTried,
 } from '../src/casual-no-target';
 import { CasualAgent, GreedyAgent, HeuristicAgent } from '../src/index';
@@ -182,7 +182,7 @@ describe('the activation guard records the failure, not the choice', () => {
     noteChoice(view, activation, tried);
     // Chosen, not failed: a repeat of an activation that went through is legitimate.
     expect(withoutTried(view, narrow, tried).options).toContainEqual(activation);
-    noteNoTarget(tried);
+    noteCancelled(tried);
     expect(withoutTried(view, narrow, tried).options).not.toContainEqual(activation);
     // Another turn: offered again.
     expect(withoutTried({ ...view, turn: view.turn + 1 }, narrow, tried).options).toContainEqual(
@@ -196,7 +196,7 @@ describe('the activation guard records the failure, not the choice', () => {
     const tried = new Set<string>();
     noteChoice(view, activation, tried);
     noteChoice(view, { kind: 'pass' }, tried);
-    noteNoTarget(tried);
+    noteCancelled(tried);
     expect(withoutTried(view, narrow, tried).options).toContainEqual(activation);
   });
 });
@@ -216,4 +216,40 @@ test('"another target" with one object for both slots: each slot has a legal tar
   expect(hasNoTargetToChoose(pair)).toBe(true);
   expect(hasNoTargetToChoose(pending)).toBe(false);
   expect(createCasualHandlers(g.view(0), () => 0).targets(pair)).toEqual({ kind: 'cancel' });
+});
+
+test('"another target" with two objects for both slots: the agent answers with the pair, not one object twice and a cancel (issue 638)', () => {
+  const g = scenario()
+    .define(WALKER)
+    .seat(0)
+    .battlefield(WALKER_NAME, 'Grizzly Bears', 'Giant Spider')
+    .library('Plains', { count: 4 })
+    .seat(1)
+    .library('Plains', { count: 4 })
+    .at('precombatMain', { active: 0 })
+    .build();
+  g.choose(walkerOption(g).activation);
+  const pending = g.state.pending;
+  if (pending?.kind !== 'targets') throw new Error('targets expected');
+  const [first] = pending.specs;
+  if (first === undefined) throw new Error('a slot expected');
+  const pair: TargetsDecision = {
+    ...pending,
+    specs: [
+      first,
+      {
+        ...first,
+        specId: 't2',
+        differentFrom: first.specId,
+        legal: first.legal.map((l) => ({ ...l, specId: 't2' })),
+      },
+    ],
+  };
+  expect(pair.specs.every((s) => s.legal.length === 2)).toBe(true);
+  const answer = createCasualHandlers(g.view(0), () => 0).targets(pair);
+  if (answer.kind !== 'chooseTargets')
+    throw new Error(`chooseTargets expected, got ${answer.kind}`);
+  const ids = answer.targets.map((t) => (t.kind === 'object' ? t.id : null));
+  expect(answer.targets.map((t) => t.specId)).toEqual(['t1', 't2']);
+  expect(new Set(ids).size).toBe(2);
 });
