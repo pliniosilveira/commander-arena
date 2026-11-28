@@ -193,6 +193,13 @@ function applyEffect(
       ...hit.map((part) => ({ definition: made, count: part.count, original: part.original })),
     ];
   }
+  // Fisher's Talent (CR 614.1a, the ruling of 2024-07-26): "create a 3/3 blue Shark creature token instead": each matching token becomes one of the token, and what the instruction
+  // said about it (tapped, attacking) still applies, so each part keeps its `original`; only the characteristics are replaced.
+  if (effect.replacement.mode === 'swap') {
+    return batch.map((part) =>
+      hit.includes(part) ? { definition: made, count: part.count, original: part.original } : part,
+    );
+  }
   if (effect.replacement.mode === 'thatMany') {
     const total = hit.reduce((n, part) => n + part.count, 0);
     return [
@@ -337,6 +344,7 @@ const effectText = (effect: TokenEffect): string => {
   if (effect.replacement.mode === 'plusThatMany') {
     return `Create those tokens plus that many ${name} tokens instead`;
   }
+  if (effect.replacement.mode === 'swap') return `Create a ${name} token instead of each`;
   return effect.replacement.mode === 'thatMany'
     ? `Create that many ${name} tokens instead`
     : `Create those tokens plus an additional ${name} token instead`;

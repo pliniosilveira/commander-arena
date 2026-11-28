@@ -5663,6 +5663,9 @@ export type Effect =
         // `manifest` (Manifest dread, CR 701.62a): "Look at the top two cards of your library. Manifest one of them, then put the cards you looked at that were not manifested this way into your
         // graveyard." The card taken is put onto the battlefield face down as a manifested 2/2 creature under the controller's control (CR 701.40a), unrevealed (nobody sees it, CR 708.5); what
         // `moved` names afterwards is that permanent. `min` and `max` of 1 and `hidden`, with `rest` the graveyard (a single card is manifested with no question, CR 701.62a).
+        // `reveal` (Fisher's Talent, CR 701.20a, 701.20b, 608.2c): "Look at the top card of your library. You may reveal it if it's a land card.": the card taken is only revealed to every player
+        // and stays where it is (revealing does not move a card); the reveal is what "if you revealed it this way" after it reads (`didPrevious`). `max` of 1 with no `min`, `hidden`, `tapped`,
+        // `totalManaValue`, `all`, `any`, `kinds` or `elseAnyToHand`, no `revealAll` or `from`, and `rest` `top`.
         readonly to?:
           | 'hand'
           | 'battlefield'
@@ -5671,7 +5674,8 @@ export type Effect =
           | 'exile'
           | 'castFree'
           | 'top'
-          | 'manifest';
+          | 'manifest'
+          | 'reveal';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.
@@ -8976,11 +8980,14 @@ export type Replacement =
    * created instead." The tokens `what` matches stay what they are (the same definition and what the instruction said about them, tapped for one) and are
    * made twice over: there is no `token`. It is applied once to one event (CR 614.5), so two of them make four; it does not change which tokens, so the order
    * of it and of the other effects never changes the result of a `thatMany` (the same number of the other token) and is only asked when it can.
+   * `swap` (Fisher's Talent): "If you would create a Fish token, create a 3/3 blue Shark creature token instead." Each token `what` matches is replaced by one `token`, and what the
+   * instruction said about it still applies (the card's ruling of 2024-07-26: tapped, attacking, "that token gains haste"); only the characteristics change. It applies to the tokens of any
+   * effect its controller creates, and a second `swap` sees the tokens the first made (CR 614.5, 616.1f: a Fish becomes a Shark, then the Shark an Octopus).
    */
   | {
       readonly kind: 'tokensInstead';
       readonly what: ObjectFilter;
-      readonly mode: 'thatMany' | 'plus' | 'plusThatMany';
+      readonly mode: 'thatMany' | 'plus' | 'plusThatMany' | 'swap';
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }

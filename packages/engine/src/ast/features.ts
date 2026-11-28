@@ -176,6 +176,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookTakeFromPlayer',
     // Orcish Spy (CR 401.2, 701.20e): "Look at the top three cards of target player's library" (`lookAtTop` with `take.max` 0).
     'lookTakeNothing',
+    // Fisher's Talent (CR 701.20a, 701.20b): "Look at the top card of your library. You may reveal it if it's a land card." (`lookAtTop` with `take.to` `reveal`).
+    'lookTakeReveal',
+    // Fisher's Talent (CR 614.1a): "If you would create a Fish token, create a 3/3 blue Shark creature token instead." (`tokensInstead` in `swap` mode).
+    'tokensSwap',
     // Cruelclaw's Heist (CR 701.20a, 402.3, 608.2d): "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (`ChooseSelector.revealHand`).
     'chooseRevealedHand',
     // The Ruinous Powers (CR 701.13, 603.7): "Choose an opponent at random. Exile the top card of that player's library." (`exileTop.randomOpponent`) and "When you cast a spell this way, its owner loses life equal to its mana value" (`mayPlay.whenCast`).
@@ -2388,6 +2392,10 @@ export const ABILITY_FEATURES = [
   'lookTakeFromPlayer',
   /** "Look at the top three cards of target player's library" (Orcish Spy, CR 401.2, 701.20e): the engine's `lookAtTop` with nothing taken (`take.max` 0, `rest` `top`). */
   'lookTakeNothing',
+  /** "Look at the top card of your library. You may reveal it if it's a land card." (Fisher's Talent, CR 701.20a, 701.20b): the engine's `lookAtTop` with `take.to` `reveal`: the card is only shown and stays on top. */
+  'lookTakeReveal',
+  /** "If you would create a Fish token, create a 3/3 blue Shark creature token instead." (Fisher's Talent, CR 614.1a, 616.1f): the engine's `tokensInstead` in `swap` mode. */
+  'tokensSwap',
   /** "Target opponent reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, CR 701.20a, 402.3): the engine's `ChooseSelector.revealHand` with `fromHandOf`. */
   'chooseRevealedHand',
   /** "Choose an opponent at random. Exile the top card of that player's library." (The Ruinous Powers, CR 701.13): the engine's `exileTop.randomOpponent`. */
@@ -3711,6 +3719,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   lookTakeKinds: true,
   lookTakeFromPlayer: true,
   lookTakeNothing: true,
+  lookTakeReveal: true,
+  tokensSwap: true,
   chooseRevealedHand: true,
   exileTopRandomOpponent: true,
   exileTopBottom: true,

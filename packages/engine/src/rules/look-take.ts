@@ -56,9 +56,11 @@ function revealedEvent(
 /** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-396), "You may put a card that matches into your hand". */
 function mayTakeWords(
   ins: LookTake,
-  to: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top' | 'manifest',
+  to: 'hand' | 'battlefield' | 'exileFaceDown' | 'exile' | 'top' | 'manifest' | 'reveal',
 ): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
+  // Fisher's Talent (CR 701.20a): "You may reveal it if it's a land card": the card is only shown; it stays where it is.
+  if (to === 'reveal') return `You may reveal ${cards}`;
   // `min`: a card that must be taken (Cavalier of Thorns: "Put a land card from among them onto the battlefield"), not a "you may".
   const must = (ins.min ?? 0) > 0;
   const them = ins.max === 1 ? 'it' : 'them';
@@ -247,6 +249,14 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     events.push(revealedEvent(state, seat, chosen));
   }
   const left = looked.filter((id) => !chosen.includes(id));
+  // Fisher's Talent (CR 701.20a, 701.20b, 608.2c): a card that is only revealed stays where it is (the `cardsRevealed` event above shows it); revealing it is what "if you revealed it
+  // this way" reads (`performed`), as a card taken into the hand is.
+  if (to === 'reveal') {
+    return {
+      ...done(state, events, [{ ...ins, stage: 'rest', chosen, left }]),
+      performed: chosen.length,
+    };
+  }
   return done(state, events, [
     ...(to === 'top'
       ? // CR 401.2: the card stays where it is, in the library; the rest leaves the top, so it is the top card (stage `rest`).
