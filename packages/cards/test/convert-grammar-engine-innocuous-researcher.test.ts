@@ -67,8 +67,10 @@ describe('Innocuous Researcher: played in a three-seat game', () => {
 
   /** Passes priority, in the step where it is, until seat 0 holds it (the opponents act first in their own turns). */
   const toSeat0 = (g: ReturnType<typeof board>) => {
-    for (let i = 0; i < 4 && g.state.turn.prioritySeat !== 0; i += 1) {
-      g.act(g.state.turn.prioritySeat).pass();
+    for (let i = 0; i < 4; i += 1) {
+      const holder = g.state.turn.prioritySeat;
+      if (holder === null || holder === 0) return;
+      g.act(holder).pass();
     }
   };
 
