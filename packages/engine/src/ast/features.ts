@@ -425,6 +425,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantPlayerManaAbility',
     // D-639: "Goad target creature" (CR 701.15).
     'goad',
+    // CR 701.15a (Serene Sleuth): "each creature you control is no longer goaded".
+    'endGoad',
     // CR 506.4 (Observed Stasis): "Remove enchanted creature from combat."
     'removeFromCombat',
     'grantPlayerProtectionEverything',
@@ -3843,6 +3845,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantAbility: true,
   restrict: true,
   goad: true,
+  endGoad: true,
   removeFromCombat: true,
   requireAttack: true,
   attackRandomOpponent: true,

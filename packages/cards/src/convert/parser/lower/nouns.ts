@@ -1604,6 +1604,18 @@ function selectorOf(
   ctx: LowerContext,
   options: RefOptions = {},
 ): LowerResult<ObjectSelector> {
+  // CR 611.2c, 608.2c (issue 128, Alandra, Sky Dreamer: "~ and Drakes you control each get +X/+X until end of turn"): the group the filter names, and the permanent itself too (the
+  // engine's `plus`), selected together as the effect resolves.
+  if (noun.det === 'selfAndGroup') {
+    const blocked = gate(noun, ['selector:eachPlus']);
+    if (blocked !== null) return blocked;
+    const group = selectorOf({ ...noun, det: 'each' }, ctx, options);
+    return group.ok && group.value.kind === 'each' && group.value.plus === undefined
+      ? { ...group, value: { ...group.value, plus: { kind: 'this' } } }
+      : group.ok
+        ? failure(noun, [])
+        : group;
+  }
   if (noun.det === 'each') {
     const blocked = gate(noun, ['selector:each']);
     if (blocked !== null) return blocked;

@@ -330,6 +330,20 @@ const GOAD: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Each creature you control is no longer goaded" (issue 128, Serene Sleuth, CR 701.15a): the engine's `endGoad` on what the operand names. */
+const END_GOAD: Lowering<IrClause, Effects> = {
+  head: 'endGoad',
+  id: 'lower.end-goad',
+  needs: ['effect:endGoad'],
+  lower(clause, ctx) {
+    const operandNoun = operand(clause, 'objects');
+    if (operandNoun?.kind !== 'noun') return failure(clause);
+    const object = objectSelectorOf(operandNoun, ctx);
+    if (!object.ok) return object;
+    return { ok: true, value: [{ kind: 'endGoad', objects: object.value }], rule: clause.rule };
+  },
+};
+
 /**
  * "Goad each creature that had a double strike counter put on it this way" (Spectacular Showdown, CR 701.15a, 608.2c): the engine's `goad` of `putCountersOn`, the objects the counters of the
  * instruction before it really went on. Only right after an `addCounters`: after any other instruction "this way" names nothing the engine tracks.
@@ -3189,6 +3203,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  END_GOAD,
   GOAD_COUNTERED,
   REMOVE_FROM_COMBAT,
   ATTACK_RANDOM_OPPONENT,

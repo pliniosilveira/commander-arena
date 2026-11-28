@@ -5366,6 +5366,11 @@ export type Effect =
    */
   | { readonly kind: 'goad'; readonly objects: ObjectSelector; readonly forever?: true }
   /**
+   * "Then each creature you control is no longer goaded" (issue 128, Serene Sleuth; CR 701.15a, 611.2c): each creature `objects` names is no longer goaded by any player: the goads that
+   * `goad` effects made on it end. The set is fixed when the effect resolves. The designation of an Aura's static "is goaded" is not an effect of the game and stays.
+   */
+  | { readonly kind: 'endGoad'; readonly objects: ObjectSelector }
+  /**
    * "Remove enchanted creature from combat" (CR 506.4, Observed Stasis): each creature `objects` names that is attacking or blocking is taken out of the combat in progress, as a
    * permanent that changes controller is (`rules/combat-removal.ts`): it stops attacking or blocking, a creature it blocked stays blocked (CR 509.1h) and no combat damage is dealt by or
    * to it. It is not tapped, untapped or dealt anything else. A permanent that is in no combat, or is not on the battlefield, is not changed.

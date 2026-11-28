@@ -50,6 +50,31 @@ export function runGoad(
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
 }
 
+/**
+ * "Each creature you control is no longer goaded" (CR 701.15a): the creatures the effect names are taken out of every continuous effect of a goad (any player's). A creature goaded by an
+ * Aura's static "is goaded" stays goaded by it: that designation is not an effect of the game. The set is fixed now (CR 611.2c).
+ */
+export function runEndGoad(
+  state: GameState,
+  node: Extract<Effect, { kind: 'endGoad' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const affected = new Set(resolveObjects(state, node.objects, ctx, targets));
+  let changed = false;
+  const kept: ContinuousEffect[] = [];
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'goaded' || !e.objects.some((id) => affected.has(id))) {
+      kept.push(e);
+      continue;
+    }
+    changed = true;
+    const rest = e.objects.filter((id) => !affected.has(id));
+    if (rest.length > 0) kept.push({ ...e, objects: rest });
+  }
+  return changed ? done({ ...state, continuousEffects: kept }) : done(state);
+}
+
 /** The players whose spells or abilities have goaded `id` and whose turn has not begun since (CR 701.15a). */
 function effectGoaders(state: GameState, id: ObjectId): SeatId[] {
   const seats: SeatId[] = [];

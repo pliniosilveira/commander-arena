@@ -127,7 +127,7 @@ import { runExplore } from './explore';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runMayCastEachType } from './free-cast-effect';
-import { runGoad } from './goad';
+import { runEndGoad, runGoad } from './goad';
 import { landCardsToGraveyard } from './graveyard-lands';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { runHandCards, startHandCards } from './hand-cards';
@@ -5134,6 +5134,10 @@ function runEffect(
     case 'goad':
       // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
       return runGoad(state, effect, ctx, targets);
+
+    case 'endGoad':
+      // CR 701.15a (issue 128): the goads of the game on the creatures end (`rules/goad.ts`).
+      return runEndGoad(state, effect, ctx, targets);
 
     case 'removeFromCombat':
       // CR 506.4: the creatures are taken out of the combat in progress (`rules/remove-from-combat.ts`).

@@ -306,11 +306,11 @@ export const EFFECT_INVESTIGATE = defineRule<Clauses>({
     'investigate',
     'investigate once for each opponent who has more cards in hand than you',
     'investigate once for each creature you control',
+    'investigate for each goaded creature you control',
   ],
   rejects: [
     'investigates',
     'investigate a Clue',
-    'investigate for each land',
     'investigate once',
     'investigate once for each',
     'investigate once for each creature',
@@ -318,8 +318,12 @@ export const EFFECT_INVESTIGATE = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const word = pattern(/investigate(?![\p{L}\p{N}])/iu)(ctx, pos);
     if (!word.ok) return word;
+    // CR 608.2c: "investigate once for each ..." and (Serene Sleuth) "investigate for each ...": the count of the "for each" is the number of Clues.
     const each = optional(
-      map(sequence(literal(' once'), FOR_EACH_TAIL), ([, amount]) => amount),
+      choice(
+        map(sequence(literal(' once'), FOR_EACH_TAIL), ([, amount]) => amount),
+        FOR_EACH_TAIL,
+      ),
       null,
     )(ctx, word.pos);
     if (!each.ok) return each;

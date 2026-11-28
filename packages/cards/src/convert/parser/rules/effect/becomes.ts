@@ -852,10 +852,78 @@ export const EFFECT_BECOMES_WHILE_COUNTER = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.group-become-creatures`: "other Clues you control become 6/6 Plant creatures in addition to their other types until end of turn" (issue 128, Tangletrove Kelp; CR 613.1d,
+ * 613.4b, 611.2c, 205.3: the permanents are those the group names as it resolves; they keep their types, gain the creature type and the creature subtype, and have the base power
+ * and toughness). The numbers and one creature subtype are required. Not read: the singular, "all", a color, no creature subtype, a missing "in addition to their other types", a
+ * duration other than the ones of `duration`.
+ */
+export const EFFECT_GROUP_BECOME_CREATURES = defineRule<Clauses>({
+  id: 'effect.group-become-creatures',
+  family: 'effect',
+  leading: ['other', 'artifacts', 'clues', 'lands', 'permanents', 'noncreature'],
+  cites: [
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 205.3 (Subtypes)',
+  ],
+  examples: [
+    'other Clues you control become 6/6 Plant creatures in addition to their other types until end of turn',
+    'artifacts you control become 4/4 Golem creatures in addition to their other types until end of turn',
+  ],
+  rejects: [
+    'other Clues you control become 6/6 Plant creatures until end of turn',
+    'other Clues you control become 6/6 creatures in addition to their other types until end of turn',
+    'other Clues you control becomes 6/6 Plant creatures in addition to their other types until end of turn',
+    'other Clues you control become 6/6 Plant creatures in addition to their other types',
+    'other Clues you control become Plant creatures in addition to their other types until end of turn',
+    'target Clue becomes a 6/6 Plant creature in addition to its other types until end of turn',
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.group-become-creatures';
+    const subject = family<IrNoun>('noun', {
+      only: ['noun.other-permanents', 'noun.other-subtype-permanents', 'noun.plain-permanents'],
+    })(ctx, pos);
+    if (!subject.ok) return subject;
+    const what = spanned(
+      pattern(new RegExp(` become (\\d+)\\/(\\d+) ([A-Z][a-z]+) creatures${BOUNDARY}`, 'u')),
+    )(ctx, subject.pos);
+    if (!what.ok) return what;
+    const addition = pattern(IN_ADDITION)(ctx, what.pos);
+    if (!addition.ok) return addition;
+    const space = literal(' ')(ctx, addition.pos);
+    if (!space.ok) return space;
+    const duration = family<IrDuration>('duration')(ctx, space.pos);
+    if (!duration.ok) return duration;
+    const [, power, toughness, subtype] = what.value.value;
+    const span = what.value.span;
+    const becoming: Becoming = {
+      colors: null,
+      types: {
+        kind: 'typeList',
+        subtypes: [subtype as string],
+        cardTypes: ['creature'],
+        additive: true,
+        span,
+        rule,
+      },
+      basePt: { kind: 'basePt', power: Number(power), toughness: Number(toughness), span, rule },
+      span,
+    };
+    return {
+      ok: true,
+      value: [{ ...becomesClause(rule, subject.value, becoming), duration: duration.value }],
+      pos: duration.pos,
+    };
+  },
+});
+
 export const BECOMES_RULES = [
   EFFECT_LOSES_ABILITIES,
   EFFECT_BECOMES,
   EFFECT_EACH_BECOMES,
+  EFFECT_GROUP_BECOME_CREATURES,
   EFFECT_BASE_PT,
   EFFECT_LEAD_BECOMES,
   EFFECT_LEAD_BECOMES_TARGET,

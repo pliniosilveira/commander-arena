@@ -7587,6 +7587,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.forever`, 'forever must be true when present');
       }
       break;
+    case 'endGoad':
+      // Issue 128 (CR 701.15a): each creature the selector names is no longer goaded.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'removeFromCombat':
       // CR 506.4: each creature the selector names is taken out of the combat in progress.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

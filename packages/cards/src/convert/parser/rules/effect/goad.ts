@@ -1,7 +1,7 @@
 /**
  * Effect rule of issue 89 (Silverquill Influence, D-651): "Goad target creature." and "goad it." (CR 701.15a).
  */
-import { literal, pattern, sequence } from '../../combinators';
+import { choice, literal, map, pattern, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, spanned } from '../registry';
 import { flag } from './dragons';
@@ -289,7 +289,51 @@ export const EFFECT_REMOVE_FROM_COMBAT = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.end-goad`: "each creature you control is no longer goaded" (issue 128, Serene Sleuth; CR 701.15a: the goad designation ends). One group of creatures a player controls
+ * (as the effect resolves, CR 611.2c). Not read: "target creature is no longer goaded" (a target is another line), "is no longer goaded" with no creature, a duration.
+ */
+export const EFFECT_END_GOAD = defineRule<Clauses>({
+  id: 'effect.end-goad',
+  family: 'effect',
+  leading: ['each', 'creatures'],
+  cites: ['CR 701.15a (Goad)'],
+  examples: [
+    'each creature you control is no longer goaded',
+    'creatures you control are no longer goaded',
+    'each creature your opponents control is no longer goaded',
+  ],
+  rejects: [
+    'each creature you control is goaded',
+    'each creature you control is no longer goaded until end of turn',
+    'each creature you control are no longer goaded',
+    'creatures you control is no longer goaded',
+    'is no longer goaded',
+  ],
+  parse: single(
+    'effect.end-goad',
+    choice(
+      map(
+        sequence(
+          operands(['noun.each-permanent'], 'effect.end-goad'),
+          literal(' is no longer goaded'),
+        ),
+        ([objects]) => objects,
+      ),
+      map(
+        sequence(
+          operands(['noun.plain-permanents'], 'effect.end-goad'),
+          literal(' are no longer goaded'),
+        ),
+        ([objects]) => objects,
+      ),
+    ),
+    (objects) => ({ verb: 'endGoad', args: { objects } }),
+  ),
+});
+
 export const GOAD_EFFECT_RULES = [
+  EFFECT_END_GOAD,
   EFFECT_REMOVE_FROM_COMBAT,
   EFFECT_EXPLORE,
   EFFECT_GOAD,
