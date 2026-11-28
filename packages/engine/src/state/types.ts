@@ -3248,6 +3248,11 @@ export interface TurnLog {
    * activate each turn"). Kept only while a permanent has an ability that reads it (`abilityCostReduction` with `firstOfArtifactEachTurn`), so the log of every other game is as it was.
    */
   readonly artifactActivated?: readonly SeatId[];
+  /**
+   * The players who created tokens this turn (issue 128, Esix, Fractal Bloom: "the first time you would create one or more tokens during each of your turns"): each once, in order, added as
+   * their first token of the turn is made, whatever the permanent that reads it was doing. Absent until a token is made.
+   */
+  readonly tokensCreatedBy?: readonly SeatId[];
   /** Each time a player investigated this turn (CR 701.16a, issue 128), in order, one entry for each action: "whenever you investigate for the first time each turn". Absent until one did. */
   readonly investigated?: readonly SeatId[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */

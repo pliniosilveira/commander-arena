@@ -8997,6 +8997,16 @@ export type Replacement =
     }
   | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
   /**
+   * "The first time you would create one or more tokens during each of your turns, you may instead choose a creature other than ~ and create that many tokens that are copies of that
+   * creature." (Esix, Fractal Bloom; issue 128; CR 614.1a, 614.5, 616.1, 707.2, 111.4): a replacement effect of a permanent on the battlefield that applies only on its controller's turn and
+   * only to the first creation of tokens by that player in the turn, whether or not anything applied to an earlier one (`TurnLog.tokensCreatedBy`: a token made before the permanent came under
+   * its control that turn counts). It is optional: the player is asked, among the effects that can apply, whether to apply it and which creature to copy (the creatures on the battlefield but the
+   * permanent with the ability); declining uses it up for the turn. It applies before any other effect of the creation (it replaces the tokens as the instruction described them, before anything
+   * that changes how they enter), and every token of the event becomes a copy (`what` names the tokens it applies to: all of them). The copies are made as the creature is now (its copiable
+   * values; counters and damage are not copied), under the controller's control, untapped and with none of what the instruction said about the original tokens. Not with a `token`.
+   */
+  | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'copyChosen' }
+  /**
    * "If you would create a Clue, Food, or Treasure token, instead create one of each." (Academy Manufactor, CR 614.1a, 111.2, 614.5): every token `what` matches among the ones its
    * controller would create at once is replaced by one of each of the predefined tokens `tokens` for each such token (a count of N is N of each), so a Treasure becomes a Clue, a
    * Food and a Treasure. The tokens it makes are the ones it names (what the instruction said about the replaced ones, tapped for one, does not carry over, as for `thatMany`). It is

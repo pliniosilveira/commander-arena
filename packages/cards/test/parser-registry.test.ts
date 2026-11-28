@@ -1374,6 +1374,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'replacement.tokens-plus-that-many': asIs,
   'replacement.tokens-each-of': asIs,
+  'replacement.tokens-copy-chosen': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'static.same-name-goaded': asIs,

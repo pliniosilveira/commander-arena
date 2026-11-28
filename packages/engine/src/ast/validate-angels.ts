@@ -305,7 +305,9 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
-      if (!isOneOf(r.mode, ['thatMany', 'plus', 'plusThatMany', 'double', 'eachOf'])) {
+      if (
+        !isOneOf(r.mode, ['thatMany', 'plus', 'plusThatMany', 'double', 'eachOf', 'copyChosen'])
+      ) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }
       if (r.mode === 'eachOf') {
@@ -325,6 +327,22 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
         }
         if ((r as { token?: unknown }).token !== undefined) {
           issue(out, `${path}.token`, 'a replacement of one of each makes no token of its own');
+        }
+      } else if (r.mode === 'copyChosen') {
+        // CR 614.1a (Esix): the copies of the chosen creature replace all the tokens; no token of its own, and the tokens it applies to are any.
+        if ((r as { token?: unknown }).token !== undefined) {
+          issue(
+            out,
+            `${path}.token`,
+            'a replacement by copies of a creature makes no token of its own',
+          );
+        }
+        if (Object.keys((r as { what?: object }).what ?? {}).length > 0) {
+          issue(
+            out,
+            `${path}.what`,
+            'a replacement by copies of a creature applies to every token: no filter',
+          );
         }
       } else if (r.mode === 'double') {
         // D-378 (CR 614.1a): "twice that many of those tokens" makes more of the tokens `what` names, not a token of its own.

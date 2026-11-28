@@ -220,6 +220,16 @@ export function makeTokens(
       },
     };
     events.push({ kind: 'tokenCreated', seat, object: id, name: definition.name });
+    // Esix (issue 128): the first creation of tokens by this player this turn is over, whether or not anything replaced it.
+    if (!(state.turnLog.tokensCreatedBy ?? []).includes(seat)) {
+      state = {
+        ...state,
+        turnLog: {
+          ...state.turnLog,
+          tokensCreatedBy: [...(state.turnLog.tokensCreatedBy ?? []), seat],
+        },
+      };
+    }
     // CR 722.3a, 722.3c (D-225): a token copy of a preparation card has the copied "This creature enters prepared." and the prepare spell: it enters prepared.
     if (
       prepareOf !== undefined &&

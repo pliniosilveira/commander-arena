@@ -34,6 +34,7 @@ import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import type { OrderFlow } from './damage-order';
 import { derive } from './derive';
+import { prepareCardOf } from './prepare';
 import { matchesFilter } from './select';
 import { sourceInfo } from './source-info';
 import { hypotheticalToken } from './token-object';
@@ -49,6 +50,14 @@ export interface TokenBatch {
 /** A replacement effect that applies to the creation of tokens: one ability of one permanent. */
 interface TokenEffect {
   readonly key: string;
+  /**
+   * Esix, Fractal Bloom (issue 128): the effect of a permanent that asks whether to apply it and which creature to copy is offered as one effect for each answer ("copy this
+   * creature", and none to decline), sharing the `group` of the ability: applying any of them uses the whole ability up. They are applied before every other effect (`first`).
+   */
+  readonly group?: string;
+  readonly first?: true;
+  /** The creature a copy effect copies; null for the answer that declines. */
+  readonly copy?: ObjectId | null;
   readonly object: ObjectId;
   readonly objectName: string;
   readonly replacement: Extract<
@@ -95,6 +104,40 @@ function tokenEffects(state: GameState, seat: SeatId): readonly TokenEffect[] {
     const d = derive(state, permanent);
     d.abilities.forEach((ability, index) => {
       if (ability.kind !== 'replacement' || ability.replacement.kind !== 'tokensInstead') return;
+      // Esix (CR 614.1a): an optional copy of a creature, only on the first creation of tokens of its controller in their own turn.
+      if (ability.replacement.mode === 'copyChosen') {
+        if (
+          state.turn.activeSeat !== seat ||
+          (state.turnLog.tokensCreatedBy ?? []).includes(seat)
+        ) {
+          return;
+        }
+        const group = effectKey(id, index);
+        const candidates = state.battlefield.filter((other) => {
+          const creature = state.objects[other];
+          return (
+            other !== id &&
+            creature !== undefined &&
+            derive(state, creature).types.includes('creature')
+          );
+        });
+        if (candidates.length === 0) return;
+        for (const copy of [null, ...candidates]) {
+          found.push({
+            timestamp: permanent.timestamp,
+            effect: {
+              key: `${group}:${copy === null ? 'decline' : `copy:${copy}`}`,
+              group,
+              first: true,
+              copy,
+              object: id,
+              objectName: d.name,
+              replacement: ability.replacement,
+            },
+          });
+        }
+        return;
+      }
       found.push({
         timestamp: permanent.timestamp,
         effect: {
@@ -124,7 +167,13 @@ function tokenEffects(state: GameState, seat: SeatId): readonly TokenEffect[] {
 
 /** The token a `thatMany` or `plus` effect makes; a `double` effect makes none of its own (it makes more of the tokens it names). */
 const madeBy = (effect: TokenEffect): TokenDefinition | null => {
-  if (effect.replacement.mode === 'double' || effect.replacement.mode === 'eachOf') return null;
+  if (
+    effect.replacement.mode === 'double' ||
+    effect.replacement.mode === 'eachOf' ||
+    effect.replacement.mode === 'copyChosen'
+  ) {
+    return null;
+  }
   const token = effect.replacement.token;
   return token.kind === 'preset' ? TOKEN_PRESETS[token.preset] : token.definition;
 };
@@ -166,6 +215,26 @@ function applyEffect(
   effect: TokenEffect,
 ): readonly TokenBatch[] {
   const hit = matching(state, seat, batch, effect);
+  // Esix (CR 614.1a, 707.2): every token of the event is replaced by as many copies of the creature chosen as it is now; declining leaves the tokens as they are.
+  if (effect.replacement.mode === 'copyChosen') {
+    const original =
+      effect.copy === null || effect.copy === undefined ? undefined : state.objects[effect.copy];
+    if (original === undefined || hit.length === 0) return batch;
+    const values = copiableValues(state, original);
+    const prepareOf = prepareCardOf(state, original);
+    return [
+      {
+        definition: {
+          ...values.characteristics,
+          abilities: [...values.abilities],
+          ...(prepareOf === null ? {} : { prepareOf }),
+          ...(values.doors === undefined ? {} : { doors: values.doors }),
+        },
+        count: totalOf(batch),
+        original: false,
+      },
+    ];
+  }
   // D-378 (CR 614.1a, 614.5): "twice that many of those tokens are created instead": each matching part is made twice over, as it was described.
   if (effect.replacement.mode === 'double') {
     return batch.map((part) => (hit.includes(part) ? { ...part, count: part.count * 2 } : part));
@@ -256,11 +325,22 @@ class OrderSearch {
     this.effects = effects;
   }
 
+  /** The effects not used yet that apply at a position; the effects that apply before all the others (Esix) alone while one of them is open. */
+  private open(at: Position): readonly TokenEffect[] {
+    const open = this.effects.filter(
+      (e) =>
+        !at.used.has(e.key) &&
+        (e.group === undefined || !at.used.has(e.group)) &&
+        applies(this.state, this.seat, at.batch, e),
+    );
+    return open.some((e) => e.first === true) ? open.filter((e) => e.first === true) : open;
+  }
+
   /** The effects that apply at a position, in the default order: the one that can make the most tokens first, the older first on a tie. */
   options(at: Position): readonly TokenEffect[] {
-    const open = this.effects.filter(
-      (e) => !at.used.has(e.key) && applies(this.state, this.seat, at.batch, e),
-    );
+    const open = this.open(at);
+    // A "you may" that applies first (Esix): its answers are offered as they were written, declining first, and a flow that does not ask declines.
+    if (open.some((e) => e.first === true)) return open;
     const scored = open.map((effect, index) => ({
       effect,
       index,
@@ -272,7 +352,11 @@ class OrderSearch {
   after(at: Position, effect: TokenEffect): Position {
     return {
       batch: applyEffect(this.state, this.seat, at.batch, effect),
-      used: new Set([...at.used, effect.key]),
+      used: new Set([
+        ...at.used,
+        effect.key,
+        ...(effect.group === undefined ? [] : [effect.group]),
+      ]),
     };
   }
 
@@ -290,9 +374,7 @@ class OrderSearch {
     const key = `${[...at.used].sort().join(',')}#${canonical(at.batch)}`;
     const known = this.memo.get(key);
     if (known !== undefined) return known;
-    const open = this.effects.filter(
-      (e) => !at.used.has(e.key) && applies(this.state, this.seat, at.batch, e),
-    );
+    const open = this.open(at);
     let reach: Reach;
     if (open.length === 0) {
       reach = { results: new Set([canonical(at.batch)]), most: totalOf(at.batch) };
@@ -327,7 +409,15 @@ export function describeBatch(batch: readonly TokenBatch[]): readonly string[] {
   return [...counts.entries()].map(([name, count]) => `${count} ${name}`);
 }
 
-const effectText = (effect: TokenEffect): string => {
+const effectText = (effect: TokenEffect, state: GameState): string => {
+  // Esix (issue 128): one answer for each creature that can be copied, and one that leaves the tokens as they are.
+  if (effect.replacement.mode === 'copyChosen') {
+    const copied =
+      effect.copy === null || effect.copy === undefined ? undefined : state.objects[effect.copy];
+    return copied === undefined
+      ? `Don't replace the tokens`
+      : `Create copies of ${derive(state, copied).name} instead`;
+  }
   const made = madeBy(effect);
   if (effect.replacement.mode === 'eachOf') {
     return `Create one of each of ${effect.replacement.tokens.join(', ')} instead`;
@@ -416,7 +506,7 @@ function question(
     return {
       option: effect.key,
       kind: 'tokens',
-      text: effectText(effect),
+      text: effectText(effect, state),
       object: effect.object,
       objectName: effect.objectName,
       outcome: { tokens: describeBatch(end), total: totalOf(end) },
