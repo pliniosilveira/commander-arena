@@ -1,7 +1,12 @@
 // The Vraska EDHREC deck, group 2 (stage P64, D-217): the REAL cards of the owner's golden corpus read through the grammar only, defined in an engine scenario and
 // played through applyAction. Stand-in cards are SYNTHETIC (named so), with invented power and toughness.
 import { readFileSync } from 'node:fs';
-import { type CardDefinition, type GameState, getView } from '@commander-arena/engine';
+import {
+  type CardDefinition,
+  type GameState,
+  getLegalActions,
+  getView,
+} from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
@@ -227,6 +232,27 @@ describe('Saheeli, Sublime Artificer (-2: target artifact you control becomes a 
     expect(copy?.types).toEqual(expect.arrayContaining(['artifact', 'creature']));
     expect([copy?.power, copy?.toughness]).toEqual([1, 1]);
     g.expect.invariants();
+  });
+
+  test('with one artifact only, which fits both slots alone, the -2 is not offered: the two targets must differ (CR 115.3, 601.2c, 602.2b, issue 638)', () => {
+    const alone = scenario()
+      .define(SAHEELI)
+      .define(ROCK)
+      .seat(0)
+      .battlefield(SAHEELI.name)
+      .battlefield(ROCK.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    const activatesSaheeli = (g: typeof alone) =>
+      getLegalActions(g.state, 0).some(
+        (a) => a.kind === 'activate' && a.object === g.id({ name: SAHEELI.name }),
+      );
+    expect(activatesSaheeli(alone)).toBe(false);
+    // With the Wizard there is a pair (the Rock, then the Wizard): it is offered.
+    expect(activatesSaheeli(game())).toBe(true);
   });
 });
 

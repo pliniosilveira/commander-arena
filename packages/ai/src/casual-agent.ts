@@ -16,6 +16,7 @@ import {
   nextInt,
   type PendingDecision,
   type RngState,
+  type TargetsDecision,
 } from '@commander-arena/engine';
 import type { Agent, DecideContext, FallbackRecord } from './agent';
 import { chooseAmassArmy } from './casual-amass';
@@ -31,7 +32,7 @@ import { chooseDevourSacrifice } from './casual-keywords';
 import { laterAnswer } from './casual-later';
 import { chooseArrangement } from './casual-library';
 import { chooseModalTargets, chooseModesAnswer } from './casual-modes';
-import { hasNoTargetToChoose, noteCast, withoutTriedCasts } from './casual-no-target';
+import { hasNoTargetToChoose, noteCancelled, noteChoice, withoutTried } from './casual-no-target';
 import { chooseOptionAnswer } from './casual-options';
 import { choosePartyAnswer } from './casual-party';
 import { choosePayOptionsAnswer } from './casual-pay-options';
@@ -70,6 +71,26 @@ export interface CasualAgentOptions {
   readonly handlerOverrides?: Partial<DecisionHandlers<Action>>;
 }
 
+/** The casual answer of a targets decision. */
+function chooseCasualTargets(view: GameView, d: TargetsDecision): Action {
+  // No legal target for a slot that needs one: the cast or activation is cancelled (it is not chosen again this turn, `casual-no-target.ts`).
+  if (hasNoTargetToChoose(d)) return { kind: 'cancel' };
+  // The target of another player's triggered ability that this agent chooses (CR 603.3d, "of that player's choice"): what costs it least.
+  if (d.forController !== undefined) return chooseForController(view, d);
+  // The new target of a spell or ability whose target a resolving effect changes (D-181, CR 115.7a).
+  const redirected = chooseNewTarget(view, d);
+  if (redirected !== null) return redirected;
+  // A division announced with the targets (CR 601.2d, D-145): the shares are part of the answer.
+  const divided = chooseDividedTargets(view, d);
+  if (divided !== null) return divided;
+  // A modal spell or ability (D-114): each slot is aimed by the text of the mode it belongs to.
+  const modal = chooseModalTargets(view, d);
+  if (modal !== null) return { kind: 'chooseTargets', targets: modal };
+  // "Deals X damage" once X is known: a creature that X kills, else the opponent (casual-x.ts).
+  const aimed = chooseXDamageTarget(view, d);
+  return aimed === null ? chooseTargets(view, d) : { kind: 'chooseTargets', targets: aimed };
+}
+
 /**
  * The handler per decision kind for one view. The record type makes a missing kind a compile
  * error. `draw(n)` gives a number in [0, n) for tie-breaks.
@@ -83,32 +104,21 @@ export function createCasualHandlers(
     priority: (d) => {
       const action = choosePriorityAction(
         view,
-        withoutTriedCasts(view, d, activations),
+        withoutTried(view, d, activations),
         draw,
         activations,
       );
-      noteCast(view, action, activations);
+      noteChoice(view, action, activations);
       return action;
     },
     mulligan: (d) => chooseMulligan(view, d, MIN_KEEP_SIZE),
     mulliganBottom: (d) => chooseCardsToLose(view, d),
-    // "Deals X damage" once X is known: a creature that X kills, else the opponent (casual-x.ts).
+    // A cancelled targets decision (nothing can be chosen, or no answer the agent would send) leaves the activation it was for out of the
+    // rest of the turn (`casual-no-target.ts`, issue 638): asked again, the agent would cancel again.
     targets: (d) => {
-      // No legal target for a slot that needs one: the cast is cancelled (it is not chosen again, `casual-no-target.ts`).
-      if (hasNoTargetToChoose(d)) return { kind: 'cancel' };
-      // The target of another player's triggered ability that this agent chooses (CR 603.3d, "of that player's choice"): what costs it least.
-      if (d.forController !== undefined) return chooseForController(view, d);
-      // The new target of a spell or ability whose target a resolving effect changes (D-181, CR 115.7a).
-      const redirected = chooseNewTarget(view, d);
-      if (redirected !== null) return redirected;
-      // A division announced with the targets (CR 601.2d, D-145): the shares are part of the answer.
-      const divided = chooseDividedTargets(view, d);
-      if (divided !== null) return divided;
-      // A modal spell or ability (D-114): each slot is aimed by the text of the mode it belongs to.
-      const modal = chooseModalTargets(view, d);
-      if (modal !== null) return { kind: 'chooseTargets', targets: modal };
-      const aimed = chooseXDamageTarget(view, d);
-      return aimed === null ? chooseTargets(view, d) : { kind: 'chooseTargets', targets: aimed };
+      const action = chooseCasualTargets(view, d);
+      if (action.kind === 'cancel') noteCancelled(activations);
+      return action;
     },
     // The casting flow pays automatically, so the AI never needs to tap mana sources itself.
     payMana: () => ({ kind: 'payAuto' }),

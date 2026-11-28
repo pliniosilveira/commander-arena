@@ -21,6 +21,7 @@ import type { GameObject, GameState, StackAbility } from '../state/types';
 import { evaluateCondition } from './conditions';
 import { legalTargets, type SelectContext, targetBounds } from './select';
 import { sourceInfo } from './source-info';
+import { targetSlotsFillable } from './target-distinct';
 
 /** The modes of a modal spell or ability and how many to choose. */
 export interface ModalText {
@@ -82,9 +83,8 @@ export function modeLimit(state: GameState, modal: ModalText, ctx: SelectContext
 
 /** Every slot of the mode could be filled with at least its minimum number of legal targets (CR 700.2a). */
 function modePossible(state: GameState, mode: SpellMode, ctx: SelectContext): boolean {
-  return (mode.targets ?? []).every(
-    (spec) => legalTargets(state, spec, ctx).length >= targetBounds(spec).min,
-  );
+  // CR 115.3 (issue 638): "another target" within the mode: the slots that must differ are filled together.
+  return targetSlotsFillable(mode.targets ?? [], (spec) => legalTargets(state, spec, ctx));
 }
 
 /**
