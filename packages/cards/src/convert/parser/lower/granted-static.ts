@@ -12,7 +12,8 @@ import { bind } from '../ir/bind';
 import type { IrClause } from '../ir/types';
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { lowerAngelStatic } from './angels';
-import { arg, type Effects, failure, operand } from './clauses';
+import { amountArg, arg, type Effects, failure, operand } from './clauses';
+import { missingFeatures } from './features';
 import { lateLowerers } from './late';
 import { objectSelectorOf, playerSelectorOf } from './nouns';
 import { type Lowering, newContext } from './types';
@@ -177,17 +178,31 @@ export const BECOMES_LOSES_ALL: Lowering<IrClause, Effects> = {
 /**
  * "If target player has fewer than nine poison counters, they get a number of poison counters equal to the difference." (CR 122.1, 107.1b; Vraska, Betrayal's Sting): the engine's
  * `givePoison` of the player the text names, the amount the number less the poison counters the player has as the instruction runs (nothing when they have that many or more).
+ * Without a `limit`, "that player gets two poison counters" (Bloodroot Apothecary): the amount the text states.
  */
 export const GIVE_POISON: Lowering<IrClause, Effects> = {
   head: 'givePoison',
   id: 'lower.give-poison',
-  needs: ['effect:givePoison', 'amount:poisonShortfall'],
+  needs: ['effect:givePoison'],
   lower(clause, ctx) {
     const who = arg(clause, 'player');
     const limit = arg(clause, 'limit');
-    if (who?.kind !== 'noun' || limit?.kind !== 'number') return failure(clause);
+    if (who?.kind !== 'noun') return failure(clause);
     const player = playerSelectorOf(who, ctx);
     if (!player.ok) return player;
+    // Bloodroot Apothecary (CR 122.1, 704.5c): "that player gets two poison counters": a number of poison counters the text states.
+    if (limit === undefined) {
+      const amount = amountArg(clause, 'amount', ctx);
+      if (!amount.ok) return amount;
+      return {
+        ok: true,
+        value: [{ kind: 'givePoison', player: player.value, amount: amount.value }],
+        rule: clause.rule,
+      };
+    }
+    if (limit.kind !== 'number') return failure(clause);
+    const blocked = missingFeatures(['amount:poisonShortfall']);
+    if (blocked.length > 0) return failure(clause, blocked);
     return {
       ok: true,
       value: [

@@ -419,6 +419,36 @@ const experienceAction: Action = (subject, you, rule) =>
       ),
   );
 
+/**
+ * "gets two poison counters", "get a poison counter" (CR 122.1, 704.5c: the player puts that many poison counters on themselves; Bloodroot Apothecary): the engine's `givePoison`. A
+ * player with ten or more is out of the game as a state-based action. Not read: an amount that is not a number ("that many"), another kind of counter.
+ */
+const poisonAction: Action = (subject, you, rule) =>
+  map(
+    spanned(
+      sequence(
+        verbWord('get', you),
+        choice(
+          map(pattern(/a poison counter(?![\p{L}\p{N}])/iu), () => 1),
+          map(
+            sequence(
+              satisfy(quantity, (n) => n >= 2),
+              pattern(/ poison counters(?![\p{L}\p{N}])/iu),
+            ),
+            ([n]) => n,
+          ),
+        ),
+      ),
+    ),
+    ({ value, span }) =>
+      actionClause(
+        rule,
+        'givePoison',
+        { player: subject, amount: { kind: 'number', value: value[1], span } },
+        span,
+      ),
+  );
+
 /** "shuffle your library" and "shuffles their library" (CR 701.24). */
 const shuffleAction: Action = (subject, you, rule) =>
   map(
@@ -833,6 +863,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you get an experience counter',
     'you get two experience counters',
     'target player gets an experience counter',
+    // Bloodroot Apothecary (CR 122.1, 704.5c): poison counters.
+    'that player gets two poison counters',
+    'target opponent gets a poison counter',
+    'each opponent gets a poison counter',
     'you draw a card, then discard a card at random',
     'target opponent discards a card at random',
     // D-269, CR 104.3e: an effect says that a player loses the game.
@@ -875,6 +909,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you get 1 experience counters',
     'you get an experience',
     'you get a experience counter',
+    'that player gets two poison counter',
+    'that player get two poison counters',
+    'that player gets 1 poison counters',
     'you gets an experience counter',
     'you get an energy counter',
     'you get {E}{R}',
@@ -997,6 +1034,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         // Issue 105: ", then you may pay eight {E}".
         alone('effect.player.energy-offer', energyOfferAction),
         part('effect.player.experience', experienceAction),
+        // Bloodroot Apothecary (CR 122.1): "that player gets two poison counters".
+        part('effect.player.poison', poisonAction),
         alone('effect.player.sacrifice', sacrificeAction),
         alone('effect.player.exile-graveyard', exileGraveyardCardsAction),
         alone('effect.player.put-exiled', putExiledCardsAction),
