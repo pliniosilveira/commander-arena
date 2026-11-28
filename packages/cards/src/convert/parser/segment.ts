@@ -1114,6 +1114,13 @@ const EACH_PLAYER_REVEALS_THEN_DRAWS_SENTENCE =
 const FOR_EACH_NONLAND_REVEALED_INVESTIGATE =
   /^for each nonland card revealed this way, you investigate\.$/i;
 const THEN_EACH_PLAYER_DRAWS_A_CARD = /^then each player draws a card\.$/i;
+/**
+ * "Whenever ~ enters or deals combat damage to a player, exile up to one target nonland permanent. For as long as that card remains exiled, its owner may cast it." (Aerial Extortionist,
+ * issue 128, CR 608.2c, 611.2b): the second sentence is about the card the first one exiled, so the two are read as one instruction by `effect.exile-owner-may-cast`.
+ */
+const EXILE_UP_TO_ONE_NONLAND = /(?:^|, )exile up to one target nonland permanent\.$/i;
+const OWNER_MAY_CAST_WHILE_EXILED =
+  /^for as long as that card remains exiled, its owner may cast it\.$/i;
 const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
@@ -1796,6 +1803,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, EACH_PLAYER_REVEALS_TOP) && said(b, FOR_EACH_NONLAND_REVEALED_TOKEN)) ||
+        (said(a, EXILE_UP_TO_ONE_NONLAND) && said(b, OWNER_MAY_CAST_WHILE_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||

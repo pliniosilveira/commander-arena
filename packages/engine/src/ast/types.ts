@@ -3817,6 +3817,11 @@ export type Effect =
        */
       readonly lifeForMana?: true;
       /**
+       * "For as long as that card remains exiled, its owner may cast it." (issue 128, Aerial Extortionist; CR 601.2, 108.3, 611.2b, 406.3): the player who may cast each card is its owner, not
+       * the controller of this effect. Needs `castOnly` and `lasts` `whileExiled`.
+       */
+      readonly byOwner?: true;
+      /**
        * "Until end of turn, you may play one of those cards" (Nashi, CR 601.2, 305.1): the permission is for one card among all the cards `objects` names: casting or playing one of them ends
        * the permissions of the others (`rules/play-permission-one.ts`).
        */

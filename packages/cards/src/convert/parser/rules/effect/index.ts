@@ -118,6 +118,7 @@ import { ENDURING_EFFECT_RULES } from './enduring';
 import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { ESPERS_EFFECT_RULES } from './espers';
 import { EXILE_COUNTERS_EFFECT_RULES } from './exile-counters';
+import { EXILE_OWNER_CAST_EFFECT_RULES } from './exile-owner-cast';
 import { EXILE_SPELL_RULES } from './exile-spell';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILE_TOP_UNTIL_ANOTHER_EFFECT_RULES } from './exile-top-until-another';
@@ -1808,6 +1809,8 @@ export const EFFECT_RULES = [
   ...SQUIRRELED_G4_EFFECT_RULES,
   // Smirking Spelljacker: "exile target creature spell an opponent controls" starts like `effect.exile`, which would read "exile target creature" and stop, so it is tried first.
   ...EXILE_SPELL_RULES,
+  // Aerial Extortionist (issue 128): before `effect.exile`, which would read only its first sentence.
+  ...EXILE_OWNER_CAST_EFFECT_RULES,
   EFFECT_EXILE,
   // Witherbloom Witchcraft, group C (issue 190): "return it to the battlefield face down under its owner's control. It's a Forest land".
   ...WITHERBLOOM_C_EARLY_EFFECT_RULES,

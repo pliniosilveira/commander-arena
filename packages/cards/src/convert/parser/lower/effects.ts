@@ -110,6 +110,7 @@ import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { ENDURING_LOWERINGS } from './enduring';
 import { EXILE_COUNTERS_LOWERINGS } from './exile-counters';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
+import { EXILE_OWNER_CAST_LOWERINGS } from './exile-owner-cast';
 import { EXILE_UNTIL_CAST_LOWERINGS } from './exile-until-cast';
 import { EXILE_UNTIL_PUT_REST_BOTTOM_LOWERINGS } from './exile-until-put-rest-bottom';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
@@ -3438,6 +3439,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   ...RANDOM_OPPONENT_LOWERINGS,
   ...FLORIAN_LOWERINGS,
+  ...EXILE_OWNER_CAST_LOWERINGS,
   ...SHELL_GAME_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
