@@ -449,10 +449,7 @@ const CHOICES: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Other creatures you control get +1/+1 and gain trample until your next turn.',
-    expect: no(
-      'Other creatures you control get +1/+1 and gain trample until your next turn.',
-      NONE,
-    ),
+    expect: no('get +1/+1 and gain trample until your next turn.', 'effect.group-become-creatures'),
     note: '"other" with a second change and a duration of the end of the turn is read since issue 345 (`effect.gain-keyword-others`); another duration is not',
   },
   {

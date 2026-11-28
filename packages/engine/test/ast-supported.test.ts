@@ -421,6 +421,8 @@ describe('supported feature gate', () => {
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
+        // CR 701.16a (issue 128).
+        'investigated',
         'lifeLost',
         'milled',
         'noncombatDamageDealt',

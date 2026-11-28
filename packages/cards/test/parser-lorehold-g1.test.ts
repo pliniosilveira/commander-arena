@@ -96,7 +96,8 @@ describe('"you may pay {1} and discard a card. If you do, ..." (D-610, CR 118.3,
     'Whenever ~ attacks, you may pay {1} and discard a card at random. If you do, draw a card.',
     'Whenever ~ attacks, you may pay {1}, discard a card. If you do, draw a card.',
     'Whenever ~ attacks, you may pay 2 life and discard a card. If you do, draw a card.',
-    'Whenever ~ attacks, you may pay {1} and sacrifice a creature. If you do, draw a card.',
+    // Issue 128 (Killer Service): a sacrifice of a creature in the payment is read; a target is not.
+    'Whenever ~ attacks, you may pay {1} and sacrifice target creature. If you do, draw a card.',
     'Whenever ~ attacks, you may pay {1} and discard a card and draw a card. If you do, draw a card.',
     'Whenever ~ attacks, you may pay {X} and discard a card. If you do, draw a card.',
   ])('not read: %s', (text) => {
