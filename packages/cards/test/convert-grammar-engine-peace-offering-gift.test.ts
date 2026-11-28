@@ -190,3 +190,41 @@ describe('Perch Protection', () => {
     expect(canTarget(g, 1, 0)).toBe(false);
   });
 });
+
+// The same two lines read for Perch Protection make Teferi's Protection (a real card of the corpus) supported: it is played here too.
+describe("Teferi's Protection", () => {
+  const teferi = real("Teferi's Protection");
+  const TEFERI = teferi.name;
+
+  test('the controller is locked and protected, everything they control phases out, and the card is exiled; all of it ends as their next turn begins', () => {
+    expect(validateCard(teferi)).toEqual([]);
+    const b = scenario().define(teferi);
+    b.seat(0)
+      .life(20)
+      .library(...LIBRARY)
+      .hand(TEFERI)
+      .battlefield('Plains', { count: 3 })
+      .battlefield('Grizzly Bears');
+    b.seat(1)
+      .life(20)
+      .library(...LIBRARY)
+      .hand('Lightning Bolt')
+      .battlefield('Mountain');
+    const g = b.at('precombatMain', { active: 0, priority: 0 }).build();
+    g.act(0).cast(TEFERI, { pay: true });
+    g.passAll();
+    g.expect.zone(TEFERI, 'exile', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'phased', { seat: 0 });
+    g.expect.zone('Plains', 'phased', { seat: 0, count: 3 });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.act(1).cast('Lightning Bolt');
+    const pending = g.state.pending;
+    if (pending?.kind !== 'targets') throw new Error(`expected targets, got ${pending?.kind}`);
+    expect(pending.specs[0]?.legal.some((t) => t.kind === 'player' && t.seat === 0)).toBe(false);
+    g.act(1).cancel();
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Plains', 'battlefield', { seat: 0, count: 3 });
+    g.expect.life(0, 20);
+  });
+});
