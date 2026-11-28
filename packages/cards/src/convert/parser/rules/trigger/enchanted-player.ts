@@ -48,7 +48,6 @@ export const TRIGGER_ENCHANTED_PLAYER_ATTACKED = defineRule<IrTrigger>({
   },
 });
 
-
 const TRUCE_ID = 'trigger.enchanted-opponent-attacks';
 
 /**

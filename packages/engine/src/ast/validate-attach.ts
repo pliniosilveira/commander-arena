@@ -307,7 +307,12 @@ export function checkAttachmentFace(
   );
   abilities.forEach((a, i) => {
     if (a.kind === 'triggered') {
-      checkEnchantedPlayerTrigger(a.trigger, enchantsPlayer, `${path}.abilities[${i}].trigger`, out);
+      checkEnchantedPlayerTrigger(
+        a.trigger,
+        enchantsPlayer,
+        `${path}.abilities[${i}].trigger`,
+        out,
+      );
     }
     const subject = a.kind === 'static' && 'subject' in a.static ? a.static.subject : null;
     if (subject?.kind === 'attached' && !isAura && !isEquipment && !bestows) {
@@ -366,7 +371,11 @@ function checkEnchantedPlayerTrigger(
         t.attackedEnchantedPlayerOrPlaneswalkers === true ||
         t.byEnchantedPlayer === true));
   if (needsPlayer && !enchantsPlayer) {
-    issue(out, path, 'a trigger about the enchanted player needs an Aura that enchants a player (D-629)');
+    issue(
+      out,
+      path,
+      'a trigger about the enchanted player needs an Aura that enchants a player (D-629)',
+    );
   }
   if (t.kind !== 'attackBatch') return;
   if (t.byEnchantedPlayer !== undefined) {

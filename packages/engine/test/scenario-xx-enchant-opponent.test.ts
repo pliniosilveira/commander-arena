@@ -5,10 +5,10 @@
 // attached to), CR 508.1, 508.1b, 508.6 and 603.2c (attackers are declared together: "when you attack a player" triggers once for the declaration; an attack on a planeswalker
 // of that player counts; an attack on another opponent does not). The Aura is SYNTHETIC (defined in this file); the rest are real cards.
 import { describe, expect, test } from 'vitest';
-import { illegalAuras } from '../src/rules/attach';
-import { singleFaceCard } from './dsl-helpers';
 import { syntheticCard, validateCard } from '../src/index';
+import { illegalAuras } from '../src/rules/attach';
 import { scenario } from '../src/testing/index';
+import { singleFaceCard } from './dsl-helpers';
 
 const TRUCE = 'SYNTHETIC Truce Aura';
 const WALKER = 'SYNTHETIC Vanilla Planeswalker';
@@ -38,11 +38,9 @@ const truce = singleFaceCard({
       kind: 'triggered',
       trigger: { kind: 'step', step: 'endStep', whose: 'enchantedPlayer' },
       effect: {
-        kind: 'sequence',
-        effects: [
-          { kind: 'draw', player: { kind: 'you' }, count: 1 },
-          { kind: 'draw', player: { kind: 'triggerPlayer' }, count: 1 },
-        ],
+        kind: 'draw',
+        player: { kind: 'all', of: [{ kind: 'you' }, { kind: 'triggerPlayer' }] },
+        count: 1,
       },
     },
     {
@@ -116,7 +114,10 @@ describe('the card is valid', () => {
     expect(
       messages([{ kind: 'keyword', keyword: { kind: 'enchant', filter: {}, opponent: true } }]),
     ).toMatch(/opponent/);
-    const creatureAura = { kind: 'keyword', keyword: { kind: 'enchant', filter: { types: ['creature'] } } };
+    const creatureAura = {
+      kind: 'keyword',
+      keyword: { kind: 'enchant', filter: { types: ['creature'] } },
+    };
     expect(messages([creatureAura, ...face.abilities.slice(1)])).toMatch(/enchants a player/);
   });
 

@@ -157,7 +157,9 @@ export const TRIGGER_YOU_ATTACK = defineRule<IrTrigger>({
     // What follows ("with two or more creatures", "alone", "you", "or ...", "enchanted opponent") belongs to another trigger rule: a rule that reads a prefix would hide it.
     const r = sequence(
       youNoun('trigger.you-attack'),
-      pattern(/ attack(?![\p{L}\p{N}])(?!\s+(?:with|alone|you|or|and|the|enchanted)(?![\p{L}\p{N}]))/iu),
+      pattern(
+        / attack(?![\p{L}\p{N}])(?!\s+(?:with|alone|you|or|and|the|enchanted)(?![\p{L}\p{N}]))/iu,
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     const [actor] = r.value;
