@@ -274,10 +274,11 @@ function walkEffect(
         effect.cost,
         `${path}.cost`,
         out,
-        ['mana', 'payLife', 'discard', 'energy', 'energyAmount'],
+        ['mana', 'payLife', 'discard', 'energy', 'energyAmount', 'sacrifice'],
         false,
         true,
       );
+      mayPaySacrificeIssues(effect.cost, `${path}.cost`, out);
       // The cards are discarded as Ward's discard is (rules/pay-unless.ts): any cards of the hand, no filter and no name.
       effect.cost.forEach((c, i) => {
         if (c.kind === 'discard' && (c.filter !== undefined || c.named !== undefined)) {
@@ -683,6 +684,36 @@ function unlessSacrificeIssues(costs: readonly Cost[], path: string, out: AstIss
         path: `${path}[${i}]`,
         message:
           'a sacrifice cost of Ward is the only cost of the ability: it is not combined with another',
+      });
+    }
+  }
+}
+
+/**
+ * CR 701.21a, 118.3 (issue 128, Killer Service: "you may pay {2} and sacrifice a token."): the sacrifice of a "you may pay" is paid as Ward's is (`rules/pay-unless.ts`): the payer chooses
+ * `count` permanents they control that match a filter, after the life and the energy and before the mana. Not run: the source itself, a target, X, any number, several different kinds,
+ * a second sacrifice, or discarding cards in the same payment (the discard is asked after the cards are chosen only for a payment with no sacrifice).
+ */
+function mayPaySacrificeIssues(costs: readonly Cost[], path: string, out: AstIssue[]): void {
+  const sacrifices = costs.filter((c) => c.kind === 'sacrifice').length;
+  for (const [i, c] of costs.entries()) {
+    if (c.kind !== 'sacrifice') continue;
+    if (
+      'kind' in c.what ||
+      c.countX !== undefined ||
+      c.anyNumber !== undefined ||
+      c.alongside !== undefined
+    ) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'a sacrifice in the payment of a "you may pay" is a number of permanents the payer controls that match a filter: not the permanent itself, a target, X, any number or several different kinds',
+      });
+    } else if (sacrifices > 1 || costs.some((x) => x.kind === 'discard')) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'a sacrifice in the payment of a "you may pay" is not combined with a second sacrifice or with a discard',
       });
     }
   }
