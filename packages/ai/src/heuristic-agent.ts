@@ -40,9 +40,10 @@ import {
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
 import { isHelpfulSpell } from './casual-helpful';
-import { noteCast, withoutTriedCasts } from './casual-no-target';
+import { hasNoTargetToChoose, noteChoice, withoutTried } from './casual-no-target';
 import { chooseRingBearerWithEvasion } from './casual-ring';
 import { findObject } from './casual-view';
+import { ownActivations, type RankedActivation, rankActivations } from './heuristic-activations';
 import { chooseHeuristicAttack } from './heuristic-attacks';
 import { chooseHeuristicBlocks } from './heuristic-blocks';
 import {
@@ -54,7 +55,7 @@ import {
   type Think,
 } from './heuristic-budget';
 import type { LookRecord } from './heuristic-combat-look';
-import { choosePriorityHeuristic, type PriorityChoice } from './heuristic-main';
+import { choosePriorityHeuristic, type PriorityChoice, spareAbility } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
 import {
@@ -65,7 +66,7 @@ import {
   type PlanRecord,
   type TurnPlan,
 } from './heuristic-plan';
-import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
+import { mainLines, windowLines } from './heuristic-plan-lines';
 import { choosePlanOn } from './heuristic-plan-pool';
 import { type Inner, type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
 import type { Line, PlayOutPool } from './heuristic-plan-types';
@@ -213,9 +214,23 @@ export class HeuristicAgent implements ExplainingAgent {
       this.plan = null;
     }
     const when = planning ? windowOf(view, d) : null;
+    // The own activations ranked on the sample (`heuristic-activations.ts`), once a decision and only when
+    // a window asks for them: today's spare-mana rule and the planner's ability lines read the same ranking.
+    let ranking: readonly RankedActivation[] | null = null;
+    const ranked = (): readonly RankedActivation[] => {
+      ranking ??= rankActivations(view, d, think, answer);
+      return ranking;
+    };
     if (when !== null) {
       const step = followPlan(this.plan, view, d, when);
       if (step !== null) {
+        // The plan's last pass of a main phase: its play-out never used an ability (the agents inside a
+        // play-out have no sample to rank them on), so spare mana goes to one that gains, as today's rule does.
+        const spare =
+          step.action.kind === 'pass' && (when === 'main1' || when === 'main2')
+            ? spareAbility(view, d, ranked, this.weights.main.trickMargin)
+            : null;
+        if (spare !== null) return { action: spare, reason: 'ability' };
         return {
           action: step.action,
           reason: 'plan',
@@ -230,23 +245,25 @@ export class HeuristicAgent implements ExplainingAgent {
       this.activations,
       answer,
       planning ? this.simAgents : undefined,
+      when === null ? undefined : ranked,
     );
     if (when === null || when === 'attack') return today;
-    let lines: ReturnType<typeof mainLines>;
-    if (when === 'main1' || when === 'main2') {
-      if (today.action.kind === 'playLand') return today;
-      lines = mainLines(view, d, when, today, this.activations, this.weights);
-    } else {
-      const quiet = today.action.kind === 'pass' || today.action.kind === 'activate';
-      if (!quiet || ownActivations(view, d).length === 0) return today;
-      lines = windowLines(view, d, when, today.action);
-    }
-    if (lines.length < 2) return today;
     // At most MAX_PLANS_PER_TURN plannings a turn, and none again in a window where one failed (no time,
     // a refused play-out): on a huge board every decision of the window would otherwise use the budget.
+    // Checked before the lines are built, whose ability ranking costs play-outs of its own.
     if (this.tries.turn !== view.turn)
       this.tries = { turn: view.turn, count: 0, failed: new Set() };
     if (this.tries.count >= MAX_PLANS_PER_TURN || this.tries.failed.has(when)) return today;
+    let lines: ReturnType<typeof mainLines>;
+    if (when === 'main1' || when === 'main2') {
+      if (today.action.kind === 'playLand') return today;
+      lines = mainLines(view, d, when, today, this.activations, this.weights, ranked());
+    } else {
+      const quiet = today.action.kind === 'pass' || today.action.kind === 'activate';
+      if (!quiet || ownActivations(view, d).length === 0) return today;
+      lines = windowLines(view, d, when, today.action, ranked());
+    }
+    if (lines.length < 2) return today;
     this.tries.count += 1;
     const { planned, work } = yield { view, when, lines };
     this.workList.push(work);
@@ -277,9 +294,9 @@ export class HeuristicAgent implements ExplainingAgent {
   ): Generator<PlanQuery, Action, Planning> {
     this.opponent.observe(view);
     this.reserve = null;
-    const open = withoutTriedCasts(view, d, this.activations);
+    const open = withoutTried(view, d, this.activations);
     const choice = yield* this.priorityChoice(view, open, think, answer, planning);
-    noteCast(view, choice.action, this.activations);
+    noteChoice(view, choice.action, this.activations);
     this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
     this.look = choice.look ?? null;
     note(choice.reason);
@@ -373,6 +390,8 @@ export class HeuristicAgent implements ExplainingAgent {
         return choice.action;
       },
       targets: (d) => {
+        // Nothing can be chosen: the casual answer cancels and remembers the activation (`casual-no-target.ts`).
+        if (hasNoTargetToChoose(d)) return casual.targets(d);
         const source = findObject(view, d.source);
         const plain = d.forTrigger !== true && d.forCopy !== true && d.forChange !== true;
         const simple = d.specs.every((s) => s.mode === undefined && s.divide === undefined);

@@ -21,14 +21,19 @@
  *  3. Everything else that an instant-speed card could do waits for a window (below); the mana it needs
  *     stays untapped because the set above does not count it.
  *  4. What is left is the casual rules without the plays above (flashback, escape, special actions,
- *     activations such as a regeneration or a pump ability), then pass.
+ *     activations such as a regeneration or a pump ability); when they pass, the activated ability that gains
+ *     the most on the sample (`heuristic-activations.ts`) if it beats passing by `main.trickMargin` and may
+ *     be activated only at sorcery timing (in the first main phase not one that taps a creature), reason
+ *     `ability`; then pass.
  *
  * WINDOWS (any other priority decision) for instant-speed plays (the end-step set is vetted on the sample like a main-phase set):
  *  - after blockers are declared (declare-blockers step, empty stack): each instant-speed candidate is
  *    cast on the sample and the combat is played out; it is cast when it beats passing by `main.trickMargin`
  *    (reason `trick`, or `removal-attacker` for a removal spell). A pump that changes nothing is held;
  *  - the opponent's end step (empty stack): the set of instant-speed plays that uses the most mana
- *    (card draw, flash creatures, removal with a target), reason `end-step`;
+ *    (card draw, flash creatures, removal with a target), reason `end-step`; when none is cast and the casual
+ *    rules pass, at the end step of the opponent just before the agent's turn, the activated ability that gains
+ *    the most on the sample (`heuristic-activations.ts`) if it beats passing by `main.trickMargin`, reason `end-step`;
  *  - in response to an opponent's spell (their object on top of the stack): a counterspell for a spell of
  *    mana value `main.counterMinValue` or more, reason `counter`; with a sample it is held (pass, reason `hold`)
  *    when playing the turn on without it scores better by `main.counterLookMargin` (`heuristic-response-look.ts`).
@@ -49,12 +54,13 @@ import {
   withFace,
 } from './casual-priority';
 import { manaValueOf } from './casual-view';
+import { type Activation, type RankedActivation, sorceryOnly, taps } from './heuristic-activations';
 import type { Think } from './heuristic-budget';
 import type { LookRecord } from './heuristic-combat-look';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { ownUnits } from './heuristic-mana';
-import type { SimAgents } from './heuristic-plan-sim';
+import { type SimAgents, windowOf } from './heuristic-plan-sim';
 import { protectionPlay, protectionReserve } from './heuristic-protect';
 import { lookAtCounter } from './heuristic-response-look';
 import {
@@ -111,6 +117,7 @@ function mainPhase(
   think: Think,
   activations: Set<string>,
   answer: Answer,
+  ranked: (() => readonly RankedActivation[]) | undefined,
 ): PriorityChoice {
   const weights = think.weights;
   const land = planLand(view, d, weights);
@@ -156,7 +163,12 @@ function mainPhase(
   }
   const rest = casualRemainder(view, d, think, activations, reserve !== null);
   if (rest.kind === 'pass') {
-    return { action: rest, reason: land?.hold === true ? 'hold' : 'no-play' };
+    if (land?.hold === true) return { action: rest, reason: 'hold' };
+    const spare =
+      ranked === undefined ? null : spareAbility(view, d, ranked, weights.main.trickMargin);
+    return spare === null
+      ? { action: rest, reason: 'no-play' }
+      : { action: spare, reason: 'ability' };
   }
   return { action: rest, reason: rest.kind === 'bringCompanion' ? 'companion' : 'delegated' };
 }
@@ -305,17 +317,55 @@ export function choosePriorityHeuristic(
   answer: Answer,
   /** The inner agents of the look-ahead; without them (a play-out, a test) nothing is looked ahead. */
   agents?: SimAgents,
+  /** The agent's own activations ranked on the sample (`heuristic-activations.ts`), computed on demand. */
+  ranked?: () => readonly RankedActivation[],
 ): PriorityChoice {
   const me = view.viewer;
   const mainWindow =
     view.activeSeat === me &&
     (view.step === 'precombatMain' || view.step === 'postcombatMain') &&
     view.stack.length === 0;
-  if (mainWindow) return mainPhase(view, d, think, activations, answer);
+  if (mainWindow) return mainPhase(view, d, think, activations, answer, ranked);
   const faceUp = faceUpWindow(view, d, think, answer);
   if (faceUp !== null) return faceUp;
   const play = windowPlay(view, d, think, activations, answer, agents);
   if (play !== null) return play;
   const rest = casualRemainder(view, d, think, activations);
+  if (rest.kind === 'pass' && ranked !== undefined) {
+    const spare = spareAbility(view, d, ranked, think.weights.main.trickMargin);
+    if (spare !== null) return { action: spare, reason: 'end-step' };
+  }
   return { action: rest, reason: rest.kind === 'pass' ? 'no-play' : 'delegated' };
 }
+
+/**
+ * Spare mana, nothing else played: the ability of the ranking that gains the most on the sample, when it beats
+ * passing by `main.trickMargin`. At the opponent's end step before the agent's turn (its lands untap next); in
+ * the agent's main phases only one activated at sorcery timing, and in the first main phase not one that taps
+ * a creature, which may attack. The planner may still choose otherwise (`heuristic-plan-lines.ts`).
+ */
+export function spareAbility(
+  view: GameView,
+  d: PriorityDecision,
+  ranked: () => readonly RankedActivation[],
+  margin: number,
+): Action | null {
+  const when = windowOf(view, d);
+  if (when !== 'theirEnd' && when !== 'main1' && when !== 'main2') return null;
+  // A land that may still be played this turn changes the mana: nothing is spent before it.
+  if (when !== 'theirEnd' && d.options.some((o) => o.kind === 'playLand')) return null;
+  for (const r of ranked()) {
+    // Scored abilities come first, best first: past the margin nothing later beats it.
+    if (r.gain === null || r.gain <= margin) return null;
+    if (when === 'theirEnd') return r.action;
+    // In a main phase only an ability that cannot wait for the opponent's end step, where its mana would
+    // have stayed open through their turn; in the first main phase not one that taps a creature (CR 302.6).
+    if (!sorceryOnly(view, r.action)) continue;
+    if (when === 'main1' && taps(view, r.action) && isCreature(view, r.action)) continue;
+    return r.action;
+  }
+  return null;
+}
+
+const isCreature = (view: GameView, a: Activation): boolean =>
+  view.battlefield.some((o) => o.id === a.object && o.types.includes('creature'));

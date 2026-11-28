@@ -58,6 +58,16 @@ export function flashSlotOf(specs: readonly TargetSpec[]): number {
   return specs.findIndex((spec) => targetBounds(spec).min >= 1);
 }
 
+/** The legal targets of the slot as the spell is cast, narrowed by its conditional flash when `only` is given (D-408). */
+export function slotLegalTargets(
+  state: GameState,
+  spec: TargetSpec,
+  ctx: SelectContext,
+  only: ObjectFilter | null = null,
+): ChosenTarget[] {
+  return matchingOnly(state, legalTargets(state, spec, ctx), only, ctx);
+}
+
 /**
  * Whether the slot can be filled as the spell is cast: enough legal targets for its minimum and, when it divides something, a total with at
  * least 1 for each of them (CR 601.2c, 601.2d).
@@ -70,7 +80,7 @@ export function slotCanBeFilled(
   only: ObjectFilter | null = null,
 ): boolean {
   const { min } = targetBounds(spec);
-  if (matchingOnly(state, legalTargets(state, spec, ctx), only, ctx).length < min) return false;
+  if (slotLegalTargets(state, spec, ctx, only).length < min) return false;
   const total = divideTotal(state, spec, ctx);
   return total === null || total >= min;
 }

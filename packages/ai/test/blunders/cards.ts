@@ -67,3 +67,61 @@ export const CURSED_IDOL = permanent(
   '{T}: You lose 3 life.',
   [activated([{ kind: 'tap' }], { kind: 'loseLife', player: YOU, amount: 3 })],
 );
+
+/** SYNTHETIC: "{1}: Scry 1." A cheap filler ability that changes nothing the board shows. */
+export const SCRY_ORB = permanent('SYNTHETIC Scrying Orb', ['artifact'], '{1}: Scry 1.', [
+  activated([{ kind: 'mana', symbols: ['1'] }], { kind: 'scry', player: YOU, count: 1 }),
+]);
+
+/** A SYNTHETIC creature token definition of the given name, types and size. */
+const token = (name: string, types: readonly string[], power: number, toughness: number) =>
+  ({
+    kind: 'custom',
+    definition: {
+      name,
+      manaCost: null,
+      supertypes: [],
+      types,
+      subtypes: [name],
+      colors: [],
+      power,
+      toughness,
+      loyalty: null,
+      defense: null,
+      oracleText: '',
+      abilities: [],
+    },
+  }) as const;
+
+/** SYNTHETIC: a 2/2 creature (a commander in its tests) with "{2}, {T}: Create a 2/2 Soldier creature token." */
+export const BANNER_CAPTAIN = permanent(
+  'SYNTHETIC Banner Captain',
+  ['creature'],
+  '{2}, {T}: Create a 2/2 colorless Soldier creature token.',
+  [
+    activated([{ kind: 'mana', symbols: ['2'] }, { kind: 'tap' }], {
+      kind: 'createToken',
+      token: token('Soldier', ['creature'], 2, 2),
+      count: 1,
+    } as Effect),
+  ],
+  { power: 2, toughness: 2 },
+);
+
+/** SYNTHETIC: "{2}: Create a 1/1 colorless Servo artifact creature token. Activate only as a sorcery." A repeatable token maker. */
+export const SERVO_WORKS = permanent(
+  'SYNTHETIC Servo Works',
+  ['artifact'],
+  '{2}: Create a 1/1 colorless Servo artifact creature token. Activate only as a sorcery.',
+  [
+    activated(
+      [{ kind: 'mana', symbols: ['2'] }],
+      {
+        kind: 'createToken',
+        token: token('Servo', ['artifact', 'creature'], 1, 1),
+        count: 1,
+      } as Effect,
+      { timing: 'sorcery' },
+    ),
+  ],
+);

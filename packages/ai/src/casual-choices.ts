@@ -117,6 +117,20 @@ function withOtherTargets(d: TargetsDecision, action: Action): Action {
     const from = d.specs.find((s) => s.specId === t.specId)?.differentFrom;
     return from === undefined || !action.targets.some((o) => o.specId === from && same(o, t));
   });
+  // A slot left short of its minimum takes the next legal targets the other slot does not have (issue 638: Saheeli, Sublime Artificer's
+  // "another target" chose one artifact for both slots and cancelled, though a second artifact made a pair).
+  for (const spec of d.specs) {
+    if (spec.differentFrom === undefined) continue;
+    const mine = targets.filter((t) => t.specId === spec.specId);
+    const others = targets.filter((t) => t.specId === spec.differentFrom);
+    for (const l of spec.legal) {
+      if (mine.length >= spec.min) break;
+      if (mine.some((t) => same(t, l)) || others.some((o) => same(o, l))) continue;
+      const added = { ...l, specId: spec.specId };
+      mine.push(added);
+      targets.push(added);
+    }
+  }
   return { ...action, targets };
 }
 

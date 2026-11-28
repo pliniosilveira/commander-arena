@@ -62,6 +62,8 @@ export const REASONS = [
   'trick',
   /** An instant-speed play made in the opponent's end step. */
   'end-step',
+  /** An activated ability that gains on the sample, in a main phase where nothing else is played (`heuristic-activations.ts`). */
+  'ability',
   /** A counterspell cast in response to the opponent's spell. */
   'counter',
   /** An Aura with flash for a commander (D-408) was cast in response to a removal that targets the agent's commander. */

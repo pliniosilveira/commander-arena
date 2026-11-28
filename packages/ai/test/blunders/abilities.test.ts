@@ -11,7 +11,7 @@
 import type { CardDefinition } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { CURSED_IDOL, LIBRARY_LAMP, PINGER } from './cards';
+import { BANNER_CAPTAIN, CURSED_IDOL, LIBRARY_LAMP, PINGER, SCRY_ORB, SERVO_WORKS } from './cards';
 import { blunderAgent, isActivation, playUntilPass } from './drive';
 
 const V1 = 'SYNTHETIC Vanilla 1/1';
@@ -27,17 +27,16 @@ const LIBRARY = { count: 10 } as const;
 function endStep(
   mine: string[],
   theirs: string[] = [],
-  opts: { defs?: CardDefinition[]; life?: number } = {},
+  opts: { defs?: CardDefinition[]; life?: number; commander?: string } = {},
 ) {
   let b = scenario();
   for (const d of opts.defs ?? []) b = b.define(d);
   b = b
     .seat(0)
     .life(opts.life ?? 20)
-    .battlefield(...mine)
-    .library('Island', LIBRARY)
-    .seat(1)
-    .library('Island', LIBRARY);
+    .battlefield(...mine);
+  if (opts.commander !== undefined) b = b.battlefield(opts.commander, { commander: true });
+  b = b.library('Island', LIBRARY).seat(1).library('Island', LIBRARY);
   if (theirs.length > 0) b = b.battlefield(...theirs);
   const g = b.at('end', { active: 1 }).build();
   g.act(1).pass();
@@ -84,6 +83,49 @@ describe('spare mana at the end of the opposing turn is used', () => {
     expect(
       targets.map((t) => (t.kind === 'object' ? (names.get(t.id) ?? '?') : `player ${t.seat}`)),
     ).toEqual([V1]);
+  });
+});
+
+describe('the main abilities of the board are used, not only the first ones listed', () => {
+  test('at the opposing end step the commander makes a 2/2 token though three cheap scry abilities come first', async () => {
+    // Wrong to pass or scry here: the hand is empty, the lands untap next turn, and a 2/2 body beats looking at the top card.
+    const g = endStep(
+      [SCRY_ORB.name, SCRY_ORB.name, SCRY_ORB.name, 'Plains', 'Plains', 'Plains'],
+      [],
+      { defs: [SCRY_ORB, BANNER_CAPTAIN], commander: BANNER_CAPTAIN.name },
+    );
+    const captain = g.id(BANNER_CAPTAIN.name);
+    const orbs = g.view(0).battlefield.filter((o) => o.name === SCRY_ORB.name);
+    // The position is the one named: every filler's id comes before the commander's as text.
+    expect(orbs.every((o) => o.id < captain)).toBe(true);
+    const activated = (await activationsOf(g)).map((a) => (a.kind === 'activate' ? a.object : ''));
+    expect(activated).toContain(captain);
+  });
+
+  test('a sorcery-speed "{2}: create a 1/1" is activated while six lands pay for it', async () => {
+    // Wrong to stop after one token here: the hand is empty and the mana has no other use this turn.
+    const g = ownMain([SERVO_WORKS.name, ...Array.from({ length: 6 }, () => 'Plains')], {
+      defs: [SERVO_WORKS],
+    });
+    expect(await activationsOf(g)).toHaveLength(3);
+  });
+
+  test('after casting Grizzly Bears, the two lands left make a token with the sorcery-speed ability', async () => {
+    // Wrong to pass with two lands open here: nothing else is in hand and the ability cannot wait for the end step.
+    const g = scenario()
+      .define(SERVO_WORKS)
+      .seat(0)
+      .hand(BEARS)
+      .battlefield(SERVO_WORKS.name, 'Forest', 'Forest', 'Forest', 'Forest')
+      .landsPlayed(1)
+      .library('Island', LIBRARY)
+      .seat(1)
+      .library('Island', LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    const { actions, cast } = await playUntilPass(g, 0);
+    expect(cast).toEqual([BEARS]);
+    expect(actions.filter(isActivation)).toHaveLength(1);
   });
 });
 
