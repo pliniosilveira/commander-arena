@@ -26,7 +26,7 @@ const PLURAL_WORDS =
 export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
   id: RULE,
   family: 'effect',
-  leading: ['target', 'that', 'those', 'up', 'one', 'it'],
+  leading: ['target', 'that', 'those', 'up', 'one', 'it', 'they'],
   cites: [
     'CR 502.3 (Untap Step)',
     'CR 611.2a (Continuous Effects)',
@@ -45,6 +45,9 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     // Junk Winder: "Tap target nonland permanent an opponent controls. It doesn't untap during its controller's next untap step."
     "it doesn't untap during its controller's next untap step",
     "It doesn't untap during its controller's next untap step",
+    // Tamiyo, Field Researcher: "Tap up to two target nonland permanents. They don't untap during their controller's next untap step."
+    "They don't untap during their controller's next untap step",
+    "they don't untap during their controllers' next untap steps",
   ],
   rejects: [
     "target creature doesn't untap during your next untap step",
@@ -64,19 +67,29 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     "it doesn't untap during its controller's next untap steps",
     "it don't untap during its controller's next untap step",
     "it doesn't untap during your next untap step",
+    "they doesn't untap during their controller's next untap step",
+    "they don't untap during your next untap step",
   ],
   parse: single(
     RULE,
     (ctx, pos) => {
       const subject = operands(
-        ['noun.target-permanent', 'noun.that-object', 'noun.those-creatures', 'noun.it'],
+        [
+          'noun.target-permanent',
+          'noun.that-object',
+          'noun.those-creatures',
+          'noun.it',
+          'noun.they',
+        ],
         RULE,
       )(ctx, pos);
       if (!subject.ok) return subject;
       // One noun only: a list of objects is not read.
       if (subject.value.kind !== 'noun') return fail(ctx, pos);
       const noun = subject.value;
-      const words = pattern(noun.plural ? PLURAL_WORDS : SINGULAR_WORDS)(ctx, subject.pos);
+      // "They" is the plural pronoun of the objects an earlier instruction named (the binding pass points it at the most recent plural group, CR 608.2c).
+      const plural = noun.plural || noun.rule === 'noun.they';
+      const words = pattern(plural ? PLURAL_WORDS : SINGULAR_WORDS)(ctx, subject.pos);
       if (!words.ok) return words;
       return { ok: true, value: noun, pos: words.pos };
     },

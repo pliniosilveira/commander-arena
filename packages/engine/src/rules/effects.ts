@@ -2206,7 +2206,14 @@ function runEffect(
       }
       return done(next, events);
     }
-    case 'delayedCombatDamage':
+    case 'delayedCombatDamage': {
+      // CR 603.7c, 603.7e: one delayed ability of the controller for each permanent named now, about that object only (`watched`), whoever controls it later.
+      // CR 500.1 (Tamiyo, Field Researcher): "until your next turn" ends it as the controller's next turn begins (`expireTurnStartEffects`), the turn it was made in not counted.
+      const taken = state.seats[res.controller]?.turnsTaken ?? 0;
+      const lasts =
+        effect.until === 'yourNextTurn'
+          ? { until: { seat: res.controller, turnsTaken: taken + 1 } }
+          : { untilEndOfCombat: true as const };
       return done({
         ...state,
         delayedTriggers: [
@@ -2216,15 +2223,22 @@ function runEffect(
             controller: res.controller,
             watched,
             repeat: true as const,
-            untilEndOfCombat: true as const,
+            ...lasts,
+            // CR 510.2, 603.2c: "deals combat damage" to anything is one event for the permanent in a combat damage step, however many it damages.
+            ...(effect.to === 'any' ? { oncePerEvents: true as const } : {}),
             ability: {
               kind: 'triggered' as const,
-              trigger: { kind: 'dealsCombatDamage' as const, what: {}, to: 'player' as const },
+              trigger: {
+                kind: 'dealsCombatDamage' as const,
+                what: {},
+                to: effect.to ?? ('player' as const),
+              },
               effect: effect.effect,
             },
           })),
         ],
       });
+    }
     case 'earthbend': {
       // Earthbend N (Avatar: The Last Airbender, rulings 2025-10-02): the land becomes a 0/0 land creature with haste, for good, in addition to its other types; N +1/+1 counters go on it;
       // and when it dies or is exiled it returns to the battlefield tapped under the controller's control. The target is fixed as the effect resolves (CR 608.2b: a land that is gone, or

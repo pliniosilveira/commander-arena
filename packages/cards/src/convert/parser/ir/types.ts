@@ -1778,7 +1778,14 @@ export interface IrSentence extends IrNode {
       | 'nextCast'
       | 'combatDamageToThatPlayer'
       | 'combatDamageBatch'
-      | 'creatureDies';
+      | 'creatureDies'
+      | 'combatDamageUntilNextTurn';
+    /**
+     * `combatDamageUntilNextTurn` (Tamiyo, Field Researcher; CR 603.7, 603.7c, 510.2, 500.1): "Until your next turn, whenever either of those creatures deals combat damage, you draw a
+     * card": a delayed ability for each creature the target slot before it chose, until the next turn of the controller. `those` is `several` for "either of those creatures" and `one` for
+     * "that creature": the lowering finds the target slot it names, of up to that many creatures.
+     */
+    readonly those?: 'one' | 'several';
     /**
      * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
      * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
@@ -2453,6 +2460,8 @@ export type IrStaticEffect =
       readonly alternative: 'lifeForMana' | 'free';
       readonly types?: readonly string[];
       readonly from?: readonly ('hand' | 'libraryTop')[];
+      /** "You may cast spells from your hand without paying their mana costs." (Tamiyo, Field Researcher's emblem, CR 118.9): every spell, in any turn. */
+      readonly unlimited?: true;
     }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }

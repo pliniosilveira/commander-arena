@@ -1258,9 +1258,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return `${capital(object(effect.objects))} becomes prepared`;
     case 'delayedCombatDamage': {
       const inner = effectText(effect.effect, ability, self, defs);
-      return inner === ''
-        ? UNSAID
-        : `Whenever ${object(effect.objects)} deals combat damage to a player this combat, ${lower(inner)}`;
+      if (inner === '') return UNSAID;
+      // Tamiyo, Field Researcher (CR 603.7, 500.1): any recipient, until the controller's next turn.
+      const to = effect.to === 'any' ? '' : ' to a player';
+      const lasts = effect.until === 'yourNextTurn' ? '' : ' this combat';
+      const lead =
+        effect.until === 'yourNextTurn' ? 'Until your next turn, whenever any of' : 'Whenever';
+      return `${lead} ${object(effect.objects)} deals combat damage${to}${lasts}, ${lower(inner)}`;
     }
     case 'chooseOne': {
       // D-585 (CR 106.4, 608.2d): "Choose a color. Target player adds three mana of that color for each artifact sacrificed this way".

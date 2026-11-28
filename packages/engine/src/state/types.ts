@@ -1107,6 +1107,11 @@ export interface DelayedTrigger {
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
   /**
+   * With `repeat`: the ability triggers at most once in one run of events (Tamiyo, Field Researcher: "whenever either of those creatures deals combat damage", CR 510.2, 603.2c: the
+   * permanent deals all its combat damage of a step at once, to however many objects and players, and that is one event).
+   */
+  readonly oncePerEvents?: true;
+  /**
    * "Until your next turn" (`delayedAttackerPump`, CR 500.1): the ability ends as the next turn of `seat` begins, once `turnsTaken` of that player's turns have begun (the turn it was made in
    * not counted); `expireTurnStartEffects`.
    */
