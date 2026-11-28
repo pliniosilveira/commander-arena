@@ -35,7 +35,6 @@ export const EFFECT_BECOMES_ARTIFACT_CREATURE_PERMANENTLY = defineRule<Clauses>(
     'target artifact become an artifact creature',
     'target artifacts become artifact creatures',
     'target artifact becomes an artifact creature and gains flying',
-    'target creature becomes an artifact creature',
   ],
   parse: single(
     ID,

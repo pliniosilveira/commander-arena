@@ -772,6 +772,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const who = trigger.who === 'you' ? 'you gain' : `${BY_WORDS[trigger.who]} gains`;
       return `Whenever ${who} life${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
     }
+    case 'investigated': {
+      // CR 701.16a (issue 128): "Whenever you investigate", once for each time; with "for the first time each turn" only the first.
+      const who =
+        trigger.who === 'you' ? 'you investigate' : `${BY_WORDS[trigger.who]} investigates`;
+      return `Whenever ${who}${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
+    }
     case 'lifeLost': {
       // CR 119.3: "Whenever you lose life", once for each loss; with "for the first time each turn" only the first.
       const who = trigger.who === 'you' ? 'you lose' : `${BY_WORDS[trigger.who]} loses`;

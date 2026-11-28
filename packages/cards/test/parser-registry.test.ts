@@ -330,6 +330,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-ability-cost-reduction': asIs,
   // Food and Fellowship deck, group B: the reduction of the abilities of a group of permanents (Sam).
   'static.permanent-ability-cost-reduction': asIs,
+  'static.first-artifact-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
   'static.spells-cost-increase-targeting-self': asIs,
@@ -646,6 +647,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // trigger; "enters untapped" and "dies or is put into exile" are triggers; the reduction of a cost ends an activated ability.
   'keyword.gift': asIs,
   'condition.it-matches': spell(
+    (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
+  ),
+  // Issue 128 (Tezzeret, Betrayer of Flesh): "If it isn't a Vehicle, ..." after an instruction that named a target.
+  'condition.it-isnt-a': spell(
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
   // Sauron deck (Uglúk of the White Hand): the creature that died, said as one of two creature types.
