@@ -601,6 +601,12 @@ function recipientText(
     }
     case 'couldntSacrificeThisWay':
       return "each player who can't";
+    case 'actedThisWay': {
+      const group = to.of?.kind === 'eachOpponent' ? 'opponent' : 'player';
+      return to.act === 'drew'
+        ? `each ${group} who drew a card this way`
+        : `each ${group} who searched a library this way`;
+    }
     case 'eachPlayerWithoutVotes':
       return 'each player who received no votes';
     case 'eachPlayerWhoChose':
@@ -817,6 +823,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
+    case 'actedThisWay':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
     case 'eachPlayerWhoChose':

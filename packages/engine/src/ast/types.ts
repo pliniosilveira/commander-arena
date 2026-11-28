@@ -636,6 +636,8 @@ export type ThisWayKind =
   | 'discardedMost'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
   | 'searched'
+  // Tempt with Bunnies (CR 101.4, 608.2d): "For each opponent who does": the players who accepted the offer of a `playersMay` effect of this resolution.
+  | 'playersAccepted'
   // Nexus Mentality: "Draw a card for each counter removed this way": the counters the `removeAllCounters` effects of this resolution took off (CR 122.1, 608.2c).
   | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
@@ -1723,6 +1725,16 @@ export type PlayerSelector =
    * ("any number") is not one of them. Valid after a `sacrifice` effect in the same sequence.
    */
   | { readonly kind: 'couldntSacrificeThisWay' }
+  /**
+   * "Each player who drew a card this way" (Kwain, Itinerant Meddler; CR 121.1, 101.4) and "each player who searched a library this way" (Tempt with Discovery; CR 701.23, 101.4): the
+   * players who drew at least one card to a `draw` effect (`drew`), or who searched a library to a `search` effect (`searched`, a search that found nothing included, CR 701.23c), of this
+   * same resolution so far, still in the game, in the order CR 101.4 gives. `of` (`eachPlayer` or `eachOpponent`) narrows them to that group. Valid after such an effect in the same sequence.
+   */
+  | {
+      readonly kind: 'actedThisWay';
+      readonly act: 'drew' | 'searched';
+      readonly of?: PlayerSelector;
+    }
   /**
    * "Each player this creature attacked this turn" (D-269, CR 508.6): the players the creature the ability belongs to was declared as an attacker
    * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An

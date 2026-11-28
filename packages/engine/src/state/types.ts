@@ -2684,6 +2684,12 @@ export interface ThisWayCounts {
   readonly discardedHandBy?: readonly SeatId[];
   /** The players who had nothing to sacrifice to a `sacrifice` effect that names a choice (Plaguecrafter: "each player who can't"), in the order they were asked. */
   readonly couldntSacrifice?: readonly SeatId[];
+  /** The players who drew at least one card to a `draw` effect (Kwain, Itinerant Meddler: "each player who drew a card this way"), in the order they did; left out until there is one. */
+  readonly drewBy?: readonly SeatId[];
+  /** The players who searched a library to a `search` effect (Tempt with Discovery: "each player who searched a library this way"), in the order they did; left out until there is one. */
+  readonly searchedBy?: readonly SeatId[];
+  /** The players who accepted the offer of a `playersMay` effect (Tempt with Bunnies: "for each opponent who does", CR 101.4); left out until one does. */
+  readonly playersAccepted?: number;
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
   readonly searched?: number;
   /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */

@@ -1979,6 +1979,7 @@ export function selectsSeveralPlayers(sel: PlayerSelector | undefined): boolean 
     case 'lostLifeThisTurn':
     case 'combatDamagedThisTurn':
     case 'discardedThisWay':
+    case 'actedThisWay':
     case 'opponentsAttackingTriggerPlayer':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
@@ -2188,6 +2189,25 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, `${path}.choice`, "'eachOpponentWhoVoted' reads 'same' or 'different'");
       }
       break;
+    case 'actedThisWay':
+      // Kwain, Itinerant Meddler; Tempt with Discovery (CR 121.1, 701.23): a draw (`drew`) or a search (`searched`) before it in the same sequence.
+      if (sel.act !== 'drew' && sel.act !== 'searched') {
+        issue(out, `${path}.act`, "'actedThisWay' reads 'drew' or 'searched'");
+      } else if (!(scope.thisWay ?? []).includes(sel.act === 'drew' ? 'playersDrew' : 'searched')) {
+        issue(
+          out,
+          path,
+          `'actedThisWay' needs a ${sel.act === 'drew' ? 'draw' : 'search'} effect before it in the same sequence`,
+        );
+      }
+      if (
+        sel.of !== undefined &&
+        kindOf(sel.of) !== 'eachPlayer' &&
+        kindOf(sel.of) !== 'eachOpponent'
+      ) {
+        issue(out, `${path}.of`, "'actedThisWay' reads the group 'eachPlayer' or 'eachOpponent'");
+      }
+      break;
     case 'couldntSacrificeThisWay':
       // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('sacrificed')) {
@@ -2263,6 +2283,7 @@ export const PLAYER_ONLY = [
   'lostLifeThisTurn',
   'combatDamagedThisTurn',
   'discardedThisWay',
+  'actedThisWay',
   'eachPlayerWithoutVotes',
   'eachOpponentWhoVoted',
   'eachPlayerWhoChose',
@@ -2340,6 +2361,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   excessDamageDealt: 'a dealDamage effect',
   countersRemoved: 'a removeAllCounters, removeChosenCounters or removeCounters effect',
   searched: 'a search effect',
+  playersAccepted: 'a playersMay effect',
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
@@ -2412,6 +2434,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   // "Discard a card or sacrifice a permanent" (Eumidian Wastewaker): what the declined (otherwise) effect does is counted too.
   if (e?.kind === 'playersMay') {
     return [
+      // Tempt with Bunnies (CR 101.4): "for each opponent who does": the players who accepted.
+      'playersAccepted',
       ...thisWayProduced(e.effect),
       ...(e.otherwise === undefined ? [] : thisWayProduced(e.otherwise)),
     ];
