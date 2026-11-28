@@ -339,6 +339,10 @@ const TRAILING_CONDITIONS = [
   'condition.card-types-among',
   // Zimone, Mystery Unraveler: "manifest dread if this is the first time this ability has resolved this turn. Otherwise, ..." (CR 608.2c).
   'condition.resolved-times',
+  // Twenty-Toed Toad: "you win the game if there are twenty or more counters on it or you have twenty or more cards in hand" (CR 122.1, 402.1, 608.2c).
+  'condition.or',
+  'condition.there-are-counters-on-it',
+  'condition.you-have-many-cards-in-hand',
 ] as const;
 
 /**

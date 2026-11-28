@@ -438,6 +438,8 @@ export function lowerCondition(
       if (ctx?.thatPlayer?.selector.kind !== 'triggerPlayer') return failure(c, []);
       const terms: Condition[] = [];
       if (test.opponent === true) {
+        // CR 603.2b, 608.2c: the engine reads `triggerPlayerIsOpponent` as an instruction comes up, never as the intervening "if" of the trigger.
+        if (ctx.interveningCondition === true) return failure(c, []);
         const blocked = missingFeatures(['condition:triggerPlayerIsOpponent']);
         if (blocked.length > 0) return failure(c, blocked);
         terms.push({ kind: 'triggerPlayerIsOpponent' });

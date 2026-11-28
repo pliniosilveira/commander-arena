@@ -46,7 +46,7 @@ import { addLoreCounters } from './saga';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { resolveTop } from './stack';
-import { maximumHandSizeOf, keepsDamage } from './statics';
+import { keepsDamage, maximumHandSizeOf } from './statics';
 import { collectTriggers } from './triggers';
 import { untapPermanent } from './untap';
 import { untapForOthers } from './untap-others';

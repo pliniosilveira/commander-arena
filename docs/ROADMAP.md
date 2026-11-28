@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot and others; Bestow is 
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
+- Maximum hand size (CR 613.11): a "no maximum hand size" or "maximum hand size is N" static ability granted by another effect is ordered by its permanent's timestamp, not the later timestamp of the granting effect (CR 613.7a).
 - Offspring given to spells (Zinnia, Valley's Voice): the permanent keeps the token trigger after the giver leaves, and a spell with printed offspring is asked about its own cost only. Rulings and CR 702.156 (Ravenous) numbering unverified.
 - "Put onto the battlefield with this ability" (Kodama of the East Tree) is remembered per source object, not per ability: a permanent with two such abilities would not tell them apart. No card has both.
 - "You may pay {X}. When you do, ..." (Rose Room Treasurer) is a pay-any-amount: paying X = 0 triggers nothing, though the CR would trigger the reflexive ability with X = 0 (missing "becomes the target" triggers).

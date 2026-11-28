@@ -927,7 +927,8 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'maximumHandSize':
       // CR 402.2: a number of cards, a whole number (0 is a hand that is emptied each cleanup step).
-      if (!isCount(s.size)) issue(out, `${path}.size`, 'the maximum hand size is a whole number, 0 or more');
+      if (!isCount(s.size))
+        issue(out, `${path}.size`, 'the maximum hand size is a whole number, 0 or more');
       break;
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':

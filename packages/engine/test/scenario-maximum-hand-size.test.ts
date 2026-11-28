@@ -54,9 +54,7 @@ describe('CR 402.2, 514.1: a maximum hand size of twenty', () => {
   });
 
   test("an opponent's permanent changes nothing: seven is still my maximum", () => {
-    const g = endStep((b) =>
-      b.hand('Forest', { count: 9 }).seat(1).battlefield(TOAD.name).seat(0),
-    );
+    const g = endStep((b) => b.hand('Forest', { count: 9 }).seat(1).battlefield(TOAD.name).seat(0));
     g.passAll();
     expect(g.state.pending?.kind === 'discard' ? g.state.pending.count : null).toBe(2);
   });
@@ -125,7 +123,11 @@ describe('validation', () => {
     expect(validateAbility(ok)).toEqual([]);
     for (const size of [-1, 2.5]) {
       const bad = { kind: 'static', static: { kind: 'maximumHandSize', size } } as Ability;
-      expect(validateAbility(bad).map((i) => i.message).join()).toContain('whole number');
+      expect(
+        validateAbility(bad)
+          .map((i) => i.message)
+          .join(),
+      ).toContain('whole number');
     }
     expect(validateCard(TOAD)).toEqual([]);
   });

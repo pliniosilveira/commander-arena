@@ -3950,7 +3950,9 @@ function runEffect(
       // CR 402.2, 514.1: no maximum hand size for the rest of the game; the cleanup step reads it (`maximumHandSizeOf`). CR 613.7, 613.11: the effect's timestamp orders
       // it with a permanent's "Your maximum hand size is ..." (a later effect of the kind replaces an earlier one).
       const [at, stamped] = allocateTimestamp(state);
-      return done(patchSeat(stamped, res.controller, { noMaximumHandSize: true, noMaximumHandSizeAt: at }));
+      return done(
+        patchSeat(stamped, res.controller, { noMaximumHandSize: true, noMaximumHandSizeAt: at }),
+      );
     }
 
     case 'gainEnergy': {

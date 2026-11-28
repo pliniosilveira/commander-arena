@@ -2133,6 +2133,8 @@ export type IrStaticEffect =
   // Fealty to the Realm (CR 613.1b, 725.1): "The monarch controls enchanted creature.": the engine's `controlAttached` by the monarch.
   | { readonly kind: 'controlByMonarch' }
   | { readonly kind: 'noMaxHandSize' }
+  /** "Your maximum hand size is twenty." (Twenty-Toed Toad, CR 402.2, 613.11): the engine's `maximumHandSize` of the controller. */
+  | { readonly kind: 'maxHandSize'; readonly size: number }
   /** "If this card is in your opening hand, you may begin the game with it on the battlefield." (CR 103.6): the engine's `beginGameOnBattlefield` of the card itself. */
   | { readonly kind: 'beginGameOnBattlefield' }
   /**

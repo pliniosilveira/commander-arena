@@ -1969,6 +1969,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As long as ${e}, you may cast noncreature spells as though they had flash.`,
   ),
   'condition.you-have-many-cards-in-hand': permanent((e) => `~ can't attack or block unless ${e}.`),
+  // Peace Offering deck: the intervening "if" of an upkeep trigger (Triskaidekaphile, Ghirapur Orrery) and the trailing "if" of an attack trigger (Twenty-Toed Toad).
+  'condition.you-have-exactly-cards-in-hand': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, you win the game.`,
+  ),
+  'condition.that-player-has-cards-in-hand': permanent(
+    (e) => `At the beginning of each player's upkeep, if ${e}, that player draws three cards.`,
+  ),
+  'condition.there-are-counters-on-it': permanent(
+    (e) => `Whenever ~ attacks, you win the game if ${e}.`,
+  ),
+  'condition.or': permanent((e) => `Whenever ~ attacks, you win the game if ${e}.`),
+  'static.maximum-hand-size': asIs,
   // The party (CR 700.8).
   'condition.full-party': permanent(
     (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,

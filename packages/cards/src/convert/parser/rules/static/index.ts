@@ -41,6 +41,7 @@ import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRAND_LARCENY_C_STATIC_RULES } from './grand-larceny-c';
 import { GRANT_STATIC_RULES } from './grants';
 import { GROUP_LOSES_STATIC_RULES } from './group-loses';
+import { HAND_SIZE_STATIC_RULES } from './hand-size';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
 import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
@@ -120,6 +121,8 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  // Peace Offering deck (Twenty-Toed Toad): "Your maximum hand size is twenty."
+  ...HAND_SIZE_STATIC_RULES,
   STATIC_BEGIN_GAME_ON_BATTLEFIELD,
   // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
   ...DEATH_TOLL_C_STATIC_RULES,
