@@ -1262,7 +1262,8 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // Tamiyo, Field Researcher (CR 603.7, 500.1): any recipient, until the controller's next turn.
       const to = effect.to === 'any' ? '' : ' to a player';
       const lasts = effect.until === 'yourNextTurn' ? '' : ' this combat';
-      const lead = effect.until === 'yourNextTurn' ? 'Until your next turn, whenever' : 'Whenever';
+      const lead =
+        effect.until === 'yourNextTurn' ? 'Until your next turn, whenever any of' : 'Whenever';
       return `${lead} ${object(effect.objects)} deals combat damage${to}${lasts}, ${lower(inner)}`;
     }
     case 'chooseOne': {
