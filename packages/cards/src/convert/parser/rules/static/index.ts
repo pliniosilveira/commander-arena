@@ -21,7 +21,8 @@ import { ATTACHED_CONDITION_STATIC_RULES } from './attached-conditions';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
-import { STATIC_CAST_ONCE_EACH_TURN } from './cast-once';
+import { STATIC_CAST_FROM_HAND_FREE, STATIC_CAST_ONCE_EACH_TURN } from './cast-once';
+import { CAST_ONLY_DURING_STATIC_RULES } from './cast-only-during';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
@@ -41,6 +42,7 @@ import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRAND_LARCENY_C_STATIC_RULES } from './grand-larceny-c';
 import { GRANT_STATIC_RULES } from './grants';
 import { GROUP_LOSES_STATIC_RULES } from './group-loses';
+import { HAND_SIZE_STATIC_RULES } from './hand-size';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
 import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
@@ -120,6 +122,8 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  // Peace Offering deck (Twenty-Toed Toad): "Your maximum hand size is twenty."
+  ...HAND_SIZE_STATIC_RULES,
   STATIC_BEGIN_GAME_ON_BATTLEFIELD,
   // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
   ...DEATH_TOLL_C_STATIC_RULES,
@@ -168,6 +172,8 @@ export const STATIC_RULES = [
   // Stage P33 (D-150): protections of a player, damage prevented to ~, a card that can't be cast early, a tax on blocking, permanents that
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,
+  // Illusionist's Gambit (CR 101.2, 601.3): "Cast ~ only during the declare blockers step on an opponent's turn."
+  ...CAST_ONLY_DURING_STATIC_RULES,
   ...ANGEL_PLAY_RULES,
   ...ARWEN_STATIC_RULES,
   // Stage P34 (D-152): mana that stays through steps and phases, casting from the top of the library.
@@ -187,6 +193,7 @@ export const STATIC_RULES = [
   STATIC_PAY_ZERO_ALT_COST_FROM_EXILE,
   // Miracle Worker deck (issue 109): "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost."
   STATIC_CAST_ONCE_EACH_TURN,
+  STATIC_CAST_FROM_HAND_FREE,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."

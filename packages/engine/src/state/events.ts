@@ -264,6 +264,16 @@ export type GameEvent =
    * ability, after its `abilityTriggered`. A copy of a spell is put on the stack, not cast, so it makes none.
    */
   | { readonly kind: 'crimeCommitted'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
+   * `seat` gave a gift (CR 702.174c): `object` is the instant or sorcery spell they control whose gift cost was paid, as it resolves, or the gift triggered ability of a
+   * permanent they control, as it resolves (CR 702.174b). Emitted as the resolution begins, before the gift's effect.
+   */
+  | { readonly kind: 'giftGiven'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
+   * `objects` phased out (CR 702.26a, 702.26g: those named and what is attached to them). It is no zone change (CR 702.26d): no trigger reads it as one; the scan for
+   * triggers reads it to know that the permanents were on the battlefield, and saw the events, until this point (CR 603.2).
+   */
+  | { readonly kind: 'phasedOut'; readonly objects: readonly ObjectId[] }
   | {
       readonly kind: 'abilityActivated';
       readonly seat: SeatId;

@@ -98,18 +98,47 @@ describe('where the player of the event is not named', () => {
     ).toContain('needs a triggered ability whose event is about a player');
   });
 
-  test('an intervening "if" is refused: the player is read as the instruction comes up, not as the ability triggers', () => {
-    for (const condition of [
-      { kind: 'triggerPlayerIsOpponent' },
-      { kind: 'triggerPlayerStat', stat: 'cardsInHand', compare: { cmp: 'atLeast', value: 4 } },
-    ] as const) {
-      const ability = {
-        kind: 'triggered',
-        trigger: END_STEP,
-        interveningIf: condition,
-        effect: { kind: 'draw', player: { kind: 'triggerPlayer' }, count: 1 },
-      } as unknown as Ability;
-      expect(messages(ability).join()).toContain('only valid in a conditional effect');
-    }
+  test('an intervening "if" of triggerPlayerIsOpponent is refused: the player is read as the instruction comes up', () => {
+    const ability = {
+      kind: 'triggered',
+      trigger: END_STEP,
+      interveningIf: { kind: 'triggerPlayerIsOpponent' },
+      effect: { kind: 'draw', player: { kind: 'triggerPlayer' }, count: 1 },
+    } as unknown as Ability;
+    expect(messages(ability).join()).toContain('only valid in a conditional effect');
+  });
+});
+
+describe('triggerPlayerStat as the intervening "if" (Ghirapur Orrery, CR 603.4)', () => {
+  const NO_CARDS = {
+    kind: 'triggerPlayerStat',
+    stat: 'cardsInHand',
+    compare: { cmp: 'atMost', value: 0 },
+  } as const;
+  const ability = (trigger: unknown, interveningIf: Condition) =>
+    ({
+      kind: 'triggered',
+      trigger,
+      interveningIf,
+      effect: { kind: 'draw', player: { kind: 'triggerPlayer' }, count: 3 },
+    }) as unknown as Ability;
+
+  test('of a trigger about a player (each upkeep) it is valid, alone or inside not/and', () => {
+    const upkeep = { kind: 'upkeep', whose: 'each' };
+    expect(messages(ability(upkeep, NO_CARDS))).toEqual([]);
+    expect(messages(ability(upkeep, { kind: 'not', term: NO_CARDS }))).toEqual([]);
+    expect(messages(ability(END_STEP, { kind: 'and', terms: [NO_CARDS] }))).toEqual([]);
+  });
+
+  test('its stat and comparison are still checked', () => {
+    const bad = { ...NO_CARDS, compare: { cmp: 'over', value: 0 } } as unknown as Condition;
+    expect(messages(ability(END_STEP, bad)).join()).toContain('unknown comparison');
+  });
+
+  test('of a trigger about no player (an enters trigger) it is refused', () => {
+    const enters = { kind: 'entersBattlefield', what: { kind: 'this' } };
+    expect(messages(ability(enters, NO_CARDS)).join()).toContain(
+      'triggerPlayerStat reads the player the event of a trigger is about',
+    );
   });
 });

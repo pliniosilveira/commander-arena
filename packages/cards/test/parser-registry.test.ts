@@ -124,6 +124,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.play-lands-from-top': asIs,
   'static.play-lands-and-cast-from-top': asIs,
   'static.cast-once-each-turn': asIs,
+  'static.cast-from-hand-free': asIs,
   'static.play-lands-from-graveyard': asIs,
   'static.graveyard-play-each-type': asIs,
   // Issue 345: the play-from-the-top lines are lines of their own.
@@ -137,6 +138,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
+  'keyword.enchant-opponent': asIs,
   'keyword.equip': asIs,
   'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
@@ -760,6 +762,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.cant-cast-early': asIs,
   'static.cant-cast-unless-opponent-lost-life': asIs,
+  'static.cast-only-during-step': asIs,
   // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
   'static.opponents-cant-gain-life': asIs,
   // Everlasting Torment: each line stands alone.
@@ -1131,6 +1134,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.dies-batch': whenever,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,
+  'trigger.give-gift': whenever,
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,
@@ -1375,6 +1379,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-plus-that-many': asIs,
   'replacement.tokens-each-of': asIs,
   'replacement.tokens-copy-chosen': asIs,
+  // Peace Offering deck, group F (Fisher's Talent): a level's replacement is a line of its own.
+  'replacement.token-swap': asIs,
   'static.cant-have-counters': asIs,
   'static.cant-be-sacrificed': asIs,
   'static.same-name-goaded': asIs,
@@ -1383,6 +1389,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
+  'trigger.enchanted-opponent-attacks': permanent((e) => `When ${e}, you gain 1 life.`),
   'trigger.player-attacks-you': whenever,
   'trigger.player-attacks-bare': whenever,
   'condition.they-arent-attacking-you': permanent(
@@ -1809,6 +1816,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `{1}, {T}: Put a +1/+1 counter on each creature you control that entered this turn. If ${e}, draw a card.`,
   ),
+  // Mr. Foxglove (CR 608.2c): what the draw before it did.
+  'condition.didnt-draw-this-way': permanent(
+    (e) =>
+      `Whenever ~ attacks, draw cards equal to the number of cards in defending player's hand minus the number of cards in your hand. If ${e}, you may put a creature card from your hand onto the battlefield.`,
+  ),
   'condition.searched-this-way': permanent(
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
@@ -1976,6 +1988,18 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As long as ${e}, you may cast noncreature spells as though they had flash.`,
   ),
   'condition.you-have-many-cards-in-hand': permanent((e) => `~ can't attack or block unless ${e}.`),
+  // Peace Offering deck: the intervening "if" of an upkeep trigger (Triskaidekaphile, Ghirapur Orrery) and the trailing "if" of an attack trigger (Twenty-Toed Toad).
+  'condition.you-have-exactly-cards-in-hand': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, you win the game.`,
+  ),
+  'condition.that-player-has-cards-in-hand': permanent(
+    (e) => `At the beginning of each player's upkeep, if ${e}, that player draws three cards.`,
+  ),
+  'condition.there-are-counters-on-it': permanent(
+    (e) => `Whenever ~ attacks, you win the game if ${e}.`,
+  ),
+  'condition.or': permanent((e) => `Whenever ~ attacks, you win the game if ${e}.`),
+  'static.maximum-hand-size': asIs,
   // The party (CR 700.8).
   'condition.full-party': permanent(
     (e) => `At the beginning of combat on your turn, if ${e}, you gain 1 life.`,

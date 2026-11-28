@@ -775,6 +775,14 @@
       "reasons": [],
       "ast": "cf048891"
     },
+    "09ecb8df-2a17-4e5a-814c-474bce54794d": {
+      "name": "Bloodroot Apothecary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3209f033"
+    },
     "0a79237e-0811-4a8a-bd4d-db3ca91bff22": {
       "name": "Everflowing Chalice",
       "group": "acceptance",
@@ -995,19 +1003,10 @@
     "0d4ecdb1-ec90-497f-a7a4-1c68092b8757": {
       "name": "Teferi's Protection",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.group-enters-tapped"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "babb870b"
+      "ast": "7b0c2617"
     },
     "0d59f010-9669-4ad2-9ae9-cd88b85f282c": {
       "name": "Sliver Gravemother",
@@ -1081,14 +1080,6 @@
       "reasons": [],
       "ast": "3b98be66"
     },
-    "0ee06ed0-717a-4bfa-b634-d00e013c1f16": {
-      "name": "Lonis, Cryptozoologist",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "9a1d2abc"
-    },
     "0ee41ef9-0b39-4d00-a68e-7914839a7175": {
       "name": "Bone Devourer",
       "group": "acceptance",
@@ -1128,14 +1119,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1d774bab"
-    },
-    "0f30f32f-3c4c-4f73-8b2a-82045a40bda9": {
-      "name": "Killer Service",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "eae12274"
     },
     "0f4350ad-dc44-4942-b097-e4033e29d659": {
       "name": "Umaro, Raging Yeti",
@@ -1970,6 +1953,14 @@
       "reasons": [],
       "ast": "5c715c87"
     },
+    "1cf7e5a0-cc8f-4bf7-9767-2f3bcae26339": {
+      "name": "Octomancer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "06d16f3f"
+    },
     "1d45f248-5b83-4377-a3ba-4eae48e63ca1": {
       "name": "Planetary Annihilation",
       "group": "acceptance",
@@ -2001,14 +1992,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b6cf6256"
-    },
-    "1d7d9404-cad6-4c1a-bd47-7a31ebb2791c": {
-      "name": "Tangletrove Kelp",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "1f1b5d51"
     },
     "1d85eec2-80db-466c-bd48-d2a12866e8bd": {
       "name": "Old Stickfingers",
@@ -2418,14 +2401,6 @@
       "reasons": [],
       "ast": "871fd979"
     },
-    "24038629-7c12-45ef-8ec4-0d2bb3e2265c": {
-      "name": "Ethereal Investigator",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "6a2fcd5e"
-    },
     "240e85d3-e495-4877-8609-4b4056c402f7": {
       "name": "Victimize",
       "group": "acceptance",
@@ -2522,6 +2497,14 @@
       "reasons": [],
       "ast": "b27c5ee3"
     },
+    "25636214-c6ea-4655-a5e8-98e735da5b05": {
+      "name": "Ms. Bumbleflower",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "21a2b7a2"
+    },
     "25712827-626a-484d-bc52-f3bd6087857f": {
       "name": "Crowded Crypt",
       "group": "acceptance",
@@ -2536,7 +2519,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "fcbd2ba9"
+      "ast": "5734b310"
     },
     "25877c41-39a4-4cc3-ac4b-8f3dd06d579b": {
       "name": "Stensian Sanguinist // Exsanguinate",
@@ -2729,6 +2712,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cbc33e41"
+    },
+    "295fe873-ecb5-4d5e-a73c-3af6c478afc5": {
+      "name": "Perch Protection",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "89e25825"
     },
     "2962fe4c-bf48-454b-8a6b-0f8253352ae8": {
       "name": "Spelunking",
@@ -3397,6 +3388,14 @@
       "reasons": [],
       "ast": "d61938d8"
     },
+    "333745d9-e930-439b-94d6-3aeea2877f69": {
+      "name": "Illusionist's Gambit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "769f715f"
+    },
     "334c284e-7bc3-4c18-9f8d-4d846f80008e": {
       "name": "Haunting Voyage",
       "group": "acceptance",
@@ -3799,6 +3798,14 @@
       "reasons": [],
       "ast": "020f756c"
     },
+    "36f68aa3-9955-46f1-bc87-497f16ef5222": {
+      "name": "Wizard Class",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fa6b2297"
+    },
     "37513bd8-7303-4ac6-a7a7-224184faf758": {
       "name": "Theorist's Sanctum",
       "group": "acceptance",
@@ -3960,14 +3967,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3178465c"
-    },
-    "39d8406a-90c3-460c-b4e8-0f590573db51": {
-      "name": "Mechanized Production",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "da729e79"
     },
     "3a16bdda-8499-47e4-b870-b9576f4c1a83": {
       "name": "Master of Death",
@@ -4271,7 +4270,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "5cd53ce7"
+      "ast": "b7b64a22"
     },
     "3d6fa57a-aa53-4b5c-b8af-a7612c823117": {
       "name": "Faithless Looting",
@@ -4632,6 +4631,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b9761e6"
+    },
+    "44ba2aa5-2bf5-4267-ae82-f0daf8f5e3e8": {
+      "name": "Fisher's Talent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9bbd3c13"
     },
     "44cbf70c-61cf-473e-901d-039956ced642": {
       "name": "Hraesvelgr of the First Brood",
@@ -5088,6 +5095,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "61589060"
+    },
+    "4baa6145-216e-476b-b178-aaaa1e633701": {
+      "name": "Tempt with Discovery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e087d9bf"
     },
     "4baa7847-dfcc-4aa3-aa64-2deeaa3f013b": {
       "name": "Murmuring Volume",
@@ -5553,7 +5568,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "b79dc4b6"
+      "ast": "5dfc9bb5"
     },
     "52b3a979-3b93-4441-9237-0c8a754e5523": {
       "name": "Furious Rise",
@@ -5906,6 +5921,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1142fb89"
+    },
+    "57c1a98e-c4fb-4144-9e3e-d0fe6789ba26": {
+      "name": "Simic Ascendancy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9e64f396"
     },
     "57e4a1c0-4218-4a07-88e7-d6083884c2b6": {
       "name": "Champions from Beyond",
@@ -6287,14 +6310,6 @@
       "reasons": [],
       "ast": "64200be0"
     },
-    "5dedd5a9-bc5d-47bb-9ae1-7d683843d041": {
-      "name": "Tezzeret, Betrayer of Flesh",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "ddb9ad86"
-    },
     "5def9f38-0a0b-4e8d-9f9d-29dcb46520b4": {
       "name": "Esper Sentinel",
       "group": "training",
@@ -6360,6 +6375,14 @@
       "reasons": [],
       "ast": "ea6999e0"
     },
+    "5e316864-d55c-496f-8f46-773567896864": {
+      "name": "Broken Wings",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "709ee0e9"
+    },
     "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
       "name": "Rakdos Charm",
       "group": "acceptance",
@@ -6375,14 +6398,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2fd7ecce"
-    },
-    "5e7586dd-d42e-4ac6-adb8-d46b6cdef923": {
-      "name": "Disorder in the Court",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "30c4c25d"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -6463,14 +6478,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bc9399d0"
-    },
-    "5ff4ef34-acb9-46c3-8530-f4b093807066": {
-      "name": "Erdwal Illuminator",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "749b0dcc"
     },
     "60040023-7bf0-42e0-ab30-46a730675564": {
       "name": "Hoarder's Greed",
@@ -7129,6 +7136,14 @@
       "reasons": [],
       "ast": "e5a1e829"
     },
+    "6874be51-623d-4eaf-a67a-2fcbb9a8ceca": {
+      "name": "Tempt with Bunnies",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2c2d2ab5"
+    },
     "687cfdf7-8f35-464a-8d6e-9f2d769ed6b4": {
       "name": "Subterfuge",
       "group": "acceptance",
@@ -7641,6 +7656,14 @@
       "reasons": [],
       "ast": "e50941a9"
     },
+    "7080fb43-5d93-41f5-87d3-bc1801805ea0": {
+      "name": "Rites of Flourishing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "171504ef"
+    },
     "70a6f08e-854d-4e2f-9d8c-c45ec3231157": {
       "name": "Faeburrow Elder",
       "group": "acceptance",
@@ -7872,6 +7895,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c83786e7"
+    },
+    "73ec7a0b-274a-4a10-a173-ff1625d62fce": {
+      "name": "Intellectual Offering",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe6bd1e6"
     },
     "741c51f1-cfbe-4c29-ac8f-ca6bcd2652f9": {
       "name": "Wandering Fumarole",
@@ -8402,6 +8433,14 @@
       "reasons": [],
       "ast": "09b647ae"
     },
+    "7bd36106-04fe-481f-b16e-e076dcbb183b": {
+      "name": "Kalonian Hydra",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4ab49d6"
+    },
     "7c340a39-4ee0-4ba1-bb66-6674f8020fda": {
       "name": "Gratuitous Violence",
       "group": "acceptance",
@@ -8621,14 +8660,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5c6a268e"
-    },
-    "7e7d7f4d-2c22-4803-ba5e-5eb653c25b5e": {
-      "name": "Aerial Extortionist",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "687e8046"
     },
     "7e84aff5-2cb6-4214-befd-3d2de31229e5": {
       "name": "Lovestruck Beast // Heart's Desire",
@@ -9021,7 +9052,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "107b7195"
+      "ast": "9eaa310a"
     },
     "84391c32-5bb7-4c36-be50-bbb5f8732156": {
       "name": "Rukarumel, Biologist",
@@ -9222,14 +9253,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca74f1c1"
-    },
-    "8806ee05-10d5-4492-b672-2f6bcab94be0": {
-      "name": "Knowledge Is Power",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "7c1cc628"
     },
     "883ad210-917b-40e6-8682-31d6eb3ed12a": {
       "name": "Burakos, Party Leader",
@@ -9657,6 +9680,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "81cf60e8"
+    },
+    "8e22bf51-1b1b-459b-af78-91188b6e3f09": {
+      "name": "Jolly Gerbils",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9dbb05b3"
     },
     "8e356df5-ca92-4be2-871e-8965c2510fbe": {
       "name": "Tempt with Vengeance",
@@ -10266,14 +10297,6 @@
       "reasons": [],
       "ast": "124087ac"
     },
-    "97bb1589-2941-4a75-a5f6-916871e51e9e": {
-      "name": "Alandra, Sky Dreamer",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "2ab45a4d"
-    },
     "97d61346-bd53-4eb8-a920-6ae0382eb20d": {
       "name": "Thief of Blood",
       "group": "acceptance",
@@ -10401,6 +10424,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7acd4bf1"
+    },
+    "99deac41-584b-43f2-804e-c56ae0fef047": {
+      "name": "Communal Brewing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "08513514"
     },
     "9a1de7e4-9930-4db3-a8f3-d146d0abf38b": {
       "name": "Edric, Spymaster of Trest",
@@ -10666,6 +10697,14 @@
       "reasons": [],
       "ast": "37f61c69"
     },
+    "9cf99129-f51a-4418-a8cc-8ca2992b17fa": {
+      "name": "Tamiyo, Field Researcher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "85c8fdb7"
+    },
     "9cfc01a7-e291-4388-bd09-94846d72e291": {
       "name": "Rumbleweed",
       "group": "acceptance",
@@ -10681,23 +10720,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "36b41ee1"
-    },
-    "9d22960b-babc-4cf3-b228-d32e13bc6014": {
-      "name": "Esix, Fractal Bloom",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "The first time you would create one or more tokens during each of your turns, you may instead choose a creature other than ~ and create that many tokens that are copies of that creature.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "fb4b6328"
     },
     "9d2aea05-f55c-4355-950f-bfdc4e985e80": {
       "name": "Selvala's Stampede",
@@ -11138,14 +11160,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "74900873"
-    },
-    "a30d076b-c942-45e4-b943-3749ce955291": {
-      "name": "Confirm Suspicions",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "34a2acfe"
     },
     "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
       "name": "Ganax, Astral Hunter",
@@ -12189,14 +12203,6 @@
       "reasons": [],
       "ast": "ec1fcda8"
     },
-    "b0d639cb-71d4-454f-9dd6-89cd7a59b702": {
-      "name": "Serene Sleuth",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c32032ea"
-    },
     "b0efb6fb-f2d1-4027-90b5-44fb3f5dd538": {
       "name": "Unification",
       "group": "acceptance",
@@ -12376,14 +12382,6 @@
       "reasons": [],
       "ast": "9387e928"
     },
-    "b401a490-d25f-4029-bb91-8999e140c6a1": {
-      "name": "Armed with Proof",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "13d67517"
-    },
     "b4429e71-434e-480c-a8d1-2ad11de8b2d9": {
       "name": "Convert to Slime",
       "group": "acceptance",
@@ -12475,19 +12473,10 @@
     "b628a39b-c923-473d-900a-1617f47ecb76": {
       "name": "Selvala, Explorer Returned",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fd6bb236"
+      "ast": "27190ec2"
     },
     "b655bee5-52d3-467e-b16c-cfc2edf2b1a1": {
       "name": "Arachnogenesis",
@@ -13202,6 +13191,14 @@
       "reasons": [],
       "ast": "d1d99388"
     },
+    "c2008ba9-00df-4607-ba0c-189af52033eb": {
+      "name": "Mr. Foxglove",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "287a67a2"
+    },
     "c20a96f7-aa5a-4c15-b8b1-806685c99b27": {
       "name": "Bolt Bend",
       "group": "acceptance",
@@ -13521,6 +13518,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a71f16c3"
+    },
+    "c6bb3a58-131a-4d7b-8c07-173a7de23b06": {
+      "name": "Ghirapur Orrery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "00fb88e1"
     },
     "c6d89c4a-351f-4d63-ba57-b978a695191e": {
       "name": "Seedship Impact",
@@ -14002,6 +14007,14 @@
       "reasons": [],
       "ast": "18c3e056"
     },
+    "cce643fb-cd88-457c-8f13-c203554df675": {
+      "name": "Twenty-Toed Toad",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "47587d97"
+    },
     "ccfc74f7-bf32-4201-ad8f-f552ed7f96f8": {
       "name": "Cazur, Ruthless Stalker",
       "group": "acceptance",
@@ -14081,6 +14094,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6875583f"
+    },
+    "ce6a85b5-e249-4582-a6be-ce200da5fd53": {
+      "name": "Kwain, Itinerant Meddler",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "080d8f5a"
     },
     "ce723db6-2a80-42a5-a176-cd322b4e1e27": {
       "name": "Back in Town",
@@ -14314,14 +14335,6 @@
       "reasons": [],
       "ast": "6d0089b6"
     },
-    "d1ec1e4e-faa6-4afc-9e00-a3327105c11b": {
-      "name": "Wavesifter",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "f08535f4"
-    },
     "d1ecfad3-e79a-447b-a932-68ef728eaf1f": {
       "name": "Rockalanche",
       "group": "acceptance",
@@ -14329,6 +14342,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cedbe8c1"
+    },
+    "d1f3d5ca-cb17-400f-8ed9-3b9a4f151b62": {
+      "name": "Steelburr Champion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "02c77a68"
     },
     "d22ea32b-2128-4dcc-8b1c-c4c52f0b2f45": {
       "name": "Rejoin the Fight",
@@ -14896,7 +14917,7 @@
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "15f30e70"
+      "ast": "3bd830cb"
     },
     "d9826660-0f34-4d82-8915-cf2796ab8d9a": {
       "name": "Sproutback Trudge",
@@ -15963,14 +15984,6 @@
       "reasons": [],
       "ast": "52b36118"
     },
-    "eaf8027a-017a-4471-ae7b-a372fd8e0ff3": {
-      "name": "Sophia, Dogged Detective",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "94930546"
-    },
     "eaffdf95-8e20-408d-99fa-3adc9e19523d": {
       "name": "Misleading Signpost",
       "group": "holdout",
@@ -16284,6 +16297,14 @@
       "reasons": [],
       "ast": "b27fc9f3"
     },
+    "ef238ba8-acf0-4e62-9abd-5291886a32e8": {
+      "name": "Triskaidekaphile",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3da5ca69"
+    },
     "ef47c447-bd7f-43c6-b4db-4a848c39820c": {
       "name": "Visions of Glory",
       "group": "acceptance",
@@ -16315,14 +16336,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6c5bd8cb"
-    },
-    "ef764497-800e-4cbd-805e-7635919a983c": {
-      "name": "Innocuous Researcher",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "d315016d"
     },
     "ef833546-f755-4ac5-867a-3926984e68a0": {
       "name": "Archaeomancer's Map",
@@ -16419,6 +16432,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "217985f7"
+    },
+    "f0bf2923-aea2-4bac-b061-64bc84437ef1": {
+      "name": "Tenuous Truce",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "95f36a6e"
     },
     "f0ead7f5-5c82-40fd-8e89-3e3c5d31fbad": {
       "name": "Cleric Class",
@@ -17483,7 +17504,7 @@
   },
   "summary": {
     "training": {
-      "supported": 159,
+      "supported": 160,
       "total": 174
     },
     "holdout": {
@@ -17491,8 +17512,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 1884,
-      "total": 1902
+      "supported": 1892,
+      "total": 1908
     }
   }
 }

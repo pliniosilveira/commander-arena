@@ -19,6 +19,7 @@ import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
 import {
+  allocateTimestamp,
   getObject,
   getSeat,
   objectsInZone,
@@ -574,20 +575,25 @@ export function runInstruction(
       };
     }
     const chosen = instruction.answer ? instruction.effect : instruction.otherwise;
-    if (chosen === undefined) return done(state);
+    // CR 101.4, 608.2d (Tempt with Bunnies): "for each opponent who does" counts the players who accepted the offer.
+    const accepted = instruction.answer ? { thisWay: { playersAccepted: 1 } } : {};
+    if (chosen === undefined) return { ...done(state), ...accepted };
     const as = instruction.answer ? instruction.as : undefined;
-    return done(
-      state,
-      [],
-      [
-        {
-          kind: 'effect',
-          effect: chosen,
-          ...(as === undefined ? {} : { as }),
-          ...(!instruction.answer ? { declinedBy: instruction.seat } : {}),
-        },
-      ],
-    );
+    return {
+      ...done(
+        state,
+        [],
+        [
+          {
+            kind: 'effect',
+            effect: chosen,
+            ...(as === undefined ? {} : { as }),
+            ...(!instruction.answer ? { declinedBy: instruction.seat } : {}),
+          },
+        ],
+      ),
+      ...accepted,
+    };
   }
   if (instruction.kind === 'mayEffect') {
     // D-111: "you may [effect]" inside an effect: the controller answers, accepting runs the effect.
@@ -2225,7 +2231,14 @@ function runEffect(
       }
       return done(next, events);
     }
-    case 'delayedCombatDamage':
+    case 'delayedCombatDamage': {
+      // CR 603.7c, 603.7e: one delayed ability of the controller for each permanent named now, about that object only (`watched`), whoever controls it later.
+      // CR 500.1 (Tamiyo, Field Researcher): "until your next turn" ends it as the controller's next turn begins (`expireTurnStartEffects`), the turn it was made in not counted.
+      const taken = state.seats[res.controller]?.turnsTaken ?? 0;
+      const lasts =
+        effect.until === 'yourNextTurn'
+          ? { until: { seat: res.controller, turnsTaken: taken + 1 } }
+          : { untilEndOfCombat: true as const };
       return done({
         ...state,
         delayedTriggers: [
@@ -2235,15 +2248,22 @@ function runEffect(
             controller: res.controller,
             watched,
             repeat: true as const,
-            untilEndOfCombat: true as const,
+            ...lasts,
+            // CR 510.2, 603.2c: "deals combat damage" to anything is one event for the permanent in a combat damage step, however many it damages.
+            ...(effect.to === 'any' ? { oncePerEvents: true as const } : {}),
             ability: {
               kind: 'triggered' as const,
-              trigger: { kind: 'dealsCombatDamage' as const, what: {}, to: 'player' as const },
+              trigger: {
+                kind: 'dealsCombatDamage' as const,
+                what: {},
+                to: effect.to ?? ('player' as const),
+              },
               effect: effect.effect,
             },
           })),
         ],
       });
+    }
     case 'earthbend': {
       // Earthbend N (Avatar: The Last Airbender, rulings 2025-10-02): the land becomes a 0/0 land creature with haste, for good, in addition to its other types; N +1/+1 counters go on it;
       // and when it dies or is exiled it returns to the battlefield tapped under the controller's control. The target is fixed as the effect resolves (CR 608.2b: a land that is gone, or
@@ -3190,6 +3210,21 @@ function runEffect(
                       effect: effect.atBeginning,
                     },
                   }),
+              // Illusionist's Gambit (CR 508.1c, 508.1d, 611.2c): "those creatures" are fixed now; what binds them is put in place as that combat begins (`rules/flow.ts`).
+              ...(effect.those === undefined
+                ? {}
+                : {
+                    those: {
+                      objects: resolveObjects(state, effect.those.objects, ctx, targets),
+                      controller: res.controller,
+                      ...(effect.those.attackIfAble === true
+                        ? { attackIfAble: true as const }
+                        : {}),
+                      ...(effect.those.cantAttackYou === true
+                        ? { cantAttackYou: true as const }
+                        : {}),
+                    },
+                  }),
             },
             ...(state.turn.addedPhases ?? []),
           ],
@@ -3222,7 +3257,7 @@ function runEffect(
       return runPlayerSpellsCostLess(state, effect, ctx, targets);
     case 'spellEntersWithCounters':
       // CR 614.1c, 122.6 (Yuna, Grand Summoner): the spell that was cast remembers the counters its permanent enters with (rules/spell-enters-counters.ts).
-      return runSpellEntersWithCounters(state, effect, ctx);
+      return runSpellEntersWithCounters(state, effect, ctx, targets);
     case 'nextSpellPayLife':
       // CR 118.9, 601.2b: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (rules/next-spell-life.ts).
       return runNextSpellPayLife(state, res);
@@ -3985,9 +4020,14 @@ function runEffect(
       );
     }
 
-    case 'noMaxHandSizeForGame':
-      // CR 402.2, 514.1: no maximum hand size for the rest of the game; the cleanup step reads it (`hasNoMaximumHandSize`).
-      return done(patchSeat(state, res.controller, { noMaximumHandSize: true }));
+    case 'noMaxHandSizeForGame': {
+      // CR 402.2, 514.1: no maximum hand size for the rest of the game; the cleanup step reads it (`maximumHandSizeOf`). CR 613.7, 613.11: the effect's timestamp orders
+      // it with a permanent's "Your maximum hand size is ..." (a later effect of the kind replaces an earlier one).
+      const [at, stamped] = allocateTimestamp(state);
+      return done(
+        patchSeat(stamped, res.controller, { noMaximumHandSize: true, noMaximumHandSizeAt: at }),
+      );
+    }
 
     case 'gainEnergy': {
       // CR 107.14, 122.1 (D-209): "You get {E}{E}": the player puts that many energy counters on themselves.
@@ -4200,7 +4240,13 @@ function runEffect(
     case 'phaseOut': {
       // CR 702.26a-g (D-234): the permanents phase out, with what is attached to them (rules/phasing.ts).
       const ids = resolveObjects(state, effect.objects, ctx, targets);
-      return { ...done(phaseOut(state, ids)), performed: ids.length > 0 ? 1 : 0 };
+      const phased = phaseOut(state, ids);
+      const before = new Set(state.phased ?? []);
+      const moved = (phased.phased ?? []).filter((id) => !before.has(id));
+      return {
+        ...done(phased, moved.length > 0 ? [{ kind: 'phasedOut', objects: moved }] : []),
+        performed: ids.length > 0 ? 1 : 0,
+      };
     }
 
     case 'becomeCopyOfCard':

@@ -7,7 +7,7 @@
  * a kind has no handler.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Cost, TargetSpec, Trigger } from '../ast/types';
+import type { Cost, Keyword, TargetSpec, Trigger } from '../ast/types';
 import type { CardType, Color, PartyType } from '../characteristics';
 import type { CardId, DecisionId, ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
@@ -878,6 +878,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * accepted. Declining every offer casts the spell with no gift. `cancel` is a legal answer and rewinds the cast (CR 733).
    */
   readonly giftTo?: SeatId;
+  /** For purpose `'gift'`: what the gift is (CR 702.174d to 702.174i), so that the question can say what the opponent would get. */
+  readonly gift?: Extract<Keyword, { kind: 'gift' }>['gift'];
   /**
    * For purpose `'costChoice'` (D-181, CR 118.8, 601.2b): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}"
    * asks the caster which way to pay, after the kicker and replicate questions and the gift, before X and the targets. `source` is the spell on

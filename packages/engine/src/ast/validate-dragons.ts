@@ -16,6 +16,7 @@ import {
   checkEffect,
   checkEnumList,
   checkFilter,
+  checkObjectSelector,
   checkPlayerSelector,
   checkRef,
   declareTargets,
@@ -686,13 +687,26 @@ export function checkDragonsEffect(
         scope.exertTrigger !== true &&
         scope.combatDamageTrigger !== true &&
         scope.mainPhaseTrigger !== true &&
-        scope.combatPhaseCondition !== true
+        scope.combatPhaseCondition !== true &&
+        scope.combatStepSpell !== true
       ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
+          'an additional combat phase is added by a triggered ability of an attack or of combat damage, one that checks that it is your main phase, an effect that checks that it is your combat phase, or a spell cast only during a step of combat',
         );
+      }
+      // Illusionist's Gambit (CR 508.1c, 508.1d): what binds "those creatures" in that combat: a set of permanents, and at least one of the requirement and the restriction.
+      if (e.those !== undefined) {
+        checkObjectSelector(e.those.objects, `${path}.those.objects`, scope, out);
+        for (const flag of ['attackIfAble', 'cantAttackYou'] as const) {
+          if (e.those[flag] !== undefined && e.those[flag] !== true) {
+            issue(out, `${path}.those.${flag}`, `${flag} must be true when present`);
+          }
+        }
+        if (e.those.attackIfAble !== true && e.those.cantAttackYou !== true) {
+          issue(out, `${path}.those`, 'those needs attackIfAble or cantAttackYou');
+        }
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the
       // ability that created it (CR 603.7c: that ability is gone when it triggers).
@@ -1324,6 +1338,20 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
       );
     }
   });
+  // CR 508.5: a player named as defending player ("cards in defending player's hand", Mr. Foxglove; "their graveyard", Guiltfeeder) exists only for an attacking creature,
+  // so it is read in a trigger of one; elsewhere there is no defending player and the count would be of nobody's cards.
+  face.abilities.forEach((a, i) => {
+    if (!JSON.stringify(a ?? null).includes('"owner":{"kind":"defendingPlayer"}')) return;
+    const inner = a?.kind === 'static' && a.static?.kind === 'grantAbility' ? a.static.ability : a;
+    const kind = inner?.kind === 'triggered' ? inner.trigger?.kind : undefined;
+    if (kind !== 'attacks' && kind !== 'attackBatch' && kind !== 'becomesUnblocked') {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        "the owner 'defendingPlayer' needs a triggered ability of an attacking creature",
+      );
+    }
+  });
   // CR 111.4, 113.1 (Wake the Dragon): a token a spell creates has abilities of its own, triggered ones too: they are checked as the abilities they are, and the words of the
   // spell are read without them.
   const withoutTokenAbilities = (value: unknown): string =>
@@ -1342,6 +1370,7 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
   if (
     spell.includes('"controller":"triggerPlayer"') ||
     spell.includes('"controller":"defendingPlayer"') ||
+    spell.includes('"owner":{"kind":"defendingPlayer"}') ||
     spell.includes('"notRepeatedThisTurn"') ||
     spell.includes('"notRepeatedBySource"')
   ) {

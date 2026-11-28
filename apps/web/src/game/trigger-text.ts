@@ -365,22 +365,26 @@ function tappedThings(filter: ObjectFilter, plural: boolean): string | null {
   return REGULAR_NOUNS.has(noun) ? [`${noun}s`, ...rest].join(' ') : null;
 }
 
-const WHOSE_STEP: Readonly<Record<'you' | 'each' | 'opponent' | 'monarch', string>> = {
+type StepOwner = Extract<Trigger, { kind: 'step' }>['whose'];
+
+const WHOSE_STEP: Readonly<Record<StepOwner, string>> = {
   you: 'your',
   monarch: "the monarch's",
   each: "each player's",
   opponent: "each opponent's",
+  // Tenuous Truce (CR 303.4m): the player the Aura is attached to.
+  enchantedPlayer: "enchanted player's",
 };
 
 /** "At the beginning of combat on your turn", "At the beginning of each opponent's upkeep". */
-function stepWording(step: TriggerStep, whose: 'you' | 'each' | 'opponent' | 'monarch'): string {
+function stepWording(step: TriggerStep, whose: StepOwner): string {
   // The two steps that are not "<player>'s <step>" read "on <player's> turn".
   if (step === 'beginCombat' || step === 'combatEnd') {
     const word = step === 'beginCombat' ? 'combat' : 'the end of combat';
     if (whose === 'each') {
       return `At the beginning of each ${step === 'beginCombat' ? 'combat' : 'end of combat'}`;
     }
-    return `At the beginning of ${word} on ${whose === 'you' ? 'your' : whose === 'monarch' ? "the monarch's" : "each opponent's"} turn`;
+    return `At the beginning of ${word} on ${WHOSE_STEP[whose]} turn`;
   }
   const w = STEP_WORDS[step];
   if (whose === 'each') return `At the beginning of each ${w}`;
@@ -744,6 +748,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'crimeCommitted':
       // D-464 (CR 700.13): a spell or ability of the player that targets an opponent, what an opponent controls or a card in an opponent's graveyard.
       return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
+    case 'givesGift':
+      // CR 702.174c: an instant or sorcery of the player whose gift cost was paid resolves, or the gift ability of their permanent resolves.
+      return `Whenever ${trigger.who === 'you' ? 'you give' : `${BY_WORDS[trigger.who]} gives`} a gift`;
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
       return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
@@ -827,6 +834,19 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           if (trigger.who === 'any') return 'Whenever a player attacks you';
         }
         return null;
+      }
+      // Tenuous Truce (CR 303.4m, 508.1b, 508.6): the attacks between the Aura's controller and the player it enchants.
+      if (trigger.attackedEnchantedPlayerOrPlaneswalkers === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1 && trigger.what === undefined
+          ? 'Whenever you attack enchanted player or a planeswalker they control'
+          : null;
+      }
+      if (trigger.byEnchantedPlayer === true) {
+        return trigger.attackedYouOrPlaneswalkers === true &&
+          trigger.atLeast === 1 &&
+          trigger.what === undefined
+          ? 'Whenever enchanted player attacks you or a planeswalker you control'
+          : null;
       }
       // Loot Dispute (CR 726.1, 508.1b): "Whenever you attack the player who has the initiative".
       if (trigger.attackedInitiativeHolder === true) {

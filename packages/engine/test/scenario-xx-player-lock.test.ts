@@ -75,6 +75,73 @@ const lifeLockOnly = singleFace({
   },
 });
 
+const TOKEN_PHASE = 'SYNTHETIC Token Phase';
+const tokenPhase = singleFace({
+  name: TOKEN_PHASE,
+  manaCost: ['W'],
+  types: ['instant'],
+  colors: ['W'],
+  colorIdentity: ['W'],
+  oracleText:
+    'SYNTHETIC fixture: create a 2/2 white Bird creature token, then all permanents you control phase out.',
+  spell: {
+    effect: {
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'createToken',
+          token: {
+            kind: 'custom',
+            definition: {
+              name: 'Bird',
+              manaCost: null,
+              supertypes: [],
+              types: ['creature'],
+              subtypes: ['Bird'],
+              colors: ['W'],
+              power: 2,
+              toughness: 2,
+              loyalty: null,
+              defense: null,
+              oracleText: '',
+              abilities: [],
+            },
+          },
+          count: 1,
+        },
+        {
+          kind: 'phaseOut',
+          objects: { kind: 'each', filter: { zone: 'battlefield', controller: 'you' } },
+        },
+      ],
+    },
+  },
+});
+
+describe('a phased-out token (CR 702.26d)', () => {
+  test("continues to exist while phased out, and phases in as its controller's untap step begins", () => {
+    const g = scenario()
+      .define(tokenPhase)
+      .seat(0)
+      .hand(TOKEN_PHASE)
+      .battlefield('Plains')
+      .library('Island', { count: 6 })
+      .seat(1)
+      .library('Island', { count: 6 })
+      .build();
+
+    g.act(0).cast(TOKEN_PHASE, { pay: true });
+    g.passAll();
+    g.expect.zone('Bird', 'phased', { seat: 0 });
+    g.expect.zone('Plains', 'phased', { seat: 0 });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.zone('Bird', 'phased', { seat: 0 });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.zone('Bird', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+});
+
 describe('player lock and mass phasing (D-607)', () => {
   test('protects the opponent, prevents life loss, phases out their nonlands and expires as their next turn begins', () => {
     const g = scenario()

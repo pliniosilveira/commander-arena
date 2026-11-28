@@ -523,6 +523,7 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
         d.giftTo === d.seat ? 'you' : 'opponent',
         spell?.types ?? [],
         d.sourceName,
+        d.gift,
       ),
       yes: 'Gift',
       no: 'No gift',

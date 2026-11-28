@@ -67,6 +67,7 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'triggerSources':
     case 'triggerAttackers':
     case 'convokers':
+    case 'removedFromCombat':
       return 'their';
     case 'sacrificedCost':
       // D-133: the permanent sacrificed to pay the cost ("the sacrificed creature's power").
@@ -118,6 +119,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return 'it';
     case 'triggerSources':
     case 'triggerAttackers':
+    case 'removedFromCombat':
       return 'those creatures';
     case 'convokers':
       return 'each creature that convoked this spell';
@@ -229,6 +231,9 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of nontoken creatures destroyed this way';
     case 'playersDrew':
       return 'the number of players who drew a card this way';
+    case 'cardsDrawn':
+      // Communal Brewing (CR 121.1): "for each card drawn this way".
+      return 'the number of cards drawn this way';
     case 'tapped':
       // D-139: "the number of Myr tapped this way".
       return 'the number of permanents tapped this way';
@@ -260,6 +265,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'searched':
       // Lorehold group 1: "If you search your library this way".
       return 'the number of times you searched your library this way';
+    case 'playersAccepted':
+      // Tempt with Bunnies (CR 101.4): "for each opponent who does".
+      return 'the number of players who accepted';
     case 'damageDealt':
       // Issue 159: "equal to the damage dealt this way".
       return 'the damage dealt this way';
@@ -424,6 +432,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'minus':
       // D-321 (CR 107.1b): "the number of cards in your hand minus 4", never below 0.
       return `${amountPhrase(amount.of, ctx)} minus ${amount.by}`;
+    case 'subtract':
+      // Mr. Foxglove (CR 107.1b): one amount less another, never below 0.
+      return `${amountPhrase(amount.of[0], ctx)} minus ${amountPhrase(amount.of[1], ctx)}`;
     case 'sum':
       return amount.of.map((part) => amountPhrase(part, ctx)).join(' plus ');
     case 'extreme':

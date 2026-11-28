@@ -585,6 +585,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exerted' });
     }
     case 'crimeCommitted':
+    case 'givesGift':
     case 'activatesAbility':
     case 'tokenCreated': {
       // "Whenever you commit a crime" (Gisa deck, D-464, CR 700.13), "whenever you create a token" (D-465, CR 111.2): the player is relative to the controller.
@@ -609,7 +610,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const ofSource = sourceNoun === undefined ? undefined : lowerFilter(sourceNoun);
       if (ofSource !== undefined && !ofSource.ok) return ofSource;
       return ok({
-        kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
+        kind: t.event as 'crimeCommitted' | 'givesGift' | 'tokenCreated' | 'activatesAbility',
         who,
         ...(xCost ? { xCost: true as const } : {}),
         ...(anySource ? { anySource: true as const } : {}),
@@ -698,6 +699,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         const blocked = missingFeatures(['trigger:stepMonarch']);
         if (blocked.length > 0) return { ...failure(t), needs: blocked };
         return ok({ kind: 'step', step: t.event, whose: 'monarch' });
+      }
+      // CR 303.4m, 603.2b (Tenuous Truce): "At the beginning of enchanted opponent's end step": the engine's `step` of the player the Aura is attached to.
+      if (t.enchantedPlayerTurn === true) {
+        const blocked = missingFeatures(['trigger:stepEnchantedPlayer']);
+        if (blocked.length > 0) return { ...failure(t), needs: blocked };
+        return ok({ kind: 'step', step: t.event, whose: 'enchantedPlayer' });
       }
       const whose = whoseOf(t.actor);
       if (whose === null) return failure(t);
@@ -839,12 +846,21 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         if (!filter.ok) return filter;
         what = filter.value;
       }
+      // Tenuous Truce (CR 303.4m, 508.1b, 508.6): the attacks between the Aura's controller and the player it enchants.
+      if (t.attackedEnchantedPlayerOrPlaneswalkers === true || t.byEnchantedPlayer === true) {
+        const blocked = missingFeatures(['trigger:attackBatchEnchantedPlayer']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       return ok({
         kind: 'attackBatch',
         who,
         atLeast: t.atLeast,
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
+        ...(t.attackedEnchantedPlayerOrPlaneswalkers === true
+          ? { attackedEnchantedPlayerOrPlaneswalkers: true as const }
+          : {}),
+        ...(t.byEnchantedPlayer === true ? { byEnchantedPlayer: true as const } : {}),
         ...(t.attackedYou === true ? { attackedYou: true as const } : {}),
         ...(t.attackedYouOrPlaneswalkers === true
           ? { attackedYouOrPlaneswalkers: true as const }
@@ -1110,6 +1126,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
+      // CR 702.174c: the player who gave the gift.
+      'givesGift',
       'activatesAbility',
       'tokenCreated',
       'scries',
@@ -2654,6 +2672,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:castNth',
   'trigger:castFirstOfKind',
   'trigger:crimeCommitted',
+  'trigger:givesGift',
   'trigger:tokenCreated',
   'trigger:activatesAbility',
   'trigger:activatesAbilityOfSource',

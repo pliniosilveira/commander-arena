@@ -355,26 +355,31 @@ export function lowerAngelStatic(
       case 'cantCastThis': {
         // CR 101.2, 500.1: the card can't be cast during the first N turns of the player who would cast it.
         if (subject.det !== 'self' || effects.length !== 1) return failure(ability);
-        if ((effect.turns === undefined) === (effect.unlessOpponentLostLife === undefined)) {
-          return failure(ability);
-        }
+        const ways = [effect.turns, effect.unlessOpponentLostLife, effect.onlyDuring].filter(
+          (w) => w !== undefined,
+        );
+        if (ways.length !== 1) return failure(ability);
         const blocked = missingFeatures([
           'ability:static',
           'static:cantCastThis',
           'ability:staticCondition',
           ...(effect.unlessOpponentLostLife === true
             ? (['condition:aPlayerLostLifeThisTurn', 'condition:not'] as const)
-            : (['condition:ownTurnNumber'] as const)),
+            : effect.onlyDuring !== undefined
+              ? (['condition:duringStep', 'condition:yourTurn', 'condition:not'] as const)
+              : (['condition:ownTurnNumber'] as const)),
         ]);
         if (blocked.length > 0) return failure(ability, blocked);
-        // CR 119.3, 102.2: "unless an opponent lost life this turn" is the negation of the condition "an opponent lost life this turn".
         const condition: Condition =
-          effect.turns === undefined
-            ? {
-                kind: 'not',
-                term: { kind: 'aPlayerLostLifeThisTurn', atLeast: 1, opponent: true },
-              }
-            : { kind: 'ownTurnNumber', compare: { cmp: 'atMost', value: effect.turns } };
+          effect.onlyDuring !== undefined
+            ? castOnlyDuring(effect.onlyDuring)
+            : effect.turns === undefined
+              ? // CR 119.3, 102.2: "unless an opponent lost life this turn" is the negation of the condition "an opponent lost life this turn".
+                {
+                  kind: 'not',
+                  term: { kind: 'aPlayerLostLifeThisTurn', atLeast: 1, opponent: true },
+                }
+              : { kind: 'ownTurnNumber', compare: { cmp: 'atMost', value: effect.turns } };
         abilities.push({ kind: 'static', static: { kind: 'cantCastThis' }, condition });
         break;
       }
@@ -383,6 +388,24 @@ export function lowerAngelStatic(
     }
   }
   return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
+ * "Cast ~ only during the declare blockers step on an opponent's turn." (Illusionist's Gambit; CR 101.2, 601.3, 102.2): the card can't be cast unless it is that step and, with
+ * `opponentsTurn`, the active player is not the player who would cast it (every other player is an opponent in a free-for-all game, CR 102.2): `cantCastThis` while that is not so.
+ */
+function castOnlyDuring(only: {
+  readonly step: 'declareAttackers' | 'declareBlockers';
+  readonly opponentsTurn?: true;
+}): Condition {
+  const during: Condition = { kind: 'duringStep', step: only.step };
+  return {
+    kind: 'not',
+    term:
+      only.opponentsTurn === true
+        ? { kind: 'and', terms: [during, { kind: 'not', term: { kind: 'yourTurn' } }] }
+        : during,
+  };
 }
 
 /** Features the lowerings of this file can name, for the dimension test. */
@@ -402,6 +425,8 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:combatCreatureLimit',
   'static:cantCastThis',
   'condition:ownTurnNumber',
+  'condition:duringStep',
+  'condition:yourTurn',
   'replacement:othersEnterWithCounters',
   'replacement:lifeGainBonus',
   'replacement:lifeGainDouble',

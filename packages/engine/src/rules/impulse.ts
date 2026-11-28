@@ -275,6 +275,7 @@ function bakeAmount(amount: Amount, ids: readonly ObjectId[]): Amount {
     case 'minus':
       return { ...amount, of: bakeAmount(amount.of, ids) };
     case 'difference':
+    case 'subtract':
       return { ...amount, of: [bakeAmount(amount.of[0], ids), bakeAmount(amount.of[1], ids)] };
     case 'extreme':
     case 'sum':

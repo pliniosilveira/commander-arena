@@ -526,12 +526,15 @@ export function lowerAmount(
         }
         // Cavern-Hoard Dragon (CR 109.4, 608.2c): "for each artifact that player controls" after "deals combat damage to a player": the player the trigger is about, read as the count is made.
         const triggerPlayer = controller.noun.det === 'triggerActor';
+        // Mr. Foxglove (CR 508.5): "the number of cards in defending player's hand": the hand of the player the attacking creature attacks.
+        const defending = controller.noun.det === 'defendingPlayer';
         if (
           controller.orPlaneswalkerController === true ||
           (controller.noun.det !== 'target' &&
             controller.noun.det !== 'anaphor' &&
             !itsController &&
-            !triggerPlayer)
+            !triggerPlayer &&
+            !defending)
         ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
@@ -539,7 +542,13 @@ export function lowerAmount(
         if (!named.ok) return named;
         if (
           named.value.kind !==
-          (itsController ? 'controllerOf' : triggerPlayer ? 'triggerPlayer' : 'target')
+          (itsController
+            ? 'controllerOf'
+            : triggerPlayer
+              ? 'triggerPlayer'
+              : defending
+                ? 'defendingPlayer'
+                : 'target')
         ) {
           return { ok: false, needs: [], at: amount.span, rule };
         }
@@ -844,6 +853,12 @@ export function lowerAmount(
       if (!first.ok) return first;
       const second = lowerAmount(other, ctx, rule);
       if (!second.ok) return second;
+      // Mr. Foxglove (CR 107.1b): "... minus ...": the first less the second, floored at 0.
+      if (amount.ordered === true) {
+        const less = needs('subtract');
+        if (less !== null) return less;
+        return { ok: true, value: { kind: 'subtract', of: [first.value, second.value] }, rule };
+      }
       return { ok: true, value: { kind: 'difference', of: [first.value, second.value] }, rule };
     }
     case 'extreme': {

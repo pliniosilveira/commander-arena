@@ -179,8 +179,11 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const reprotected: { readonly object: GameObject; readonly seat: SeatId }[] = []; // CR 704.5y
 
   for (const obj of Object.values(state.objects)) {
-    // CR 704.5d: a token in a zone other than the battlefield; an emblem is not one of those tokens, it stays in the command zone (CR 114.5, D-201).
-    if (obj.token && obj.zone !== 'battlefield' && obj.emblem !== true) cease.push(obj);
+    // CR 704.5d: a token in a zone other than the battlefield; an emblem is not one of those tokens, it stays in the command zone (CR 114.5, D-201). A phased-out
+    // token is still on the battlefield (CR 702.26d: "Tokens continue to exist on the battlefield while phased out"), though the engine keeps it apart.
+    if (obj.token && obj.zone !== 'battlefield' && obj.zone !== 'phased' && obj.emblem !== true) {
+      cease.push(obj);
+    }
     // CR 704.5e (D-654): a copy of a card is in a zone other than the stack or the battlefield (the copy an effect made in exile and that was not cast).
     if (obj.cardCopy === true && obj.zone !== 'stack' && obj.zone !== 'battlefield')
       cease.push(obj);

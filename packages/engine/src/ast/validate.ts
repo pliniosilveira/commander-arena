@@ -126,9 +126,15 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       } else if (k.player !== undefined) {
         // Issue 159 (CR 702.5a, 702.5d): "Enchant player": a player, never a permanent, so there is nothing to describe.
         if (k.player !== true) issue(out, `${path}.player`, 'player must be true when present');
+        if (k.opponent !== undefined && k.opponent !== true) {
+          issue(out, `${path}.opponent`, 'opponent must be true when present');
+        }
         if (Object.keys(k.filter).length > 0) {
           issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
         }
+      } else if (k.opponent !== undefined) {
+        // CR 702.5a (Tenuous Truce): "Enchant opponent" is a player who is an opponent: it goes with `player` only.
+        issue(out, `${path}.opponent`, 'opponent goes only with player ("Enchant opponent")');
       } else if (k.filter.zone === 'graveyard') {
         // CR 702.5a, 303.4a (Animate Dead): "Enchant creature card in a graveyard": the spell targets such a card, which the Aura is attached to while it stays there.
         checkFilter(k.filter, `${path}.filter`, out);
@@ -735,6 +741,21 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       ) {
         issue(out, `${path}.from`, "from lists 'hand' and 'libraryTop', each at most once");
       }
+      // CR 118.9 (Tamiyo, Field Researcher's emblem): the permission with no limit is "cast spells from your hand without paying their mana costs" only.
+      if (
+        s.unlimited !== undefined &&
+        (s.unlimited !== true ||
+          s.alternative !== 'free' ||
+          s.from === undefined ||
+          s.from.length !== 1 ||
+          s.from[0] !== 'hand')
+      ) {
+        issue(
+          out,
+          `${path}.unlimited`,
+          "a permission with no limit is 'free', from the 'hand' only",
+        );
+      }
       checkFilter(s.spells, `${path}.spells`, out);
       if (
         filterSome(
@@ -924,6 +945,11 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'noMaximumHandSize':
     case 'beginGameOnBattlefield':
+      break;
+    case 'maximumHandSize':
+      // CR 402.2: a number of cards, a whole number (0 is a hand that is emptied each cleanup step).
+      if (!isCount(s.size))
+        issue(out, `${path}.size`, 'the maximum hand size is a whole number, 0 or more');
       break;
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
@@ -1583,6 +1609,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // CR 701.38a: "whenever players finish voting": no parameter, any vote of any spell or ability.
       break;
     case 'crimeCommitted':
+    case 'givesGift':
     case 'tokenCreated':
     case 'activatesAbility':
     case 'scries':
@@ -1969,7 +1996,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           `alsoStep must be another known step, not ${String(t.alsoStep)}`,
         );
       }
-      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch'])) {
+      if (!isOneOf(t.whose, ['you', 'each', 'opponent', 'monarch', 'enchantedPlayer'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
       break;
@@ -2196,6 +2223,8 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'castSpell':
     case 'becomesTarget':
     case 'crimeCommitted':
+    // CR 702.174c: the spell or gift ability that gave the gift.
+    case 'givesGift':
     case 'activatesAbility':
     case 'entersCausesTrigger':
       return 'stack';
@@ -2714,6 +2743,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       if (a.optional !== undefined && typeof a.optional !== 'boolean') {
         issue(out, `${path}.optional`, 'optional must be a boolean');
       }
+      // CR 702.174b, 702.174c: the gift triggered ability is the engine's own, derived from the Gift keyword; a card never writes it.
+      if (a.giftAbility !== undefined) {
+        issue(out, `${path}.giftAbility`, 'the gift ability is derived from the Gift keyword');
+      }
       // D-256 (CR 603.2h): "Do this only once each turn."
       if (a.doOnlyOnceEachTurn !== undefined) {
         if (a.doOnlyOnceEachTurn !== true) {
@@ -2808,7 +2841,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         if (a.interveningIf.kind === 'objectMatches' && kindOf(a.interveningIf.of) === 'attached') {
           checkAttachedIf(a.interveningIf, `${path}.interveningIf`, out);
         } else {
-          checkCondition(a.interveningIf, `${path}.interveningIf`, out);
+          // CR 603.4: "if that player has no cards in hand" reads the player the event is about (`triggerPlayerStat`), which only such a trigger has.
+          checkCondition(a.interveningIf, `${path}.interveningIf`, out, {
+            triggerPlayer: triggerHasPlayer(a.trigger),
+          });
         }
         // D-120: Evolve's comparison reads the creature that entered, so only an enters trigger has one.
         if (
@@ -3189,8 +3225,14 @@ export function validateAbility(a: Ability): AstIssue[] {
 
 // ---- Spell text (CR 608)
 
-function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
+function checkSpellText(
+  s: SpellText,
+  path: string,
+  out: AstIssue[],
+  combatStepSpell = false,
+): void {
   const xAllowed = s.x === true;
+  const combat = combatStepSpell ? { combatStepSpell: true } : {};
   const hasModes = s.modes !== undefined;
   if (s.x !== undefined && typeof s.x !== 'boolean') issue(out, `${path}.x`, 'x must be a boolean');
 
@@ -3205,7 +3247,7 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
       s.modes,
       s.chooseModes,
       path,
-      (targets) => ({ owner: 'spell', targets, xAllowed, ...HOOKS }),
+      (targets) => ({ owner: 'spell', targets, xAllowed, ...combat, ...HOOKS }),
       out,
       false,
       true,
@@ -3241,10 +3283,32 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
     issue(out, `${path}.x`, 'a target with mana value X needs x: true (the spell announces an X)');
   }
   if (s.effect !== undefined) {
-    checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
+    checkEffect(
+      s.effect,
+      `${path}.effect`,
+      { owner: 'spell', targets, xAllowed, ...combat, ...HOOKS },
+      out,
+    );
   } else if (targets.size > 0) {
     issue(out, `${path}.targets`, 'targets are declared but there is no effect to use them');
   }
+}
+
+/**
+ * Illusionist's Gambit (CR 101.2, 601.3, 500.2): the face can be cast only during a step of combat: it has a `cantCastThis` whose condition is "not X" where X holds only during a
+ * combat step (`duringStep`, alone or as a term of an `and`). The spell then resolves in that step, since the stack empties before a step ends.
+ */
+function castOnlyDuringCombatStep(face: CardFace): boolean {
+  const needsStep = (c: Condition | undefined): boolean =>
+    c?.kind === 'duringStep' ||
+    (c?.kind === 'and' && Array.isArray(c.terms) && c.terms.some((t) => t?.kind === 'duringStep'));
+  return face.abilities.some(
+    (a) =>
+      a.kind === 'static' &&
+      a.static?.kind === 'cantCastThis' &&
+      a.condition?.kind === 'not' &&
+      needsStep(a.condition.term),
+  );
 }
 
 /** A spell's resolution effect exists: either `effect`, or modes that each carry one. */
@@ -3447,7 +3511,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   }
 
   if (face.spell !== null) {
-    checkSpellText(face.spell, `${path}.spell`, out);
+    checkSpellText(face.spell, `${path}.spell`, out, castOnlyDuringCombatStep(face));
     // D-135: a gift-conditioned target is used only in the matching promised or unpromised branch.
     for (const id of giftTargetsUsedUnguarded(face.spell)) {
       issue(

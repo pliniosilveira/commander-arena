@@ -668,6 +668,11 @@ function occurrences(
       return event.kind === 'crimeCommitted'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'givesGift':
+      // CR 702.174c: the spell or gift ability that gave the gift is the subject, the player who gave it the player.
+      return event.kind === 'giftGiven'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'entersCausesTrigger':
       // CR 603.2, 603.6a (Aboleth Spawn): the triggered ability on the stack is the subject, the permanent that entered (its source) is what the filter reads; the player is the one who
       // controls it, which is the controller of the ability it caused.
@@ -1183,6 +1188,10 @@ function matches(
           );
         })
       );
+    case 'givesGift':
+      // CR 702.174c: the player who gave the gift, relative to the controller of this ability.
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      return trigger.who !== 'opponent' || occ.seat !== candidate.controller;
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -1324,6 +1333,22 @@ function matches(
       ) {
         return false;
       }
+      // CR 303.4m, 508.1b, 508.6 (Tenuous Truce): "you attack enchanted opponent or a planeswalker they control": a creature was declared as attacking the Aura's player or a
+      // planeswalker that player controls (`attackersAt`).
+      if (
+        trigger.attackedEnchantedPlayerOrPlaneswalkers === true &&
+        (candidate.attachedToPlayer === undefined ||
+          !(occ.attackersAt ?? []).includes(candidate.attachedToPlayer))
+      ) {
+        return false;
+      }
+      // CR 303.4m, 508.1 (Tenuous Truce): "when they attack": the player the Aura enchants declared the attackers.
+      if (
+        trigger.byEnchantedPlayer === true &&
+        (candidate.attachedToPlayer === undefined || occ.seat !== candidate.attachedToPlayer)
+      ) {
+        return false;
+      }
       // CR 508.1b: "Whenever an opponent attacks you": the controller of the ability was declared as attacked, as a player.
       if (trigger.attackedYou === true && !(occ.attacked ?? []).includes(candidate.controller)) {
         return false;
@@ -1431,6 +1456,10 @@ function matches(
       if (trigger.whose === 'you') return occ.seat === candidate.controller;
       // CR 725.2, 603.2b: the active player is the monarch as the step begins.
       if (trigger.whose === 'monarch') return state.monarch !== null && occ.seat === state.monarch;
+      // CR 303.4m, 603.2b (Tenuous Truce): "enchanted opponent's end step": the turn of the player the Aura is attached to.
+      if (trigger.whose === 'enchantedPlayer') {
+        return candidate.attachedToPlayer !== undefined && occ.seat === candidate.attachedToPlayer;
+      }
       return trigger.whose === 'each' || occ.seat !== candidate.controller;
     case 'drawn':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
@@ -1590,6 +1619,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
+    case 'giftGiven': // CR 702.174c
     case 'abilityActivated':
     case 'abilityTriggered': // CR 603.2 (Aboleth Spawn): "causes a triggered ability to trigger"
     case 'doorUnlocked': // CR 709.5h
@@ -1657,6 +1687,9 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
       if (e.fromZone === 'battlefield' && e.component !== true) members.push(e.from);
     } else if (e?.kind === 'tokenCreated') {
       members = members.filter((m) => m !== e.object);
+    } else if (e?.kind === 'phasedOut') {
+      // CR 702.26d, 603.2: a permanent that phased out was on the battlefield for the events before.
+      members.push(...e.objects.filter((m) => !members.includes(m)));
     }
   }
   return members;
@@ -1821,6 +1854,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
       }
     } else if (event.kind === 'tokenCreated') {
       members = [...members, event.object].sort(byAge);
+    } else if (event.kind === 'phasedOut') {
+      // CR 702.26b: from here on it is treated as though it does not exist, and its abilities trigger on nothing.
+      members = members.filter((m) => !event.objects.includes(m));
     }
     if (!isRelevant(event)) continue;
     const lore = loreChange(state, events, eventIndex);
@@ -2334,7 +2370,9 @@ function findDelayedTriggers(
       remaining.push(delayed);
       continue;
     }
-    for (const occurrence of delayed.repeat === true ? matched : matched.slice(0, 1)) {
+    for (const occurrence of delayed.repeat === true && delayed.oncePerEvents !== true
+      ? matched
+      : matched.slice(0, 1)) {
       found.push({
         source: delayed.source,
         controller: delayed.controller,

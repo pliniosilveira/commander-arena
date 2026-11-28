@@ -264,6 +264,8 @@ describe('the dimensions', () => {
       // "Once during each of your turns, you may cast a spell ... for an alternative cost" (CR 118.9, 601.2b).
       'castOnceEachTurn',
       'noMaximumHandSize',
+      // Twenty-Toed Toad: "Your maximum hand size is twenty." (CR 402.2, 613.11).
+      'maximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',
       // "The monarch controls enchanted creature." (CR 613.1b, 725.1).

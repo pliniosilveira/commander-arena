@@ -194,6 +194,8 @@ import { OPPONENT_REVEALS_PUT_LOWERINGS } from './opponent-reveals-put';
 import { EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS, EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
+import { peaceOfferingLowerings } from './peace-offering';
+import { lookTopMayRevealCreateLowering } from './peace-offering-fisher';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PLAYER_CHOICES_LOWERINGS } from './player-choices';
@@ -1686,6 +1688,11 @@ function playerVerb(
       if (who?.kind !== 'noun') return failure(clause);
       const player = playerSelectorOf(who, ctx);
       if (!player.ok) return player;
+      // Mr. Foxglove (CR 608.2c): "If you didn't draw cards this way" reads the draws of the text, which must all be the controller's.
+      if (verb === 'draw') {
+        ctx.drewBefore =
+          player.value.kind === 'you' && ctx.drewBefore !== 'other' ? 'you' : 'other';
+      }
       if (verb === 'shuffle') {
         return { ok: true, value: [{ kind: 'shuffle', player: player.value }], rule: clause.rule };
       }
@@ -3368,6 +3375,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Ahoy Mateys deck, group 10: "Each creature that convoked this spell connives.", "Each player reveals the top card of their library. For each nonland card revealed this way, you create a Map token."
   ...AHOY_G10_LOWERINGS,
   revealEachTokenLowering(lowerCreateToken),
+  ...peaceOfferingLowerings(lowerCreateToken),
+  // Peace Offering deck, group F (Fisher's Talent): "Look at the top card of your library. You may reveal it if it's a land card. Create ... if you revealed it this way."
+  lookTopMayRevealCreateLowering(lowerCreateToken),
   // Ahoy Mateys deck, group 8: "Until end of turn, each creature card in your graveyard gains "Escape-{3}{B}, Exile four other cards from your graveyard."".
   ...AHOY_G8_LOWERINGS,
   ...THE_TOKEN_LOWERINGS,
@@ -3578,7 +3588,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                           test === 'putCountersThisWay' ||
                           test === 'discardedSpellThisWay' ||
                           test === 'destroyedThisWay' ||
-                          test === 'searchedThisWay'
+                          test === 'searchedThisWay' ||
+                          test === 'notDrewThisWay'
                         ? 'thisWayAtLeast'
                         : test === 'otherAttachedToHost' || test === 'xAtLeast'
                           ? 'amountIs'

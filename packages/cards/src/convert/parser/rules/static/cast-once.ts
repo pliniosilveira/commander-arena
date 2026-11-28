@@ -84,3 +84,51 @@ export const STATIC_CAST_ONCE_EACH_TURN = defineRule<IrStatic>({
     };
   },
 });
+
+const FREE_ID = 'static.cast-from-hand-free';
+
+/**
+ * `static.cast-from-hand-free`: "You may cast spells from your hand without paying their mana costs." (the emblem of Tamiyo, Field Researcher; CR 118.9, 118.9a, 601.2b, 601.2f, 107.3b): an
+ * alternative cost a static ability gives every spell its controller casts from their hand, in any turn and as often as they like (at the timing of each spell's types, CR 601.3; additional
+ * costs are paid, CR 118.9d; an {X} is 0, CR 107.3b). The engine's `castOnceEachTurn` with `unlimited`. Not read: a kind of spell, another zone, "a spell", another cost, "this turn", more text.
+ */
+export const STATIC_CAST_FROM_HAND_FREE = defineRule<IrStatic>({
+  id: FREE_ID,
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 118.9 (Costs)',
+    'CR 118.9a (Costs)',
+    'CR 601.2b (Casting Spells)',
+    'CR 601.2f (Casting Spells)',
+    'CR 107.3b (Numbers and Symbols)',
+  ],
+  examples: ['You may cast spells from your hand without paying their mana costs.'],
+  rejects: [
+    'You may cast spells from your hand without paying their mana costs',
+    'You may cast spells from your graveyard without paying their mana costs.',
+    'You may cast spells without paying their mana costs.',
+    'You may cast creature spells from your hand without paying their mana costs.',
+    'You may cast a spell from your hand without paying its mana cost.',
+    'You may cast spells from your hand without paying their mana costs this turn.',
+    'You may cast spells from your hand by paying life equal to their mana values rather than paying their mana costs.',
+    'You may cast spells from your hand without paying their mana costs. Draw a card.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may cast spells from your hand without paying their mana costs\.(?![\p{L}\p{N}])(?!\s*\S)/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: staticOf(
+        FREE_ID,
+        subjectNoun('you', 'you', { start: pos, end: r.pos }, FREE_ID),
+        [{ kind: 'castOnceEachTurn', alternative: 'free', from: ['hand'], unlimited: true }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});

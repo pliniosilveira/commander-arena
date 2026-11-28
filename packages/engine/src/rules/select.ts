@@ -981,6 +981,11 @@ export function resolveObjects(
       const kinds = selector.counter === undefined ? Object.keys(byKind) : [selector.counter];
       return [...new Set(kinds.flatMap((kind) => byKind[kind] ?? []))];
     }
+    case 'removedFromCombat':
+      // CR 608.2c, 400.7 (Illusionist's Gambit): the creatures the `removeFromCombat` effects of this resolution took out of combat, still the same objects on the battlefield.
+      return (ctx.thisWay?.removedFromCombat ?? []).filter(
+        (id) => state.objects[id]?.zone === 'battlefield',
+      );
     case 'triggerSubject':
       return ctx.triggerSubject === undefined ? [] : [ctx.triggerSubject];
     case 'sacrificed':
@@ -1350,6 +1355,18 @@ export function resolvePlayers(
         ),
       );
     }
+    case 'actedThisWay': {
+      // CR 121.1, 701.23, 101.4 (Kwain, Itinerant Meddler; Tempt with Discovery): "each player who drew a card this way", "each player who searched a library this way": the
+      // players of the `draw` or `search` effects of this resolution who did it, in the order of CR 101.4; `of` narrows them to every player or every opponent.
+      const named =
+        selector.of === undefined ? undefined : resolvePlayers(state, selector.of, ctx, targets);
+      return apnapOrder(
+        state,
+        ((selector.act === 'drew' ? ctx.thisWay?.drewBy : ctx.thisWay?.searchedBy) ?? []).filter(
+          (seat) => !getSeat(state, seat).hasLost && (named === undefined || named.includes(seat)),
+        ),
+      );
+    }
     case 'couldntSacrificeThisWay':
       // CR 701.21a, 101.4 (Plaguecrafter): "each player who can't": the players the `sacrifice` effects of this resolution found nothing to sacrifice for, in the order of CR 101.4.
       return apnapOrder(
@@ -1454,6 +1471,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||
+    sel.kind === 'actedThisWay' ||
     sel.kind === 'attackedPlayers' ||
     sel.kind === 'combatDamagedByNamed' ||
     sel.kind === 'lostLifeThisTurn' ||

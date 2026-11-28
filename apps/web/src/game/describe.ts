@@ -1312,6 +1312,24 @@ export function describeEvent(
         [event.object],
         'CR 700.13',
       );
+    case 'phasedOut':
+      // CR 702.26a, 702.26b: treated as though they do not exist until they phase in.
+      return line(
+        'detail',
+        `${event.objects.map((o) => label(o)).join(', ')} ${event.objects.length === 1 ? 'phases' : 'phase'} out.`,
+        null,
+        [...event.objects],
+        'CR 702.26a',
+      );
+    case 'giftGiven':
+      // CR 702.174c: an instant or sorcery whose gift cost was paid resolves, or the gift ability of a permanent resolves.
+      return line(
+        'detail',
+        `${who(event.seat)} ${verb(event.seat, 'give', 'gives')} a gift with ${label(event.object)}.`,
+        event.seat,
+        [event.object],
+        'CR 702.174c',
+      );
     case 'legendRule':
       return line(
         'major',

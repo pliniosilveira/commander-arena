@@ -393,6 +393,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'it';
     case 'putIntoGraveyardThisWay':
       return 'each permanent put into a graveyard this way';
+    case 'removedFromCombat':
+      // Illusionist's Gambit (CR 608.2c): the creatures the removal from combat before it took out.
+      return 'them';
     case 'putCountersOn':
       // Spectacular Showdown (CR 608.2c): the objects the counters of the instruction before it went on.
       return what.counter === undefined
@@ -601,6 +604,12 @@ function recipientText(
     }
     case 'couldntSacrificeThisWay':
       return "each player who can't";
+    case 'actedThisWay': {
+      const group = to.of?.kind === 'eachOpponent' ? 'opponent' : 'player';
+      return to.act === 'drew'
+        ? `each ${group} who drew a card this way`
+        : `each ${group} who searched a library this way`;
+    }
     case 'eachPlayerWithoutVotes':
       return 'each player who received no votes';
     case 'eachPlayerWhoChose':
@@ -629,6 +638,7 @@ function recipientText(
     case 'moved':
     case 'putCountersOn':
     case 'putIntoGraveyardThisWay':
+    case 'removedFromCombat':
     case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
@@ -817,6 +827,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
     case 'couldntSacrificeThisWay':
+    case 'actedThisWay':
     case 'eachPlayerWithoutVotes':
     case 'eachOpponentWhoVoted':
     case 'eachPlayerWhoChose':
@@ -1258,9 +1269,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return `${capital(object(effect.objects))} becomes prepared`;
     case 'delayedCombatDamage': {
       const inner = effectText(effect.effect, ability, self, defs);
-      return inner === ''
-        ? UNSAID
-        : `Whenever ${object(effect.objects)} deals combat damage to a player this combat, ${lower(inner)}`;
+      if (inner === '') return UNSAID;
+      // Tamiyo, Field Researcher (CR 603.7, 500.1): any recipient, until the controller's next turn.
+      const to = effect.to === 'any' ? '' : ' to a player';
+      const lasts = effect.until === 'yourNextTurn' ? '' : ' this combat';
+      const lead =
+        effect.until === 'yourNextTurn' ? 'Until your next turn, whenever any of' : 'Whenever';
+      return `${lead} ${object(effect.objects)} deals combat damage${to}${lasts}, ${lower(inner)}`;
     }
     case 'chooseOne': {
       // D-585 (CR 106.4, 608.2d): "Choose a color. Target player adds three mana of that color for each artifact sacrificed this way".
@@ -1791,6 +1806,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         effect.atBeginning === undefined
           ? null
           : effectText(effect.atBeginning, ability, self, defs),
+        effect.those,
       );
     case 'extraBeginningPhase':
       // D-356 (CR 500.8): "After this phase, there is an additional beginning phase".

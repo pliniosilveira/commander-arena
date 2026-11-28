@@ -306,7 +306,15 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
       if (
-        !isOneOf(r.mode, ['thatMany', 'plus', 'plusThatMany', 'double', 'eachOf', 'copyChosen'])
+        !isOneOf(r.mode, [
+          'thatMany',
+          'plus',
+          'plusThatMany',
+          'swap',
+          'double',
+          'eachOf',
+          'copyChosen',
+        ])
       ) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }

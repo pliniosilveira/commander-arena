@@ -369,8 +369,8 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'gift':
-      // D-135 and issue 57 group 5: card and tapped Fish gifts have engine effects.
-      if (k.gift !== 'card' && k.gift !== 'tappedFish') {
+      // D-135, issue 57 group 5 and issue 112: the card, tapped Fish, extra turn and Octopus gifts have engine effects (CR 702.174e to 702.174i).
+      if (!['card', 'tappedFish', 'extraTurn', 'octopus'].includes(k.gift)) {
         issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported`);
       }
       return true;

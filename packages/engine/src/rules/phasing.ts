@@ -17,7 +17,10 @@ function attachedTo(state: GameState, host: ObjectId): ObjectId[] {
   return state.battlefield.filter((id) => state.objects[id]?.attachedTo === host);
 }
 
-/** Phases out each of `ids` that is on the battlefield, with what is attached to it. Nothing is emitted: a phasing event is no zone change (CR 702.26d). */
+/**
+ * Phases out each of `ids` that is on the battlefield, with what is attached to it. A phasing event is no zone change (CR 702.26d): the effect that phases them out emits
+ * only `phasedOut`, which the scan for triggers reads to know the permanents saw the events before it.
+ */
 export function phaseOut(state: GameState, ids: readonly ObjectId[]): GameState {
   let next = state;
   const direct = ids.filter((id) => next.objects[id]?.zone === 'battlefield');
