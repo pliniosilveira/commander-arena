@@ -117,3 +117,68 @@ describe('Octomancer: "At the beginning of each end step, create a token that\'s
     expect(read(text, 'creature').unparsed).toHaveLength(1);
   });
 });
+
+describe('Perch Protection: the promised branch (CR 702.26, 702.16, 119.10)', () => {
+  const PROTECTION = {
+    kind: 'grantPlayerProtectionEverything',
+    player: { kind: 'you' },
+    duration: 'untilNextTurn',
+  } as const;
+  const LIFE_LOCK = {
+    kind: 'preventPlayerLifeTotalChange',
+    player: { kind: 'you' },
+    duration: 'untilNextTurn',
+  } as const;
+  const ALL_MINE_PHASE_OUT = {
+    kind: 'phaseOut',
+    objects: { kind: 'each', filter: { zone: 'battlefield', controller: 'you' } },
+  } as const;
+
+  test('the real line: four Birds, then, if the gift was promised, the phasing and the lock of the controller', () => {
+    const line =
+      "Create four 2/2 blue Bird creature tokens with flying. If the gift was promised, all permanents you control phase out, and until your next turn, your life total can't change and you gain protection from everything.";
+    const effect = readAll(line).spell?.effect;
+    expect(effect).toMatchObject({
+      kind: 'sequence',
+      effects: [
+        { kind: 'createToken', count: 4, token: { kind: 'custom', definition: { name: 'Bird' } } },
+        {
+          kind: 'conditional',
+          condition: { kind: 'giftPromised' },
+          effect: { kind: 'sequence', effects: [ALL_MINE_PHASE_OUT, PROTECTION, LIFE_LOCK] },
+        },
+      ],
+    });
+  });
+
+  test('the last line: the spell exiles itself', () => {
+    expect(readAll('Exile ~.').spell?.effect).toEqual({
+      kind: 'exile',
+      objects: { kind: 'thisSpell' },
+    });
+  });
+
+  test.each(['All permanents you control phase out.', 'All creatures you control phase out.'])(
+    '"all ... you control phase out" (SYNTHETIC): %s',
+    (text) => {
+      expect(readAll(text).spell?.effect).toMatchObject({ kind: 'phaseOut' });
+    },
+  );
+
+  test('the other order of the two halves of the lock (SYNTHETIC)', () => {
+    const line =
+      "Until your next turn, you gain protection from everything and your life total can't change.";
+    expect(readAll(line).spell?.effect).toEqual({
+      kind: 'sequence',
+      effects: [PROTECTION, LIFE_LOCK],
+    });
+  });
+
+  test.each([
+    'All permanents you control phases out.',
+    "Until your next turn, your life total can't change.",
+    "Until their next turn, your life total can't change and you gain protection from everything.",
+  ])('not read (SYNTHETIC): %s', (text) => {
+    expect(read(text).unparsed).toHaveLength(1);
+  });
+});

@@ -413,6 +413,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   becameSolved: [],
   crimeCommitted: [],
   giftGiven: [],
+  phasedOut: [],
   counterRemoved: [],
   died: ['card'],
   sacrificed: [],

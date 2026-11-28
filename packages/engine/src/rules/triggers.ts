@@ -1659,6 +1659,9 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
       if (e.fromZone === 'battlefield' && e.component !== true) members.push(e.from);
     } else if (e?.kind === 'tokenCreated') {
       members = members.filter((m) => m !== e.object);
+    } else if (e?.kind === 'phasedOut') {
+      // CR 702.26d, 603.2: a permanent that phased out was on the battlefield for the events before.
+      members.push(...e.objects.filter((m) => !members.includes(m)));
     }
   }
   return members;
@@ -1823,6 +1826,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
       }
     } else if (event.kind === 'tokenCreated') {
       members = [...members, event.object].sort(byAge);
+    } else if (event.kind === 'phasedOut') {
+      // CR 702.26b: from here on it is treated as though it does not exist, and its abilities trigger on nothing.
+      members = members.filter((m) => !event.objects.includes(m));
     }
     if (!isRelevant(event)) continue;
     const lore = loreChange(state, events, eventIndex);

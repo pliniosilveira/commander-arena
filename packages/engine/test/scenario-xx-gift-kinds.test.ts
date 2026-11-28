@@ -112,6 +112,23 @@ const copier: CardDefinition = singleFace({
   ],
 });
 
+const VANISH = 'SYNTHETIC Vanishing Gift';
+const vanish: CardDefinition = singleFace({
+  name: VANISH,
+  manaCost: ['1', 'U'],
+  types: ['instant'],
+  colors: ['U'],
+  colorIdentity: ['U'],
+  oracleText: 'Gift an extra turn. All permanents you control phase out.',
+  abilities: [gift('extraTurn')],
+  spell: {
+    effect: {
+      kind: 'phaseOut',
+      objects: { kind: 'each', filter: { zone: 'battlefield', controller: 'you' } },
+    },
+  },
+});
+
 const FILLER = ['Island', 'Island', 'Island', 'Island', 'Island', 'Island'] as const;
 
 /** Seat 0 has `mine` on the battlefield, four Islands and `hand`; each other seat has `theirs` and a library. */
@@ -127,6 +144,7 @@ function game(
     .define(watcher)
     .define(rival)
     .define(copier)
+    .define(vanish)
     .seat(0)
     .life(20)
     .library(...FILLER)
@@ -144,15 +162,20 @@ function game(
 }
 
 describe('the cards are valid', () => {
-  test.each([octo, turn, watcher, rival, copier])('$name', (card) => {
+  test.each([octo, turn, watcher, rival, copier, vanish])('$name', (card) => {
     expect(validateCard(card)).toEqual([]);
   });
 
   test('a card cannot write the gift ability itself: it is derived from the keyword', () => {
     const forged = singleFace({
-      ...watcher,
-      ...watcher.faces[0],
       name: 'SYNTHETIC Forged Gift',
+      manaCost: ['1', 'W'],
+      types: ['creature'],
+      colors: ['W'],
+      colorIdentity: ['W'],
+      power: 2,
+      toughness: 3,
+      oracleText: 'When this creature enters, draw a card.',
       abilities: [
         {
           kind: 'triggered',
@@ -248,6 +271,15 @@ describe('"Whenever you give a gift" (CR 702.174c)', () => {
     g.passAll();
     g.expect.handSize(0, 1);
     g.expect.life(0, 22);
+  });
+
+  test('the watcher phases out later in the same resolution: it saw the gift first, and still draws (CR 702.26d, 603.2)', () => {
+    const g = game(2, [VANISH], [WATCHER]);
+    g.act(0).cast(VANISH, { gift: true, pay: true });
+    g.passAll();
+    g.expect.zone(WATCHER, 'phased', { seat: 0 });
+    g.expect.eventLog([{ kind: 'giftGiven', seat: 0 }, { kind: 'phasedOut' }]);
+    g.expect.handSize(0, 1);
   });
 
   test('no gift promised, no gift given: the watcher does not trigger', () => {

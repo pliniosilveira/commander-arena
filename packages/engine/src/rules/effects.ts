@@ -4160,7 +4160,13 @@ function runEffect(
     case 'phaseOut': {
       // CR 702.26a-g (D-234): the permanents phase out, with what is attached to them (rules/phasing.ts).
       const ids = resolveObjects(state, effect.objects, ctx, targets);
-      return { ...done(phaseOut(state, ids)), performed: ids.length > 0 ? 1 : 0 };
+      const phased = phaseOut(state, ids);
+      const before = new Set(state.phased ?? []);
+      const moved = (phased.phased ?? []).filter((id) => !before.has(id));
+      return {
+        ...done(phased, moved.length > 0 ? [{ kind: 'phasedOut', objects: moved }] : []),
+        performed: ids.length > 0 ? 1 : 0,
+      };
     }
 
     case 'becomeCopyOfCard':
