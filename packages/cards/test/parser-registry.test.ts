@@ -138,6 +138,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
+  'keyword.enchant-opponent': asIs,
   'keyword.equip': asIs,
   'keyword.equip-or-remove-counter': asIs,
   'keyword.kicker': asIs,
@@ -1377,6 +1378,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.player-dealt-damage': whenever,
   'trigger.damage-to-player-prevented': whenever,
   'trigger.enchanted-player-attacked': whenever,
+  'trigger.enchanted-opponent-attacks': permanent((e) => `When ${e}, you gain 1 life.`),
   'trigger.player-attacks-you': whenever,
   'trigger.player-attacks-bare': whenever,
   'condition.they-arent-attacking-you': permanent(

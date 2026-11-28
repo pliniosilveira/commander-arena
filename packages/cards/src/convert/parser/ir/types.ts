@@ -1903,6 +1903,8 @@ export interface IrTrigger extends IrNode {
     | 'you';
   /** 'endStep' "At the beginning of the monarch's end step" (CR 725.2, 603.2b): the turn of the player who is the monarch; `actor` is `eachPlayer`. */
   readonly monarchTurn?: true;
+  /** 'endStep' "At the beginning of enchanted opponent's end step" (Tenuous Truce, CR 303.4m, 603.2b): the turn of the player the Aura is attached to; `actor` is `eachPlayer`. */
+  readonly enchantedPlayerTurn?: true;
   /** 'combatDamageBatch' "... while you're the monarch" (issue 81, CR 725.2): the controller was the monarch as the damage was dealt. */
   readonly whileMonarch?: true;
   /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
@@ -1955,6 +1957,10 @@ export interface IrTrigger extends IrNode {
   readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
+  /** 'attackBatch' "When you attack enchanted opponent or a planeswalker they control" (Tenuous Truce, CR 303.4m, 508.1b, 508.6): that player or one of their planeswalkers was declared as attacked. */
+  readonly attackedEnchantedPlayerOrPlaneswalkers?: true;
+  /** 'attackBatch' "when they attack you" after "enchanted opponent" (Tenuous Truce, CR 303.4m, 508.1): the player the Aura enchants declared the attackers. */
+  readonly byEnchantedPlayer?: true;
   /** 'attackBatch' "Whenever an opponent attacks you" (CR 508.1b): the controller of the ability was declared as attacked as a player. */
   readonly attackedYou?: true;
   /** 'attackBatch' "Whenever an opponent attacks you and/or one or more planeswalkers you control" (Cunning Rhetoric, CR 508.1b, 508.6): the controller of the ability or a planeswalker they control was declared as attacked. */
