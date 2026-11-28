@@ -11,15 +11,20 @@
  *  4. AFTER COMBAT (first main phase only, with a creature that could attack): today's set with its creatures
  *     that lack haste moved to the second main phase.
  *  5. ABILITIES: today's set, then the mana left goes to an activated ability: at the opponent's end step
- *     (repeated while it is payable), after blockers (a creature's ability: once, or while payable), or now.
+ *     (repeated while it is payable), after blockers (a creature's ability: once, or while payable), or now
+ *     (once, or while payable). The abilities are the best of their ranking (`heuristic-activations.ts`) and
+ *     the commander's; the lines of the best one, when it scored better than passing, come right after
+ *     today's, ahead of the next-best sets, so the work budget does not cut them. An ability that may be
+ *     activated only at sorcery timing (CR 602.5d, 606.3) gets no end-step or after-blockers line.
  *  6. DO NOTHING: pass with everything open (the end-step rules may still use it).
  *
- * In a window (`windowLines`: after blockers, the opponent's end step): today's choice, each ability once or
- * while payable, and passing.
+ * In a window (`windowLines`: after blockers, the opponent's end step): today's choice, the best abilities of
+ * the ranking once or while payable, and passing.
  */
 import type { Action, GameView, ObjectView, PriorityDecision } from '@commander-arena/engine';
 import { type Play, spellPlays } from './casual-priority';
 import { hasKeyword, isLand, manaValueOf } from './casual-view';
+import { type Activation, keepTop, type RankedActivation, unranked } from './heuristic-activations';
 import { canPayAll, ownUnits } from './heuristic-mana';
 import type { Line, Window } from './heuristic-plan-sim';
 import {
@@ -40,8 +45,6 @@ const ABILITIES = 2;
 /** "While payable": an ability is repeated at most this often in one line. */
 const REPEAT = 3;
 
-type Activation = Extract<Action, { kind: 'activate' }>;
-
 const line = (
   label: string,
   acts: Line['acts'],
@@ -57,25 +60,22 @@ const line = (
 
 const times = (a: Action, n: number): Action[] => Array.from({ length: n }, () => a);
 
-/** The activated abilities of the agent's own permanents that the engine lists now, by object id. */
-export function ownActivations(view: GameView, d: PriorityDecision): Activation[] {
-  return d.options
-    .filter((o): o is Activation => o.kind === 'activate')
-    .filter((o) => view.battlefield.some((p) => p.id === o.object && p.controller === view.viewer))
-    .map((o) => ({ kind: 'activate' as const, object: o.object, abilityIndex: o.abilityIndex }))
-    .sort((a, b) =>
-      a.object < b.object ? -1 : a.object > b.object ? 1 : a.abilityIndex - b.abilityIndex,
-    );
-}
-
 const costOf = (o: ObjectView): readonly string[] => o.castCost ?? o.manaCost ?? [];
+
+const abilityOf = (view: GameView, a: Activation) =>
+  view.battlefield
+    .find((o) => o.id === a.object)
+    ?.activated?.find((x) => x.abilityIndex === a.abilityIndex)?.ability;
 
 /** Whether an ability taps its permanent (it can be activated once until the permanent untaps). */
 const taps = (view: GameView, a: Activation): boolean =>
-  view.battlefield
-    .find((o) => o.id === a.object)
-    ?.activated?.find((x) => x.abilityIndex === a.abilityIndex)
-    ?.ability.cost.some((c) => c.kind === 'tap') === true;
+  abilityOf(view, a)?.cost.some((c) => c.kind === 'tap') === true;
+
+/** CR 602.5d, 606.3: an ability activated only at sorcery timing ("Activate only as a sorcery", loyalty). */
+const sorceryOnly = (view: GameView, a: Activation): boolean => {
+  const ability = abilityOf(view, a);
+  return ability?.timing === 'sorcery' || ability?.cost.some((c) => c.kind === 'loyalty') === true;
+};
 
 /** The lines of a main phase (`now` is 'main1' or 'main2'); `today` is today's choice for this decision. */
 export function mainLines(
@@ -85,6 +85,8 @@ export function mainLines(
   today: { action: Action; reserve?: readonly string[] },
   activations: Set<string>,
   weights: AgentWeights,
+  /** The agent's own activations, best first (`rankActivations`); unranked when left out. */
+  ranked?: readonly RankedActivation[],
 ): Line[] {
   const later: Window | null = now === 'main1' ? 'main2' : null;
   const lines: Line[] = [
@@ -96,6 +98,44 @@ export function mainLines(
   const sets = topSets(view, plays, units, weights, null, MORE_SETS + 1);
   const best = sets[0] ?? [];
   const casts = (set: readonly Play[]): Action[] => order(view, set, weights).map(castAction);
+  const quiet: Line['rest'] =
+    later === null ? { [now]: 'pass' } : { [now]: 'pass', [later]: 'pass' };
+  // 5. Abilities with the mana today's set leaves (built here, pushed in two parts).
+  const base = casts(best);
+  // An ability's lines, the latest use first: on a tie the planner keeps the earlier line, so a pump waits
+  // for the blockers rather than being spent before them.
+  const abilityLines = (a: Activation): Line[] => {
+    const id = `${a.object}#${a.abilityIndex}`;
+    const most = taps(view, a) ? 1 : REPEAT;
+    const out: Line[] = [];
+    if (!sorceryOnly(view, a)) {
+      out.push(line(`end:${id}`, { [now]: base, theirEnd: times(a, most) }, quiet));
+      const creature = view.battlefield.some(
+        (o) => o.id === a.object && o.types.includes('creature'),
+      );
+      if (creature && now === 'main1') {
+        out.push(line(`blocks:${id}`, { [now]: base, afterBlocks: [a] }, { [now]: 'pass' }));
+        if (most > 1) {
+          out.push(
+            line(`blocks*:${id}`, { [now]: base, afterBlocks: times(a, most) }, { [now]: 'pass' }),
+          );
+        }
+      }
+    }
+    out.push(line(`now:${id}`, { [now]: [...base, a] }, { [now]: 'pass' }));
+    if (most > 1) {
+      out.push(line(`now*:${id}`, { [now]: [...base, ...times(a, most)] }, { [now]: 'pass' }));
+    }
+    return out;
+  };
+  const [top, ...more] = keepTop(ranked ?? unranked(view, d), ABILITIES);
+  // The best ability's lines come first when it scored better than passing on the sample.
+  const late: Line[] = [];
+  if (top !== undefined) {
+    const early = top.gain !== null && top.gain > 0;
+    (early ? lines : late).push(...abilityLines(top.action));
+  }
+  for (const r of more) late.push(...abilityLines(r.action));
   // 2. The next-best sets.
   for (const [i, set] of sets.slice(1).entries()) {
     lines.push(line(`set${i + 2}`, { [now]: casts(set) }));
@@ -112,10 +152,8 @@ export function mainLines(
     const hold = costOf(card);
     const others = plays.filter((p) => p.obj.id !== held.obj.id);
     const set = topSets(view, others, units, weights, hold, 1)[0] ?? [];
-    const rest: Line['rest'] =
-      later === null ? { [now]: 'pass' } : { [now]: 'pass', [later]: 'pass' };
     lines.push(
-      line(`hold:${held.obj.name}`, { [now]: casts(set) }, rest, {
+      line(`hold:${held.obj.name}`, { [now]: casts(set) }, quiet, {
         reserve: hold,
         holdRemoval: isRemovalSpell(held.obj) ? [held.obj.id] : [],
       }),
@@ -137,31 +175,9 @@ export function mainLines(
       );
     }
   }
-  // 5. Abilities with the mana today's set leaves.
-  const base = casts(best);
-  for (const a of ownActivations(view, d).slice(0, ABILITIES)) {
-    const id = `${a.object}#${a.abilityIndex}`;
-    const creature = view.battlefield.some(
-      (o) => o.id === a.object && o.types.includes('creature'),
-    );
-    const quiet: Line['rest'] =
-      later === null ? { [now]: 'pass' } : { [now]: 'pass', [later]: 'pass' };
-    const most = taps(view, a) ? 1 : REPEAT;
-    lines.push(line(`end:${id}`, { [now]: base, theirEnd: times(a, most) }, quiet));
-    if (creature && now === 'main1') {
-      lines.push(line(`blocks:${id}`, { [now]: base, afterBlocks: [a] }, { [now]: 'pass' }));
-      if (most > 1) {
-        lines.push(
-          line(`blocks*:${id}`, { [now]: base, afterBlocks: times(a, most) }, { [now]: 'pass' }),
-        );
-      }
-    }
-    lines.push(line(`now:${id}`, { [now]: [...base, a] }, { [now]: 'pass' }));
-  }
+  lines.push(...late);
   // 6. Do nothing.
-  lines.push(
-    line('nothing', {}, later === null ? { [now]: 'pass' } : { [now]: 'pass', [later]: 'pass' }),
-  );
+  lines.push(line('nothing', {}, quiet));
   return dedupe(lines);
 }
 
@@ -182,9 +198,11 @@ export function windowLines(
   d: PriorityDecision,
   now: Window,
   today: Action,
+  /** The agent's own activations, best first (`rankActivations`); unranked when left out. */
+  ranked?: readonly RankedActivation[],
 ): Line[] {
   const lines: Line[] = [line('today', { [now]: [today] })];
-  for (const a of ownActivations(view, d).slice(0, ABILITIES + 1)) {
+  for (const { action: a } of keepTop(ranked ?? unranked(view, d), ABILITIES + 1)) {
     const id = `${a.object}#${a.abilityIndex}`;
     lines.push(line(`once:${id}`, { [now]: [a] }, { [now]: 'pass' }));
     if (!taps(view, a)) {

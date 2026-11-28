@@ -43,6 +43,7 @@ import { isHelpfulSpell } from './casual-helpful';
 import { noteCast, withoutTriedCasts } from './casual-no-target';
 import { chooseRingBearerWithEvasion } from './casual-ring';
 import { findObject } from './casual-view';
+import { ownActivations, type RankedActivation, rankActivations } from './heuristic-activations';
 import { chooseHeuristicAttack } from './heuristic-attacks';
 import { chooseHeuristicBlocks } from './heuristic-blocks';
 import {
@@ -65,7 +66,7 @@ import {
   type PlanRecord,
   type TurnPlan,
 } from './heuristic-plan';
-import { mainLines, ownActivations, windowLines } from './heuristic-plan-lines';
+import { mainLines, windowLines } from './heuristic-plan-lines';
 import { choosePlanOn } from './heuristic-plan-pool';
 import { type Inner, type SimAgents, type Window, windowOf } from './heuristic-plan-sim';
 import type { Line, PlayOutPool } from './heuristic-plan-types';
@@ -223,6 +224,13 @@ export class HeuristicAgent implements ExplainingAgent {
         };
       }
     }
+    // The own activations ranked on the sample (`heuristic-activations.ts`), once a decision and only when
+    // a window asks for them: today's end-step rule and the planner's ability lines read the same ranking.
+    let ranking: readonly RankedActivation[] | null = null;
+    const ranked = (): readonly RankedActivation[] => {
+      ranking ??= rankActivations(view, d, think, answer);
+      return ranking;
+    };
     const today = choosePriorityHeuristic(
       view,
       d,
@@ -230,16 +238,17 @@ export class HeuristicAgent implements ExplainingAgent {
       this.activations,
       answer,
       planning ? this.simAgents : undefined,
+      when === null ? undefined : ranked,
     );
     if (when === null || when === 'attack') return today;
     let lines: ReturnType<typeof mainLines>;
     if (when === 'main1' || when === 'main2') {
       if (today.action.kind === 'playLand') return today;
-      lines = mainLines(view, d, when, today, this.activations, this.weights);
+      lines = mainLines(view, d, when, today, this.activations, this.weights, ranked());
     } else {
       const quiet = today.action.kind === 'pass' || today.action.kind === 'activate';
       if (!quiet || ownActivations(view, d).length === 0) return today;
-      lines = windowLines(view, d, when, today.action);
+      lines = windowLines(view, d, when, today.action, ranked());
     }
     if (lines.length < 2) return today;
     // At most MAX_PLANS_PER_TURN plannings a turn, and none again in a window where one failed (no time,

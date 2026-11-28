@@ -28,7 +28,9 @@
  *    cast on the sample and the combat is played out; it is cast when it beats passing by `main.trickMargin`
  *    (reason `trick`, or `removal-attacker` for a removal spell). A pump that changes nothing is held;
  *  - the opponent's end step (empty stack): the set of instant-speed plays that uses the most mana
- *    (card draw, flash creatures, removal with a target), reason `end-step`;
+ *    (card draw, flash creatures, removal with a target), reason `end-step`; when none is cast and the casual
+ *    rules pass, at the end step of the opponent just before the agent's turn, the activated ability that gains
+ *    the most on the sample (`heuristic-activations.ts`) if it beats passing by `main.trickMargin`, reason `end-step`;
  *  - in response to an opponent's spell (their object on top of the stack): a counterspell for a spell of
  *    mana value `main.counterMinValue` or more, reason `counter`; with a sample it is held (pass, reason `hold`)
  *    when playing the turn on without it scores better by `main.counterLookMargin` (`heuristic-response-look.ts`).
@@ -49,12 +51,13 @@ import {
   withFace,
 } from './casual-priority';
 import { manaValueOf } from './casual-view';
+import type { RankedActivation } from './heuristic-activations';
 import type { Think } from './heuristic-budget';
 import type { LookRecord } from './heuristic-combat-look';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { ownUnits } from './heuristic-mana';
-import type { SimAgents } from './heuristic-plan-sim';
+import { type SimAgents, windowOf } from './heuristic-plan-sim';
 import { protectionPlay, protectionReserve } from './heuristic-protect';
 import { lookAtCounter } from './heuristic-response-look';
 import {
@@ -305,6 +308,8 @@ export function choosePriorityHeuristic(
   answer: Answer,
   /** The inner agents of the look-ahead; without them (a play-out, a test) nothing is looked ahead. */
   agents?: SimAgents,
+  /** The agent's own activations ranked on the sample (`heuristic-activations.ts`), computed on demand. */
+  ranked?: () => readonly RankedActivation[],
 ): PriorityChoice {
   const me = view.viewer;
   const mainWindow =
@@ -317,5 +322,25 @@ export function choosePriorityHeuristic(
   const play = windowPlay(view, d, think, activations, answer, agents);
   if (play !== null) return play;
   const rest = casualRemainder(view, d, think, activations);
+  if (rest.kind === 'pass' && ranked !== undefined) {
+    const spare = spareAbility(view, d, ranked, think.weights.main.trickMargin);
+    if (spare !== null) return { action: spare, reason: 'end-step' };
+  }
   return { action: rest, reason: rest.kind === 'pass' ? 'no-play' : 'delegated' };
+}
+
+/**
+ * The opponent's end step before the agent's turn, nothing else played: the ability of the ranking that gains
+ * the most on the sample, when it beats passing by `main.trickMargin` (the lands untap next, so the mana is
+ * spare). The planner may still choose otherwise for the window (`heuristic-plan-lines.ts`, `windowLines`).
+ */
+function spareAbility(
+  view: GameView,
+  d: PriorityDecision,
+  ranked: () => readonly RankedActivation[],
+  margin: number,
+): Action | null {
+  if (windowOf(view, d) !== 'theirEnd') return null;
+  const best = ranked()[0];
+  return best !== undefined && best.gain !== null && best.gain > margin ? best.action : null;
 }
