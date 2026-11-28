@@ -1,6 +1,7 @@
 /**
  * Effect rules of the Peace Offering deck (issue 112): offers made to each player or each opponent, and what is done for each who took them (CR 101.4, 608.2d). The engine runs
- * `playersMay`, `search` of every opponent, `repeat`, `revealTopBranches` and the `PlayerSelector` `actedThisWay`; the sentences of one instruction are kept together by the segmenter
+ * `playersMay`, `search` of every opponent, `repeat`, `revealTopBranches` and the `PlayerSelector` `actedThisWay`, and Illusionist's Gambit's removal from combat with the combat it adds;
+ * the sentences of one instruction are kept together by the segmenter
  * (`segment-peace-offering.ts`).
  */
 import { fail, literal, pattern, sequence } from '../../combinators';
@@ -235,9 +236,59 @@ export const EFFECT_EACH_PLAYER_REVEALS_MANA_LIFE_THEN_DRAWS = defineRule<Clause
   },
 });
 
+const GAMBIT_ID = 'effect.remove-attackers-attack-again';
+
+/**
+ * `effect.remove-attackers-attack-again`: "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks
+ * that combat if able. They can't attack you or planeswalkers you control that combat" (Illusionist's Gambit; CR 506.4, 608.2c, 500.8, 508.1c, 508.1d): every attacking creature leaves
+ * combat (no combat damage from it) and untaps; one more combat phase follows this one, then the turn goes on as it would have (no main phase is added); in that combat only, the creatures
+ * removed must attack if able and can't attack the controller or the controller's planeswalkers (another opponent of the active player may be attacked; the other creatures are free,
+ * the rulings). The engine's `removeFromCombat` of each attacking creature, an `untap` of `removedFromCombat` and an `extraCombat` with `those`. The four sentences are kept together by
+ * the segmenter. Not read: "target creature", only the requirement or only the restriction, another player, "this turn", more after the last sentence.
+ */
+export const EFFECT_REMOVE_ATTACKERS_ATTACK_AGAIN = defineRule<Clauses>({
+  id: GAMBIT_ID,
+  family: 'effect',
+  leading: ['remove'],
+  cites: [
+    'CR 506.4 (Combat Phase)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 500.8 (General)',
+    'CR 508.1c (Declare Attackers Step)',
+    'CR 508.1d (Declare Attackers Step)',
+  ],
+  examples: [
+    "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat",
+    'remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able. They can’t attack you or planeswalkers you control that combat',
+  ],
+  rejects: [
+    'Remove all attacking creatures from combat and untap them',
+    'Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase',
+    "Remove target attacking creature from combat and untap it. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat",
+    'Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able',
+    "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks this turn if able. They can't attack you or planeswalkers you control that combat",
+    "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able. They can't attack you that combat",
+    "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat and you draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /remove all attacking creatures from combat and untap them\. after this phase, there is an additional combat phase\. each of those creatures attacks that combat if able\. they can['’]t attack you or planeswalkers you control that combat/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (MORE_AFTER.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(GAMBIT_ID, 'removeAttackersAttackAgain', {}, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 export const PEACE_OFFERING_EFFECT_RULES = [
   EFFECT_EACH_PLAYER_MAY_DRAW_THEN_DREW_GAIN,
   EFFECT_OPPONENTS_MAY_FOR_EACH_WHO_DOES,
   EFFECT_OPPONENTS_MAY_SEARCH_FOR_EACH_WHO_SEARCHES,
   EFFECT_EACH_PLAYER_REVEALS_MANA_LIFE_THEN_DRAWS,
+  EFFECT_REMOVE_ATTACKERS_ATTACK_AGAIN,
 ];

@@ -1,6 +1,6 @@
 /**
  * Lowerings of the Peace Offering deck (issue 112): the offers to each player or each opponent and what is done for those who took them (Kwain, Itinerant Meddler; Tempt with Bunnies; Tempt
- * with Discovery; CR 101.4, 608.2d), and Selvala, Explorer Returned's reveal (CR 701.20a, 608.2c).
+ * with Discovery; CR 101.4, 608.2d), Selvala, Explorer Returned's reveal (CR 701.20a, 608.2c) and Illusionist's Gambit's removal from combat (CR 506.4, 500.8).
  */
 import type { Effect, ManaColor, ObjectFilter } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
@@ -209,6 +209,35 @@ const REVEAL_EACH_MANA_LIFE_THEN_DRAW: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those creatures attacks that combat if able. They can't
+ * attack you or planeswalkers you control that combat." (Illusionist's Gambit; CR 506.4, 608.2c, 500.8, 508.1c, 508.1d): the attackers leave combat and untap ("them": the creatures
+ * really removed, `removedFromCombat`), and one more combat phase binds those same creatures (`extraCombat.those`, fixed as the spell resolves) for that combat only.
+ */
+const REMOVE_ATTACKERS_ATTACK_AGAIN: Lowering<IrClause, Effects> = {
+  head: 'removeAttackersAttackAgain',
+  id: 'lower.remove-attackers-attack-again',
+  needs: [
+    'effect:removeFromCombat',
+    'effect:untap',
+    'effect:extraCombat',
+    'selector:each',
+    'selector:removedFromCombat',
+  ],
+  lower(clause) {
+    const them = { kind: 'removedFromCombat' } as const;
+    return {
+      ok: true,
+      value: [
+        { kind: 'removeFromCombat', objects: { kind: 'each', filter: { attacking: true } } },
+        { kind: 'untap', objects: them },
+        { kind: 'extraCombat', those: { objects: them, attackIfAble: true, cantAttackYou: true } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export function peaceOfferingLowerings(
   lowerToken: (clause: IrClause, ctx: LowerContext) => LowerResult<Effects>,
 ): readonly Lowering<IrClause, Effects>[] {
@@ -217,5 +246,6 @@ export function peaceOfferingLowerings(
     opponentsMayForEachWhoDoes(lowerToken),
     OPPONENTS_MAY_SEARCH_FOR_EACH_WHO_SEARCHES,
     REVEAL_EACH_MANA_LIFE_THEN_DRAW,
+    REMOVE_ATTACKERS_ATTACK_AGAIN,
   ];
 }

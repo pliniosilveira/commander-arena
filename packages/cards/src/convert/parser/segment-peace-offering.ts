@@ -8,6 +8,9 @@
  *   shuffles every library searched (`effect.opponents-may-search-for-each-who-searches`).
  * - Selvala, Explorer Returned (CR 701.20a, 608.2c): "Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each
  *   player draws a card.": the second counts the cards the first revealed, and the third draws them (`effect.each-player-reveals-mana-life-then-draws`).
+ * - Illusionist's Gambit (CR 506.4, 500.8, 508.1c, 508.1d): "Remove all attacking creatures from combat and untap them. After this phase, there is an additional combat phase. Each of those
+ *   creatures attacks that combat if able. They can't attack you or planeswalkers you control that combat.": the last two bind the creatures of the first in the combat of the second
+ *   (`effect.remove-attackers-attack-again`).
  */
 
 /** Two sentences that are one instruction. */
@@ -29,5 +32,15 @@ export const PEACE_OFFERING_TRIPLE_JOINS: readonly (readonly [RegExp, RegExp, Re
     /^each player reveals the top card of their library\.$/i,
     /^for each nonland card revealed this way, add (?:\{[wubrgc]\})+ and you gain \d+ life\.$/i,
     /^then each player draws a card\.$/i,
+  ],
+];
+
+/** Four sentences that are one instruction. */
+export const PEACE_OFFERING_QUAD_JOINS: readonly (readonly [RegExp, RegExp, RegExp, RegExp])[] = [
+  [
+    /^remove all attacking creatures from combat and untap them\.$/i,
+    /^after this phase, there is an additional combat phase\.$/i,
+    /^each of those creatures attacks that combat if able\.$/i,
+    /^they can['’]t attack you or planeswalkers you control that combat\.$/i,
   ],
 ];
