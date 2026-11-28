@@ -4,6 +4,7 @@
  */
 import type { SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
+import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { abilityReductionSources } from './derive-statics';
 
@@ -12,7 +13,21 @@ import { abilityReductionSources } from './derive-statics';
  * logged (`TurnLog.artifactActivated`).
  */
 export function tracksArtifactActivations(state: GameState): boolean {
-  return abilityReductionSources(state).some((s) => s.firstOfArtifactEachTurn === true);
+  // False without looking at any layer when no permanent's copiable abilities hold the reduction (the usual game): the check runs on every activation, a mana ability included.
+  const mayHave = state.battlefield.some((id) => {
+    const obj = state.objects[id];
+    return (
+      obj !== undefined &&
+      copiableValues(state, obj).abilities.some(
+        (a) =>
+          a.kind === 'static' &&
+          a.static.kind === 'abilityCostReduction' &&
+          a.static.abilities === 'ofObjects' &&
+          a.static.firstOfArtifactEachTurn === true,
+      )
+    );
+  });
+  return mayHave && abilityReductionSources(state).some((s) => s.firstOfArtifactEachTurn === true);
 }
 
 /** The log with this activation of an ability of `source` by `seat` added, when it is of an artifact and something reads the log (`tracksArtifactActivations`). */
