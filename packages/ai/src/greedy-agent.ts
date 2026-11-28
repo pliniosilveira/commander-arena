@@ -32,7 +32,7 @@ import {
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
 import { chooseLoyaltyActivation } from './casual-loyalty';
-import { noteCast, withoutTriedCasts } from './casual-no-target';
+import { noteChoice, withoutTried } from './casual-no-target';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import {
   chooseLand,
@@ -138,9 +138,9 @@ export class GreedyAgent implements ExplainingAgent {
     return {
       ...createCasualHandlers(view, draw, this.activations),
       priority: (d) => {
-        const open = withoutTriedCasts(view, d, this.activations);
+        const open = withoutTried(view, d, this.activations);
         const { action, reason } = choosePriority(view, open, draw, this.activations);
-        noteCast(view, action, this.activations);
+        noteChoice(view, action, this.activations);
         note(reason);
         return action;
       },
