@@ -17,8 +17,9 @@ import { isLoyaltyAbility, loyaltyLimitReached } from './loyalty';
 import { legalModeSets, modalOfAbility } from './modes';
 import { activationLockedByName } from './name-locks';
 import { hasRestriction } from './restrictions';
-import { legalTargets, targetBounds } from './select';
+import { legalTargets } from './select';
 import { splitSecondOnStack } from './split-second';
+import { targetSlotsFillable } from './target-distinct';
 
 /** Whether `obj`, a card in a graveyard, has an Encore ability that a permanent gave it: its derived abilities hold an activated one that works from the graveyard. */
 function encoreGrantedTo(state: GameState, obj: GameObject): boolean {
@@ -153,11 +154,10 @@ export function activationRefusal(
   }
   // CR 700.2a: a modal ability needs a legal choice of modes (a mode with no legal target is not offered).
   const modal = modalOfAbility(ability);
+  // CR 115.3, 602.2b (issue 638): "another target": the slots that must differ are filled together, not each on its own.
   const targetable =
     modal === null
-      ? (ability.targets ?? []).every(
-          (spec) => legalTargets(state, spec, ctx).length >= targetBounds(spec).min,
-        )
+      ? targetSlotsFillable(ability.targets ?? [], (spec) => legalTargets(state, spec, ctx))
       : legalModeSets(state, modal, ctx).length > 0;
   if (!targetable) return 'That ability has no legal targets';
   // D-135: the cost as it stands now (a life amount worked out, a reduction that applies).

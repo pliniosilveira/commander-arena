@@ -5,7 +5,7 @@
 // spell with a target that is no longer legal does not do that part; a spell with every target illegal does not resolve), CR 601.2c (all targets chosen as the spell is cast).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-feather-g2.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';
-import { syntheticCard, validateCard } from '../src/index';
+import { getLegalActions, syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const HAMMER = 'SYNTHETIC Hammer Blow'; // {1}{R} instant: target creature you control deals damage equal to its power to another target creature
@@ -59,6 +59,28 @@ describe('"Target creature you control deals damage equal to its power to anothe
     // The Bears deal 2 to the Spider (2/4): it lives with 2 damage.
     h.expect.zone(SPIDER, 'battlefield', { seat: 0 });
     h.expect.damage('mine', 2);
+  });
+
+  test('"another" with one creature only: it fits both slots alone, but the two targets must differ, so the spell is not offered (CR 115.3, 601.2c, issue 638)', () => {
+    const alone = (theirs: boolean) => {
+      let b = scenario()
+        .seat(0)
+        .library(...LIBRARY)
+        .battlefield(SPIDER, { label: 'mine' })
+        .battlefield('Mountain', 'Mountain')
+        .hand(HAMMER)
+        .seat(1)
+        .library(...LIBRARY);
+      if (theirs) b = b.battlefield(BEARS, { label: 'theirs' });
+      return b.at('precombatMain', { active: 0 }).build();
+    };
+    const castsHammer = (g: ReturnType<typeof alone>) =>
+      getLegalActions(g.state, 0).some(
+        (a) => a.kind === 'castSpell' && a.object === g.id({ name: HAMMER }),
+      );
+    expect(castsHammer(alone(false))).toBe(false);
+    // A second creature makes the pair: the spell is offered again.
+    expect(castsHammer(alone(true))).toBe(true);
   });
 
   test('the first target must be a creature you control', () => {
