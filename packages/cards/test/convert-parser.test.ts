@@ -1268,6 +1268,7 @@ describe('unmatched abilities', () => {
       'effect.exile-x-cards-of-player',
       'effect.drain-for-each-exiled',
       'effect.reveal-top-branches',
+      'effect.each-player-reveals-adds-draws',
       'effect.each-player-reveals-then-draws',
       'effect.parley-investigate',
       'effect.becomes-artifact-creature-permanently',
