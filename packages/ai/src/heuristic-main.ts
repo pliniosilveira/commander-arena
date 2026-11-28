@@ -22,8 +22,9 @@
  *     stays untapped because the set above does not count it.
  *  4. What is left is the casual rules without the plays above (flashback, escape, special actions,
  *     activations such as a regeneration or a pump ability); when they pass, the activated ability that gains
- *     the most on the sample (`heuristic-activations.ts`) if it beats passing by `main.trickMargin` (in the
- *     first main phase not one that taps a creature), reason `ability`; then pass.
+ *     the most on the sample (`heuristic-activations.ts`) if it beats passing by `main.trickMargin` and may
+ *     be activated only at sorcery timing (in the first main phase not one that taps a creature), reason
+ *     `ability`; then pass.
  *
  * WINDOWS (any other priority decision) for instant-speed plays (the end-step set is vetted on the sample like a main-phase set):
  *  - after blockers are declared (declare-blockers step, empty stack): each instant-speed candidate is
@@ -53,7 +54,7 @@ import {
   withFace,
 } from './casual-priority';
 import { manaValueOf } from './casual-view';
-import type { Activation, RankedActivation } from './heuristic-activations';
+import { type Activation, type RankedActivation, sorceryOnly, taps } from './heuristic-activations';
 import type { Think } from './heuristic-budget';
 import type { LookRecord } from './heuristic-combat-look';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
@@ -339,11 +340,11 @@ export function choosePriorityHeuristic(
 
 /**
  * Spare mana, nothing else played: the ability of the ranking that gains the most on the sample, when it beats
- * passing by `main.trickMargin`. At the opponent's end step before the agent's turn (its lands untap next) and
- * in the agent's main phases; in the first main phase not one that taps a creature, which may attack. The
- * planner may still choose otherwise (`heuristic-plan-lines.ts`): this is today's line.
+ * passing by `main.trickMargin`. At the opponent's end step before the agent's turn (its lands untap next); in
+ * the agent's main phases only one activated at sorcery timing, and in the first main phase not one that taps
+ * a creature, which may attack. The planner may still choose otherwise (`heuristic-plan-lines.ts`).
  */
-function spareAbility(
+export function spareAbility(
   view: GameView,
   d: PriorityDecision,
   ranked: () => readonly RankedActivation[],
@@ -351,19 +352,20 @@ function spareAbility(
 ): Action | null {
   const when = windowOf(view, d);
   if (when !== 'theirEnd' && when !== 'main1' && when !== 'main2') return null;
+  // A land that may still be played this turn changes the mana: nothing is spent before it.
+  if (when !== 'theirEnd' && d.options.some((o) => o.kind === 'playLand')) return null;
   for (const r of ranked()) {
     // Scored abilities come first, best first: past the margin nothing later beats it.
     if (r.gain === null || r.gain <= margin) return null;
-    if (when === 'main1' && tapsCreature(view, r.action)) continue;
+    if (when === 'theirEnd') return r.action;
+    // In a main phase only an ability that cannot wait for the opponent's end step, where its mana would
+    // have stayed open through their turn; in the first main phase not one that taps a creature (CR 302.6).
+    if (!sorceryOnly(view, r.action)) continue;
+    if (when === 'main1' && taps(view, r.action) && isCreature(view, r.action)) continue;
     return r.action;
   }
   return null;
 }
 
-/** Whether an ability taps the creature it belongs to (CR 302.6: then it cannot attack this turn). */
-function tapsCreature(view: GameView, a: Activation): boolean {
-  const o = view.battlefield.find((x) => x.id === a.object);
-  if (o === undefined || !o.types.includes('creature')) return false;
-  const ability = o.activated?.find((x) => x.abilityIndex === a.abilityIndex)?.ability;
-  return ability?.cost.some((c) => c.kind === 'tap') === true;
-}
+const isCreature = (view: GameView, a: Activation): boolean =>
+  view.battlefield.some((o) => o.id === a.object && o.types.includes('creature'));

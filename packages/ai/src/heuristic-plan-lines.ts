@@ -24,7 +24,14 @@
 import type { Action, GameView, ObjectView, PriorityDecision } from '@commander-arena/engine';
 import { type Play, spellPlays } from './casual-priority';
 import { hasKeyword, isLand, manaValueOf } from './casual-view';
-import { type Activation, keepTop, type RankedActivation, unranked } from './heuristic-activations';
+import {
+  type Activation,
+  keepTop,
+  type RankedActivation,
+  sorceryOnly,
+  taps,
+  unranked,
+} from './heuristic-activations';
 import { canPayAll, ownUnits } from './heuristic-mana';
 import type { Line, Window } from './heuristic-plan-sim';
 import {
@@ -61,21 +68,6 @@ const line = (
 const times = (a: Action, n: number): Action[] => Array.from({ length: n }, () => a);
 
 const costOf = (o: ObjectView): readonly string[] => o.castCost ?? o.manaCost ?? [];
-
-const abilityOf = (view: GameView, a: Activation) =>
-  view.battlefield
-    .find((o) => o.id === a.object)
-    ?.activated?.find((x) => x.abilityIndex === a.abilityIndex)?.ability;
-
-/** Whether an ability taps its permanent (it can be activated once until the permanent untaps). */
-const taps = (view: GameView, a: Activation): boolean =>
-  abilityOf(view, a)?.cost.some((c) => c.kind === 'tap') === true;
-
-/** CR 602.5d, 606.3: an ability activated only at sorcery timing ("Activate only as a sorcery", loyalty). */
-const sorceryOnly = (view: GameView, a: Activation): boolean => {
-  const ability = abilityOf(view, a);
-  return ability?.timing === 'sorcery' || ability?.cost.some((c) => c.kind === 'loyalty') === true;
-};
 
 /** The lines of a main phase (`now` is 'main1' or 'main2'); `today` is today's choice for this decision. */
 export function mainLines(

@@ -109,6 +109,24 @@ describe('the main abilities of the board are used, not only the first ones list
     });
     expect(await activationsOf(g)).toHaveLength(3);
   });
+
+  test('after casting Grizzly Bears, the two lands left make a token with the sorcery-speed ability', async () => {
+    // Wrong to pass with two lands open here: nothing else is in hand and the ability cannot wait for the end step.
+    const g = scenario()
+      .define(SERVO_WORKS)
+      .seat(0)
+      .hand(BEARS)
+      .battlefield(SERVO_WORKS.name, 'Forest', 'Forest', 'Forest', 'Forest')
+      .landsPlayed(1)
+      .library('Island', LIBRARY)
+      .seat(1)
+      .library('Island', LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    const { actions, cast } = await playUntilPass(g, 0);
+    expect(cast).toEqual([BEARS]);
+    expect(actions.filter(isActivation)).toHaveLength(1);
+  });
 });
 
 describe('pumps that change the result are used', () => {

@@ -55,7 +55,7 @@ import {
   type Think,
 } from './heuristic-budget';
 import type { LookRecord } from './heuristic-combat-look';
-import { choosePriorityHeuristic, type PriorityChoice } from './heuristic-main';
+import { choosePriorityHeuristic, type PriorityChoice, spareAbility } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
 import {
@@ -214,9 +214,23 @@ export class HeuristicAgent implements ExplainingAgent {
       this.plan = null;
     }
     const when = planning ? windowOf(view, d) : null;
+    // The own activations ranked on the sample (`heuristic-activations.ts`), once a decision and only when
+    // a window asks for them: today's spare-mana rule and the planner's ability lines read the same ranking.
+    let ranking: readonly RankedActivation[] | null = null;
+    const ranked = (): readonly RankedActivation[] => {
+      ranking ??= rankActivations(view, d, think, answer);
+      return ranking;
+    };
     if (when !== null) {
       const step = followPlan(this.plan, view, d, when);
       if (step !== null) {
+        // The plan's last pass of a main phase: its play-out never used an ability (the agents inside a
+        // play-out have no sample to rank them on), so spare mana goes to one that gains, as today's rule does.
+        const spare =
+          step.action.kind === 'pass' && (when === 'main1' || when === 'main2')
+            ? spareAbility(view, d, ranked, this.weights.main.trickMargin)
+            : null;
+        if (spare !== null) return { action: spare, reason: 'ability' };
         return {
           action: step.action,
           reason: 'plan',
@@ -224,13 +238,6 @@ export class HeuristicAgent implements ExplainingAgent {
         };
       }
     }
-    // The own activations ranked on the sample (`heuristic-activations.ts`), once a decision and only when
-    // a window asks for them: today's end-step rule and the planner's ability lines read the same ranking.
-    let ranking: readonly RankedActivation[] | null = null;
-    const ranked = (): readonly RankedActivation[] => {
-      ranking ??= rankActivations(view, d, think, answer);
-      return ranking;
-    };
     const today = choosePriorityHeuristic(
       view,
       d,

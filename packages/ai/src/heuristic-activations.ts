@@ -45,6 +45,21 @@ export function ownActivations(view: GameView, d: PriorityDecision): Activation[
     .sort(byKey);
 }
 
+const abilityOf = (view: GameView, a: Activation) =>
+  view.battlefield
+    .find((o) => o.id === a.object)
+    ?.activated?.find((x) => x.abilityIndex === a.abilityIndex)?.ability;
+
+/** Whether an ability taps its permanent (it can be activated once until the permanent untaps). */
+export const taps = (view: GameView, a: Activation): boolean =>
+  abilityOf(view, a)?.cost.some((c) => c.kind === 'tap') === true;
+
+/** CR 602.5d, 606.3: an ability activated only at sorcery timing ("Activate only as a sorcery", loyalty). */
+export const sorceryOnly = (view: GameView, a: Activation): boolean => {
+  const ability = abilityOf(view, a);
+  return ability?.timing === 'sorcery' || ability?.cost.some((c) => c.kind === 'loyalty') === true;
+};
+
 const isCommanderAbility = (view: GameView, a: Activation): boolean =>
   view.battlefield.some((o) => o.id === a.object && o.isCommander === true);
 
