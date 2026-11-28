@@ -2458,6 +2458,8 @@ export type IrStaticEffect =
       readonly alternative: 'lifeForMana' | 'free';
       readonly types?: readonly string[];
       readonly from?: readonly ('hand' | 'libraryTop')[];
+      /** "You may cast spells from your hand without paying their mana costs." (Tamiyo, Field Researcher's emblem, CR 118.9): every spell, in any turn. */
+      readonly unlimited?: true;
     }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }

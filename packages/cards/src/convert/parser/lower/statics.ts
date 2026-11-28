@@ -1497,6 +1497,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
             spells: first.types === undefined ? {} : { types: [...first.types] as never },
             ...(first.from === undefined ? {} : { from: [...first.from] }),
             alternative: first.alternative,
+            ...(first.unlimited === true ? { unlimited: true as const } : {}),
           },
         },
       ],

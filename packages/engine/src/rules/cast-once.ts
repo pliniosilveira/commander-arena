@@ -5,6 +5,9 @@
  * the spell is cast at the timing of its types with its additional costs (`rules/legality.ts`, `rules/cast-cost.ts`), with X 0 (CR 107.3b), and the permanent whose permission it was is
  * kept on the spell (`StackData.castOnce`) and recorded as used as the spell becomes cast (`TurnLog.oncePerTurnGrants`, `finishCast`). Each permanent has its own use, and a permanent
  * that left the battlefield and came back is a new object (CR 400.7).
+ *
+ * With `unlimited` ("You may cast spells from your hand without paying their mana costs.", the emblem of Tamiyo, Field Researcher, CR 114.4, 118.9) the permission has no limit: any
+ * spell of the hand it matches, in any turn, and no use is recorded (`castOnceUse`). An emblem's ability works from the command zone (`derive-statics.ts`).
  */
 import type { ObjectId, SeatId } from '../ids';
 import { getSeat } from '../state/ops';
@@ -41,8 +44,15 @@ function reaches(
  * alternative cost, the narrowest is the one used, so that the wider one is left for another spell (the player has no way to name the permanent here).
  */
 function width(source: OnceCastSource): number {
+  // A permission with no limit is used first: it leaves every once-a-turn one for another spell.
+  if (source.unlimited === true) return -1;
   const any = Object.keys(source.spells).length === 0 ? 1 : 0;
   return any * 10 + (source.from === undefined ? 3 : source.from.length);
+}
+
+/** Whether the permission of `source` (an object on the battlefield or an emblem) is one with no limit: a spell cast with it records no use (CR 118.9). */
+export function isUnlimitedOnceCast(state: GameState, source: ObjectId): boolean {
+  return onceCastSources(state).some((s) => s.object.id === source && s.unlimited === true);
 }
 
 /**
@@ -59,14 +69,20 @@ export function onceCastGrant(
 ): ObjectId | null {
   const sources = onceCastSources(state);
   if (sources.length === 0) return null;
-  if (state.turn.activeSeat !== seat || card.card === null || card.owner !== seat) return null;
+  if (card.card === null || card.owner !== seat) return null;
   if (card.copyOf !== undefined) return null;
   const used = state.turnLog.oncePerTurnGrants ?? [];
   let best: OnceCastSource | null = null;
   for (const source of sources) {
     if (source.alternative !== alternative) continue;
     if (controllerOf(state, source.object) !== seat) continue;
-    if (used.includes(source.object.id)) continue;
+    // "Once during each of your turns" (CR 601.2b): in the seat's own turn, once; a permission with no limit works in any turn, for any number of spells.
+    if (
+      source.unlimited !== true &&
+      (state.turn.activeSeat !== seat || used.includes(source.object.id))
+    ) {
+      continue;
+    }
     if (!reaches(state, seat, card, source, otherwiseFromLibrary)) continue;
     if (
       source.condition !== undefined &&

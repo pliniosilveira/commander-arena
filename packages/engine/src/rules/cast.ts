@@ -94,6 +94,7 @@ import {
 } from './cast-cost';
 import { answerGift, toGift } from './cast-gift';
 import { answerOffspring as answerOffspringWith, toOffspring } from './cast-offspring';
+import { isUnlimitedOnceCast } from './cast-once';
 import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
@@ -1956,6 +1957,10 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     next = patchSeat(next, casting.seat, {
       spellsCastThisTurn: getSeat(next, casting.seat).spellsCastThisTurn + 1,
     });
+    const onceUsed =
+      obj.stack.castOnce !== undefined && !isUnlimitedOnceCast(next, obj.stack.castOnce)
+        ? obj.stack.castOnce
+        : undefined;
     // D-444 (CR 601.2i): the card types it was cast with, for "you've cast an instant or sorcery spell this turn".
     next = {
       ...next,
@@ -1963,13 +1968,14 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
         ...next.turnLog,
         // CR 601.2b (Tlincalli Hunter): "once each turn": the permanent whose alternative cost this spell was cast for has been used.
         // CR 601.2b, 601.2i (`castOnceEachTurn`): and the permanent whose "once during each of your turns, you may cast ..." this spell was cast with.
-        ...(obj.stack.energyGrantOnce === undefined && obj.stack.castOnce === undefined
+        // CR 118.9 (Tamiyo, Field Researcher's emblem): a permission with no limit records no use.
+        ...(obj.stack.energyGrantOnce === undefined && onceUsed === undefined
           ? {}
           : {
               oncePerTurnGrants: [
                 ...(next.turnLog.oncePerTurnGrants ?? []),
                 ...(obj.stack.energyGrantOnce === undefined ? [] : [obj.stack.energyGrantOnce]),
-                ...(obj.stack.castOnce === undefined ? [] : [obj.stack.castOnce]),
+                ...(onceUsed === undefined ? [] : [onceUsed]),
               ],
             }),
         castSpells: [

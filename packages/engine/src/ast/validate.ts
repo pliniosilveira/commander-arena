@@ -735,6 +735,21 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       ) {
         issue(out, `${path}.from`, "from lists 'hand' and 'libraryTop', each at most once");
       }
+      // CR 118.9 (Tamiyo, Field Researcher's emblem): the permission with no limit is "cast spells from your hand without paying their mana costs" only.
+      if (
+        s.unlimited !== undefined &&
+        (s.unlimited !== true ||
+          s.alternative !== 'free' ||
+          s.from === undefined ||
+          s.from.length !== 1 ||
+          s.from[0] !== 'hand')
+      ) {
+        issue(
+          out,
+          `${path}.unlimited`,
+          "a permission with no limit is 'free', from the 'hand' only",
+        );
+      }
       checkFilter(s.spells, `${path}.spells`, out);
       if (
         filterSome(

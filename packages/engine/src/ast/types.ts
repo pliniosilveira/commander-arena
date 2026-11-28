@@ -9426,6 +9426,11 @@ export type StaticEffect =
       readonly spells: ObjectFilter;
       readonly from?: readonly ('hand' | 'libraryTop')[];
       readonly alternative: 'lifeForMana' | 'free';
+      /**
+       * "You may cast spells from your hand without paying their mana costs." (the emblem of Tamiyo, Field Researcher; CR 118.9, 601.2b, 601.2f, 107.3b): the permission has no
+       * limit: every spell `spells` matches, in any turn (at the timing of its types, CR 601.3), and nothing is recorded as used. Only with `from` `hand` and `free`.
+       */
+      readonly unlimited?: true;
     }
   /**
    * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):

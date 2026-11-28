@@ -21,7 +21,7 @@ import { ATTACHED_CONDITION_STATIC_RULES } from './attached-conditions';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
-import { STATIC_CAST_ONCE_EACH_TURN } from './cast-once';
+import { STATIC_CAST_FROM_HAND_FREE, STATIC_CAST_ONCE_EACH_TURN } from './cast-once';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
@@ -187,6 +187,7 @@ export const STATIC_RULES = [
   STATIC_PAY_ZERO_ALT_COST_FROM_EXILE,
   // Miracle Worker deck (issue 109): "Once during each of your turns, you may cast a spell from your hand by paying life equal to its mana value rather than paying its mana cost."
   STATIC_CAST_ONCE_EACH_TURN,
+  STATIC_CAST_FROM_HAND_FREE,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
   // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."
