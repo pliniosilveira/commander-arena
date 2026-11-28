@@ -1411,7 +1411,11 @@ export const EFFECT_LIFE = defineRule<Clauses>({
     )(ctx, pos),
 });
 
-/** "Until that player's next turn, they gain protection from everything and their life total can't change." */
+/**
+ * "Until that player's next turn, they gain protection from everything and their life total can't change." Perch Protection (issue 112): "until your next turn, your life
+ * total can't change and you gain protection from everything", the same two effects for the controller, in the other order (CR 702.16b, 702.16e, 119.10). Not read: one of the
+ * two halves alone, another duration.
+ */
 export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
   id: 'effect.player-lock',
   family: 'effect',
@@ -1419,13 +1423,36 @@ export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
   cites: ['CR 702.16 (Protection)', 'CR 119 (Life)'],
   examples: [
     "until that player's next turn, they gain protection from everything and their life total can't change",
+    "until your next turn, your life total can't change and you gain protection from everything",
+    'until your next turn, you gain protection from everything and your life total can’t change',
   ],
   rejects: [
     "until that player's next turn, they gain protection from everything",
     "until that player's next turn, their life total can't change",
-    'until your next turn, you gain protection from everything and your life total can’t change',
+    "until your next turn, your life total can't change",
+    "until your next turn, your life total can't change and they gain protection from everything",
+    "until their next turn, your life total can't change and you gain protection from everything",
   ],
   parse: (ctx, pos) => {
+    const mine = spanned(
+      pattern(
+        /until your next turn, (?:your life total can(?:not|'t|’t) change and you gain protection from everything|you gain protection from everything and your life total can(?:not|'t|’t) change)(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (mine.ok) {
+      return {
+        ok: true,
+        value: [
+          makeClause(
+            'effect.player-lock',
+            'playerLock',
+            { player: impliedYou('effect.player-lock', pos) },
+            mine.value.span,
+          ),
+        ],
+        pos: mine.pos,
+      };
+    }
     const r = spanned(
       pattern(
         /until that player['’]s next turn, they gain protection from everything and their life total can(?:not|'t|’t) change(?![\p{L}\p{N}])/iu,

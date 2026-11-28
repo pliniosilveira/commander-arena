@@ -668,6 +668,11 @@ function occurrences(
       return event.kind === 'crimeCommitted'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'givesGift':
+      // CR 702.174c: the spell or gift ability that gave the gift is the subject, the player who gave it the player.
+      return event.kind === 'giftGiven'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'entersCausesTrigger':
       // CR 603.2, 603.6a (Aboleth Spawn): the triggered ability on the stack is the subject, the permanent that entered (its source) is what the filter reads; the player is the one who
       // controls it, which is the controller of the ability it caused.
@@ -1178,6 +1183,10 @@ function matches(
           );
         })
       );
+    case 'givesGift':
+      // CR 702.174c: the player who gave the gift, relative to the controller of this ability.
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      return trigger.who !== 'opponent' || occ.seat !== candidate.controller;
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -1604,6 +1613,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
+    case 'giftGiven': // CR 702.174c
     case 'abilityActivated':
     case 'abilityTriggered': // CR 603.2 (Aboleth Spawn): "causes a triggered ability to trigger"
     case 'doorUnlocked': // CR 709.5h
@@ -1669,6 +1679,9 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
       if (e.fromZone === 'battlefield' && e.component !== true) members.push(e.from);
     } else if (e?.kind === 'tokenCreated') {
       members = members.filter((m) => m !== e.object);
+    } else if (e?.kind === 'phasedOut') {
+      // CR 702.26d, 603.2: a permanent that phased out was on the battlefield for the events before.
+      members.push(...e.objects.filter((m) => !members.includes(m)));
     }
   }
   return members;
@@ -1833,6 +1846,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
       }
     } else if (event.kind === 'tokenCreated') {
       members = [...members, event.object].sort(byAge);
+    } else if (event.kind === 'phasedOut') {
+      // CR 702.26b: from here on it is treated as though it does not exist, and its abilities trigger on nothing.
+      members = members.filter((m) => !event.objects.includes(m));
     }
     if (!isRelevant(event)) continue;
     const lore = loreChange(state, events, eventIndex);

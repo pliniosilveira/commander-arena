@@ -2754,8 +2754,8 @@ export interface IrKeyword extends IrNode {
   readonly kind: 'keyword';
   readonly name: string;
   readonly params: readonly IrArg[];
-  /** What Gift gives when its line names the gift. */
-  readonly gift?: 'card' | 'tappedFish';
+  /** What Gift gives when its line names the gift (CR 702.174e to 702.174i). */
+  readonly gift?: 'card' | 'tappedFish' | 'extraTurn' | 'octopus';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
   /** "Kicker {X}. X can't be 0." (Thieving Skydiver, CR 702.33a, 107.3a): the kicker cost is {X}, announced as at least 1. */

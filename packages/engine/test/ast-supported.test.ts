@@ -416,6 +416,7 @@ describe('supported feature gate', () => {
         'expend',
         'exiledFromLibraryOrGraveyard',
         'exploits',
+        'givesGift',
         'landfall',
         'lastCounterRemoved',
         'leavesBattlefield',

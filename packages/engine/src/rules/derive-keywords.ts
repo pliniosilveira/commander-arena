@@ -796,7 +796,7 @@ function cumulativeUpkeepAbility(cost: readonly Cost[]): Ability {
 }
 
 /**
- * CR 702.174a, 702.174b, 702.174e: "Gift a card" of a permanent means "When this permanent enters, if its gift cost was paid,
+ * CR 702.174a, 702.174b, 702.174e: "Gift a card" (and every other gift, `rules/gift-effect.ts`) of a permanent means "When this permanent enters, if its gift cost was paid,
  * the chosen player draws a card." (An instant or sorcery has no permanent to carry it: the same effect happens as the spell
  * resolves, before its other effects, `rules/stack.ts`, CR 702.174j.) The condition is checked as it triggers and as it resolves
  * (CR 603.4); the permanent remembers the chosen player (`GameObject.giftTo`).
@@ -807,6 +807,8 @@ function giftAbility(gift: Extract<Keyword, { kind: 'gift' }>['gift']): Ability 
     trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
     interveningIf: { kind: 'giftPromised' },
     effect: effectForGift(gift),
+    // CR 702.174c: its resolution is the giving of the gift ("whenever you give a gift").
+    giftAbility: true,
   };
 }
 

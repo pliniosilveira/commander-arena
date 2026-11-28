@@ -1609,6 +1609,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // CR 701.38a: "whenever players finish voting": no parameter, any vote of any spell or ability.
       break;
     case 'crimeCommitted':
+    case 'givesGift':
     case 'tokenCreated':
     case 'activatesAbility':
     case 'scries':
@@ -2222,6 +2223,8 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'castSpell':
     case 'becomesTarget':
     case 'crimeCommitted':
+    // CR 702.174c: the spell or gift ability that gave the gift.
+    case 'givesGift':
     case 'activatesAbility':
     case 'entersCausesTrigger':
       return 'stack';
@@ -2739,6 +2742,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       if (a.optional !== undefined && typeof a.optional !== 'boolean') {
         issue(out, `${path}.optional`, 'optional must be a boolean');
+      }
+      // CR 702.174b, 702.174c: the gift triggered ability is the engine's own, derived from the Gift keyword; a card never writes it.
+      if (a.giftAbility !== undefined) {
+        issue(out, `${path}.giftAbility`, 'the gift ability is derived from the Gift keyword');
       }
       // D-256 (CR 603.2h): "Do this only once each turn."
       if (a.doOnlyOnceEachTurn !== undefined) {

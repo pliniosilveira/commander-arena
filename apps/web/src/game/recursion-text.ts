@@ -3,7 +3,10 @@
  * "any number" and of a library position ("third from the top"): composed from the engine's nodes and decisions, never
  * from a card name. Pure.
  */
-import type { SeatId, StackAbility, Trigger } from '@commander-arena/engine';
+import type { Keyword, SeatId, StackAbility, Trigger } from '@commander-arena/engine';
+
+type GiftKind = Extract<Keyword, { kind: 'gift' }>['gift'];
+
 import { seatNameOf } from './seat-name';
 
 const ORDINALS: Readonly<Record<number, string>> = {
@@ -34,6 +37,7 @@ export function giftPrompt(
   whom: 'you' | 'opponent',
   types: readonly string[],
   spellName: string,
+  gift: GiftKind = 'card',
 ): string {
   const who = whom === 'you' ? 'you' : 'Opponent';
   const head = `Promise ${who} a gift?`;
@@ -43,8 +47,25 @@ export function giftPrompt(
       : types.includes('instant') || types.includes('sorcery')
         ? ` before the other effects of ${spellName}`
         : ` when ${spellName} enters`;
-  // The only gift built is "a card" (CR 702.174d): the player draws one.
-  return `${head} If you do, ${whom === 'you' ? 'you' : 'they'} draw a card${timing}.`;
+  return `${head} If you do, ${whom === 'you' ? 'you' : 'they'} ${giftWords(gift)}${timing}.`;
+}
+
+/** What the chosen player does with each gift (CR 702.174e to 702.174i), after "they". */
+function giftWords(gift: GiftKind): string {
+  switch (gift) {
+    case 'card':
+      return 'draw a card';
+    case 'tappedFish':
+      return 'create a tapped 1/1 blue Fish creature token';
+    case 'octopus':
+      return 'create an 8/8 blue Octopus creature token';
+    case 'extraTurn':
+      return 'take an extra turn after this one';
+    default: {
+      const unreachable: never = gift;
+      return unreachable;
+    }
+  }
 }
 
 /** ", promising Opponent a gift" for the log line of a spell cast with its gift promised (CR 702.174a); '' when none. */
