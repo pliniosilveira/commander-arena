@@ -58,7 +58,13 @@ import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
-import { flashSlotOf, sameControllerFillable, slotCanBeFilled } from './target-choice';
+import {
+  flashSlotOf,
+  sameControllerFillable,
+  slotCanBeFilled,
+  slotLegalTargets,
+} from './target-choice';
+import { differentTargetsFillable } from './target-distinct';
 import { hasX } from './x-value';
 
 export type { CastAlternative, CastFrom };
@@ -786,7 +792,11 @@ export function targetsPossible(
     if (only !== null && restricted < 0) return false;
     return (
       specs.every((spec, i) => slotCanBeFilled(state, spec, ctx, i === restricted ? only : null)) &&
-      sameControllerFillable(state, specs, ctx)
+      sameControllerFillable(state, specs, ctx) &&
+      // CR 115.3, 601.2c (issue 638): "another target": the slots that must differ are filled together, not each on its own.
+      differentTargetsFillable(specs, (spec, i) =>
+        slotLegalTargets(state, spec, ctx, i === restricted ? only : null),
+      )
     );
   });
 }

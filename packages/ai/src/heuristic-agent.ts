@@ -40,7 +40,7 @@ import {
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
 import { isHelpfulSpell } from './casual-helpful';
-import { noteCast, withoutTriedCasts } from './casual-no-target';
+import { hasNoTargetToChoose, noteChoice, withoutTried } from './casual-no-target';
 import { chooseRingBearerWithEvasion } from './casual-ring';
 import { findObject } from './casual-view';
 import { chooseHeuristicAttack } from './heuristic-attacks';
@@ -277,9 +277,9 @@ export class HeuristicAgent implements ExplainingAgent {
   ): Generator<PlanQuery, Action, Planning> {
     this.opponent.observe(view);
     this.reserve = null;
-    const open = withoutTriedCasts(view, d, this.activations);
+    const open = withoutTried(view, d, this.activations);
     const choice = yield* this.priorityChoice(view, open, think, answer, planning);
-    noteCast(view, choice.action, this.activations);
+    noteChoice(view, choice.action, this.activations);
     this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
     this.look = choice.look ?? null;
     note(choice.reason);
@@ -373,6 +373,8 @@ export class HeuristicAgent implements ExplainingAgent {
         return choice.action;
       },
       targets: (d) => {
+        // Nothing can be chosen: the casual answer cancels and remembers the activation (`casual-no-target.ts`).
+        if (hasNoTargetToChoose(d)) return casual.targets(d);
         const source = findObject(view, d.source);
         const plain = d.forTrigger !== true && d.forCopy !== true && d.forChange !== true;
         const simple = d.specs.every((s) => s.mode === undefined && s.divide === undefined);
