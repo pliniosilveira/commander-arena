@@ -735,6 +735,7 @@ describe('tokens: tapped, counted, and made by a player (CR 110.5b, 111.2)', () 
       effect: {
         kind: 'createToken',
         token: { kind: 'preset', preset: 'Clue' },
+        investigate: true,
         count: { kind: 'opponentsWithMore', stat: 'cardsInHand' },
       },
     });
@@ -765,7 +766,8 @@ describe('tokens: tapped, counted, and made by a player (CR 110.5b, 111.2)', () 
     'Create a Treasure token tapped.',
     'Create tapped Treasure tokens.',
     'Create a tapped token that’s a copy of equipped creature.',
-    'Investigate twice.',
+    // "Investigate twice" is read since issue 128; a count word the grammar does not know is not.
+    'Investigate thrice.',
     'Investigate once.',
     'Create X Treasure tokens for each land you control.',
     'Create twenty-one 2/2 black Zombie creature tokens.',

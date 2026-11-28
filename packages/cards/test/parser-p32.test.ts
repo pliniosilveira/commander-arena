@@ -935,7 +935,8 @@ describe('"Equipped creature gets +X/+X, where X is ..." (CR 613.4c, 611.3a, 107
     'Equipped creature gets +0/+0, where X is the greatest mana value among your commanders.',
     'Equipped creature gets -X/-X, where X is the greatest mana value among your commanders.',
     'Equipped creature gets +X/+X until end of turn, where X is the greatest mana value among your commanders.',
-    'Creatures you control get +X/+X, where X is the greatest mana value among your commanders.',
+    // Issue 128: a group of creatures you control is read since Knowledge Is Power; the other groups are not.
+    'Other creatures you control get +X/+X, where X is the greatest mana value among your commanders.',
   ])('stays unread: %s', (text) => {
     expect(drop(text, 'artifact', ['Equipment'])).toMatchObject({ reason: 'unrecognised' });
   });

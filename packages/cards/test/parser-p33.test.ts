@@ -15,7 +15,12 @@ const THIS = { kind: 'this' } as const;
 const T1 = { kind: 'target', id: 't1' } as const;
 const FLYING = { kind: 'keyword', keyword: { kind: 'flying' } } as const;
 const VIGILANCE = { kind: 'keyword', keyword: { kind: 'vigilance' } } as const;
-const CLUE = { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 } as const;
+const CLUE = {
+  kind: 'createToken',
+  token: { kind: 'preset', preset: 'Clue' },
+  count: 1,
+  investigate: true,
+} as const;
 const ONE_W = [{ kind: 'mana', symbols: ['1'] }] as const;
 const ATTACHED = { kind: 'attached', types: ['creature'] } as const;
 

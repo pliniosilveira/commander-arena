@@ -169,7 +169,12 @@ describe('"Investigate." is "Create a Clue token" (CR 701.16a, 111.10f)', () => 
       {
         kind: 'triggered',
         trigger: { kind: 'landfall' },
-        effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Clue' }, count: 1 },
+        effect: {
+          kind: 'createToken',
+          token: { kind: 'preset', preset: 'Clue' },
+          count: 1,
+          investigate: true,
+        },
       },
     ]);
   });

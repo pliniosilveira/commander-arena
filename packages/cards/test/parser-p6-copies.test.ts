@@ -430,7 +430,11 @@ describe('becomes an artifact creature, with or without "in addition to its othe
       'Target creature becomes a 3/3 artifact creature until end of turn.',
       'artifact creature until',
     ],
-    ['Target creature becomes an artifact creature.', '.'],
+    // "Target artifact becomes an artifact creature." with no duration is read since issue 128 (Tezzeret): a creature target and the other words are not.
+    [
+      'Target creature becomes an artifact creature in addition to its other types and gains flying.',
+      '.',
+    ],
     ['Target creature becomes an artifact creature until your next turn.', 'until your next turn'],
     ['Target creature becomes an artifact creature in addition to its other types.', '.'],
     ['Target creature becomes artifact creature until end of turn.', 'artifact creature'],
