@@ -119,6 +119,20 @@ describe('Ghirapur Orrery: each upkeep, a player with no cards in hand draws thr
 });
 
 describe('Triskaidekaphile: exactly thirteen cards in hand at upkeep wins the game', () => {
+  test('it reads as an upkeep trigger whose intervening "if" counts the hand, equal to thirteen', () => {
+    const trigger = TRISKA.faces[0]?.abilities.find((a) => a.kind === 'triggered');
+    expect(trigger).toEqual({
+      kind: 'triggered',
+      trigger: { kind: 'upkeep', whose: 'you' },
+      interveningIf: {
+        kind: 'amountIs',
+        amount: { kind: 'countOf', filter: { zone: 'hand', controller: 'you' } },
+        compare: { cmp: 'equal', value: 13 },
+      },
+      effect: { kind: 'winGame', player: { kind: 'you' } },
+    });
+  });
+
   const board = (cards: number) => {
     const g = scenario()
       .define(TRISKA)
@@ -188,6 +202,34 @@ describe('Triskaidekaphile: exactly thirteen cards in hand at upkeep wins the ga
 });
 
 describe('Twenty-Toed Toad', () => {
+  test('it reads as a static maximum hand size and an attack trigger with a conditional win (no intervening "if")', () => {
+    const abilities = TOAD.faces[0]?.abilities ?? [];
+    expect(abilities[0]).toEqual({ kind: 'static', static: { kind: 'maximumHandSize', size: 20 } });
+    expect(abilities[2]).toEqual({
+      kind: 'triggered',
+      trigger: { kind: 'attacks', what: { kind: 'this' } },
+      effect: {
+        kind: 'conditional',
+        condition: {
+          kind: 'or',
+          terms: [
+            {
+              kind: 'amountIs',
+              amount: { kind: 'countersOn', of: { kind: 'this' } },
+              compare: { cmp: 'atLeast', value: 20 },
+            },
+            {
+              kind: 'amountIs',
+              amount: { kind: 'countOf', filter: { zone: 'hand', controller: 'you' } },
+              compare: { cmp: 'atLeast', value: 20 },
+            },
+          ],
+        },
+        effect: { kind: 'winGame', player: { kind: 'you' } },
+      },
+    });
+  });
+
   test('the maximum hand size is twenty: twenty cards are kept in the cleanup step (CR 402.2, 514.1)', () => {
     const g = scenario()
       .define(TOAD)
