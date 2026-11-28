@@ -142,6 +142,7 @@ export const CONDITION_SAME_NAME = defineRule<IrCondition>({
     'you control two or more artifacts with the same name',
     'you control four or more creatures with the same name',
     'you control three or more nonland permanents with the same name',
+    'you control eight or more artifacts with the same name as one another',
   ],
   rejects: [
     'you control three or more lands with the same name.',
@@ -164,7 +165,8 @@ export const CONDITION_SAME_NAME = defineRule<IrCondition>({
         map(permanentPhrase(true, 'all'), withoutZone),
         (filter) => filter.controller === undefined && filter.anyOf === undefined,
       ),
-      pattern(new RegExp(` with the same name${BOUNDARY}`, 'iu')),
+      // Issue 128 (Mechanized Production): "with the same name as one another" says the same.
+      pattern(new RegExp(` with the same name(?: as one another)?${BOUNDARY}`, 'iu')),
     )(ctx, pos);
     if (!r.ok) return r;
     const [, count, , filter] = r.value;

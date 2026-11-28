@@ -125,6 +125,8 @@ const CONTROL_CONDITIONS = [
   'condition.dont-control-a',
   'condition.control-at-least',
   'condition.control-none',
+  // Issue 128 (Mechanized Production): "Then if you control eight or more artifacts with the same name as one another, you win the game."
+  'condition.same-name',
   'condition.control-commander',
   'condition.control-your-commander',
   // Auntie Ool, Cursewretch: "draw a card if you control that creature. If you don't control it, ...".

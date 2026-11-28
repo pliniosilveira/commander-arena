@@ -1514,7 +1514,8 @@ export function objectRefOf(
     if (
       !ctx.faceSubtypes.includes(needed) ||
       types.length !== 1 ||
-      types[0] !== 'creature' ||
+      // Issue 128 (Mechanized Production): the host of an Aura with "Enchant artifact" may be an artifact too.
+      (types[0] !== 'creature' && !(types[0] === 'artifact' && noun.det === 'enchanted')) ||
       (noun.filter.supertypes?.length ?? 0) > 0
     ) {
       return failure(noun, []);

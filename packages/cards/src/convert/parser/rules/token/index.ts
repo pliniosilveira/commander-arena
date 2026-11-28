@@ -874,7 +874,14 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
 /** What a copy can be made of: this permanent, one target permanent, or "it" (CR 707.2). */
 const COPY_SOURCES = ['noun.self', 'noun.target-permanent', 'noun.it'] as const;
 
-const COPY_SOURCE = satisfy(family<IrNoun>('noun', { only: COPY_SOURCES }), (noun) => !noun.plural);
+const COPY_SOURCE = choice(
+  satisfy(family<IrNoun>('noun', { only: COPY_SOURCES }), (noun) => !noun.plural),
+  // Issue 128 (Mechanized Production, CR 707.2, 303.4b): "a token that's a copy of enchanted artifact", the permanent the Aura is attached to (an Equipment's "equipped creature" is not read).
+  satisfy(
+    family<IrNoun>('noun', { only: ['noun.attached-permanent'] }),
+    (noun) => noun.det === 'enchanted',
+  ),
+);
 
 /**
  * `token.copy`: "a token that's a copy of target creature" and "two tokens that are copies of
@@ -901,6 +908,7 @@ export const TOKEN_COPY = defineRule<IrToken>({
     'two tokens that are copies of target creature',
     'three tokens that are copies of ~',
     "a token that's a copy of target artifact",
+    "a token that's a copy of enchanted artifact",
     "a token that's a copy of target token you control",
     'two tokens that are copies of it',
     // Flamerush Rider (CR 508.4, 110.5b, 707.2): a copy that enters tapped and attacking.
