@@ -524,6 +524,17 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
         whose: 'you' as const,
       }),
     ),
+    // Tamiyo, Field Researcher (CR 603.7, 603.7c, 510.2, 500.1): the creature or creatures a target before it named, each time it deals combat damage, until the controller's next turn.
+    map(
+      pattern(
+        /until your next turn, whenever (either of those creatures|that creature) deals combat damage, /iu,
+      ),
+      (m) => ({
+        step: 'combatDamageUntilNextTurn' as const,
+        whose: 'you' as const,
+        those: (m[1]?.toLowerCase() === 'that creature' ? 'one' : 'several') as 'one' | 'several',
+      }),
+    ),
     // Massacre Girl (CR 603.7, 603.10a, 700.4): the creatures that die, any player's, for the rest of the turn.
     map(literal('whenever a creature dies this turn, '), () => ({
       step: 'creatureDies' as const,

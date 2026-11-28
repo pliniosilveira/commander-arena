@@ -2938,10 +2938,20 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly effect: Effect;
     }
+  /**
+   * "When this creature deals combat damage to a player this combat, ..." (the prepare trigger) and "Until your next turn, whenever either of those creatures deals combat damage, you
+   * draw a card." (Tamiyo, Field Researcher; CR 603.7, 603.7b, 603.7c, 603.7e, 510.2, 500.1): for each permanent `objects` names as the effect resolves, a delayed triggered ability of
+   * the controller of the spell or ability that triggers each time that permanent deals combat damage, about that object only (CR 603.7c: it still triggers when the permanent changes
+   * controller; it is the controller of the ability who is "you"). Left out, `to` is a player and the ability ends with the combat; `to` `any` is any recipient, once for each
+   * permanent in each combat damage event however many objects and players it damages (CR 510.2: the damage of one step is dealt at once), and `until` `yourNextTurn` ends it as the
+   * next turn of the controller begins (CR 500.1), whether or not the source of the ability is still on the battlefield. `effect` runs each time, with the controller as "you".
+   */
   | {
       readonly kind: 'delayedCombatDamage';
       readonly objects: ObjectSelector;
       readonly effect: Effect;
+      readonly to?: 'any';
+      readonly until?: 'yourNextTurn';
     }
   | { readonly kind: 'sequence'; readonly effects: readonly Effect[] }
   /**

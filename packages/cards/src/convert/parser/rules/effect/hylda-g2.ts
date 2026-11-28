@@ -74,7 +74,13 @@ export const EFFECT_DOESNT_UNTAP_NEXT = defineRule<Clauses>({
     RULE,
     (ctx, pos) => {
       const subject = operands(
-        ['noun.target-permanent', 'noun.that-object', 'noun.those-creatures', 'noun.it', 'noun.they'],
+        [
+          'noun.target-permanent',
+          'noun.that-object',
+          'noun.those-creatures',
+          'noun.it',
+          'noun.they',
+        ],
         RULE,
       )(ctx, pos);
       if (!subject.ok) return subject;

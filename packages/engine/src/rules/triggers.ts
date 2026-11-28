@@ -2326,7 +2326,9 @@ function findDelayedTriggers(
       remaining.push(delayed);
       continue;
     }
-    for (const occurrence of delayed.repeat === true ? matched : matched.slice(0, 1)) {
+    for (const occurrence of delayed.repeat === true && delayed.oncePerEvents !== true
+      ? matched
+      : matched.slice(0, 1)) {
       found.push({
         source: delayed.source,
         controller: delayed.controller,
