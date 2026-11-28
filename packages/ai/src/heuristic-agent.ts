@@ -241,6 +241,12 @@ export class HeuristicAgent implements ExplainingAgent {
       when === null ? undefined : ranked,
     );
     if (when === null || when === 'attack') return today;
+    // At most MAX_PLANS_PER_TURN plannings a turn, and none again in a window where one failed (no time,
+    // a refused play-out): on a huge board every decision of the window would otherwise use the budget.
+    // Checked before the lines are built, whose ability ranking costs play-outs of its own.
+    if (this.tries.turn !== view.turn)
+      this.tries = { turn: view.turn, count: 0, failed: new Set() };
+    if (this.tries.count >= MAX_PLANS_PER_TURN || this.tries.failed.has(when)) return today;
     let lines: ReturnType<typeof mainLines>;
     if (when === 'main1' || when === 'main2') {
       if (today.action.kind === 'playLand') return today;
@@ -251,11 +257,6 @@ export class HeuristicAgent implements ExplainingAgent {
       lines = windowLines(view, d, when, today.action, ranked());
     }
     if (lines.length < 2) return today;
-    // At most MAX_PLANS_PER_TURN plannings a turn, and none again in a window where one failed (no time,
-    // a refused play-out): on a huge board every decision of the window would otherwise use the budget.
-    if (this.tries.turn !== view.turn)
-      this.tries = { turn: view.turn, count: 0, failed: new Set() };
-    if (this.tries.count >= MAX_PLANS_PER_TURN || this.tries.failed.has(when)) return today;
     this.tries.count += 1;
     const { planned, work } = yield { view, when, lines };
     this.workList.push(work);
