@@ -245,6 +245,7 @@ import { PAY_HAND_OR_CANT_ATTACK_EFFECT_RULES } from './pay-hand-or-cant-attack'
 import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PAY_X_REFLEXIVE_EFFECT_RULES } from './pay-x-reflexive';
 import { PEACE_OFFERING_EFFECT_RULES } from './peace-offering';
+import { PEACE_OFFERING_FISHER_EFFECT_RULES } from './peace-offering-fisher';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import { PLANESWALKER_PARTY_EFFECT_RULES } from './planeswalker-party';
@@ -1507,6 +1508,8 @@ export const EFFECT_RULES = [
   ...AHOY_G10_EFFECT_RULES,
   // Peace Offering deck (issue 112): the offers to each player or each opponent and what follows for those who took them, and Selvala's reveal; they start like other rules on "each" and are tried first.
   ...PEACE_OFFERING_EFFECT_RULES,
+  // Peace Offering deck, group F (Fisher's Talent): a look at the top card whose land may be revealed, and a token if it was; it starts like other rules on "look" and is tried first.
+  ...PEACE_OFFERING_FISHER_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
