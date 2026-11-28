@@ -668,6 +668,11 @@ function occurrences(
       return event.kind === 'crimeCommitted'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'givesGift':
+      // CR 702.174c: the spell or gift ability that gave the gift is the subject, the player who gave it the player.
+      return event.kind === 'giftGiven'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'entersCausesTrigger':
       // CR 603.2, 603.6a (Aboleth Spawn): the triggered ability on the stack is the subject, the permanent that entered (its source) is what the filter reads; the player is the one who
       // controls it, which is the controller of the ability it caused.
@@ -1178,6 +1183,10 @@ function matches(
           );
         })
       );
+    case 'givesGift':
+      // CR 702.174c: the player who gave the gift, relative to the controller of this ability.
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      return trigger.who !== 'opponent' || occ.seat !== candidate.controller;
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -1584,6 +1593,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
+    case 'giftGiven': // CR 702.174c
     case 'abilityActivated':
     case 'abilityTriggered': // CR 603.2 (Aboleth Spawn): "causes a triggered ability to trigger"
     case 'doorUnlocked': // CR 709.5h

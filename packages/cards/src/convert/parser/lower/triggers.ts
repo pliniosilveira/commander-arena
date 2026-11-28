@@ -585,6 +585,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exerted' });
     }
     case 'crimeCommitted':
+    case 'givesGift':
     case 'activatesAbility':
     case 'tokenCreated': {
       // "Whenever you commit a crime" (Gisa deck, D-464, CR 700.13), "whenever you create a token" (D-465, CR 111.2): the player is relative to the controller.
@@ -609,7 +610,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const ofSource = sourceNoun === undefined ? undefined : lowerFilter(sourceNoun);
       if (ofSource !== undefined && !ofSource.ok) return ofSource;
       return ok({
-        kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
+        kind: t.event as 'crimeCommitted' | 'givesGift' | 'tokenCreated' | 'activatesAbility',
         who,
         ...(xCost ? { xCost: true as const } : {}),
         ...(anySource ? { anySource: true as const } : {}),
@@ -1099,6 +1100,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
+      // CR 702.174c: the player who gave the gift.
+      'givesGift',
       'activatesAbility',
       'tokenCreated',
       'scries',
@@ -2643,6 +2646,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:castNth',
   'trigger:castFirstOfKind',
   'trigger:crimeCommitted',
+  'trigger:givesGift',
   'trigger:tokenCreated',
   'trigger:activatesAbility',
   'trigger:activatesAbilityOfSource',

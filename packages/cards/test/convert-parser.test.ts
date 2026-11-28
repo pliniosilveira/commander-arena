@@ -547,6 +547,7 @@ describe('unmatched abilities', () => {
       'trigger.milled',
       'trigger.commit-crime',
       'trigger.create-token',
+      'trigger.give-gift',
       'trigger.play-card',
       'trigger.play-land-or-cast-spell-from-exile',
       'trigger.play-card-from-exile',

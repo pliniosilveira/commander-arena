@@ -1312,6 +1312,15 @@ export function describeEvent(
         [event.object],
         'CR 700.13',
       );
+    case 'giftGiven':
+      // CR 702.174c: an instant or sorcery whose gift cost was paid resolves, or the gift ability of a permanent resolves.
+      return line(
+        'detail',
+        `${who(event.seat)} ${verb(event.seat, 'give', 'gives')} a gift with ${label(event.object)}.`,
+        event.seat,
+        [event.object],
+        'CR 702.174c',
+      );
     case 'legendRule':
       return line(
         'major',

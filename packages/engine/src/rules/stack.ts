@@ -171,6 +171,11 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ? effect
       : { kind: 'sequence', effects: [giftFirst, ...(effect === undefined ? [] : [effect])] };
   const queue: Instruction[] = withGift ? [{ kind: 'effect', effect: withGift }] : [];
+  // CR 702.174c: a player gives a gift as an instant or sorcery they control whose gift cost was paid resolves, or as the gift triggered ability of a permanent
+  // they control resolves, whatever the gift turns out to do.
+  if (giftFirst !== null || (ability?.kind === 'triggered' && ability.giftAbility === true)) {
+    events.push({ kind: 'giftGiven', seat: controllerOf(input, obj), object: id });
+  }
   // CR 603.5: "you may": the controller answers when the ability resolves, before anything else.
   if (ability?.kind === 'triggered' && ability.optional)
     queue.unshift({ kind: 'confirmOptional', answer: null });

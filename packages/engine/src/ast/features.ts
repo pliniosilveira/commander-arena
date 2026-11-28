@@ -804,6 +804,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
+    // Issue 112 (Jolly Gerbils): "Whenever you give a gift" (CR 702.174c).
+    'givesGift',
     // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
     'activatesAbility',
     // Aboleth Spawn: "Whenever a creature entering under an opponent's control causes a triggered ability of that creature to trigger" (CR 603.2, 603.6a).
@@ -4070,6 +4072,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   expend: true,
   classLevel: true,
   crimeCommitted: true,
+  givesGift: true,
   tokenCreated: true,
   playsCard: true,
   activatesAbility: true,

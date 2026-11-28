@@ -744,6 +744,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'crimeCommitted':
       // D-464 (CR 700.13): a spell or ability of the player that targets an opponent, what an opponent controls or a card in an opponent's graveyard.
       return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
+    case 'givesGift':
+      // CR 702.174c: an instant or sorcery of the player whose gift cost was paid resolves, or the gift ability of their permanent resolves.
+      return `Whenever ${trigger.who === 'you' ? 'you give' : `${BY_WORDS[trigger.who]} gives`} a gift`;
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
       return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;

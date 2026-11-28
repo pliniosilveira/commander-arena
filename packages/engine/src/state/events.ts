@@ -264,6 +264,11 @@ export type GameEvent =
    * ability, after its `abilityTriggered`. A copy of a spell is put on the stack, not cast, so it makes none.
    */
   | { readonly kind: 'crimeCommitted'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
+   * `seat` gave a gift (CR 702.174c): `object` is the instant or sorcery spell they control whose gift cost was paid, as it resolves, or the gift triggered ability of a
+   * permanent they control, as it resolves (CR 702.174b). Emitted as the resolution begins, before the gift's effect.
+   */
+  | { readonly kind: 'giftGiven'; readonly seat: SeatId; readonly object: ObjectId }
   | {
       readonly kind: 'abilityActivated';
       readonly seat: SeatId;

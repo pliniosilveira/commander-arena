@@ -1125,6 +1125,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.dies-batch': whenever,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,
+  'trigger.give-gift': whenever,
   'trigger.create-token': whenever,
   'trigger.play-card': whenever,
   'trigger.play-land-or-cast-spell-from-exile': whenever,

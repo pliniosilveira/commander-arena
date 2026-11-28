@@ -1010,7 +1010,7 @@ describe('Gift a card (CR 702.174)', () => {
     expect(trigger).not.toHaveProperty('targets.0.ifGiftPromised');
   });
 
-  test.each(['Gift a Food', 'Gift a Treasure', 'Gift an extra turn', 'Gift two cards'])(
+  test.each(['Gift a Food', 'Gift a Treasure', 'Gift two extra turns', 'Gift two cards'])(
     '%s is another gift, which the engine does not run: not read',
     (line) => {
       expect(drop(line, 'creature')).toMatchObject({ reason: 'unrecognised' });

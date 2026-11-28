@@ -6794,6 +6794,12 @@ export type Trigger =
    */
   | { readonly kind: 'scries'; readonly who: 'you' | 'opponent' | 'any' }
   /**
+   * "Whenever you give a gift" (CR 702.174c, 603.2; Jolly Gerbils): once each time the player `who` names (relative to the controller of this ability) gives a gift: an instant
+   * or sorcery spell they control whose gift cost was paid resolves, or the gift triggered ability of a permanent they control resolves (the event `giftGiven`). What the gift
+   * became or whether the chosen player received it does not matter. `triggerPlayer` is the player who gave it.
+   */
+  | { readonly kind: 'givesGift'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
    * "Whenever you surveil" (CR 701.25, 603.2; Galadriel group 1): once each time the player `who` names (relative to the controller of this ability) surveils (the event `surveiled`:
    * also a surveil of a library with no card, CR 701.25d; never "surveil 0", CR 701.25c). "Whenever you scry or surveil" is two abilities with one body, as every "or" of events is.
    * `firstEachTurn` (Whispering Snitch: "Whenever you surveil for the first time each turn", CR 603.2): only the first surveil of that player in the turn (the turn log counts them); only with `who` "you".
@@ -7902,9 +7908,10 @@ export type Keyword =
    * permanent: "When this permanent enters, if its gift cost was paid, the chosen player draws a card"; of an instant or sorcery:
    * "if its gift cost was paid, the chosen player draws a card", before the other effects, and not at all if the spell is
    * countered or leaves the stack (CR 702.174j). The engine writes both abilities itself (`giftRecipient`, `giftPromised`);
-   * the card adds its own text that reads `giftPromised`. `gift` names what is given: this engine supports `card` and `tappedFish`.
+   * the card adds its own text that reads `giftPromised`. `gift` names what is given (`rules/gift-effect.ts`): a card (CR 702.174e), a tapped
+   * 1/1 blue Fish (CR 702.174f), an extra turn after this one (CR 702.174g) or an 8/8 blue Octopus (CR 702.174i).
    */
-  | { readonly kind: 'gift'; readonly gift: 'card' | 'tappedFish' }
+  | { readonly kind: 'gift'; readonly gift: 'card' | 'tappedFish' | 'extraTurn' | 'octopus' }
   /**
    * CR 702.75a (Hideaway, D-145): "Hideaway N" means "When this permanent enters, look at the top N cards of your library. Exile one of them face
    * down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that
@@ -10498,6 +10505,11 @@ export type Ability =
        * turn, and an ability that triggers twice before the first resolves resolves twice. Not with `oncePerTurn`, which counts the triggering.
        */
       readonly doOnlyOnceEachTurn?: true;
+      /**
+       * The gift triggered ability of a permanent (CR 702.174b): "When this permanent enters, if its gift cost was paid, [gift]". Written only by the engine as it derives the
+       * ability from the Gift keyword (`rules/derive-keywords.ts`), never by a card: its resolution is the giving of a gift (CR 702.174c, the event `giftGiven`).
+       */
+      readonly giftAbility?: true;
       /**
        * "Whenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand." (CR 113.6b, 603.2, D-151):
        * the ability triggers while its card is in its owner's graveyard, and not on the battlefield. The card is "this" (`this` names it while it

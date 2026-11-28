@@ -60,6 +60,7 @@ import { EXPEND_TRIGGER_RULES } from './expend';
 import { FLINT_TRIGGER_RULES } from './flint';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
+import { GIFT_TRIGGER_RULES } from './gift';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
 import { GRAVEYARD_EVENTS_TRIGGER_RULES } from './graveyard-events';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
@@ -1749,6 +1750,8 @@ export const TRIGGER_RULES = [
   ...MILL_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
+  // Peace Offering deck (issue 112, Jolly Gerbils): "you give a gift".
+  ...GIFT_TRIGGER_RULES,
   // Death Toll deck, group D: "you play a card with two or more card types".
   ...DEATH_TOLL_D_TRIGGER_RULES,
   ...FLINT_TRIGGER_RULES,

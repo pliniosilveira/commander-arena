@@ -14,7 +14,7 @@ import type { GameEvent } from '../state/events';
 import { getObject, opponentsOf, patchObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { hasGift } from './alt-costs';
-import { effectForGift } from './gift-effect';
+import { effectForGift, type GiftKind } from './gift-effect';
 import { faceOf } from './legality';
 import { fail, ok, type Result } from './result';
 import { legalTargets, targetBounds } from './select';
@@ -28,14 +28,20 @@ import { sourceInfo } from './source-info';
  */
 export function giftEffectOf(state: GameState, spell: GameObject): Effect | null {
   const face = faceOf(state, spell);
-  if (spell.stack?.giftTo === undefined || !hasGift(face)) return null;
-  const gift = face?.abilities.find(
-    (ability) => ability.kind === 'keyword' && ability.keyword.kind === 'gift',
-  );
-  if (gift?.kind !== 'keyword' || gift.keyword.kind !== 'gift') return null;
+  if (spell.stack?.giftTo === undefined) return null;
+  const gift = giftKindOf(state, spell);
+  if (gift === null) return null;
   return face?.types.some((t) => t === 'instant' || t === 'sorcery') === true
-    ? effectForGift(gift.keyword.gift)
+    ? effectForGift(gift)
     : null;
+}
+
+/** What the Gift keyword of the spell gives (CR 702.174d to 702.174i), or null when it has none. */
+function giftKindOf(state: GameState, spell: GameObject): GiftKind | null {
+  for (const ability of faceOf(state, spell)?.abilities ?? []) {
+    if (ability.kind === 'keyword' && ability.keyword.kind === 'gift') return ability.keyword.gift;
+  }
+  return null;
 }
 
 /** The step the cast goes on to once the gift is settled: announcing X, then the targets. */
@@ -58,6 +64,7 @@ function ask(state: GameState, events: GameEvent[], opponent: SeatId): Result {
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const info = sourceInfo(state, casting.object);
+  const gift = giftKindOf(state, getObject(state, casting.object));
   return ok(
     setPending(
       // The question shares the stage of the kicker question: it is answered before X and the targets.
@@ -70,6 +77,7 @@ function ask(state: GameState, events: GameEvent[], opponent: SeatId): Result {
         sourceOracleText: info?.oracleText ?? '',
         purpose: 'gift',
         giftTo: opponent,
+        ...(gift === null ? {} : { gift }),
       },
     ),
     events,
