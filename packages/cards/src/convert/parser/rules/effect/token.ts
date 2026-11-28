@@ -334,6 +334,7 @@ export const EFFECT_INVESTIGATE = defineRule<Clauses>({
     const token: IrToken = {
       kind: 'token',
       predefined: 'Clue',
+      investigate: true,
       count: each.value ?? { kind: 'number', value: 1, span },
       span,
       rule: 'effect.investigate',
@@ -361,7 +362,12 @@ export const EFFECT_INVESTIGATE_TIMES = defineRule<Clauses>({
     'CR 608.2c (Resolving Spells and Abilities)',
     'CR 107.3 (Variables)',
   ],
-  examples: ['investigate twice', 'investigate three times', 'investigate X times'],
+  examples: [
+    'investigate twice',
+    'investigate three times',
+    'investigate X times',
+    'investigate an additional time',
+  ],
   rejects: [
     'investigate',
     'investigate once',
@@ -373,12 +379,14 @@ export const EFFECT_INVESTIGATE_TIMES = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const word = pattern(/investigate(?![\p{L}\p{N}])/iu)(ctx, pos);
     if (!word.ok) return word;
-    const twice = pattern(/ twice(?![\p{L}\p{N}])/iu)(ctx, word.pos);
+    const twice = pattern(/ (twice|an additional time)(?![\p{L}\p{N}])/iu)(ctx, word.pos);
     let count: IrAmount;
     let end: number;
     if (twice.ok) {
       end = twice.pos;
-      count = { kind: 'number', value: 2, span: { start: word.pos, end } };
+      // CR 701.16a: "investigate twice" is two investigations; "investigate an additional time" (Erdwal Illuminator) is one more.
+      const value = twice.value[1]?.toLowerCase() === 'twice' ? 2 : 1;
+      count = { kind: 'number', value, span: { start: word.pos, end } };
     } else {
       const times = sequence(
         literal(' '),
@@ -393,6 +401,7 @@ export const EFFECT_INVESTIGATE_TIMES = defineRule<Clauses>({
     const token: IrToken = {
       kind: 'token',
       predefined: 'Clue',
+      investigate: true,
       count,
       span,
       rule: 'effect.investigate-times',

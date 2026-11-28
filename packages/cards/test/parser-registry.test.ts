@@ -775,6 +775,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.others-enter-with-x-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
+  'trigger.investigates': whenever,
   'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
   // Midnight Clock (issue 121): the Nth counter of a kind put on the permanent.

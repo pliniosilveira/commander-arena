@@ -3832,6 +3832,22 @@ function runEffect(
         front.push(...made.front);
         created = [...created, ...made.created];
       }
+      // CR 701.16a (issue 128): each time the keyword action "investigate" was done is an event, however the Clue made was replaced.
+      if (effect.investigate === true) {
+        for (const seat of creators) {
+          for (let i = 0; i < count; i += 1) {
+            const nth = (next.turnLog.investigated ?? []).filter((who) => who === seat).length + 1;
+            next = {
+              ...next,
+              turnLog: {
+                ...next.turnLog,
+                investigated: [...(next.turnLog.investigated ?? []), seat],
+              },
+            };
+            events.push({ kind: 'investigated', seat, nth });
+          }
+        }
+      }
       // D-230 (CR 607.2a): a token that copies a creature and links the cards exiled by the effect before it remembers them.
       if (effect.token.kind === 'copyOf' && effect.token.linkExiled === true) {
         const exiled = (ctx.moved ?? []).filter((id) => next.objects[id]?.zone === 'exile');

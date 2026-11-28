@@ -31,6 +31,8 @@ export const STATIC_GROUP_IS_EQUIPMENT = defineRule<IrStatic>({
   examples: [
     'Treasures you control are Equipment in addition to their other types and have "Equipped creature gets +2/+0," equip Pirate {1}, and equip {3}.',
     'Treasures you control are Equipment in addition to their other types and have "Equipped creature gets +1/+1," and equip {2}.',
+    // Issue 128 (Armed with Proof): the comma may come after the quotation or not at all.
+    'Clues you control are Equipment in addition to their other types and have "Equipped creature gets +2/+0" and equip {2}.',
   ],
   rejects: [
     'Treasures you control are Equipment in addition to their other types.',
@@ -49,7 +51,7 @@ export const STATIC_GROUP_IS_EQUIPMENT = defineRule<IrStatic>({
     const subject = family<IrNoun>('noun', { only: ['noun.plain-permanents'] })(ctx, pos);
     if (!subject.ok) return subject;
     const lead = pattern(
-      / are Equipment in addition to their other types and have ["“]Equipped creature gets ([+\-−]\d+)\/([+\-−]\d+),["”]/iu,
+      / are Equipment in addition to their other types and have ["“]Equipped creature gets ([+\-−]\d+)\/([+\-−]\d+),?["”]/iu,
     )(ctx, subject.pos);
     if (!lead.ok) return lead;
     const number = (text: string | undefined) => Number((text ?? '0').replace('−', '-'));

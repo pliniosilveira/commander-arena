@@ -2642,7 +2642,27 @@ function ownTokenName(named: string, ctx: LowerContext): string | null {
   return ctx.selfName === '' ? null : named.split('~').join(ctx.selfName);
 }
 
+/**
+ * "Investigate" (CR 701.16a, issue 128): the `createToken` of the Clue marks that the keyword action was done, for "whenever you investigate" (the engine's `investigate`).
+ */
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
+  const lowered = lowerCreateTokenBase(clause, ctx);
+  if (!lowered.ok) return lowered;
+  const token = arg(clause, 'token');
+  if (token?.kind !== 'token' || token.investigate !== true) return lowered;
+  return {
+    ...lowered,
+    value: lowered.value.map((effect) =>
+      effect.kind === 'createToken' &&
+      effect.token.kind === 'preset' &&
+      effect.token.preset === 'Clue'
+        ? { ...effect, investigate: true as const }
+        : effect,
+    ),
+  };
+}
+
+function lowerCreateTokenBase(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
   // "Create a tapped and attacking X/X ... creature token" (CR 508.4, Ghalta and Mavren): the tokens are created tapped, then the engine's `enterAttacking` of what was just made

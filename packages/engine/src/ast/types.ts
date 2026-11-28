@@ -6128,6 +6128,11 @@ export type Effect =
       readonly count: Amount;
       readonly controller?: PlayerSelector;
       /**
+       * "Investigate", "investigate twice" (CR 701.16a, issue 128): the Clue is made by the keyword action, which the player does `count` times (each time making one Clue), so each time is
+       * an `investigated` event, whatever the replacement effects of the tokens made (Academy Manufactor) do to the tokens. Only with the preset Clue.
+       */
+      readonly investigate?: true;
+      /**
        * "Create two tapped Treasure tokens" (CR 110.5b, 614.1c, D-131): the tokens enter the battlefield tapped (they are
        * not tapped afterwards: nothing triggers from becoming tapped, CR 603.2e). A token that would enter tapped
        * anyway still does.
@@ -7046,6 +7051,16 @@ export type Trigger =
    */
   | {
       readonly kind: 'lifeGained';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly firstEachTurn?: true;
+    }
+  /**
+   * "Whenever you investigate for the first time each turn" (CR 701.16a, 603.2, issue 128, Erdwal Illuminator): once for each time the player `who` names (relative to the controller of this
+   * ability) investigates, the keyword action of a `createToken` with `investigate`; "investigate twice" is two investigations. `firstEachTurn` limits it to the first investigation of that
+   * player in the turn (CR 603.2: the trigger counts the player's investigations, not this ability's resolutions). `triggerPlayer` is the player who investigated.
+   */
+  | {
+      readonly kind: 'investigated';
       readonly who: 'you' | 'opponent' | 'any';
       readonly firstEachTurn?: true;
     }

@@ -1548,6 +1548,8 @@ export interface IrToken extends IrNode {
     | 'Wicked Role'
     | 'Junk'
     | 'Blood';
+  /** The Clue is made by the keyword action "investigate" (CR 701.16a, issue 128), not by "create a Clue token": the engine's `createToken` `investigate`. */
+  readonly investigate?: true;
   readonly power?: number;
   readonly toughness?: number;
   /** "X/X creature token": use the X value bound by the enclosing ability's where-X clause. */

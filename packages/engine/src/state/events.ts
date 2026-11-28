@@ -442,6 +442,11 @@ export type GameEvent =
       readonly nth: number;
     }
   /**
+   * `seat` investigated (CR 701.16a, issue 128): one event for each time the keyword action was done, whatever replaced the Clue it makes (a replacement effect changes the tokens, not the
+   * action: Academy Manufactor's ruling). `nth` counts the player's investigations this turn, this one included ("for the first time each turn").
+   */
+  | { readonly kind: 'investigated'; readonly seat: SeatId; readonly nth: number }
+  /**
    * `seat`'s poison counters changed (CR 120.3b infect damage, CR 120.3g toxic, CR 122.1): `from` and `to`
    * are the totals before and after. Ten or more is a loss at the next state-based action check (CR 704.5c).
    */

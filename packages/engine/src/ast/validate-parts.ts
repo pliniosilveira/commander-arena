@@ -7133,6 +7133,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
+      // CR 701.16a (issue 128): the keyword action "investigate" makes a Clue.
+      if (
+        e.investigate !== undefined &&
+        (e.investigate !== true || e.token?.kind !== 'preset' || e.token.preset !== 'Clue')
+      ) {
+        issue(out, `${path}.investigate`, 'investigate is true on the preset Clue token');
+      }
       // D-648 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
       if (e.attacking !== undefined) {
         // CR 508.4: with `controllerChooses` the first player an attack batch attacked is only where the token enters; its controller then chooses what it attacks, so a batch that

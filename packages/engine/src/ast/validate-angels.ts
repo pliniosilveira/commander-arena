@@ -38,6 +38,7 @@ const EACH_OF_TOKENS: readonly string[] = [
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
   switch (t?.kind) {
     case 'lifeGained':
+    case 'investigated':
     case 'lifeLost':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);

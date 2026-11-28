@@ -755,6 +755,11 @@ function occurrences(
             },
           ]
         : [];
+    case 'investigated':
+      // CR 701.16a (issue 128): one occurrence for each time the player investigated.
+      return event.kind === 'investigated'
+        ? [{ subject: null, seat: event.seat, player: event.seat, gainNth: event.nth }]
+        : [];
     case 'lifeLost':
       // CR 119.3: one occurrence for each reduction of a life total (`lifeChanged` downward).
       return event.kind === 'lifeChanged' && event.to < event.from
@@ -1271,6 +1276,7 @@ function matches(
       }
       return true;
     case 'lifeGained':
+    case 'investigated':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return trigger.firstEachTurn !== true || occ.gainNth === 1;
@@ -1600,6 +1606,8 @@ function isRelevant(event: GameEvent): boolean {
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
     case 'lifeGained':
       return true; // CR 119.9 (D-149)
+    case 'investigated':
+      return true; // CR 701.16a (issue 128)
     case 'milled':
       return true; // CR 701.17a
     case 'lifeChanged':

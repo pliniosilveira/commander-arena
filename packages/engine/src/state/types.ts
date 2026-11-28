@@ -3236,6 +3236,8 @@ export interface TurnLog {
    * kind of counter. Unlike `countersPut` it also has the counters no player put. Absent until one was put, so the state of a game where none was is as it was.
    */
   readonly countersPutOn?: readonly { readonly object: ObjectId; readonly counter: string }[];
+  /** Each time a player investigated this turn (CR 701.16a, issue 128), in order, one entry for each action: "whenever you investigate for the first time each turn". Absent until one did. */
+  readonly investigated?: readonly SeatId[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
   /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */

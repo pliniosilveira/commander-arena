@@ -781,6 +781,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "whenever you gain life [for the first time each turn]", "whenever you put one or more +1/+1 counters on this creature",
     // "whenever you attack with two or more creatures".
     'lifeGained',
+    // CR 701.16a, 603.2 (issue 128): "whenever you investigate [for the first time each turn]".
+    'investigated',
     // CR 119.3, 603.2: "whenever you lose life [for the first time each turn]".
     'lifeLost',
     'countersAdded',
@@ -4047,6 +4049,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   combatDamageBatch: true,
   damageBatch: true,
   lifeGained: true,
+  investigated: true,
   lifeLost: true,
   countersAdded: true,
   lastCounterRemoved: true,

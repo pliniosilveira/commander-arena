@@ -407,6 +407,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   prepared: [],
   lifeChanged: [],
   lifeGained: [],
+  investigated: [],
   poisonChanged: [],
   counterAdded: [],
   becameMonstrous: [],
