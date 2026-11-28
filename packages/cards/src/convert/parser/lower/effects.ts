@@ -188,6 +188,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
+import { OPPONENT_REVEALS_PUT_LOWERINGS } from './opponent-reveals-put';
 import { EACH_PLAYER_REVEALS_INVESTIGATES_DRAWS, EACH_PLAYER_REVEALS_THEN_DRAWS } from './parley';
 import { PARTY_LOWERINGS } from './party';
 import { PARTY_TIME_LIBRARY_LOWERINGS } from './party-time-library';
@@ -3459,6 +3460,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   ...RANDOM_OPPONENT_LOWERINGS,
   ...FLORIAN_LOWERINGS,
+  ...OPPONENT_REVEALS_PUT_LOWERINGS,
   ...EXILE_OWNER_CAST_LOWERINGS,
   ...SHELL_GAME_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."

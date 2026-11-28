@@ -234,6 +234,7 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { OPPONENT_GRAVEYARD_CAST_EFFECT_RULES } from './opponent-graveyard-cast';
+import { OPPONENT_REVEALS_PUT_EFFECT_RULES } from './opponent-reveals-put';
 import { OWN_GRAVEYARD_CAST_EFFECT_RULES } from './own-graveyard-cast';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { PARLEY_EFFECT_RULES } from './parley';
@@ -1828,6 +1829,7 @@ export const EFFECT_RULES = [
   ...WITHERBLOOM_A_EFFECT_RULES,
   // Federation Fleet deck, group B: "each player reveals the top card of their library, then draws a card. For each nonland card revealed this way, put a +1/+1 counter on ~."
   ...PARLEY_EFFECT_RULES,
+  ...OPPONENT_REVEALS_PUT_EFFECT_RULES,
   // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
   ...THRONE_EFFECT_RULES,
   // CR 106.6 (Jegantha, the Wellspring): "This mana can't be spent to pay generic mana costs."

@@ -8912,11 +8912,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
       }
-      if (e.from !== undefined && e.take?.to !== 'exileFaceDownUnlinked' && !lookOnly) {
+      // Lonis, Cryptozoologist (CR 701.20a, 110.2, 401.4): "Target opponent reveals the top X cards of their library. You may put a nonland permanent card with mana value X or less from among
+      // them onto the battlefield under your control. That player puts the rest on the bottom of their library in a random order.": the cards of another player's library are revealed, one
+      // may be put onto the battlefield under the control of the controller of the effect, and the rest go to the bottom of that library in a random order.
+      const revealedPut =
+        e.take?.to === 'battlefield' &&
+        e.revealAll === true &&
+        e.rest === 'bottomRandom' &&
+        e.take.max === 1 &&
+        e.take.min === undefined &&
+        e.take.kinds === undefined &&
+        e.take.hidden === undefined &&
+        e.take.all === undefined;
+      if (
+        e.from !== undefined &&
+        e.take?.to !== 'exileFaceDownUnlinked' &&
+        !lookOnly &&
+        !revealedPut
+      ) {
         issue(
           out,
           `${path}.from`,
-          "from (another player's library) needs take.to 'exileFaceDownUnlinked', or a look with nothing taken (max 0)",
+          "from (another player's library) needs take.to 'exileFaceDownUnlinked', a look with nothing taken (max 0), or revealed cards of which one is put onto the battlefield (revealAll, take.to 'battlefield', max 1, rest 'bottomRandom')",
         );
       }
       if (

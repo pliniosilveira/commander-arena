@@ -1121,6 +1121,17 @@ const THEN_EACH_PLAYER_DRAWS_A_CARD = /^then each player draws a card\.$/i;
 const EXILE_UP_TO_ONE_NONLAND = /(?:^|, )exile up to one target nonland permanent\.$/i;
 const OWNER_MAY_CAST_WHILE_EXILED =
   /^for as long as that card remains exiled, its owner may cast it\.$/i;
+/**
+ * "{T}, Sacrifice X Clues: Target opponent reveals the top X cards of their library. You may put a nonland permanent card with mana value X or less from among them onto the battlefield under
+ * your control. That player puts the rest on the bottom of their library in a random order." (Lonis, Cryptozoologist, issue 128, CR 701.20a, 110.2, 401.4): three sentences that are one
+ * instruction, kept together for `effect.opponent-reveals-put-nonland`.
+ */
+const OPPONENT_REVEALS_TOP_X =
+  /(?:^|: )target opponent reveals the top X cards of their library\.$/i;
+const MAY_PUT_NONLAND_MV_X =
+  /^you may put a nonland permanent card with mana value X or less from among them onto the battlefield under your control\.$/i;
+const THAT_PLAYER_PUTS_REST_BOTTOM =
+  /^that player puts the rest on the bottom of their library in a random order\.$/i;
 const FOR_EACH_REVEALED_THIS_WAY = /^for each [^.]*? card revealed this way, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
@@ -1708,6 +1719,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, EACH_PLAYER_REVEALS_TOP) &&
       said(b, FOR_EACH_NONLAND_REVEALED_INVESTIGATE) &&
       said(c, THEN_EACH_PLAYER_DRAWS_A_CARD)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, OPPONENT_REVEALS_TOP_X) &&
+      said(b, MAY_PUT_NONLAND_MV_X) &&
+      said(c, THAT_PLAYER_PUTS_REST_BOTTOM)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
