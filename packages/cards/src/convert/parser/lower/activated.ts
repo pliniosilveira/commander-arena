@@ -1181,6 +1181,12 @@ export function lowerActivated(
 ): LowerResult<readonly Ability[]> {
   if (ability.modal !== undefined) return lowerModalActivated(ability, ability.modal, ctx);
   const clauses = ability.body.sentences.flatMap((s) => s.clauses);
+  // "Parley — {T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card." (Selvala,
+  // Explorer Returned, issue 128, CR 605.1a): a mana ability that makes its mana by its effects.
+  if (clauses.length === 1 && clauses[0]?.verb === 'eachPlayerRevealsAddsDraws') {
+    const parley = lowerParleyMana(ability);
+    if (parley !== null) return parley;
+  }
   if (
     clauses.some((c) => c.verb === 'addMana') &&
     !ability.costs.some((c) => c.kind === 'loyalty')
@@ -1199,6 +1205,45 @@ export function lowerActivated(
     if (mana !== null) return mana;
   }
   return lowerOrdinary(ability, ctx);
+}
+
+/**
+ * Selvala's parley mana ability (issue 128): the {T} cost, no production of its own and the effects that reveal, add the mana, gain the life and draw (the engine's `ManaAbility` with
+ * `production` `byEffects`, CR 605.1a, 605.3b). Null when the costs are not the {T} alone (the ordinary reading follows).
+ */
+function lowerParleyMana(ability: Activated): LowerResult<readonly Ability[]> | null {
+  if (ability.costs.length !== 1 || ability.costs[0]?.kind !== 'tap') return null;
+  const blocked = gate(ability, ['effect:revealTopBranches', 'effect:draw', 'effect:addMana']);
+  if (blocked !== null) return blocked;
+  const costs = lowerCosts(ability);
+  if (!costs.ok) return costs;
+  const everyone = { kind: 'eachPlayer' } as const;
+  const mana: ManaAbility = {
+    kind: 'mana',
+    cost: costs.value,
+    production: { kind: 'byEffects' },
+    also: [
+      {
+        kind: 'revealTopBranches',
+        player: everyone,
+        branches: [
+          {
+            ifMatches: { notTypes: ['land'] },
+            onMatch: {
+              kind: 'sequence',
+              effects: [
+                { kind: 'addMana', mana: { kind: 'fixed', mana: ['G'] } },
+                { kind: 'gainLife', player: { kind: 'you' }, amount: 1 },
+              ],
+            },
+            asController: true,
+          },
+        ],
+      },
+      { kind: 'draw', player: everyone, count: 1 },
+    ],
+  };
+  return { ok: true, value: [mana], rule: ability.rule };
 }
 
 /**

@@ -564,7 +564,8 @@ export function activationChoices(
     extraColors?: readonly ManaColor[];
   }[] = [];
   for (const outcome of productionOutcomes(state, obj, ability)) {
-    if (outcome.length === 0) continue;
+    // Selvala (issue 128): a `byEffects` ability makes its mana as its effects run, so its one outcome is empty and is still an activation.
+    if (outcome.length === 0 && ability.production.kind !== 'byEffects') continue;
     const base = isCombinationProduction(ability.production)
       ? { color: null, combination: outcome }
       : { color: isColorChoice(ability.production) ? outcomeColor(outcome) : null };

@@ -645,3 +645,4 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - AI look-ahead: with three or four seats the planner does not look a turn further, and combat keeps the crack-back formula.
 - AI play-out pool: the first play-out of a planning runs on a worker without a budget, so on a slow device the planner can wait past the safety clock until the host's watchdog replaces its answer.
 - AI play-out pool: tried in Chromium only; memory per worker is not measured, and the player has no setting to turn the pool off.
+- Selvala, Explorer Returned: a commander drawn by its mana ability goes to the hand without the owner's choice of the command zone (CR 903.9a); the ability cannot wait for an answer.

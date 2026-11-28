@@ -1119,6 +1119,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
     'fixed',
+    // Selvala, Explorer Returned (issue 128): the mana is made by the ability's own effects (`ManaAbility.also`).
+    'byEffects',
     'anyColor',
     'commanderIdentity',
     'oneOf',
@@ -1144,7 +1146,17 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'producedType',
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
-  manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
+  // Selvala, Explorer Returned (issue 128, CR 605.1a): `revealTopBranches`, `draw`, `addMana` and `sequence` of a `byEffects` production (validate-mana.ts `checkByEffectsAlso` limits them).
+  manaAbilityAlsoKinds: [
+    'dealDamage',
+    'loseLife',
+    'gainLife',
+    'delayedCast',
+    'revealTopBranches',
+    'draw',
+    'addMana',
+    'sequence',
+  ],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   // CR 701.21a, 603.2c (Gorbag of Minas Morgul): `triggerSubject`, "you may sacrifice it" in a trigger about a permanent its controller controls.
@@ -4259,6 +4271,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
+  byEffects: true,
   fixed: true,
   anyColor: true,
   commanderIdentity: true,

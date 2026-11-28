@@ -318,6 +318,9 @@ function plainOutcomes(
       const identity = commanderIdentity(state, seat);
       return identity.length === 0 ? [[]] : identity.map((c) => [c]);
     }
+    case 'byEffects':
+      // Selvala (issue 128): the mana is made by the effects of the ability as it resolves, so none is known in advance and the planner has nothing to plan on.
+      return [[]];
     case 'producedType':
       // CR 605.1b: only the effect of a triggered mana ability (`validateCard` refuses it as what a mana ability makes), read in `mana-triggers.ts`: no mana of its own.
       return [[]];

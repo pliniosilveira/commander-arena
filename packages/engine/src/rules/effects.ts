@@ -943,13 +943,33 @@ export function runImmediateEffects(
   };
   let next = state;
   const events: GameEvent[] = [];
-  for (const effect of effects) {
-    const out = runEffect(next, res, effect, [], quietFlow());
-    if (out.needs !== null || out.front.length > 0) {
-      throw new Error(`The ${effect.kind} effect of a mana ability needed a decision`);
+  // CR 605.3b (Selvala, issue 128): a mana ability resolves at once, so the instructions an effect leaves (the cards a reveal sends on, the draws, a branch's effect) run right after
+  // it, in order, with no one asked: a draw that would ask about a commander (CR 903.9b) is answered "no". An effect that still needs a decision is an engine bug.
+  const queue: Instruction[] = effects.map((effect) => ({ kind: 'effect' as const, effect }));
+  while (queue.length > 0) {
+    const [first, ...rest] = queue;
+    if (first === undefined) break;
+    const instruction: Instruction =
+      first.kind === 'draw' || first.kind === 'move'
+        ? { ...first, commanderChoice: first.commanderChoice ?? false }
+        : first;
+    const step = { ...res, queue: rest };
+    const out =
+      instruction.kind === 'effect'
+        ? runEffect(
+            next,
+            instruction.as === undefined ? step : { ...step, controller: instruction.as },
+            instruction.effect,
+            [],
+            quietFlow(),
+          )
+        : runInstruction(next, step, instruction as EffectInstruction, []);
+    if (out.needs !== null) {
+      throw new Error(`The ${instruction.kind} of a mana ability needed a decision`);
     }
     next = out.state;
     events.push(...out.events);
+    queue.splice(0, queue.length, ...out.front, ...rest);
   }
   return { state: next, events };
 }

@@ -23,6 +23,9 @@ const MANA_COLORS = ['W', 'U', 'B', 'R', 'G', 'C'];
 
 export function checkManaProduction(mp: ManaProduction, path: string, out: Out): void {
   switch (mp?.kind) {
+    case 'byEffects':
+      // Selvala (issue 128): what the ability makes is made by its `also` effects (`checkByEffectsAlso`); there is nothing to list here.
+      break;
     case 'fixed':
       if (!Array.isArray(mp.mana) || mp.mana.length === 0) {
         issue(out, `${path}.mana`, 'fixed mana production must list at least one mana');
@@ -206,6 +209,79 @@ export function checkManaAbilityAlso(e: Effect, path: string, out: Out): void {
         out,
         path,
         `a mana ability's extra effect must be damage to you or you losing or gaining life, not ${kindOf(e)} (CR 605.1a)`,
+      );
+  }
+}
+
+/**
+ * The effects of a mana ability that makes its mana by them (`ManaProduction` `byEffects`, Selvala, Explorer Returned; issue 128; CR 605.1a, 605.3b, 701.20a): run at once, in order, as a
+ * short resolution with no target and no decision a player must make (a draw that would ask about a commander is answered "no"). Allowed: the reveal of the top card of the libraries of
+ * players, with a branch for each kind of card whose effect is one of these effects (done by the controller of the ability), adding fixed mana, gaining your own life, and a draw of a number of
+ * cards by you or every player, and several of them in a sequence.
+ */
+export function checkByEffectsAlso(e: Effect, path: string, out: Out): void {
+  switch (e?.kind) {
+    case 'sequence':
+      if (!Array.isArray(e.effects) || e.effects.length === 0) {
+        issue(out, `${path}.effects`, 'a sequence needs effects');
+      } else {
+        e.effects.forEach((child, i) => {
+          checkByEffectsAlso(child, `${path}.effects[${i}]`, out);
+        });
+      }
+      break;
+    case 'revealTopBranches':
+      if (!['eachPlayer', 'you'].includes(kindOf(e.player) ?? '')) {
+        issue(out, `${path}.player`, 'the libraries revealed are those of each player or yours');
+      }
+      (Array.isArray(e.branches) ? e.branches : []).forEach((branch, i) => {
+        if (branch.to !== undefined || branch.onMatch === undefined) {
+          issue(
+            out,
+            `${path}.branches[${i}]`,
+            'a branch of a mana ability does an effect and moves no card',
+          );
+        } else {
+          checkByEffectsAlso(branch.onMatch, `${path}.branches[${i}].onMatch`, out);
+        }
+        if (branch.asController !== true) {
+          issue(
+            out,
+            `${path}.branches[${i}].asController`,
+            'the controller of the ability does the effect of a branch',
+          );
+        }
+      });
+      break;
+    case 'addMana':
+      if (e.mana?.kind !== 'fixed' || e.mana.times !== undefined || e.player !== undefined) {
+        issue(
+          out,
+          `${path}.mana`,
+          'a mana ability adds fixed mana for its controller: no amount, no other player',
+        );
+      }
+      break;
+    case 'gainLife':
+      if (kindOf(e.player) !== 'you' || typeof e.amount !== 'number' || e.amount < 1) {
+        issue(out, path, 'a mana ability gains a positive number of life for you');
+      }
+      break;
+    case 'draw':
+      if (
+        !['eachPlayer', 'you'].includes(kindOf(e.player) ?? '') ||
+        typeof e.count !== 'number' ||
+        e.count < 1
+      ) {
+        issue(out, path, 'a mana ability draws a positive number of cards for you or each player');
+      }
+      if (e.upTo !== undefined) issue(out, `${path}.upTo`, 'a mana ability draws no "up to" cards');
+      break;
+    default:
+      issue(
+        out,
+        path,
+        `a mana ability that makes its mana by effects may reveal, add mana, gain your life and draw, not ${kindOf(e)} (CR 605.1a)`,
       );
   }
 }

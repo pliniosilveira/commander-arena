@@ -6211,6 +6211,13 @@ export type Effect =
     };
 
 export type ManaProduction =
+  /**
+   * "{T}: Each player reveals the top card of their library. For each nonland card revealed this way, add {G} and you gain 1 life. Then each player draws a card." (Selvala, Explorer
+   * Returned; issue 128; CR 605.1a, 605.3b, 701.20a): a mana ability that makes its mana only through its effects (`ManaAbility.also`, run at once, in order, as a short resolution
+   * that may reveal, add mana with `addMana`, gain life and draw). It adds nothing as it is activated, so what it will make is not known in advance: the payment planner does not
+   * count on it, and a player activates it by hand. A decision a draw would ask (a commander drawn, CR 903.9b) is answered "no".
+   */
+  | { readonly kind: 'byEffects' }
   | {
       readonly kind: 'fixed';
       readonly mana: readonly ManaColor[];

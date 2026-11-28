@@ -7,7 +7,7 @@ import { CARD_TYPES, COLORS } from '../characteristics';
 import type { ManaAbility, ObjectFilter } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
-import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
+import { checkByEffectsAlso, checkManaAbilityAlso, checkManaProduction } from './validate-mana';
 import {
   checkCondition,
   checkCosts,
@@ -274,6 +274,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       checkBattlefieldFilter(a.production.lands, `${path}.production.lands`, out);
     }
   }
+  if (a.production?.kind === 'byEffects' && (a.also === undefined || a.also.length === 0)) {
+    issue(
+      out,
+      `${path}.also`,
+      'a mana ability that makes its mana by effects needs the effects (also)',
+    );
+  }
   if (a.also !== undefined) {
     if (!Array.isArray(a.also) || a.also.length === 0) {
       issue(out, `${path}.also`, 'also must be a non-empty list when present');
@@ -296,7 +303,11 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           );
           return;
         }
-        checkManaAbilityAlso(e, `${path}.also[${i}]`, out);
+        if (a.production?.kind === 'byEffects') {
+          checkByEffectsAlso(e, `${path}.also[${i}]`, out);
+        } else {
+          checkManaAbilityAlso(e, `${path}.also[${i}]`, out);
+        }
       });
     }
   }
